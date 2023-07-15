@@ -1,0 +1,11 @@
+scm:
+  inbound:
+    host: localhost
+    port: 8582
+
+spring:
+  datasource:
+    url: jdbc:db2://10.10.5.70:50000/DBREFSW
+    username: db2inst1
+    password: db2inst1
+    driver-class-name: com.ibm.db2.jcc.DB2Driver
