@@ -24,7 +24,7 @@ public class GatewayOperationRepository {
                         "where PUBLISH = 1";
         List<GatewayOperation> list = jdbcTemplate.query(sql, (rs, rowNum) -> {
             GatewayOperation operation = new GatewayOperation();
-            operation.setId(rs.getLong("EB_SERVICE_ID"));
+//            operation.setId(rs.getLong("EB_SERVICE_ID"));
             operation.setServiceType(ServiceType.findByCode((int) rs.getLong("SERVICE_TYPE")));
             operation.setTitle(rs.getString("name"));
             operation.setCode(rs.getString("code"));

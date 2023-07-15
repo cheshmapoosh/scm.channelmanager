@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.gateway.camel;
 
 import ir.daneshrefah.scm.common.model.Constants;
 import ir.daneshrefah.scm.common.model.GatewayOperation;
+import ir.daneshrefah.scm.common.model.ProfileEntity;
 import ir.daneshrefah.scm.gateway.service.GatewayOperationService;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -20,6 +21,8 @@ public class RestEndpointInboundGenerator extends RouteBuilder {
 //    private String inboundPort;
     @Autowired
     private GatewayOperationService operationInfoService;
+    @Autowired
+    private String activeProfileId;
 
     @Override
     public void configure() throws Exception {

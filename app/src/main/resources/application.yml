@@ -1,4 +1,5 @@
 scm:
+  profile: IB4DEV
   inbound:
     host: localhost
     port: 8582
@@ -9,3 +10,8 @@ spring:
     username: db2inst1
     password: db2inst1
     driver-class-name: com.ibm.db2.jcc.DB2Driver
+  jpa:
+    properties:
+      hibernate:
+        default_schema: REF
+

@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.common.model;
 
 
-public class GatewayOperation {
+public class GatewayOperation extends AbstractEntity {
 
-    private Long id;
-
+    private String id;
     private ServiceType serviceType;
     private String title;
     private String code;
@@ -27,14 +26,6 @@ public class GatewayOperation {
         this.inputJSONSchema = inputJSONSchema;
         this.outputJSONSchema = outputJSONSchema;
         this.metadata = metadata;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public ServiceType getServiceType() {
@@ -107,5 +98,15 @@ public class GatewayOperation {
 
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 }

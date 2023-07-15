@@ -1,15 +1,32 @@
 -- 14020424
+CREATE TABLE REF.TBL_SCM_PROFILE (
+        PROFILE_ID VARCHAR(36) NOT NULL,
+        CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CREATOR VARCHAR(255),
+        LAST_EDITOR VARCHAR(255),
+        NAME VARCHAR(255),
+        TITLE VARCHAR(255),
+        PRIMARY KEY (PROFILE_ID)
+)
+
+INSERT INTO REF.TBL_SCM_PROFILE (PROFILE_ID, CREATOR, LAST_EDITOR, NAME, TITLE)
+VALUES ('a9dcfd02e4fc4f7f92bce0c6a2e7f225', 'Reza Jamshidi', 'Reza Jamshidi', 'IB4DEV', 'اینترنت بانک توسعه');
+
+INSERT INTO REF.TBL_SCM_PROFILE (PROFILE_ID, CREATOR, LAST_EDITOR, NAME, TITLE)
+VALUES ('f3e0ebe042f244b09be0581ac05351d0', 'Reza Jamshidi', 'Reza Jamshidi', 'MB4DEV', 'موبایل بانک توسعه');
+
 CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER (
-                                              SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL,
-                                              CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                              LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                              CREATOR VARCHAR(255),
-                                              LAST_EDITOR VARCHAR(255),
-                                              NAME VARCHAR(255),
-                                              TITLE VARCHAR(255),
-                                              COMPONENT_NAME VARCHAR(255),
-                                              VALUE VARCHAR(255),
-                                              PRIMARY KEY (SERVICE_PROVIDER_ID)
+        SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL,
+        CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CREATOR VARCHAR(255),
+        LAST_EDITOR VARCHAR(255),
+        NAME VARCHAR(255),
+        TITLE VARCHAR(255),
+        COMPONENT_NAME VARCHAR(255),
+        VALUE VARCHAR(255),
+        PRIMARY KEY (SERVICE_PROVIDER_ID)
 )
 
 
