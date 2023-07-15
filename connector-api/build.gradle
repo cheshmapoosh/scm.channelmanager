@@ -10,5 +10,6 @@ plugins {
 
 dependencies {
     api 'org.apache.camel.springboot:camel-core-starter'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     api project(":common")
 }

@@ -18,27 +18,27 @@ public class GatewayOperationRepository {
     private JdbcTemplate jdbcTemplate;
 
     public Map<String, GatewayOperation> findAllGatewayOperation() {
-        String sql = "select O.*, S.* from ref.EB_SERVICE O where PUBLISHED = 1";// +
-//                "INNER JOIN REF.SERVE_CATEGORY S";
-//        List<GatewayOperation> list = jdbcTemplate.query(sql, (rs, rowNum) -> {
-//            GatewayOperation operation = new GatewayOperation();
-//            operation.setId(rs.getLong("EB_SERVICE_ID"));
-////            operation.setServiceType(ServiceType.findByCode(rs.getLong("EB_SERVICE_ID")));
-////            private ServiceType serviceType;
-////            private String title;
-////            private String code;
-////            private GatewayService service;
-////            private String serviceProviderComponent;
-////            private String urlBase;
-////            private String inputJSONSchema;
-////            private String outputJSONSchema;
-////            private String metadata;
-//            operation.setCode(rs.getString("name"));
-//            operation.setUrlBase(rs.getString("code"));
-//            operation.setTitle(rs.getString("title"));
-//            // Map other columns to entity fields as needed
-//            return operation;
-//        });
+        String sql = "select O.*, S.SERVICE_CATEGORY_ID, S.NAME AS SERVICE_NAME, s.DESCRIPTION AS SERVICE_TITLE from ref.EB_SERVICE O  " +
+                        "INNER JOIN REF.SERVICE_CATEGORY S " +
+                        "ON O.SERVICE_CATEGORY_ID = S.SERVICE_CATEGORY_ID " +
+                        "where PUBLISH = 1";
+        List<GatewayOperation> list = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            GatewayOperation operation = new GatewayOperation();
+            operation.setId(rs.getLong("EB_SERVICE_ID"));
+            operation.setServiceType(ServiceType.findByCode((int) rs.getLong("SERVICE_TYPE")));
+            operation.setTitle(rs.getString("name"));
+            operation.setCode(rs.getString("code"));
+            GatewayService gatewayService = new GatewayService(rs.getLong("SERVICE_CATEGORY_ID"),
+                    rs.getString("SERVICE_NAME"), rs.getString("SERVICE_TITLE"));
+            operation.setService(gatewayService);
+//            private String serviceProviderComponent;
+            operation.setUrlBase(rs.getString("code"));
+//            private String inputJSONSchema;
+//            private String outputJSONSchema;
+//            private String metadata;
+            // Map other columns to entity fields as needed
+            return operation;
+        });
         Map<String, GatewayOperation> map = new HashMap<>();
         String citiesInputJSONSchema = """
                 {
