@@ -9,4 +9,4 @@
  */
 
 rootProject.name = 'ChannelManager'
-include('app', 'gateway', 'common', 'connector-api', 'connector-impl', 'nab-connector-impl')
+include('scm-common', 'scm-dao', 'scm-service', 'scm-core', 'scm-connector-api', 'scm-gateway', 'scm-web', 'scm-connector-nab-repo', 'scm-connector-hps')
