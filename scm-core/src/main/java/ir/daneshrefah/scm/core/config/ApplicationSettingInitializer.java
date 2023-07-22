@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.config;
 
-import ir.daneshrefah.scm.common.model.ApplicationSetting;
 import ir.daneshrefah.scm.common.model.Profile;
 import ir.daneshrefah.scm.service.ProfileService;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,12 +18,10 @@ public class ApplicationSettingInitializer {
     }
 
     @Bean
-    public ApplicationSetting applicationSetting() {
-        Profile profile = profileService.findProfileByName(activeProfileCode);
-
-        ApplicationSetting applicationSetting = new ApplicationSetting();
-        applicationSetting.setActiveProfile(profile);
-        return applicationSetting;
+    public ApplicationConfig applicationSetting() {
+        Profile profile = profileService.findProfileByCode(activeProfileCode);
+        ApplicationConfig applicationConfig = new ApplicationConfig(profile);
+        return applicationConfig;
     }
 
 }

@@ -1,21 +1,18 @@
 package ir.daneshrefah.scm.gateway.rest;
 
-import ir.daneshrefah.scm.common.model.ApplicationSetting;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RestEndpointInboundGenerator extends RouteBuilder {
 
-    @Autowired
-    private ApplicationSetting applicationSetting;
+//    @Autowired
+//    private ApplicationSetting applicationSetting;
 
     @Override
     public void configure() throws Exception {
-        from("netty-http:http://0.0.0.0:8080/api/cities1")
+        /*from("netty-http:http://0.0.0.0:8080/api/cities1")
                 .choice()
                     .when(header("CamelHttpMethod").isEqualTo("GET"))
                         .to("direct:cities1")
@@ -42,7 +39,7 @@ public class RestEndpointInboundGenerator extends RouteBuilder {
                 .setBody().constant("cities3");
 
         from("direct:cities4")
-                .setBody().constant("cities4");
+                .setBody().constant("cities4");*/
     }
 
 }
