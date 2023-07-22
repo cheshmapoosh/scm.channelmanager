@@ -15,7 +15,7 @@ public class NabProducer extends AbstractProducer {
     public Object internalProcess(ScmExchange exchange) throws Exception {
 //        GatewayOperation gatewayOperation = (GatewayOperation) exchange.getHeaders().get(Constants.MESSAGE_HEADER_KEY_GATEWAY_OPERATION);
 //        Object body = exchange.getBody();
-        return "Nab Hello 2";
+        return "Nab Hello 3";
     }
 
 }

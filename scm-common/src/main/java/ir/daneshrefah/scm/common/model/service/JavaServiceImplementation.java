@@ -16,4 +16,7 @@ public class JavaServiceImplementation implements ServiceImplementation {
 
     }
 
+    public void setServiceClassName(Class<? extends BaseJavaServiceImplementation> serviceClassName) {
+        this.serviceClassName = serviceClassName;
+    }
 }

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.mapper;
 
 import ir.daneshrefah.scm.common.model.component.ServiceComponentProvider;
-import ir.daneshrefah.scm.entity.ServiceComponentProviderEntity;
+import ir.daneshrefah.scm.entity.component.ServiceComponentProviderEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 

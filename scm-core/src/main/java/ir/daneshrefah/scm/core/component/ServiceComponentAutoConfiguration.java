@@ -1,8 +1,7 @@
-package ir.daneshrefah.scm.core.comnent;
+package ir.daneshrefah.scm.core.component;
 
 import ir.daneshrefah.scm.common.model.component.ServiceComponentProvider;
 import ir.daneshrefah.scm.connector.nab.NabComponent;
-import ir.daneshrefah.scm.core.inbound.RestInboundChannelGenerator;
 import ir.daneshrefah.scm.service.ServiceComponentProviderService;
 import ir.daneshrefah.scm.service.ServiceComponentService;
 import jakarta.annotation.PostConstruct;

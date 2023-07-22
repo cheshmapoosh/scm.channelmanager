@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.entity;
+package ir.daneshrefah.scm.entity.component;
 
+import ir.daneshrefah.scm.entity.AbstractEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -14,9 +15,11 @@ public class ServiceComponentEntity extends AbstractEntity {
     private String code;
     private String title;
     private String serviceComponentProviderId;
-//    private String requestJSONSchema;
-//    private String responseJSONSchema;
-//    private String metadata;
+    @Column(name = "REQUEST_JSON_SCHEMA", nullable = true)
+    private String requestJSONSchema;
+    @Column(name = "RESPONSE_JSON_SCHEMA", nullable = true)
+    private String responseJSONSchema;
+    private String metadata;
 
     public String getCode() {
         return code;
@@ -42,29 +45,29 @@ public class ServiceComponentEntity extends AbstractEntity {
         this.serviceComponentProviderId = serviceComponentProviderId;
     }
 
-//    public String getRequestJSONSchema() {
-//        return requestJSONSchema;
-//    }
-//
-//    public void setRequestJSONSchema(String requestJSONSchema) {
-//        this.requestJSONSchema = requestJSONSchema;
-//    }
-//
-//    public String getResponseJSONSchema() {
-//        return responseJSONSchema;
-//    }
-//
-//    public void setResponseJSONSchema(String responseJSONSchema) {
-//        this.responseJSONSchema = responseJSONSchema;
-//    }
-//
-//    public String getMetadata() {
-//        return metadata;
-//    }
-//
-//    public void setMetadata(String metadata) {
-//        this.metadata = metadata;
-//    }
+    public String getRequestJSONSchema() {
+        return requestJSONSchema;
+    }
+
+    public void setRequestJSONSchema(String requestJSONSchema) {
+        this.requestJSONSchema = requestJSONSchema;
+    }
+
+    public String getResponseJSONSchema() {
+        return responseJSONSchema;
+    }
+
+    public void setResponseJSONSchema(String responseJSONSchema) {
+        this.responseJSONSchema = responseJSONSchema;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
 
     @Override
     public String getId() {

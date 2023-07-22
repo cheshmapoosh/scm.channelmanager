@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.repository;
 
-import ir.daneshrefah.scm.entity.ServiceComponentEntity;
+import ir.daneshrefah.scm.entity.component.ServiceComponentEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

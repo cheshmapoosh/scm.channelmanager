@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.comnent;
+package ir.daneshrefah.scm.core.component;
 
 import ir.daneshrefah.scm.common.model.component.ServiceComponent;
 import ir.daneshrefah.scm.common.model.component.ServiceComponentProvider;

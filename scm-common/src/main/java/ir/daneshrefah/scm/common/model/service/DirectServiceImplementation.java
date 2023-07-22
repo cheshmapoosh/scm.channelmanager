@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.common.model.service;
 
-import ir.daneshrefah.scm.common.model.component.ServiceComponentRelation;
-
 import java.util.List;
 
 /**
@@ -13,7 +11,7 @@ import java.util.List;
  */
 public class DirectServiceImplementation implements ServiceImplementation {
 
-    private List<ServiceComponentRelation> serviceComponents;
+    private List<ServiceRelation> serviceRelations;
     private Integer executionPolicy; // 1: all, 2: any
 
     @Override
@@ -21,4 +19,19 @@ public class DirectServiceImplementation implements ServiceImplementation {
 
     }
 
+    public List<ServiceRelation> getServiceRelations() {
+        return serviceRelations;
+    }
+
+    public void setServiceRelations(List<ServiceRelation> serviceRelations) {
+        this.serviceRelations = serviceRelations;
+    }
+
+    public Integer getExecutionPolicy() {
+        return executionPolicy;
+    }
+
+    public void setExecutionPolicy(Integer executionPolicy) {
+        this.executionPolicy = executionPolicy;
+    }
 }

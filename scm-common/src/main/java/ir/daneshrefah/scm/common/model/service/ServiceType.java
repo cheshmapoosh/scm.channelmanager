@@ -9,6 +9,24 @@ package ir.daneshrefah.scm.common.model.service;
  */
 public enum ServiceType {
 
-    DIRECT, JAVA, BPMN;
+    DIRECT(1), JAVA(2), BPMN(3);
 
+    private Integer code;
+
+    ServiceType(Integer code) {
+        this.code = code;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public static ServiceType findByCode(Integer code) {
+        for (ServiceType enumValue : ServiceType.values()) {
+            if (enumValue.getCode().equals(code)) {
+                return enumValue;
+            }
+        }
+        return null;
+    }
 }

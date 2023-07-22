@@ -17,12 +17,12 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         restConfiguration().host("localhost").port(8090).bindingMode(RestBindingMode.json);
         from("rest:post:api/test")
                 .log("body ${body}")
-                .to("direct:ACH_XFER")
+                .to("direct:SERVICE_ACH_XFER")
                 .end();
 
-        from("direct:test")
-                .setBody().constant("Helloooooo2")
-                .end();
+//        from("direct:test")
+//                .setBody().constant("Helloooooo2")
+//                .end();
     }
 
 }

@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.entity;
+package ir.daneshrefah.scm.entity.component;
 
+import ir.daneshrefah.scm.entity.AbstractEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
