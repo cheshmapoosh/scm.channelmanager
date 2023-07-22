@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
+import ir.daneshrefah.scm.common.model.BaseModel;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,19 +9,10 @@ package ir.daneshrefah.scm.common.model.terminal;
  * @version 1.0
  * @since 2023-07-19
  */
-public abstract class Channel {
+public abstract class Channel extends BaseModel {
 
-    private Boolean isSynchronous;
     private String code;
     private String title;
-
-    public Boolean getSynchronous() {
-        return isSynchronous;
-    }
-
-    public void setSynchronous(Boolean synchronous) {
-        isSynchronous = synchronous;
-    }
 
     public String getCode() {
         return code;
@@ -36,4 +29,7 @@ public abstract class Channel {
     public void setTitle(String title) {
         this.title = title;
     }
+
+    public abstract Protocol getProtocol();
+
 }

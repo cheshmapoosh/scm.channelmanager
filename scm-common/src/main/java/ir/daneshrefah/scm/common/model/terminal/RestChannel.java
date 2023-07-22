@@ -26,4 +26,9 @@ public class RestChannel extends Channel {
     public void setPort(Integer port) {
         this.port = port;
     }
+
+    @Override
+    public Protocol getProtocol() {
+        return Protocol.REST;
+    }
 }

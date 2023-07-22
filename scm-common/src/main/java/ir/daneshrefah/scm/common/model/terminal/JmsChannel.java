@@ -54,4 +54,9 @@ public class JmsChannel extends Channel {
     public void setResponseQueue(String responseQueue) {
         this.responseQueue = responseQueue;
     }
+
+    @Override
+    public Protocol getProtocol() {
+        return Protocol.JMS;
+    }
 }

@@ -14,4 +14,28 @@ public class Terminal {
     private String code;
     private String title;
     private List<TerminalServiceAccess> services;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public List<TerminalServiceAccess> getServices() {
+        return services;
+    }
+
+    public void setServices(List<TerminalServiceAccess> services) {
+        this.services = services;
+    }
 }

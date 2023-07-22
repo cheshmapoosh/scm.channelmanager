@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
+import ir.daneshrefah.scm.common.model.BaseModel;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 /**
@@ -9,7 +10,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
  * @version 1.0
  * @since 2023-07-19
  */
-public class TerminalServiceAccess {
+public class TerminalServiceAccess extends BaseModel {
 
     private Terminal terminal;
     private Service service;
