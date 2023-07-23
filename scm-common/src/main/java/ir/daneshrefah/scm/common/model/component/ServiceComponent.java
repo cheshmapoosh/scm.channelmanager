@@ -16,8 +16,6 @@ public class ServiceComponent extends BaseModel {
     private String code;
     private String title;
     private ServiceComponentProvider provider;
-    private String requestJSONSchema;
-    private String responseJSONSchema;
     private String metadata;
 
     public String getCode() {
@@ -42,22 +40,6 @@ public class ServiceComponent extends BaseModel {
 
     public void setProvider(ServiceComponentProvider provider) {
         this.provider = provider;
-    }
-
-    public String getRequestJSONSchema() {
-        return requestJSONSchema;
-    }
-
-    public void setRequestJSONSchema(String requestJSONSchema) {
-        this.requestJSONSchema = requestJSONSchema;
-    }
-
-    public String getResponseJSONSchema() {
-        return responseJSONSchema;
-    }
-
-    public void setResponseJSONSchema(String responseJSONSchema) {
-        this.responseJSONSchema = responseJSONSchema;
     }
 
     public String getMetadata() {

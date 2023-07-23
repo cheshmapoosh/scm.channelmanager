@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.connector.api.component;
 
 //import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.message.Message;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.camel.support.ExchangeHelper;
@@ -28,13 +29,14 @@ public abstract class AbstractProducer extends DefaultProducer {
 //        } else
 //            body = exchange.getMessage().getBody();
 ////        exchange.getMessage().setBody("Nab Hello");
-        ScmExchange scmExchange = new ScmExchange(body, contentType, exchange.getMessage().getHeaders());
+//        Message scmExchange = new Message(body, contentType, exchange.getMessage().getHeaders());
+        Message scmExchange = exchange.getMessage().getBody(Message.class);
         Object newBody = internalProcess(scmExchange);
         if (null != newBody) {
             exchange.getMessage().setBody(newBody);
         }
     }
 
-    public abstract Object internalProcess(ScmExchange exchange) throws Exception;
+    public abstract Object internalProcess(Message message) throws Exception;
 
 }

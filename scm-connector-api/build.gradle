@@ -10,4 +10,5 @@ plugins {
 
 dependencies {
     api 'org.apache.camel.springboot:camel-core-starter'
+    api project(':scm-common')
 }

@@ -15,10 +15,6 @@ public class ServiceComponentEntity extends AbstractEntity {
     private String code;
     private String title;
     private String serviceComponentProviderId;
-    @Column(name = "REQUEST_JSON_SCHEMA", nullable = true)
-    private String requestJSONSchema;
-    @Column(name = "RESPONSE_JSON_SCHEMA", nullable = true)
-    private String responseJSONSchema;
     private String metadata;
 
     public String getCode() {
@@ -43,22 +39,6 @@ public class ServiceComponentEntity extends AbstractEntity {
 
     public void setServiceComponentProviderId(String serviceComponentProviderId) {
         this.serviceComponentProviderId = serviceComponentProviderId;
-    }
-
-    public String getRequestJSONSchema() {
-        return requestJSONSchema;
-    }
-
-    public void setRequestJSONSchema(String requestJSONSchema) {
-        this.requestJSONSchema = requestJSONSchema;
-    }
-
-    public String getResponseJSONSchema() {
-        return responseJSONSchema;
-    }
-
-    public void setResponseJSONSchema(String responseJSONSchema) {
-        this.responseJSONSchema = responseJSONSchema;
     }
 
     public String getMetadata() {
