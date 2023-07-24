@@ -1,23 +1,26 @@
-package ir.daneshrefah.scm.common.model;
+package ir.daneshrefah.scm.core.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 
 import java.io.Serializable;
 import java.time.LocalTime;
 
-public class BaseModel<T> implements Serializable {
+@MappedSuperclass
+public abstract class AbstractEntity<T> implements Serializable {
 
-    private T id;
+    @Column(name = "CREATOR")
     private String creator;
+    @Column(name = "LAST_EDITOR")
     private String lastEditor;
+    @Column(name = "CREATE_DATE")
     private LocalTime createDate;
+    @Column(name = "LAST_EDIT_DATE")
     private LocalTime lastEditDate;
 
-    public T getId() {
-        return id;
-    }
+    public abstract T getId();
 
-    public void setId(T id) {
-        this.id = id;
-    }
+    public abstract void setId(T id);
 
     public String getCreator() {
         return creator;
