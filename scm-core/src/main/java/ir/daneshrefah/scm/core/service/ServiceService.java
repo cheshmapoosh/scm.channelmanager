@@ -34,7 +34,7 @@ public class ServiceService {
             ir.daneshrefah.scm.plugin.api.model.service.Service service = ServiceMapper.INSTANCE.toModel(serviceEntity);
             switch (service.getImplementationType()) {
                 case DIRECT:
-                    DirectServiceImplementation directImplementation = new DirectServiceImplementation();
+                    DirectServiceImplementation directImplementation = new DirectServiceImplementation(service);
                     List<ServiceComponentRelationEntity> serviceRelations = serviceComponentRelationRepository.
                             findServiceRelationEntityByServiceEntityId(serviceEntity.getId());
                     directImplementation.setServiceComponentRelations(ServiceComponentRelationMapper.INSTANCE.entitiesToModels(serviceRelations));

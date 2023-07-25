@@ -12,7 +12,7 @@ import java.util.List;
 public interface ServiceComponentMapper {
     ServiceComponentMapper INSTANCE = Mappers.getMapper(ServiceComponentMapper.class);
 
-    @Mapping(source = "serviceComponentProviderId", target = "serviceComponentProvider.id")
+    @Mapping(source = "serviceComponentProviderEntity", target = "serviceComponentProvider")
     ServiceComponent toModel(ServiceComponentEntity entity);
 
     List<ServiceComponent> entitiesToModels(Iterable<ServiceComponentEntity> entities);

@@ -33,7 +33,7 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
     public void configure() {
         for (Iterator<ServiceComponent> iterator = serviceComponents.iterator(); iterator.hasNext(); ) {
             ServiceComponent serviceComponent = iterator.next();
-            String fromUri = "direct:SVC_" + /*serviceComponentProvider.getCode() + "_" + */serviceComponent.getCode();
+            String fromUri = "direct:SVC_" + serviceComponentProvider.getCode() + "_" + serviceComponent.getCode();
             String toUri = serviceComponentProvider.getCode() + ":" + serviceComponent.getCode();
             from(fromUri)
                     .log("serviceComponent Call")

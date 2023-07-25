@@ -21,4 +21,5 @@ public class NabEndpoint extends AbstractEndpoint {
     public AbstractProducer createInternalProducer() throws Exception {
         return new NabProducer(this);
     }
+
 }

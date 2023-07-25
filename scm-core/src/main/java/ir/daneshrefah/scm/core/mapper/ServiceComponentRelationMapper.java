@@ -14,6 +14,7 @@ public interface ServiceComponentRelationMapper {
     ServiceComponentRelationMapper INSTANCE = Mappers.getMapper(ServiceComponentRelationMapper.class);
 
     @Mapping(source = "serviceComponentEntity", target = "serviceComponent")
+    @Mapping(source = "serviceComponentEntity.serviceComponentProviderEntity", target = "serviceComponent.serviceComponentProvider")
     ServiceComponentRelation toModel(ServiceComponentRelationEntity entity);
 
     List<ServiceComponentRelation> entitiesToModels(List<ServiceComponentRelationEntity> entities);

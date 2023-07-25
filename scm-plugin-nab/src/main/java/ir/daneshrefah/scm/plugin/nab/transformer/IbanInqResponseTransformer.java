@@ -12,8 +12,9 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
  */
 public class IbanInqResponseTransformer extends AbstractTransformer {
 
+
     @Override
-    public Object transform(Object inputSchema, Object outputSchema, Message message) {
+    public Object transform(Object inputSchema, Object outputSchema, Message message, String metadata) {
         return null;
     }
     

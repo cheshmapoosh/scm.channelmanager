@@ -9,7 +9,14 @@ import org.apache.camel.model.RouteDefinition;
  * @version 1.0
  * @since 2023-07-19
  */
-public interface ServiceImplementation {
-    public RouteDefinition fullFill(RouteDefinition routeDefinition);
+public abstract class ServiceImplementation {
+
+    protected Service service;
+
+    public ServiceImplementation(Service service) {
+        this.service = service;
+    }
+
+    public abstract RouteDefinition fullFill(RouteDefinition routeDefinition);
 
 }

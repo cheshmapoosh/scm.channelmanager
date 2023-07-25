@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service;
 
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.model.message.MessageComponent;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.apache.camel.model.RouteDefinition;
@@ -16,10 +17,14 @@ import java.util.List;
  * @version 1.0
  * @since 2023-07-19
  */
-public class DirectServiceImplementation implements ServiceImplementation {
+public class DirectServiceImplementation extends ServiceImplementation {
 
     private List<ServiceComponentRelation> serviceComponentRelations;
     private Integer executionPolicy; // 1: all, 2: any
+
+    public DirectServiceImplementation(Service service) {
+        super(service);
+    }
 
     @Override
     public RouteDefinition fullFill(RouteDefinition routeDefinition) {
@@ -29,21 +34,26 @@ public class DirectServiceImplementation implements ServiceImplementation {
                     serviceComponentRelation.getRequestTransformerClass(), AbstractTransformer.class);
             AbstractTransformer responseTransformer = ClassLoader.createInstanceOfClass(
                     serviceComponentRelation.getResponseTransformerClass(), AbstractTransformer.class);
-            if (null != requestTransformer) {
-                AbstractTransformer finalRequestTransformer = requestTransformer;
-                routeDefinition = routeDefinition.process(exchange -> {
-                    Message message = exchange.getMessage().getBody(Message.class);
-                    Object request = finalRequestTransformer.transform("", "", message);
-//                    message.setInput(request);
-                });
-            }
-            String targetUri = "direct:SVC_" + /*serviceComponentRelation.getServiceComponent().getServiceComponentProvider().getCode() +
-                    "_" +*/
+            AbstractTransformer finalRequestTransformer = requestTransformer;
+            routeDefinition = routeDefinition.process(exchange -> {
+                Message message = exchange.getMessage().getBody(Message.class);
+                MessageComponent component = new MessageComponent();
+                component.setServiceComponent(serviceComponentRelation.getServiceComponent());
+                message.setMessageComponent(component);
+                if (null != requestTransformer) {
+                    Object request = finalRequestTransformer.transform(service.getRequestJSONSchema(),
+                            serviceComponentRelation.getServiceComponent().getRequestJSONSchema(), message,
+                            serviceComponentRelation.getRequestMetadata());
+                    component.setPayload(request);
+                }
+            });
+
+            String targetUri = "direct:SVC_" + serviceComponentRelation.getServiceComponent().getServiceComponentProvider().getCode() +
+                                "_" +
                     serviceComponentRelation.getServiceComponent().getCode();
-            routeDefinition = routeDefinition.log("direct impl call");
-            routeDefinition = routeDefinition.to("direct:SVC_" + targetUri);
+            routeDefinition = routeDefinition.to(targetUri);
         }
-        routeDefinition.end();
+//        routeDefinition = routeDefinition.end();
         return routeDefinition;
     }
 

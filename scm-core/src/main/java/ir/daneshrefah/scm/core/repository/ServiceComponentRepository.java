@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface ServiceComponentRepository extends CrudRepository<ServiceComponentEntity, String> {
 
-    public List<ServiceComponentEntity> findListByServiceComponentProviderId(String serviceComponentProviderId);
+    public List<ServiceComponentEntity> findListByServiceComponentProviderEntityId(String serviceComponentProviderId);
 
 }

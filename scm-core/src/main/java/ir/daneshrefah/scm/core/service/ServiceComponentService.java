@@ -17,7 +17,7 @@ public class ServiceComponentService {
 
     public List<ServiceComponent> findListByServiceComponentProvider(String serviceComponentProviderId) {
         Iterable<ServiceComponentEntity> serviceComponentProviderEntities = serviceComponentRepository
-                .findListByServiceComponentProviderId(serviceComponentProviderId);
+                .findListByServiceComponentProviderEntityId(serviceComponentProviderId);
         return ServiceComponentMapper.INSTANCE.entitiesToModels(serviceComponentProviderEntities);
     }
 }

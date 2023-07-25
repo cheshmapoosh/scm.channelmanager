@@ -14,8 +14,7 @@ public class Message {
     private Status status;
     private List<Error> errors;
     private Object payload;
-    private Object input;
-    private Object output;
+    private MessageComponent messageComponent;
 
     public Header getHeader() {
         return header;
@@ -49,19 +48,11 @@ public class Message {
         this.payload = payload;
     }
 
-    public Object getInput() {
-        return input;
+    public MessageComponent getMessageComponent() {
+        return messageComponent;
     }
 
-    public void setInput(Object input) {
-        this.input = input;
-    }
-
-    public Object getOutput() {
-        return output;
-    }
-
-    public void setOutput(Object output) {
-        this.output = output;
+    public void setMessageComponent(MessageComponent messageComponent) {
+        this.messageComponent = messageComponent;
     }
 }
