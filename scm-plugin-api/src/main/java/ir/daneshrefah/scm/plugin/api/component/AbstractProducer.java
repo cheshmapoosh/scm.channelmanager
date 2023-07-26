@@ -5,9 +5,12 @@ import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.camel.support.ExchangeHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractProducer extends DefaultProducer {
 
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractProducer.class);
     public AbstractProducer(AbstractEndpoint endpoint) {
         super(endpoint);
     }

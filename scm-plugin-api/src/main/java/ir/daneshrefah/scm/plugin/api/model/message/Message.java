@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.List;
 
 /**
@@ -13,7 +15,7 @@ public class Message {
     private Header header;
     private Status status;
     private List<Error> errors;
-    private Object payload;
+    private JsonNode payload;
     private MessageComponent messageComponent;
 
     public Header getHeader() {
@@ -40,11 +42,11 @@ public class Message {
         this.errors = errors;
     }
 
-    public Object getPayload() {
+    public JsonNode getPayload() {
         return payload;
     }
 
-    public void setPayload(Object payload) {
+    public void setPayload(JsonNode payload) {
         this.payload = payload;
     }
 

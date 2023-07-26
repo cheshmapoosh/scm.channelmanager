@@ -1,24 +1,17 @@
-package ir.daneshrefah.scm.core.integration.inbound;
+package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderUnreachableException;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.model.message.Header;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.apache.commons.lang3.RandomStringUtils;
 
-import java.util.ArrayList;
+import java.net.ConnectException;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -42,24 +35,32 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         Integer port = metadataJson.get(JSON_PROPERTY_METADATA_PORT).intValue();
         String contextPath = metadataJson.get(JSON_PROPERTY_METADATA_CONTEXT_PATH).textValue();
         restConfiguration().host("localhost").port(port).bindingMode(RestBindingMode.json);
+//        onException(Exception.class)
+//                .handled(true)
+//                .transform().constant("Sorry");
+
+        // this is just the generic error handler where we set the
+        // destination
+        // and the number of redeliveries we want to try
+//        errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(1));
         for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
             String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
             String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
             from("rest:post:api" + contextPath + "/" + terminalCode + "/" + serviceCode)
+                    .doTry()
                     .log("body ${body}")
                     .process(exchange -> {
-                        JsonNode requestBody = exchange.getMessage().getBody(JsonNode.class);
-                        Message message = new Message();
-                        Header header = new Header();
-                        header.setService(channelAccess);
-                        header.setCorrelationId(RandomStringUtils.randomAlphanumeric(10));
-                        message.setHeader(header);
-                        message.setPayload(requestBody);
-                        exchange.getMessage().setBody(message, Message.class);
-
+                        new RestMessageInitializer().initMessageBody(exchange, channelAccess);
                     })
                     .to("direct:SVI_" + serviceCode)
+                    .doCatch(Exception.class)
+                    .process(new Processor() {
+                        @Override
+                        public void process(Exchange exchange) throws Exception {
+                            exchange.getMessage().setBody("error");
+                        }
+                    })
                     .end();
         }
         /*for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
