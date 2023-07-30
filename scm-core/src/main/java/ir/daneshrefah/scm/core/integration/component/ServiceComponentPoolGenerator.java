@@ -46,10 +46,7 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
                     .routeId("ROUTE_" + fromUri)
                     .onException(Exception.class)
                     .process(exchange -> {
-                        LOGGER.error("");
                         Message message = exchange.getMessage().getBody(Message.class);
-                        String correlationId = message.getHeader().getCorrelationId();
-                        String source = message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode();
                         Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                         if (exception instanceof BaseException) {
                             BaseException baseException = (BaseException) exception;
@@ -57,21 +54,14 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
                         } else {
                             message = errorMappingService.resolveMessageByException(message, exception);
                         }
-//                        Error error = new Error("", "eror on ...", "");
-//                        message.setPayload(null);
-//                        message.addError(error, Status.SC_ERROR_UNAVAILABLE_PROVIDER.getCode());
-//                        exchange.setProperty(Exchange.EXCEPTION_CAUGHT, null);
                         exchange.getMessage().setBody(message);
-//                        String code = StringUtils.isEmpty(exception.getMessage()) ? "" : exception.getMessage();
-//                        Message m = new Message();
-//                        exchange.setProperty(Exchange.EXCEPTION_CAUGHT, null);
-////                        exchange.getMessage().setBody("errrrrror");
-////
-//                        System.out.println("nowc");
                     })
                     .end()
-                    .log("serviceComponent Call")
-                    .to(toUri)
+                    .choice()
+                    .when(simple("${body.status} == 'SC_PROCESSING'"))
+                        .to(toUri)
+                    .otherwise()
+                    .endChoice()
                     .end();
             LOGGER.info("serviceComponent with source '{}' and target '{}' registered.", fromUri, toUri);
         }

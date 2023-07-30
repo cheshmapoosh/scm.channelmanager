@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
+import ir.daneshrefah.scm.plugin.api.model.message.EventType;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
@@ -14,6 +15,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
 
+import java.time.LocalDateTime;
 import java.util.Iterator;
 
 /**
@@ -64,11 +66,11 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
             String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
             from("rest:post:api" + contextPath + "/" + terminalCode + "/" + serviceCode)
                     .doTry()
-                    .log("body ${body}")
                     .process(exchange -> {
                         new RestMessageInitializer().initMessageBody(exchange, channelAccess);
 //                        exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class).getMessage()
                     })
+                    .log("body ${body}")
                     .to("direct:SVI_" + serviceCode)
                     .process(exchange -> {
                         System.out.println("nowi");
@@ -82,6 +84,8 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
                     })
                     .end()
                     .process(exchange -> {
+                        Message message = exchange.getMessage().getBody(Message.class);
+                        message.addEvent(EventType.WHOLE, message.getHeader().getReceiveTimestamp(), LocalDateTime.now(), "");
                         new RestResponseInitializer().initResponseHeader(exchange);
                     })
                     .marshal(dataFormat)

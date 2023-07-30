@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +18,7 @@ public class Message {
     private Header header;
     private Status status;
     private List<Error> errors;
+    private List<Event> events;
     private JsonNode payload;
     private MessageComponent messageComponent;
 
@@ -43,6 +46,14 @@ public class Message {
         this.errors = errors;
     }
 
+    public List<Event> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<Event> events) {
+        this.events = events;
+    }
+
     public JsonNode getPayload() {
         return payload;
     }
@@ -64,5 +75,17 @@ public class Message {
             errors = new ArrayList<>();
         errors.add(error);
         setStatus(Status.findByCode(statusCode));
+    }
+
+    public void addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, String providerCode) {
+        if (null == events)
+            events = new ArrayList<>();
+        Event event = new Event();
+        event.setType(type);
+        event.setStartTime(startTime);
+        event.setEndTime(endTime);
+        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+        event.setServiceProviderCode(providerCode);
+        events.add(event);
     }
 }

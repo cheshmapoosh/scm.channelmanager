@@ -20,7 +20,7 @@ public class IbanInqResponseTransformer extends AbstractTransformer {
 
 
     @Override
-    public Object transform(Object inputSchema, Object outputSchema, Message message, String metadata) {
+    public Object internalTransform(Object inputSchema, Object outputSchema, Message message, String metadata) {
         Object response = message.getMessageComponent().getPayload();
         if (null == response) {
             return null;
@@ -47,22 +47,27 @@ public class IbanInqResponseTransformer extends AbstractTransformer {
 //            "GENERAL":407,
 //            "RANGEID":0,
 //            "IBANVALUE":"IR970130100000000000001399",
+            String iban = element.get("IBANVALUE").asText();
+            String account = element.get("SRLACC").asText();
+            String status = element.get("STATUSX").asText();
             String firstName = element.get("FNAME").asText();
             String lastName = element.get("LNAME").asText();
             Integer customerTypeCode = element.get("CUSTOMERTYPE").asInt();
             Integer accountTypeCode = element.get("ACCOUNTYPE").asInt();
             Integer accountStatusCode = element.get("ACCOUNSTATUS").asInt();
 //            "TASHILAT":0,
-//            "":2,
 //            "RQID":"15975368"
 
             // Create a new ObjectNode with modified property names
             ObjectNode modifiedElement = objectMapper.createObjectNode();
+            modifiedElement.put("iban", iban);
+            modifiedElement.put("account", account);
+            modifiedElement.put("status", status);
             modifiedElement.put("firstName", firstName);
             modifiedElement.put("lastname", lastName);
             modifiedElement.put("customerTypeCode", customerTypeCode);
             modifiedElement.put("accountTypeCode", accountTypeCode);
-            modifiedElement.put("accountStatusCode", accountTypeCode);
+            modifiedElement.put("accountStatusCode", accountStatusCode);
 
             // Add the modified element to the new array
             result.add(modifiedElement);

@@ -5,11 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.plugin.api.model.message.*;
 import ir.daneshrefah.scm.plugin.api.model.message.Error;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 
@@ -29,14 +29,9 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         if (Status.SC_SUCCESS.equals(value.getStatus())) {
             JsonNode payload = value.getPayload();
             if (null != payload && payload.isArray()) {
-                gen.writeArrayFieldStart("results");
-                gen.writeObject(payload);
-//                gen.writeObjectField("result", payload);
-                gen.writeEndArray();
+                gen.writeObjectField("results", payload);
             } else if (null != payload && payload.isObject()) {
-//                gen.writeObjectFieldStart("result");
                 gen.writeObjectField("result", payload);
-//                gen.writeEndObject();
             }
         } else {
             if (null != value.getErrors()) {
@@ -51,6 +46,21 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
                 }
                 gen.writeEndArray();
             }
+        }
+        if (null != value.getEvents()) {
+            gen.writeArrayFieldStart("events");
+            for (Iterator<Event> iterator = value.getEvents().iterator(); iterator.hasNext(); ) {
+                Event event = iterator.next();
+                gen.writeStartObject();
+                gen.writeStringField("serviceCode", event.getServiceCode());
+                gen.writeStringField("serviceProviderCode", event.getServiceProviderCode());
+                gen.writeObjectField("type", event.getType());
+                gen.writeObjectField("startTime", event.getStartTime());
+                gen.writeObjectField("endTime", event.getEndTime());
+                gen.writeObjectField("durationMillis", event.getDurationMillis());
+                gen.writeEndObject();
+            }
+            gen.writeEndArray();
         }
         gen.writeObjectField("responseTimestamp", LocalDateTime.now());
         gen.writeEndObject();
