@@ -19,6 +19,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-netty-starter'
     api 'org.apache.camel.springboot:camel-netty-http-starter'
     api 'org.apache.camel:camel-beanstalk:3.16.0' // Add this line
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
     //    api project(':scm-common')
     api project(':scm-plugin-nab')
 }

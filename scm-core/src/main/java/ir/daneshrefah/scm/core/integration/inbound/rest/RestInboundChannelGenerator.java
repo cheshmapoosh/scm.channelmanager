@@ -2,15 +2,18 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderUnreachableException;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
+import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
 
-import java.net.ConnectException;
 import java.util.Iterator;
 
 /**
@@ -43,6 +46,18 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         // destination
         // and the number of redeliveries we want to try
 //        errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(1));
+
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addSerializer(Message.class, new MessageRestSerializer());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.registerModule(simpleModule);
+        JacksonDataFormat dataFormat = new JacksonDataFormat();
+        dataFormat.setObjectMapper(objectMapper);
+
+
         for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
             String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
@@ -52,15 +67,24 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
                     .log("body ${body}")
                     .process(exchange -> {
                         new RestMessageInitializer().initMessageBody(exchange, channelAccess);
+//                        exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class).getMessage()
                     })
                     .to("direct:SVI_" + serviceCode)
+                    .process(exchange -> {
+                        System.out.println("nowi");
+                    })
                     .doCatch(Exception.class)
                     .process(new Processor() {
                         @Override
                         public void process(Exchange exchange) throws Exception {
-                            exchange.getMessage().setBody("error");
+//                            exchange.getMessage().setBody("error");
                         }
                     })
+                    .end()
+                    .process(exchange -> {
+                        new RestResponseInitializer().initResponseHeader(exchange);
+                    })
+                    .marshal(dataFormat)
                     .end();
         }
         /*for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {

@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.model.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.message.MessageComponent;
+import ir.daneshrefah.scm.plugin.api.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.apache.camel.model.RouteDefinition;
@@ -34,14 +36,13 @@ public class DirectServiceImplementation extends ServiceImplementation {
                     serviceComponentRelation.getRequestTransformerClass(), AbstractTransformer.class);
             AbstractTransformer responseTransformer = ClassLoader.createInstanceOfClass(
                     serviceComponentRelation.getResponseTransformerClass(), AbstractTransformer.class);
-            AbstractTransformer finalRequestTransformer = requestTransformer;
             routeDefinition = routeDefinition.process(exchange -> {
                 Message message = exchange.getMessage().getBody(Message.class);
                 MessageComponent component = new MessageComponent();
                 component.setServiceComponent(serviceComponentRelation.getServiceComponent());
                 message.setMessageComponent(component);
                 if (null != requestTransformer) {
-                    Object request = finalRequestTransformer.transform(service.getRequestJSONSchema(),
+                    Object request = requestTransformer.transform(service.getRequestJSONSchema(),
                             serviceComponentRelation.getServiceComponent().getRequestJSONSchema(), message,
                             serviceComponentRelation.getRequestMetadata());
                     component.setPayload(request);
@@ -52,8 +53,24 @@ public class DirectServiceImplementation extends ServiceImplementation {
                                 "_" +
                     serviceComponentRelation.getServiceComponent().getCode();
             routeDefinition = routeDefinition.to(targetUri);
+
+            routeDefinition = routeDefinition.process(exchange -> {
+                Message message = exchange.getMessage().getBody(Message.class);
+                if (null != responseTransformer) {
+                    JsonNode response = (JsonNode) responseTransformer.transform(serviceComponentRelation.getServiceComponent().getResponseJSONSchema(),
+                            service.getResponseJSONSchema(), message,
+                            serviceComponentRelation.getRequestMetadata());
+                    if (null != response)
+                        message.setPayload(response);
+                }
+            });
         }
-//        routeDefinition = routeDefinition.end();
+        routeDefinition = routeDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            if (Status.SC_PROCESSING.equals(message.getStatus())) {
+                message.setStatus(Status.SC_SUCCESS);
+            }
+        });
         return routeDefinition;
     }
 

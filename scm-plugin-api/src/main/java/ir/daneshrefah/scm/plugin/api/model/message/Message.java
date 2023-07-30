@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,5 +57,12 @@ public class Message {
 
     public void setMessageComponent(MessageComponent messageComponent) {
         this.messageComponent = messageComponent;
+    }
+
+    public void addError(Error error, String statusCode) {
+        if (null == errors)
+            errors = new ArrayList<>();
+        errors.add(error);
+        setStatus(Status.findByCode(statusCode));
     }
 }

@@ -32,10 +32,11 @@ public abstract class AbstractProducer extends DefaultProducer {
 //            body = exchange.getMessage().getBody();
 ////        exchange.getMessage().setBody("Nab Hello");
 //        Message scmExchange = new Message(body, contentType, exchange.getMessage().getHeaders());
-        Message scmExchange = exchange.getMessage().getBody(Message.class);
-        Object newBody = internalProcess(scmExchange);
+        Message message = exchange.getMessage().getBody(Message.class);
+        Object newBody = internalProcess(message);
         if (null != newBody) {
-            exchange.getMessage().setBody(newBody);
+            message.getMessageComponent().setPayload(newBody);
+//            exchange.getMessage().setBody(newBody);
         }
     }
 

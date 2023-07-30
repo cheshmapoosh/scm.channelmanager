@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,29 +8,28 @@ package ir.daneshrefah.scm.plugin.api.model.message;
  * @version 1.0
  * @since 2023-07-23
  */
-public class Status {
+public enum Status {
+
+    SC_PROCESSING("sc_prg"), SC_SUCCESS("sc_scs"), SC_UNAUTHORIZED("sc_uat"), SC_NOT_FOUND("sc_nfd"),
+    SC_ERROR_VALIDATION("sc_evl"), SC_ERROR_SYSTEM("sc_esy"), SC_ERROR_BUSINESS("sc_ebz"),
+    SC_ERROR_UNAVAILABLE_PROVIDER("sc_eup");
+
+    Status(String code) {
+        this.code = code;
+    }
 
     private String code;
-    private String message;
-
-    public Status(String code, String message) {
-        this.code = code;
-        this.message = message;
-    }
 
     public String getCode() {
         return code;
     }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
+    public static Status findByCode(String code) {
+        for (Status enumValue : Status.values()) {
+            if (enumValue.getCode().equals(code)) {
+                return enumValue;
+            }
+        }
+        return null;
     }
 }

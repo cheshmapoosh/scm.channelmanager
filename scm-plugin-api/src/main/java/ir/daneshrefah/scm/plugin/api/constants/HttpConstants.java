@@ -16,6 +16,7 @@ public class HttpConstants {
     public static final String HTTP_HEADER_CHANNEL = "X-SCM-Channel";
     public static final String HTTP_HEADER_TERMINAL = "X-SCM-Terminal";
     public static final String HTTP_HEADER_CLIENT_TIMESTAMP = "X-SCM-Client-Timestamp";
+    public static final String HTTP_HEADER_RECEIVE_TIMESTAMP = "X-SCM-receive-Timestamp";
     public static final String HTTP_HEADER_ACCESS_PARAMETER = "X-SCM-Access-Parameter";
 
 

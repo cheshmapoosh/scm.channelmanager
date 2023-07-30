@@ -1,7 +1,11 @@
 package ir.daneshrefah.scm.plugin.nab.component;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.plugin.api.component.AbstractEndpoint;
 import ir.daneshrefah.scm.plugin.api.component.AbstractProducer;
+import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderBusinessException;
 import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderUnreachableException;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 
@@ -43,25 +47,43 @@ public class NabProducer extends AbstractProducer {
                 .build();
 
         HttpResponse<String> response = null;
-        try {
+//        try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode node = objectMapper.readTree(response.body());
+            if (node.has("errors") && node.get("errors").isArray() && node.get("errors").size() > 0) {
+                ArrayNode errorsNode = (ArrayNode) node.get("errors");
+                if (errorsNode.isArray()) {
+                    for (JsonNode element : errorsNode) {
+                        // Read the data from the array element (assuming they are integers in this example)
+                        String errorCode = element.get("id").asText();
+                        String errorMessage = element.get("message").asText();
+                        throw new ServiceProviderBusinessException(message.getHeader().getCorrelationId(),
+                                message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
+                                errorCode, errorMessage);
+                    }
+                }
+            }
+//        } catch (Exception e) {
+//            throw e;
+//        }
 //        } catch (ExecutionException e) {
 //            if (e.getCause() instanceof IOException) {
 //                System.out.println("Error: " + e.getCause().getMessage());
 //            } else {
 //                e.printStackTrace();
 //            }
-        } catch (ConnectException e) {
+//        } catch (ConnectException e) {
 //            LOGGER.error("error on message '{}' with address '{}'", message.getHeader().getCorrelationId(),
 //                    serviceUrl, e);
-            throw new ServiceProviderUnreachableException(message.getHeader().getCorrelationId(),
-                    message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(), "");
-        } catch (InterruptedException e) {
-//            System.out.println("HTTP request interrupted");
-        } catch (Exception e) {
-//            e.printStackTrace();
-            throw e;
-        }
+//            throw new ServiceProviderUnreachableException(message.getHeader().getCorrelationId(),
+//                    message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(), "");
+//        } catch (InterruptedException e) {
+////            System.out.println("HTTP request interrupted");
+//        } catch (Exception e) {
+////            e.printStackTrace();
+//            throw e;
+//        }
         return response.body();
 //        return "Test Nab ";
     }
@@ -71,7 +93,12 @@ public class NabProducer extends AbstractProducer {
         message.getMessageComponent().getServiceComponent().getMetadata();
         String baseUrl = "";
         String serviceName = "";
-        return "http://10.15.29.81/Service/RCASUSA.IBANINQUIRY";
+        String paymentCode = message.getPayload().get("paymentCode").asText();
+        if ("123".equals(paymentCode))
+            return "http://10.15.29.81/Service/RCASUSA.IBANINQUIRY";
+        else
+            return "http://10.15.29.80/Service/RCASUSA.IBANINQUIRY";
+
     }
 
 }

@@ -11,12 +11,13 @@ public class BaseException extends Exception {
 
     private String correlationId;
     private String source;
-    private String code;
+    private String errorCode;
 
-    public BaseException(String correlationId, String source, String code) {
+    public BaseException(String correlationId, String source, String code, String message) {
+        super(message);
         this.correlationId = correlationId;
         this.source = source;
-        this.code = code;
+        this.errorCode = code;
     }
 
     public String getCorrelationId() {
@@ -35,11 +36,11 @@ public class BaseException extends Exception {
         this.source = source;
     }
 
-    public String getCode() {
-        return code;
+    public String getErrorCode() {
+        return errorCode;
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
     }
 }

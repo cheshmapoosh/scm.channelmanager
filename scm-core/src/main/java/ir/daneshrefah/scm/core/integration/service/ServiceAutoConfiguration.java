@@ -33,10 +33,19 @@ public class ServiceAutoConfiguration extends RouteBuilder {
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
             Service service = iterator.next();
-            String fromUri = "direct:SVI_" + service.getCode();
-            RouteDefinition routeDefinition = from(fromUri);
+            String fromUri = "SVI_" + service.getCode();
+            RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
+//            routeDefinition.onException(Exception.class)
+//                    .handled(true)
+//                    .process(exchange -> {
+//                        System.out.println("now");
+//                    })
+//                    .end();
             routeDefinition.log("service call");
             routeDefinition = service.getImplementation().fullFill(routeDefinition);
+            routeDefinition.process(exchange -> {
+                System.out.println("sia");
+            });
             routeDefinition.end();
         }
     }

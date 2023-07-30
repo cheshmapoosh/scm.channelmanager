@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.plugin.api.model.message.Header;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.Exchange;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,7 +57,9 @@ public class RestMessageInitializer {
         header.setTerminal(channelAccess.getTerminalServiceAccess().getTerminal()); //HttpConstants.HTTP_HEADER_TERMINAL
 //        header.setClientTransactionTimestamp(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_TIMESTAMP, String.class));
         header.setAccessParameter(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_ACCESS_PARAMETER, String.class));
+        header.setReceiveTimestamp(LocalDateTime.now());
         message.setHeader(header);
+        message.setStatus(Status.SC_PROCESSING);
 
         message.setPayload(requestBody);
 

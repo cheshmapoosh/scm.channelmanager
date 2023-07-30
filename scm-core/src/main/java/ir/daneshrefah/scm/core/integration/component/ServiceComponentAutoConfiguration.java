@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.component;
 
+import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.plugin.api.model.component.ServiceComponent;
 import ir.daneshrefah.scm.plugin.api.model.component.ServiceComponentProvider;
 import ir.daneshrefah.scm.core.service.ServiceComponentProviderService;
@@ -37,6 +38,8 @@ public class ServiceComponentAutoConfiguration {
     private ServiceComponentProviderService serviceComponentProviderService;
     @Autowired
     private ServiceComponentService serviceComponentService;
+    @Autowired
+    private ErrorMappingService errorMappingService;
 
     @PostConstruct
     public void init() {
@@ -63,7 +66,7 @@ public class ServiceComponentAutoConfiguration {
                 continue;
             }
             ServiceComponentPoolGenerator serviceComponentPoolGenerator = new ServiceComponentPoolGenerator(
-                    serviceComponentProvider, serviceComponents);
+                    serviceComponentProvider, serviceComponents, errorMappingService);
             beanFactory.registerSingleton("serviceComponentRouteBuilder_" + serviceComponentProvider.getCode(),
             serviceComponentPoolGenerator);
         }

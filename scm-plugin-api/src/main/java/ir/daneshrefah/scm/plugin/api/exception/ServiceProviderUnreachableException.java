@@ -7,10 +7,10 @@ package ir.daneshrefah.scm.plugin.api.exception;
  * @version 1.0
  * @since 2023-07-26
  */
-public class ServiceProviderUnreachableException extends BaseException {
+public class ServiceProviderUnreachableException extends ServiceComponentException {
 
     public ServiceProviderUnreachableException(String correlationId, String source, String code) {
-        super(correlationId, source, code);
+        super(correlationId, source, code, "");
     }
 
 }
