@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.component;
 
 import ir.daneshrefah.scm.common.model.BaseModel;
+import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,6 +19,12 @@ public class ServiceComponent extends BaseModel<String> {
     private String requestJSONSchema;
     private String responseJSONSchema;
     private String metadata;
+    private TransformerType requestTransformerType;
+    private TransformerType responseTransformerType;
+    private String requestMetadata;
+    private String responseMetadata;
+    private String requestTransformerClass;
+    private String responseTransformerClass;
 
     public String getCode() {
         return code;
@@ -73,5 +80,53 @@ public class ServiceComponent extends BaseModel<String> {
 
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    public TransformerType getRequestTransformerType() {
+        return requestTransformerType;
+    }
+
+    public void setRequestTransformerType(TransformerType requestTransformerType) {
+        this.requestTransformerType = requestTransformerType;
+    }
+
+    public TransformerType getResponseTransformerType() {
+        return responseTransformerType;
+    }
+
+    public void setResponseTransformerType(TransformerType responseTransformerType) {
+        this.responseTransformerType = responseTransformerType;
+    }
+
+    public String getRequestMetadata() {
+        return requestMetadata;
+    }
+
+    public void setRequestMetadata(String requestMetadata) {
+        this.requestMetadata = requestMetadata;
+    }
+
+    public String getResponseMetadata() {
+        return responseMetadata;
+    }
+
+    public void setResponseMetadata(String responseMetadata) {
+        this.responseMetadata = responseMetadata;
+    }
+
+    public String getRequestTransformerClass() {
+        return requestTransformerClass;
+    }
+
+    public void setRequestTransformerClass(String requestTransformerClass) {
+        this.requestTransformerClass = requestTransformerClass;
+    }
+
+    public String getResponseTransformerClass() {
+        return responseTransformerClass;
+    }
+
+    public void setResponseTransformerClass(String responseTransformerClass) {
+        this.responseTransformerClass = responseTransformerClass;
     }
 }

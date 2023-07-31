@@ -25,25 +25,20 @@ public abstract class AbstractProducer extends DefaultProducer {
 
     @Override
     public final void process(Exchange exchange) throws Exception {
-//        String contentType = exchange.getIn().getHeader(Exchange.CONTENT_TYPE, String.class);
-        Object body = null;
-        String contentType = ExchangeHelper.getContentType(exchange);
-//        if (MimeTypeUtils.APPLICATION_JSON_VALUE.equals(contentType)) {
-//            body = exchange.getMessage().getBody(JsonNode.class);
-////            body = exchange.getMessage().getBody(JsonNode.class);
-//        } else
-//            body = exchange.getMessage().getBody();
-////        exchange.getMessage().setBody("Nab Hello");
-//        Message scmExchange = new Message(body, contentType, exchange.getMessage().getHeaders());
         Message message = exchange.getMessage().getBody(Message.class);
         LocalDateTime startTime = LocalDateTime.now();
-        Object newBody = internalProcess(message);
-        LocalDateTime endTime = LocalDateTime.now();
-        message.addEvent(EventType.SERVICE_COMPONENT_CALL, startTime, endTime,
-                message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode());
+        Object newBody = null;
+        try {
+            newBody = internalProcess(message);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            LocalDateTime endTime = LocalDateTime.now();
+            message.addEvent(EventType.SERVICE_COMPONENT_CALL, startTime, endTime,
+                    message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode());
+        }
         if (null != newBody) {
             message.getMessageComponent().setPayload(newBody);
-//            exchange.getMessage().setBody(newBody);
         }
     }
 

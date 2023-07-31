@@ -28,5 +28,6 @@ public class HttpConstants {
     public static final String HTTP_HEADER_CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data; boundary=--------------------------136964537185632199292725";
     public static final String HTTP_HEADER_CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
 
+    public static final int HTTP_STATUS_BAD_REQUEST = 400;
 
 }

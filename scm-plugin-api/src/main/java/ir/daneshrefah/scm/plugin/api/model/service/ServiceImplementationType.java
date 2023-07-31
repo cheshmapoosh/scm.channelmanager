@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.plugin.api.model.service;
  */
 public enum ServiceImplementationType {
 
-    DIRECT(1), JAVA(2), BPMN(3);
+    DIRECT(1), JAVA(2), BPMN(3), PARENT(4);
 
     private Integer code;
 

@@ -11,11 +11,13 @@ public class Error {
     private String code;
     private String message;
     private String source;
+    private String sourceErrorCode;
 
-    public Error(String code, String message, String source) {
+    public Error(String code, String message, String source, String sourceErrorCode) {
         this.code = code;
         this.message = message;
         this.source = source;
+        this.sourceErrorCode = sourceErrorCode;
     }
 
     public String getCode() {
@@ -40,5 +42,13 @@ public class Error {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public String getSourceErrorCode() {
+        return sourceErrorCode;
+    }
+
+    public void setSourceErrorCode(String sourceErrorCode) {
+        this.sourceErrorCode = sourceErrorCode;
     }
 }

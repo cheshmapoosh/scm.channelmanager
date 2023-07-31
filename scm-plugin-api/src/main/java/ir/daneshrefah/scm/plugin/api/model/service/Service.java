@@ -17,6 +17,7 @@ public class Service extends BaseModel<String> {
     private String requestJSONSchema;
     private String responseJSONSchema;
     private ServiceImplementation implementation;
+    private Service parent;
 
     public String getCode() {
         return code;
@@ -65,4 +66,13 @@ public class Service extends BaseModel<String> {
     public void setImplementation(ServiceImplementation implementation) {
         this.implementation = implementation;
     }
+
+    public Service getParent() {
+        return parent;
+    }
+
+    public void setParent(Service parent) {
+        this.parent = parent;
+    }
+
 }

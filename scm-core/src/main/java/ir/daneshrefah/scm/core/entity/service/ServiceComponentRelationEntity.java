@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.core.entity.service;
 
-import ir.daneshrefah.scm.core.converter.ServiceComponentRelationTypeConverter;
+import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.entity.component.ServiceComponentEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.ServiceComponentRelationType;
+import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
 import jakarta.persistence.*;
 
 @Entity
@@ -19,11 +19,11 @@ public class ServiceComponentRelationEntity extends AbstractEntity<String> {
     @JoinColumn(name = "SERVICE_ID")
     private ServiceEntity serviceEntity;
     @Column(name = "REQUEST_TRANSFORMER_TYPE_CODE")
-    @Convert(converter = ServiceComponentRelationTypeConverter.class)
-    private ServiceComponentRelationType requestTransformerType;
+    @Convert(converter = TransformerTypeConverter.class)
+    private TransformerType requestTransformerType;
     @Column(name = "RESPONSE_TRANSFORMER_TYPE_CODE")
-    @Convert(converter = ServiceComponentRelationTypeConverter.class)
-    private ServiceComponentRelationType responseTransformerType;
+    @Convert(converter = TransformerTypeConverter.class)
+    private TransformerType responseTransformerType;
     private String requestMetadata;
     private String responseMetadata;
     private String requestTransformerClass;
@@ -55,19 +55,19 @@ public class ServiceComponentRelationEntity extends AbstractEntity<String> {
         this.serviceEntity = serviceEntity;
     }
 
-    public ServiceComponentRelationType getRequestTransformerType() {
+    public TransformerType getRequestTransformerType() {
         return requestTransformerType;
     }
 
-    public void setRequestTransformerType(ServiceComponentRelationType requestTransformerType) {
+    public void setRequestTransformerType(TransformerType requestTransformerType) {
         this.requestTransformerType = requestTransformerType;
     }
 
-    public ServiceComponentRelationType getResponseTransformerType() {
+    public TransformerType getResponseTransformerType() {
         return responseTransformerType;
     }
 
-    public void setResponseTransformerType(ServiceComponentRelationType responseTransformerType) {
+    public void setResponseTransformerType(TransformerType responseTransformerType) {
         this.responseTransformerType = responseTransformerType;
     }
 

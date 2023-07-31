@@ -42,6 +42,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
                     gen.writeStringField("code", error.getCode());
                     gen.writeStringField("message", error.getMessage());
                     gen.writeStringField("source", error.getSource());
+                    gen.writeStringField("sourceErrorCode", error.getSourceErrorCode());
                     gen.writeEndObject();
                 }
                 gen.writeEndArray();

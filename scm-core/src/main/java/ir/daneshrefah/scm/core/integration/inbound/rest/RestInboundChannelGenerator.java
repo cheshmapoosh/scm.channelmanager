@@ -14,6 +14,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Iterator;
@@ -26,6 +28,8 @@ import java.util.Iterator;
  * @since 2023-07-22
  */
 public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestInboundChannelGenerator.class);
 
     private static final String JSON_PROPERTY_METADATA_PORT = "port";
     private static final String JSON_PROPERTY_METADATA_CONTEXT_PATH = "contextPath";
@@ -40,15 +44,6 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         Integer port = metadataJson.get(JSON_PROPERTY_METADATA_PORT).intValue();
         String contextPath = metadataJson.get(JSON_PROPERTY_METADATA_CONTEXT_PATH).textValue();
         restConfiguration().host("localhost").port(port).bindingMode(RestBindingMode.json);
-//        onException(Exception.class)
-//                .handled(true)
-//                .transform().constant("Sorry");
-
-        // this is just the generic error handler where we set the
-        // destination
-        // and the number of redeliveries we want to try
-//        errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(1));
-
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -60,15 +55,18 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         dataFormat.setObjectMapper(objectMapper);
 
 
+        LOGGER.info("*********** start define rest inbound services. ***********");
+
+        String inboundUrl = null;
         for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
             String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
             String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
-            from("rest:post:api" + contextPath + "/" + terminalCode + "/" + serviceCode)
+            inboundUrl = "rest:post:api" + contextPath + "/" + terminalCode + "/" + serviceCode;
+            from(inboundUrl)
                     .doTry()
                     .process(exchange -> {
                         new RestMessageInitializer().initMessageBody(exchange, channelAccess);
-//                        exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class).getMessage()
                     })
                     .log("body ${body}")
                     .to("direct:SVI_" + serviceCode)
@@ -90,59 +88,11 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
                     })
                     .marshal(dataFormat)
                     .end();
+            LOGGER.info("rest inbound '{}' related to service '{}' registered.", inboundUrl, serviceCode);
         }
-        /*for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
-            TerminalServiceChannelAccess channelAccess = iterator.next();
-            String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
-            String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
-            from("rest:post:api" + restChannel.getContext() + "/" + terminalCode + "/" + serviceCode)
-                    .log("body ${body}")
-                    .process(exchange -> {
-                        JsonNode requestBody = exchange.getMessage().getBody(JsonNode.class);
-                        Message message = new Message();
-                        Header header = new Header();
-                        header.setService(channelAccess);
-                        header.setCorrelationId(RandomStringUtils.randomAlphanumeric(10));
-                        message.setHeader(header);
-                        message.setPayload(requestBody);
-                        exchange.getMessage().setBody(message, Message.class);
 
-                        String requestJsonSchema = channelAccess.getTerminalServiceAccess().getService().getRequestJSONSchema();
+        LOGGER.info("*********** end define rest inbound services. ***********");
 
-                        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
-                        JsonSchema schema = factory.getSchema(requestJsonSchema);
-
-                        Set<ValidationMessage> errors = schema.validate(requestBody);
-                        if (errors.size() > 0) {
-                            List<Error> errorList = new ArrayList<>();
-                            for (Iterator<ValidationMessage> errorIterator = errors.iterator(); errorIterator.hasNext(); ) {
-                                ValidationMessage validationMessage = errorIterator.next();
-                                Error error = new Error(validationMessage.getCode(), validationMessage.getMessage(), "JSONSchema");
-                                errorList.add(error);
-                            }
-                            throw new ValidationException(message, errorList);
-                        }
-                        System.out.println("now validate");
-                    })
-                    .process(exchange -> {
-                        System.out.println(exchange.getMessage().getBody(Message.class).getHeader().getCorrelationId());
-                    })
-                    .log("inbound body is : ${body}")
-                    .to("direct:SERVICE_" + serviceCode)
-                    .onException(Exception.class)
-                    .handled(true)
-                    .process(exchange -> {
-                        BaseException exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, BaseException.class);
-                        Message message = exception.getIncomeMessage();
-                        message.setErrors(exception.getErrors());
-                        exchange.getMessage().setBody(message);
-                    }).marshal().json()
-                    .end();
-        }*/
-
-//        from("direct:test")
-//                .setBody().constant("Helloooooo2")
-//                .end();
     }
 
     public static String getProtocolKey() {

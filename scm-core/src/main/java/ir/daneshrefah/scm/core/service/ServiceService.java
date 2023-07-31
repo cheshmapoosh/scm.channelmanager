@@ -7,6 +7,10 @@ import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.plugin.api.model.service.DirectServiceImplementation;
 import ir.daneshrefah.scm.core.repository.ServiceComponentRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
+import ir.daneshrefah.scm.plugin.api.model.service.JavaServiceImplementation;
+import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
+import ir.daneshrefah.scm.plugin.api.service.ServiceComponentExecutor;
+import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +28,11 @@ public class ServiceService {
     ServiceRepository serviceRepository;
     @Autowired
     ServiceComponentRelationRepository serviceComponentRelationRepository;
+    @Autowired
+    ServiceComponentExecutor serviceComponentExecutor;
 
     public List<ir.daneshrefah.scm.plugin.api.model.service.Service> findServiceList() {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();
-//        List<ir.daneshrefah.scm.plugin.api.model.service.Service> services = ServiceMapper.INSTANCE.entitiesToModels(serviceEntities);
         List<ir.daneshrefah.scm.plugin.api.model.service.Service> services = new ArrayList<>();
         for (Iterator<ServiceEntity> iterator = serviceEntities.iterator(); iterator.hasNext(); ) {
             ServiceEntity serviceEntity = iterator.next();
@@ -41,9 +46,16 @@ public class ServiceService {
                     service.setImplementation(directImplementation);
                     break;
                 case JAVA:
-                    LOGGER.warn("implementationType JAVA is defined for service '{}' but not implemented.", service.getCode());
+                    String javaServiceClassName = serviceEntity.getJavaImplementationClassName();
+                    AbstractJavaService javaService = ClassLoader.createInstanceOfClass(javaServiceClassName,
+                            AbstractJavaService.class, serviceComponentExecutor);
+                    JavaServiceImplementation javaImplementation = new JavaServiceImplementation(service, javaService);
+                    service.setImplementation(javaImplementation);
                     break;
                 case BPMN:
+                    LOGGER.warn("implementationType BPMN is defined for service '{}' but not implemented.", service.getCode());
+                    break;
+                case PARENT:
                     LOGGER.warn("implementationType BPMN is defined for service '{}' but not implemented.", service.getCode());
                     break;
                 default:
@@ -53,31 +65,5 @@ public class ServiceService {
             services.add(service);
         }
         return services;
-/*        List<ir.daneshrefah.scm.common.model.service.Service> result = new ArrayList<>();
-        for (Iterator<ServiceEntity> iterator = serviceList.iterator(); iterator.hasNext(); ) {
-            ServiceEntity serviceEntity = iterator.next();
-            ir.daneshrefah.scm.common.model.service.Service service = ServiceMapper.INSTANCE.toModel(serviceEntity);
-            switch (serviceEntity.getType()) {
-                case DIRECT:
-                    DirectServiceImplementation directImplementation = new DirectServiceImplementation();
-                    List<ServiceRelation> serviceRelations = serviceRelationService.findServiceRelationListByServiceId(serviceEntity.getId());
-                    directImplementation.setServiceRelations(serviceRelations);
-                    service.setImplementation(directImplementation);
-                    break;
-                case JAVA:
-                    JavaServiceImplementation javaImplementation = new JavaServiceImplementation();
-//                    implementation.setServiceClassName();
-                    service.setImplementation(javaImplementation);
-                    break;
-                case BPMN:
-                    System.out.println("It's Wednesday.");
-                    break;
-                default:
-                    System.out.println("Invalid day of the week.");
-                    break;
-            }
-            result.add(service);
-        }
-        return result;*/
     }
 }

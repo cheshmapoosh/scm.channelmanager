@@ -29,8 +29,29 @@ public class ClassLoader {
             Class<?>[] classes = Arrays.stream(params)
                     .map(Object::getClass)
                     .toArray(Class<?>[]::new);
-            Constructor<T> constructor = instanceClass.getConstructor(classes);
-            return constructor.newInstance(params);
+
+            Constructor<T>[] constructors = (Constructor<T>[]) instanceClass.getConstructors();
+            Constructor<T> finalConstructor = null;
+            for (Constructor<T> constructor : constructors) {
+                Class<?>[] parameterTypes = constructor.getParameterTypes();
+                boolean matched = true;
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    Class<?> parameterType = parameterTypes[i];
+                    if (params.length > i && !parameterType.isAssignableFrom(params[i].getClass())) {
+                        matched = false;
+                    }
+                }
+                if (matched) {
+                    finalConstructor = constructor;
+                    break;
+                }
+            }
+
+//            Constructor<T> constructor = instanceClass.getConstructor(classes);
+            if (null != finalConstructor)
+                return finalConstructor.newInstance(params);
+            else
+                return null;
         } catch (Exception e) {
             LOGGER.error("error load with class: '{}'", className, e);
         }

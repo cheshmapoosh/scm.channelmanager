@@ -13,8 +13,8 @@ import ir.daneshrefah.scm.plugin.api.model.component.ServiceComponent;
 public class ServiceComponentRelation {
 
     private ServiceComponent serviceComponent;
-    private ServiceComponentRelationType requestTransformerType;
-    private ServiceComponentRelationType responseTransformerType;
+    private TransformerType requestTransformerType;
+    private TransformerType responseTransformerType;
     private String requestMetadata;
     private String responseMetadata;
     private String requestTransformerClass;
@@ -28,19 +28,19 @@ public class ServiceComponentRelation {
         this.serviceComponent = serviceComponent;
     }
 
-    public ServiceComponentRelationType getRequestTransformerType() {
+    public TransformerType getRequestTransformerType() {
         return requestTransformerType;
     }
 
-    public void setRequestTransformerType(ServiceComponentRelationType requestTransformerType) {
+    public void setRequestTransformerType(TransformerType requestTransformerType) {
         this.requestTransformerType = requestTransformerType;
     }
 
-    public ServiceComponentRelationType getResponseTransformerType() {
+    public TransformerType getResponseTransformerType() {
         return responseTransformerType;
     }
 
-    public void setResponseTransformerType(ServiceComponentRelationType responseTransformerType) {
+    public void setResponseTransformerType(TransformerType responseTransformerType) {
         this.responseTransformerType = responseTransformerType;
     }
 

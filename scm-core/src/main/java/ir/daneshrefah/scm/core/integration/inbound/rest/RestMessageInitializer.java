@@ -29,24 +29,7 @@ public class RestMessageInitializer {
     }
 
     public void initMessageBody(Exchange exchange, TerminalServiceChannelAccess channelAccess) {
-        String contentType = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class);
-        BodyExtractor bodyExtractor = bodyExtractorMap.get(contentType);
-        Message message = null;
-        if (null != bodyExtractor) {
-            message = bodyExtractor.transform(exchange, channelAccess);
-        }
-        exchange.getMessage().setBody(message, Message.class);
-    }
 
-    @FunctionalInterface
-    interface BodyExtractor {
-        Message transform(Exchange exchange, TerminalServiceChannelAccess channelAccess);
-    }
-
-    // Define your transformation methods
-    static Message bodyExtractorJson(Exchange exchange, TerminalServiceChannelAccess channelAccess) {
-        JsonNode requestBody = exchange.getMessage().getBody(JsonNode.class);
-        Message message = new Message();
         Header header = new Header();
         header.setService(channelAccess);
         header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
@@ -58,8 +41,28 @@ public class RestMessageInitializer {
 //        header.setClientTransactionTimestamp(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_TIMESTAMP, String.class));
         header.setAccessParameter(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_ACCESS_PARAMETER, String.class));
         header.setReceiveTimestamp(LocalDateTime.now());
+
+        Message message = new Message();
         message.setHeader(header);
         message.setStatus(Status.SC_PROCESSING);
+
+        String contentType = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class);
+        BodyExtractor bodyExtractor = bodyExtractorMap.get(contentType);
+        if (null != bodyExtractor) {
+            message = bodyExtractor.transform(exchange, message);
+        }
+
+        exchange.getMessage().setBody(message, Message.class);
+    }
+
+    @FunctionalInterface
+    interface BodyExtractor {
+        Message transform(Exchange exchange, Message message);
+    }
+
+    // Define your transformation methods
+    static Message bodyExtractorJson(Exchange exchange, Message message) {
+        JsonNode requestBody = exchange.getMessage().getBody(JsonNode.class);
 
         message.setPayload(requestBody);
 

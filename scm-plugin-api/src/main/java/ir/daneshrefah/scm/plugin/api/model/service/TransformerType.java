@@ -7,11 +7,11 @@ package ir.daneshrefah.scm.plugin.api.model.service;
  * @version 1.0
  * @since 2023-07-24
  */
-public enum ServiceComponentRelationType {
+public enum TransformerType {
 
     NONE(1), DYNAMIC(2), JAVA(3);
 
-    ServiceComponentRelationType(Integer code) {
+    TransformerType(Integer code) {
         this.code = code;
     }
 
@@ -21,8 +21,8 @@ public enum ServiceComponentRelationType {
         return code;
     }
 
-    public static ServiceComponentRelationType findByCode(Integer code) {
-        for (ServiceComponentRelationType enumValue : ServiceComponentRelationType.values()) {
+    public static TransformerType findByCode(Integer code) {
+        for (TransformerType enumValue : TransformerType.values()) {
             if (enumValue.getCode().equals(code)) {
                 return enumValue;
             }

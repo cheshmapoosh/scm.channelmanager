@@ -20,4 +20,12 @@ public class ServiceComponentService {
                 .findListByServiceComponentProviderEntityId(serviceComponentProviderId);
         return ServiceComponentMapper.INSTANCE.entitiesToModels(serviceComponentProviderEntities);
     }
+
+    public ServiceComponent findServiceComponentByCodeAndProviderCode(String serviceComponentProviderCode,
+                                                                      String serviceComponentCode) {
+        ServiceComponentEntity serviceComponentProviderEntities = serviceComponentRepository
+                .findByCodeAndProviderCode(serviceComponentCode, serviceComponentProviderCode);
+        return ServiceComponentMapper.INSTANCE.toModel(serviceComponentProviderEntities);
+    }
+
 }

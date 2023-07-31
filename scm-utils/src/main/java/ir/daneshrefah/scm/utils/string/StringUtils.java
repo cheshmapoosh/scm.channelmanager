@@ -13,4 +13,12 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.isEmpty(cs);
     }
 
+    public static boolean endsWith(final CharSequence str, final CharSequence suffix) {
+        return org.apache.commons.lang3.StringUtils.endsWith(str, suffix);
+    }
+
+    public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {
+        return org.apache.commons.lang3.StringUtils.appendIfMissing(str, suffix, suffixes);
+    }
+
 }

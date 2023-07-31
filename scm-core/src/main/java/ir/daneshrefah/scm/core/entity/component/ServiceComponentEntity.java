@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.core.entity.component;
 
+import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
 import jakarta.persistence.*;
 
 @Entity
@@ -20,6 +22,26 @@ public class ServiceComponentEntity extends AbstractEntity<String> {
     @Column(name = "RESPONSE_JSON_SCHEMA", nullable = true)
     private String responseJSONSchema;
     private String metadata;
+    @Column(name = "REQUEST_TRANSFORMER_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
+    private TransformerType requestTransformerType;
+    @Column(name = "RESPONSE_TRANSFORMER_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
+    private TransformerType responseTransformerType;
+    private String requestMetadata;
+    private String responseMetadata;
+    private String requestTransformerClass;
+    private String responseTransformerClass;
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getCode() {
         return code;
@@ -77,14 +99,51 @@ public class ServiceComponentEntity extends AbstractEntity<String> {
         this.metadata = metadata;
     }
 
-    @Override
-    public String getId() {
-        return id;
+    public TransformerType getRequestTransformerType() {
+        return requestTransformerType;
     }
 
-    @Override
-    public void setId(String id) {
-        this.id = id;
+    public void setRequestTransformerType(TransformerType requestTransformerType) {
+        this.requestTransformerType = requestTransformerType;
     }
 
+    public TransformerType getResponseTransformerType() {
+        return responseTransformerType;
+    }
+
+    public void setResponseTransformerType(TransformerType responseTransformerType) {
+        this.responseTransformerType = responseTransformerType;
+    }
+
+    public String getRequestMetadata() {
+        return requestMetadata;
+    }
+
+    public void setRequestMetadata(String requestMetadata) {
+        this.requestMetadata = requestMetadata;
+    }
+
+    public String getResponseMetadata() {
+        return responseMetadata;
+    }
+
+    public void setResponseMetadata(String responseMetadata) {
+        this.responseMetadata = responseMetadata;
+    }
+
+    public String getRequestTransformerClass() {
+        return requestTransformerClass;
+    }
+
+    public void setRequestTransformerClass(String requestTransformerClass) {
+        this.requestTransformerClass = requestTransformerClass;
+    }
+
+    public String getResponseTransformerClass() {
+        return responseTransformerClass;
+    }
+
+    public void setResponseTransformerClass(String responseTransformerClass) {
+        this.responseTransformerClass = responseTransformerClass;
+    }
 }

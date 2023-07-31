@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.ConnectException;
+import java.net.http.HttpTimeoutException;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,9 +38,9 @@ public class ErrorMappingService {
     }
 
     public Message resolveMessageByException(Message message, Exception exception) {
-        if (exception instanceof ConnectException) {
+        if (exception instanceof ConnectException || exception instanceof HttpTimeoutException) {
             Error error = new Error(ErrorCodes.ERROR_UNAVAILABLE_PROVIDER, "",
-                    message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode());
+                    message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(), null);
             message.addError(error, Status.SC_ERROR_UNAVAILABLE_PROVIDER.getCode());
         }
         return message;
@@ -58,10 +59,10 @@ public class ErrorMappingService {
             ErrorMapping errorMapping = errorMappingOptional.get();
             String errorMessage = StringUtils.isEmpty(errorMapping.getMessage()) ? exception.getMessage(): errorMapping.getMessage();
             Error error = new Error(errorMapping.getScmErrorCode(), errorMessage,
-                    errorMapping.getServiceComponentProvider().getCode());
+                    errorMapping.getServiceComponentProvider().getCode(), providerErrorCode);
             message.addError(error, errorMapping.getStatus().getCode());
         } else {
-            Error error = new Error(ErrorCodes.ERROR_UNKNOWN, exception.getMessage(), providerCode);
+            Error error = new Error(ErrorCodes.ERROR_UNKNOWN, exception.getMessage(), providerCode, providerErrorCode);
             message.addError(error, Status.SC_ERROR_SYSTEM.getCode());
         }
 
