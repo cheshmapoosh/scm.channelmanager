@@ -25,9 +25,20 @@ public abstract class AbstractTransformer {
      */
     public Object transform(Object inputSchema, Object outputSchema, Message message, String metadata) {
         LocalDateTime startTime = LocalDateTime.now();
-        Object result = internalTransform(inputSchema, outputSchema, message, metadata);
-        LocalDateTime endTime = LocalDateTime.now();
-        message.addEvent(EventType.TRANSFORM, startTime, endTime, "");
+        Object result = null;
+        boolean isSuccessful = true;
+        String errorMessage = null;
+        try {
+            result = internalTransform(inputSchema, outputSchema, message, metadata);
+        } catch (Exception e) {
+            isSuccessful = false;
+            errorMessage = e.getMessage();
+            throw e;
+        } finally {
+            LocalDateTime endTime = LocalDateTime.now();
+            message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, errorMessage,
+                    (null != result ? result.getClass().getName() : "null"));
+        }
         return result;
     }
     public abstract Object internalTransform(Object inputSchema, Object outputSchema, Message message, String metadata);

@@ -4,12 +4,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.plugin.api.model.message.*;
 import ir.daneshrefah.scm.plugin.api.model.message.Error;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 
@@ -53,12 +51,30 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
             for (Iterator<Event> iterator = value.getEvents().iterator(); iterator.hasNext(); ) {
                 Event event = iterator.next();
                 gen.writeStartObject();
-                gen.writeStringField("serviceCode", event.getServiceCode());
-                gen.writeStringField("serviceProviderCode", event.getServiceProviderCode());
+//                gen.writeStringField("serviceCode", event.getServiceCode());
+//                gen.writeStringField("serviceProviderCode", event.getServiceProviderCode());
                 gen.writeObjectField("type", event.getType());
                 gen.writeObjectField("startTime", event.getStartTime());
                 gen.writeObjectField("endTime", event.getEndTime());
                 gen.writeObjectField("durationMillis", event.getDurationMillis());
+                switch (event.getType()) {
+                    case WHOLE:
+                        break;
+                    case TRANSFORM:
+                        TransformEvent transformEvent = (TransformEvent) event;
+                        gen.writeObjectField("transformerClassName", transformEvent.getTransformerClassName());
+                        gen.writeObjectField("errorMessage", transformEvent.getErrorMessage());
+                        gen.writeObjectField("isSuccessful", transformEvent.getSuccessful());
+                        gen.writeObjectField("outputType", transformEvent.getOutputType());
+                        break;
+                    case SERVICE_COMPONENT_CALL:
+                        ServiceComponentCallEvent serviceComponentCallEvent = (ServiceComponentCallEvent) event;
+                        gen.writeObjectField("serviceProviderCode", serviceComponentCallEvent.getServiceProviderCode());
+                        gen.writeObjectField("serviceComponentCode", serviceComponentCallEvent.getServiceComponentCode());
+                        gen.writeObjectField("errorMessage", serviceComponentCallEvent.getErrorMessage());
+                        gen.writeObjectField("isSuccessful", serviceComponentCallEvent.getSuccessful());
+                        break;
+                }
                 gen.writeEndObject();
             }
             gen.writeEndArray();

@@ -12,28 +12,10 @@ import java.time.LocalDateTime;
  */
 public class Event {
 
-    private String serviceCode;
-    private String serviceProviderCode;
     private EventType type;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Long durationMillis;
-
-    public String getServiceCode() {
-        return serviceCode;
-    }
-
-    public void setServiceCode(String serviceCode) {
-        this.serviceCode = serviceCode;
-    }
-
-    public String getServiceProviderCode() {
-        return serviceProviderCode;
-    }
-
-    public void setServiceProviderCode(String serviceProviderCode) {
-        this.serviceProviderCode = serviceProviderCode;
-    }
 
     public EventType getType() {
         return type;

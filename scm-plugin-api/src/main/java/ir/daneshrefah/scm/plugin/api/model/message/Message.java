@@ -77,7 +77,34 @@ public class Message {
         setStatus(Status.findByCode(statusCode));
     }
 
-    public void addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, String providerCode) {
+    public void addTransformEvent(LocalDateTime startTime, LocalDateTime endTime, String transformerClass,
+                                  boolean isSuccessful, String errorMessage, String outputType) {
+        if (null == events)
+            events = new ArrayList<>();
+
+        TransformEvent event = new TransformEvent(transformerClass, errorMessage, isSuccessful, outputType);
+        event.setType(EventType.TRANSFORM);
+        event.setStartTime(startTime);
+        event.setEndTime(endTime);
+        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+
+        events.add(event);
+    }
+    public void addServiceComponentCallEvent(LocalDateTime startTime, LocalDateTime endTime, String serviceComponentCode,
+                                             String serviceProviderCode, boolean isSuccessful, String errorMessage) {
+        if (null == events)
+            events = new ArrayList<>();
+
+        ServiceComponentCallEvent event = new ServiceComponentCallEvent(serviceComponentCode, serviceProviderCode,
+                errorMessage, isSuccessful);
+        event.setType(EventType.SERVICE_COMPONENT_CALL);
+        event.setStartTime(startTime);
+        event.setEndTime(endTime);
+        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+
+        events.add(event);
+    }
+    public void addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime) {
         if (null == events)
             events = new ArrayList<>();
         Event event = new Event();
@@ -85,7 +112,6 @@ public class Message {
         event.setStartTime(startTime);
         event.setEndTime(endTime);
         event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
-        event.setServiceProviderCode(providerCode);
         events.add(event);
     }
 }
