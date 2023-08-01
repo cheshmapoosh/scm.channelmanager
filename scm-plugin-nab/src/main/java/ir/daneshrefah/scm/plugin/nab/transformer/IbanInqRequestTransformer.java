@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,14 +23,22 @@ public class IbanInqRequestTransformer extends AbstractTransformer {
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectMapper mapper = new ObjectMapper();
 
+        String payloadStr = message.getMessageComponent().getPayload(String.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode payload = null;
+        try {
+            payload = objectMapper.readTree(payloadStr);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         // Create the parameters array
         ArrayNode parameters = nodeFactory.arrayNode();
         addParameter(parameters, "P_TYPEX", "1");
         addParameter(parameters, "P_BIC", "1");
-        addParameter(parameters, "P_IBAN", message.getPayload().get("iban").asText());
+        addParameter(parameters, "P_IBAN", payload.get("iban").asText());
         addParameter(parameters, "P_RQID", message.getHeader().getCorrelationId());
-        if (null != message.getPayload().get("paymentCode")) {
-            addParameter(parameters, "P_PAYMENTCODE", message.getPayload().get("paymentCode").asText());
+        if (null != payload.get("paymentCode")) {
+            addParameter(parameters, "P_PAYMENTCODE", payload.get("paymentCode").asText());
         } else {
             addParameter(parameters, "P_PAYMENTCODE", "");
         }

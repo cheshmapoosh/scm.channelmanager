@@ -91,7 +91,7 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
                                         serviceComponent.getResponseJSONSchema(),
                                         message, serviceComponent.getResponseMetadata());
                                 if (null != response)
-                                    message.setPayload(response);
+                                    message.getMessageComponent().setPayload(response);
                             }
 
                         })

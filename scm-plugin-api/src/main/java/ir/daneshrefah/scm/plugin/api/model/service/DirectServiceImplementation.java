@@ -43,12 +43,15 @@ public class DirectServiceImplementation extends ServiceImplementation {
                 MessageComponent component = new MessageComponent();
                 component.setServiceComponent(serviceComponentRelation.getServiceComponent());
                 message.setMessageComponent(component);
+                Object request = null;
                 if (null != requestTransformer) {
-                    Object request = requestTransformer.transform(service.getRequestJSONSchema(),
+                    request = requestTransformer.transform(service.getRequestJSONSchema(),
                             serviceComponentRelation.getServiceComponent().getRequestJSONSchema(), message,
                             serviceComponentRelation.getRequestMetadata());
-                    component.setPayload(request);
+                } else {
+                    request = message.getPayload().toString();
                 }
+                component.setPayload(request);
             });
 
             String targetUri = "direct:SVC_" + serviceComponentRelation.getServiceComponent().getServiceComponentProvider().getCode() +
@@ -58,13 +61,16 @@ public class DirectServiceImplementation extends ServiceImplementation {
 
             routeDefinition = routeDefinition.process(exchange -> {
                 Message message = exchange.getMessage().getBody(Message.class);
+                JsonNode response = null;
                 if (null != responseTransformer) {
-                    JsonNode response = (JsonNode) responseTransformer.transform(serviceComponentRelation.getServiceComponent().getResponseJSONSchema(),
+                    response = (JsonNode) responseTransformer.transform(serviceComponentRelation.getServiceComponent().getResponseJSONSchema(),
                             service.getResponseJSONSchema(), message,
                             serviceComponentRelation.getRequestMetadata());
-                    if (null != response)
-                        message.setPayload(response);
+                } else {
+                    response = (JsonNode) message.getMessageComponent().getPayload();
                 }
+                if (null != response)
+                    message.setPayload(response);
             });
         }
         routeDefinition = routeDefinition.process(exchange -> {

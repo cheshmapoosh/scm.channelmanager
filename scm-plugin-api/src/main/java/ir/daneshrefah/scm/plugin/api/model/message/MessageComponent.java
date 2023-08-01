@@ -22,6 +22,13 @@ public class MessageComponent {
         this.serviceComponent = serviceComponent;
     }
 
+    public <T> T getPayload(Class<T> type) {
+        if (type.isInstance(payload)) {
+            return (T) payload;
+        }
+        return null;
+    }
+
     public Object getPayload() {
         return payload;
     }

@@ -23,7 +23,7 @@ public class IbanCalculatorService extends AbstractJavaService {
 
     @Override
     protected void internalExecute(Message message) {
-        Object componentPayload = "{\"parameters\":[{\"name\":\"P_TYPEX\",\"value\":\"1\"},{\"name\":\"P_BIC\",\"value\":\"1\"},{\"name\":\"P_IBAN\",\"value\":\"IR970130100000000000001399\"},{\"name\":\"P_RQID\",\"value\":\"15975368\"},{\"name\":\"P_PAYMENTCODE\",\"value\":\"124\"}],\"callType\":\"Reader\",\"encoding\":\"ASCII\",\"requestID\":\"RequestID\"}";
+        Object componentPayload = "{\"iban\": \"IR970130100000000000001399\",\"paymentCode\": \"124\"}";
         callServiceComponent("NAB", "IBAN_INQ", message, componentPayload);
 
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
