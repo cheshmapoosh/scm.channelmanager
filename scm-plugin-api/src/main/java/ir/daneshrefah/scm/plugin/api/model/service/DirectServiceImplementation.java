@@ -32,10 +32,12 @@ public class DirectServiceImplementation extends ServiceImplementation {
     public RouteDefinition fullFill(RouteDefinition routeDefinition) {
         for (Iterator<ServiceComponentRelation> iterator = serviceComponentRelations.iterator(); iterator.hasNext(); ) {
             ServiceComponentRelation serviceComponentRelation = iterator.next();
-            AbstractTransformer requestTransformer = ClassLoader.createInstanceOfClass(
-                    serviceComponentRelation.getRequestTransformerClass(), AbstractTransformer.class);
-            AbstractTransformer responseTransformer = ClassLoader.createInstanceOfClass(
-                    serviceComponentRelation.getResponseTransformerClass(), AbstractTransformer.class);
+            AbstractTransformer requestTransformer = TransformerType.JAVA.equals(serviceComponentRelation.getRequestTransformerType()) ?
+                    ClassLoader.createInstanceOfClass(serviceComponentRelation.getRequestTransformerClass(), AbstractTransformer.class) :
+                    null;
+            AbstractTransformer responseTransformer = TransformerType.JAVA.equals(serviceComponentRelation.getResponseTransformerType()) ?
+                    ClassLoader.createInstanceOfClass(serviceComponentRelation.getResponseTransformerClass(), AbstractTransformer.class):
+                    null;
             routeDefinition = routeDefinition.process(exchange -> {
                 Message message = exchange.getMessage().getBody(Message.class);
                 MessageComponent component = new MessageComponent();

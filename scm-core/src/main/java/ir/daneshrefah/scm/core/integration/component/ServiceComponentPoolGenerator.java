@@ -1,10 +1,14 @@
 package ir.daneshrefah.scm.core.integration.component;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.plugin.api.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.model.component.ServiceComponent;
 import ir.daneshrefah.scm.plugin.api.model.component.ServiceComponentProvider;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
@@ -40,8 +44,16 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
     public void configure() {
         for (Iterator<ServiceComponent> iterator = serviceComponents.iterator(); iterator.hasNext(); ) {
             ServiceComponent serviceComponent = iterator.next();
+            AbstractTransformer requestTransformer = TransformerType.JAVA.equals(serviceComponent.getRequestTransformerType()) ?
+                    ClassLoader.createInstanceOfClass(serviceComponent.getRequestTransformerClass(), AbstractTransformer.class) :
+                    null;
+            AbstractTransformer responseTransformer = TransformerType.JAVA.equals(serviceComponent.getResponseTransformerType()) ?
+                    ClassLoader.createInstanceOfClass(serviceComponent.getResponseTransformerClass(), AbstractTransformer.class) :
+                    null;
+
             String fromUri = "SVC_" + serviceComponentProvider.getCode() + "_" + serviceComponent.getCode();
             String toUri = serviceComponentProvider.getCode() + ":" + serviceComponent.getCode();
+
             from("direct:" + fromUri)
                     .routeId("ROUTE_" + fromUri)
                     .onException(Exception.class)
@@ -59,7 +71,30 @@ public class ServiceComponentPoolGenerator extends RouteBuilder {
                     .end()
                     .choice()
                     .when(simple("${body.status} == 'SC_PROCESSING'"))
+                        .process(exchange -> {
+                            // request transformer process
+                            if (null != requestTransformer) {
+                                Message message = exchange.getMessage().getBody(Message.class);
+                                Object request = requestTransformer.transform(
+                                        serviceComponent.getRequestJSONSchema(), null, message,
+                                        serviceComponent.getRequestMetadata());
+                                message.getMessageComponent().setPayload(request);
+                            }
+
+                        })
                         .to(toUri)
+                        .process(exchange -> {
+                            // response transformer process
+                            Message message = exchange.getMessage().getBody(Message.class);
+                            if (null != responseTransformer) {
+                                JsonNode response = (JsonNode) responseTransformer.transform(null,
+                                        serviceComponent.getResponseJSONSchema(),
+                                        message, serviceComponent.getResponseMetadata());
+                                if (null != response)
+                                    message.setPayload(response);
+                            }
+
+                        })
                     .otherwise()
                     .endChoice()
                     .end();
