@@ -79,39 +79,25 @@ public class Message {
 
     public void addTransformEvent(LocalDateTime startTime, LocalDateTime endTime, String transformerClass,
                                   boolean isSuccessful, String errorMessage, String outputType) {
-        if (null == events)
-            events = new ArrayList<>();
 
-        TransformEvent event = new TransformEvent(transformerClass, errorMessage, isSuccessful, outputType);
-        event.setType(EventType.TRANSFORM);
-        event.setStartTime(startTime);
-        event.setEndTime(endTime);
-        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+        TransformEvent event = (TransformEvent) addEvent(EventType.TRANSFORM, startTime, endTime, isSuccessful, errorMessage);
+        event.setTransformerClassName(transformerClass);
+        event.setOutputType(outputType);
 
-        events.add(event);
     }
     public void addServiceComponentCallEvent(LocalDateTime startTime, LocalDateTime endTime, String serviceComponentCode,
                                              String serviceProviderCode, boolean isSuccessful, String errorMessage) {
-        if (null == events)
-            events = new ArrayList<>();
 
-        ServiceComponentCallEvent event = new ServiceComponentCallEvent(serviceComponentCode, serviceProviderCode,
-                errorMessage, isSuccessful);
-        event.setType(EventType.SERVICE_COMPONENT_CALL);
-        event.setStartTime(startTime);
-        event.setEndTime(endTime);
-        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+        ServiceComponentCallEvent event = (ServiceComponentCallEvent) addEvent(EventType.SERVICE_COMPONENT_CALL, startTime, endTime, isSuccessful, errorMessage);
+        event.setServiceComponentCode(serviceComponentCode);
+        event.setServiceProviderCode(serviceProviderCode);
 
-        events.add(event);
     }
-    public void addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime) {
+    public Event addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful, String errorMessage) {
         if (null == events)
             events = new ArrayList<>();
-        Event event = new Event();
-        event.setType(type);
-        event.setStartTime(startTime);
-        event.setEndTime(endTime);
-        event.setDurationMillis(Duration.between(startTime, endTime).toMillis());
+        Event event = EventFactory.createNewEvent(type, startTime, endTime, errorMessage, isSuccessful);
         events.add(event);
+        return event;
     }
 }

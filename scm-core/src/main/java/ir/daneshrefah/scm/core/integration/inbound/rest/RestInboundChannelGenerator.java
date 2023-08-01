@@ -83,7 +83,8 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
                     .end()
                     .process(exchange -> {
                         Message message = exchange.getMessage().getBody(Message.class);
-                        message.addEvent(EventType.WHOLE, message.getHeader().getReceiveTimestamp(), LocalDateTime.now());
+                        message.addEvent(EventType.WHOLE, message.getHeader().getReceiveTimestamp(),
+                                LocalDateTime.now(), true, null);
                         new RestResponseInitializer().initResponseHeader(exchange);
                     })
                     .marshal(dataFormat)

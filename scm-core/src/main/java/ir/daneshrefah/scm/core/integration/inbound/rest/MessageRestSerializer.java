@@ -46,39 +46,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
                 gen.writeEndArray();
             }
         }
-        if (null != value.getEvents()) {
-            gen.writeArrayFieldStart("events");
-            for (Iterator<Event> iterator = value.getEvents().iterator(); iterator.hasNext(); ) {
-                Event event = iterator.next();
-                gen.writeStartObject();
-//                gen.writeStringField("serviceCode", event.getServiceCode());
-//                gen.writeStringField("serviceProviderCode", event.getServiceProviderCode());
-                gen.writeObjectField("type", event.getType());
-                gen.writeObjectField("startTime", event.getStartTime());
-                gen.writeObjectField("endTime", event.getEndTime());
-                gen.writeObjectField("durationMillis", event.getDurationMillis());
-                switch (event.getType()) {
-                    case WHOLE:
-                        break;
-                    case TRANSFORM:
-                        TransformEvent transformEvent = (TransformEvent) event;
-                        gen.writeObjectField("transformerClassName", transformEvent.getTransformerClassName());
-                        gen.writeObjectField("errorMessage", transformEvent.getErrorMessage());
-                        gen.writeObjectField("isSuccessful", transformEvent.getSuccessful());
-                        gen.writeObjectField("outputType", transformEvent.getOutputType());
-                        break;
-                    case SERVICE_COMPONENT_CALL:
-                        ServiceComponentCallEvent serviceComponentCallEvent = (ServiceComponentCallEvent) event;
-                        gen.writeObjectField("serviceProviderCode", serviceComponentCallEvent.getServiceProviderCode());
-                        gen.writeObjectField("serviceComponentCode", serviceComponentCallEvent.getServiceComponentCode());
-                        gen.writeObjectField("errorMessage", serviceComponentCallEvent.getErrorMessage());
-                        gen.writeObjectField("isSuccessful", serviceComponentCallEvent.getSuccessful());
-                        break;
-                }
-                gen.writeEndObject();
-            }
-            gen.writeEndArray();
-        }
+        gen.writeObjectField("events", value.getEvents());
         gen.writeObjectField("responseTimestamp", LocalDateTime.now());
         gen.writeEndObject();
     }

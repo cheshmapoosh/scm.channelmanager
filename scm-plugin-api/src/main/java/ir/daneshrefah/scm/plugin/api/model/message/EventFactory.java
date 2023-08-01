@@ -1,0 +1,30 @@
+package ir.daneshrefah.scm.plugin.api.model.message;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-07-23
+ */
+public class EventFactory {
+
+    public static Event createNewEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, String errorMessage, Boolean isSuccessful) {
+        Event event = null;
+        switch (type) {
+            case WHOLE:
+                event = new Event(type, startTime, endTime, errorMessage, isSuccessful);
+                break;
+            case TRANSFORM:
+                event = new TransformEvent(startTime, endTime, errorMessage, isSuccessful);
+                break;
+            case SERVICE_COMPONENT_CALL:
+                event = new ServiceComponentCallEvent(startTime, endTime, errorMessage, isSuccessful);
+                break;
+        }
+        return event;
+    }
+}

@@ -16,36 +16,39 @@ public class Event {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Long durationMillis;
+    private String errorMessage;
+    private Boolean isSuccessful;
+
+    public Event(EventType type, LocalDateTime startTime, LocalDateTime endTime, String errorMessage, Boolean isSuccessful) {
+        this.type = type;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.durationMillis = Duration.between(startTime, endTime).toMillis();
+        this.errorMessage = errorMessage;
+        this.isSuccessful = isSuccessful;
+    }
 
     public EventType getType() {
         return type;
-    }
-
-    public void setType(EventType type) {
-        this.type = type;
     }
 
     public LocalDateTime getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
     public LocalDateTime getEndTime() {
         return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
     }
 
     public Long getDurationMillis() {
         return durationMillis;
     }
 
-    public void setDurationMillis(Long durationMillis) {
-        this.durationMillis = durationMillis;
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public Boolean getSuccessful() {
+        return isSuccessful;
     }
 }

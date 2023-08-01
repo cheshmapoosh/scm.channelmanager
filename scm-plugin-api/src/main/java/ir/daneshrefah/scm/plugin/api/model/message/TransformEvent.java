@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
+import java.time.LocalDateTime;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -10,30 +12,26 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 public class TransformEvent extends Event {
 
     private String transformerClassName;
-    private String errorMessage;
-    private Boolean isSuccessful;
     private String outputType;
 
-    public TransformEvent(String transformerClassName, String errorMessage, Boolean isSuccessful, String outputType) {
-        this.transformerClassName = transformerClassName;
-        this.errorMessage = errorMessage;
-        this.isSuccessful = isSuccessful;
-        this.outputType = outputType;
+
+    public TransformEvent(LocalDateTime startTime, LocalDateTime endTime, String errorMessage, Boolean isSuccessful) {
+        super(EventType.TRANSFORM, startTime, endTime,errorMessage, isSuccessful);
     }
 
     public String getTransformerClassName() {
         return transformerClassName;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public Boolean getSuccessful() {
-        return isSuccessful;
+    public void setTransformerClassName(String transformerClassName) {
+        this.transformerClassName = transformerClassName;
     }
 
     public String getOutputType() {
         return outputType;
+    }
+
+    public void setOutputType(String outputType) {
+        this.outputType = outputType;
     }
 }
