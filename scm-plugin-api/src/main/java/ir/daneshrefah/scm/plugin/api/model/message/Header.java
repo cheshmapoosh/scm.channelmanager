@@ -19,6 +19,7 @@ public class Header {
     private String contentType;
     private Object authorization;
     private String claimCode;
+    private String clientCorrelationId;
     private String correlationId;
     private LocalDateTime clientTransactionTimestamp;
     private LocalDateTime receiveTimestamp;
@@ -49,6 +50,14 @@ public class Header {
 
     public void setClaimCode(String claimCode) {
         this.claimCode = claimCode;
+    }
+
+    public String getClientCorrelationId() {
+        return clientCorrelationId;
+    }
+
+    public void setClientCorrelationId(String clientCorrelationId) {
+        this.clientCorrelationId = clientCorrelationId;
     }
 
     public String getCorrelationId() {

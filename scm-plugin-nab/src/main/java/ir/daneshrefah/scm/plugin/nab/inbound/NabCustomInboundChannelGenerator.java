@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.nab.inbound;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 
 import java.util.List;
 
@@ -16,8 +17,8 @@ import java.util.List;
 public class NabCustomInboundChannelGenerator extends AbstractInboundChannelGenerator {
 
 
-    public NabCustomInboundChannelGenerator(Channel channel) {
-        super(channel);
+    public NabCustomInboundChannelGenerator(ServiceProducerTemplate producerTemplate, Channel channel) {
+        super(producerTemplate, channel);
     }
 
     @Override

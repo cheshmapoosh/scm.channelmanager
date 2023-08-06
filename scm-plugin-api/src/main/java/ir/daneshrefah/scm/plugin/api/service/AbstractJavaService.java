@@ -11,10 +11,10 @@ import ir.daneshrefah.scm.plugin.api.model.message.Message;
  */
 public abstract class AbstractJavaService {
 
-    ServiceComponentExecutor serviceComponentExecutor;
+    ServiceProducerTemplate serviceProducerTemplate;
 
-    public AbstractJavaService(ServiceComponentExecutor serviceComponentExecutor) {
-        this.serviceComponentExecutor = serviceComponentExecutor;
+    public AbstractJavaService(ServiceProducerTemplate serviceComponentExecutor) {
+        this.serviceProducerTemplate = serviceComponentExecutor;
     }
 
     public void execute(Message message) {
@@ -23,7 +23,7 @@ public abstract class AbstractJavaService {
 
     protected void callServiceComponent(String serviceComponentProviderCode, String serviceComponentCode,
                                         Message message, Object payload) {
-        serviceComponentExecutor.executeServiceComponent(serviceComponentProviderCode, serviceComponentCode, message, payload);
+        serviceProducerTemplate.executeServiceComponent(serviceComponentProviderCode, serviceComponentCode, message, payload);
 
     }
     protected abstract void internalExecute(Message message);

@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.plugin.api.model.message.Header;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 
 import java.time.LocalDateTime;
@@ -35,7 +36,8 @@ public class RestMessageInitializer {
         header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
         header.setAuthorization(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class));
         header.setClaimCode(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLAIM, String.class));
-        header.setCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CORRELATION_ID, String.class));
+        header.setClientCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, String.class));
+        header.setCorrelationId(StringUtils.generateGuid());
         header.setChannel(channelAccess.getChannel()); //HttpConstants.HTTP_HEADER_CHANNEL
         header.setTerminal(channelAccess.getTerminalServiceAccess().getTerminal()); //HttpConstants.HTTP_HEADER_TERMINAL
 //        header.setClientTransactionTimestamp(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_TIMESTAMP, String.class));

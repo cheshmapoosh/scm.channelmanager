@@ -1,5 +1,9 @@
 package ir.daneshrefah.scm.utils.string;
 
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.util.UUID;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -19,6 +23,11 @@ public class StringUtils {
 
     public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {
         return org.apache.commons.lang3.StringUtils.appendIfMissing(str, suffix, suffixes);
+    }
+
+    public static String generateGuid() {
+//        return RandomStringUtils.random(36, true, true);
+        return UUID.randomUUID().toString();
     }
 
 }

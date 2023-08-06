@@ -3,10 +3,8 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.message.Status;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.Exchange;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,6 +33,7 @@ public class RestResponseInitializer {
         Message message = exchange.getMessage().getBody(Message.class);
         exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, statusMappingMap.get(message.getStatus()));
         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, message.getHeader().getContentType());
+        exchange.getMessage().setHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, message.getHeader().getClientCorrelationId());
         exchange.getMessage().setHeader(HttpConstants.HTTP_HEADER_CORRELATION_ID, message.getHeader().getCorrelationId());
         exchange.getMessage().setHeader(HttpConstants.HTTP_HEADER_CLIENT_TIMESTAMP, message.getHeader().getClientTransactionTimestamp());
         exchange.getMessage().setHeader(HttpConstants.HTTP_HEADER_RECEIVE_TIMESTAMP, message.getHeader().getReceiveTimestamp());

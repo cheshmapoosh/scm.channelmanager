@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 
 import java.util.List;
@@ -17,8 +18,10 @@ public abstract class AbstractInboundChannelGenerator extends RouteBuilder {
 
     protected Channel channel;
     protected List<TerminalServiceChannelAccess> channelAccesses;
+    protected ServiceProducerTemplate producerTemplate;
 
-    public AbstractInboundChannelGenerator(Channel channel) {
+    public AbstractInboundChannelGenerator(ServiceProducerTemplate producerTemplate, Channel channel) {
+        this.producerTemplate = producerTemplate;
         this.channel = channel;
     }
 

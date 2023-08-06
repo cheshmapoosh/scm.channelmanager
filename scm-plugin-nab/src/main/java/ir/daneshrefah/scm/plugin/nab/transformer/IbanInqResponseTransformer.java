@@ -20,7 +20,7 @@ public class IbanInqResponseTransformer extends AbstractTransformer {
 
 
     @Override
-    public Object internalTransform(Object inputSchema, Object outputSchema, Message message, String metadata) {
+    public Object internalTransform(Message message, String metadata) {
         Object response = message.getMessageComponent().getPayload();
         if (null == response) {
             return null;

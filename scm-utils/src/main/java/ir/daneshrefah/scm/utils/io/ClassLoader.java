@@ -26,30 +26,13 @@ public class ClassLoader {
             return null;
         try {
             Class<T> instanceClass = (Class<T>) Class.forName(className);
-            Class<?>[] classes = Arrays.stream(params)
-                    .map(Object::getClass)
-                    .toArray(Class<?>[]::new);
-
-            Constructor<T>[] constructors = (Constructor<T>[]) instanceClass.getConstructors();
-            Constructor<T> finalConstructor = null;
-            for (Constructor<T> constructor : constructors) {
-                Class<?>[] parameterTypes = constructor.getParameterTypes();
-                boolean matched = true;
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    Class<?> parameterType = parameterTypes[i];
-                    if (params.length > i && !parameterType.isAssignableFrom(params[i].getClass())) {
-                        matched = false;
-                    }
-                }
-                if (matched) {
-                    finalConstructor = constructor;
-                    break;
-                }
-            }
-
+//            Class<?>[] classes = Arrays.stream(params)
+//                    .map(Object::getClass)
+//                    .toArray(Class<?>[]::new);
 //            Constructor<T> constructor = instanceClass.getConstructor(classes);
-            if (null != finalConstructor)
-                return finalConstructor.newInstance(params);
+            Constructor<T> constructor = findConstructor(instanceClass, params);
+            if (null != constructor)
+                return constructor.newInstance(params);
             else
                 return null;
         } catch (Exception e) {
@@ -58,12 +41,30 @@ public class ClassLoader {
         return null;
     }
 
+    public static <T> Constructor<T> findConstructor(Class<T> instanceClass, Object... params) {
+        Constructor<T>[] constructors = (Constructor<T>[]) instanceClass.getConstructors();
+        for (Constructor<T> constructor : constructors) {
+            Class<?>[] parameterTypes = constructor.getParameterTypes();
+            boolean matched = true;
+            for (int i = 0; i < parameterTypes.length; i++) {
+                Class<?> parameterType = parameterTypes[i];
+                if (params.length > i && !parameterType.isAssignableFrom(params[i].getClass())) {
+                    matched = false;
+                }
+            }
+            if (matched) {
+                return constructor;
+            }
+        }
+        return null;
+    }
+
     public static <T> T createInstanceOfClass(Class<T> clazz, Object... params) {
         try {
-            Class<?>[] classes = Arrays.stream(params)
-                    .map(Object::getClass)
-                    .toArray(Class<?>[]::new);
-            Constructor<T> constructor = clazz.getConstructor(classes);
+//            Class<?>[] classes = Arrays.stream(params)
+//                    .map(Object::getClass)
+//                    .toArray(Class<?>[]::new);
+            Constructor<T> constructor = findConstructor(clazz, params);
             return constructor.newInstance(params);
         } catch (Exception e) {
             LOGGER.error("error load with class: '{}'", clazz.getName(), e);

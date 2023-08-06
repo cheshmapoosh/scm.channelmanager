@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.core.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,8 @@ public class InboundChannelsAutoConfiguration {
     private ChannelService channelService;
     @Autowired
     private TerminalService terminalService;
+    @Autowired
+    private ServiceProducerTemplate producerTemplate;
 
     @Bean
     public void restInboundChannelGenerator() {
@@ -52,7 +55,7 @@ public class InboundChannelsAutoConfiguration {
             }
 
             AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.createInstanceOfClass(
-                    inboundChannelGeneratorClass, channel);
+                    inboundChannelGeneratorClass, producerTemplate, channel);
             if (null == inboundChannelGenerator) {
                 LOGGER.warn("Error on create instance of inboundChannelGenerator found for channel '{}' with protocolCode '{}' with ClassName '{}'",
                         channel.getCode(), channel.getProtocolCode(), inboundChannelGeneratorClass.getName());

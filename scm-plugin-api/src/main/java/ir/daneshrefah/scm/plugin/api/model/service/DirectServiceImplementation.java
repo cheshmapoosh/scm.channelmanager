@@ -45,8 +45,7 @@ public class DirectServiceImplementation extends ServiceImplementation {
                 message.setMessageComponent(component);
                 Object request = null;
                 if (null != requestTransformer) {
-                    request = requestTransformer.transform(service.getRequestJSONSchema(),
-                            serviceComponentRelation.getServiceComponent().getRequestJSONSchema(), message,
+                    request = requestTransformer.transform(message,
                             serviceComponentRelation.getRequestMetadata());
                 } else {
                     request = message.getPayload().toString();
@@ -63,11 +62,10 @@ public class DirectServiceImplementation extends ServiceImplementation {
                 Message message = exchange.getMessage().getBody(Message.class);
                 JsonNode response = null;
                 if (null != responseTransformer) {
-                    response = (JsonNode) responseTransformer.transform(serviceComponentRelation.getServiceComponent().getResponseJSONSchema(),
-                            service.getResponseJSONSchema(), message,
+                    response = (JsonNode) responseTransformer.transform(message,
                             serviceComponentRelation.getRequestMetadata());
                 } else {
-                    response = (JsonNode) message.getMessageComponent().getPayload();
+                    response = message.getPayload();
                 }
                 if (null != response)
                     message.setPayload(response);

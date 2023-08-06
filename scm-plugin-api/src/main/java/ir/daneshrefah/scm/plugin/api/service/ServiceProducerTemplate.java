@@ -9,9 +9,11 @@ import ir.daneshrefah.scm.plugin.api.model.message.Message;
  * @version 1.0
  * @since 2023-07-31
  */
-public interface ServiceComponentExecutor {
+public interface ServiceProducerTemplate {
 
     public void executeServiceComponent(String serviceComponentProviderCode, String serviceComponentCode,
                                         Message message, Object payload);
+
+    public void executeService(String serviceCode, Message message);
 
 }

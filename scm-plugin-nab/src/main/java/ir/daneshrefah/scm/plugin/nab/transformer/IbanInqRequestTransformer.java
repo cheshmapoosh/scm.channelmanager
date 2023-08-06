@@ -19,7 +19,7 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 public class IbanInqRequestTransformer extends AbstractTransformer {
 
     @Override
-    public Object internalTransform(Object inputSchema, Object outputSchema, Message message, String metadata) {
+    public Object internalTransform(Message message, String metadata) {
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectMapper mapper = new ObjectMapper();
 

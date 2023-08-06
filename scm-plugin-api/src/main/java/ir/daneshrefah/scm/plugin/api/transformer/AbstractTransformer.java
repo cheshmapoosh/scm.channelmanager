@@ -23,13 +23,13 @@ public abstract class AbstractTransformer {
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public Object transform(Object inputSchema, Object outputSchema, Message message, String metadata) {
+    public Object transform(Message message, String metadata) {
         LocalDateTime startTime = LocalDateTime.now();
         Object result = null;
         boolean isSuccessful = true;
         String errorMessage = null;
         try {
-            result = internalTransform(inputSchema, outputSchema, message, metadata);
+            result = internalTransform(message, metadata);
         } catch (Exception e) {
             isSuccessful = false;
             errorMessage = e.getMessage();
@@ -41,6 +41,6 @@ public abstract class AbstractTransformer {
         }
         return result;
     }
-    public abstract Object internalTransform(Object inputSchema, Object outputSchema, Message message, String metadata);
+    public abstract Object internalTransform(Message message, String metadata);
 
 }

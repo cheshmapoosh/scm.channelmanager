@@ -1,12 +1,11 @@
 package ir.daneshrefah.scm.plugin.nab.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.plugin.api.service.ServiceComponentExecutor;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,7 +16,7 @@ import ir.daneshrefah.scm.plugin.api.service.ServiceComponentExecutor;
  */
 public class IbanCalculatorService extends AbstractJavaService {
 
-    public IbanCalculatorService(ServiceComponentExecutor serviceComponentExecutor) {
+    public IbanCalculatorService(ServiceProducerTemplate serviceComponentExecutor) {
         super(serviceComponentExecutor);
     }
 

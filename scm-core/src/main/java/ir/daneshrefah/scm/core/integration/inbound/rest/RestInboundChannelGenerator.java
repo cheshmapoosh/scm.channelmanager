@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.plugin.api.model.message.EventType;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.jackson.JacksonDataFormat;
@@ -34,8 +35,8 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
     private static final String JSON_PROPERTY_METADATA_PORT = "port";
     private static final String JSON_PROPERTY_METADATA_CONTEXT_PATH = "contextPath";
 
-    public RestInboundChannelGenerator(Channel channel) {
-        super(channel);
+    public RestInboundChannelGenerator(ServiceProducerTemplate producerTemplate, Channel channel) {
+        super(producerTemplate, channel);
     }
 
     @Override
@@ -69,7 +70,10 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
                         new RestMessageInitializer().initMessageBody(exchange, channelAccess);
                     })
                     .log("body ${body}")
-                    .to("direct:SVI_" + serviceCode)
+                    .process(exchange -> {
+                        producerTemplate.executeService(serviceCode, exchange.getMessage().getBody(Message.class));
+                    })
+//                    .to("direct:SVI_" + serviceCode)
                     .process(exchange -> {
                         System.out.println("nowi");
                     })

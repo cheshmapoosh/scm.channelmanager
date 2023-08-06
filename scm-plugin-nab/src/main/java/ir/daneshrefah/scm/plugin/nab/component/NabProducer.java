@@ -6,22 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.plugin.api.component.AbstractEndpoint;
 import ir.daneshrefah.scm.plugin.api.component.AbstractProducer;
-import ir.daneshrefah.scm.plugin.api.constants.ErrorCodes;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderBusinessException;
-import ir.daneshrefah.scm.plugin.api.exception.ServiceProviderUnreachableException;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
-import java.io.IOException;
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.*;
 
@@ -62,7 +56,7 @@ public class NabProducer extends AbstractProducer {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
             if (statusCode == HttpConstants.HTTP_STATUS_BAD_REQUEST) {
-                throw new ServiceProviderBusinessException(message.getHeader().getCorrelationId(),
+                throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
                         message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
                         String.valueOf(statusCode), "http status: " + statusCode);
             }
@@ -76,7 +70,7 @@ public class NabProducer extends AbstractProducer {
                         // Read the data from the array element (assuming they are integers in this example)
                         String errorCode = element.get("id").asText();
                         String errorMessage = element.get("message").asText();
-                        throw new ServiceProviderBusinessException(message.getHeader().getCorrelationId(),
+                        throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
                                 message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
                                 errorCode, errorMessage);
                     }

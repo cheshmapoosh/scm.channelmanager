@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.core.repository.ServiceComponentRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.JavaServiceImplementation;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.plugin.api.service.ServiceComponentExecutor;
+import ir.daneshrefah.scm.plugin.api.service.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.io.ClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ public class ServiceService {
     @Autowired
     ServiceComponentRelationRepository serviceComponentRelationRepository;
     @Autowired
-    ServiceComponentExecutor serviceComponentExecutor;
+    ServiceProducerTemplate serviceComponentExecutor;
 
     public List<ir.daneshrefah.scm.plugin.api.model.service.Service> findServiceList() {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();

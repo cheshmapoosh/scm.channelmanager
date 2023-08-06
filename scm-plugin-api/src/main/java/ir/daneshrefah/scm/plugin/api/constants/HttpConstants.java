@@ -12,6 +12,7 @@ public class HttpConstants {
     public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
     public static final String HTTP_HEADER_AUTHORIZATION = "Authorization";
     public static final String HTTP_HEADER_CLAIM = "X-SCM-Claim";
+    public static final String HTTP_HEADER_CLIENT_CORRELATION_ID = "X-Client-Correlation-ID";
     public static final String HTTP_HEADER_CORRELATION_ID = "X-SCM-Correlation-ID";
     public static final String HTTP_HEADER_CHANNEL = "X-SCM-Channel";
     public static final String HTTP_HEADER_TERMINAL = "X-SCM-Terminal";
