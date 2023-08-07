@@ -1,16 +1,22 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 import ir.daneshrefah.scm.core.service.ServiceService;
+import ir.daneshrefah.scm.plugin.api.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,34 +26,51 @@ import java.util.List;
  * @since 2023-07-24
  */
 @Component
-public class ServiceAutoConfiguration extends RouteBuilder {
+public class ServiceAutoConfiguration extends RouteBuilder implements InitializingBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);
 
     @Autowired
     private ServiceService serviceService;
+    @Autowired
+    private ExternalServiceExecutor externalServiceExecutor;
+    @Autowired
+    private JavaServiceExecutor javaServiceExecutor;
+    @Autowired
+    private CompositionServiceExecutor compositionServiceExecutor;
+    private final Map<ServiceImplementationType, ServiceExecutor> executorMap = new HashMap<>();
+
+    public ServiceAutoConfiguration() {
+    }
 
     @Override
-    public void configure() throws Exception {
+    public void configure() {
+        executorMap.put(ServiceImplementationType.EXTERNAL, externalServiceExecutor);
+        executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
+        executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
         List<Service> services = serviceService.findServiceList();
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
             Service service = iterator.next();
             String fromUri = "SVI_" + service.getCode();
+
+            if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType())) {
+                externalServiceExecutor.registerExternalServiceProvider(((ExternalService) service).getServiceProvider());
+            }
+
             RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
-//            routeDefinition.onException(Exception.class)
-//                    .handled(true)
-//                    .process(exchange -> {
-//                        System.out.println("now");
-//                    })
-//                    .end();
-            routeDefinition.log("service call");
-            routeDefinition = service.getImplementation().fullFill(routeDefinition);
+            routeDefinition.log("service call: " + service.getCode());
+//            routeDefinition = service.getImplementation().fullFill(routeDefinition);
             routeDefinition.process(exchange -> {
-                System.out.println("sia");
+                ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
+                serviceExecutor.executeService(service, exchange.getMessage().getBody(Message.class));
             });
             routeDefinition.end();
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
     }
 
 }

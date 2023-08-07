@@ -19,26 +19,19 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 public class IbanInqRequestTransformer extends AbstractTransformer {
 
     @Override
-    public Object internalTransform(Message message, String metadata) {
+    public Object internalTransform(Object payload, Message message, String metadata) {
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectMapper mapper = new ObjectMapper();
 
-        String payloadStr = message.getMessageComponent().getPayload(String.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode payload = null;
-        try {
-            payload = objectMapper.readTree(payloadStr);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JsonNode payloadJson = (JsonNode) payload;
         // Create the parameters array
         ArrayNode parameters = nodeFactory.arrayNode();
         addParameter(parameters, "P_TYPEX", "1");
         addParameter(parameters, "P_BIC", "1");
-        addParameter(parameters, "P_IBAN", payload.get("iban").asText());
+        addParameter(parameters, "P_IBAN", payloadJson.get("iban").asText());
         addParameter(parameters, "P_RQID", message.getHeader().getCorrelationId());
-        if (null != payload.get("paymentCode")) {
-            addParameter(parameters, "P_PAYMENTCODE", payload.get("paymentCode").asText());
+        if (null != payloadJson.get("paymentCode")) {
+            addParameter(parameters, "P_PAYMENTCODE", payloadJson.get("paymentCode").asText());
         } else {
             addParameter(parameters, "P_PAYMENTCODE", "");
         }

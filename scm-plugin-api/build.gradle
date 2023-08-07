@@ -12,6 +12,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-jackson-starter'
     api 'org.apache.camel.springboot:camel-json-validator-starter'
     api 'org.apache.camel.springboot:camel-core-starter'
+    implementation 'org.reflections:reflections:0.10.2'
     api project(':scm-common')
     api project(':scm-utils')
 }

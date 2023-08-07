@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.transformer;
 
 
-import ir.daneshrefah.scm.plugin.api.model.message.EventType;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 
 import java.time.LocalDateTime;
@@ -17,19 +16,17 @@ public abstract class AbstractTransformer {
     /**
      * Creates a new value from message
      *
-     * @param  inputSchema source JsonSchema
-     * @param  outputSchema target JsonSchema
      * @param  message message
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public Object transform(Message message, String metadata) {
+    public Object transform(Object payload, Message message, String metadata) {
         LocalDateTime startTime = LocalDateTime.now();
         Object result = null;
         boolean isSuccessful = true;
         String errorMessage = null;
         try {
-            result = internalTransform(message, metadata);
+            result = internalTransform(payload, message, metadata);
         } catch (Exception e) {
             isSuccessful = false;
             errorMessage = e.getMessage();
@@ -41,6 +38,6 @@ public abstract class AbstractTransformer {
         }
         return result;
     }
-    public abstract Object internalTransform(Message message, String metadata);
+    public abstract Object internalTransform(Object payload, Message message, String metadata);
 
 }

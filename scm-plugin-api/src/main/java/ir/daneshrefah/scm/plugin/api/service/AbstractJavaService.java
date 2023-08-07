@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
+import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.model.service.Service;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,7 +13,7 @@ import ir.daneshrefah.scm.plugin.api.model.message.Message;
  */
 public abstract class AbstractJavaService {
 
-    ServiceProducerTemplate serviceProducerTemplate;
+    private final ServiceProducerTemplate serviceProducerTemplate;
 
     public AbstractJavaService(ServiceProducerTemplate serviceComponentExecutor) {
         this.serviceProducerTemplate = serviceComponentExecutor;
@@ -21,9 +23,8 @@ public abstract class AbstractJavaService {
         internalExecute(message);
     }
 
-    protected void callServiceComponent(String serviceComponentProviderCode, String serviceComponentCode,
-                                        Message message, Object payload) {
-        serviceProducerTemplate.executeServiceComponent(serviceComponentProviderCode, serviceComponentCode, message, payload);
+    protected void callService(Service service, Message message) {
+        serviceProducerTemplate.callService(service, message);
 
     }
     protected abstract void internalExecute(Message message);

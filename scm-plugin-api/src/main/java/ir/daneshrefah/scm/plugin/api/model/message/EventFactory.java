@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -21,8 +20,8 @@ public class EventFactory {
             case TRANSFORM:
                 event = new TransformEvent(startTime, endTime, errorMessage, isSuccessful);
                 break;
-            case SERVICE_COMPONENT_CALL:
-                event = new ServiceComponentCallEvent(startTime, endTime, errorMessage, isSuccessful);
+            case SERVICE_CALL:
+                event = new ServiceCallEvent(startTime, endTime, errorMessage, isSuccessful);
                 break;
         }
         return event;

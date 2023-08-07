@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.terminal;
 
+import ir.daneshrefah.scm.plugin.api.model.BaseModel;
+
 import java.util.List;
 
 /**
@@ -9,11 +11,10 @@ import java.util.List;
  * @version 1.0
  * @since 2023-07-19
  */
-public class Terminal {
+public class Terminal extends BaseModel<String> {
 
     private String code;
     private String title;
-    private List<TerminalServiceAccess> services;
 
     public String getCode() {
         return code;
@@ -31,11 +32,4 @@ public class Terminal {
         this.title = title;
     }
 
-    public List<TerminalServiceAccess> getServices() {
-        return services;
-    }
-
-    public void setServices(List<TerminalServiceAccess> services) {
-        this.services = services;
-    }
 }

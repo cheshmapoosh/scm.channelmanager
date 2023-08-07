@@ -21,6 +21,21 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.endsWith(str, suffix);
     }
 
+    public static String replaceOnce(final String text, final String searchString, final String replacement) {
+        return org.apache.commons.lang3.StringUtils.replaceOnce(text, searchString, replacement);
+    }
+
+    public static String replaceOnceIgnoreCase(final String text, final String searchString, final String replacement) {
+        return org.apache.commons.lang3.StringUtils.replaceOnceIgnoreCase(text, searchString, replacement);
+    }
+
+    public static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
+        if (ignoreCase) {
+            return org.apache.commons.lang3.StringUtils.startsWithIgnoreCase(str, prefix);
+        } else {
+            return org.apache.commons.lang3.StringUtils.startsWith(str, prefix);
+        }
+    }
     public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {
         return org.apache.commons.lang3.StringUtils.appendIfMissing(str, suffix, suffixes);
     }

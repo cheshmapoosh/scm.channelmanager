@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.terminal;
 
-import ir.daneshrefah.scm.common.model.BaseModel;
+
+import ir.daneshrefah.scm.plugin.api.model.BaseModel;
 
 /**
  * Description of the class or purpose of the file.
@@ -9,7 +10,7 @@ import ir.daneshrefah.scm.common.model.BaseModel;
  * @version 1.0
  * @since 2023-07-19
  */
-public class TerminalServiceChannelAccess extends BaseModel {
+public class TerminalServiceChannelAccess extends BaseModel<String> {
     private TerminalServiceAccess terminalServiceAccess;
     private Channel channel;
 

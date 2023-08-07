@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,25 +17,25 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
  * @version 1.0
  * @since 2023-07-24
  */
+@Component("ibanInqResponseTransformer")
 public class IbanInqResponseTransformer extends AbstractTransformer {
 
 
     @Override
-    public Object internalTransform(Message message, String metadata) {
-        Object response = message.getMessageComponent().getPayload();
-        if (null == response) {
+    public Object internalTransform(Object payload, Message message, String metadata) {
+        if (null == payload) {
             return null;
         }
-        if (response instanceof String && StringUtils.isEmpty((String) response))
+        if (payload instanceof String && StringUtils.isEmpty((String) payload))
             return null;
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode result = objectMapper.createArrayNode();
         JsonNode responseNode = null;
-        if (response instanceof JsonNode)
-            responseNode = (JsonNode) response;
-        if (response instanceof String) {
+        if (payload instanceof JsonNode)
+            responseNode = (JsonNode) payload;
+        if (payload instanceof String) {
             try {
-                responseNode = objectMapper.readTree((String) response);
+                responseNode = objectMapper.readTree((String) payload);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

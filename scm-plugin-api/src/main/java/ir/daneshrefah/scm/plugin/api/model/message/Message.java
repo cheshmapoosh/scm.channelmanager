@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,6 @@ public class Message {
     private List<Error> errors;
     private List<Event> events;
     private JsonNode payload;
-    private MessageComponent messageComponent;
 
     public Header getHeader() {
         return header;
@@ -62,14 +60,6 @@ public class Message {
         this.payload = payload;
     }
 
-    public MessageComponent getMessageComponent() {
-        return messageComponent;
-    }
-
-    public void setMessageComponent(MessageComponent messageComponent) {
-        this.messageComponent = messageComponent;
-    }
-
     public void addError(Error error, String statusCode) {
         if (null == errors)
             errors = new ArrayList<>();
@@ -85,10 +75,10 @@ public class Message {
         event.setOutputType(outputType);
 
     }
-    public void addServiceComponentCallEvent(LocalDateTime startTime, LocalDateTime endTime, String serviceComponentCode,
-                                             String serviceProviderCode, boolean isSuccessful, String errorMessage) {
+    public void addServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, String serviceComponentCode,
+                                    String serviceProviderCode, boolean isSuccessful, String errorMessage) {
 
-        ServiceComponentCallEvent event = (ServiceComponentCallEvent) addEvent(EventType.SERVICE_COMPONENT_CALL, startTime, endTime, isSuccessful, errorMessage);
+        ServiceCallEvent event = (ServiceCallEvent) addEvent(EventType.SERVICE_CALL, startTime, endTime, isSuccessful, errorMessage);
         event.setServiceComponentCode(serviceComponentCode);
         event.setServiceProviderCode(serviceProviderCode);
 

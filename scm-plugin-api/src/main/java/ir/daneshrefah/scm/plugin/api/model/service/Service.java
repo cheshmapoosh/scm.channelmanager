@@ -1,23 +1,28 @@
 package ir.daneshrefah.scm.plugin.api.model.service;
 
-import ir.daneshrefah.scm.common.model.BaseModel;
+import ir.daneshrefah.scm.plugin.api.model.BaseModel;
 
 /**
  * Description of the class or purpose of the file.
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-07-19
+ * @since 2023-08-06
  */
-public class Service extends BaseModel<String> {
+public abstract class Service extends BaseModel<String> {
 
     private String code;
     private String title;
+    private String metadata;
     private ServiceImplementationType implementationType;
-    private String requestJSONSchema;
-    private String responseJSONSchema;
-    private ServiceImplementation implementation;
-    private Service parent;
+    private String requestJsonSchema;
+    private String responseJsonSchema;
+    private TransformerType requestTransformerType;
+    private TransformerType responseTransformerType;
+    private String requestTransformMetadata;
+    private String responseTransformMetadata;
+    private String requestTransformerClass;
+    private String responseTransformerClass;
 
     public String getCode() {
         return code;
@@ -35,6 +40,14 @@ public class Service extends BaseModel<String> {
         this.title = title;
     }
 
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
     public ServiceImplementationType getImplementationType() {
         return implementationType;
     }
@@ -43,36 +56,67 @@ public class Service extends BaseModel<String> {
         this.implementationType = implementationType;
     }
 
-    public String getRequestJSONSchema() {
-        return requestJSONSchema;
+    public String getRequestJsonSchema() {
+        return requestJsonSchema;
     }
 
-    public void setRequestJSONSchema(String requestJSONSchema) {
-        this.requestJSONSchema = requestJSONSchema;
+    public void setRequestJsonSchema(String requestJsonSchema) {
+        this.requestJsonSchema = requestJsonSchema;
     }
 
-    public String getResponseJSONSchema() {
-        return responseJSONSchema;
+    public String getResponseJsonSchema() {
+        return responseJsonSchema;
     }
 
-    public void setResponseJSONSchema(String responseJSONSchema) {
-        this.responseJSONSchema = responseJSONSchema;
+    public void setResponseJsonSchema(String responseJsonSchema) {
+        this.responseJsonSchema = responseJsonSchema;
     }
 
-    public ServiceImplementation getImplementation() {
-        return implementation;
+    public TransformerType getRequestTransformerType() {
+        return requestTransformerType;
     }
 
-    public void setImplementation(ServiceImplementation implementation) {
-        this.implementation = implementation;
+    public void setRequestTransformerType(TransformerType requestTransformerType) {
+        this.requestTransformerType = requestTransformerType;
     }
 
-    public Service getParent() {
-        return parent;
+    public TransformerType getResponseTransformerType() {
+        return responseTransformerType;
     }
 
-    public void setParent(Service parent) {
-        this.parent = parent;
+    public void setResponseTransformerType(TransformerType responseTransformerType) {
+        this.responseTransformerType = responseTransformerType;
     }
 
+    public String getRequestTransformMetadata() {
+        return requestTransformMetadata;
+    }
+
+    public void setRequestTransformMetadata(String requestTransformMetadata) {
+        this.requestTransformMetadata = requestTransformMetadata;
+    }
+
+    public String getResponseTransformMetadata() {
+        return responseTransformMetadata;
+    }
+
+    public void setResponseTransformMetadata(String responseTransformMetadata) {
+        this.responseTransformMetadata = responseTransformMetadata;
+    }
+
+    public String getRequestTransformerClass() {
+        return requestTransformerClass;
+    }
+
+    public void setRequestTransformerClass(String requestTransformerClass) {
+        this.requestTransformerClass = requestTransformerClass;
+    }
+
+    public String getResponseTransformerClass() {
+        return responseTransformerClass;
+    }
+
+    public void setResponseTransformerClass(String responseTransformerClass) {
+        this.responseTransformerClass = responseTransformerClass;
+    }
 }

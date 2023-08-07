@@ -1,20 +1,11 @@
-package ir.daneshrefah.scm.plugin.api.model.terminal;
-
+package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import ir.daneshrefah.scm.plugin.api.model.BaseModel;
 
-/**
- * Description of the class or purpose of the file.
- *
- * @author reza jamshidi
- * @version 1.0
- * @since 2023-07-19
- */
-public class Channel extends BaseModel<String> {
-
+public class ExternalServiceProvider extends BaseModel<String> {
     private String code;
     private String title;
-    private String protocolCode;
+    private String providerClassName;
     private String metadata;
 
     public String getCode() {
@@ -33,12 +24,12 @@ public class Channel extends BaseModel<String> {
         this.title = title;
     }
 
-    public String getProtocolCode() {
-        return protocolCode;
+    public String getProviderClassName() {
+        return providerClassName;
     }
 
-    public void setProtocolCode(String protocolCode) {
-        this.protocolCode = protocolCode;
+    public void setProviderClassName(String componentClassName) {
+        this.providerClassName = componentClassName;
     }
 
     public String getMetadata() {
