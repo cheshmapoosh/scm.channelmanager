@@ -47,7 +47,7 @@ public abstract class ServiceExecutor {
         try {
             response = executeInternal(service, message, requestPayload);
         } catch (Exception e) {
-            message.setStatus(Status.SC_ERROR_VALIDATION);
+            errorMappingService.resolveMessageByException(message, e);
             isSuccessful = false;
             exception = ClassLoader.cloneExceptionWithoutStackTrace(e);
             return;
@@ -61,7 +61,7 @@ public abstract class ServiceExecutor {
         try {
             response = transformResponse(service, message, response);
         } catch (Exception e) {
-            message.setStatus(Status.SC_ERROR_VALIDATION);
+            errorMappingService.resolveMessageByException(message, e);
             return;
         }
         if (null == response)

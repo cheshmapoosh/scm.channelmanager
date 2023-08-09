@@ -1,9 +1,5 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -25,5 +21,6 @@ public abstract class BaseException extends RuntimeException {
     }
 
     public abstract Object getSource();
+    public abstract Object getSourceCode();
 
 }

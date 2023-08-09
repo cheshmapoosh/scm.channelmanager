@@ -13,10 +13,13 @@ public class ExternalProviderException extends BaseException {
 
     private ExternalServiceProvider externalServiceProvider;
     private String providerErrorCode;
+    private String providerErrorMessage;
 
-    public ExternalProviderException(ExternalServiceProvider externalServiceProvider, String providerErrorCode) {
+    public ExternalProviderException(ExternalServiceProvider externalServiceProvider, String providerErrorCode,
+                                     String providerErrorMessage) {
         this.externalServiceProvider = externalServiceProvider;
         this.providerErrorCode = providerErrorCode;
+        this.providerErrorMessage = providerErrorMessage;
     }
 
     public String getSourceErrorCode() {
@@ -28,4 +31,12 @@ public class ExternalProviderException extends BaseException {
         return externalServiceProvider.getId();
     }
 
+    @Override
+    public Object getSourceCode() {
+        return externalServiceProvider.getCode();
+    }
+
+    public String getSourceErrorMessage() {
+        return providerErrorMessage;
+    }
 }

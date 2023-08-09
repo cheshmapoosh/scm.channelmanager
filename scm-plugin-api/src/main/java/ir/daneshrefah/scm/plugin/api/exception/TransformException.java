@@ -22,4 +22,9 @@ public class TransformException extends BaseException {
     public Object getSource() {
         return transformer;
     }
+
+    @Override
+    public Object getSourceCode() {
+        return transformer;
+    }
 }

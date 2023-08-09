@@ -65,19 +65,23 @@ public class ErrorMappingService {
         }
 
         Optional<ErrorMapping> errorMappingOptional = findErrorMappingByException(exception);
+        String sourceExceptionMessage = exception instanceof ExternalProviderException ?
+                ((ExternalProviderException) exception).getSourceErrorMessage() : null;
         if (errorMappingOptional.isPresent()) {
             ErrorMapping errorMapping = errorMappingOptional.get();
             String errorMessage = StringUtils.isEmpty(errorMapping.getMessage()) ? exception.getMessage() : errorMapping.getMessage();
             Error error = new Error(errorMapping.getScmErrorCode(), errorMessage,
                     errorMapping.getExternalServiceProvider().getCode(), errorMapping.getProviderErrorCode(),
-                    null, exception);
+                    sourceExceptionMessage, exception);
             message.addError(error, errorMapping.getStatus());
             return message;
         }
 
-        Object source = exception instanceof BaseException ? ((BaseException) exception).getSource() : null;
+        Object source = exception instanceof BaseException ? ((BaseException) exception).getSourceCode() : null;
+        String sourceErrorCode = exception instanceof ExternalProviderException ? ((ExternalProviderException) exception).getSourceErrorCode() : null;
+        String sourceErrorMessage = exception instanceof ExternalProviderException ? ((ExternalProviderException) exception).getSourceErrorMessage() : sourceExceptionMessage;
         Error error = new Error(ErrorCodes.ERROR_UNKNOWN, exception.getMessage(),
-                source, null,null, exception);
+                source, sourceErrorCode, sourceErrorMessage, ClassLoader.cloneExceptionWithoutStackTrace(exception));
         message.addError(error, Status.SC_ERROR_SYSTEM);
 
         return message;
@@ -87,7 +91,7 @@ public class ErrorMappingService {
         if (null == errorMappings) {
             errorMappings = findErrorMappingList();
         }
-        Optional<ErrorMapping> errorMappingOptional = null;
+        Optional<ErrorMapping> errorMappingOptional = Optional.empty();
         if (exception instanceof ExternalProviderException) {
             ExternalProviderException providerException = (ExternalProviderException) exception;
             errorMappingOptional = errorMappings.stream()

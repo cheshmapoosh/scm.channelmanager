@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
+import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -63,9 +65,10 @@ public class NabServiceProvider extends AbstractExternalServiceProvider<JsonNode
                 .header(HTTP_HEADER_CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON)
                 .build();
         HttpResponse<String> response = null;
+//        try {
         try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            int statusCode = response.statusCode();
+        int statusCode = response.statusCode();
             if (statusCode == HttpConstants.HTTP_STATUS_BAD_REQUEST) {
 //                throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
 //                        message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
@@ -81,14 +84,17 @@ public class NabServiceProvider extends AbstractExternalServiceProvider<JsonNode
                         // Read the data from the array element (assuming they are integers in this example)
                         String errorCode = element.get("id").asText();
                         String errorMessage = element.get("message").asText();
-//                        throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
-//                                message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
-//                                errorCode, errorMessage);
+                        throw new ExternalProviderException(externalServiceProvider, errorCode, errorMessage);
                     }
                 }
             }
             return response.body();
-        } catch (Exception e) {
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

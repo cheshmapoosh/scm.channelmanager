@@ -26,4 +26,9 @@ public class ValidationException extends BaseException {
     public Object getSource() {
         return source;
     }
+
+    @Override
+    public Object getSourceCode() {
+        return source;
+    }
 }
