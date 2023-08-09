@@ -13,7 +13,16 @@ import java.util.List;
  */
 public class CompositionService extends Service {
 
+    private ServiceCompositionType compositionType;
     private List<ServiceRelation> relations;
+
+    public ServiceCompositionType getCompositionType() {
+        return compositionType;
+    }
+
+    public void setCompositionType(ServiceCompositionType compositionType) {
+        this.compositionType = compositionType;
+    }
 
     public List<ServiceRelation> getRelations() {
         return relations;

@@ -1,8 +1,14 @@
-package ir.daneshrefah.scm.plugin.api.model.service.composition;
+package ir.daneshrefah.scm.core.entity.service.composition;
 
+import ir.daneshrefah.scm.core.converter.ServiceRelationTypeConverter;
+import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
+import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.plugin.api.model.BaseModel;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
+import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
+import jakarta.persistence.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,41 +17,79 @@ import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
  * @version 1.0
  * @since 2023-08-08
  */
-public class ServiceRelation extends BaseModel<String> {
+@Entity
+@Table(name = "TBL_SCM_SERVICE_RELATION")
+public class ServiceRelationEntity extends AbstractEntity<String> {
 
-    private Service sourceService;
+    @Id
+    @Column(name = "SERVICE_RELATION_ID")
+    private String id;
+    @ManyToOne
+    @JoinColumn(name = "SOURCE_SERVICE_ID")
+    private ServiceEntity sourceService;
     private Integer order;
+    @Column(name = "RELATION_TYPE_CODE")
+    @Convert(converter = ServiceRelationTypeConverter.class)
     private ServiceRelationType relationType;
 
-    private Service targetService;
+    @ManyToOne
+    @JoinColumn(name = "TARGET_SERVICE_ID")
+    private ServiceEntity targetService;
+    @Column(name = "TARGET_SERVICE_TRANSFORMER_REQUEST_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceTransformerRequestType;
     private String targetServiceTransformerRequestMetadata;
     private String targetServiceTransformerRequestClassName;
+    @Column(name = "TARGET_SERVICE_TRANSFORMER_RESPONSE_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceTransformerResponseType;
     private String targetServiceTransformerResponseMetadata;
     private String targetServiceTransformerResponseClassName;
 
-    private Service targetServiceCommit;
+    @ManyToOne
+    @JoinColumn(name = "TARGET_SERVICE_COMMIT_ID")
+    private ServiceEntity targetServiceCommit;
+    @Column(name = "TARGET_SERVICE_COMMIT_TRANSFORMER_REQUEST_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceCommitTransformerRequestType;
     private String targetServiceCommitTransformerRequestMetadata;
     private String targetServiceCommitTransformerRequestClassName;
+    @Column(name = "TARGET_SERVICE_COMMIT_TRANSFORMER_RESPONSE_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceCommitTransformerResponseType;
     private String targetServiceCommitTransformerResponseMetadata;
     private String targetServiceCommitTransformerResponseClassName;
 
-    private Service targetServiceReverse;
+    @ManyToOne
+    @JoinColumn(name = "TARGET_SERVICE_REVERSE_ID")
+    private ServiceEntity targetServiceReverse;
+    @Column(name = "TARGET_SERVICE_REVERSE_TRANSFORMER_REQUEST_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceReverseTransformerRequestType;
     private String targetServiceReverseTransformerRequestMetadata;
     private String targetServiceReverseTransformerRequestClassName;
+    @Column(name = "TARGET_SERVICE_REVERSE_TRANSFORMER_RESPONSE_TYPE_CODE")
+    @Convert(converter = TransformerTypeConverter.class)
     private TransformerType targetServiceReverseTransformerResponseType;
     private String targetServiceReverseTransformerResponseMetadata;
     private String targetServiceReverseTransformerResponseClassName;
 
-    public Service getSourceService() {
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public ServiceEntity getSourceService() {
         return sourceService;
     }
 
-    public void setSourceService(Service sourceService) {
+    public void setSourceService(ServiceEntity sourceService) {
         this.sourceService = sourceService;
     }
 
@@ -65,11 +109,11 @@ public class ServiceRelation extends BaseModel<String> {
         this.relationType = relationType;
     }
 
-    public Service getTargetService() {
+    public ServiceEntity getTargetService() {
         return targetService;
     }
 
-    public void setTargetService(Service targetService) {
+    public void setTargetService(ServiceEntity targetService) {
         this.targetService = targetService;
     }
 
@@ -121,11 +165,11 @@ public class ServiceRelation extends BaseModel<String> {
         this.targetServiceTransformerResponseClassName = targetServiceTransformerResponseClassName;
     }
 
-    public Service getTargetServiceCommit() {
+    public ServiceEntity getTargetServiceCommit() {
         return targetServiceCommit;
     }
 
-    public void setTargetServiceCommit(Service targetServiceCommit) {
+    public void setTargetServiceCommit(ServiceEntity targetServiceCommit) {
         this.targetServiceCommit = targetServiceCommit;
     }
 
@@ -177,11 +221,11 @@ public class ServiceRelation extends BaseModel<String> {
         this.targetServiceCommitTransformerResponseClassName = targetServiceCommitTransformerResponseClassName;
     }
 
-    public Service getTargetServiceReverse() {
+    public ServiceEntity getTargetServiceReverse() {
         return targetServiceReverse;
     }
 
-    public void setTargetServiceReverse(Service targetServiceReverse) {
+    public void setTargetServiceReverse(ServiceEntity targetServiceReverse) {
         this.targetServiceReverse = targetServiceReverse;
     }
 

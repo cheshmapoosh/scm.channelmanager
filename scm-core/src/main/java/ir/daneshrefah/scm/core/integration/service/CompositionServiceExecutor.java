@@ -1,15 +1,18 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
+import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -23,16 +26,45 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
     @Autowired
     private ServiceProducerTemplate serviceProducerTemplate;
+    @Autowired
+    private ServiceService serviceService;
 
     @Override
     protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message, Object requestPayload) {
         CompositionService compositionService = (CompositionService) service;
         List<ServiceRelation> relations = compositionService.getRelations();
+        if (null == relations) {
+            relations = serviceService.findServiceRelationListBySourceServiceId(service.getId(), ServiceRelationType.COMPOSITION);
+            compositionService.setRelations(relations);
+        }
+        Deque<ServiceRelation> reverseServiceStack = new LinkedList<>();
+        Queue<ServiceRelation> commitServiceQueueQueue = new ArrayDeque<>();
+
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
+
             serviceRelation.getSourceService();
-//            JsonNode response = serviceProducerTemplate.callService(serviceRelation.getTargetService(), message);
-//            message.appendResponse(response, responseKey);
+            AbstractTransformer relationRequestTransformer = getTransformer(serviceRelation.getTargetServiceTransformerRequestType(),
+                    serviceRelation.getTargetServiceTransformerRequestClassName());
+            Object relationRequestPayload = message.getPayload();
+            if (null != relationRequestTransformer) {
+                relationRequestPayload = relationRequestTransformer.transform(relationRequestPayload, message,
+                        serviceRelation.getTargetServiceTransformerRequestMetadata());
+            }
+
+            Message newMessage = SerializationUtils.clone(message);
+            newMessage.setPayload((JsonNode) relationRequestPayload);
+            serviceProducerTemplate.callService(serviceRelation.getTargetService(), newMessage);
+
+            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
+                    serviceRelation.getTargetServiceTransformerResponseClassName());
+            Object relationResponsePayload = relationResponseTransformer.transform(newMessage.getPayload(), newMessage,
+                    serviceRelation.getTargetServiceTransformerResponseMetadata());
+
+            message.setPayload((JsonNode) relationResponsePayload);
+            reverseServiceStack.push(serviceRelation);
+            commitServiceQueueQueue.add(serviceRelation);
+
         }
         return null;
     }

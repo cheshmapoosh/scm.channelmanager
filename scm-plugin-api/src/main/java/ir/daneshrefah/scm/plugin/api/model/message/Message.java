@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
  * @version 1.0
  * @since 2023-07-19
  */
-public class Message {
+public class Message implements Serializable {
     private Header header;
     private Status status;
     private List<Error> errors;

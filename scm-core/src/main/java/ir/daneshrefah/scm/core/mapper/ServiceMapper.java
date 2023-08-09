@@ -1,8 +1,11 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.core.entity.service.*;
+import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
+import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
@@ -65,13 +68,12 @@ public interface ServiceMapper {
         }
         return result;
     }
-//    Service toModel(ServiceEntity entity);
-//
 
+    @Mapping(source = "sourceService", target = "sourceService", qualifiedByName = "toService")
+    @Mapping(source = "targetService", target = "targetService", qualifiedByName = "toService")
+    @Mapping(source = "targetServiceCommit", target = "targetServiceCommit", qualifiedByName = "toService")
+    @Mapping(source = "targetServiceReverse", target = "targetServiceReverse", qualifiedByName = "toService")
+    ServiceRelation toModel(ServiceRelationEntity entity);
 
-//    Service toModel(ServiceEntity entity);
-//
-//    ServiceEntity toEntity(Service model);
-
-
+    List<ServiceRelation> relationEntitiesToModels(Iterable<ServiceRelationEntity> entities);
 }

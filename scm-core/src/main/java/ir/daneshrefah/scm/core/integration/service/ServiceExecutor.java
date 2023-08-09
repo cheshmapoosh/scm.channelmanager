@@ -109,11 +109,7 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    public AbstractTransformer getResponseTransformer(Service service) {
-        return getTransformer(service.getResponseTransformerType(), service.getResponseTransformerClass());
-    }
-
-    private AbstractTransformer getTransformer(TransformerType transformerType, String responseTransformerClass) {
+    protected AbstractTransformer getTransformer(TransformerType transformerType, String responseTransformerClass) {
         if (TransformerType.JAVA.equals(transformerType)) {
             String className = responseTransformerClass;
             return ClassLoader.findBeanOrCreateInstanceOfClass(className, AbstractTransformer.class);

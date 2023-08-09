@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Terminal;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
  * @version 1.0
  * @since 2023-07-23
  */
-public class Header {
+public class Header implements Serializable {
 
     private String contentType;
     private Object authorization;

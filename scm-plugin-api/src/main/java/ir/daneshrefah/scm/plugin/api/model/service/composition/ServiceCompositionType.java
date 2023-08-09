@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -9,11 +7,11 @@ import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
  * @version 1.0
  * @since 2023-08-08
  */
-public enum ServiceRelationType {
+public enum ServiceCompositionType {
 
-    COMPOSITION(1), CHILD(2);
+    SAGA(1), FAILOVER(3), ROUND_ROBIN(4);
 
-    ServiceRelationType(Integer code) {
+    ServiceCompositionType(Integer code) {
         this.code = code;
     }
 
@@ -23,8 +21,8 @@ public enum ServiceRelationType {
         return code;
     }
 
-    public static ServiceRelationType findByCode(Integer code) {
-        for (ServiceRelationType enumValue : ServiceRelationType.values()) {
+    public static ServiceCompositionType findByCode(Integer code) {
+        for (ServiceCompositionType enumValue : ServiceCompositionType.values()) {
             if (enumValue.getCode().equals(code)) {
                 return enumValue;
             }
