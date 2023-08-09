@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
+import org.yaml.snakeyaml.util.EnumUtils;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -96,4 +97,23 @@ public class Message implements Serializable {
         events.add(event);
         return event;
     }
+
+    public void addEvents(List<Event> events) {
+        if (null == events)
+            return;
+
+        if (null == this.events)
+            this.events = new ArrayList<>();
+        this.events.addAll(events);
+    }
+
+    public void addErrors(List<Error> errors) {
+        if (null == errors)
+            return;
+
+        if (null == this.errors)
+            this.errors = new ArrayList<>();
+        this.errors.addAll(errors);
+    }
+
 }

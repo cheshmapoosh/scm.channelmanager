@@ -44,6 +44,12 @@ public class Error {
         return exception;
     }
 
+    public String getExceptionType() {
+        if (null == exception)
+            return null;
+        return exception.getClass().getName();
+    }
+
     public String getSourceErrorMessage() {
         return sourceErrorMessage;
     }

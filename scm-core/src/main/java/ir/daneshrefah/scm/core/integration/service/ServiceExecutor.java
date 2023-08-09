@@ -4,8 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
-import ir.daneshrefah.scm.plugin.api.exception.BaseException;
-import ir.daneshrefah.scm.plugin.api.model.message.Error;
+import ir.daneshrefah.scm.core.transformer.DynamicTransformer;
+import ir.daneshrefah.scm.core.transformer.EmptyTransformer;
+import ir.daneshrefah.scm.core.transformer.NullTransformer;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
@@ -27,6 +28,12 @@ public abstract class ServiceExecutor {
 
     @Autowired
     private ErrorMappingService errorMappingService;
+    @Autowired
+    private EmptyTransformer emptyTransformer;
+    @Autowired
+    private NullTransformer nullTransformer;
+    @Autowired
+    private DynamicTransformer dynamicTransformer;
 
     public void executeService(Service service, Message message) {
 
@@ -109,11 +116,13 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    protected AbstractTransformer getTransformer(TransformerType transformerType, String responseTransformerClass) {
+    protected AbstractTransformer getTransformer(TransformerType transformerType, String transformerClass) {
         if (TransformerType.JAVA.equals(transformerType)) {
-            String className = responseTransformerClass;
-            return ClassLoader.findBeanOrCreateInstanceOfClass(className, AbstractTransformer.class);
-
+            return ClassLoader.findBeanOrCreateInstanceOfClass(transformerClass, AbstractTransformer.class);
+        } else if (TransformerType.EMPTY.equals(transformerType)) {
+            return emptyTransformer;
+        } else if (TransformerType.DYNAMIC.equals(transformerType)) {
+            return dynamicTransformer;
         }
         return null;
     }

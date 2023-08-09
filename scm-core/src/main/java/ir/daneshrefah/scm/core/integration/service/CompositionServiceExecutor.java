@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.model.message.Event;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
@@ -30,7 +31,9 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private ServiceService serviceService;
 
     @Override
-    protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message, Object requestPayload) {
+    protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message,
+                                     Object requestPayload) {
+
         CompositionService compositionService = (CompositionService) service;
         List<ServiceRelation> relations = compositionService.getRelations();
         if (null == relations) {
@@ -43,7 +46,6 @@ public class CompositionServiceExecutor extends ServiceExecutor {
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
 
-            serviceRelation.getSourceService();
             AbstractTransformer relationRequestTransformer = getTransformer(serviceRelation.getTargetServiceTransformerRequestType(),
                     serviceRelation.getTargetServiceTransformerRequestClassName());
             Object relationRequestPayload = message.getPayload();
@@ -52,20 +54,29 @@ public class CompositionServiceExecutor extends ServiceExecutor {
                         serviceRelation.getTargetServiceTransformerRequestMetadata());
             }
 
-            Message newMessage = SerializationUtils.clone(message);
-            newMessage.setPayload((JsonNode) relationRequestPayload);
-            serviceProducerTemplate.callService(serviceRelation.getTargetService(), newMessage);
+            Message tempMessage = SerializationUtils.clone(message);
+            tempMessage.setErrors(null);
+            tempMessage.setEvents(null);
+            tempMessage.setPayload((JsonNode) relationRequestPayload);
+            serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
+            message.addEvents(tempMessage.getEvents());
+            message.addErrors(tempMessage.getErrors());
 
             AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
                     serviceRelation.getTargetServiceTransformerResponseClassName());
-            Object relationResponsePayload = relationResponseTransformer.transform(newMessage.getPayload(), newMessage,
-                    serviceRelation.getTargetServiceTransformerResponseMetadata());
+            Object relationResponsePayload = message.getPayload();
+            if (null != relationResponseTransformer) {
+                relationResponsePayload = relationResponseTransformer.transform(tempMessage.getPayload(), tempMessage,
+                        serviceRelation.getTargetServiceTransformerResponseMetadata());
+            }
 
             message.setPayload((JsonNode) relationResponsePayload);
+
             reverseServiceStack.push(serviceRelation);
             commitServiceQueueQueue.add(serviceRelation);
 
         }
-        return null;
+
+        return message.getPayload();
     }
 }

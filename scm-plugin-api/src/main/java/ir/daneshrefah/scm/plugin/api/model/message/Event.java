@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
  * @version 1.0
  * @since 2023-07-23
  */
-public class Event {
+public class Event implements Serializable {
 
     private EventType type;
     private LocalDateTime startTime;

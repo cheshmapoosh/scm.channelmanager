@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.plugin.api.model.service;
  */
 public enum TransformerType {
 
-    NONE(1), DYNAMIC(2), JAVA(3);
+    NONE(1), DYNAMIC(2), JAVA(3), EMPTY(4);
 
     TransformerType(Integer code) {
         this.code = code;
