@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.plugin.api.exception.ValidationException;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 
@@ -44,7 +44,8 @@ public class IbanInqRequestTransformer extends AbstractTransformer {
         jsonObject.put("requestID", "RequestID");
 
 //        String jsonString = jsonObject.toString();
-
+//        throw new RuntimeException("invalid x");
+//        throw new ValidationException("firstName", null, "must not be empty");
         return jsonObject;
     }
 

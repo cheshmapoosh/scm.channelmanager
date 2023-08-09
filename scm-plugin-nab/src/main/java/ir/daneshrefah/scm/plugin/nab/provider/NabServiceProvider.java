@@ -49,7 +49,7 @@ public class NabServiceProvider extends AbstractExternalServiceProvider<JsonNode
     }
 
     @Override
-    protected Object executeServiceComponent(Message message, Object requestBody, Service service) {
+    protected Object executeInternal(Message message, Object requestBody, Service service) {
         String url = prepareServiceUrl(service);
         HttpRequest.BodyPublisher requestBodyPublisher = null;
         if (null != requestBody)

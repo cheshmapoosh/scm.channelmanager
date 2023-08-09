@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.model.service.Service;
 
 /**
@@ -19,5 +20,10 @@ public class ExternalService extends Service {
 
     public void setServiceProvider(ExternalServiceProvider serviceProvider) {
         this.serviceProvider = serviceProvider;
+    }
+
+    @Override
+    public Object getServiceInfo() {
+        return "serviceProviderCode:" + serviceProvider.getCode();
     }
 }

@@ -15,8 +15,8 @@ public class TransformEvent extends Event {
     private String outputType;
 
 
-    public TransformEvent(LocalDateTime startTime, LocalDateTime endTime, String errorMessage, Boolean isSuccessful) {
-        super(EventType.TRANSFORM, startTime, endTime,errorMessage, isSuccessful);
+    public TransformEvent(LocalDateTime startTime, LocalDateTime endTime, Object error, Object input, Object output, Boolean isSuccessful) {
+        super(EventType.TRANSFORM, startTime, endTime, error, input, output, isSuccessful);
     }
 
     public String getTransformerClassName() {

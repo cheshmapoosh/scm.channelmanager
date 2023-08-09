@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.plugin.api.model.service.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -60,33 +61,37 @@ public class Message {
         this.payload = payload;
     }
 
-    public void addError(Error error, String statusCode) {
+    public void addError(Error error, Status status) {
         if (null == errors)
             errors = new ArrayList<>();
         errors.add(error);
-        setStatus(Status.findByCode(statusCode));
+        setStatus(status);
     }
 
     public void addTransformEvent(LocalDateTime startTime, LocalDateTime endTime, String transformerClass,
-                                  boolean isSuccessful, String errorMessage, String outputType) {
+                                  boolean isSuccessful, Object error, Object input, Object output, String outputType) {
 
-        TransformEvent event = (TransformEvent) addEvent(EventType.TRANSFORM, startTime, endTime, isSuccessful, errorMessage);
+        TransformEvent event = (TransformEvent) addEvent(EventType.TRANSFORM, startTime, endTime, isSuccessful, error,
+                input, output);
         event.setTransformerClassName(transformerClass);
         event.setOutputType(outputType);
 
     }
-    public void addServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, String serviceComponentCode,
-                                    String serviceProviderCode, boolean isSuccessful, String errorMessage) {
+    public void addServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, Service service, boolean isSuccessful,
+                                    Object error, Object input, Object output) {
 
-        ServiceCallEvent event = (ServiceCallEvent) addEvent(EventType.SERVICE_CALL, startTime, endTime, isSuccessful, errorMessage);
-        event.setServiceComponentCode(serviceComponentCode);
-        event.setServiceProviderCode(serviceProviderCode);
+        ServiceCallEvent event = (ServiceCallEvent) addEvent(EventType.SERVICE_CALL, startTime, endTime, isSuccessful,
+                error, input, output);
+        event.setServiceCode(service.getCode());
+        event.setImplementationType(service.getImplementationType());
+        event.setAdditionalInfo(service.getServiceInfo());
 
     }
-    public Event addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful, String errorMessage) {
+    public Event addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful,
+                          Object error, Object input, Object output) {
         if (null == events)
             events = new ArrayList<>();
-        Event event = EventFactory.createNewEvent(type, startTime, endTime, errorMessage, isSuccessful);
+        Event event = EventFactory.createNewEvent(type, startTime, endTime, error, input, output, isSuccessful);
         events.add(event);
         return event;
     }

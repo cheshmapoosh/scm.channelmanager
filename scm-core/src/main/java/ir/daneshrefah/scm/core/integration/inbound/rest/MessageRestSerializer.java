@@ -26,25 +26,26 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         gen.writeStringField("status", value.getStatus().name());
         if (Status.SC_SUCCESS.equals(value.getStatus())) {
             JsonNode payload = value.getPayload();
-            if (null != payload && payload.isArray()) {
-                gen.writeObjectField("results", payload);
-            } else if (null != payload && payload.isObject()) {
+//            if (null != payload && payload.isArray()) {
                 gen.writeObjectField("result", payload);
-            }
+//            } else if (null != payload && payload.isObject()) {
+//                gen.writeObjectField("result", payload);
+//            }
         } else {
-            if (null != value.getErrors()) {
+            /*if (null != value.getErrors()) {
                 gen.writeArrayFieldStart("errors");
                 for (Iterator<Error> iterator = value.getErrors().iterator(); iterator.hasNext(); ) {
                     Error error = iterator.next();
                     gen.writeStartObject();
                     gen.writeStringField("code", error.getCode());
                     gen.writeStringField("message", error.getMessage());
-                    gen.writeStringField("source", error.getSource());
+                    gen.writeObjectField("source", error.getSource());
                     gen.writeStringField("sourceErrorCode", error.getSourceErrorCode());
                     gen.writeEndObject();
                 }
                 gen.writeEndArray();
-            }
+            }*/
+            gen.writeObjectField("errors", value.getErrors());
         }
         gen.writeObjectField("events", value.getEvents());
         gen.writeObjectField("responseTimestamp", LocalDateTime.now());

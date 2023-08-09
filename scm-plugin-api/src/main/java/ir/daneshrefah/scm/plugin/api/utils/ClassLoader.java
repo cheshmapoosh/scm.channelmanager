@@ -106,4 +106,18 @@ public class ClassLoader {
         applicationContext = applicationContextVal;
     }
 
+    public static <T extends Throwable> T cloneExceptionWithoutStackTrace(T original) {
+        if (null == original)
+            return null;
+        T newException;
+        try {
+            Constructor<? extends Throwable> constructor = original.getClass().getConstructor(String.class);
+            newException = (T) constructor.newInstance(original.getMessage());
+            newException.setStackTrace(new StackTraceElement[]{original.getStackTrace()[0]});
+        } catch (Exception e) {
+            newException = (T) new Exception(original.getMessage());
+            newException.setStackTrace(new StackTraceElement[]{original.getStackTrace()[0]});
+        }
+        return newException;
+    }
 }

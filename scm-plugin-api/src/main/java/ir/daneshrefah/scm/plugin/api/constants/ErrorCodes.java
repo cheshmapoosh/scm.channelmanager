@@ -10,7 +10,7 @@ package ir.daneshrefah.scm.plugin.api.constants;
 public class ErrorCodes {
 
     public static final String ERROR_UNKNOWN = "SCM-1001";
-    public static final String ERROR_RATE_LIMIT = "SCM-1002";
-    public static final String ERROR_UNAVAILABLE_PROVIDER = "SCM-1003";
+    public static final String ERROR_TRANSFORMATION = "SCM-1002";
+    public static final String ERROR_VALIDATION = "SCM-1003";
 
 }

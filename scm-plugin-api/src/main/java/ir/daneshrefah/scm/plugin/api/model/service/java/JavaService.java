@@ -21,4 +21,8 @@ public class JavaService extends Service {
         this.javaImplementationClassName = javaImplementationClassName;
     }
 
+    @Override
+    public Object getServiceInfo() {
+        return "javaImplementationClassName:" + javaImplementationClassName;
+    }
 }

@@ -10,4 +10,8 @@ import ir.daneshrefah.scm.plugin.api.model.service.Service;
  * @since 2023-08-06
  */
 public class ParentService extends Service {
+    @Override
+    public Object getServiceInfo() {
+        return null;
+    }
 }

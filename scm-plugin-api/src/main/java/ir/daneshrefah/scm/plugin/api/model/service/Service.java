@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.model.BaseModel;
 
 /**
@@ -119,4 +120,7 @@ public abstract class Service extends BaseModel<String> {
     public void setResponseTransformerClass(String responseTransformerClass) {
         this.responseTransformerClass = responseTransformerClass;
     }
+
+    public abstract Object getServiceInfo();
+
 }

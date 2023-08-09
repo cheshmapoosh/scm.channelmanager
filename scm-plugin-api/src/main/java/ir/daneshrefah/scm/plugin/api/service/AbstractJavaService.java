@@ -13,20 +13,20 @@ import ir.daneshrefah.scm.plugin.api.model.service.Service;
  */
 public abstract class AbstractJavaService {
 
-    private final ServiceProducerTemplate serviceProducerTemplate;
+    private ServiceProducerTemplate serviceProducerTemplate;
+
+
+    public AbstractJavaService() {
+    }
 
     public AbstractJavaService(ServiceProducerTemplate serviceComponentExecutor) {
         this.serviceProducerTemplate = serviceComponentExecutor;
     }
 
-    public void execute(Message message) {
-        internalExecute(message);
+    public Object execute(Message message, Service service, Object payload) {
+        return internalExecute(service, payload);
     }
 
-    protected void callService(Service service, Message message) {
-        serviceProducerTemplate.callService(service, message);
-
-    }
-    protected abstract void internalExecute(Message message);
+    protected abstract Object internalExecute(Service service, Object payload);
 
 }

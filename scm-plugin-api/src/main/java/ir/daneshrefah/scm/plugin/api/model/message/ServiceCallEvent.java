@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
+import ir.daneshrefah.scm.plugin.api.model.service.ServiceImplementationType;
+
 import java.time.LocalDateTime;
 
 /**
@@ -11,26 +13,35 @@ import java.time.LocalDateTime;
  */
 public class ServiceCallEvent extends Event {
 
-    private String serviceComponentCode;
-    private String serviceProviderCode;
+    private String serviceCode;
+    private ServiceImplementationType implementationType;
+    private Object additionalInfo;
 
-    public ServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, String errorMessage, Boolean isSuccessful) {
-        super(EventType.SERVICE_CALL, startTime, endTime, errorMessage, isSuccessful);
+    public ServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, Object error, Object input, Object output, Boolean isSuccessful) {
+        super(EventType.SERVICE_CALL, startTime, endTime, error, input, output, isSuccessful);
     }
 
-    public String getServiceComponentCode() {
-        return serviceComponentCode;
+    public String getServiceCode() {
+        return serviceCode;
     }
 
-    public void setServiceComponentCode(String serviceComponentCode) {
-        this.serviceComponentCode = serviceComponentCode;
+    public void setServiceCode(String serviceCode) {
+        this.serviceCode = serviceCode;
     }
 
-    public String getServiceProviderCode() {
-        return serviceProviderCode;
+    public ServiceImplementationType getImplementationType() {
+        return implementationType;
     }
 
-    public void setServiceProviderCode(String serviceProviderCode) {
-        this.serviceProviderCode = serviceProviderCode;
+    public void setImplementationType(ServiceImplementationType implementationType) {
+        this.implementationType = implementationType;
+    }
+
+    public Object getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public void setAdditionalInfo(Object additionalInfo) {
+        this.additionalInfo = additionalInfo;
     }
 }

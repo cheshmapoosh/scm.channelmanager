@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.plugin.api.transformer;
 
 
+import ir.daneshrefah.scm.plugin.api.exception.BaseException;
+import ir.daneshrefah.scm.plugin.api.exception.TransformException;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 
 import java.time.LocalDateTime;
 
@@ -24,16 +27,20 @@ public abstract class AbstractTransformer {
         LocalDateTime startTime = LocalDateTime.now();
         Object result = null;
         boolean isSuccessful = true;
-        String errorMessage = null;
+        Exception error = null;
         try {
             result = internalTransform(payload, message, metadata);
         } catch (Exception e) {
             isSuccessful = false;
-            errorMessage = e.getMessage();
-            throw e;
+            error = ClassLoader.cloneExceptionWithoutStackTrace(e);
+            if (e instanceof BaseException) {
+                throw e;
+            } else {
+                throw new TransformException(this);
+            }
         } finally {
             LocalDateTime endTime = LocalDateTime.now();
-            message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, errorMessage,
+            message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, error, payload, result,
                     (null != result ? result.getClass().getName() : "null"));
         }
         return result;

@@ -28,10 +28,10 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     private final Map<String, AbstractExternalServiceProvider> serviceProviderMap = new HashMap<>();
 
     @Override
-    protected void executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message) {
+    protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message, Object requestPayload) {
         ExternalService externalService = (ExternalService) service;
         AbstractExternalServiceProvider provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
-        provider.execute(message, service);
+        return provider.execute(message, service, requestPayload);
     }
 
     public void registerExternalServiceProvider(ExternalServiceProvider serviceProviderModel) {

@@ -17,13 +17,10 @@ import org.springframework.stereotype.Service;
 public class JavaServiceExecutor extends ServiceExecutor {
 
     @Override
-    protected void executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message) {
+    protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message, Object requestPayload) {
         JavaService javaServiceModel = (JavaService) service;
         AbstractJavaService javaService = ClassLoader.findBeanOrCreateInstanceOfClass(
                 javaServiceModel.getJavaImplementationClassName(), AbstractJavaService.class);
-        javaService.execute();
-        getRequestTransformer(service);
-        getResponseTransformer(service);
-
+        return javaService.execute(message, service, requestPayload);
     }
 }

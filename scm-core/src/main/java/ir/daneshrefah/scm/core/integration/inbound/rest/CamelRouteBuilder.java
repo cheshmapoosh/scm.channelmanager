@@ -78,7 +78,7 @@ public class CamelRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Message message = exchange.getMessage().getBody(Message.class);
                     message.addEvent(EventType.WHOLE, message.getHeader().getReceiveTimestamp(),
-                            LocalDateTime.now(), true, null);
+                            LocalDateTime.now(), true, null, null, null);
                     restResponseGenerator.initResponseHeader(exchange);
                 })
                 .marshal(dataFormat)
