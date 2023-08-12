@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.plugin.api.model.message.EventType;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
@@ -38,11 +39,11 @@ public class CamelRouteBuilder extends RouteBuilder {
         this.channel = channel;
         this.serviceInvoker = serviceInvoker;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        ObjectMapper objectMapper = ApplicationConfig.getObjectMapperInstance();
+//        objectMapper.registerModule(new JavaTimeModule());
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addSerializer(Message.class, new MessageRestSerializer());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.registerModule(simpleModule);
         dataFormat = new JacksonDataFormat();
         dataFormat.setObjectMapper(objectMapper);

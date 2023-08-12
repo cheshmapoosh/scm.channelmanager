@@ -1,5 +1,11 @@
 package ir.daneshrefah.scm.core.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ir.daneshrefah.scm.core.integration.inbound.rest.MessageRestSerializer;
+import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -17,10 +23,31 @@ import org.springframework.context.annotation.Configuration;
 public class ApplicationConfig implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
+    private static ObjectMapper objectMapper;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
         ClassLoader.setApplicationContext(applicationContext);
+    }
+
+    private synchronized static void initObjectMapper() {
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        SimpleModule simpleModule = new SimpleModule();
+//        simpleModule.addSerializer(Message.class, new MessageRestSerializer());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.registerModule(simpleModule);
+    }
+    public ObjectMapper objectMapper() {
+        if (null == objectMapper)
+            initObjectMapper();
+        return objectMapper;
+    }
+
+    public static ObjectMapper getObjectMapperInstance() {
+        if (null == objectMapper)
+            initObjectMapper();
+        return objectMapper;
     }
 }
