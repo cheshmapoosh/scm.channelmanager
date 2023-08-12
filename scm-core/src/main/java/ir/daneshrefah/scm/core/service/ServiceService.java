@@ -1,8 +1,11 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.core.entity.limitation.ServiceLimitationEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
+import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
+import ir.daneshrefah.scm.core.repository.ServiceLimitationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
@@ -12,8 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -24,6 +25,8 @@ public class ServiceService {
     ServiceRepository serviceRepository;
     @Autowired
     ServiceRelationRepository serviceRelationRepository;
+    @Autowired
+    ServiceLimitationRepository serviceLimitationRepository;
 //    @Autowired
 //    ServiceComponentRelationRepository serviceComponentRelationRepository;
 //    @Autowired
@@ -40,4 +43,11 @@ public class ServiceService {
         List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
         return relations;
     }
+
+    public List<ServiceLimitation> findAllServiceLimitations() {
+        Iterable<ServiceLimitationEntity> limitationEntities = serviceLimitationRepository.findAll();
+        List<ServiceLimitation> limitations = ServiceMapper.INSTANCE.limitationEntitiesToModels(limitationEntities);
+        return limitations;
+    }
+
 }

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
 import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
@@ -10,6 +11,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.springframework.context.ApplicationContext;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,8 +26,9 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
     private CamelContext camelContext;
     private CamelRouteBuilder routeBuilder;
 
-    public RestInboundChannelGenerator(ApplicationContext applicationContext, ServiceProducerTemplate producerTemplate, Channel channel) {
-        super(applicationContext, producerTemplate, channel);
+    public RestInboundChannelGenerator(ApplicationContext applicationContext, ServiceProducerTemplate producerTemplate,
+                                       Channel channel, List<ServiceLimitation> serviceLimitations) {
+        super(applicationContext, producerTemplate, channel, serviceLimitations);
     }
 
     @Override
