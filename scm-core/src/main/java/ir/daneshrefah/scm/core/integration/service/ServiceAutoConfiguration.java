@@ -1,15 +1,14 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.core.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

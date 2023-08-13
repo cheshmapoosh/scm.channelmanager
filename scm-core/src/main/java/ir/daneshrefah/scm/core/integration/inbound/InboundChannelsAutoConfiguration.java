@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.core.integration.inbound;
 
-import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
+import ir.daneshrefah.scm.common.model.authority.terminal.TerminalAuthority;
 import ir.daneshrefah.scm.core.service.ChannelService;
 import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.core.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,14 +44,12 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
     @Autowired
     private TerminalService terminalService;
     @Autowired
-    private ServiceService serviceService;
-    @Autowired
     private ServiceProducerTemplate producerTemplate;
     private ApplicationContext applicationContext;
 
     @Bean
     public void registerInboundBeans() {
-        List<ServiceLimitation> serviceLimitations = serviceService.findAllServiceLimitations();
+        List<TerminalAuthority> terminalAuthorities = terminalService.findAllTerminalAuthorities();
         LOGGER.info("=================== start InboundChannelsAutoConfiguration ===================");
 
         Map<String, Class<? extends AbstractInboundChannelGenerator>> inboundChannelGeneratorMap = extractInboundChannelGeneratorMap();
@@ -73,7 +71,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
             }
 
             AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.createInstanceOfClass(
-                    inboundChannelGeneratorClass, applicationContext, producerTemplate, channel, serviceLimitations);
+                    inboundChannelGeneratorClass, applicationContext, producerTemplate, channel, terminalAuthorities);
             if (null == inboundChannelGenerator) {
                 LOGGER.warn("Error on create instance of inboundChannelGenerator found for channel '{}' with protocolCode '{}' with ClassName '{}'",
                         channel.getCode(), channel.getProtocolCode(), inboundChannelGeneratorClass.getName());

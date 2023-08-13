@@ -4,9 +4,7 @@ import ir.daneshrefah.scm.core.converter.ServiceRelationTypeConverter;
 import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.plugin.api.model.BaseModel;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
+import ir.daneshrefah.scm.common.model.service.TransformerType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import jakarta.persistence.*;
 

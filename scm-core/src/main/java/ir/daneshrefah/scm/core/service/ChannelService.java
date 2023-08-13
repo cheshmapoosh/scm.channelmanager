@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.service;
 import ir.daneshrefah.scm.core.entity.terminal.ChannelEntity;
 import ir.daneshrefah.scm.core.mapper.ChannelMapper;
 import ir.daneshrefah.scm.core.repository.ChannelRepository;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

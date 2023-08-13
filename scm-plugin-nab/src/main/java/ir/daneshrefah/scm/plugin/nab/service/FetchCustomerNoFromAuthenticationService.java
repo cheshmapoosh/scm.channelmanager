@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service("fetchCustomerNoFromAuthenticationService")
 public class FetchCustomerNoFromAuthenticationService extends AbstractJavaService {
     @Override
-    protected Object internalExecute(ir.daneshrefah.scm.plugin.api.model.service.Service service, Object payload) {
+    protected Object internalExecute(ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
         ObjectNode objPayload = (ObjectNode) payload;
         String cardNo = null;
         if (objPayload.has("cardNo")) {

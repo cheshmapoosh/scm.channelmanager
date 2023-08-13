@@ -4,12 +4,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import ir.daneshrefah.scm.plugin.api.model.message.*;
-import ir.daneshrefah.scm.plugin.api.model.message.Error;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Status;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Iterator;
 
 /**
  * Description of the class or purpose of the file.

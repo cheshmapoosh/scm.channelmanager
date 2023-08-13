@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Status;
 import org.apache.camel.Exchange;
 
 import java.util.HashMap;

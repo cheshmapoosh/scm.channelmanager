@@ -1,11 +1,12 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.core.entity.limitation.ServiceLimitationEntity;
-import ir.daneshrefah.scm.core.entity.service.*;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.core.entity.service.ExternalServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ParentServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
-import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
@@ -79,15 +80,15 @@ public interface ServiceMapper {
 
     List<ServiceRelation> relationEntitiesToModels(Iterable<ServiceRelationEntity> entities);
 
-    @Mapping(source = "service", target = "service", qualifiedByName = "toService")
-    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess")
-    @Mapping(source = "terminalServiceAccess.terminalEntity", target = "terminalServiceAccess.terminal")
-    @Mapping(source = "terminalServiceAccess.serviceEntity", target = "terminalServiceAccess.service", qualifiedByName = "toService")
-    @Mapping(source = "terminalServiceChannelAccess", target = "terminalServiceChannelAccess")
-    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity", target = "terminalServiceChannelAccess.terminalServiceAccess")
-    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity.terminalEntity", target = "terminalServiceChannelAccess.terminalServiceAccess.terminal")
-    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity.serviceEntity", target = "terminalServiceChannelAccess.terminalServiceAccess.service", qualifiedByName = "toService")
-    ServiceLimitation toModel(ServiceLimitationEntity entity);
-    List<ServiceLimitation> limitationEntitiesToModels(Iterable<ServiceLimitationEntity> entities);
+//    @Mapping(source = "service", target = "service", qualifiedByName = "toService")
+//    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess")
+//    @Mapping(source = "terminalServiceAccess.terminalEntity", target = "terminalServiceAccess.terminal")
+//    @Mapping(source = "terminalServiceAccess.serviceEntity", target = "terminalServiceAccess.service", qualifiedByName = "toService")
+//    @Mapping(source = "terminalServiceChannelAccess", target = "terminalServiceChannelAccess")
+//    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity", target = "terminalServiceChannelAccess.terminalServiceAccess")
+//    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity.terminalEntity", target = "terminalServiceChannelAccess.terminalServiceAccess.terminal")
+//    @Mapping(source = "terminalServiceChannelAccess.terminalServiceAccessEntity.serviceEntity", target = "terminalServiceChannelAccess.terminalServiceAccess.service", qualifiedByName = "toService")
+//    ServiceLimitation toModel(ServiceLimitationEntity entity);
+//    List<ServiceLimitation> limitationEntitiesToModels(Iterable<ServiceLimitationEntity> entities);
 
 }

@@ -1,15 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.

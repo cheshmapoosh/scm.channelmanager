@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import org.springframework.stereotype.Service;
 

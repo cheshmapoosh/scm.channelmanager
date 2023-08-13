@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import ir.daneshrefah.scm.plugin.api.model.BaseModel;
+import ir.daneshrefah.scm.common.BaseModel;
 
 public class ExternalServiceProvider extends BaseModel<String> {
     private String code;

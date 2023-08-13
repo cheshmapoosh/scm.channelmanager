@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 
 /**
  * Description of the class or purpose of the file.

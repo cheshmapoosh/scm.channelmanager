@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.Service;
 
 import java.util.List;
 

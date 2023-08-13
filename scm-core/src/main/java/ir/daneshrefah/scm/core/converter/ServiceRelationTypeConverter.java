@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

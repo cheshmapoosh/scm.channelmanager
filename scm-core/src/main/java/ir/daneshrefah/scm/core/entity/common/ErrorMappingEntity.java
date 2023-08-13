@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.entity.common;
 import ir.daneshrefah.scm.core.converter.MessageStatusTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.Status;
 import jakarta.persistence.*;
 
 /**

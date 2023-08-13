@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.plugin.api.transformer;
 
 import ir.daneshrefah.scm.plugin.api.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 
 import java.time.LocalDateTime;

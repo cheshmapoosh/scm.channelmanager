@@ -2,14 +2,12 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
-import ir.daneshrefah.scm.plugin.api.model.message.EventType;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.message.EventType;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;

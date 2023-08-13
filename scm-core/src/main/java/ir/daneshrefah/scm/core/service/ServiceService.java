@@ -1,11 +1,8 @@
 package ir.daneshrefah.scm.core.service;
 
-import ir.daneshrefah.scm.core.entity.limitation.ServiceLimitationEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
-import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
-import ir.daneshrefah.scm.core.repository.ServiceLimitationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
@@ -25,16 +22,14 @@ public class ServiceService {
     ServiceRepository serviceRepository;
     @Autowired
     ServiceRelationRepository serviceRelationRepository;
-    @Autowired
-    ServiceLimitationRepository serviceLimitationRepository;
 //    @Autowired
 //    ServiceComponentRelationRepository serviceComponentRelationRepository;
 //    @Autowired
 //    ServiceProducerTemplate serviceComponentExecutor;
 
-    public List<ir.daneshrefah.scm.plugin.api.model.service.Service> findServiceList() {
+    public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();
-        List<ir.daneshrefah.scm.plugin.api.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
         return services;
     }
 
@@ -42,12 +37,6 @@ public class ServiceService {
         Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
         List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
         return relations;
-    }
-
-    public List<ServiceLimitation> findAllServiceLimitations() {
-        Iterable<ServiceLimitationEntity> limitationEntities = serviceLimitationRepository.findAll();
-        List<ServiceLimitation> limitations = ServiceMapper.INSTANCE.limitationEntitiesToModels(limitationEntities);
-        return limitations;
     }
 
 }

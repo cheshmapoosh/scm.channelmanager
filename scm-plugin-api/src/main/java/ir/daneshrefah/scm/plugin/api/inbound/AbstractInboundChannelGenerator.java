@@ -1,11 +1,13 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
+import ir.daneshrefah.scm.common.model.authority.BaseAuthority;
+import ir.daneshrefah.scm.common.model.authority.terminal.TerminalAuthority;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.model.limitation.ServiceLimitation;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Channel;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Terminal;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Iterator;
@@ -20,17 +22,17 @@ import java.util.List;
  */
 public abstract class AbstractInboundChannelGenerator {
 
-    private List<ServiceLimitation> serviceLimitations;
     protected Channel channel;
     protected List<TerminalServiceChannelAccess> channelAccesses;
     protected ServiceProducerTemplate producerTemplate;
     protected ApplicationContext applicationContext;
+    private List<TerminalAuthority> authorities;
     public AbstractInboundChannelGenerator(ApplicationContext applicationContext, ServiceProducerTemplate producerTemplate,
-                                           Channel channel, List<ServiceLimitation> serviceLimitations) {
+                                           Channel channel, List<TerminalAuthority> authorities) {
         this.producerTemplate = producerTemplate;
         this.channel = channel;
         this.applicationContext = applicationContext;
-        this.serviceLimitations = serviceLimitations;
+        this.authorities = authorities;
     }
 
     public void setChannelAccesses(List<TerminalServiceChannelAccess> channelAccesses) {
@@ -49,11 +51,17 @@ public abstract class AbstractInboundChannelGenerator {
     private boolean isServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
         if (!isServiceAuthenticationAllowed(service, message))
             return false;
+        if (!isServiceSecondAuthenticationAllowed(service, message))
+            return false;
         if (!isAccountAuthorizationAllowed(service, message))
             return false;
         if (!isServiceAccessAllowed(service, message))
             return false;
         return isServiceWithdrawAllowed(service, message);
+    }
+
+    private boolean isServiceSecondAuthenticationAllowed(TerminalServiceChannelAccess service, Message message) {
+        return true;
     }
 
     private boolean isServiceAccessAllowed(TerminalServiceChannelAccess service, Message message) {
@@ -66,10 +74,15 @@ public abstract class AbstractInboundChannelGenerator {
         return true;
     }
 
-    private boolean isServiceAuthenticationAllowed(TerminalServiceChannelAccess service, Message message) {
-        Terminal terminal = service.getTerminalServiceAccess().getTerminal();
-        if (!terminal.getSupportCheckAuthentication() && !terminal.getSupportCheckSecondAuthentication())
+    private boolean isServiceAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
+        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
+        Service service = serviceAccess.getTerminalServiceAccess().getService();
+        if (!terminal.getSupportCheckAuthentication()) {
             return true;
+        }
+        if (!service.getCheckAccessFirstAuthentication()) {
+            return true;
+        }
 //        TODO
 //        1) check terminal support "checkAuthentication" and "checkSecondAuthentication". if not return true
 //        2) check service support "checkAuthentication" and "checkSecondAuthentication". if not return true
@@ -86,11 +99,11 @@ public abstract class AbstractInboundChannelGenerator {
     }
 
     private boolean isServiceWithdrawAllowed(TerminalServiceChannelAccess service, Message message) {
-        for (Iterator<ServiceLimitation> iterator = serviceLimitations.iterator(); iterator.hasNext(); ) {
-            ServiceLimitation serviceLimitation = iterator.next();
-            if (!serviceLimitation.isAllowServiceCall(service, message))
-                return false;
-        }
+//        for (Iterator<TerminalServiceWithdrawAuthority> iterator = serviceLimitations.iterator(); iterator.hasNext(); ) {
+//            TerminalServiceWithdrawAuthority serviceLimitation = iterator.next();
+//            if (!serviceLimitation.isGranted(service, message))
+//                return false;
+//        }
         return true;
     }
 

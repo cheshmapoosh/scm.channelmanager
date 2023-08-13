@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.core.entity.terminal.TerminalEntity;
-import ir.daneshrefah.scm.plugin.api.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 

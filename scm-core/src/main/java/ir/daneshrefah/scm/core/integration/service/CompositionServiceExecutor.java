@@ -3,8 +3,7 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.model.message.Event;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
@@ -31,7 +30,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private ServiceService serviceService;
 
     @Override
-    protected Object executeInternal(ir.daneshrefah.scm.plugin.api.model.service.Service service, Message message,
+    protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message,
                                      Object requestPayload) {
 
         CompositionService compositionService = (CompositionService) service;

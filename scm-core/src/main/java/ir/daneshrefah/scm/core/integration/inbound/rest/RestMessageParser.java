@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
-import ir.daneshrefah.scm.plugin.api.model.message.Header;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.message.Header;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 

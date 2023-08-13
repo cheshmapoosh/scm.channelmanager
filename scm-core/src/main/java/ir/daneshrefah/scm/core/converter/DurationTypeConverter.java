@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.plugin.api.type.DurationType;
+import ir.daneshrefah.scm.common.type.DurationType;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

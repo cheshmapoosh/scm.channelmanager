@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
+import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
 import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.TransformerType;
 import jakarta.persistence.*;
 
 @Entity
@@ -19,6 +21,9 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private String code;
     private String title;
     private String metadata;
+    @Column(name = "SERVICE_TYPE_CODE", insertable = false, updatable = false)
+    @Convert(converter = ServiceTypeConverter.class)
+    private ServiceType type;
     @Column(name = "SERVICE_IMPLEMENTATION_TYPE_CODE", insertable = false, updatable = false)
     @Convert(converter = ServiceImplementationTypeConverter.class)
     private ServiceImplementationType implementationType;
@@ -40,6 +45,15 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private String requestTransformerClass;
     @Column(name = "TRANSFORM_CLASS_RESPONSE")
     private String responseTransformerClass;
+    private Boolean checkAccessFirstAuthentication;
+    private Boolean checkAccessSecondAuthentication;
+    private Boolean checkAccessService;
+    private Boolean checkAccessAccount;
+    private Boolean checkAccessWithdraw;
+    @Column(name = "PROPERTY_NAME_AMOUNT")
+    private String amountProperty;
+    @Column(name = "PROPERTY_NAME_ACCOUNT")
+    private String accountProperty;
 
 
     @Override
@@ -146,5 +160,69 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
 
     public void setResponseTransformerClass(String responseTransformerClass) {
         this.responseTransformerClass = responseTransformerClass;
+    }
+
+    public ServiceType getType() {
+        return type;
+    }
+
+    public void setType(ServiceType type) {
+        this.type = type;
+    }
+
+    public Boolean getCheckAccessFirstAuthentication() {
+        return checkAccessFirstAuthentication;
+    }
+
+    public void setCheckAccessFirstAuthentication(Boolean checkAccessFirstAuthentication) {
+        this.checkAccessFirstAuthentication = checkAccessFirstAuthentication;
+    }
+
+    public Boolean getCheckAccessSecondAuthentication() {
+        return checkAccessSecondAuthentication;
+    }
+
+    public void setCheckAccessSecondAuthentication(Boolean checkAccessSecondAuthentication) {
+        this.checkAccessSecondAuthentication = checkAccessSecondAuthentication;
+    }
+
+    public Boolean getCheckAccessService() {
+        return checkAccessService;
+    }
+
+    public void setCheckAccessService(Boolean checkAccessService) {
+        this.checkAccessService = checkAccessService;
+    }
+
+    public Boolean getCheckAccessAccount() {
+        return checkAccessAccount;
+    }
+
+    public void setCheckAccessAccount(Boolean checkAccessAccount) {
+        this.checkAccessAccount = checkAccessAccount;
+    }
+
+    public Boolean getCheckAccessWithdraw() {
+        return checkAccessWithdraw;
+    }
+
+    public void setCheckAccessWithdraw(Boolean checkAccessWithdraw) {
+        this.checkAccessWithdraw = checkAccessWithdraw;
+    }
+
+    public String getAmountProperty() {
+        return amountProperty;
+    }
+
+    public void setAmountProperty(String amountProperty) {
+        this.amountProperty = amountProperty;
+    }
+
+    public String getAccountProperty() {
+        return accountProperty;
+    }
+
+    public void setAccountProperty(String accountProperty) {
+        this.accountProperty = accountProperty;
     }
 }

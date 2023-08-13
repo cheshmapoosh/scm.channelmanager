@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ir.daneshrefah.scm.core.integration.inbound.rest.MessageRestSerializer;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

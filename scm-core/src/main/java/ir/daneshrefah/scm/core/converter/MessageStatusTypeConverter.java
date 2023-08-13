@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.Status;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

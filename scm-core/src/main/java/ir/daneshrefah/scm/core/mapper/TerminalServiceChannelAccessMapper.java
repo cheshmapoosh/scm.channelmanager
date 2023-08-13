@@ -1,11 +1,9 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceChannelAccessEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.plugin.api.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

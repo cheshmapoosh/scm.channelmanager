@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
-import ir.daneshrefah.scm.plugin.api.model.BaseModel;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.service.TransformerType;
+import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.TransformerType;
 
 /**
  * Description of the class or purpose of the file.

@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
-import ir.daneshrefah.scm.plugin.api.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.service.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import org.springframework.stereotype.Component;
 

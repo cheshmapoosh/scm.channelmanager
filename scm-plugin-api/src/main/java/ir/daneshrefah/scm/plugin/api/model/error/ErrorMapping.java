@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.error;
 
-import ir.daneshrefah.scm.plugin.api.model.BaseModel;
-import ir.daneshrefah.scm.plugin.api.model.message.Status;
+import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 
 /**
