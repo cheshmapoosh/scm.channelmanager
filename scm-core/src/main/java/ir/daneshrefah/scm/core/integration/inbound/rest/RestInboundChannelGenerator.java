@@ -55,17 +55,4 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
         }
     }
 
-    /*@Override
-    public void initInbound() {
-        Map<String, CamelContext> beanMap  = applicationContext.getBeansOfType(CamelContext.class);
-        if (!beanMap.isEmpty()) {
-            camelContext = beanMap.values().iterator().next();
-        }
-        try {
-            camelContext.addRoutes(new CamelRouteBuilder(channel, channelAccesses));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }*/
-
 }

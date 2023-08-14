@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 
+import ir.daneshrefah.scm.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
@@ -18,8 +19,7 @@ import java.time.LocalDateTime;
 public class Header implements Serializable {
 
     private String contentType;
-    private Object authorization;
-    private String claimCode;
+    private Authentication authentication;
     private String clientCorrelationId;
     private String correlationId;
     private LocalDateTime clientTransactionTimestamp;
@@ -37,20 +37,12 @@ public class Header implements Serializable {
         this.contentType = contentType;
     }
 
-    public Object getAuthorization() {
-        return authorization;
+    public Authentication getAuthentication() {
+        return authentication;
     }
 
-    public void setAuthorization(Object authorization) {
-        this.authorization = authorization;
-    }
-
-    public String getClaimCode() {
-        return claimCode;
-    }
-
-    public void setClaimCode(String claimCode) {
-        this.claimCode = claimCode;
+    public void setAuthentication(Authentication authentication) {
+        this.authentication = authentication;
     }
 
     public String getClientCorrelationId() {

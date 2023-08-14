@@ -34,8 +34,13 @@ public class RestMessageParser {
         Header header = new Header();
         header.setService(channelAccess);
         header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
-        header.setAuthorization(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class));
-        header.setClaimCode(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLAIM, String.class));
+        String token = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class);
+        String claim = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLAIM, String.class);
+//        Authorization: Basic base64(username:password)
+//        Authorization: Digest username="username", realm="realm", nonce="nonce", uri="uri", response="hash"
+//        Authorization: Bearer token
+
+        header.setAuthentication(null);
         header.setClientCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, String.class));
         header.setCorrelationId(StringUtils.generateGuid());
         header.setChannel(channelAccess.getChannel()); //HttpConstants.HTTP_HEADER_CHANNEL

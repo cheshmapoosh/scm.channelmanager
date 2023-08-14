@@ -40,32 +40,46 @@ public abstract class AbstractInboundChannelGenerator {
     }
 
     private boolean checkServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
-        if (!isServiceAuthenticationAllowed(service, message))
+        if (!checkServiceAuthenticationAllowed(service, message))
             return false;
         if (!isServiceSecondAuthenticationAllowed(service, message))
             return false;
-        if (!isAccountAuthorizationAllowed(service, message))
+        if (!checkAccountAuthorizationAllowed(service, message))
             return false;
-        if (!isServiceAccessAllowed(service, message))
+        if (!checkServiceAccessAllowed(service, message))
             return false;
         return isServiceWithdrawAllowed(service, message);
     }
 
-    private boolean isServiceSecondAuthenticationAllowed(TerminalServiceChannelAccess service, Message message) {
-        return true;
-    }
-
-    private boolean isServiceAccessAllowed(TerminalServiceChannelAccess service, Message message) {
-        Terminal terminal = service.getTerminalServiceAccess().getTerminal();
-//        if ()
+    private boolean isServiceSecondAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
+        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
+        Service service = serviceAccess.getTerminalServiceAccess().getService();
+        if (!terminal.getSupportCheckSecondAuthentication()) {
+            return true;
+        }
+        if (!service.getCheckAccessSecondAuthentication()) {
+            return true;
+        }
 //        TODO
-//        1) check terminal support "checkServiceAccess". if not return true
-//        2) check service support "checkServiceAccess". if not return true
-//        3) iterate over ServiceAccessAuthority (UserServiceAccessAuthority/AccountServiceAccessAuthority) authorities of user. if any matched (with/without account) return true
+//        3) if second authentication matched return true
         return true;
     }
 
-    private boolean isServiceAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
+    private boolean checkServiceAccessAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
+        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
+        Service service = serviceAccess.getTerminalServiceAccess().getService();
+        if (!terminal.getSupportCheckServiceAccess()) {
+            return true;
+        }
+        if (!service.getCheckAccessService()) {
+            return true;
+        }
+//        TODO
+//        3) check AccountAccessAuthority of user
+        return true;
+    }
+
+    private boolean checkServiceAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
         Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
         Service service = serviceAccess.getTerminalServiceAccess().getService();
         if (!terminal.getSupportCheckAuthentication()) {
@@ -75,17 +89,21 @@ public abstract class AbstractInboundChannelGenerator {
             return true;
         }
 //        TODO
-//        1) check terminal support "checkAuthentication" and "checkSecondAuthentication". if not return true
-//        2) check service support "checkAuthentication" and "checkSecondAuthentication". if not return true
 //        3) if authentication matched return true
         return true;
     }
 
-    private boolean isAccountAuthorizationAllowed(TerminalServiceChannelAccess service, Message message) {
+    private boolean checkAccountAuthorizationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
+        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
+        Service service = serviceAccess.getTerminalServiceAccess().getService();
+        if (!terminal.getSupportCheckAccountAuthorization()) {
+            return true;
+        }
+        if (!service.getCheckAccessAccount()) {
+            return true;
+        }
 //        TODO
-//        1) check terminal support "checkAccountAuthorization". if not return true
-//        2) check service support "checkAccountAuthorization". if not return true
-//        3) iterate over UserAccountAuthority list. if any matched return true
+//        3) check AccountAccessAuthority of user
         return true;
     }
 
