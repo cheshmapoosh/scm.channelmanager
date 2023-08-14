@@ -1,12 +1,14 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
-import ir.daneshrefah.scm.common.model.authority.terminal.TerminalAuthority;
+import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.CamelContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
@@ -18,22 +20,19 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-08-06
  */
+@Component
 public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator {
 
+    @Autowired
     private CamelContext camelContext;
     private CamelRouteBuilder routeBuilder;
 
-    public RestInboundChannelGenerator(ApplicationContext applicationContext, ServiceProducerTemplate producerTemplate,
-                                       Channel channel, List<TerminalAuthority> authorities) {
-        super(applicationContext, producerTemplate, channel, authorities);
-    }
-
     @Override
     protected void initConfig() {
-        Map<String, CamelContext> beanMap  = applicationContext.getBeansOfType(CamelContext.class);
-        if (!beanMap.isEmpty()) {
-            camelContext = beanMap.values().iterator().next();
-        }
+//        Map<String, CamelContext> beanMap  = applicationContext.getBeansOfType(CamelContext.class);
+//        if (!beanMap.isEmpty()) {
+//            camelContext = beanMap.values().iterator().next();
+//        }
         routeBuilder = new CamelRouteBuilder(channel, this::invokeService);
         /*try {
             camelContext.addRoutes(new CamelRouteBuilder(channel, channelAccesses));
@@ -68,9 +67,5 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
             throw new RuntimeException(e);
         }
     }*/
-
-    public static String getProtocolKey() {
-        return "REST";
-    }
 
 }

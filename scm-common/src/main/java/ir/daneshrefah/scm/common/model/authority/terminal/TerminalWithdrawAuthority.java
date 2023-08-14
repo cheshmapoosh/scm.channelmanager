@@ -1,60 +1,57 @@
 package ir.daneshrefah.scm.common.model.authority.terminal;
 
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.authority.AuthorityType;
-import ir.daneshrefah.scm.common.model.authority.WithdrawAuthority;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.type.DurationType;
 
 /**
  * Description of the class or purpose of the file.
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-07-19
+ * @since 2023-08-14
  */
-public class TerminalWithdrawAuthority extends WithdrawAuthority implements TerminalAuthority {
+public class TerminalWithdrawAuthority extends Authority {
 
-    private Terminal terminal;
-    private Channel channel;
-    private Service service;
-    private AuthenticationMethod authenticationMethod;
-
-    public Terminal getTerminal() {
-        return terminal;
-    }
-
-    public void setTerminal(Terminal terminal) {
-        this.terminal = terminal;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public void setChannel(Channel channel) {
-        this.channel = channel;
-    }
-
-    public Service getService() {
-        return service;
-    }
-
-    public void setService(Service service) {
-        this.service = service;
-    }
-
-    public AuthenticationMethod getAuthenticationMethod() {
-        return authenticationMethod;
-    }
-
-    public void setAuthenticationMethod(AuthenticationMethod authenticationMethod) {
-        this.authenticationMethod = authenticationMethod;
-    }
+    private DurationType withdrawDurationType;
+    private Integer withdrawDuration;
+    private Integer withdrawMinAmount;
+    private Integer withdrawMaxAmount;
 
     @Override
-    public AuthorityType getType() {
+    public AuthorityType getAuthorityType() {
         return AuthorityType.TERMINAL_WITHDRAW;
+    }
+
+    public DurationType getWithdrawDurationType() {
+        return withdrawDurationType;
+    }
+
+    public void setWithdrawDurationType(DurationType withdrawDurationType) {
+        this.withdrawDurationType = withdrawDurationType;
+    }
+
+    public Integer getWithdrawDuration() {
+        return withdrawDuration;
+    }
+
+    public void setWithdrawDuration(Integer withdrawDuration) {
+        this.withdrawDuration = withdrawDuration;
+    }
+
+    public Integer getWithdrawMinAmount() {
+        return withdrawMinAmount;
+    }
+
+    public void setWithdrawMinAmount(Integer withdrawMinAmount) {
+        this.withdrawMinAmount = withdrawMinAmount;
+    }
+
+    public Integer getWithdrawMaxAmount() {
+        return withdrawMaxAmount;
+    }
+
+    public void setWithdrawMaxAmount(Integer withdrawMaxAmount) {
+        this.withdrawMaxAmount = withdrawMaxAmount;
     }
 }

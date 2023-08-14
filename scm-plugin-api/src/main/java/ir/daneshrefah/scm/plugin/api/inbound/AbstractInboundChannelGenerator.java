@@ -1,14 +1,12 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
-import ir.daneshrefah.scm.common.model.authority.BaseAuthority;
-import ir.daneshrefah.scm.common.model.authority.terminal.TerminalAuthority;
+import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import org.springframework.context.ApplicationContext;
 
 import java.util.Iterator;
 import java.util.List;
@@ -25,21 +23,14 @@ public abstract class AbstractInboundChannelGenerator {
     protected Channel channel;
     protected List<TerminalServiceChannelAccess> channelAccesses;
     protected ServiceProducerTemplate producerTemplate;
-    protected ApplicationContext applicationContext;
-    private List<TerminalAuthority> authorities;
-    public AbstractInboundChannelGenerator(ApplicationContext applicationContext, ServiceProducerTemplate producerTemplate,
-                                           Channel channel, List<TerminalAuthority> authorities) {
+    private List<Authority> authorities;
+
+    public final void initInbound(ServiceProducerTemplate producerTemplate,
+                                  Channel channel, List<TerminalServiceChannelAccess> channelAccesses, List<Authority> authorities) {
         this.producerTemplate = producerTemplate;
         this.channel = channel;
-        this.applicationContext = applicationContext;
-        this.authorities = authorities;
-    }
-
-    public void setChannelAccesses(List<TerminalServiceChannelAccess> channelAccesses) {
         this.channelAccesses = channelAccesses;
-    }
-
-    public final void initInbound() {
+        this.authorities = authorities;
         initConfig();
         for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
@@ -48,7 +39,7 @@ public abstract class AbstractInboundChannelGenerator {
         finalizeConfig();
     }
 
-    private boolean isServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
+    private boolean checkServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
         if (!isServiceAuthenticationAllowed(service, message))
             return false;
         if (!isServiceSecondAuthenticationAllowed(service, message))
@@ -114,15 +105,11 @@ public abstract class AbstractInboundChannelGenerator {
     protected abstract void registerTerminalService(TerminalServiceChannelAccess channelAccess);
 
     protected final Message invokeService(TerminalServiceChannelAccess service, Message message) {
-        if (!isServiceCallAllowed(service, message)) {
+        if (!checkServiceCallAllowed(service, message)) {
             return message;
         }
         producerTemplate.callService(service.getTerminalServiceAccess().getService(), message);
         return message;
-    }
-
-    public static String getProtocolKey() {
-        return null;
     }
 
 }

@@ -1,7 +1,11 @@
 package ir.daneshrefah.scm.core.entity.authority;
 
 import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.authority.AuthorityType;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.core.converter.AuthenticationMethodConverter;
+import ir.daneshrefah.scm.core.converter.AuthorityTypeConverter;
+import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.terminal.ChannelEntity;
@@ -17,6 +21,9 @@ public abstract class AuthorityEntity extends AbstractEntity<String> {
     @Id
     @Column(name = "AUTHORITY_ID")
     private String id;
+    @Column(name = "AUTHORITY_TYPE_CODE", insertable = false, updatable = false)
+    @Convert(converter = AuthorityTypeConverter.class)
+    private AuthorityType authorityType;
     @ManyToOne
     @JoinColumn(name = "SOURCE_TERMINAL_ID")
     private TerminalEntity sourceTerminal;
@@ -47,6 +54,14 @@ public abstract class AuthorityEntity extends AbstractEntity<String> {
 
     public TerminalEntity getSourceTerminal() {
         return sourceTerminal;
+    }
+
+    public AuthorityType getAuthorityType() {
+        return authorityType;
+    }
+
+    public void setAuthorityType(AuthorityType authorityType) {
+        this.authorityType = authorityType;
     }
 
     public void setSourceTerminal(TerminalEntity sourceTerminal) {

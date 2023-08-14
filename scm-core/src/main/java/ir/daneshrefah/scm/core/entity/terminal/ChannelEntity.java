@@ -11,7 +11,7 @@ public class ChannelEntity extends AbstractEntity<String> {
     private String id;
     private String code;
     private String title;
-    private String protocolCode;
+    private String channelClassName;
     private String metadata;
 
     @Override
@@ -40,12 +40,12 @@ public class ChannelEntity extends AbstractEntity<String> {
         this.title = title;
     }
 
-    public String getProtocolCode() {
-        return protocolCode;
+    public String getChannelClassName() {
+        return channelClassName;
     }
 
-    public void setProtocolCode(String protocol) {
-        this.protocolCode = protocol;
+    public void setChannelClassName(String protocol) {
+        this.channelClassName = protocol;
     }
 
     public String getMetadata() {

@@ -1,19 +1,17 @@
 package ir.daneshrefah.scm.core.integration.inbound;
 
-import ir.daneshrefah.scm.common.model.authority.terminal.TerminalAuthority;
+import ir.daneshrefah.scm.common.model.authority.Authority;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.service.ChannelService;
-import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.core.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -49,11 +47,11 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
 
     @Bean
     public void registerInboundBeans() {
-        List<TerminalAuthority> terminalAuthorities = terminalService.findAllTerminalAuthorities();
+        List<Authority> terminalAuthorities = terminalService.findAllTerminalAuthorities();
         LOGGER.info("=================== start InboundChannelsAutoConfiguration ===================");
 
-        Map<String, Class<? extends AbstractInboundChannelGenerator>> inboundChannelGeneratorMap = extractInboundChannelGeneratorMap();
-        LOGGER.info("found '{}' inboundChannelGenerator.", null != inboundChannelGeneratorMap ? inboundChannelGeneratorMap.size() : "null");
+//        Map<String, Class<? extends AbstractInboundChannelGenerator>> inboundChannelGeneratorMap = extractInboundChannelGeneratorMap();
+//        LOGGER.info("found '{}' inboundChannelGenerator.", null != inboundChannelGeneratorMap ? inboundChannelGeneratorMap.size() : "null");
 
         LOGGER.info("start fetch channel list from database.");
         List<Channel> channels = channelService.findChannelList();
@@ -61,63 +59,58 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
 
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
             Channel channel = iterator.next();
-            LOGGER.info("start init channel with code '{}', with protocol '{}'.", channel.getCode(), channel.getProtocolCode());
+            LOGGER.info("start init channel with code '{}', with protocol '{}'.", channel.getCode(), channel.getChannelClassName());
 
-            Class<? extends AbstractInboundChannelGenerator> inboundChannelGeneratorClass = inboundChannelGeneratorMap.get(channel.getProtocolCode());
-            if (null == inboundChannelGeneratorClass) {
-                LOGGER.warn("No inboundChannelGenerator found for channel '{}' with protocolCode '{}'",
-                        channel.getCode(), channel.getProtocolCode());
-                continue;
-            }
+//            Class<? extends AbstractInboundChannelGenerator> inboundChannelGeneratorClass = inboundChannelGeneratorMap.get(channel.getChannelClassName());
+//            if (null == inboundChannelGeneratorClass) {
+//                LOGGER.warn("No inboundChannelGenerator found for channel '{}' with protocolCode '{}'",
+//                        channel.getCode(), channel.getChannelClassName());
+//                continue;
+//            }
+//
+//            AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.createInstanceOfClass(
+//                    inboundChannelGeneratorClass, applicationContext, producerTemplate, channel, terminalAuthorities);
 
-            AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.createInstanceOfClass(
-                    inboundChannelGeneratorClass, applicationContext, producerTemplate, channel, terminalAuthorities);
+            AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.findBeanOrCreateInstanceOfClass(channel.getChannelClassName(),
+                    AbstractInboundChannelGenerator.class);
             if (null == inboundChannelGenerator) {
                 LOGGER.warn("Error on create instance of inboundChannelGenerator found for channel '{}' with protocolCode '{}' with ClassName '{}'",
-                        channel.getCode(), channel.getProtocolCode(), inboundChannelGeneratorClass.getName());
+                        channel.getCode(), channel.getChannelClassName(), channel.getChannelClassName());
                 continue;
             }
 
             List<TerminalServiceChannelAccess> terminalServiceChannelAccessList = terminalService.
                     findTerminalServiceChannelAccessByChannelId(channel.getId());
-            inboundChannelGenerator.setChannelAccesses(terminalServiceChannelAccessList);
-            beanFactory.addBeanPostProcessor(new BeanPostProcessor() {
-                @Override
-                public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-                    if (bean instanceof AbstractInboundChannelGenerator) {
-                        ((AbstractInboundChannelGenerator) bean).initInbound();
-                    }
-                    return bean;
-                }
-            });
-            beanFactory.registerSingleton("inboundChannelGeneratorBean_" + channel.getCode(), inboundChannelGenerator);
-            AbstractInboundChannelGenerator  bean = (AbstractInboundChannelGenerator) beanFactory.getBean("inboundChannelGeneratorBean_" + channel.getCode());
-            bean.initInbound();
+
+            inboundChannelGenerator.initInbound(producerTemplate, channel, terminalServiceChannelAccessList, terminalAuthorities);
+//            inboundChannelGenerator.setChannelAccesses(terminalServiceChannelAccessList);
+//            AbstractInboundChannelGenerator bean = (AbstractInboundChannelGenerator) beanFactory.getBean("inboundChannelGeneratorBean_" + channel.getCode());
+//            bean.initInbound();
             LOGGER.info("inboundChannelGenerator '{}' for channel '{}' with protocolCode '{}' registration completed successfully.",
-                    inboundChannelGeneratorClass.getName(), channel.getCode(), channel.getProtocolCode());
+                    channel.getChannelClassName(), channel.getCode(), channel.getChannelClassName());
 
         }
 
         LOGGER.info("=================== end InboundChannelsAutoConfiguration ===================");
     }
 
-    private Map<String, Class<? extends AbstractInboundChannelGenerator>> extractInboundChannelGeneratorMap() {
-        List<Class<? extends AbstractInboundChannelGenerator>> classList = ClassLoader.loadSubclasses(AbstractInboundChannelGenerator.class, "ir.daneshrefah.scm");
-        Map<String, Class<? extends AbstractInboundChannelGenerator>> resultMap = classList.stream()
-                .collect(Collectors.toMap(cls -> {
-                    try {
-                        String key = (String) cls.getMethod("getProtocolKey").invoke(null);
-                        LOGGER.info("InboundChannelGenerator '{}' with class '{}' registered.", key, cls.getName());
-                        return key;
-                    } catch (Exception e) {
-                        LOGGER.error("error on initInboundChannelGeneratorMap.", e);
-                        return null;
-                    }
-                }, cls -> cls));
-
-        // Print the result map
-        return resultMap;
-    }
+//    private Map<String, Class<? extends AbstractInboundChannelGenerator>> extractInboundChannelGeneratorMap() {
+//        List<Class<? extends AbstractInboundChannelGenerator>> classList = ClassLoader.loadSubclasses(AbstractInboundChannelGenerator.class, "ir.daneshrefah.scm");
+//        Map<String, Class<? extends AbstractInboundChannelGenerator>> resultMap = classList.stream()
+//                .collect(Collectors.toMap(cls -> {
+//                    try {
+//                        String key = (String) cls.getMethod("getProtocolKey").invoke(null);
+//                        LOGGER.info("InboundChannelGenerator '{}' with class '{}' registered.", key, cls.getName());
+//                        return key;
+//                    } catch (Exception e) {
+//                        LOGGER.error("error on initInboundChannelGeneratorMap.", e);
+//                        return null;
+//                    }
+//                }, cls -> cls));
+//
+//        // Print the result map
+//        return resultMap;
+//    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

@@ -14,7 +14,7 @@ public class Channel extends BaseModel<String> {
 
     private String code;
     private String title;
-    private String protocolCode;
+    private String channelClassName;
     private String metadata;
 
     public String getCode() {
@@ -33,12 +33,12 @@ public class Channel extends BaseModel<String> {
         this.title = title;
     }
 
-    public String getProtocolCode() {
-        return protocolCode;
+    public String getChannelClassName() {
+        return channelClassName;
     }
 
-    public void setProtocolCode(String protocolCode) {
-        this.protocolCode = protocolCode;
+    public void setChannelClassName(String channelClassName) {
+        this.channelClassName = channelClassName;
     }
 
     public String getMetadata() {
