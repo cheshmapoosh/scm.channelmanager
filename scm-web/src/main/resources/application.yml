@@ -4,6 +4,10 @@ scm:
     host: localhost
     port: 8582
 
+server:
+  servlet:
+    context-path: /scm
+  port: 8080
 spring:
   datasource:
     url: jdbc:db2://10.10.5.70:50000/DBREFSW
@@ -14,3 +18,7 @@ spring:
     properties:
       hibernate:
         default_schema: REF
+#  mvc:
+#    servlet:
+#      load-on-startup: 1
+#      path: /

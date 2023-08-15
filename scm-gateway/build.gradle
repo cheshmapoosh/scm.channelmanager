@@ -19,5 +19,6 @@ dependencies {
 //    api 'org.apache.camel.springboot:camel-netty-starter'
 //    api 'org.apache.camel.springboot:camel-netty-http-starter'
 //    api 'org.apache.camel.springboot:camel-json-validator-starter'
+    api 'org.springframework.boot:spring-boot-starter-web'
     api project(':scm-core')
 }

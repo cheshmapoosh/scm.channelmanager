@@ -20,6 +20,7 @@ public class Header implements Serializable {
 
     private String contentType;
     private Authentication authentication;
+    private Boolean secondLevelAuthenticated;
     private String clientCorrelationId;
     private String correlationId;
     private LocalDateTime clientTransactionTimestamp;
@@ -43,6 +44,14 @@ public class Header implements Serializable {
 
     public void setAuthentication(Authentication authentication) {
         this.authentication = authentication;
+    }
+
+    public Boolean getSecondLevelAuthenticated() {
+        return secondLevelAuthenticated;
+    }
+
+    public void setSecondLevelAuthenticated(Boolean secondLevelAuthenticated) {
+        this.secondLevelAuthenticated = secondLevelAuthenticated;
     }
 
     public String getClientCorrelationId() {
