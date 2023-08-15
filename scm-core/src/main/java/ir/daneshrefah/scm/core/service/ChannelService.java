@@ -23,7 +23,7 @@ public class ChannelService {
         return ChannelMapper.INSTANCE.entitiesToModels(channelEntities);
     }
 
-    public Page<Channel> findChannelList(Pageable pageable) {
+    public Page<Channel> findPagedChannelList(Pageable pageable) {
         Page<ChannelEntity> channelEntities = channelRepository
                 .findAll(pageable);
         return ChannelMapper.INSTANCE.pageEntityToPageModel(channelEntities);

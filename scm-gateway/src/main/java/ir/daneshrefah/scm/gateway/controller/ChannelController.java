@@ -34,7 +34,7 @@ public class ChannelController extends AbstractController {
 
     @GetMapping("/paged")
     public ResponseEntity<PagingResponse<Channel>> getChannelPage(Pageable pageable) {
-        Page<Channel> channels = channelService.findChannelList(pageable);
+        Page<Channel> channels = channelService.findPagedChannelList(pageable);
         PagingResponse<Channel> response = createPagingResponse(channels.getContent(), pageable, channels.getTotalElements());
         return ResponseEntity.ok(response);
     }
