@@ -19,7 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/terminal")
-public class TerminalController {
+public class TerminalController extends AbstractController {
 
     @Autowired
     private TerminalService terminalService;

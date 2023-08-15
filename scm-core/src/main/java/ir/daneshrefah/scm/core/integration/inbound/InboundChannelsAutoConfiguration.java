@@ -20,8 +20,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -54,7 +52,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
 //        LOGGER.info("found '{}' inboundChannelGenerator.", null != inboundChannelGeneratorMap ? inboundChannelGeneratorMap.size() : "null");
 
         LOGGER.info("start fetch channel list from database.");
-        List<Channel> channels = channelService.findChannelList();
+        List<Channel> channels = channelService.findAllChannelList();
         LOGGER.info("found '{}' channel.", null != channels ? channels.size() : "null");
 
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {

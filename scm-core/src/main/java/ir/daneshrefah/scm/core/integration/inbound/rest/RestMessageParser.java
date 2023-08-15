@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.authentication.Authentication;
+import ir.daneshrefah.scm.common.model.authentication.AuthenticationVerifier;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -35,12 +37,21 @@ public class RestMessageParser {
         header.setService(channelAccess);
         header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
         String token = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class);
+        if (StringUtils.isNotEmpty(token)) {
+            String tokenDelegated = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION_DELEGATED, String.class);
+            Authentication authentication = AuthenticationVerifier.verifyAuthenticationRequest(token, tokenDelegated);
+            header.setAuthentication(authentication);
+        }
         String claim = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLAIM, String.class);
+        if (StringUtils.isNotEmpty(claim) /*&& service.checkSecondLevel()*/) {
+            boolean authentication = AuthenticationVerifier.verifySecondAuthenticationRequest(token);
+            header.setSecondLevelAuthenticated(authentication);
+        }
 //        Authorization: Basic base64(username:password)
 //        Authorization: Digest username="username", realm="realm", nonce="nonce", uri="uri", response="hash"
 //        Authorization: Bearer token
+//        Authorization: Session sessionKey
 
-        header.setAuthentication(null);
         header.setClientCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, String.class));
         header.setCorrelationId(StringUtils.generateGuid());
         header.setChannel(channelAccess.getChannel()); //HttpConstants.HTTP_HEADER_CHANNEL
