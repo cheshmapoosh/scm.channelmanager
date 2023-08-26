@@ -10,9 +10,9 @@ build:
 deploy:
   stage: deploy
   script:
-    - pkill -f scm-web.jar
+    - ssh pwausr:pwausr@10.10.4.121 "pkill -f scm-web.jar"
     - current_date=$(date +\%Y\%m\%d)
-    - mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
+    - ssh pwausr:pwausr@10.10.4.121 "mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar"
     - scp -o StrictHostKeyChecking=no -P 2022 scm-web/build/libs/scm-web.jar pwausr:pwausr@10.10.4.121:/home/pwausr/scm-web.jar
     - java -jar /home/pwausr/scm-web.jar &
 #    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl restart your-app.service"
