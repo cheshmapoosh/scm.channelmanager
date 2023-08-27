@@ -10,11 +10,12 @@ build:
 deploy:
   stage: deploy
   script:
-    - ssh pwausr:pwausr@10.10.4.121 "pkill -f scm-web.jar"
-    - current_date=$(date +\%Y\%m\%d)
-    - ssh pwausr:pwausr@10.10.4.121 "mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar"
-    - scp -o StrictHostKeyChecking=no -P 2022 scm-web/build/libs/scm-web.jar pwausr:pwausr@10.10.4.121:/home/pwausr/scm-web.jar
-    - java -jar /home/pwausr/scm-web.jar &
+    - 'which ssh-agent || ( apt-get install -qq openssh-client )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$DEV_SSH_PRIVATE_KEY")
+    - ssh -o StrictHostKeyChecking=no -p $DEV_SSH_PORT $DEV_SSH_USER@$DEV_SSH_SERVER "pkill -f scm-web.jar; current_date=$(date +\%Y\%m\%d); mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar"
+    - scp -o StrictHostKeyChecking=no -P $DEV_SSH_PORT scm-web/build/libs/scm-web.jar $DEV_SSH_USER@$DEV_SSH_SERVER:/home/pwausr/scm-web.jar
+    - ssh -o StrictHostKeyChecking=no -p $DEV_SSH_PORT $DEV_SSH_USER@$DEV_SSH_SERVER "nohup java -jar /home/pwausr/scm-web.jar &"
 #    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl restart your-app.service"
 #    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl stop your-app.service"
 #    - ssh pwausr:pwausr@10.10.4.121 "mv /path/to/deployment/your-app.jar /path/to/deployment/your-app-$(date +\%Y\%m\%d).jar"
