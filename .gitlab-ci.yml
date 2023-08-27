@@ -21,4 +21,4 @@ deploy:
 #    - scp target/your-app.jar pwausr:pwausr@10.10.4.121:/path/to/deployment/
 #    - ssh user@server "sudo systemctl start your-app.service"
   only:
-    - master
+    - main
