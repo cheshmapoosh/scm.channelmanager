@@ -5,7 +5,7 @@ image: registry.daneshrefah.ir/refahprojects/build-image:gradle-7-2-0-jdk17
 build:
   stage: build
   script:
-    - ./gradlew build
+    - gradle build
 
 deploy:
   stage: deploy
