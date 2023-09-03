@@ -13,6 +13,9 @@ build:
 
 deploy:
   stage: deploy
+    needs:
+    - job: build
+      artifacts: true
   script:
     - 'which ssh-agent || ( apt-get install -qq openssh-client )'
     - eval $(ssh-agent -s)
