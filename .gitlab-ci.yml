@@ -4,6 +4,7 @@ stages:
 image: registry.daneshrefah.ir/refahprojects/build-image:gradle-7-4-2-jdk17
 build:
   stage: build
+  when: manual
   artifacts:
     paths:
       - "scm-web/build/libs/*.jar"
