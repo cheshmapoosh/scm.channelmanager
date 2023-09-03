@@ -4,6 +4,9 @@ stages:
 image: registry.daneshrefah.ir/refahprojects/build-image:gradle-7-4-2-jdk17
 build:
   stage: build
+  artifacts:
+    paths:
+      - "scm-web/build/libs/*.jar"
   script:
     - gradle build
 
@@ -16,7 +19,7 @@ deploy:
     - ssh -o StrictHostKeyChecking=no -p $DEV_SSH_PORT $DEV_SSH_USER@$DEV_SSH_SERVER "pkill -f scm-web.jar;"
     - current_date=$(date +\%Y\%m\%d)
     - ssh -o StrictHostKeyChecking=no -p $DEV_SSH_PORT $DEV_SSH_USER@$DEV_SSH_SERVER mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
-    - scp -o StrictHostKeyChecking=no -P $DEV_SSH_PORT scm-web/build/libs/scm-web.jar $DEV_SSH_USER@$DEV_SSH_SERVER:/home/pwausr/scm-web.jar
+    - scp -o StrictHostKeyChecking=no -P $DEV_SSH_PORT scm-web/build/libs/*.jar $DEV_SSH_USER@$DEV_SSH_SERVER:/home/pwausr/scm-web.jar
     - ssh -o StrictHostKeyChecking=no -p $DEV_SSH_PORT $DEV_SSH_USER@$DEV_SSH_SERVER "nohup java -jar /home/pwausr/scm-web.jar &"
 #    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl restart your-app.service"
 #    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl stop your-app.service"
