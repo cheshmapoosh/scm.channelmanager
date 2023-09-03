@@ -12,6 +12,13 @@ plugins {
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenLocal()
+    maven {
+        url 'https://swd.daneshrefah.ir/artifactory/remote-repos'
+        credentials {
+            username = 'builder'
+            password = 'AP9XCqyRCWrtUydrRwLiL7RpuRq'
+        }
+    }
     mavenCentral()
 }
 
