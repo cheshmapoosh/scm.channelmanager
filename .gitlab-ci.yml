@@ -13,7 +13,7 @@ build:
 
 deploy:
   stage: deploy
-    needs:
+  needs:
     - job: build
       artifacts: true
   script:
