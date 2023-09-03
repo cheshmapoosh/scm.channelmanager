@@ -8,7 +8,7 @@ build:
     paths:
       - "scm-web/build/libs/*.jar"
   script:
-    - gradle build
+    - gradle bootJar
 
 deploy:
   stage: deploy
