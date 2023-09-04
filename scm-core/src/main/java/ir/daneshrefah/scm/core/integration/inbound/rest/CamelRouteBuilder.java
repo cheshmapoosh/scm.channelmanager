@@ -3,9 +3,9 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import ir.daneshrefah.scm.common.model.message.*;
+import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
-import ir.daneshrefah.scm.common.model.message.EventType;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import org.apache.camel.builder.RouteBuilder;
@@ -13,6 +13,7 @@ import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.function.BiFunction;
 
 /**
@@ -62,7 +63,9 @@ public class CamelRouteBuilder extends RouteBuilder {
     public void addRoute(TerminalServiceChannelAccess channelAccess) {
         String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
         String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
-        String inboundUrl = "rest:post:api" + "/" + terminalCode + "/" + serviceCode;
+        String httpMethod = createHttpMethodBasedOnServiceType(channelAccess.getTerminalServiceAccess().getService().getType());
+        String serviceUrl = serviceCode.toLowerCase().replace("_", "-");
+        String inboundUrl = "rest:" + httpMethod + ":api" + "/" + terminalCode + "/" + serviceUrl;
         from(inboundUrl)
                 .process(exchange -> {
                     // init message
@@ -85,4 +88,14 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     }
 
+    private String createHttpMethodBasedOnServiceType(ServiceType type) {
+        switch (type) {
+            case REPORT:
+                return "get";
+            case FINANCE:
+                return "post";
+            default:
+                return "post";
+        }
+    }
 }
