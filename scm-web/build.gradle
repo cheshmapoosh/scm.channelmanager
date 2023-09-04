@@ -6,6 +6,7 @@
 
 plugins {
     id 'ir.daneshrefah.scm.java-application-conventions'
+    id 'org.springframework.boot' version '3.1.1'
 }
 
 dependencies {
@@ -15,6 +16,6 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'ir.daneshrefah.scm.app.App'
+    mainClass = 'ir.daneshrefah.scm.web.App'
 }
 
