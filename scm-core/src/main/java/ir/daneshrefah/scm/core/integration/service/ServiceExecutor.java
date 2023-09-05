@@ -3,9 +3,6 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.transformer.DynamicTransformer;
@@ -15,7 +12,6 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.TransformerType;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +50,7 @@ public abstract class ServiceExecutor {
             serviceExecutionMap.put(service.getCode(), serviceExecutionWrapper);
         }
 
-        Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequest(message);
+        Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequestSchema(message);
         if (!errors.isEmpty()) {
             errorMappingService.resolveMessageByValidationMessage(message, errors.get());
             return;

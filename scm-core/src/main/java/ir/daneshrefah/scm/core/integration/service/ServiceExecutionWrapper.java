@@ -6,6 +6,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.util.Optional;
 import java.util.Set;
@@ -21,15 +22,20 @@ public class ServiceExecutionWrapper {
 
     private Service service;
     private JsonSchema requestJsonSchema;
+    private JsonSchema responseJsonSchema;
     public ServiceExecutionWrapper(Service service) {
         this.service = service;
-        if (null != service.getRequestJsonSchema()) {
+        if (StringUtils.isNotEmpty(service.getRequestJsonSchema())) {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
             requestJsonSchema = factory.getSchema(service.getRequestJsonSchema());
         }
+        if (StringUtils.isNotEmpty(service.getResponseJsonSchema())) {
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            responseJsonSchema = factory.getSchema(service.getResponseJsonSchema());
+        }
     }
 
-    public Optional<Set<ValidationMessage>> validateRequest(Message message) {
+    public Optional<Set<ValidationMessage>> validateRequestSchema(Message message) {
         if (null == requestJsonSchema) {
             return Optional.empty();
         }
