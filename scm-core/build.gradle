@@ -23,4 +23,5 @@ dependencies {
     //    api project(':scm-common')
     api project(':scm-plugin-nab')
     api project(':scm-plugin-scm')
+    api project(':scm-plugin-mock')
 }
