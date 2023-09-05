@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import org.slf4j.Logger;
