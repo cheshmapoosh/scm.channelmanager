@@ -6,8 +6,10 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -23,6 +25,9 @@ public class ServiceExecutionWrapper {
     private Service service;
     private JsonSchema requestJsonSchema;
     private JsonSchema responseJsonSchema;
+    private List<TransformerExecutionWrapper> requestTransformers;
+    private List<TransformerExecutionWrapper> responseTransformers;
+
     public ServiceExecutionWrapper(Service service) {
         this.service = service;
         if (StringUtils.isNotEmpty(service.getRequestJsonSchema())) {
@@ -46,4 +51,19 @@ public class ServiceExecutionWrapper {
         return Optional.of(errors);
     }
 
+    public List<TransformerExecutionWrapper> getRequestTransformers() {
+        return requestTransformers;
+    }
+
+    public void setRequestTransformers(List<TransformerExecutionWrapper> requestTransformers) {
+        this.requestTransformers = requestTransformers;
+    }
+
+    public List<TransformerExecutionWrapper> getResponseTransformers() {
+        return responseTransformers;
+    }
+
+    public void setResponseTransformers(List<TransformerExecutionWrapper> responseTransformers) {
+        this.responseTransformers = responseTransformers;
+    }
 }

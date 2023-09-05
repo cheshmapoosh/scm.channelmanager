@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,6 +31,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private ServiceProducerTemplate serviceProducerTemplate;
     @Autowired
     private ServiceService serviceService;
+    private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override
     protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message,
@@ -44,14 +48,15 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
+            CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
 
-            AbstractTransformer relationRequestTransformer = getTransformer(serviceRelation.getTargetServiceTransformerRequestType(),
-                    serviceRelation.getTargetServiceTransformerRequestClassName());
+//            AbstractTransformer relationRequestTransformer = getTransformer(serviceRelation.getTargetServiceTransformerRequestType(),
+//                    serviceRelation.getTargetServiceTransformerRequestClassName());
             Object relationRequestPayload = message.getPayload();
-            if (null != relationRequestTransformer) {
-                relationRequestPayload = relationRequestTransformer.transform(relationRequestPayload, message,
-                        serviceRelation.getTargetServiceTransformerRequestMetadata());
-            }
+//            if (null != relationRequestTransformer) {
+//                relationRequestPayload = relationRequestTransformer.transform(relationRequestPayload, message,
+//                        serviceRelation.getTargetServiceTransformerRequestMetadata());
+//            }
 
             Message tempMessage = SerializationUtils.clone(message);
             tempMessage.setErrors(null);
@@ -61,13 +66,13 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             message.addEvents(tempMessage.getEvents());
             message.addErrors(tempMessage.getErrors());
 
-            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
-                    serviceRelation.getTargetServiceTransformerResponseClassName());
+//            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
+//                    serviceRelation.getTargetServiceTransformerResponseClassName());
             Object relationResponsePayload = message.getPayload();
-            if (null != relationResponseTransformer) {
-                relationResponsePayload = relationResponseTransformer.transform(tempMessage.getPayload(), tempMessage,
-                        serviceRelation.getTargetServiceTransformerResponseMetadata());
-            }
+//            if (null != relationResponseTransformer) {
+//                relationResponsePayload = relationResponseTransformer.transform(tempMessage.getPayload(), tempMessage,
+//                        serviceRelation.getTargetServiceTransformerResponseMetadata());
+//            }
 
             message.setPayload((JsonNode) relationResponsePayload);
 
@@ -77,5 +82,48 @@ public class CompositionServiceExecutor extends ServiceExecutor {
         }
 
         return message.getPayload();
+    }
+
+    private CompositeServiceExecutionWrapper prepareServiceExecutionWrapper(ServiceRelation serviceRelation) {
+        CompositeServiceExecutionWrapper serviceExecutionWrapper = serviceExecutionMap.get(serviceRelation.getId());
+        if (null == serviceExecutionWrapper) {
+            serviceExecutionWrapper = new CompositeServiceExecutionWrapper(serviceRelation);
+
+            List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
+                    serviceRelation.getId());
+            serviceExecutionWrapper.setTargetServiceRequestTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_REQUEST.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+            serviceExecutionWrapper.setTargetServiceResponseTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_RESPONSE.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+            serviceExecutionWrapper.setTargetServiceCommitRequestTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_COMMIT_REQUEST.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+            serviceExecutionWrapper.setTargetServiceCommitResponseTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_COMMIT_RESPONSE.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+            serviceExecutionWrapper.setTargetServiceReverseRequestTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_REVERSE_REQUEST.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+            serviceExecutionWrapper.setTargetServiceReverseResponseTransformers(
+                    transformerRelations.stream()
+                            .filter(t -> TransformerRelationType.SERVICE_RELATION_REVERSE_RESPONSE.equals(t.getRelationType()))
+                            .map(t -> new TransformerExecutionWrapper(t))
+                            .collect(Collectors.toList()));
+
+            serviceExecutionMap.put(serviceRelation.getId(), serviceExecutionWrapper);
+        }
+        return serviceExecutionWrapper;
     }
 }

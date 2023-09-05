@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.common.model.service;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,12 +21,6 @@ public abstract class Service extends BaseModel<String> {
     private ServiceImplementationType implementationType;
     private String requestJsonSchema;
     private String responseJsonSchema;
-    private TransformerType requestTransformerType;
-    private TransformerType responseTransformerType;
-    private String requestTransformMetadata;
-    private String responseTransformMetadata;
-    private String requestTransformerClass;
-    private String responseTransformerClass;
     private Boolean checkAccessFirstAuthentication;
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
@@ -86,54 +83,6 @@ public abstract class Service extends BaseModel<String> {
 
     public void setResponseJsonSchema(String responseJsonSchema) {
         this.responseJsonSchema = responseJsonSchema;
-    }
-
-    public TransformerType getRequestTransformerType() {
-        return requestTransformerType;
-    }
-
-    public void setRequestTransformerType(TransformerType requestTransformerType) {
-        this.requestTransformerType = requestTransformerType;
-    }
-
-    public TransformerType getResponseTransformerType() {
-        return responseTransformerType;
-    }
-
-    public void setResponseTransformerType(TransformerType responseTransformerType) {
-        this.responseTransformerType = responseTransformerType;
-    }
-
-    public String getRequestTransformMetadata() {
-        return requestTransformMetadata;
-    }
-
-    public void setRequestTransformMetadata(String requestTransformMetadata) {
-        this.requestTransformMetadata = requestTransformMetadata;
-    }
-
-    public String getResponseTransformMetadata() {
-        return responseTransformMetadata;
-    }
-
-    public void setResponseTransformMetadata(String responseTransformMetadata) {
-        this.responseTransformMetadata = responseTransformMetadata;
-    }
-
-    public String getRequestTransformerClass() {
-        return requestTransformerClass;
-    }
-
-    public void setRequestTransformerClass(String requestTransformerClass) {
-        this.requestTransformerClass = requestTransformerClass;
-    }
-
-    public String getResponseTransformerClass() {
-        return responseTransformerClass;
-    }
-
-    public void setResponseTransformerClass(String responseTransformerClass) {
-        this.responseTransformerClass = responseTransformerClass;
     }
 
     public Boolean getCheckAccessFirstAuthentication() {

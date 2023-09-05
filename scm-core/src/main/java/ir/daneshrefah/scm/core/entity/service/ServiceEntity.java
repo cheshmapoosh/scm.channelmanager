@@ -3,10 +3,8 @@ package ir.daneshrefah.scm.core.entity.service;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
-import ir.daneshrefah.scm.core.converter.TransformerTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.common.model.service.TransformerType;
 import jakarta.persistence.*;
 
 @Entity
@@ -31,20 +29,6 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private String requestJsonSchema;
     @Column(name = "RESPONSE_JSON_SCHEMA", nullable = true)
     private String responseJsonSchema;
-    @Column(name = "TRANSFORMER_TYPE_CODE_REQUEST")
-    @Convert(converter = TransformerTypeConverter.class)
-    private TransformerType requestTransformerType;
-    @Column(name = "TRANSFORMER_TYPE_CODE_RESPONSE")
-    @Convert(converter = TransformerTypeConverter.class)
-    private TransformerType responseTransformerType;
-    @Column(name = "TRANSFORM_METADATA_REQUEST")
-    private String requestTransformMetadata;
-    @Column(name = "TRANSFORM_METADATA_RESPONSE")
-    private String responseTransformMetadata;
-    @Column(name = "TRANSFORM_CLASS_REQUEST")
-    private String requestTransformerClass;
-    @Column(name = "TRANSFORM_CLASS_RESPONSE")
-    private String responseTransformerClass;
     private Boolean checkAccessFirstAuthentication;
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
@@ -112,54 +96,6 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
 
     public void setResponseJsonSchema(String responseJsonSchema) {
         this.responseJsonSchema = responseJsonSchema;
-    }
-
-    public TransformerType getRequestTransformerType() {
-        return requestTransformerType;
-    }
-
-    public void setRequestTransformerType(TransformerType requestTransformerType) {
-        this.requestTransformerType = requestTransformerType;
-    }
-
-    public TransformerType getResponseTransformerType() {
-        return responseTransformerType;
-    }
-
-    public void setResponseTransformerType(TransformerType responseTransformerType) {
-        this.responseTransformerType = responseTransformerType;
-    }
-
-    public String getRequestTransformMetadata() {
-        return requestTransformMetadata;
-    }
-
-    public void setRequestTransformMetadata(String requestMetadata) {
-        this.requestTransformMetadata = requestMetadata;
-    }
-
-    public String getResponseTransformMetadata() {
-        return responseTransformMetadata;
-    }
-
-    public void setResponseTransformMetadata(String responseMetadata) {
-        this.responseTransformMetadata = responseMetadata;
-    }
-
-    public String getRequestTransformerClass() {
-        return requestTransformerClass;
-    }
-
-    public void setRequestTransformerClass(String requestTransformerClass) {
-        this.requestTransformerClass = requestTransformerClass;
-    }
-
-    public String getResponseTransformerClass() {
-        return responseTransformerClass;
-    }
-
-    public void setResponseTransformerClass(String responseTransformerClass) {
-        this.responseTransformerClass = responseTransformerClass;
     }
 
     public ServiceType getType() {

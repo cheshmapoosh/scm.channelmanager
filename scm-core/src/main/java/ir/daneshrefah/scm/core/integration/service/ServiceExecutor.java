@@ -4,23 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.ValidationMessage;
-import ir.daneshrefah.scm.core.service.ErrorMappingService;
-import ir.daneshrefah.scm.core.transformer.DynamicTransformer;
-import ir.daneshrefah.scm.core.transformer.EmptyTransformer;
-import ir.daneshrefah.scm.core.transformer.NullTransformer;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.service.TransformerType;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.core.service.ErrorMappingService;
+import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,19 +30,24 @@ public abstract class ServiceExecutor {
     @Autowired
     private ErrorMappingService errorMappingService;
     @Autowired
-    private EmptyTransformer emptyTransformer;
-    @Autowired
-    private NullTransformer nullTransformer;
-    @Autowired
-    private DynamicTransformer dynamicTransformer;
+    protected TransformerService transformerService;
     private final Map<String, ServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     public void executeService(Service service, Message message) {
 
-        ServiceExecutionWrapper serviceExecutionWrapper = null;
-        serviceExecutionWrapper = serviceExecutionMap.get(service.getCode());
+        ServiceExecutionWrapper serviceExecutionWrapper = serviceExecutionMap.get(service.getCode());
         if (null == serviceExecutionWrapper) {
             serviceExecutionWrapper = new ServiceExecutionWrapper(service);
+            List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
+                    service.getId());
+            serviceExecutionWrapper.setRequestTransformers(transformerRelations.stream().filter(
+                    t -> TransformerRelationType.SERVICE_REQUEST.equals(t.getRelationType()))
+                    .map(t -> new TransformerExecutionWrapper(t))
+                    .collect(Collectors.toList()));
+            serviceExecutionWrapper.setResponseTransformers(transformerRelations.stream().filter(
+                    t -> TransformerRelationType.SERVICE_RESPONSE.equals(t.getRelationType()))
+                    .map(t -> new TransformerExecutionWrapper(t))
+                    .collect(Collectors.toList()));
             serviceExecutionMap.put(service.getCode(), serviceExecutionWrapper);
         }
 
@@ -58,7 +59,7 @@ public abstract class ServiceExecutor {
 
         Object requestPayload = null;
         try {
-            requestPayload = transformRequest(service, message);
+            requestPayload = transformRequest(serviceExecutionWrapper.getRequestTransformers(), message);
         } catch (Exception e) {
             errorMappingService.resolveMessageByException(message, e);
             return;
@@ -116,26 +117,35 @@ public abstract class ServiceExecutor {
         }
     }
 
-    public Object transformRequest(Service service, Message message) {
+    public Object transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
         Object payload = message.getPayload();
-        AbstractTransformer requestTransformer = getTransformer(service.getRequestTransformerType(),
-                service.getRequestTransformerClass());
-        if (null != requestTransformer) {
-            payload = requestTransformer.transform(payload, message, service.getRequestTransformMetadata());
+        for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
+            TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+
         }
+        return payload;
+    }
+
+    public Object transformRequest2(Service service, Message message) {
+        Object payload = message.getPayload();
+//        AbstractTransformer requestTransformer = getTransformer(service.getRequestTransformerType(),
+//                service.getRequestTransformerClass());
+//        if (null != requestTransformer) {
+//            payload = requestTransformer.transform(payload, message, service.getRequestTransformMetadata());
+//        }
         return payload;
     }
 
     public Object transformResponse(Service service, Message message, Object payload) {
-        AbstractTransformer responseTransformer = getTransformer(service.getResponseTransformerType(),
-                service.getResponseTransformerClass());
-        if (null != responseTransformer) {
-            payload = responseTransformer.transform(payload, message, service.getResponseTransformMetadata());
-        }
+//        AbstractTransformer responseTransformer = getTransformer(service.getResponseTransformerType(),
+//                service.getResponseTransformerClass());
+//        if (null != responseTransformer) {
+//            payload = responseTransformer.transform(payload, message, service.getResponseTransformMetadata());
+//        }
         return payload;
     }
 
-    protected AbstractTransformer getTransformer(TransformerType transformerType, String transformerClass) {
+    /*protected AbstractTransformer getTransformer(TransformerType transformerType, String transformerClass) {
         if (TransformerType.JAVA.equals(transformerType)) {
             return ClassLoader.findBeanOrCreateInstanceOfClass(transformerClass, AbstractTransformer.class);
         } else if (TransformerType.EMPTY.equals(transformerType)) {
@@ -144,7 +154,7 @@ public abstract class ServiceExecutor {
             return dynamicTransformer;
         }
         return null;
-    }
+    }*/
 
     protected abstract Object executeInternal(Service service, Message message, Object requestPayload);
 
