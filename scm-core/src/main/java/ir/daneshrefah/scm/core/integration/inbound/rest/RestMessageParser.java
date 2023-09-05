@@ -36,6 +36,10 @@ public class RestMessageParser {
         header.setService(channelAccess);
         header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
         String token = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class);
+        if (StringUtils.isNotEmpty(token)) {
+            Authentication a = new Authentication(token.replace("Bearer ", ""));
+            header.setAuthentication(a);
+        }
 //        if (StringUtils.isNotEmpty(token)) {
 //            String tokenDelegated = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION_DELEGATED, String.class);
 //            Authentication authentication = AuthenticationVerifier.verifyAuthenticationRequest(token, tokenDelegated);

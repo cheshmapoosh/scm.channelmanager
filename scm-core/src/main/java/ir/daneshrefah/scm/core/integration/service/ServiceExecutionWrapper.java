@@ -26,11 +26,11 @@ public class ServiceExecutionWrapper {
     public ServiceExecutionWrapper(Service service) {
         this.service = service;
         if (StringUtils.isNotEmpty(service.getRequestJsonSchema())) {
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             requestJsonSchema = factory.getSchema(service.getRequestJsonSchema());
         }
         if (StringUtils.isNotEmpty(service.getResponseJsonSchema())) {
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             responseJsonSchema = factory.getSchema(service.getResponseJsonSchema());
         }
     }
