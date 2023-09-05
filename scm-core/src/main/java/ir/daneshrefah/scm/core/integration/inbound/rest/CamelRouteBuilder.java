@@ -89,13 +89,17 @@ public class CamelRouteBuilder extends RouteBuilder {
     }
 
     private String createHttpMethodBasedOnServiceType(ServiceType type) {
+        String defaultMethod = "post";
+        if (null == type) {
+            return defaultMethod;
+        }
         switch (type) {
             case REPORT:
                 return "get";
             case FINANCE:
                 return "post";
             default:
-                return "post";
+                return defaultMethod;
         }
     }
 }
