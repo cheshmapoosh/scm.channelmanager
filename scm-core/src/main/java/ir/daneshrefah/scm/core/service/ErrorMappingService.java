@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
@@ -17,8 +18,10 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -37,6 +40,16 @@ public class ErrorMappingService {
     public List<ErrorMapping> findErrorMappingList() {
         Iterable<ErrorMappingEntity> errorMappingEntities = repository.findAll();
         return ErrorMappingMapper.INSTANCE.entitiesToModels(errorMappingEntities);
+    }
+
+    public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors) {
+        for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
+            ValidationMessage validationMessage = iterator.next();
+            Error error = new Error(ErrorCodes.ERROR_VALIDATION, validationMessage.getMessage(),
+                    validationMessage.getCode(), validationMessage.getCode(), validationMessage.getMessage(), null);
+            message.addError(error, Status.SC_ERROR_VALIDATION);
+        }
+        return message;
     }
 
     public Message resolveMessageByException(Message message, Exception exception) {

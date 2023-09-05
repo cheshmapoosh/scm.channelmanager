@@ -3,6 +3,10 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.transformer.DynamicTransformer;
 import ir.daneshrefah.scm.core.transformer.EmptyTransformer;
@@ -11,11 +15,16 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.TransformerType;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,8 +43,22 @@ public abstract class ServiceExecutor {
     private NullTransformer nullTransformer;
     @Autowired
     private DynamicTransformer dynamicTransformer;
+    private final Map<String, ServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     public void executeService(Service service, Message message) {
+
+        ServiceExecutionWrapper serviceExecutionWrapper = null;
+        serviceExecutionWrapper = serviceExecutionMap.get(service.getCode());
+        if (null == serviceExecutionWrapper) {
+            serviceExecutionWrapper = new ServiceExecutionWrapper(service);
+            serviceExecutionMap.put(service.getCode(), serviceExecutionWrapper);
+        }
+
+        Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequest(message);
+        if (!errors.isEmpty()) {
+            errorMappingService.resolveMessageByValidationMessage(message, errors.get());
+            return;
+        }
 
         Object requestPayload = null;
         try {
@@ -99,7 +122,7 @@ public abstract class ServiceExecutor {
 
     public Object transformRequest(Service service, Message message) {
         Object payload = message.getPayload();
-        AbstractTransformer requestTransformer =  getTransformer(service.getRequestTransformerType(),
+        AbstractTransformer requestTransformer = getTransformer(service.getRequestTransformerType(),
                 service.getRequestTransformerClass());
         if (null != requestTransformer) {
             payload = requestTransformer.transform(payload, message, service.getRequestTransformMetadata());
@@ -108,7 +131,7 @@ public abstract class ServiceExecutor {
     }
 
     public Object transformResponse(Service service, Message message, Object payload) {
-        AbstractTransformer responseTransformer =  getTransformer(service.getResponseTransformerType(),
+        AbstractTransformer responseTransformer = getTransformer(service.getResponseTransformerType(),
                 service.getResponseTransformerClass());
         if (null != responseTransformer) {
             payload = responseTransformer.transform(payload, message, service.getResponseTransformMetadata());
