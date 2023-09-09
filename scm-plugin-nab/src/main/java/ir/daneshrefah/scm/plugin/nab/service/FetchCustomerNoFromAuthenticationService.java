@@ -22,6 +22,6 @@ public class FetchCustomerNoFromAuthenticationService extends AbstractJavaServic
             cardNo = objPayload.get("cardNo").asText();
         }
 //        throw new RuntimeException("invalid login");
-        return 159753654L;
+        return "IR970130100000000000001399";
     }
 }

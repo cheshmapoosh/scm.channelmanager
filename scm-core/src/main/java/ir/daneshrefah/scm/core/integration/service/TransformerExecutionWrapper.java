@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
  * @version 1.0
  * @since 2023-09-05
  */
-public class TransformerExecutionWrapper extends AbstractTransformer {
+public class TransformerExecutionWrapper {
 
     private TransformerRelation transformerRelation;
     private AbstractTransformer transformerInstance;
@@ -23,8 +23,11 @@ public class TransformerExecutionWrapper extends AbstractTransformer {
                 transformerRelation.getTransformer().getJavaClassName(), AbstractTransformer.class);
     }
 
-    @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
-        return null;
+    public TransformerRelation getTransformerRelation() {
+        return transformerRelation;
+    }
+
+    public AbstractTransformer getTransformerInstance() {
+        return transformerInstance;
     }
 }

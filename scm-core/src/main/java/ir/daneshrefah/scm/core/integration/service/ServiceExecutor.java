@@ -28,12 +28,17 @@ import java.util.stream.Collectors;
 public abstract class ServiceExecutor {
 
     @Autowired
-    private ErrorMappingService errorMappingService;
+    protected ErrorMappingService errorMappingService;
     @Autowired
     protected TransformerService transformerService;
     private final Map<String, ServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     public void executeService(Service service, Message message) {
+
+        LocalDateTime startTime = LocalDateTime.now();
+        boolean isSuccessful = true;
+        Exception exception = null;
+        Object response = null;
 
         ServiceExecutionWrapper serviceExecutionWrapper = serviceExecutionMap.get(service.getCode());
         if (null == serviceExecutionWrapper) {
@@ -54,6 +59,7 @@ public abstract class ServiceExecutor {
         Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequestSchema(message);
         if (!errors.isEmpty()) {
             errorMappingService.resolveMessageByValidationMessage(message, errors.get());
+            addServiceCallEvent(message, service, false, startTime, exception, message.getPayload(), response);
             return;
         }
 
@@ -66,11 +72,6 @@ public abstract class ServiceExecutor {
         }
 
 
-        LocalDateTime startTime = LocalDateTime.now();
-        boolean isSuccessful = true;
-        Exception exception = null;
-        Object response = null;
-
         try {
             response = executeInternal(service, message, requestPayload);
         } catch (Exception e) {
@@ -80,13 +81,11 @@ public abstract class ServiceExecutor {
             return;
         } finally {
             LocalDateTime endTime = LocalDateTime.now();
-            message.addServiceCallEvent(startTime, endTime,
-                    service,
-                    isSuccessful, exception, requestPayload, response);
+            addServiceCallEvent(message, service, isSuccessful, startTime, exception, requestPayload, response);
         }
 
         try {
-            response = transformResponse(service, message, response);
+            response = transformResponse(serviceExecutionWrapper.getResponseTransformers(), message, response);
         } catch (Exception e) {
             errorMappingService.resolveMessageByException(message, e);
             return;
@@ -111,16 +110,25 @@ public abstract class ServiceExecutor {
 //                throw new RuntimeException(e);
             }
         }
-        if (Status.SC_PROCESSING.equals(message.getStatus()) &&
-                service.getId().equals(message.getHeader().getService().getTerminalServiceAccess().getService().getId())) {
+        if (Status.SC_PROCESSING.equals(message.getStatus()) /*&&
+                service.getId().equals(message.getHeader().getService().getTerminalServiceAccess().getService().getId())*/) {
             message.setStatus(Status.SC_SUCCESS);
         }
+    }
+
+    private void addServiceCallEvent(Message message, Service service, boolean isSuccessful, LocalDateTime startTime,
+                                     Exception exception, Object requestPayload, Object response) {
+        message.addServiceCallEvent(startTime, LocalDateTime.now(),
+                service,
+                isSuccessful, exception, requestPayload, response);
     }
 
     public Object transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
         Object payload = message.getPayload();
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+            payload = transformerExecutionWrapper.getTransformerInstance()
+                    .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
 
         }
         return payload;
@@ -136,7 +144,16 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    public Object transformResponse(Service service, Message message, Object payload) {
+    public Object transformResponse(List<TransformerExecutionWrapper> transformerRelations, Message message, Object payload) {
+        for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
+            TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+            payload = transformerExecutionWrapper.getTransformerInstance()
+                    .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
+        }
+        return payload;
+    }
+
+    public Object transformResponse2(Service service, Message message, Object payload) {
 //        AbstractTransformer responseTransformer = getTransformer(service.getResponseTransformerType(),
 //                service.getResponseTransformerClass());
 //        if (null != responseTransformer) {

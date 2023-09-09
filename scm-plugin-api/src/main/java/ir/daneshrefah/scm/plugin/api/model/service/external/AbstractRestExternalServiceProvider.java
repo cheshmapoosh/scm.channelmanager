@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
+import ir.daneshrefah.scm.plugin.api.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,8 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
 //                        String.valueOf(statusCode), "http status: " + statusCode);
             }
             return processResponse(response, response.statusCode());
+        } catch (BaseException e) {
+            throw e;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {

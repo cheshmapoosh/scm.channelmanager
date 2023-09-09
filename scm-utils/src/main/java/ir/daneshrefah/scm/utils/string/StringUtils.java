@@ -25,6 +25,10 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.endsWith(str, suffix);
     }
 
+    public static boolean equalsIgnoreCase(CharSequence cs1, CharSequence cs2) {
+        return org.apache.commons.lang3.StringUtils.equalsIgnoreCase(cs1, cs2);
+    }
+
     public static String replaceOnce(final String text, final String searchString, final String replacement) {
         return org.apache.commons.lang3.StringUtils.replaceOnce(text, searchString, replacement);
     }

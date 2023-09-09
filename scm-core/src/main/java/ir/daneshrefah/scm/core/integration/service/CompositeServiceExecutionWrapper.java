@@ -24,7 +24,6 @@ public class CompositeServiceExecutionWrapper {
     private List<TransformerExecutionWrapper> targetServiceReverseResponseTransformers;
 
     public CompositeServiceExecutionWrapper(ServiceRelation serviceRelation) {
-        serviceRelation.getTargetServiceRequestTransformers();
         this.serviceRelation = serviceRelation;
     }
 
