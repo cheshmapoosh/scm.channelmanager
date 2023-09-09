@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.model.authentication;
 import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -12,7 +13,7 @@ import java.util.List;
  * @version 1.0
  * @since 2023-08-14
  */
-public class Authentication {
+public class Authentication implements Serializable {
 
     private String sessionKey;
     private String username;

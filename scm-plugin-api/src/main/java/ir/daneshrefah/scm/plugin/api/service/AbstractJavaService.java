@@ -24,9 +24,9 @@ public abstract class AbstractJavaService {
     }
 
     public Object execute(Message message, Service service, Object payload) {
-        return internalExecute(service, payload);
+        return internalExecute(message, service, payload);
     }
 
-    protected abstract Object internalExecute(Service service, Object payload);
+    protected abstract Object internalExecute(Message message, Service service, Object payload);
 
 }
