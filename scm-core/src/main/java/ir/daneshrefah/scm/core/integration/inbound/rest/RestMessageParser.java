@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.common.model.message.Header;
@@ -69,9 +70,10 @@ public class RestMessageParser {
 
         String contentType = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class);
         BodyExtractor bodyExtractor = bodyExtractorMap.get(contentType);
-        if (null != bodyExtractor) {
-            message = bodyExtractor.transform(exchange, message);
+        if (null == bodyExtractor) {
+            bodyExtractor = RestMessageParser::bodyExtractorNull;
         }
+        message = bodyExtractor.transform(exchange, message);
 
         return message;
     }
@@ -84,6 +86,14 @@ public class RestMessageParser {
     // Define your transformation methods
     static Message bodyExtractorJson(Exchange exchange, Message message) {
         JsonNode requestBody = exchange.getMessage().getBody(JsonNode.class);
+
+        message.setPayload(requestBody);
+
+        return message;
+    }
+
+    static Message bodyExtractorNull(Exchange exchange, Message message) {
+        JsonNode requestBody = NullNode.getInstance();
 
         message.setPayload(requestBody);
 

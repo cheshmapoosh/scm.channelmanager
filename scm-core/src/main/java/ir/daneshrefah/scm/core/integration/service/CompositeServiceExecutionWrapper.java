@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
+import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 
 import java.util.List;
 

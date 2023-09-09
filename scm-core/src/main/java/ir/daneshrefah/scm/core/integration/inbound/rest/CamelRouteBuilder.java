@@ -94,6 +94,8 @@ public class CamelRouteBuilder extends RouteBuilder {
             return defaultMethod;
         }
         switch (type) {
+            case INQUIRY:
+                return "get";
             case REPORT:
                 return "get";
             case FINANCE:

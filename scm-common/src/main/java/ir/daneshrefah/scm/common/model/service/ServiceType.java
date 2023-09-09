@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.common.model.service;
  */
 public enum ServiceType {
 
-    REPORT(1), FINANCE(2);
+    REPORT(1), FINANCE(2), INQUIRY(3);
 
     private Integer code;
 

@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.service.TransformerService;
+import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 
