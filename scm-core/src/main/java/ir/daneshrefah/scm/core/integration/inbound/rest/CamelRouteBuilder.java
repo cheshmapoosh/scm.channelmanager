@@ -56,7 +56,7 @@ public class CamelRouteBuilder extends RouteBuilder {
         JsonNode metadataJson = new ObjectMapper().readTree(channel.getMetadata());
         Integer port = metadataJson.get(JSON_PROPERTY_METADATA_PORT).intValue();
         String contextPath = metadataJson.get(JSON_PROPERTY_METADATA_CONTEXT_PATH).textValue();
-        restConfiguration().host("localhost").port(port).bindingMode(RestBindingMode.json).contextPath(contextPath);
+        restConfiguration().host("0.0.0.0").port(port).bindingMode(RestBindingMode.json).contextPath(contextPath);
 
     }
 
