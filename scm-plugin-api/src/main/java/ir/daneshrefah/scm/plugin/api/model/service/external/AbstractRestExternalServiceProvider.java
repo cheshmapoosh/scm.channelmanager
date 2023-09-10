@@ -77,7 +77,12 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
-            if (statusCode == HttpConstants.HTTP_STATUS_BAD_REQUEST) {
+            if (statusCode != HttpConstants.HTTP_STATUS_OK && statusCode != HttpConstants.HTTP_STATUS_NO_CONTENT) {
+                Object result = processError(response, response.statusCode());
+                if (null != result) {
+                    return result;
+                }
+                throw new ExternalProviderException(externalServiceProvider, String.valueOf(response.statusCode()), response.body());
 //                throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
 //                        message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
 //                        String.valueOf(statusCode), "http status: " + statusCode);
@@ -95,6 +100,9 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
     }
 
     protected abstract Object processResponse(HttpResponse<String> response, int statusCode) throws Exception;
+    protected Object processError(HttpResponse<String> response, int statusCode) throws Exception {
+        return null;
+    }
 
     protected String extractServiceRequestHeaderContentType(Service service) {
         return HTTP_HEADER_CONTENT_TYPE_JSON;

@@ -44,7 +44,7 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
                 String value = element.get("value").asText();
 
                 if (StringUtils.equalsIgnoreCase("${customerNo}", value)) {
-                    ((ObjectNode) result).put(propertyName, "159152121");
+                    ((ObjectNode) result).put(propertyName, "11342422");
                 } else if (StringUtils.equalsIgnoreCase("${username}", value)) {
                     ((ObjectNode) result).put(propertyName, extractUsername(message));
                 }

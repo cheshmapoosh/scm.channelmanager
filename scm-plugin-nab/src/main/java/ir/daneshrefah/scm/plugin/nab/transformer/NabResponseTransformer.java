@@ -1,0 +1,98 @@
+package ir.daneshrefah.scm.plugin.nab.transformer;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import org.springframework.stereotype.Service;
+
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-07-24
+ */
+@Service
+public class NabResponseTransformer extends AbstractTransformer {
+
+    private ObjectMapper objectMapper;
+
+    public NabResponseTransformer(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public Object internalTransform(Object payload, Message message, String metadata) {
+        if (null == payload) {
+            return null;
+        }
+        try {
+            JsonNode jsonPayload = payload instanceof JsonNode ? (JsonNode) payload : objectMapper.readTree((String) payload);
+            jsonPayload = jsonPayload.get("result");
+            ObjectNode jsonMetadata = (ObjectNode) objectMapper.readTree(metadata);
+            JsonNode result = jsonPayload.isArray() ? objectMapper.createArrayNode() : objectMapper.createObjectNode();
+            if (jsonPayload.isArray()) {
+                for (JsonNode jsonNode : jsonPayload) {
+                    ((ArrayNode) result).add(createResponseItem(jsonMetadata, (ObjectNode) jsonNode));
+                }
+            } else {
+                result = createResponseItem(jsonMetadata, (ObjectNode) jsonPayload);
+            }
+            return result;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ObjectNode createResponseItem(ObjectNode metadata, ObjectNode payload) {
+        ObjectNode result = objectMapper.createObjectNode();
+
+        metadata.fields().forEachRemaining(entry -> {
+            String key = entry.getKey();
+            JsonNode value = entry.getValue();
+            JsonNode sourceValue = payload.get(value.get("propertyName").asText());
+            if (sourceValue.isTextual()) {
+                result.put(key, sourceValue.asText().trim());
+            } else {
+                result.set(key, sourceValue);
+            }
+        });
+        return result;
+    }
+
+    private static void modifyJsonNode(JsonNode node, JsonNode payload) {
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.fields().forEachRemaining(entry -> {
+                String fieldName = entry.getKey();
+                JsonNode fieldValue = entry.getValue();
+
+                if (fieldValue.isObject() || fieldValue.isArray()) {
+                    // Recursively traverse nested objects or arrays
+                    modifyJsonNode(fieldValue, payload);
+                } else if (fieldValue.isTextual() && fieldValue.textValue().startsWith("$")) {
+                    String propertyName = fieldValue.textValue().substring(2, fieldValue.textValue().length() - 1);
+                    String newValue = payload.get(propertyName).textValue();
+                    objectNode.put(fieldName, newValue);
+                }
+            });
+        } else if (node.isArray()) {
+            // Handle JSON arrays if needed
+            // You can iterate through elements and recursively modify them
+            for (JsonNode element : node) {
+                modifyJsonNode(element, payload);
+            }
+        }
+    }
+
+    // Helper method to add a parameter object to the array
+    private static void addParameter(ArrayNode parameters, String name, String value) {
+        ObjectNode parameter = parameters.addObject();
+        parameter.put("name", name);
+        parameter.put("value", value);
+    }
+}
