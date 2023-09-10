@@ -26,7 +26,7 @@ deploy:
     - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_1_SSH_PORT $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
     - scp -o StrictHostKeyChecking=no -P $DEV_SCM_1_SSH_PORT scm-web/build/libs/*.jar $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER:/home/pwausr/scm-web.jar
     - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_1_SSH_PORT $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER "bash -c /home/pwausr/server.sh"
-        - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER "pkill -f scm-web.jar;"
+    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER "pkill -f scm-web.jar;"
     - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
     - scp -o StrictHostKeyChecking=no -P $DEV_SCM_2_SSH_PORT scm-web/build/libs/*.jar $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER:/home/pwausr/scm-web.jar
     - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER "bash -c /home/pwausr/server.sh"
