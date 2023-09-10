@@ -41,7 +41,7 @@ public class RestResponseGenerator {
         exchange.getMessage().setHeader("Access-Control-Allow-Headers", "*");
         exchange.getMessage().setHeader("Access-Control-Allow-Methods", "*");
         exchange.getMessage().setHeader("Access-Control-Allow-Origin", "*");
-//        exchange.getMessage().setHeader("Access-Control-Max-Age", "3600");
+        exchange.getMessage().setHeader("Access-Control-Max-Age", "3600");
     }
 
 }
