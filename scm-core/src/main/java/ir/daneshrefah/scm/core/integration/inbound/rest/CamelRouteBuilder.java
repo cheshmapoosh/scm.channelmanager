@@ -56,7 +56,12 @@ public class CamelRouteBuilder extends RouteBuilder {
         JsonNode metadataJson = new ObjectMapper().readTree(channel.getMetadata());
         Integer port = metadataJson.get(JSON_PROPERTY_METADATA_PORT).intValue();
         String contextPath = metadataJson.get(JSON_PROPERTY_METADATA_CONTEXT_PATH).textValue();
-        restConfiguration().host("0.0.0.0").port(port).bindingMode(RestBindingMode.json).enableCORS(true).contextPath(contextPath);
+        restConfiguration().host("0.0.0.0").port(port).bindingMode(RestBindingMode.json)
+                .enableCORS(true) // <-- Important
+                .corsAllowCredentials(true) // <-- Important
+                .corsHeaderProperty("Access-Control-Allow-Origin","*")
+                .corsHeaderProperty("Access-Control-Allow-Headers","Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization")
+                .contextPath(contextPath);
 
     }
 
