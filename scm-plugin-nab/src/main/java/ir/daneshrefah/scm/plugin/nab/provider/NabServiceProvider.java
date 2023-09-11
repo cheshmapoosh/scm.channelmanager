@@ -10,6 +10,9 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
+import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -32,6 +35,11 @@ import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_
 @Component("nabCoreServiceProvider")
 public class NabServiceProvider extends AbstractRestExternalServiceProvider {
 
+    @Autowired
+    private NabRequestTransformer nabRequestTransformer;
+    @Autowired
+    private NabResponseTransformer nabResponseTransformer;
+
     @Override
     protected Object processResponse(HttpResponse<String> response, int statusCode) throws Exception {
         JsonNode node = objectMapper.readTree(response.body());
@@ -47,6 +55,16 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
             }
         }
         return response.body();
+    }
+
+    @Override
+    protected HttpResponse<String> prepareResponse(HttpResponse<String> response, Message message, Service service) {
+        return super.prepareResponse(response, message, service);
+    }
+
+    @Override
+    protected Object prepareRequest(Message message, Object requestBody, Service service) {
+        return super.prepareRequest(message, requestBody, service);
     }
 
     @Override

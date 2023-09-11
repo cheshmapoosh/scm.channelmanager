@@ -57,7 +57,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         String serviceHttpMethod = extractServiceUrl(service);
         String serviceRequestHeaderContentType = extractServiceRequestHeaderContentType(service);
         String targetUrl = endpointUri + serviceUrl;
-
+        requestBody = prepareRequest(message, requestBody, service);
         HttpRequest.BodyPublisher requestBodyPublisher = null;
         if (null != requestBody)
             requestBodyPublisher = HttpRequest.BodyPublishers.ofString(requestBody.toString());
@@ -87,6 +87,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
 //                        message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
 //                        String.valueOf(statusCode), "http status: " + statusCode);
             }
+            response = prepareResponse(response, message, service);
             return processResponse(response, response.statusCode());
         } catch (BaseException e) {
             throw e;
@@ -97,6 +98,14 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected HttpResponse<String> prepareResponse(HttpResponse<String> response, Message message, Service service) {
+        return response;
+    }
+
+    protected Object prepareRequest(Message message, Object requestBody, Service service) {
+        return requestBody;
     }
 
     protected abstract Object processResponse(HttpResponse<String> response, int statusCode) throws Exception;
