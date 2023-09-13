@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.common.model.message.Header;
@@ -12,8 +14,9 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
 
@@ -41,6 +44,7 @@ public class RestMessageParser {
             Authentication a = new Authentication(token.replace("Bearer ", ""));
             header.setAuthentication(a);
         }
+
 //        if (StringUtils.isNotEmpty(token)) {
 //            String tokenDelegated = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION_DELEGATED, String.class);
 //            Authentication authentication = AuthenticationVerifier.verifyAuthenticationRequest(token, tokenDelegated);
@@ -74,8 +78,34 @@ public class RestMessageParser {
             bodyExtractor = RestMessageParser::bodyExtractorNull;
         }
         message = bodyExtractor.transform(exchange, message);
+        List<String> pathVariables = extractPathVariables(channelAccess.getTerminalServiceAccess().getService().getAlias());
+        for (Iterator<String> iterator = pathVariables.iterator(); iterator.hasNext(); ) {
+            String pathVariable = iterator.next();
+            String pathVariableValue = exchange.getMessage().getHeader(pathVariable, String.class);
+            if (message.getPayload() instanceof NullNode) {
+                message.setPayload(JsonNodeFactory.instance.objectNode());
+            }
+            ((ObjectNode) message.getPayload()).put(pathVariable, pathVariableValue);
+        }
 
         return message;
+    }
+
+    public static List<String> extractPathVariables(String urlPattern) {
+        List<String> pathVariables = new ArrayList<>();
+        if (StringUtils.isEmpty(urlPattern))
+            return pathVariables;
+
+        // Define a regular expression pattern to match path variables in curly braces
+        Pattern pattern = Pattern.compile("\\{([^}]+)\\}");
+        Matcher matcher = pattern.matcher(urlPattern);
+
+        // Find and add path variable names to the list
+        while (matcher.find()) {
+            pathVariables.add(matcher.group(1));
+        }
+
+        return pathVariables;
     }
 
     @FunctionalInterface
