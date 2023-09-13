@@ -38,6 +38,9 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private String amountProperty;
     @Column(name = "PROPERTY_NAME_ACCOUNT")
     private String accountProperty;
+    @ManyToOne
+    @JoinColumn(name = "PARENT_SERVICE_ID")
+    private ServiceEntity parent;
 
 
     @Override
@@ -160,5 +163,13 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
 
     public void setAccountProperty(String accountProperty) {
         this.accountProperty = accountProperty;
+    }
+
+    public ServiceEntity getParent() {
+        return parent;
+    }
+
+    public void setParent(ServiceEntity parent) {
+        this.parent = parent;
     }
 }

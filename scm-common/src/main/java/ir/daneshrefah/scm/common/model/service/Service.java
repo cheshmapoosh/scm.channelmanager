@@ -18,6 +18,7 @@ public abstract class Service extends BaseModel<String> {
     private String title;
     private String metadata;
     private ServiceType type;
+    private Service parent;
     private ServiceImplementationType implementationType;
     private String requestJsonSchema;
     private String responseJsonSchema;
@@ -59,6 +60,14 @@ public abstract class Service extends BaseModel<String> {
 
     public void setType(ServiceType type) {
         this.type = type;
+    }
+
+    public Service getParent() {
+        return parent;
+    }
+
+    public void setParent(Service parent) {
+        this.parent = parent;
     }
 
     public ServiceImplementationType getImplementationType() {

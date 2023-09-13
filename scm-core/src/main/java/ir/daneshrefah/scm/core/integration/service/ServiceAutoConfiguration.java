@@ -47,10 +47,13 @@ public class ServiceAutoConfiguration extends RouteBuilder {
         executorMap.put(ServiceImplementationType.EXTERNAL, externalServiceExecutor);
         executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
         executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
-        List<Service> services = serviceService.findServiceList();
+        List<Service> services = serviceService.findCallableServiceList();
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
             Service service = iterator.next();
+            if (ServiceImplementationType.PARENT.equals(service.getImplementationType())) {
+                continue;
+            }
             String fromUri = "SVI_" + service.getCode();
 
             if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType())) {

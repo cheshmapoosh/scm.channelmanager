@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -22,10 +23,6 @@ public class ServiceService {
     ServiceRepository serviceRepository;
     @Autowired
     ServiceRelationRepository serviceRelationRepository;
-//    @Autowired
-//    ServiceComponentRelationRepository serviceComponentRelationRepository;
-//    @Autowired
-//    ServiceProducerTemplate serviceComponentExecutor;
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();
@@ -33,8 +30,14 @@ public class ServiceService {
         return services;
     }
 
+    public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
+        Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
+        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+        return services;
+    }
+
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId, ServiceRelationType relationType) {
-        Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
+        Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceIdAndRelationType(sourceServiceId, relationType);
         List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
         return relations;
     }

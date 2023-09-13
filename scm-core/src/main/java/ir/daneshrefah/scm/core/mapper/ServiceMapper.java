@@ -25,24 +25,32 @@ import java.util.List;
 public interface ServiceMapper {
     ServiceMapper INSTANCE = Mappers.getMapper(ServiceMapper.class);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     JavaService toModel(JavaServiceEntity entity);
 
     List<JavaService> javaEntitiesToModels(Iterable<JavaServiceEntity> entities);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     JavaServiceEntity toEntity(JavaService model);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "externalServiceProviderEntity", target = "serviceProvider")
     ExternalService toModel(ExternalServiceEntity entity);
     List<ExternalService> externalEntitiesToModels(Iterable<ExternalServiceEntity> entities);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     ExternalServiceEntity toEntity(ExternalService model);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     CompositionService toModel(CompositionServiceEntity entity);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     CompositionServiceEntity toEntity(CompositionService model);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     ParentService toModel(ParentServiceEntity entity);
 
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     ParentServiceEntity toEntity(ParentService model);
 
     @Named("toService")
@@ -55,6 +63,20 @@ public interface ServiceMapper {
             return toModel((ParentServiceEntity) serviceEntity);
         } else if (serviceEntity instanceof CompositionServiceEntity) {
             return toModel((CompositionServiceEntity) serviceEntity);
+        }
+        return null;
+    }
+
+    @Named("toServiceEntity")
+    default ServiceEntity toServiceEntity(Service service) {
+        if (service instanceof JavaService) {
+            return toEntity((JavaService) service);
+        } else if (service instanceof ExternalService) {
+            return toEntity((ExternalService) service);
+        } else if (service instanceof ParentService) {
+            return toEntity((ParentService) service);
+        } else if (service instanceof CompositionService) {
+            return toEntity((CompositionService) service);
         }
         return null;
     }
