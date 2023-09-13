@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import ir.daneshrefah.scm.common.model.message.*;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -65,12 +67,29 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     }
 
+    private String extractServiceUrl(Service service) {
+        if (null == service) {
+            return null;
+        }
+        String serviceUrl = StringUtils.isNotEmpty(service.getAlias()) ? service.getAlias() : service.getCode();
+        if (!StringUtils.startsWith(serviceUrl, "/", true)) {
+            serviceUrl = "/" + serviceUrl;
+        }
+        return serviceUrl.toLowerCase().replace("_", "-");
+    }
     public void addRoute(TerminalServiceChannelAccess channelAccess) {
-        String serviceCode = channelAccess.getTerminalServiceAccess().getService().getCode();
         String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
         String httpMethod = createHttpMethodBasedOnServiceType(channelAccess.getTerminalServiceAccess().getService().getType());
-        String serviceUrl = serviceCode.toLowerCase().replace("_", "-");
-        String inboundUrl = "rest:" + httpMethod + ":api" + "/" + terminalCode + "/" + serviceUrl;
+        String serviceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService());
+        String parentServiceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService().getParent());
+        StringBuilder urlBuilder = new StringBuilder("rest:");
+        urlBuilder
+                .append(httpMethod)
+                .append(":api/")
+                .append(terminalCode)
+                .append(null != parentServiceUrl ? parentServiceUrl : "")
+                .append(serviceUrl);
+        String inboundUrl = urlBuilder.toString();
         from(inboundUrl)
                 .process(exchange -> {
                     // init message

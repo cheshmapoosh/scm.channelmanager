@@ -18,6 +18,9 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private String id;
     private String code;
     private String title;
+    private String alias;
+    private Integer version;
+    private Boolean isSystemic;
     private String metadata;
     @Column(name = "SERVICE_TYPE_CODE", insertable = false, updatable = false)
     @Convert(converter = ServiceTypeConverter.class)
@@ -65,8 +68,32 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
         return title;
     }
 
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public Boolean getSystemic() {
+        return isSystemic;
+    }
+
+    public void setSystemic(Boolean systemic) {
+        isSystemic = systemic;
     }
 
     public String getMetadata() {

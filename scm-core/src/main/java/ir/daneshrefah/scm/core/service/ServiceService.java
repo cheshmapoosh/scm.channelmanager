@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
@@ -32,6 +33,12 @@ public class ServiceService {
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
+        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+        return services;
+    }
+
+    public List<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList() {
+        Iterable<ServiceEntity> serviceEntities = serviceRepository.findServiceListByImplementationType(ServiceImplementationType.PARENT);
         List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
         return services;
     }

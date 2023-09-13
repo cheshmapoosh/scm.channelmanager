@@ -16,6 +16,9 @@ public abstract class Service extends BaseModel<String> {
 
     private String code;
     private String title;
+    private String alias;
+    private Integer version;
+    private Boolean isSystemic;
     private String metadata;
     private ServiceType type;
     private Service parent;
@@ -44,6 +47,30 @@ public abstract class Service extends BaseModel<String> {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public Boolean getSystemic() {
+        return isSystemic;
+    }
+
+    public void setSystemic(Boolean systemic) {
+        isSystemic = systemic;
     }
 
     public String getMetadata() {
