@@ -46,6 +46,10 @@ public class StringUtils {
     }
     public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {
         return org.apache.commons.lang3.StringUtils.appendIfMissing(str, suffix, suffixes);
+    }  
+    
+    public static String removeStart(final String str, String remove) {
+        return org.apache.commons.lang3.StringUtils.removeStart(str, remove);
     }
 
     public static String generateGuid() {

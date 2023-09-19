@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
@@ -18,6 +19,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE;
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
@@ -58,6 +60,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         String serviceRequestHeaderContentType = extractServiceRequestHeaderContentType(service);
         String targetUrl = endpointUri + serviceUrl;
         requestBody = prepareRequest(message, requestBody, service);
+
         HttpRequest.BodyPublisher requestBodyPublisher = null;
         if (null != requestBody)
             requestBodyPublisher = HttpRequest.BodyPublishers.ofString(requestBody.toString());
@@ -75,6 +78,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         HttpResponse<String> response = null;
 
         try {
+            LocalDateTime startTime = LocalDateTime.now();
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
             if (statusCode != HttpConstants.HTTP_STATUS_OK && statusCode != HttpConstants.HTTP_STATUS_NO_CONTENT) {
@@ -87,8 +91,8 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
 //                        message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
 //                        String.valueOf(statusCode), "http status: " + statusCode);
             }
-            response = prepareResponse(response, message, service);
-            return processResponse(response, response.statusCode());
+            return prepareResponse(response, message, service);
+
         } catch (BaseException e) {
             throw e;
         } catch (IOException e) {
@@ -100,8 +104,8 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         }
     }
 
-    protected HttpResponse<String> prepareResponse(HttpResponse<String> response, Message message, Service service) {
-        return response;
+    protected Object prepareResponse(HttpResponse<String> response, Message message, Service service) {
+        return response.body();
     }
 
     protected Object prepareRequest(Message message, Object requestBody, Service service) {

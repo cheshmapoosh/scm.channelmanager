@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BaseJsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -21,6 +24,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Iterator;
 
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE;
 import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
@@ -34,6 +38,8 @@ import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_
  */
 @Component("nabCoreServiceProvider")
 public class NabServiceProvider extends AbstractRestExternalServiceProvider {
+
+    private final String PROPERTIES = "properties";
 
     @Autowired
     private NabRequestTransformer nabRequestTransformer;
@@ -58,13 +64,32 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
     }
 
     @Override
-    protected HttpResponse<String> prepareResponse(HttpResponse<String> response, Message message, Service service) {
-        return super.prepareResponse(response, message, service);
+    protected ObjectNode prepareResponse(HttpResponse<String> response, Message message, Service service) {
+        try {
+        JsonNode body = objectMapper.readTree(response.body());
+        if (body.has("errors") && body.get("errors").isArray() && body.get("errors").size() > 0) {
+            ArrayNode errorsNode = (ArrayNode) body.get("errors");
+            if (errorsNode.isArray()) {
+                for (JsonNode element : errorsNode) {
+                    // Read the data from the array element (assuming they are integers in this example)
+                    String errorCode = element.get("id").asText();
+                    String errorMessage = element.get("message").asText();
+                    throw new ExternalProviderException(externalServiceProvider, errorCode, errorMessage);
+                }
+            }
+        }else
+            return (ObjectNode) nabResponseTransformer.transform(body, message, service.getMetadata());
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
     }
 
     @Override
     protected Object prepareRequest(Message message, Object requestBody, Service service) {
-        return super.prepareRequest(message, requestBody, service);
+        return nabRequestTransformer.transform(requestBody,message,service.getMetadata());
     }
 
     @Override
