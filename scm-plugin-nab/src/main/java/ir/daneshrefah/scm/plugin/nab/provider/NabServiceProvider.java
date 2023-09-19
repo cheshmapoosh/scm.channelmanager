@@ -64,7 +64,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
     }
 
     @Override
-    protected ObjectNode prepareResponse(HttpResponse<String> response, Message message, Service service) {
+    protected Object prepareResponse(HttpResponse<String> response, Message message, Service service) {
         try {
         JsonNode body = objectMapper.readTree(response.body());
         if (body.has("errors") && body.get("errors").isArray() && body.get("errors").size() > 0) {
@@ -78,7 +78,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
                 }
             }
         }else
-            return (ObjectNode) nabResponseTransformer.transform(body, message, service.getMetadata());
+            return  nabResponseTransformer.transform(body, message, service.getMetadata());
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

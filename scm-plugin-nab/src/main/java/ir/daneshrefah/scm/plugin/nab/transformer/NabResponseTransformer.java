@@ -37,6 +37,7 @@ public class NabResponseTransformer extends AbstractTransformer {
         JsonNode resultNab = payloadTmp.get("result");
         ArrayNode arrayResult = JsonNodeFactory.instance.arrayNode();
         ObjectNode objectResult = JsonNodeFactory.instance.objectNode();
+        JsonNode result=JsonNodeFactory.instance.objectNode();;
         if (resultNab.isArray()) {
             ArrayNode arrayNode= (ArrayNode) resultNab;
             for (JsonNode jsonNode : arrayNode) {
@@ -44,14 +45,14 @@ public class NabResponseTransformer extends AbstractTransformer {
                 ObjectNode binding = bind.response();
                 arrayResult.add(binding);
             }
-            objectResult.set("result",arrayResult);
+            result=arrayResult;
 
         }else {
             Bind bind = new Bind((ObjectNode) resultNab, metadata);
             ObjectNode binding = bind.response();
-            objectResult.setAll(binding);
+            result=binding;
         }
-        return objectResult;
+        return result;
 
 //        try {
 //            JsonNode jsonPayload = payload instanceof JsonNode ? (JsonNode) payload : objectMapper.readTree((String) payload);
