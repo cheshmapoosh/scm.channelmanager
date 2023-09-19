@@ -1,13 +1,12 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.nab.provider.Bind;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,14 +27,11 @@ public class NabRequestTransformer extends AbstractTransformer {
 
     @Override
     public Object internalTransform(Object payload, Message message, String metadata) {
-        try {
-            JsonNode jsonMetadata = objectMapper.readTree(metadata);
-            modifyJsonNode(jsonMetadata, (JsonNode) payload);
-            return jsonMetadata;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        Bind bind=new Bind((ObjectNode) payload,metadata);
+        return bind.request();
     }
+
+
 
     private static void modifyJsonNode(JsonNode node, JsonNode payload) {
         if (node.isObject()) {

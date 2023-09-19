@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.nab.provider.Bind;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,22 +32,43 @@ public class NabResponseTransformer extends AbstractTransformer {
         if (null == payload) {
             return null;
         }
-        try {
-            JsonNode jsonPayload = payload instanceof JsonNode ? (JsonNode) payload : objectMapper.readTree((String) payload);
-            jsonPayload = jsonPayload.get("result");
-            ObjectNode jsonMetadata = (ObjectNode) objectMapper.readTree(metadata);
-            JsonNode result = jsonPayload.isArray() ? objectMapper.createArrayNode() : objectMapper.createObjectNode();
-            if (jsonPayload.isArray()) {
-                for (JsonNode jsonNode : jsonPayload) {
-                    ((ArrayNode) result).add(createResponseItem(jsonMetadata, (ObjectNode) jsonNode));
-                }
-            } else {
-                result = createResponseItem(jsonMetadata, (ObjectNode) jsonPayload);
+
+        ObjectNode payloadTmp = (ObjectNode) payload;
+        JsonNode resultNab = payloadTmp.get("result");
+        ArrayNode arrayResult = JsonNodeFactory.instance.arrayNode();
+        ObjectNode objectResult = JsonNodeFactory.instance.objectNode();
+        if (resultNab.isArray()) {
+            ArrayNode arrayNode= (ArrayNode) resultNab;
+            for (JsonNode jsonNode : arrayNode) {
+                Bind bind = new Bind((ObjectNode) jsonNode, metadata);
+                ObjectNode binding = bind.response();
+                arrayResult.add(binding);
             }
-            return result;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            objectResult.set("result",arrayResult);
+
+        }else {
+            Bind bind = new Bind((ObjectNode) resultNab, metadata);
+            ObjectNode binding = bind.response();
+            objectResult.setAll(binding);
         }
+        return objectResult;
+
+//        try {
+//            JsonNode jsonPayload = payload instanceof JsonNode ? (JsonNode) payload : objectMapper.readTree((String) payload);
+//            jsonPayload = jsonPayload.get("result");
+//            ObjectNode jsonMetadata = (ObjectNode) objectMapper.readTree(metadata);
+//            JsonNode result = jsonPayload.isArray() ? objectMapper.createArrayNode() : objectMapper.createObjectNode();
+//            if (jsonPayload.isArray()) {
+//                for (JsonNode jsonNode : jsonPayload) {
+//                    ((ArrayNode) result).add(createResponseItem(jsonMetadata, (ObjectNode) jsonNode));
+//                }
+//            } else {
+//                result = createResponseItem(jsonMetadata, (ObjectNode) jsonPayload);
+//            }
+//            return result;
+//        } catch (JsonProcessingException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     private ObjectNode createResponseItem(ObjectNode metadata, ObjectNode payload) {
