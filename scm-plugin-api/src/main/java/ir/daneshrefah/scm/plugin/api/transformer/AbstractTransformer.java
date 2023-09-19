@@ -40,8 +40,9 @@ public abstract class AbstractTransformer {
             }
         } finally {
             LocalDateTime endTime = LocalDateTime.now();
+            String invokerClassName = Thread.currentThread().getStackTrace()[2].getClassName();
             message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, error, payload, result,
-                    (null != result ? result.getClass().getName() : "null"));
+                    (null != result ? result.getClass().getName() : "null"), invokerClassName);
         }
         return result;
     }

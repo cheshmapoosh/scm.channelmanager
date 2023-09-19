@@ -70,12 +70,14 @@ public class Message implements Serializable {
     }
 
     public void addTransformEvent(LocalDateTime startTime, LocalDateTime endTime, String transformerClass,
-                                  boolean isSuccessful, Object error, Object input, Object output, String outputType) {
+                                  boolean isSuccessful, Object error, Object input, Object output, String outputType,
+                                  String invokerClassName) {
 
         TransformEvent event = (TransformEvent) addEvent(EventType.TRANSFORM, startTime, endTime, isSuccessful, error,
                 input, output);
         event.setTransformerClassName(transformerClass);
         event.setOutputType(outputType);
+        event.setInvokerClassName(invokerClassName);
 
     }
     public void addServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, Service service, boolean isSuccessful,

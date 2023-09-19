@@ -13,6 +13,7 @@ public class TransformEvent extends Event {
 
     private String transformerClassName;
     private String outputType;
+    private String invokerClassName;
 
 
     public TransformEvent(LocalDateTime startTime, LocalDateTime endTime, Object error, Object input, Object output, Boolean isSuccessful) {
@@ -33,5 +34,13 @@ public class TransformEvent extends Event {
 
     public void setOutputType(String outputType) {
         this.outputType = outputType;
+    }
+
+    public String getInvokerClassName() {
+        return invokerClassName;
+    }
+
+    public void setInvokerClassName(String invokerClassName) {
+        this.invokerClassName = invokerClassName;
     }
 }
