@@ -17,6 +17,7 @@ import org.apache.camel.model.rest.RestBindingMode;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Description of the class or purpose of the file.
@@ -31,14 +32,20 @@ public class CamelRouteBuilder extends RouteBuilder {
     private static final String JSON_PROPERTY_METADATA_CONTEXT_PATH = "contextPath";
     private Channel channel;
     private BiFunction<TerminalServiceChannelAccess, Message, Message> serviceInvoker;
+    private Function<TerminalServiceChannelAccess, String> serviceUrlBuilder;
+    private Function<TerminalServiceChannelAccess, String> httpMethodExtractor;
     private JacksonDataFormat dataFormat;
 
     private RestMessageParser restMessageParser;
     private RestResponseGenerator restResponseGenerator;
 
-    public CamelRouteBuilder(Channel channel, BiFunction<TerminalServiceChannelAccess, Message, Message> serviceInvoker) {
+    public CamelRouteBuilder(Channel channel, BiFunction<TerminalServiceChannelAccess, Message, Message> serviceInvoker,
+                             Function<TerminalServiceChannelAccess, String> serviceUrlBuilder,
+                             Function<TerminalServiceChannelAccess, String> httpMethodExtractor) {
         this.channel = channel;
         this.serviceInvoker = serviceInvoker;
+        this.serviceUrlBuilder = serviceUrlBuilder;
+        this.httpMethodExtractor = httpMethodExtractor;
 
         ObjectMapper objectMapper = ApplicationConfig.getObjectMapperInstance();
 //        objectMapper.registerModule(new JavaTimeModule());
@@ -67,29 +74,20 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     }
 
-    private String extractServiceUrl(Service service) {
-        if (null == service) {
-            return null;
-        }
-        String serviceUrl = StringUtils.isNotEmpty(service.getAlias()) ? service.getAlias() : service.getCode();
-        if (!StringUtils.startsWith(serviceUrl, "/", true)) {
-            serviceUrl = "/" + serviceUrl;
-        }
-        return serviceUrl.toLowerCase().replace("_", "-");
-    }
     public void addRoute(TerminalServiceChannelAccess channelAccess) {
-        String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
-        String httpMethod = createHttpMethodBasedOnServiceType(channelAccess.getTerminalServiceAccess().getService().getType());
-        String serviceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService());
-        String parentServiceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService().getParent());
-        StringBuilder urlBuilder = new StringBuilder("rest:");
-        urlBuilder
-                .append(httpMethod)
-                .append(":api/")
-                .append(terminalCode)
-                .append(null != parentServiceUrl ? parentServiceUrl : "")
-                .append(serviceUrl);
-        String inboundUrl = urlBuilder.toString();
+//        String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
+//        String httpMethod = createHttpMethodBasedOnServiceType(channelAccess.getTerminalServiceAccess().getService().getType());
+//        String serviceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService());
+//        String parentServiceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService().getParent());
+//        StringBuilder urlBuilder = new StringBuilder("rest:");
+//        urlBuilder
+//                .append(httpMethod)
+//                .append(":api/")
+//                .append(terminalCode)
+//                .append(null != parentServiceUrl ? parentServiceUrl : "")
+//                .append(serviceUrl);
+        String inboundUrl = "rest:" + httpMethodExtractor.apply(channelAccess) + ":" +
+                serviceUrlBuilder.apply(channelAccess);
         from(inboundUrl)
                 .process(exchange -> {
                     // init message
@@ -112,20 +110,4 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     }
 
-    private String createHttpMethodBasedOnServiceType(ServiceType type) {
-        String defaultMethod = "post";
-        if (null == type) {
-            return defaultMethod;
-        }
-        switch (type) {
-            case INQUIRY:
-                return "get";
-            case REPORT:
-                return "get";
-            case FINANCE:
-                return "post";
-            default:
-                return defaultMethod;
-        }
-    }
 }
