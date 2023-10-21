@@ -13,6 +13,8 @@ import java.util.UUID;
  */
 public class StringUtils {
 
+    public static final String SPACE = org.apache.commons.lang3.StringUtils.SPACE;
+
     public static boolean isEmpty(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isEmpty(cs);
     }
@@ -56,5 +58,12 @@ public class StringUtils {
 //        return RandomStringUtils.random(36, true, true);
         return UUID.randomUUID().toString();
     }
+
+    public static String substringBefore(String str, String separator) {
+//        return RandomStringUtils.random(36, true, true);
+        return org.apache.commons.lang3.StringUtils.substringBefore(str, separator);
+    }
+
+
 
 }

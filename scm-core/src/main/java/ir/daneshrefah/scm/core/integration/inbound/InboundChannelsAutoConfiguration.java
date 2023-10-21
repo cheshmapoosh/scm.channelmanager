@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -45,6 +46,9 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
     @Autowired
     private TransformerService transformerService;
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private UaaClientAuthenticationService uaaClientAuthenticationService;
 
     @Bean
     public void registerInboundBeans() {
@@ -84,7 +88,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
                     findTerminalServiceChannelAccessByChannelId(channel.getId());
 
             inboundChannelGenerator.initInbound(producerTemplate, channel, terminalServiceChannelAccessList,
-                    terminalAuthorities, transformerService);
+                    terminalAuthorities, transformerService, uaaClientAuthenticationService);
 //            inboundChannelGenerator.setChannelAccesses(terminalServiceChannelAccessList);
 //            AbstractInboundChannelGenerator bean = (AbstractInboundChannelGenerator) beanFactory.getBean("inboundChannelGeneratorBean_" + channel.getCode());
 //            bean.initInbound();

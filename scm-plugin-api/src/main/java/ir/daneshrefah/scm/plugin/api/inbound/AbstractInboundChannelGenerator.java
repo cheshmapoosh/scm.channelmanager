@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
@@ -12,6 +13,13 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
+import ir.daneshrefah.scm.uaa.common.model.authentication.AuthenticationResponse;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.AuthorizationServiceException;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,9 +40,11 @@ public abstract class AbstractInboundChannelGenerator {
     protected TransformerService transformerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
+    private UaaClientAuthenticationService uaaClientAuthenticationService;
+
     public final void initInbound(ServiceProducerTemplate producerTemplate,
                                   Channel channel, List<TerminalServiceChannelAccess> channelAccesses,
-                                  List<Authority> authorities, TransformerService transformerService) {
+                                  List<Authority> authorities, TransformerService transformerService, UaaClientAuthenticationService uaaClientAuthenticationService) {
         this.producerTemplate = producerTemplate;
         this.channel = channel;
         this.channelAccesses = channelAccesses;
@@ -57,6 +67,7 @@ public abstract class AbstractInboundChannelGenerator {
             }
             registerTerminalService(channelAccess);
         }
+        this.uaaClientAuthenticationService = uaaClientAuthenticationService;
         finalizeConfig();
     }
 
@@ -109,6 +120,13 @@ public abstract class AbstractInboundChannelGenerator {
         if (!service.getCheckAccessFirstAuthentication()) {
             return true;
         }
+
+        //TODO uaa check authority
+//        AuthenticationResponse authenticationResponse = (AuthenticationResponse) SecurityContextHolder.getContext().getAuthentication();
+//        AuthorizationDecision decision = AuthorityAuthorizationManager.hasAnyAuthority("").check(() -> authenticationResponse, null);
+//        if (decision != null && !decision.isGranted()) {
+//            throw new AccessDeniedException("Access Denied");
+//        }
 //        TODO
 //        3) if authentication matched return true
         return true;

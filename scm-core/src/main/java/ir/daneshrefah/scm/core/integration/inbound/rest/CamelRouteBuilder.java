@@ -4,18 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import ir.daneshrefah.scm.common.model.message.*;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -41,7 +38,7 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     public CamelRouteBuilder(Channel channel, BiFunction<TerminalServiceChannelAccess, Message, Message> serviceInvoker,
                              Function<TerminalServiceChannelAccess, String> serviceUrlBuilder,
-                             Function<TerminalServiceChannelAccess, String> httpMethodExtractor) {
+                             Function<TerminalServiceChannelAccess, String> httpMethodExtractor, UaaClientAuthenticationService uaaClientAuthenticationService) {
         this.channel = channel;
         this.serviceInvoker = serviceInvoker;
         this.serviceUrlBuilder = serviceUrlBuilder;
@@ -55,7 +52,7 @@ public class CamelRouteBuilder extends RouteBuilder {
         objectMapper.registerModule(simpleModule);
         dataFormat = new JacksonDataFormat();
         dataFormat.setObjectMapper(objectMapper);
-        restMessageParser = new RestMessageParser();
+        restMessageParser = new RestMessageParser(uaaClientAuthenticationService);
         restResponseGenerator = new RestResponseGenerator();
     }
 
