@@ -1,0 +1,13 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+
+}
+
