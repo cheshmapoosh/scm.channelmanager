@@ -25,7 +25,7 @@ public class PropertyService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Cacheable(value = "cache_config", key = "#root.methodName + '-' + #application + '-' + #profile + '-' + #label")
+//    @Cacheable(value = "cache_config", key = "#root.methodName + '-' + #application + '-' + #profile + '-' + #label")
     public List<Property> find(String application, String profile, String label) {
         StringBuilder sql = new StringBuilder("SELECT * FROM REF.TBL_SFG_PROPERTIES WHERE APPLICATION_KEY = ? " +
                 "AND PROFILE_KEY = ? ");
