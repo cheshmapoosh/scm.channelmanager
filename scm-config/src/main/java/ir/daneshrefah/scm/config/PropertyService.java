@@ -44,7 +44,7 @@ public class PropertyService {
                     resultSet.getString("profile_key"),
                     resultSet.getString("label_key"),
                     resultSet.getString("prop_key"),
-                    resultSet.getString("prop_key"));
+                    resultSet.getString("prop_value"));
             return property;
         }, args.toArray());
     }
