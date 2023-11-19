@@ -1,0 +1,11 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.hazelcast:hazelcast-spring:5.2.2'
+    implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+}
