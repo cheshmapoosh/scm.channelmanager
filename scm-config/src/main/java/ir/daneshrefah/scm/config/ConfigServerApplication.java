@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.config.server.EnableConfigServer;
-//import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,7 +14,7 @@ import org.springframework.cloud.config.server.EnableConfigServer;
  */
 @SpringBootApplication
 @EnableConfigServer
-//@EnableJpaRepositories(basePackages = "ir.daneshrefah.scm.config")
+@EnableCaching
 public class ConfigServerApplication {
     public static void main(String[] args) {
         SpringApplication.run(ConfigServerApplication.class, args);

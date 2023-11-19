@@ -3,15 +3,24 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.2.xsd">
 
-    <cache name="configCache">
-        <key-type class-name="java.lang.String"/>
-        <value-type class-name="java.util.Properties"/>
-        <management-enabled>true</management-enabled>
-        <statistics-enabled>true</statistics-enabled>
-<!--        <max-size policy="USED_HEAP_PERCENTAGE">75</max-size>-->
-<!--        <eviction-policy>LRU</eviction-policy>-->
-<!--        <time-to-live-seconds>0</time-to-live-seconds>-->
-<!--        <max-idle-seconds>0</max-idle-seconds>-->
+    <!--<network>
+        <join>
+            <multicast enabled="false"/>
+            <tcp-ip enabled="true">
+                <member-list>
+                    <member>192.168.1.100</member>
+                    <member>192.168.1.101</member>
+                    <member>192.168.1.102</member>
+                </member-list>
+            </tcp-ip>
+        </join>
+    </network>-->
+
+    <cache name="cache_config">
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="CREATED" time-unit="SECONDS"
+                                         duration-amount="10"/>
+        </expiry-policy-factory>
     </cache>
 
 </hazelcast>

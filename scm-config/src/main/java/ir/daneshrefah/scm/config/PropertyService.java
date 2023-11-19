@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.config;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,16 +25,27 @@ public class PropertyService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Cacheable(value = "cache_config", key = "#root.methodName + '-' + #application + '-' + #profile + '-' + #label")
     public List<Property> find(String application, String profile, String label) {
-        String sql = "SELECT * FROM REF.TBL_SFG_PROPERTIES ";
+        StringBuilder sql = new StringBuilder("SELECT * FROM REF.TBL_SFG_PROPERTIES WHERE APPLICATION_KEY = ? " +
+                "AND PROFILE_KEY = ? ");
+        List<Object> args = new ArrayList<>();
+        args.add(application);
+        args.add(profile);
+        if (null == label) {
+            sql.append("AND LABEL_KEY IS NULL");
+        } else {
+            sql.append("AND LABEL_KEY = ?");
+            args.add(label);
+        }
 
-        return jdbcTemplate.query(sql, (resultSet, rowNum) -> {
+        return jdbcTemplate.query(sql.toString(), (resultSet, rowNum) -> {
             Property property = new Property(resultSet.getString("application_key"),
                     resultSet.getString("profile_key"),
                     resultSet.getString("label_key"),
                     resultSet.getString("prop_key"),
                     resultSet.getString("prop_key"));
             return property;
-        });
+        }, args.toArray());
     }
 }
