@@ -36,6 +36,7 @@ public class DatabaseEnvironmentRepository implements EnvironmentRepository {
             if (null != property.getLabelKey()) {
                 name = name + "-" + property.getLabelKey();
             }
+            name = name + "-" + property.getPropKey();
             PropertySource source = new PropertySource( name,
                     Collections.singletonMap(property.getPropKey(), property.getPropValue()));
             environment.getPropertySources().add(source);
