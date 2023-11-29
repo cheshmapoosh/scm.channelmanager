@@ -3,11 +3,21 @@ scm:
   inbound:
     host: localhost
     port: 8582
+  cache:
+    client:
+      config:
+        cluster-name: dev3
+        server-host: 127.0.0.1
+        server-port: 5701
+        near-cache-config:
+          myMap:
+            in-memory-format: object
+            time-to-live-seconds: 10
 
 server:
   servlet:
     context-path: /scm
-  port: 8080
+  port: 8086
 spring:
   datasource:
     url: jdbc:db2://10.10.4.104:50001/DBREFSW
@@ -23,10 +33,3 @@ spring:
 #      load-on-startup: 1
 #      path: /
 
-cache:
-  config:
-    client:
-      server-host: 127.0.0.1
-      server-port: 5701
-      cluster-name: dev3
-      near-cache-enabled: true
