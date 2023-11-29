@@ -7,7 +7,6 @@ import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.cache.config.instances.service.InstanceConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class HazelcastConfig {
 
+
     @Bean
     @ConfigurationProperties(prefix = "hazelcast.config", ignoreUnknownFields = false)
     Config config() {
@@ -34,10 +34,9 @@ public class HazelcastConfig {
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(InstanceConfig instanceConfig){
-     return (command) ->{
-         instanceConfig.setup(config());
-        };
+    public Boolean setupInstanceConfig(InstanceConfig instanceConfig){
+        instanceConfig.setup(config());
+        return true;
     }
     @Bean
     public HazelcastInstance hazelcastInstance(){
