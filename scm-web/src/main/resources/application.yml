@@ -10,7 +10,7 @@ server:
   port: 8080
 spring:
   datasource:
-    url: jdbc:db2://10.10.5.70:50000/DBREFSW
+    url: jdbc:db2://10.10.4.104:50001/DBREFSW
     username: db2inst1
     password: db2inst1
     driver-class-name: com.ibm.db2.jcc.DB2Driver
@@ -22,3 +22,11 @@ spring:
 #    servlet:
 #      load-on-startup: 1
 #      path: /
+
+cache:
+  config:
+    client:
+      server-host: 127.0.0.1
+      server-port: 5701
+      cluster-name: dev3
+      near-cache-enabled: true

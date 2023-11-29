@@ -1,0 +1,19 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.hazelcast:hazelcast-spring:5.3.6'
+//    implementation 'com.hazelcast:hazelcast:5.3.6'
+    implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+}
