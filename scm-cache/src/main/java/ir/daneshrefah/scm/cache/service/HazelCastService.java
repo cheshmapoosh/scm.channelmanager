@@ -1,10 +1,10 @@
-package ir.daneshrefah.scm.cache.rest.service;
+package ir.daneshrefah.scm.cache.service;
 
 import ir.daneshrefah.scm.cache.client.CacheTemplate;
 
 import java.util.List;
 
-public interface HazelCastRestEndpoint extends CacheTemplate {
+public interface HazelCastService extends CacheTemplate {
 
     List<String> getMapList();
 

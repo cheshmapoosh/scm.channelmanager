@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.rest.service;
+package ir.daneshrefah.scm.cache.service;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class HazelCastRestEndpointImpl implements HazelCastRestEndpoint {
+public class HazelCastServiceImpl implements HazelCastService {
 
     private final HazelcastInstance  hazelcastInstance;
 
