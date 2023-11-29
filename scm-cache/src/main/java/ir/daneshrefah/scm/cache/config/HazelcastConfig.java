@@ -5,7 +5,6 @@ import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.cache.config.instances.service.InstanceConfig;
-import ir.daneshrefah.scm.cache.config.model.HazelConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -27,16 +26,10 @@ public class HazelcastConfig {
 
     @Bean
     @ConfigurationProperties(prefix = "hazelcast.config", ignoreUnknownFields = false)
-    HazelConfig hazelAddonConfig() {
-        HazelConfig hazelConfig = new HazelConfig();
-        log.info(">>> hazelcast config loaded");
-        return hazelConfig;
-    }
-
-    @Bean
-    public Config config(){
-        Config config = hazelAddonConfig();
+    Config config() {
+        Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
+        log.info(">>> hazelcast config loaded");
         return config;
     }
 
