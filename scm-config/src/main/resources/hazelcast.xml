@@ -16,6 +16,14 @@
         </join>
     </network>-->
 
+    <network>
+        <port>5700</port>
+        <join>
+            <auto-detection enabled="false"/>
+            <multicast enabled="false"/>
+        </join>
+    </network>
+
     <cache name="cache_config">
         <expiry-policy-factory>
             <timed-expiry-policy-factory expiry-policy-type="CREATED" time-unit="SECONDS"

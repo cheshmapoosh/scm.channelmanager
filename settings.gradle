@@ -9,4 +9,4 @@
  */
 
 rootProject.name = 'ChannelManager'
-include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 'scm-web', 'scm-plugin-scm', 'scm-plugin-nab', 'scm-plugin-mock', 'scm-plugin-hps', 'scm-config', 'scm-cache', 'scm-data')
+include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 'scm-web', 'scm-plugin-scm', 'scm-plugin-nab', 'scm-plugin-mock', 'scm-plugin-hps', 'scm-config', 'scm-cache','scm-cache-client')

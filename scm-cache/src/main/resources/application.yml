@@ -4,3 +4,9 @@ spring:
     name: scm-cache
   config:
     import: configserver:http://localhost:8888
+
+springdoc:
+  api-docs:
+    enabled: true
+  packages-to-scan: ir.daneshrefah.scm.cache.rest
+
