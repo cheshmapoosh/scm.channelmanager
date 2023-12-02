@@ -17,7 +17,7 @@ import java.util.List;
  * @version 1.0
  * @since 2023-11-18
  */
-@Component
+//@Component
 public class DatabaseEnvironmentRepository implements EnvironmentRepository {
 
 //    private final PropertiesRepository propertiesRepository;
