@@ -3,10 +3,11 @@ package ir.daneshrefah.scm.cache.client.config;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.config.*;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import ir.daneshrefah.scm.cache.client.config.exception.HazelCastClientInitializationException;
+import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -42,6 +43,7 @@ public class HazelcastClientAutoConfiguration {
             clientConfig.setNetworkConfig(new ClientNetworkConfig().addAddress(getServerAddress()));
             clientConfig.setClusterName(clientProperties.getClusterName());
             setupNearCache(clientConfig);
+            setupSerializationConfig(clientConfig);
             return HazelcastClient.newHazelcastClient(clientConfig);
         } catch (Exception exception) {
             log.error(">>> couldn't create client hazelcast instance", exception);
@@ -67,8 +69,16 @@ public class HazelcastClientAutoConfiguration {
                         NearCacheConfig nearCacheConfig = nearCacheConfigMap.get(cacheName);
                         nearCacheConfig.setName(cacheName);
                         clientConfig.addNearCacheConfig(nearCacheConfig);
-                        log.info(">>> hazelcast client near cache config loaded for {}", cacheName);
+                        log.info(">>> hazelcast client near cache config has been loaded for {}", cacheName);
                     });
+        }
+    }
+
+    private void setupSerializationConfig(ClientConfig clientConfig){
+        if (Objects.nonNull(clientProperties.getSerializationConfig())){
+            SerializationConfig serializationConfig = clientProperties.getSerializationConfig();
+            clientConfig.setSerializationConfig(serializationConfig);
+            log.info(">>> hazelcast client serialization config has been loaded");
         }
     }
 

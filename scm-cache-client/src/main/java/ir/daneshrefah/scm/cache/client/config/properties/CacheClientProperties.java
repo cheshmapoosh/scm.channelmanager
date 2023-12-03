@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.cache.client.config.properties;
 
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SerializationConfig;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -40,4 +41,5 @@ public class CacheClientProperties {
     private String serverPort;                              //mandatory
     private String clusterName;                             //mandatory
     private Map<String, NearCacheConfig> nearCacheConfig;   //optional
+    private SerializationConfig serializationConfig;        //optional
 }
