@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.config;
+package ir.daneshrefah.scm.config.config;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.config.environment.Environment;
@@ -22,6 +22,7 @@ public class CustomJdbcEnvironmentRepository extends JdbcEnvironmentRepository {
 
     @Override
     public Environment findOne(String application, String profile, String label) {
+//        return super.findOne(application, profile, label);
         if (!StringUtils.contains(profile, "default")) {
             profile = "default, " + profile;
         }
