@@ -1,13 +1,11 @@
-package ir.daneshrefah.scm.config;
+package ir.daneshrefah.scm.config.service;
 
-import org.springframework.cache.annotation.Cacheable;
+import ir.daneshrefah.scm.config.Properties;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,16 +15,16 @@ import java.util.Map;
  * @since 2023-11-18
  */
 @Service
-public class PropertyService {
+public class PropertyServicew {
 
     private JdbcTemplate jdbcTemplate;
 
-    public PropertyService(JdbcTemplate jdbcTemplate) {
+    public PropertyServicew(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
 //    @Cacheable(value = "cache_config", key = "#root.methodName + '-' + #application + '-' + #profile + '-' + #label")
-    public List<Property> find(String application, String profile, String label) {
+    public List<Properties> find(String application, String profile, String label) {
         StringBuilder sql = new StringBuilder("SELECT * FROM REF.TBL_SFG_PROPERTIES WHERE APPLICATION_KEY = ? " +
                 "AND PROFILE_KEY = ? ");
         List<Object> args = new ArrayList<>();
@@ -40,7 +38,7 @@ public class PropertyService {
         }
 
         return jdbcTemplate.query(sql.toString(), (resultSet, rowNum) -> {
-            Property property = new Property(resultSet.getString("application_key"),
+            Properties property = new Properties(resultSet.getString("application_key"),
                     resultSet.getString("profile_key"),
                     resultSet.getString("label_key"),
                     resultSet.getString("prop_key"),
