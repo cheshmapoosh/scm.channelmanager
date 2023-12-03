@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.config;
 
 import java.io.Serializable;
 
-public class Property implements Serializable {
+public class Properties implements Serializable {
 
     private String applicationKey;
     private String profileKey;
@@ -10,7 +10,7 @@ public class Property implements Serializable {
     private String propKey;
     private String propValue;
 
-    public Property(String applicationKey, String profileKey, String labelKey, String propKey, String propValue) {
+    public Properties(String applicationKey, String profileKey, String labelKey, String propKey, String propValue) {
         this.applicationKey = applicationKey;
         this.profileKey = profileKey;
         this.labelKey = labelKey;
