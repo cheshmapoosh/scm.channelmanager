@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.config.instances.domain;
+package ir.daneshrefah.scm.cache.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,20 +9,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "SCM_CACHE_MULTI_MAP_CONFIG")
+@Table(name = "SCM_CACHE_LIST_CONFIG")
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MultiMapCacheConfigEntity extends InstanceConfigEntity {
-    @Column(name = "BINARY_ENABLED")
-    private Boolean binaryEnabled;
+public class ListCacheConfigEntity extends InstanceConfigEntity {
     @Column(name = "BACKUP_COUNT")
     private Integer backupCount;
     @Column(name = "ASYNC_BACKUP_COUNT")
     private Integer asyncBackupCount;
-    @Column(name = "SPLIT_BRAIN_PROTECTION_NAME")
-    private String splitBrainProtectionName;
-    @Column(name = "VALUE_COLLECTION_TYPE")
-    private String valueCollectionType;
+    @Column(name = "MAX_SIZE")
+    private Integer maxSize;
+    @Column(name = "MERGE_POLICY_BATCH_SIZE")
+    private Integer mergePolicyBatchSize;
 }

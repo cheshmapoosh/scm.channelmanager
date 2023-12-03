@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.config.instances.domain;
+package ir.daneshrefah.scm.cache.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

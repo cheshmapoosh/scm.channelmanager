@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.config.instances.domain;
+package ir.daneshrefah.scm.cache.domain;
 
 import com.hazelcast.config.*;
 import jakarta.persistence.Column;

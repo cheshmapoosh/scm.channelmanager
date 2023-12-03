@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.cache.config.instances.repository;
+package ir.daneshrefah.scm.cache.repository;
 
-import ir.daneshrefah.scm.cache.config.instances.domain.*;
+import ir.daneshrefah.scm.cache.domain.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
@@ -20,8 +20,8 @@ public class InstanceCacheConfigRepository {
          resultList.addAll(entityManager.createQuery("select o from MapCacheConfigEntity o", MapCacheConfigEntity.class).getResultList());
          resultList.addAll(entityManager.createQuery("select o from MultiMapCacheConfigEntity o", MultiMapCacheConfigEntity.class).getResultList());
          resultList.addAll(entityManager.createQuery("select o from QueueCacheConfigEntity o", QueueCacheConfigEntity.class).getResultList());
-         resultList.addAll(entityManager.createQuery("select o from ReplicatedMapCacheConfigEntity o",ReplicatedMapCacheConfigEntity.class).getResultList());
-         resultList.addAll(entityManager.createQuery("select o from SetCacheConfigEntity o",SetCacheConfigEntity.class).getResultList());
+         resultList.addAll(entityManager.createQuery("select o from ReplicatedMapCacheConfigEntity o", ReplicatedMapCacheConfigEntity.class).getResultList());
+         resultList.addAll(entityManager.createQuery("select o from SetCacheConfigEntity o", SetCacheConfigEntity.class).getResultList());
          resultList.addAll(entityManager.createQuery("select o from TopicCacheConfigEntity o", TopicCacheConfigEntity.class).getResultList());
          return resultList;
     }
