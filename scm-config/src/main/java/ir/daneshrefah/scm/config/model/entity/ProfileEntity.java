@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.config.model.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "TBL_SFG_PROFILE")
@@ -18,6 +19,18 @@ public class ProfileEntity implements Serializable {
 
     @Column(name = "TITLE")
     private String title;
+
+    @Column(name = "CREATE_DATE")
+    private LocalDateTime createDate;
+
+    @Column(name = "LAST_EDIT_DATE")
+    private LocalDateTime lastEditDate;
+
+    @Column(name = "CREATOR_USER")
+    private String creatorUser;
+
+    @Column(name = "LAST_EDITOR_USER")
+    private String lastEditorUser;
 
 
     public String getId() {
@@ -42,5 +55,37 @@ public class ProfileEntity implements Serializable {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public LocalDateTime getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(LocalDateTime createDate) {
+        this.createDate = createDate;
+    }
+
+    public LocalDateTime getLastEditDate() {
+        return lastEditDate;
+    }
+
+    public void setLastEditDate(LocalDateTime lastEditDate) {
+        this.lastEditDate = lastEditDate;
+    }
+
+    public String getCreatorUser() {
+        return creatorUser;
+    }
+
+    public void setCreatorUser(String creatorUser) {
+        this.creatorUser = creatorUser;
+    }
+
+    public String getLastEditorUser() {
+        return lastEditorUser;
+    }
+
+    public void setLastEditorUser(String lastEditorUser) {
+        this.lastEditorUser = lastEditorUser;
     }
 }

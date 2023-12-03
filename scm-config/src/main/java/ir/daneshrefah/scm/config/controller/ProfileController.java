@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/profile")
+@RequestMapping("/config/profile")
 public class ProfileController {
 
     private final ProfileService profileService;

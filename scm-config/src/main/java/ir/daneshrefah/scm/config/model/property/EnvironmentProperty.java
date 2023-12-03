@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.config.model.property;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class EnvironmentProperty implements Serializable {
 
@@ -57,5 +58,18 @@ public class EnvironmentProperty implements Serializable {
 
     public void setPropKey(String propKey) {
         this.propKey = propKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EnvironmentProperty that = (EnvironmentProperty) o;
+        return Objects.equals(propKey, that.propKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(propKey);
     }
 }
