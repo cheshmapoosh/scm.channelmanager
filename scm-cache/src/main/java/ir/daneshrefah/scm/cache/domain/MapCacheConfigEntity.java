@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "SCM_CACHE_MAP_CONFIG")
+@Table(name = "TBL_CHE_MAP_CONFIG")
 @Setter
 @Getter
 @NoArgsConstructor

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/hazelcast")
 @RequiredArgsConstructor
@@ -16,13 +18,13 @@ public class HazelcastRestAPI {
     private final HazelCastService hazelCastService;
 
     @GetMapping("/{mapName}/{key}")
-    public ResponseEntity get(@PathVariable("mapName") String mapName,
+    public ResponseEntity<Object> get(@PathVariable("mapName") String mapName,
                       @PathVariable("key") String key) {
         return ResponseEntity.ok(hazelCastService.getFromCache(mapName, key));
     }
 
     @PutMapping("/{mapName}/{key}")
-    public ResponseEntity put(@PathVariable("mapName") String mapName,
+    public ResponseEntity<String> put(@PathVariable("mapName") String mapName,
                     @PathVariable("key") String key,
                     @RequestBody String value) {
         hazelCastService.putInCache(mapName, key, value);
@@ -30,7 +32,7 @@ public class HazelcastRestAPI {
     }
 
     @PutMapping("/{mapName}/{key}/{lifetime}")
-    public ResponseEntity put(@PathVariable("mapName") String mapName,
+    public ResponseEntity<String> put(@PathVariable("mapName") String mapName,
                     @PathVariable("key") String key,
                     @PathVariable("lifetime") String lifetime,
                     @RequestBody String value) {
@@ -39,30 +41,30 @@ public class HazelcastRestAPI {
     }
 
     @DeleteMapping("/{mapName}/{key}")
-    public ResponseEntity remove(@PathVariable("mapName") String mapName,
+    public ResponseEntity<Object> remove(@PathVariable("mapName") String mapName,
                          @PathVariable("key") String key) {
         return ResponseEntity.ok(hazelCastService.removeFromCache(mapName, key));
     }
 
     @GetMapping("/create/{mapName}")
-    public ResponseEntity create(@PathVariable("mapName") String mapName) {
+    public ResponseEntity<String> create(@PathVariable("mapName") String mapName) {
         hazelCastService.createCacheIfNull(mapName);
         return ResponseEntity.ok(mapName);
     }
 
     @GetMapping("/generate-flake-id/{name}")
-    public ResponseEntity generateId(@PathVariable("name") String name) {
+    public ResponseEntity<Long> generateId(@PathVariable("name") String name) {
         FlakeIdGenerator idGeneratorIfNull = hazelCastService.createIdGeneratorIfNull(name);
         return ResponseEntity.ok(idGeneratorIfNull.newId());
     }
 
     @GetMapping("/maps")
-    public ResponseEntity mapList() {
+    public ResponseEntity<List<String>> mapList() {
         return ResponseEntity.ok(hazelCastService.getMapList());
     }
 
     @GetMapping("/maps/get-all/{map-name}")
-    public ResponseEntity mapList(@PathVariable("map-name") String mapName) {
+    public ResponseEntity<Object> mapList(@PathVariable("map-name") String mapName) {
         return ResponseEntity.ok(hazelCastService.getMapData(mapName));
     }
 }
