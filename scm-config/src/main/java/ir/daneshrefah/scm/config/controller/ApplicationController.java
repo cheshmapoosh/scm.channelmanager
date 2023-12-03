@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/application")
+@RequestMapping("/config/application")
 public class ApplicationController {
 
     private final ApplicationService applicationService;
