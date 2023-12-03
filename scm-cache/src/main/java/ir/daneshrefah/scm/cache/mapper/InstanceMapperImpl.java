@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.cache.mapper;
 
 import com.hazelcast.config.*;
-import ir.daneshrefah.scm.cache.config.instances.domain.*;
 import ir.daneshrefah.scm.cache.domain.*;
 import org.springframework.stereotype.Component;
 

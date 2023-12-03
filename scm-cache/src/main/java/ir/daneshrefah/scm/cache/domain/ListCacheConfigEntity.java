@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "SCM_CACHE_LIST_CONFIG")
+@Table(name = "TBL_CHE_LIST_CONFIG")
 @Setter
 @Getter
 @NoArgsConstructor

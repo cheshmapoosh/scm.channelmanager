@@ -29,11 +29,8 @@ import java.util.List;
 @Slf4j
 public class HazelcastConfig {
 
+    private final InstanceMapper instanceMapper;
 
-    @Autowired
-    private InstanceMapper instanceMapper;
-    @Autowired
-    private InstanceCacheConfigRepository instanceCacheConfigRepository;
     @Bean
     @ConfigurationProperties(prefix = "hazelcast.config", ignoreUnknownFields = false)
     Config config() {
@@ -49,7 +46,7 @@ public class HazelcastConfig {
     }
 
     @Bean
-    public Boolean setupInstanceConfig(){
+    public Boolean setupInstanceConfig(InstanceCacheConfigRepository instanceCacheConfigRepository){
         initHazelcastElementsConfig(instanceCacheConfigRepository);
         return true;
     }
