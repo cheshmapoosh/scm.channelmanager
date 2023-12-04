@@ -1,9 +1,15 @@
 
+
 spring:
   application:
     name: scm-cache
   config:
-    import: configserver:http://localhost:8888
+    import: configserver:http://localhost:8888/config
+  cloud:
+    config:
+      profile: default
+
+
 
 springdoc:
   api-docs:
