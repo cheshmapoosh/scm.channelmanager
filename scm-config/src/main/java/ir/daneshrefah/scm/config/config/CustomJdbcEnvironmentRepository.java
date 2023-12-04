@@ -22,41 +22,10 @@ public class CustomJdbcEnvironmentRepository extends JdbcEnvironmentRepository {
 
     @Override
     public Environment findOne(String application, String profile, String label) {
-//        return super.findOne(application, profile, label);
         if (!StringUtils.contains(profile, "default")) {
-            profile = "default, " + profile;
+            profile = "default," + profile;
         }
-
-        List<PropertySource> propertySources = super.findOne(application, profile, label).getPropertySources();
-        Environment environment = new Environment(application,profile);
-        List<PropertySource> mergedPropertySources = mergePropertySources(propertySources);
-        for (PropertySource property : mergedPropertySources) {
-            environment.getPropertySources().add(property);
-        }
-        return environment;
+        return super.findOne(application, profile, label);
     }
 
-    public  List<PropertySource> mergePropertySources(List<PropertySource> propertySources) {
-        List<PropertySource> mergedList = new ArrayList<>();
-
-        for (PropertySource source : propertySources) {
-            mergeOrAddSource(mergedList, source);
-        }
-
-        return mergedList;
-    }
-
-    private void mergeOrAddSource(List<PropertySource> mergedList, PropertySource source) {
-        for (PropertySource mergedSource : mergedList) {
-            if (areSourcesEqual(mergedSource.getSource(), source.getSource())) {
-                mergedSource.getName();
-                return;
-            }
-        }
-        mergedList.add(new PropertySource(mergedList.isEmpty() ? source.getName() : mergedList.get(0).getName(), source.getSource()));
-    }
-
-    private boolean areSourcesEqual(Map<?, ?> source1, Map<?, ?> source2) {
-        return source1.equals(source2);
-    }
 }
