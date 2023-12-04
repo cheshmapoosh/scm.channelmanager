@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HazelCastServiceImpl implements HazelCastService {
 
-    private final HazelcastInstance  hazelcastInstance;
+    private final HazelcastInstance hazelcastInstance;
 
     @Override
     public Object getFromCache(String mapName, String key) {
-        return hazelcastInstance.getMap(mapName).get(key);
+        return hazelcastInstance.getMap(mapName).getEntryView(key);
     }
 
     @Override
@@ -50,10 +50,10 @@ public class HazelCastServiceImpl implements HazelCastService {
 
     @Override
     public List<String> getMapList() {
-       return hazelcastInstance
+        return hazelcastInstance
                 .getDistributedObjects()
                 .stream()
-                .filter(distributedObject -> distributedObject instanceof IMap<?,?>)
+                .filter(distributedObject -> distributedObject instanceof IMap<?, ?>)
                 .map(distributedObject -> hazelcastInstance.getMap(distributedObject.getName()))
                 .map(IMap::getName)
                 .collect(Collectors.toList());
