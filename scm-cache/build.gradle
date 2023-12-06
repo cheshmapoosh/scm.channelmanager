@@ -16,7 +16,7 @@ dependencies {
     runtimeOnly 'com.ibm.db2:jcc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-
+    implementation 'ir.daneshrefah.scm.uaa:uaa-common:0.0.1'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
 }
