@@ -482,41 +482,10 @@ CREATE TABLE REF.TBL_SCM_TERMINAL_SERVICE_CONDITION(
                                                        PRIMARY KEY (TERMINAL_SERVICE_CONDITION_ID)
 );
 --/////////////////////////////////////////////////////////
---/////////////////////////////////////////////////////////
---/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_CUSTOMER_PROVIDE_METHOD(
-    --Definition
-                                                    CUSTOMER_PROVIDE_METHOD_ID VARCHAR(36) NOT NULL,
-                                                    TITLE                      VARCHAR(255),
-                                                    DESC                       VARCHAR(255),
-    --Attribute
-    --Versioning
-                                                    CREATE_DATE                TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                                    LAST_EDIT_DATE             TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                                    CREATOR                    VARCHAR(255),
-                                                    LAST_EDITOR                VARCHAR(255),
-    --Relation
-                                                    PRIMARY KEY (CUSTOMER_PROVIDE_METHOD_ID)
-);--Done
---/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_ASSET_TYPE(
-    --Definition
-                                       ASSET_TYPE_ID  VARCHAR(36) NOT NULL,
-                                       TITLE          VARCHAR(255),
-                                       DESC           VARCHAR(255),
-    --Attribute
-    --Versioning
-                                       CREATE_DATE    TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                       LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                       CREATOR        VARCHAR(255),
-                                       LAST_EDITOR    VARCHAR(255),
-    --Relation
-                                       PRIMARY KEY (ASSET_TYPE_ID)
-);--Done
---/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_USER_GROUP (
+CREATE TABLE REF.TBL_UAA_USER_GROUP (
     --Definition
                                         USER_GROUP_ID  VARCHAR(36) NOT NULL,
+                                        USER_GROUP_CODE  VARCHAR(36) NOT NULL,
     --Attribute
                                         STATUS         SMALLINT,
                                         TITLE          VARCHAR(255),
@@ -531,9 +500,9 @@ CREATE TABLE REF.TBL_SCM_USER_GROUP (
 --/////////////////////////////////////////////////////////
 CREATE TABLE REF.TBL_SCM_ASSET (
     --Definition
-                                   ASSET_ID       VARCHAR(36) NOT NULL,
+                                   ASSET_ID       VARCHAR(36) NOT NULL, --TODO AutoIncrement
                                    PROVIDER_ID    VARCHAR(255) NOT NULL,
-                                   ASSET_TYPE_ID  VARCHAR(255) NOT NULL,
+                                   ASSET_TYPE_CODE  SMALLINT NOT NULL,
     --Attribute
     --Versioning
                                    CREATE_DATE    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -542,16 +511,21 @@ CREATE TABLE REF.TBL_SCM_ASSET (
                                    LAST_EDITOR    VARCHAR(255),
     --Relation
                                    FOREIGN KEY (PROVIDER_ID) REFERENCES REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER (EXTERNAL_SERVICE_PROVIDER_ID),
-                                   FOREIGN KEY (ASSET_TYPE_ID) REFERENCES REF.TBL_SCM_ASSET_TYPE (ASSET_TYPE_ID),
                                    PRIMARY KEY (ASSET_ID)
 );--Done
 --/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_CUSTOMER_ASSET(
+-- REF.CUSTOMER--Done
+ALTER TABLE REF.CUSTOMER ADD COLUMN PROVIDER_ID VARCHAR(36) NOT NULL DEFAULT '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7';
+ALTER TABLE REF.CUSTOMER ADD FOREIGN KEY (PROVIDER_ID) REFERENCES REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER(EXTERNAL_SERVICE_PROVIDER_ID); -- todo rename TBL_SCM_EXTERNAL_SERVICE_PROVIDER
+
+--/////////////////////////////////////////////////////////
+CREATE TABLE REF.TBL_SCM_CUSTOMER_ASSET( --todo use membership & customerAccount & card tables
     --Definition
                                            CUSTOMER_ASSET_ID VARCHAR(36)  NOT NULL,
                                            CUSTOMER_ID       INTEGER      NOT NULL,
                                            ASSET_ID          VARCHAR(255) NOT NULL,
-                                           ASSET_REF_ID      VARCHAR(255) NOT NULL,--reference ID to asset's table, related to asset type (ASSET_TYPE_ID). ACC type for account, CRD type for card, ...
+                                           ASSET_ACCOUNT_REF_ID      VARCHAR(255),--reference ID to asset's table, related to asset type (ASSET_TYPE_ID). ACC type for account, CRD type for card, ...
+                                           ASSET_CARD__REF_ID      VARCHAR(255),--todo define foreign key for both account & card
 
     --Attribute
                                            RELATION_TYPE     SMALLINT     NOT NULL,--0, Owner, 1: Advocacy, 2: Delegation, 4:...
@@ -566,7 +540,7 @@ CREATE TABLE REF.TBL_SCM_CUSTOMER_ASSET(
                                            PRIMARY KEY (CUSTOMER_ASSET_ID)
 );
 --/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_ASSET_ACCOUNT (
+CREATE TABLE REF.TBL_SCM_ASSET_ACCOUNT ( -- todo use account table
     --Definition
                                            ASSET_ACCOUNT_ID VARCHAR(36) NOT NULL,
     --Attribute
@@ -574,7 +548,7 @@ CREATE TABLE REF.TBL_SCM_ASSET_ACCOUNT (
                                            SHEBA_NO         VARCHAR(36) NOT NULL,
                                            STATUS           SMALLINT NOT NULL,--0: Block, 1: Active, 3: Suspend, 4: Closed
                                            PRODUCT_TYPE     SMALLINT,--Should define the product type
-                                           ACCOUNT_TYPE     SMALLINT,--Should define the sup type of product
+                                           ACCOUNT_TYPE     SMALLINT,--Should define the sup type of product --todo define foreignKey to AccountType
                                            TITLE            VARCHAR(36) NOT NULL,
                                            TYPE             SMALLINT NOT NULL,--0: Individual, 1: Legal
                                            SHARED           BOOLEAN NOT NULL,
@@ -594,7 +568,7 @@ CREATE TABLE REF.TBL_SCM_ASSET_ACCOUNT (
                                            PRIMARY KEY (ASSET_ACCOUNT_ID)
 );--Done
 --/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_ASSET_CARD (
+CREATE TABLE REF.TBL_SCM_ASSET_CARD ( --todo use card table
     --Definition
                                         ASSET_CARD_ID  VARCHAR(36) NOT NULL,
 
@@ -615,7 +589,7 @@ CREATE TABLE REF.TBL_SCM_ASSET_CARD (
                                         PRIMARY KEY (ASSET_CARD_ID)
 );--Done
 --/////////////////////////////////////////////////////////
-CREATE TABLE REF.TBL_SCM_ASSET_CARD_ACCOUNT (
+CREATE TABLE REF.TBL_SCM_ASSET_CARD_ACCOUNT ( --todo use card table
     --Definition
                                                 ASSET_CARD_ACCOUNT_ID VARCHAR(36) NOT NULL,
                                                 ASSET_CARD_ID         VARCHAR(36) NOT NULL,
@@ -636,11 +610,8 @@ CREATE TABLE REF.TBL_SCM_ASSET_CARD_ACCOUNT (
 --/////////////////////////////////////////////////////////
 --Alter
 --REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER--Done
-ALTER TABLE REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER ADD COLUMN CUSTOMER_PROVIDE_METHOD_ID   VARCHAR(36) NOT NULL;
+ALTER TABLE REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER ADD COLUMN CUSTOMER_PROVIDE_METHOD_CODE SMALLINT NOT NULL;
 ALTER TABLE REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER ADD COLUMN STATUS   SMALLINT;
 
--- REF.CUSTOMER--Done
-ALTER TABLE REF.CUSTOMER ADD COLUMN PROVIDER_ID VARCHAR(36) NOT NULL DEFAULT '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7';
-ALTER TABLE REF.CUSTOMER ADD FOREIGN KEY (PROVIDER_ID) REFERENCES REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER(EXTERNAL_SERVICE_PROVIDER_ID);
 --/////////////////////////////////////////////////////////
 
