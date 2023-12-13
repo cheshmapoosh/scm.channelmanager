@@ -1,0 +1,18 @@
+
+
+uaa:
+  key-store:
+    name: config/keystore.p12
+    password: password
+    alias: selfsigned
+
+#spring:
+#  application:
+#    name: scm-uaa
+#  config:
+#    import: configserver:http://localhost:8888/config
+#  cloud:
+#    config:
+#      profile: default
+server:
+  port: 8000
