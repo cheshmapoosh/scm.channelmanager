@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache;
+package ir.daneshrefah.scm.uaa;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
