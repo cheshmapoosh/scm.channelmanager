@@ -1,0 +1,22 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+    id 'maven-publish'
+    id 'java'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'ir.daneshrefah.scm.uaa'
+            artifactId = 'scm-uaa-common'
+            version = '1.0.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+}
