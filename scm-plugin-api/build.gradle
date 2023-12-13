@@ -13,7 +13,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-json-validator-starter'
     api 'org.apache.camel.springboot:camel-core-starter'
     implementation 'org.reflections:reflections:0.10.2'
-    implementation 'ir.daneshrefah.scm.uaa:uaa-client:0.0.1-SNAPSHOT'
+    api 'ir.daneshrefah.scm.uaa:uaa-client:0.0.1-SNAPSHOT'
     api project(':scm-common')
     api project(':scm-utils')
 }

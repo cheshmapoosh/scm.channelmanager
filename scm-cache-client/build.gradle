@@ -4,6 +4,19 @@ plugins {
     id 'java'
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'ir.daneshrefah.scm.cache'
+            artifactId = 'scm-cache-client'
+            version = '1.0.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+//group = 'ir.daneshrefah.scm.cache'
+//version = '0.0.1-SNAPSHOT'
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
