@@ -28,7 +28,7 @@ public class ClientService {
                 AuthorizationGrantType.REFRESH_TOKEN));
         client.setRedirectUrls(Arrays.asList("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc",
                 "http://127.0.0.1:8080/authorized"));
-        client.setTerminalScope("IB");
+        client.setTerminalCode("IB");
         client.setScopes(Arrays.asList(OidcScopes.OPENID, OidcScopes.PROFILE));
         client.setRequireAuthorizationConsent(true);
         return client;
