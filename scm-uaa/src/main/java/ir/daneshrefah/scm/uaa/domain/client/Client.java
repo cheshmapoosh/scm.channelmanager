@@ -17,7 +17,7 @@ public class Client {
     private ClientAuthenticationMethod authenticationMethod;
     private List<AuthorizationGrantType> authorizationGrantTypes;
     private List<String> redirectUrls;
-    private String terminalScope;
+    private String terminalCode;
     private List<String> scopes;
     private boolean requireAuthorizationConsent;
     private boolean requireProofKey;

@@ -83,7 +83,6 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 String redirectUri = iterator.next();
                 clientBuilder.redirectUri(redirectUri);
             }
-            clientBuilder.scope(client.getTerminalScope());
             for (Iterator<String> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
                 String scope = iterator.next();
                 clientBuilder.scope(scope);

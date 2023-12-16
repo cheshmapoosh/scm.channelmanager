@@ -19,7 +19,7 @@ import java.util.Objects;
 public class User extends BaseModel {
 
     private GeneralPerson person; // USER_CHANNEL_AUTHENTICATION.USER_ID
-    private String terminalScope; // USER_CHANNEL_AUTHENTICATION.CHANNEL_ID
+    private String terminalCode; // USER_CHANNEL_AUTHENTICATION.CHANNEL_ID
 //    private Client client; // USER_CHANNEL_AUTHENTICATION.CHANNEL_ID
     private String nickName; // USER_CHANNEL_AUTHENTICATION.NICK_NAME
     private AuthenticationMethod loginAuthenticationMethod; // USER_CHANNEL_AUTHENTICATION.AUTHENTICATION_METHOD_ID
@@ -34,11 +34,11 @@ public class User extends BaseModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(person, user.person) && Objects.equals(terminalScope, user.terminalScope) && Objects.equals(nickName, user.nickName);
+        return Objects.equals(person, user.person) && Objects.equals(terminalCode, user.terminalCode) && Objects.equals(nickName, user.nickName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(person, terminalScope, nickName);
+        return Objects.hash(person, terminalCode, nickName);
     }
 }
