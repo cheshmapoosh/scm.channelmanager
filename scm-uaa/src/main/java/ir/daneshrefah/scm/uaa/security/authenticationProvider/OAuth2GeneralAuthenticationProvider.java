@@ -17,13 +17,13 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.util.Assert;
 
-public class FirstPasswordGrantAuthenticationProvider implements AuthenticationProvider {
+public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvider {
 
     private final OAuth2AuthorizationService authorizationService;
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
 
-    public FirstPasswordGrantAuthenticationProvider(OAuth2AuthorizationService authorizationService,
-                                                    OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator) {
+    public OAuth2GeneralAuthenticationProvider(OAuth2AuthorizationService authorizationService,
+                                               OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator) {
         Assert.notNull(authorizationService, "authorizationService cannot be null");
         Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
         this.authorizationService = authorizationService;

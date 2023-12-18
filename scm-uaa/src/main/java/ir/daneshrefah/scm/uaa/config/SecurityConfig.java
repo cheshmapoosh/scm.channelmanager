@@ -7,7 +7,8 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.FirstPasswordGrantAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +19,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -86,7 +89,7 @@ public class SecurityConfig {
                                 .authenticationProviders(
                                         providers -> providers.addAll(
                                             Arrays.asList(
-                                                    new FirstPasswordGrantAuthenticationProvider(http.getSharedObject(OAuth2AuthorizationService.class), http.getSharedObject(OAuth2TokenGenerator.class)))
+                                                    new OAuth2GeneralAuthenticationProvider(http.getSharedObject(OAuth2AuthorizationService.class), http.getSharedObject(OAuth2TokenGenerator.class)))
                                         )
                                 )
                 )
@@ -143,6 +146,14 @@ public class SecurityConfig {
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
                     });
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authManager(HttpSecurity http, GeneralAuthenticationProvider authProvider) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder =
+                http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.authenticationProvider(authProvider);
+        return authenticationManagerBuilder.build();
     }
 
     @Bean

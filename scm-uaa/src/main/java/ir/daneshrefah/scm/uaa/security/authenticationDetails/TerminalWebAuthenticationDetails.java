@@ -22,4 +22,12 @@ public class TerminalWebAuthenticationDetails extends WebAuthenticationDetails {
     private static String extractTerminalCode(HttpServletRequest request) {
         return request.getParameter("terminal_code");
     }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getTerminalCode() {
+        return terminalCode;
+    }
 }
