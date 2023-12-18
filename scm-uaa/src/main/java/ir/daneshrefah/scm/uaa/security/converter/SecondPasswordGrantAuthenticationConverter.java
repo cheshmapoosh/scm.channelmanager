@@ -22,7 +22,7 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-08-06
  */
-public class FirstPasswordGrantAuthenticationConverter implements AuthenticationConverter {
+public class SecondPasswordGrantAuthenticationConverter implements AuthenticationConverter {
 
     @Override
     public Authentication convert(HttpServletRequest request) {

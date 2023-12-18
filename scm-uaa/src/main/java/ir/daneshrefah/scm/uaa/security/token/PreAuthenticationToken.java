@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
-import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
+import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 import java.util.Collection;
 
@@ -15,18 +14,20 @@ import java.util.Collection;
  * @version 1.0
  * @since 2023-12-18
  */
-public class FirstPasswordAuthenticationToken extends AbstractAuthenticationToken {
+public class PreAuthenticationToken extends AbstractAuthenticationToken {
 
     private String username;
     private String password;
+    private AuthorizationGrantType grantType;
     private Authentication clientPrincipal;
 
-    public FirstPasswordAuthenticationToken(Collection<? extends GrantedAuthority> authorities,
-                                            String username, String password,
-                                            Authentication clientPrincipal) {
+    public PreAuthenticationToken(Collection<? extends GrantedAuthority> authorities,
+                                  String username, String password, AuthorizationGrantType grantType,
+                                  Authentication clientPrincipal) {
         super(authorities);
         this.username = username;
         this.password = password;
+        this.grantType = grantType;
         this.clientPrincipal = clientPrincipal;
     }
 
@@ -41,7 +42,7 @@ public class FirstPasswordAuthenticationToken extends AbstractAuthenticationToke
     }
 
     public AuthorizationGrantType getGrantType() {
-        return AuthorizationGrantTypeMapper.INSTANCE.toSpring(ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType.FIRST_PASSWORD);
+        return grantType;
     }
 
     public Authentication getClientPrincipal() {

@@ -1,12 +1,11 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,7 @@ public class GeneralAuthenticationProvider extends AbstractUserDetailsAuthentica
             clientId = ((TerminalWebAuthenticationDetails) authentication.getDetails()).getClientId();
             terminalCode = clientService.findByClientId(clientId).getTerminalCode();
         }
-//        authentication.getDetails()
+        User user = null;//getAuthenticatedUserChannelElseThrowInvalidUsr(preToken.getUserAuthenticationRequest());
         return null;
     }
 

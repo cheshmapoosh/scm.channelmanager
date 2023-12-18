@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.uaa.security.token.FirstPasswordAuthenticationToken;
+import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
+import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -33,16 +34,17 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
 
-        FirstPasswordAuthenticationToken firstPasswordGrantAuthentication =
-                (FirstPasswordAuthenticationToken) authentication;
+        PreAuthenticationToken firstPasswordGrantAuthentication =
+                (PreAuthenticationToken) authentication;
 
         // Ensure the client is authenticated
         OAuth2ClientAuthenticationToken clientPrincipal =
                 getAuthenticatedClientElseThrowInvalidClient(firstPasswordGrantAuthentication);
+        AuthorizationGrantType grantType = AuthorizationGrantTypeMapper.INSTANCE.toSpring(firstPasswordGrantAuthentication.getGrantType());
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
 
         // Ensure the client is configured to use this authorization grant type
-        if (!registeredClient.getAuthorizationGrantTypes().contains(firstPasswordGrantAuthentication.getGrantType())) {
+        if (!registeredClient.getAuthorizationGrantTypes().contains(grantType)) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
@@ -54,7 +56,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
                 .principal(clientPrincipal)
                 .authorizationServerContext(AuthorizationServerContextHolder.getContext())
                 .tokenType(OAuth2TokenType.ACCESS_TOKEN)
-                .authorizationGrantType(firstPasswordGrantAuthentication.getGrantType())
+                .authorizationGrantType(grantType)
                 .authorizationGrant(firstPasswordGrantAuthentication)
                 .build();
 
@@ -72,7 +74,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         // Initialize the OAuth2Authorization
         OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .principalName(clientPrincipal.getName())
-                .authorizationGrantType(firstPasswordGrantAuthentication.getGrantType());
+                .authorizationGrantType(grantType);
 
         if (generatedAccessToken instanceof ClaimAccessor) {
             authorizationBuilder.token(accessToken, (metadata) ->
@@ -91,7 +93,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, clientPrincipal, accessToken);
     }
 
-    private static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(FirstPasswordAuthenticationToken authentication) {
+    private static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(PreAuthenticationToken authentication) {
         OAuth2ClientAuthenticationToken clientPrincipal = null;
         if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getClientPrincipal().getClass())) {
             clientPrincipal = (OAuth2ClientAuthenticationToken) authentication.getClientPrincipal();
@@ -104,6 +106,6 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return FirstPasswordAuthenticationToken.class.isAssignableFrom(authentication);
+        return PreAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

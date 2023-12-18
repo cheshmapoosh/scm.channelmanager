@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticationConverter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -84,13 +85,13 @@ public class SecurityConfig {
                         tokenEndpoint
                                 .accessTokenRequestConverters(
                                         converters -> converters.addAll(
-                                            Arrays.asList(new FirstPasswordGrantAuthenticationConverter()))
+                                            Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
+                                                    new SecondPasswordGrantAuthenticationConverter()))
                                 )
-                                .authenticationProviders(
-                                        providers -> providers.addAll(
-                                            Arrays.asList(
-                                                    new OAuth2GeneralAuthenticationProvider(http.getSharedObject(OAuth2AuthorizationService.class), http.getSharedObject(OAuth2TokenGenerator.class)))
-                                        )
+                                .authenticationProvider(
+                                                    new OAuth2GeneralAuthenticationProvider(
+                                                            http.getSharedObject(OAuth2AuthorizationService.class),
+                                                            http.getSharedObject(OAuth2TokenGenerator.class))
                                 )
                 )
                 .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0

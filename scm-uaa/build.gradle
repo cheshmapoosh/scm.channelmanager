@@ -20,4 +20,5 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.5.3.Final'
 
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    api project(':scm-uaa-common')
 }
