@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -22,7 +21,8 @@
             <label for="password" class="sr-only">Password</label>
             <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
         </p>
-        <input name="_csrf" type="hidden" value="MkNUkxZb98oje2zo_9wDrp_nkaBFMsYZCM4Cjt5vuTEA_xYnAnRspXVowKkOGV7fy_E3mfvTvMIgBv40bqs16usJjFQ1zyVB" />
+        <input th:name="${csrf_name}" type="hidden" th:value="${csrf_value}" />
+        <input name="client_id" type="hidden" th:value="${client_id}" />
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
     </form>
 </div>
