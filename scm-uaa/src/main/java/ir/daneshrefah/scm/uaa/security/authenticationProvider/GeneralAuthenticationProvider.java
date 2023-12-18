@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.security.UserDetailsService;
 import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +11,18 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-12-18
+ */
 @Component
 public class GeneralAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider {
 
-    @Autowired
     private ClientService clientService;
+    private UserDetailsService userDetailsService;
 
     @Override
     protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {

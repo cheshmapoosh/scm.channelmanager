@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -60,11 +62,15 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
         }
 
         return clients.stream().map(client -> {
+            ClientSettings  clientSetting = ClientSettings.builder()
+                    .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
+                    .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
+                    .build();
             RegisteredClient.Builder clientBuilder = RegisteredClient.withId(client.getId())
                     .clientId(client.getClientId())
                     .clientSecret(client.getClientSecret())
                     .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
-                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(client.isRequireAuthorizationConsent()).build());
+                    .clientSettings(clientSetting);
             for (Iterator<ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
                 ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType authorizationGrantType = iterator.next();
                 clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));

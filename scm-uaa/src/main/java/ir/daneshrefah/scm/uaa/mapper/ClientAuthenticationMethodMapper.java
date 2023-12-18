@@ -5,6 +5,13 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-12-18
+ */
 public class ClientAuthenticationMethodMapper {
 
     public static ClientAuthenticationMethodMapper INSTANCE = new ClientAuthenticationMethodMapper();

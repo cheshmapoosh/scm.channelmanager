@@ -7,6 +7,13 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-12-18
+ */
 @Mapper
 public interface ClientMapper {
 
