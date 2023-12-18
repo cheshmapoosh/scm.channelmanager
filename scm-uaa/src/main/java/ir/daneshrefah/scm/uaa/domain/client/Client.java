@@ -12,6 +12,7 @@ import java.util.List;
 public class Client {
 
     private String id;
+    private String title;
     private String clientId;
     private String clientSecret;
     private ClientAuthenticationMethod authenticationMethod;

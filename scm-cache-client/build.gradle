@@ -26,3 +26,14 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+             groupId = 'ir.daneshrefah.scm.cache'
+             artifactId = 'scm-cache-client'
+            version = '1.0.0-SNAPSHOT'
+        }
+    }
+}
