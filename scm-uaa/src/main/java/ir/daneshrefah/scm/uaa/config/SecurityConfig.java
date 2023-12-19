@@ -6,7 +6,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
-import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
@@ -27,12 +27,16 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -65,8 +69,12 @@ public class SecurityConfig {
     private String keyStorePassword;
     @Value("${uaa.key-store.alias}")
     private String keyStoreAlias;
+//    @Autowired
+//    private UserDetailsService userDetailsService;
     @Autowired
-    private UserDetailsService userDetailsService;
+    private OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider;
+    @Autowired
+    private GeneralAuthenticationProvider generalAuthenticationProvider;
 
     @Bean
     @Order(1)
@@ -88,11 +96,11 @@ public class SecurityConfig {
                                             Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
                                                     new SecondPasswordGrantAuthenticationConverter()))
                                 )
-                                .authenticationProvider(
-                                                    new OAuth2GeneralAuthenticationProvider(
-                                                            http.getSharedObject(OAuth2AuthorizationService.class),
-                                                            http.getSharedObject(OAuth2TokenGenerator.class),
-                                                            userDetailsService)
+                                .authenticationProvider(oAuth2GeneralAuthenticationProvider
+//                                                    new OAuth2GeneralAuthenticationProvider(
+//                                                            http.getSharedObject(OAuth2AuthorizationService.class),
+//                                                            http.getSharedObject(OAuth2TokenGenerator.class),
+//                                                            userDetailsService)
                                 )
                 )
                 .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
@@ -118,6 +126,7 @@ public class SecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
         http
+                .authenticationProvider(generalAuthenticationProvider)
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/login**").permitAll()
                         .anyRequest().authenticated()
@@ -143,36 +152,37 @@ public class SecurityConfig {
                     login.usernameParameter("username");
                     login.passwordParameter("password");
                     login.loginPage("/login");
-                    login.failureUrl("/login?error");
+                    login.failureHandler(new TerminalUrlAuthenticationFailureHandler("/login?error"));
+//                    login.failureUrl("/login?error");
                     login.authenticationDetailsSource(new TerminalAuthenticationDetailsSource());
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
                     });
         return http.build();
     }
 
-    @Bean
+    /*@Bean
     public AuthenticationManager authManager(HttpSecurity http, GeneralAuthenticationProvider authProvider) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder.authenticationProvider(authProvider);
         return authenticationManagerBuilder.build();
-    }
+    }*/
 
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        UserDetails userDetails1 = User.withDefaultPasswordEncoder()
-//                .username("user")
-//                .password("password")
-//                .roles("USER")
-//                .build();
-//        UserDetails userDetails2 = User.withDefaultPasswordEncoder()
-//                .username("ib")
-//                .password("password")
-//                .roles("USER")
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(userDetails1, userDetails2);
-//    }
+    /*@Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails userDetails1 = User.withDefaultPasswordEncoder()
+                .username("user")
+                .password("password")
+                .roles("USER")
+                .build();
+        UserDetails userDetails2 = User.withDefaultPasswordEncoder()
+                .username("ib")
+                .password("password")
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(userDetails1, userDetails2);
+    }*/
 
 //    @Bean
 //    public RegisteredClientRepository registeredClientRepository() {

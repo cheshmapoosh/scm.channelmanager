@@ -23,7 +23,15 @@ public class UserService {
     }
 
     public Optional<User> loadUserByUsername(String username, String terminalCode) {
-        return null;
+        if (!"reza".equals(username) || !"IB".equalsIgnoreCase(terminalCode)) {
+            return Optional.empty();
+        }
+        User user = new User();
+        user.setTerminalCode(terminalCode);
+        user.setNickName(username);
+        user.setFirstPassword("12345");
+        user.setActive(true);
+        return Optional.of(user);
     }
 
 }

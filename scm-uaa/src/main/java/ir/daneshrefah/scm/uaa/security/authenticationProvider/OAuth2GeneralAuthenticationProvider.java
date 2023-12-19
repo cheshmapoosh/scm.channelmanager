@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
@@ -26,19 +27,20 @@ import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_T
  * @version 1.0
  * @since 2023-12-18
  */
+@Component
 public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvider {
 
-    private final OAuth2AuthorizationService authorizationService;
-    private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
+//    private final OAuth2AuthorizationService authorizationService;
+//    private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
     private final UserDetailsService userDetailsService;
 
-    public OAuth2GeneralAuthenticationProvider(OAuth2AuthorizationService authorizationService,
-                                               OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
+    public OAuth2GeneralAuthenticationProvider(/*OAuth2AuthorizationService authorizationService,
+                                               OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,*/
                                                UserDetailsService userDetailsService) {
-        Assert.notNull(authorizationService, "authorizationService cannot be null");
-        Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
-        this.authorizationService = authorizationService;
-        this.tokenGenerator = tokenGenerator;
+//        Assert.notNull(authorizationService, "authorizationService cannot be null");
+//        Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
+//        this.authorizationService = authorizationService;
+//        this.tokenGenerator = tokenGenerator;
         this.userDetailsService = userDetailsService;
     }
 
