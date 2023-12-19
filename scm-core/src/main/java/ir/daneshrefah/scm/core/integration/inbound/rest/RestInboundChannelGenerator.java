@@ -1,21 +1,14 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
-import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
-import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
+import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -31,7 +24,7 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
     private CamelContext camelContext;
 
     @Autowired
-    private UaaClientAuthenticationService uaaClientAuthenticationService;
+    private AuthenticationClientTemplate authenticationClientTemplate;
     private CamelRouteBuilder routeBuilder;
 
     @Override
@@ -40,7 +33,8 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
 //        if (!beanMap.isEmpty()) {
 //            camelContext = beanMap.values().iterator().next();
 //        }
-        routeBuilder = new CamelRouteBuilder(channel, this::invokeService, this::prepareServiceUrl, this::createHttpMethodBasedOnServiceType, uaaClientAuthenticationService);
+        routeBuilder = new CamelRouteBuilder(channel, this::invokeService, this::prepareServiceUrl,
+                this::createHttpMethodBasedOnServiceType, authenticationClientTemplate);
         /*try {
             camelContext.addRoutes(new CamelRouteBuilder(channel, channelAccesses));
         } catch (Exception e) {

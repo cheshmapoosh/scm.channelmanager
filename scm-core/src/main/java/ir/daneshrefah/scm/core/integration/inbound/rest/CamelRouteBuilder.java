@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -38,7 +38,8 @@ public class CamelRouteBuilder extends RouteBuilder {
 
     public CamelRouteBuilder(Channel channel, BiFunction<TerminalServiceChannelAccess, Message, Message> serviceInvoker,
                              Function<TerminalServiceChannelAccess, String> serviceUrlBuilder,
-                             Function<TerminalServiceChannelAccess, String> httpMethodExtractor, UaaClientAuthenticationService uaaClientAuthenticationService) {
+                             Function<TerminalServiceChannelAccess, String> httpMethodExtractor,
+                             AuthenticationClientTemplate authenticationClientTemplate) {
         this.channel = channel;
         this.serviceInvoker = serviceInvoker;
         this.serviceUrlBuilder = serviceUrlBuilder;
@@ -52,7 +53,7 @@ public class CamelRouteBuilder extends RouteBuilder {
         objectMapper.registerModule(simpleModule);
         dataFormat = new JacksonDataFormat();
         dataFormat.setObjectMapper(objectMapper);
-        restMessageParser = new RestMessageParser(uaaClientAuthenticationService);
+        restMessageParser = new RestMessageParser(authenticationClientTemplate);
         restResponseGenerator = new RestResponseGenerator();
     }
 

@@ -43,8 +43,6 @@ dependencies {
     implementation group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.1.0'
 
 
-
-
     //    api project(':scm-common')
     api project(':scm-plugin-nab')
     api project(':scm-plugin-scm')

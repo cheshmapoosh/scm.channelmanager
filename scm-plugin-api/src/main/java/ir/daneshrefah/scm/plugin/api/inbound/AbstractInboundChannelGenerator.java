@@ -1,25 +1,18 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.common.model.authority.Authority;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.uaa.client.service.UaaClientAuthenticationService;
-import ir.daneshrefah.scm.uaa.common.model.authentication.AuthenticationResponse;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.AuthorizationServiceException;
-import org.springframework.security.authorization.AuthorityAuthorizationManager;
-import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.core.context.SecurityContextHolder;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,11 +33,12 @@ public abstract class AbstractInboundChannelGenerator {
     protected TransformerService transformerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
-    private UaaClientAuthenticationService uaaClientAuthenticationService;
+    private AuthenticationClientTemplate authenticationClientTemplate;
 
     public final void initInbound(ServiceProducerTemplate producerTemplate,
                                   Channel channel, List<TerminalServiceChannelAccess> channelAccesses,
-                                  List<Authority> authorities, TransformerService transformerService, UaaClientAuthenticationService uaaClientAuthenticationService) {
+                                  List<Authority> authorities, TransformerService transformerService,
+                                  AuthenticationClientTemplate authenticationClientTemplate) {
         this.producerTemplate = producerTemplate;
         this.channel = channel;
         this.channelAccesses = channelAccesses;
@@ -67,7 +61,7 @@ public abstract class AbstractInboundChannelGenerator {
             }
             registerTerminalService(channelAccess);
         }
-        this.uaaClientAuthenticationService = uaaClientAuthenticationService;
+        this.authenticationClientTemplate = authenticationClientTemplate;
         finalizeConfig();
     }
 
