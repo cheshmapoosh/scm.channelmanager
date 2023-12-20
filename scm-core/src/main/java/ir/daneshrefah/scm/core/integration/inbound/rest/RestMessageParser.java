@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -43,31 +44,12 @@ public class RestMessageParser {
 
         Header header = new Header();
         header.setService(channelAccess);
-        header.setContentType(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class));
-        String token = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class);
-        if (StringUtils.isNotEmpty(token)) {
-            Authentication a = new Authentication(token.replace("Bearer ", ""));
-            header.setAuthentication(a);
-        }
+        header.setContentType(CamelUtils.getContentTypeHeaderFromExchange(exchange));
 
-        String authorizationToken = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION, String.class);
-        String tokenKey = StringUtils.substringBefore(authorizationToken, StringUtils.SPACE);
-
-
-//        if (StringUtils.isNotEmpty(token)) {
-//            String tokenDelegated = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION_DELEGATED, String.class);
-//            Authentication authentication = AuthenticationVerifier.verifyAuthenticationRequest(token, tokenDelegated);
-//            header.setAuthentication(authentication);
-//        }
-//        String claim = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLAIM, String.class);
-//        if (StringUtils.isNotEmpty(claim) /*&& service.checkSecondLevel()*/) {
-//            boolean authentication = AuthenticationVerifier.verifySecondAuthenticationRequest(token);
-//            header.setSecondLevelAuthenticated(authentication);
-//        }
-//        Authorization: Basic base64(username:password)
-//        Authorization: Digest username="username", realm="realm", nonce="nonce", uri="uri", response="hash"
-//        Authorization: Bearer token
-//        Authorization: Session sessionKey
+        String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(exchange);
+        Authentication authentication = authenticationClientTemplate
+                            .extractAuthenticationFromAuthorizationHeader(authorizationHeader);
+        header.setAuthentication(authentication);
 
         header.setClientCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, String.class));
         header.setCorrelationId(StringUtils.generateGuid());
