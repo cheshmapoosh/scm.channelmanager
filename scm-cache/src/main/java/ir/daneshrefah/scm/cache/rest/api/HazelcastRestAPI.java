@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.cache.rest.api;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import ir.daneshrefah.scm.cache.service.HazelCastService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,25 +20,32 @@ public class HazelcastRestAPI {
 
     @GetMapping("/{mapName}/{key}")
     public ResponseEntity<Object> get(@PathVariable("mapName") String mapName,
-                      @PathVariable("key") String key) {
+                                      @PathVariable("key") String key) {
         return ResponseEntity.ok(hazelCastService.getFromCache(mapName, key));
     }
 
-    @PutMapping("/{mapName}/{key}")
-    public ResponseEntity<String> put(@PathVariable("mapName") String mapName,
-                    @PathVariable("key") String key,
-                    @RequestBody String value) {
-        hazelCastService.putInCache(mapName, key, value);
-        return ResponseEntity.ok("DONE");
+    @PutMapping(value = "/{mapName}/{key}")
+    public ResponseEntity<Object> put(@PathVariable("mapName") String mapName,
+                                      @PathVariable("key") String key,
+                                      @RequestBody String value) {
+        return ResponseEntity.ok(hazelCastService.putInCache(mapName, key, value));
     }
 
-    @PutMapping("/{mapName}/{key}/{lifetime}")
-    public ResponseEntity<String> put(@PathVariable("mapName") String mapName,
-                    @PathVariable("key") String key,
-                    @PathVariable("lifetime") String lifetime,
-                    @RequestBody String value) {
-        hazelCastService.putInCache(mapName, key, value, Integer.parseInt(lifetime));
-        return ResponseEntity.ok("DONE");
+    @PutMapping("/{mapName}/{key}/{ttl}")
+    public ResponseEntity<Object> put(@PathVariable("mapName") String mapName,
+                                      @PathVariable("key") String key,
+                                      @PathVariable("ttl") String lifetime,
+                                      @RequestBody String value) {
+        return ResponseEntity.ok(hazelCastService.putInCache(mapName, key, value, Integer.parseInt(lifetime)));
+    }
+
+    @PutMapping("/{mapName}/{key}/{ttl}/{max-idle}")
+    public ResponseEntity<Object> put(@PathVariable("mapName") String mapName,
+                                      @PathVariable("key") String key,
+                                      @PathVariable("ttl") String lifetime,
+                                      @PathVariable("max-idle") String maxIdle,
+                                      @RequestBody String value) {
+        return ResponseEntity.ok(hazelCastService.putInCache(mapName, key, value, Integer.parseInt(lifetime), Integer.parseInt(maxIdle)));
     }
 
     @DeleteMapping("/{mapName}/{key}")
@@ -67,4 +75,5 @@ public class HazelcastRestAPI {
     public ResponseEntity<Object> mapList(@PathVariable("map-name") String mapName) {
         return ResponseEntity.ok(hazelCastService.getMapData(mapName));
     }
+
 }

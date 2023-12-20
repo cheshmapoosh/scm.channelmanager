@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
+import ir.daneshrefah.scm.common.type.ConditionType;
+import ir.daneshrefah.scm.common.type.PeriodType;
+import ir.daneshrefah.scm.core.converter.PeriodTypeConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,10 +23,14 @@ public class ConditionEntity extends AbstractEntity<String> {
     @Column(name = "DESC")
     private String desc;
     @Column(name = "TYPE")
-    private Integer type;
-    @Column(name = "CURRENCY_VALUE")
-    private Long currencyValue;
-    @Column(name = "REATE_VALUE")
-    private Boolean reateValue;
+    @Enumerated(EnumType.ORDINAL)
+    private ConditionType type;
+    @Column(name = "VALUE")
+    private Long value;
+    @Column(name = "PERIOD_TYPE")
+    @Convert(converter = PeriodTypeConverter.class)
+    private PeriodType periodType;
+    @Column(name = "PERIOD_VALUE")
+    private Integer periodValue;
 
 }

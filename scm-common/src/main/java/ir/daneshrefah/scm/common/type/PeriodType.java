@@ -8,10 +8,10 @@ package ir.daneshrefah.scm.common.type;
  * @version 1.0
  * @since 2023-08-12
  */
-public enum DurationType {
-    DAY(1), WEEK(2), MONTH(3), YEAR(4), ACTION(5);
+public enum PeriodType {
+    REQUEST(1),SECOND(2),MINUTE(3),HOUR(4),DAY(5), WEEK(6), MONTH(7), YEAR(8);
 
-    DurationType(int code) {
+    PeriodType(int code) {
         this.code = code;
     }
 
@@ -21,8 +21,8 @@ public enum DurationType {
         return code;
     }
 
-    public static DurationType findByCode(Integer code) {
-        for (DurationType enumValue : DurationType.values()) {
+    public static PeriodType findByCode(Integer code) {
+        for (PeriodType enumValue : PeriodType.values()) {
             if (enumValue.getCode() == code) {
                 return enumValue;
             }

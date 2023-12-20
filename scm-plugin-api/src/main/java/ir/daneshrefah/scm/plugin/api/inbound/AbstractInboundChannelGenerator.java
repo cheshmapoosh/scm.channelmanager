@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractInboundChannelGenerator {
 
+
+    protected DecisionManager decisionManager;
+
     protected Channel channel;
     protected List<TerminalServiceChannelAccess> channelAccesses;
     protected ServiceProducerTemplate producerTemplate;
@@ -36,6 +40,7 @@ public abstract class AbstractInboundChannelGenerator {
     private AuthenticationClientTemplate authenticationClientTemplate;
 
     public final void initInbound(ServiceProducerTemplate producerTemplate,
+                                  DecisionManager decisionManager,
                                   Channel channel, List<TerminalServiceChannelAccess> channelAccesses,
                                   List<Authority> authorities, TransformerService transformerService,
                                   AuthenticationClientTemplate authenticationClientTemplate) {
@@ -44,6 +49,7 @@ public abstract class AbstractInboundChannelGenerator {
         this.channelAccesses = channelAccesses;
         this.authorities = authorities;
         this.transformerService = transformerService;
+        this.decisionManager = decisionManager;
         initConfig();
         for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
@@ -66,15 +72,8 @@ public abstract class AbstractInboundChannelGenerator {
     }
 
     private boolean checkServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
-        if (!checkServiceAuthenticationAllowed(service, message))
-            return false;
-        if (!isServiceSecondAuthenticationAllowed(service, message))
-            return false;
-        if (!checkAccountAuthorizationAllowed(service, message))
-            return false;
-        if (!checkServiceAccessAllowed(service, message))
-            return false;
-        return isServiceWithdrawAllowed(service, message);
+        decisionManager.decide(service,message);
+        return true;
     }
 
     private boolean isServiceSecondAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {

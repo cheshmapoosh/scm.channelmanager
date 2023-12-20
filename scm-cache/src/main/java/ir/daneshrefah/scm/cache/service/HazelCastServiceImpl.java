@@ -24,13 +24,21 @@ public class HazelCastServiceImpl implements HazelCastService {
     }
 
     @Override
-    public void putInCache(String mapName, String key, Object value) {
+    public Object putInCache(String mapName, String key, Object value) {
         hazelcastInstance.getMap(mapName).put(key, value);
+        return getFromCache(mapName,key);
     }
 
     @Override
-    public void putInCache(String mapName, String key, Object value, int timeToLiveSeconds) {
+    public Object putInCache(String mapName, String key, Object value, int timeToLiveSeconds) {
         hazelcastInstance.getMap(mapName).put(key, value, timeToLiveSeconds, TimeUnit.SECONDS);
+        return getFromCache(mapName,key);
+    }
+
+    @Override
+    public Object putInCache(String mapName, String key, Object value, int timeToLiveSeconds,int maxIdle) {
+        hazelcastInstance.getMap(mapName).put(key, value, timeToLiveSeconds, TimeUnit.SECONDS,maxIdle,TimeUnit.SECONDS);
+        return getFromCache(mapName,key);
     }
 
     @Override
@@ -39,8 +47,10 @@ public class HazelCastServiceImpl implements HazelCastService {
     }
 
     @Override
-    public Map createCacheIfNull(String mapName) {
-        return Collections.unmodifiableMap(hazelcastInstance.getMap(mapName));
+    public Map<?,?> createCacheIfNull(String mapName) {
+        IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
+        hazelcastInstance.getConfig().getMapConfig(mapName).setPerEntryStatsEnabled(true);
+        return Collections.unmodifiableMap(map);
     }
 
     @Override
