@@ -19,4 +19,5 @@ publishing {
 dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    api project(':scm-common')
 }

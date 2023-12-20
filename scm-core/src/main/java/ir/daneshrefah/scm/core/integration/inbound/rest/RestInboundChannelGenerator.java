@@ -4,7 +4,6 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +21,8 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
 
     @Autowired
     private CamelContext camelContext;
-
     @Autowired
-    private AuthenticationClientTemplate authenticationClientTemplate;
+    private RestMessageParser restMessageParser;
     private CamelRouteBuilder routeBuilder;
 
     @Override
@@ -34,7 +32,7 @@ public class RestInboundChannelGenerator extends AbstractInboundChannelGenerator
 //            camelContext = beanMap.values().iterator().next();
 //        }
         routeBuilder = new CamelRouteBuilder(channel, this::invokeService, this::prepareServiceUrl,
-                this::createHttpMethodBasedOnServiceType, authenticationClientTemplate);
+                this::createHttpMethodBasedOnServiceType, restMessageParser);
         /*try {
             camelContext.addRoutes(new CamelRouteBuilder(channel, channelAccesses));
         } catch (Exception e) {

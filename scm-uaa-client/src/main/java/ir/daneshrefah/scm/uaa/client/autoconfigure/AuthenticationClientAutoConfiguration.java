@@ -19,4 +19,5 @@ public class AuthenticationClientAutoConfiguration {
     public AuthenticationClientTemplate authenticationClientTemplate() {
         return new AuthenticationClientTemplate();
     }
+
 }

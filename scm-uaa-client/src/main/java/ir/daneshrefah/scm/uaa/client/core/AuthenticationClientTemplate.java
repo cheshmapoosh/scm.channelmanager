@@ -8,4 +8,9 @@ package ir.daneshrefah.scm.uaa.client.core;
  * @since 2023-12-19
  */
 public class AuthenticationClientTemplate {
+
+    public Object extractAuthenticationFromAuthorizationHeader(String authorizationHeader) {
+        return null;
+    }
+
 }

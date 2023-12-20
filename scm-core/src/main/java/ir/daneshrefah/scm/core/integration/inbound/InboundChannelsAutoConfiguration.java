@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.integration.inbound;
 
-import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.service.ChannelService;
@@ -10,7 +9,6 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
-import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -50,12 +48,8 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
     private TransformerService transformerService;
     private ApplicationContext applicationContext;
 
-    @Autowired
-    private AuthenticationClientTemplate authenticationClientTemplate;
-
     @Bean
     public void registerInboundBeans() {
-        List<Authority> terminalAuthorities = terminalService.findAllTerminalAuthorities();
         LOGGER.info("=================== start InboundChannelsAutoConfiguration ===================");
 
 //        Map<String, Class<? extends AbstractInboundChannelGenerator>> inboundChannelGeneratorMap = extractInboundChannelGeneratorMap();
@@ -91,7 +85,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
                     findTerminalServiceChannelAccessByChannelId(channel.getId());
 
             inboundChannelGenerator.initInbound(producerTemplate, decisionManager, channel, terminalServiceChannelAccessList,
-                    terminalAuthorities, transformerService, authenticationClientTemplate);
+                    transformerService);
 //            inboundChannelGenerator.setChannelAccesses(terminalServiceChannelAccessList);
 //            AbstractInboundChannelGenerator bean = (AbstractInboundChannelGenerator) beanFactory.getBean("inboundChannelGeneratorBean_" + channel.getCode());
 //            bean.initInbound();

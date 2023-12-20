@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.model.authentication.Authentication;
+import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,6 +29,7 @@ import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_
  * @version 1.0
  * @since 2023-07-26
  */
+@Component
 public class RestMessageParser {
     private final AuthenticationClientTemplate authenticationClientTemplate;
     Map<String, BodyExtractor> bodyExtractorMap = new HashMap<>();

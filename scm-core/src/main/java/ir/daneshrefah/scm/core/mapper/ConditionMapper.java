@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.common.model.condition.Condition;
-import ir.daneshrefah.scm.common.model.condition.ServiceCondition;
-import ir.daneshrefah.scm.common.model.condition.TerminalCondition;
-import ir.daneshrefah.scm.common.model.condition.TerminalServiceCondition;
+import ir.daneshrefah.scm.core.model.condition.Condition;
+import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
+import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
+import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;

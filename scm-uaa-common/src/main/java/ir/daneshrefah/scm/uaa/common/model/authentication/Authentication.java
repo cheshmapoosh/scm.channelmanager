@@ -1,10 +1,7 @@
-package ir.daneshrefah.scm.common.model.authentication;
+package ir.daneshrefah.scm.uaa.common.model.authentication;
 
-import ir.daneshrefah.scm.common.model.authority.Authority;
+import ir.daneshrefah.scm.common.model.message.AuthenticationHeader;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,13 +10,13 @@ import java.util.List;
  * @version 1.0
  * @since 2023-08-14
  */
-public class Authentication implements Serializable {
+public class Authentication implements AuthenticationHeader {
 
     private String sessionKey;
     private String username;
     private String accessParameter;
     private Terminal terminal;
-    private List<Authority> authorities;
+//    private List<Authority> authorities;
 
     public Authentication(String username) {
         this.username = username;
@@ -57,11 +54,4 @@ public class Authentication implements Serializable {
         this.terminal = terminal;
     }
 
-    public List<Authority> getAuthorities() {
-        return authorities;
-    }
-
-    public void setAuthorities(List<Authority> authorities) {
-        this.authorities = authorities;
-    }
 }

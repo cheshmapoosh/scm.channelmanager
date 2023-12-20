@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
-
 import ir.daneshrefah.scm.core.converter.AuthenticationMethodConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

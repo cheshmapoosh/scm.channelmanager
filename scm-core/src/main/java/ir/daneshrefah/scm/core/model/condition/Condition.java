@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.model.condition;
+package ir.daneshrefah.scm.core.model.condition;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.type.ConditionType;

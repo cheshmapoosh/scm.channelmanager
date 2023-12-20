@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
@@ -13,7 +12,6 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,21 +31,16 @@ public abstract class AbstractInboundChannelGenerator {
     protected Channel channel;
     protected List<TerminalServiceChannelAccess> channelAccesses;
     protected ServiceProducerTemplate producerTemplate;
-    private List<Authority> authorities;
     protected TransformerService transformerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
-
-    private AuthenticationClientTemplate authenticationClientTemplate;
 
     public final void initInbound(ServiceProducerTemplate producerTemplate,
                                   DecisionManager decisionManager,
                                   Channel channel, List<TerminalServiceChannelAccess> channelAccesses,
-                                  List<Authority> authorities, TransformerService transformerService,
-                                  AuthenticationClientTemplate authenticationClientTemplate) {
+                                  TransformerService transformerService) {
         this.producerTemplate = producerTemplate;
         this.channel = channel;
         this.channelAccesses = channelAccesses;
-        this.authorities = authorities;
         this.transformerService = transformerService;
         this.decisionManager = decisionManager;
         initConfig();
@@ -67,7 +60,6 @@ public abstract class AbstractInboundChannelGenerator {
             }
             registerTerminalService(channelAccess);
         }
-        this.authenticationClientTemplate = authenticationClientTemplate;
         finalizeConfig();
     }
 

@@ -1,13 +1,9 @@
 package ir.daneshrefah.scm.core.authority.decision.cache;
 
-import ir.daneshrefah.scm.common.model.authentication.Authentication;
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
-import ir.daneshrefah.scm.common.model.condition.*;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.constant.ConditionCacheType;
+import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
+import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

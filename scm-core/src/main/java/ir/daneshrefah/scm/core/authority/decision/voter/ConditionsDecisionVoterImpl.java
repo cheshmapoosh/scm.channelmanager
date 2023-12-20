@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.common.model.authentication.Authentication;
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
-import ir.daneshrefah.scm.common.model.condition.Condition;
+import ir.daneshrefah.scm.common.model.message.AuthenticationHeader;
+import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
+import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -11,8 +11,7 @@ import ir.daneshrefah.scm.core.authority.decision.cache.CacheConditionService;
 import ir.daneshrefah.scm.core.authority.decision.constant.ConditionCacheType;
 import ir.daneshrefah.scm.core.authority.decision.constant.Priority;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
-import ir.daneshrefah.scm.core.authority.decision.exception.TerminalNotSupportAuthenticationException;
-import ir.daneshrefah.scm.core.authority.decision.exception.TerminalNotSupportSecondAuthenticationException;
+import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -51,7 +50,7 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
     private AuthenticationMethod realizeFirstAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
         Service service = authObject.getTerminalServiceAccess().getService();
         Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        Authentication userFirstAuth = message.getHeader().getAuthentication();
+        AuthenticationHeader userFirstAuth = message.getHeader().getAuthentication();
         // TODO HEADER DOES NOT HAVE METHOD AUTH!
         if (service.getCheckAccessFirstAuthentication() && terminal.getSupportCheckAuthentication()) {
             //SAMPLE RET
@@ -63,7 +62,7 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
     private AuthenticationMethod realizeSecondAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
         Service service = authObject.getTerminalServiceAccess().getService();
         Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        Authentication userSecondAuth = message.getHeader().getAuthentication();
+        AuthenticationHeader userSecondAuth = message.getHeader().getAuthentication();
         // TODO HEADER DOES NOT HAVE METHOD AUTH!
         if (service.getCheckAccessSecondAuthentication() && terminal.getSupportCheckSecondAuthentication()) {
             return AuthenticationMethod.STATIC_PASSWORD;

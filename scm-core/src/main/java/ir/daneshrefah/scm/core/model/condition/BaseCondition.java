@@ -1,7 +1,7 @@
-package ir.daneshrefah.scm.common.model.condition;
+package ir.daneshrefah.scm.core.model.condition;
 
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 
 public class BaseCondition<T> extends BaseModel<T> {
     private AuthenticationMethod authenticationMethod;

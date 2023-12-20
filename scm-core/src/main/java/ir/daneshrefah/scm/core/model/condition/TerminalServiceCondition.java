@@ -1,8 +1,5 @@
-package ir.daneshrefah.scm.common.model.condition;
+package ir.daneshrefah.scm.core.model.condition;
 
-import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 
