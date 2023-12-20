@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.model.authority.terminal;
 
 import ir.daneshrefah.scm.common.model.authority.Authority;
 import ir.daneshrefah.scm.common.model.authority.AuthorityType;
-import ir.daneshrefah.scm.common.type.DurationType;
+import ir.daneshrefah.scm.common.type.PeriodType;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.common.type.DurationType;
  */
 public class TerminalWithdrawAuthority extends Authority {
 
-    private DurationType withdrawDurationType;
+    private PeriodType withdrawDurationType;
     private Integer withdrawDuration;
     private Integer withdrawMinAmount;
     private Integer withdrawMaxAmount;
@@ -23,11 +23,11 @@ public class TerminalWithdrawAuthority extends Authority {
         return AuthorityType.TERMINAL_WITHDRAW;
     }
 
-    public DurationType getWithdrawDurationType() {
+    public PeriodType getWithdrawDurationType() {
         return withdrawDurationType;
     }
 
-    public void setWithdrawDurationType(DurationType withdrawDurationType) {
+    public void setWithdrawDurationType(PeriodType withdrawDurationType) {
         this.withdrawDurationType = withdrawDurationType;
     }
 

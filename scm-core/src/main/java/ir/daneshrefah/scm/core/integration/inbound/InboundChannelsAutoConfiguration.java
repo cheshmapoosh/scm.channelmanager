@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.service.ChannelService;
 import ir.daneshrefah.scm.core.service.TerminalService;
 import ir.daneshrefah.scm.core.service.TransformerService;
+import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -43,6 +44,8 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
     private TerminalService terminalService;
     @Autowired
     private ServiceProducerTemplate producerTemplate;
+    @Autowired
+    private DecisionManager decisionManager;
     @Autowired
     private TransformerService transformerService;
     private ApplicationContext applicationContext;
@@ -87,7 +90,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
             List<TerminalServiceChannelAccess> terminalServiceChannelAccessList = terminalService.
                     findTerminalServiceChannelAccessByChannelId(channel.getId());
 
-            inboundChannelGenerator.initInbound(producerTemplate, channel, terminalServiceChannelAccessList,
+            inboundChannelGenerator.initInbound(producerTemplate, decisionManager, channel, terminalServiceChannelAccessList,
                     terminalAuthorities, transformerService, authenticationClientTemplate);
 //            inboundChannelGenerator.setChannelAccesses(terminalServiceChannelAccessList);
 //            AbstractInboundChannelGenerator bean = (AbstractInboundChannelGenerator) beanFactory.getBean("inboundChannelGeneratorBean_" + channel.getCode());

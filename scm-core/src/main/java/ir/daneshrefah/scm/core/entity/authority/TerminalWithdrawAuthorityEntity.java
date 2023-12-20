@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.authority;
 
-import ir.daneshrefah.scm.common.type.DurationType;
-import ir.daneshrefah.scm.core.converter.DurationTypeConverter;
+import ir.daneshrefah.scm.common.type.PeriodType;
+import ir.daneshrefah.scm.core.converter.PeriodTypeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.DiscriminatorValue;
@@ -19,8 +19,8 @@ import jakarta.persistence.Entity;
 public class TerminalWithdrawAuthorityEntity extends AuthorityEntity {
 
     @Column(name = "TARGET_WITHDRAW_DURATION_TYPE_CODE", insertable = false, updatable = false)
-    @Convert(converter = DurationTypeConverter.class)
-    private DurationType withdrawDurationType;
+    @Convert(converter = PeriodTypeConverter.class)
+    private PeriodType withdrawDurationType;
     @Column(name = "TARGET_WITHDRAW_DURATION", insertable = false, updatable = false)
     private Integer withdrawDuration;
     @Column(name = "TARGET_WITHDRAW_MIN_AMOUNT", insertable = false, updatable = false)
@@ -28,11 +28,11 @@ public class TerminalWithdrawAuthorityEntity extends AuthorityEntity {
     @Column(name = "TARGET_WITHDRAW_MAX_AMOUNT", insertable = false, updatable = false)
     private Integer withdrawMaxAmount;
 
-    public DurationType getWithdrawDurationType() {
+    public PeriodType getWithdrawDurationType() {
         return withdrawDurationType;
     }
 
-    public void setWithdrawDurationType(DurationType withdrawDurationType) {
+    public void setWithdrawDurationType(PeriodType withdrawDurationType) {
         this.withdrawDurationType = withdrawDurationType;
     }
 

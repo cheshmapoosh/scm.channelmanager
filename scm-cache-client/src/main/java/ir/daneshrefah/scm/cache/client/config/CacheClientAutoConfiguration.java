@@ -57,6 +57,7 @@ public class CacheClientAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "scm.cache.client.config.distributed", havingValue = "false", matchIfMissing = false)
     public HazelcastInstance hazelcastEmbed() {
+        log.info(">>> hazelcast local iit started");
         return Hazelcast.newHazelcastInstance();
     }
 
