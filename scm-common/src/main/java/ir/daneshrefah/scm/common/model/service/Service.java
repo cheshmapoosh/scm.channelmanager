@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.common.model.service;
 
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,10 +25,9 @@ public abstract class Service extends BaseModel<String> {
     private Boolean checkAccessFirstAuthentication;
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
-    private Boolean checkAccessAccount;
-    private Boolean checkAccessWithdraw;
+    private Boolean checkAccessAsset;
     private String amountProperty;
-    private String accountProperty;
+    private String assetProperty;
 
     public String getCode() {
         return code;
@@ -145,20 +141,12 @@ public abstract class Service extends BaseModel<String> {
         this.checkAccessService = checkAccessService;
     }
 
-    public Boolean getCheckAccessAccount() {
-        return checkAccessAccount;
+    public Boolean getCheckAccessAsset() {
+        return checkAccessAsset;
     }
 
-    public void setCheckAccessAccount(Boolean checkAccessAccount) {
-        this.checkAccessAccount = checkAccessAccount;
-    }
-
-    public Boolean getCheckAccessWithdraw() {
-        return checkAccessWithdraw;
-    }
-
-    public void setCheckAccessWithdraw(Boolean checkAccessWithdraw) {
-        this.checkAccessWithdraw = checkAccessWithdraw;
+    public void setCheckAccessAsset(Boolean checkAccessAsset) {
+        this.checkAccessAsset = checkAccessAsset;
     }
 
     public String getAmountProperty() {
@@ -169,12 +157,12 @@ public abstract class Service extends BaseModel<String> {
         this.amountProperty = amountProperty;
     }
 
-    public String getAccountProperty() {
-        return accountProperty;
+    public String getAssetProperty() {
+        return assetProperty;
     }
 
-    public void setAccountProperty(String accountProperty) {
-        this.accountProperty = accountProperty;
+    public void setAssetProperty(String assetProperty) {
+        this.assetProperty = assetProperty;
     }
 
     public abstract Object getServiceInfo();

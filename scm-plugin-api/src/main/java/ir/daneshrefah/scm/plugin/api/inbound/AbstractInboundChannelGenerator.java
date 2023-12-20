@@ -129,10 +129,10 @@ public abstract class AbstractInboundChannelGenerator {
     private boolean checkAccountAuthorizationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
         Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
         Service service = serviceAccess.getTerminalServiceAccess().getService();
-        if (!terminal.getSupportCheckAccountAuthorization()) {
+        if (!terminal.getSupportCheckAssetAccess()) {
             return true;
         }
-        if (!service.getCheckAccessAccount()) {
+        if (!service.getCheckAccessAsset()) {
             return true;
         }
 //        TODO

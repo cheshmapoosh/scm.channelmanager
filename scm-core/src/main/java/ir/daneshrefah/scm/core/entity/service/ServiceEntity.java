@@ -35,12 +35,11 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
     private Boolean checkAccessFirstAuthentication;
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
-    private Boolean checkAccessAccount;
-    private Boolean checkAccessWithdraw;
+    private Boolean checkAccessAsset;
     @Column(name = "PROPERTY_NAME_AMOUNT")
     private String amountProperty;
-    @Column(name = "PROPERTY_NAME_ACCOUNT")
-    private String accountProperty;
+    @Column(name = "PROPERTY_NAME_ASSET")
+    private String assetProperty;
     @ManyToOne
     @JoinColumn(name = "PARENT_SERVICE_ID")
     private ServiceEntity parent;
@@ -160,20 +159,12 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
         this.checkAccessService = checkAccessService;
     }
 
-    public Boolean getCheckAccessAccount() {
-        return checkAccessAccount;
+    public Boolean getCheckAccessAsset() {
+        return checkAccessAsset;
     }
 
-    public void setCheckAccessAccount(Boolean checkAccessAccount) {
-        this.checkAccessAccount = checkAccessAccount;
-    }
-
-    public Boolean getCheckAccessWithdraw() {
-        return checkAccessWithdraw;
-    }
-
-    public void setCheckAccessWithdraw(Boolean checkAccessWithdraw) {
-        this.checkAccessWithdraw = checkAccessWithdraw;
+    public void setCheckAccessAsset(Boolean checkAccessAsset) {
+        this.checkAccessAsset = checkAccessAsset;
     }
 
     public String getAmountProperty() {
@@ -184,12 +175,12 @@ public abstract class ServiceEntity extends AbstractEntity<String> {
         this.amountProperty = amountProperty;
     }
 
-    public String getAccountProperty() {
-        return accountProperty;
+    public String getAssetProperty() {
+        return assetProperty;
     }
 
-    public void setAccountProperty(String accountProperty) {
-        this.accountProperty = accountProperty;
+    public void setAssetProperty(String assetProperty) {
+        this.assetProperty = assetProperty;
     }
 
     public ServiceEntity getParent() {

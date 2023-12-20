@@ -17,7 +17,7 @@ import jakarta.persistence.ManyToOne;
 public class ExternalServiceEntity extends ServiceEntity {
 
     @ManyToOne
-    @JoinColumn(name = "IMPLEMENTATION_EXTERNAL_SERVICE_PROVIDER_ID")
+    @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
     private ExternalServiceProviderEntity externalServiceProviderEntity;
 
     public ExternalServiceProviderEntity getExternalServiceProviderEntity() {

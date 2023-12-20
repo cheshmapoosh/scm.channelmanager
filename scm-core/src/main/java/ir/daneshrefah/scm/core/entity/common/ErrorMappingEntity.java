@@ -22,7 +22,7 @@ public class ErrorMappingEntity extends AbstractEntity<String> {
     private String id;
 
     @ManyToOne
-    @JoinColumn(name = "EXTERNAL_SERVICE_PROVIDER_ID")
+    @JoinColumn(name = "SERVICE_PROVIDER_ID")
     private ExternalServiceProviderEntity externalServiceProviderEntity;
     private String providerErrorCode;
     private String scmErrorCode;

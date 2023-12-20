@@ -5,11 +5,13 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.cache.client.config.exception.HazelCastClientInitializationException;
 import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -31,11 +33,12 @@ import java.util.Objects;
 @Configuration
 @EnableCaching
 @Slf4j
-public class HazelcastClientAutoConfiguration {
+public class CacheClientAutoConfiguration {
 
     private final CacheClientProperties clientProperties;
 
     @Bean
+    @ConditionalOnProperty(name = "scm.cache.client.config.distributed", havingValue = "true", matchIfMissing = true)
     public HazelcastInstance hazelcastClient() {
         try {
             log.info(">>> hazelcast client config loaded");
@@ -51,13 +54,19 @@ public class HazelcastClientAutoConfiguration {
         }
     }
 
+    @Bean
+    @ConditionalOnProperty(name = "scm.cache.client.config.distributed", havingValue = "false", matchIfMissing = false)
+    public HazelcastInstance hazelcastEmbed() {
+        return Hazelcast.newHazelcastInstance();
+    }
+
     private String getServerAddress() {
         return clientProperties.getServerHost() + ":" + clientProperties.getServerPort();
     }
 
     @Bean
-    public CacheManager cacheManager() {
-        return new com.hazelcast.spring.cache.HazelcastCacheManager(hazelcastClient());
+    public CacheManager cacheManager(HazelcastInstance hazelcastInstance) {
+        return new com.hazelcast.spring.cache.HazelcastCacheManager(hazelcastInstance);
     }
 
     private void setupNearCache(ClientConfig clientConfig) {

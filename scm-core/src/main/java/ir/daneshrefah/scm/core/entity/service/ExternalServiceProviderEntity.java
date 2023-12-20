@@ -7,10 +7,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "TBL_SCM_EXTERNAL_SERVICE_PROVIDER")
+@Table(name = "TBL_SCM_SERVICE_PROVIDER")
 public class ExternalServiceProviderEntity extends AbstractEntity<String> {
     @Id
-    @Column(name = "EXTERNAL_SERVICE_PROVIDER_ID")
+    @Column(name = "SERVICE_PROVIDER_ID")
     private String id;
     private String code;
     private String title;

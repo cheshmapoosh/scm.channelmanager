@@ -16,8 +16,7 @@ public class Terminal extends BaseModel<String> {
     private Boolean supportCheckAuthentication;
     private Boolean supportCheckSecondAuthentication;
     private Boolean supportCheckServiceAccess;
-    private Boolean supportCheckAccountAuthorization;
-    private Boolean supportCheckMaxWithdraw;
+    private Boolean supportCheckAssetAccess;
 
     public String getCode() {
         return code;
@@ -59,19 +58,12 @@ public class Terminal extends BaseModel<String> {
         this.supportCheckServiceAccess = supportCheckServiceAccess;
     }
 
-    public Boolean getSupportCheckAccountAuthorization() {
-        return supportCheckAccountAuthorization;
+    public Boolean getSupportCheckAssetAccess() {
+        return supportCheckAssetAccess;
     }
 
-    public void setSupportCheckAccountAuthorization(Boolean supportCheckAccountAuthorization) {
-        this.supportCheckAccountAuthorization = supportCheckAccountAuthorization;
+    public void setSupportCheckAssetAccess(Boolean supportCheckAssetAccess) {
+        this.supportCheckAssetAccess = supportCheckAssetAccess;
     }
 
-    public Boolean getSupportCheckMaxWithdraw() {
-        return supportCheckMaxWithdraw;
-    }
-
-    public void setSupportCheckMaxWithdraw(Boolean supportCheckMaxWithdraw) {
-        this.supportCheckMaxWithdraw = supportCheckMaxWithdraw;
-    }
 }

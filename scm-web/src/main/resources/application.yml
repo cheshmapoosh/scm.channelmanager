@@ -6,6 +6,7 @@ scm:
   cache:
     client:
       config:
+        distributed: false
         cluster-name: dev3
         server-host: 127.0.0.1
         server-port: 5701
