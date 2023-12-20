@@ -13,7 +13,7 @@ public class TerminalConditionEntity extends ConditionBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @Column(name = "TERMINAL_CONDITION_ID")
     private String id;
 
     @ManyToOne

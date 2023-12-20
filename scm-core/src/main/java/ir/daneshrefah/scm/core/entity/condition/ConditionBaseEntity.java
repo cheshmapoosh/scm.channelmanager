@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
 import ir.daneshrefah.scm.common.model.authentication.AuthenticationMethod;
+
 import ir.daneshrefah.scm.core.converter.AuthenticationMethodConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import jakarta.persistence.*;
@@ -23,4 +24,7 @@ public abstract class ConditionBaseEntity<T> extends AbstractEntity<T> {
     @ManyToOne
     @JoinColumn(name = "CONDITION_ID")
     private ConditionEntity conditionEntity;
+
+    @Column(name = "STATUS")
+    private Boolean status;
 }

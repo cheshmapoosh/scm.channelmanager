@@ -170,6 +170,7 @@ public class InstanceMapperImpl implements InstanceMapper {
         }
         if (Objects.nonNull(mapCacheConfig.getStatisticsEnabled())) {
             mapConfig.setStatisticsEnabled(mapCacheConfig.getStatisticsEnabled());
+            mapConfig.setPerEntryStatsEnabled(mapCacheConfig.getStatisticsEnabled());
         }
         if (Objects.nonNull(mapCacheConfig.getEvictionSize())) {
             evictionConfig.setSize(mapCacheConfig.getEvictionSize());

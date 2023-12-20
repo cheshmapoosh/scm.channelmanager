@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,19 +12,15 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_TERMINAL_SERVICE_CONDITION")
 @Getter
 @Setter
-public class TerminalServiceCondition extends ConditionBaseEntity<String> {
+public class TerminalServiceConditionEntity extends ConditionBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @Column(name = "TERMINAL_SERVICE_CONDITION_ID")
     private String id;
 
     @ManyToOne
-    @JoinColumn(name = "TERMINAL_ID")
-    private TerminalEntity terminalEntity;
-
-    @ManyToOne
-    @JoinColumn(name = "SERVICE_ID")
-    private ServiceEntity serviceEntity;
+    @JoinColumn(name = "TERMINAL_SERVICE_ACCESS_ID")
+    private TerminalServiceAccessEntity terminalServiceAccessEntity;
 
 }

@@ -13,7 +13,7 @@ public class ServiceConditionEntity extends ConditionBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @Column(name = "SERVICE_CONDITION_ID")
     private String id;
     @ManyToOne
     @JoinColumn(name = "SERVICE_ID")

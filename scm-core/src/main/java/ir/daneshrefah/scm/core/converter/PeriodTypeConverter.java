@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.common.type.DurationType;
+import ir.daneshrefah.scm.common.type.PeriodType;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -12,15 +12,15 @@ import jakarta.persistence.Converter;
  * @since 2023-07-22
  */
 @Converter
-public class DurationTypeConverter implements AttributeConverter<DurationType, Integer> {
+public class PeriodTypeConverter implements AttributeConverter<PeriodType, Integer> {
 
     @Override
-    public Integer convertToDatabaseColumn(DurationType enumValue) {
+    public Integer convertToDatabaseColumn(PeriodType enumValue) {
         return enumValue.getCode();
     }
 
     @Override
-    public DurationType convertToEntityAttribute(Integer code) {
-        return DurationType.findByCode(code);
+    public PeriodType convertToEntityAttribute(Integer code) {
+        return PeriodType.findByCode(code);
     }
 }

@@ -13,13 +13,14 @@ public interface HazelCastService {
 
     Object getFromCache(String mapName, String key);
 
-    void putInCache(String mapName, String key, Object value);
+    Object putInCache(String mapName, String key, Object value);
 
-    void putInCache(String mapName, String key, Object value, int timeToLiveSeconds);
+    Object putInCache(String mapName, String key, Object value, int timeToLiveSeconds);
+    Object putInCache(String mapName, String key, Object value, int timeToLiveSeconds,int maxIdle);
 
     Object removeFromCache(String mapName, String key);
 
-    Map createCacheIfNull(String mapName);
+    Map<?,?> createCacheIfNull(String mapName);
 
     FlakeIdGenerator createIdGeneratorIfNull(String name);
 
