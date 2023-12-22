@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.uaa.client.converter;
 
+import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.BearerTokenError;
 import org.springframework.security.oauth2.server.resource.BearerTokenErrors;
-import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
-import org.springframework.util.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,12 +16,16 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @since 2023-12-19
  */
-public class BearerTokenResolver {
+public class BearerTokenResolver implements AuthenticationConverter {
 
     private static final Pattern authorizationPattern = Pattern.compile("^Bearer (?<token>[a-zA-Z0-9-._~+/]+=*)$",
             Pattern.CASE_INSENSITIVE);
 
-    public BearerTokenAuthenticationToken resolve(String authorizationHeader) {
+    @Override
+    public BearerAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+        if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
+            return null;
+        }
         final String authorizationHeaderToken = resolveFromAuthorizationHeader(authorizationHeader);
         final String parameterToken = null; /*isParameterTokenSupportedForRequest(request)
                 ? resolveFromRequestParameters(request) : null;*/
@@ -32,7 +36,8 @@ public class BearerTokenResolver {
                 throw new OAuth2AuthenticationException(error);
             }
 
-            BearerTokenAuthenticationToken authenticationRequest = new BearerTokenAuthenticationToken(authorizationHeaderToken);
+            BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(terminalCode,
+                    authorizationHeaderToken);
 //            authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
 

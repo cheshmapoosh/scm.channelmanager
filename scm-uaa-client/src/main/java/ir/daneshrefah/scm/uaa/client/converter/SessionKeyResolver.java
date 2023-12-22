@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.uaa.client.converter;
 
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.BearerTokenError;
 import org.springframework.security.oauth2.server.resource.BearerTokenErrors;
-import org.springframework.util.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,12 +16,16 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @since 2023-12-19
  */
-public class SessionKeyResolver {
+public class SessionKeyResolver implements AuthenticationConverter {
 
     private static final Pattern authorizationPattern = Pattern.compile("^Session (?<token>[a-zA-Z0-9-._~+/]+=*)$",
             Pattern.CASE_INSENSITIVE);
 
-    public SessionAuthenticationToken resolve(String authorizationHeader) {
+    @Override
+    public SessionAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+        if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
+            return null;
+        }
         final String authorizationHeaderToken = resolveFromAuthorizationHeader(authorizationHeader);
         final String parameterToken = null; /*isParameterTokenSupportedForRequest(request)
                 ? resolveFromRequestParameters(request) : null;*/
@@ -32,7 +36,8 @@ public class SessionKeyResolver {
                 throw new OAuth2AuthenticationException(error);
             }
 
-            SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(authorizationHeaderToken);
+            SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(terminalCode,
+                    authorizationHeaderToken);
 //            authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
 

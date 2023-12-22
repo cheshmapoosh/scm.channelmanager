@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,8 +13,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 public class BasicAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
 
+    public BasicAuthenticationProvider(CacheTemplate cacheTemplate) {
+        super(cacheTemplate);
+    }
+
     @Override
     public boolean supports(Class<?> authentication) {
-        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+        return BasicAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

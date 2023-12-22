@@ -37,4 +37,8 @@ public class CamelUtils {
         return getStringHeaderFromExchange(exchange, HttpConstants.HTTP_HEADER_CONTENT_TYPE);
     }
 
+    public static String getTerminalHeaderFromExchange(Exchange exchange) {
+        return getStringHeaderFromExchange(exchange, HttpConstants.HTTP_HEADER_TERMINAL);
+    }
+
 }

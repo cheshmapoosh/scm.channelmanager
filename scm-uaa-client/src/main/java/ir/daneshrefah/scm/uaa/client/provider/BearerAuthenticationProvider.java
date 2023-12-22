@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,8 +13,12 @@ import org.springframework.security.oauth2.server.resource.authentication.Bearer
 public class BearerAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
 
+    public BearerAuthenticationProvider(CacheTemplate cacheTemplate) {
+        super(cacheTemplate);
+    }
+
     @Override
     public boolean supports(Class<?> authentication) {
-        return BearerTokenAuthenticationToken.class.isAssignableFrom(authentication);
+        return BearerAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

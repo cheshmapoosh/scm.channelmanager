@@ -39,6 +39,10 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.replaceOnceIgnoreCase(text, searchString, replacement);
     }
 
+    public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
+        return org.apache.commons.lang3.StringUtils.startsWithIgnoreCase(str, prefix);
+    }
+
     public static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
         if (ignoreCase) {
             return org.apache.commons.lang3.StringUtils.startsWithIgnoreCase(str, prefix);

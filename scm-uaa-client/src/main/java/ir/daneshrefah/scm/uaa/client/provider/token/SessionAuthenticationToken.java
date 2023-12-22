@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
  */
 import java.util.Collections;
 
-public class SessionAuthenticationToken extends AbstractAuthenticationToken {
+public class SessionAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String sessionKey;
 
@@ -22,23 +22,24 @@ public class SessionAuthenticationToken extends AbstractAuthenticationToken {
      * @param sessionKey
      *
      */
-    public SessionAuthenticationToken(String sessionKey) {
-        super(Collections.emptyList());
+    public SessionAuthenticationToken(String terminalCode, String sessionKey) {
+        super(terminalCode, Collections.emptyList());
         Assert.hasText(sessionKey, "sessionKey cannot be empty");
         this.sessionKey = sessionKey;
-    }
-
-    @Override
-    public Object getCredentials() {
-        return this.sessionKey;
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return this.sessionKey;
     }
 
     public String getSessionKey() {
         return sessionKey;
     }
+
+    @Override
+    public Object getCredentials() {
+        return this.getSessionKey();
+    }
+
+    @Override
+    public Object getPrincipal() {
+        return this.getSessionKey();
+    }
+
 }

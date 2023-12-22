@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -12,6 +13,12 @@ import org.springframework.security.core.AuthenticationException;
  * @since 2023-12-19
  */
 public abstract class AbstractClientAuthenticationProvider implements AuthenticationProvider {
+
+    protected final CacheTemplate cacheTemplate;
+
+    protected AbstractClientAuthenticationProvider(CacheTemplate cacheTemplate) {
+        this.cacheTemplate = cacheTemplate;
+    }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

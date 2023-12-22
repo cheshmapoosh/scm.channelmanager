@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -10,4 +12,7 @@ package ir.daneshrefah.scm.uaa.client.provider;
 public abstract class AbstractRemoteClientAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
 
+    public AbstractRemoteClientAuthenticationProvider(CacheTemplate cacheTemplate) {
+        super(cacheTemplate);
+    }
 }

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 
 /**
@@ -11,6 +12,10 @@ import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
  */
 public class SessionAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
+
+    public SessionAuthenticationProvider(CacheTemplate cacheTemplate) {
+        super(cacheTemplate);
+    }
 
     @Override
     public boolean supports(Class<?> authentication) {

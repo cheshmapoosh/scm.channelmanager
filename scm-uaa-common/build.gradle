@@ -19,5 +19,6 @@ publishing {
 dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    implementation 'org.springframework.security:spring-security-core'
     api project(':scm-common')
 }

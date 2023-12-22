@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.BasicAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.client.provider.BearerAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.client.provider.SessionAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -44,6 +46,8 @@ public class AuthenticationClientAutoConfiguration {
 //    @Value("${uaa.server.token-endpoint}")
 //    private String tokenEndpoint;
     private String ANONYMOUS_AUTH_KEY = UUID.randomUUID().toString();
+    @Autowired
+    private CacheTemplate cacheTemplate;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -69,11 +73,10 @@ public class AuthenticationClientAutoConfiguration {
     public AuthenticationManager authenticationManager() {
         return new ProviderManager(
                 new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_KEY),
-                new BearerAuthenticationProvider(),
-                new SessionAuthenticationProvider(),
-                new BasicAuthenticationProvider()
-                /*new BearerAuthenticationProvider(uaaServerConnectorService(restTemplate()),cacheTemplate,jwtDecoder()),
-                new SessionKeyAuthenticationProvider(cacheTemplate)*/);
+                new BearerAuthenticationProvider(cacheTemplate),
+                new SessionAuthenticationProvider(cacheTemplate),
+                new BasicAuthenticationProvider(cacheTemplate)
+        );
     }
 
     @Bean
