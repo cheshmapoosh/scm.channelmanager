@@ -23,4 +23,7 @@ public abstract class BaseAuthenticationToken extends AbstractAuthenticationToke
     public BaseAuthenticationToken(Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
     }
+
+    public abstract String getId();
+
 }

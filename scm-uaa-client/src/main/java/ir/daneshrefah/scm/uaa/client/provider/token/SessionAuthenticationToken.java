@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider.token;
 
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.util.Assert;
 
@@ -42,4 +43,8 @@ public class SessionAuthenticationToken extends BaseTerminalAuthenticationToken 
         return this.getSessionKey();
     }
 
+    @Override
+    public String getId() {
+        return getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
+    }
 }

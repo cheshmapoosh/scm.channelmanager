@@ -1,9 +1,21 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
-import org.springframework.security.authentication.AuthenticationProvider;
+import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.SpringSecurityMessageSource;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
+import org.springframework.security.core.userdetails.UserCache;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsChecker;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.cache.NullUserCache;
+import org.springframework.util.Assert;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,15 +26,136 @@ import org.springframework.security.core.AuthenticationException;
  */
 public abstract class AbstractClientAuthenticationProvider implements AuthenticationProvider {
 
-    protected final CacheTemplate cacheTemplate;
+    protected final Log logger = LogFactory.getLog(getClass());
 
-    protected AbstractClientAuthenticationProvider(CacheTemplate cacheTemplate) {
-        this.cacheTemplate = cacheTemplate;
-    }
+    private UserCache userCache = new NullUserCache();
+
+    private UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
+
+    private UserDetailsChecker postAuthenticationChecks = new DefaultPostAuthenticationChecks();
+
+    private boolean forcePrincipalAsString = false;
+
+    protected boolean hideUserNotFoundExceptions = true;
+
+    protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
+
+    private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        return null;
+        Assert.isInstanceOf(BaseAuthenticationToken.class, authentication,
+                () -> this.messages.getMessage("AbstractClientAuthenticationProvider.onlySupports",
+                        "Only BaseAuthenticationToken is supported"));
+        String username = determineUsername(authentication);
+        boolean cacheWasUsed = true;
+        UserDetails user = this.userCache.getUserFromCache(((BaseAuthenticationToken) authentication).getId());
+        if (user == null) {
+            cacheWasUsed = false;
+            try {
+                user = retrieveUser(username, (BaseAuthenticationToken) authentication);
+            }
+            catch (UsernameNotFoundException ex) {
+                this.logger.debug("Failed to find user '" + username + "'");
+                if (!this.hideUserNotFoundExceptions) {
+                    throw ex;
+                }
+                throw new BadCredentialsException(this.messages
+                        .getMessage("AbstractClientAuthenticationProvider.badCredentials", "Bad credentials"));
+            }
+            Assert.notNull(user, "retrieveUser returned null - a violation of the interface contract");
+        }
+        try {
+            this.preAuthenticationChecks.check(user);
+            additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
+        }
+        catch (AuthenticationException ex) {
+            if (!cacheWasUsed) {
+                throw ex;
+            }
+            // There was a problem, so try again after checking
+            // we're using latest data (i.e. not from the cache)
+            cacheWasUsed = false;
+            user = retrieveUser(username, (BaseAuthenticationToken) authentication);
+            this.preAuthenticationChecks.check(user);
+            additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
+        }
+        this.postAuthenticationChecks.check(user);
+        if (!cacheWasUsed) {
+            this.userCache.putUserInCache(user);
+        }
+        Object principalToReturn = user;
+        if (this.forcePrincipalAsString) {
+            principalToReturn = user.getUsername();
+        }
+        return createSuccessAuthentication(principalToReturn, authentication, user);
     }
 
+    private String determineUsername(Authentication authentication) {
+        return (authentication.getPrincipal() == null) ? "NONE_PROVIDED" : authentication.getName();
+    }
+
+    protected abstract UserDetails retrieveUser(String username, BaseAuthenticationToken authentication)
+            throws AuthenticationException;
+
+    protected abstract void additionalAuthenticationChecks(UserDetails userDetails,
+                                                           BaseAuthenticationToken authentication) throws AuthenticationException;
+
+    private class DefaultPreAuthenticationChecks implements UserDetailsChecker {
+
+        @Override
+        public void check(UserDetails user) {
+            if (!user.isAccountNonLocked()) {
+                AbstractClientAuthenticationProvider.this.logger
+                        .debug("Failed to authenticate since user account is locked");
+                throw new LockedException(AbstractClientAuthenticationProvider.this.messages
+                        .getMessage("AbstractClientAuthenticationProvider.locked", "User account is locked"));
+            }
+            if (!user.isEnabled()) {
+                AbstractClientAuthenticationProvider.this.logger
+                        .debug("Failed to authenticate since user account is disabled");
+                throw new DisabledException(AbstractClientAuthenticationProvider.this.messages
+                        .getMessage("AbstractClientAuthenticationProvider.disabled", "User is disabled"));
+            }
+            if (!user.isAccountNonExpired()) {
+                AbstractClientAuthenticationProvider.this.logger
+                        .debug("Failed to authenticate since user account has expired");
+                throw new AccountExpiredException(AbstractClientAuthenticationProvider.this.messages
+                        .getMessage("AbstractClientAuthenticationProvider.expired", "User account has expired"));
+            }
+        }
+
+    }
+
+    private class DefaultPostAuthenticationChecks implements UserDetailsChecker {
+
+        @Override
+        public void check(UserDetails user) {
+            if (!user.isCredentialsNonExpired()) {
+                AbstractClientAuthenticationProvider.this.logger
+                        .debug("Failed to authenticate since user account credentials have expired");
+                throw new CredentialsExpiredException(AbstractClientAuthenticationProvider.this.messages
+                        .getMessage("AbstractClientAuthenticationProvider.credentialsExpired",
+                                "User credentials have expired"));
+            }
+        }
+
+    }
+
+    protected Authentication createSuccessAuthentication(Object principal, Authentication authentication,
+                                                         UserDetails user) {
+        // Ensure we return the original credentials the user supplied,
+        // so subsequent attempts are successful even with encoded passwords.
+        // Also ensure we return the original getDetails(), so that future
+        // authentication events after cache expiry contain the details
+        UsernamePasswordAuthenticationToken result = UsernamePasswordAuthenticationToken.authenticated(principal,
+                authentication.getCredentials(), this.authoritiesMapper.mapAuthorities(user.getAuthorities()));
+        result.setDetails(authentication.getDetails());
+        this.logger.debug("Authenticated user");
+        return result;
+    }
+
+    protected UserCache getUserCache() {
+        return userCache;
+    }
 }

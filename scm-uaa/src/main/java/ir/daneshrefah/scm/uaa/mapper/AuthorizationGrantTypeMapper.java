@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 
 import java.util.HashMap;
 import java.util.Map;

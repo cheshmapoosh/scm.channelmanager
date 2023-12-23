@@ -2,29 +2,27 @@ package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
-import ir.daneshrefah.scm.uaa.client.provider.BasicAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.client.provider.BearerAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.client.provider.SessionAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -50,13 +48,13 @@ public class AuthenticationClientAutoConfiguration {
     private CacheTemplate cacheTemplate;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context) throws Exception {
         http
                 .authorizeHttpRequests((authorize) -> authorize
                         .anyRequest().authenticated()
                 )
 //                .addFilter(anonymousAuthenticationFilter())
-                .addFilter(basicAuthenticationFilter())
+                .addFilter(basicAuthenticationFilter(context))
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())));
 
@@ -70,18 +68,23 @@ public class AuthenticationClientAutoConfiguration {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager() {
-        return new ProviderManager(
-                new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_KEY),
-                new BearerAuthenticationProvider(cacheTemplate),
-                new SessionAuthenticationProvider(cacheTemplate),
-                new BasicAuthenticationProvider(cacheTemplate)
+    public AuthenticationManager authenticationManager(ApplicationContext context) {
+        Map<String, AbstractClientAuthenticationProvider> providersMap =
+                context.getBeansOfType(AbstractClientAuthenticationProvider.class);
+        List<AuthenticationProvider> providers = providersMap.entrySet().stream()
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
+        return new ProviderManager(providers
+//                new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_KEY),
+//                new BearerAuthenticationProvider(),
+//                new SessionAuthenticationProvider(),
+//                new BasicAuthenticationProvider()
         );
     }
 
     @Bean
-    public BasicAuthenticationFilter basicAuthenticationFilter() {
-        return new BasicAuthenticationFilter(authenticationManager());
+    public BasicAuthenticationFilter basicAuthenticationFilter(ApplicationContext context) {
+        return new BasicAuthenticationFilter(authenticationManager(context));
     }
 
     /*@Bean

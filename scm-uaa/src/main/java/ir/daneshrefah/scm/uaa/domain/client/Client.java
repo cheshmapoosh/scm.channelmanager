@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
-import lombok.AllArgsConstructor;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import lombok.Getter;
 import lombok.Setter;
 

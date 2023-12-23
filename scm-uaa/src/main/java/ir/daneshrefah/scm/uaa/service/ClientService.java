@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;

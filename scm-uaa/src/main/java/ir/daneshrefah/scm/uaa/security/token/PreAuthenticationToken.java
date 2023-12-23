@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

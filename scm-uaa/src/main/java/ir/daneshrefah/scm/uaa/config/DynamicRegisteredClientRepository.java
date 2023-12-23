@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.ClientService;
@@ -11,10 +10,8 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
@@ -71,8 +68,8 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     .clientSecret(client.getClientSecret())
                     .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
                     .clientSettings(clientSetting);
-            for (Iterator<ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
-                ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType authorizationGrantType = iterator.next();
+            for (Iterator<AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
+                AuthorizationGrantType authorizationGrantType = iterator.next();
                 clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));
             }
             for (Iterator<String> iterator = client.getRedirectUrls().iterator(); iterator.hasNext(); ) {

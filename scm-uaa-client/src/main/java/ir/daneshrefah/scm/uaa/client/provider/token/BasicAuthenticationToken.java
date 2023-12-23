@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider.token;
 
+import ir.daneshrefah.scm.utils.string.StringUtils;
+
 import java.util.Collections;
 
 /**
@@ -27,11 +29,17 @@ public class BasicAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     @Override
     public Object getCredentials() {
-        return this.principal;
+        return this.credentials;
     }
 
     @Override
     public Object getPrincipal() {
-        return this.credentials;
+        return this.principal;
     }
+
+    @Override
+    public String getId() {
+        return getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
+    }
+
 }

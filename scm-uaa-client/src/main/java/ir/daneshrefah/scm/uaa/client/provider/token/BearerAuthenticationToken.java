@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider.token;
 
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.util.Assert;
 
 import java.util.Collections;
@@ -33,5 +34,10 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
     @Override
     public Object getPrincipal() {
         return this.getToken();
+    }
+
+    @Override
+    public String getId() {
+        return getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
     }
 }

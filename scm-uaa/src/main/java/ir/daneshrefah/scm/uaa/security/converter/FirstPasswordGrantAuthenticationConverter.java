@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.converter;
 
-import ir.daneshrefah.scm.uaa.domain.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
