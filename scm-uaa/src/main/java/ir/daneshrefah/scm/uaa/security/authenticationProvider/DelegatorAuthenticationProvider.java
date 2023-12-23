@@ -1,16 +1,15 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.provider.AbstractAuthenticationProvider;
-import org.springframework.context.ApplicationContext;
+import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -22,24 +21,41 @@ import java.util.stream.Collectors;
 @Component
 public class DelegatorAuthenticationProvider implements AuthenticationProvider {
 
-    private List<AbstractAuthenticationProvider> providers = Collections.emptyList();
+    private final List<AbstractAuthenticationProvider> providers;
 
-    public DelegatorAuthenticationProvider(ApplicationContext context) {
-        Map<String, AbstractAuthenticationProvider> providersMap =
+    public DelegatorAuthenticationProvider(List<AbstractAuthenticationProvider> providers) {
+        /*Map<String, AbstractAuthenticationProvider> providersMap =
                 context.getBeansOfType(AbstractAuthenticationProvider.class);
 
         this.providers = providersMap.entrySet().stream()
                 .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
+        this.providers = providers;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        return null;
+        Class<? extends Authentication> toTest = authentication.getClass();
+        Authentication result = null;
+
+        for (AuthenticationProvider provider : providers) {
+            if (!provider.supports(toTest)) {
+                continue;
+            }
+
+            result = provider.authenticate(authentication);
+            if (Objects.nonNull(result))
+                break;
+        }
+
+        if (Objects.isNull(result))
+            throw new ProviderNotFoundException("DelegatorAuthenticationProvider.providerNotFound");
+
+        return result;
     }
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return false;
+        return AbstractAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

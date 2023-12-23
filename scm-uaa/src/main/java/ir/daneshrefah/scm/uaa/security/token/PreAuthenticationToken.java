@@ -18,6 +18,7 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
 
     private String username;
     private String password;
+    private String claimCode;
     private AuthorizationGrantType grantType;
     private Authentication clientPrincipal;
 
@@ -47,5 +48,9 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
 
     public Authentication getClientPrincipal() {
         return clientPrincipal;
+    }
+
+    public String getClaimCode() {
+        return claimCode;
     }
 }

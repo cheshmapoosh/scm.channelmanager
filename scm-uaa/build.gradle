@@ -21,4 +21,5 @@ dependencies {
 
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
     api project(':scm-uaa-common')
+    api project(':scm-utils')
 }

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.service;
 
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.repository.dao.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ public class UserService {
         user.setNickName(username);
         user.setFirstPassword("12345");
         user.setActive(true);
+        user.setLoginAuthenticationMethod(AuthenticationMethod.STATIC_PASSWORD);
         return Optional.of(user);
     }
 

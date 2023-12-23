@@ -79,8 +79,14 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             this.logger.trace("Retrieved authorization with authorization code");
         }
 
-        AbstractAuthenticationToken token = authenticationTokenGenerator.generateToken(
-                preAuthenticationToken, (TerminalUserDetails) userDetails);
+        AbstractAuthenticationToken token = null;
+        try {
+            token = authenticationTokenGenerator.generateToken(
+                    preAuthenticationToken, (TerminalUserDetails) userDetails);
+        } catch (Exception e) {
+            logger.error(e);
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
+        }
 
         delegatorAuthenticationProvider.authenticate(token);
 

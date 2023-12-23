@@ -1,14 +1,20 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,14 +26,33 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticationTokenGenerator {
 
-    public AbstractAuthenticationToken generateToken(PreAuthenticationToken authentication, TerminalUserDetails userDetails) {
-
+    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(PreAuthenticationToken authentication, TerminalUserDetails userDetails) throws Exception {
         AuthenticationMethod authenticationMethod = extractAuthenticationMethod(authentication.getGrantType(),
                 userDetails.getUser());
+        List<AuthenticationTokenTypes> filteredTokenType = Arrays.stream(AuthenticationTokenTypes.values()).filter(
+                        authenticationTokenType -> authenticationTokenType.getGrantType().equals(authentication.getGrantType()) &&
+                                authenticationTokenType.isClaimCodeProvided() == StringUtils.isNotEmpty(authentication.getClaimCode()) &&
+                                authenticationTokenType.getAuthenticationMethod().equals(authenticationMethod))
+                .collect(Collectors.toList());
+        if (filteredTokenType.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(filteredTokenType.get(0).getTokenClass());
+    }
 
-        AbstractAuthenticationToken result = null;
+    public GeneralAuthenticationToken generateToken(PreAuthenticationToken authentication, TerminalUserDetails userDetails) throws Exception {
 
-        return result;
+        Optional<Class<? extends GeneralAuthenticationToken>> tokenOptional = extractTokenType(authentication, userDetails);
+
+        if (tokenOptional.isEmpty()) {
+            return null;
+        }
+//TODO must change to factory instead of reflection
+        GeneralAuthenticationToken token = tokenOptional.get()
+                .getDeclaredConstructor(TerminalUserDetails.class, PreAuthenticationToken.class)
+                .newInstance(userDetails, authentication);
+        token.setDetails(userDetails);
+        return token;
     }
 
     private AuthenticationMethod extractAuthenticationMethod(AuthorizationGrantType grantType, User user) {

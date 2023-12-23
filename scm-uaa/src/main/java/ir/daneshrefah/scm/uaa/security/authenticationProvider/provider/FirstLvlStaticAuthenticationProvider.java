@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
 
+import ir.daneshrefah.scm.uaa.security.token.FirstLvlStaticAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,5 +12,15 @@ import org.springframework.stereotype.Component;
  * @since 2023-12-19
  */
 @Component
-public class FirstLvlStaticAuthenticationProvider extends AbstractAuthenticationProvider {
+public class FirstLvlStaticAuthenticationProvider extends AbstractFirstLvlStaticAccessAuthenticationProvider {
+
+    public FirstLvlStaticAuthenticationProvider(PasswordEncoder encoder) {
+        super(encoder);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return FirstLvlStaticAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
 }
