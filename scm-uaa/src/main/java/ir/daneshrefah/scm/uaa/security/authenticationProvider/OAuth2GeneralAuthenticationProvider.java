@@ -9,11 +9,15 @@ import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
@@ -41,6 +45,7 @@ import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_T
 public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvider {
 
     private final Log logger = LogFactory.getLog(getClass());
+    private final UserCache userCache;
     private final AuthenticationTokenGenerator authenticationTokenGenerator = new AuthenticationTokenGenerator();
     private final UserDetailsService userDetailsService;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
@@ -48,12 +53,14 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
     public OAuth2GeneralAuthenticationProvider(UserDetailsService userDetailsService,
                                                OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
-                                               List<AbstractAuthenticationProvider> providers) {
+                                               List<AbstractAuthenticationProvider> providers,
+                                               @Nullable UserCache userCache) {
         Assert.notNull(userDetailsService, "userDetailsService cannot be null");
         Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
         this.userDetailsService = userDetailsService;
         this.delegatorAuthenticationProvider = new DelegatorAuthenticationProvider(providers);
         this.tokenGenerator = tokenGenerator;
+        this.userCache = null != userCache ? userCache : new NullUserCache();
     }
 
     @Override
@@ -69,15 +76,25 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
         final String terminalCode = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
-        UserDetails userDetails = null;
-        try {
-            userDetails = userDetailsService.loadUserByUsername(preAuthenticationToken.getName(), terminalCode);
-        } catch (UsernameNotFoundException e) {
-            this.logger.warn("user not found for: " + preAuthenticationToken.getName() + ":" + terminalCode);
+        boolean cacheWasUsed = true;
+        UserDetails userDetails = this.userCache.getUserFromCache(preAuthenticationToken.getName());
+        if (userDetails == null) {
+            cacheWasUsed = false;
+            try {
+                userDetails = retrieveUser(preAuthenticationToken.getName(), terminalCode);
+            } catch (UsernameNotFoundException ex) {
+                this.logger.debug("Failed to find user '" + preAuthenticationToken.getName() + "'");
+                throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
+            }
+            Assert.notNull(userDetails, "retrieveUser returned null - a violation of the interface contract");
         }
 
         if (userDetails == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+        }
+
+        if (!cacheWasUsed) {
+            this.userCache.putUserInCache(userDetails);
         }
 
         if (this.logger.isTraceEnabled()) {
@@ -136,6 +153,16 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             return clientPrincipal;
         }
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+    }
+
+    protected UserDetails retrieveUser(String username, String terminalCode)
+            throws AuthenticationException {
+        try {
+            return userDetailsService.loadUserByUsername(username, terminalCode);
+        } catch (UsernameNotFoundException e) {
+            this.logger.warn("user not found for: " + username + ":" + terminalCode);
+        }
+        return null;
     }
 
     @Override

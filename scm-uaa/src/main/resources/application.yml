@@ -5,7 +5,11 @@ uaa:
     name: config/keystore.p12
     password: password
     alias: selfsigned
-
+scm:
+  cache:
+    client:
+      config:
+        distributed: false
 #spring:
 #  application:
 #    name: scm-uaa
