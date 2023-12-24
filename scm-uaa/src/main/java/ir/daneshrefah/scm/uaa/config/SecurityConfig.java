@@ -15,30 +15,24 @@ import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticati
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -75,14 +69,11 @@ public class SecurityConfig {
     private String keyStoreAlias;
 //    @Autowired
 //    private UserDetailsService userDetailsService;
-    @Autowired
-    private OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider;
-    @Autowired
-    private GeneralAuthenticationProvider generalAuthenticationProvider;
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
+                                                                      OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider)
             throws Exception {
 
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
@@ -127,7 +118,8 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
+                                                          GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
         http
                 .authenticationProvider(generalAuthenticationProvider)
@@ -164,47 +156,34 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /*@Bean
-    public AuthenticationManager authManager(HttpSecurity http, GeneralAuthenticationProvider authProvider) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.authenticationProvider(authProvider);
-        return authenticationManagerBuilder.build();
-    }*/
+    @Bean
+    @Primary
+    OAuth2TokenGenerator<?> uaaTokenGenerator(JWKSource<SecurityContext> jwkSource) {
+        NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
+        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
+        jwtGenerator.setJwtCustomizer(jwtCustomizer());
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator);
+    }
 
-    /*@Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails userDetails1 = User.withDefaultPasswordEncoder()
-                .username("user")
-                .password("password")
-                .roles("USER")
-                .build();
-        UserDetails userDetails2 = User.withDefaultPasswordEncoder()
-                .username("ib")
-                .password("password")
-                .roles("USER")
-                .build();
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
+        return context -> {
+            /*JwtClaimsSet.Builder claims = context.getClaims();
+            if (GeneralAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
+                String sessionKey = ((GeneralAuthenticationToken) context.getPrincipal()).getSessionKey();
+                String username = context.getPrincipal().getName();
+                String appVersion = ((GeneralAuthenticationToken) context.getPrincipal()).getAuthenticationRequest().getClientVersion();
+                Authentication delegatorAuthentication = ((GeneralAuthenticationToken) context.getPrincipal()).getAuthenticationRequest().getDelegatorAuthentication();
+                String delegatorUser= Objects.nonNull(delegatorAuthentication)? delegatorAuthentication.getName() : null;
 
-        return new InMemoryUserDetailsManager(userDetails1, userDetails2);
-    }*/
-
-//    @Bean
-//    public RegisteredClientRepository registeredClientRepository() {
-//        RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
-//                .clientId("client1")
-//                .clientSecret("{noop}myClientSecretValue")
-//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-//                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-//                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc")
-//                .redirectUri("http://127.0.0.1:8080/authorized")
-//                .scope(OidcScopes.OPENID)
-//                .scope(OidcScopes.PROFILE)
-//                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-//                .build();
-//
-//        return new InMemoryRegisteredClientRepository(oidcClient);
-//    }
+                if (StringUtils.isNotEmpty(sessionKey))
+                    claims.claim(TOKEN_SESSION_KEY_TAG, sessionKey);
+                claims.claim(TOKEN_USERNAME_TAG, username);
+                claims.claim(TOKEN_APP_VERSION_TAG, appVersion);
+                claims.claim(DELEGATOR_USER_INFO, Optional.ofNullable(delegatorUser).orElse(username));
+            }*/
+        };
+    }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource(JWKSet jwkSet) {
@@ -257,4 +236,14 @@ public class SecurityConfig {
                 .build();
     }
 
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        PasswordEncoder defaultPasswordEncoder = new org.springframework.security.crypto.password.MessageDigestPasswordEncoder("MD5");
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put("noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance());
+        encoders.put("MD5", defaultPasswordEncoder);
+        DelegatingPasswordEncoder passwordEncoder = new DelegatingPasswordEncoder("MD5", encoders);
+        passwordEncoder.setDefaultPasswordEncoderForMatches(defaultPasswordEncoder);
+        return passwordEncoder;
+    }
 }

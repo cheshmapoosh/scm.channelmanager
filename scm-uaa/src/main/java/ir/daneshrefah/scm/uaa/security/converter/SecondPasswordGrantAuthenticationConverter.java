@@ -47,7 +47,8 @@ public class SecondPasswordGrantAuthenticationConverter implements Authenticatio
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }
 
-        return new PreAuthenticationToken(null, username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal);
+        return new PreAuthenticationToken(username, password, AuthorizationGrantType.SECOND_PASSWORD,
+                clientPrincipal, null);
     }
 
     private static MultiValueMap<String, String> getParameters(HttpServletRequest request) {

@@ -6,14 +6,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -23,6 +28,8 @@ import java.util.Map;
  * @since 2023-08-06
  */
 public class FirstPasswordGrantAuthenticationConverter implements AuthenticationConverter {
+
+    private static final String DEFAULT_ERROR_URI = "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1";
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -47,7 +54,19 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }
 
-        return new PreAuthenticationToken(null, username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal);
+        // scope (OPTIONAL)
+        Set<String> scopes = null;
+        String scope = parameters.getFirst(OAuth2ParameterNames.SCOPE);
+        if (StringUtils.hasText(scope) &&
+                parameters.get(OAuth2ParameterNames.SCOPE).size() != 1) {
+            throwError(OAuth2ErrorCodes.INVALID_REQUEST, OAuth2ParameterNames.SCOPE);
+        }
+        if (StringUtils.hasText(scope)) {
+            scopes = new HashSet<>(
+                    Arrays.asList(StringUtils.delimitedListToStringArray(scope, " ")));
+        }
+
+        return new PreAuthenticationToken(username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal, scopes);
     }
 
     private static MultiValueMap<String, String> getParameters(HttpServletRequest request) {
@@ -62,4 +81,14 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
         });
         return parameters;
     }
+
+    private static void throwError(String errorCode, String parameterName) {
+        throwError(errorCode, parameterName, DEFAULT_ERROR_URI);
+    }
+
+    private static void throwError(String errorCode, String parameterName, String errorUri) {
+        OAuth2Error error = new OAuth2Error(errorCode, "OAuth 2.0 Parameter: " + parameterName, errorUri);
+        throw new OAuth2AuthorizationCodeRequestAuthenticationException(error, null);
+    }
+
 }

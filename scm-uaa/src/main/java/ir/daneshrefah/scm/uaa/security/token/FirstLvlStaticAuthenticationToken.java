@@ -15,13 +15,4 @@ public class FirstLvlStaticAuthenticationToken extends GeneralAuthenticationToke
         super(user, authenticationToken);
     }
 
-    @Override
-    public Object getCredentials() {
-        return null;
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return null;
-    }
 }

@@ -24,12 +24,6 @@ public class DelegatorAuthenticationProvider implements AuthenticationProvider {
     private final List<AbstractAuthenticationProvider> providers;
 
     public DelegatorAuthenticationProvider(List<AbstractAuthenticationProvider> providers) {
-        /*Map<String, AbstractAuthenticationProvider> providersMap =
-                context.getBeansOfType(AbstractAuthenticationProvider.class);
-
-        this.providers = providersMap.entrySet().stream()
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());*/
         this.providers = providers;
     }
 

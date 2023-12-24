@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import org.springframework.security.core.GrantedAuthority;
 
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -17,8 +19,28 @@ public abstract class GeneralAuthenticationToken extends AbstractAuthenticationT
 
 
     protected GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken) {
-        super(Collections.emptyList());
+        this(user, preAuthenticationToken, Collections.emptyList());
+    }
+
+    protected GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
+                                         Collection<? extends GrantedAuthority> authorities) {
+        super(authorities);
         this.setDetails(user);
         this.preAuthenticationToken = preAuthenticationToken;
     }
+
+    public PreAuthenticationToken getPreAuthenticationToken() {
+        return preAuthenticationToken;
+    }
+
+    @Override
+    public Object getCredentials() {
+        return getPreAuthenticationToken().getCredentials();
+    }
+
+    @Override
+    public Object getPrincipal() {
+        return getPreAuthenticationToken().getPrincipal();
+    }
+
 }

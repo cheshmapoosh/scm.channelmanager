@@ -3,9 +3,10 @@ package ir.daneshrefah.scm.uaa.security.token;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 
-import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,15 +22,19 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     private String claimCode;
     private AuthorizationGrantType grantType;
     private Authentication clientPrincipal;
+    private final Set<String> scopes;
 
-    public PreAuthenticationToken(Collection<? extends GrantedAuthority> authorities,
-                                  String username, String password, AuthorizationGrantType grantType,
-                                  Authentication clientPrincipal) {
-        super(authorities);
+    public PreAuthenticationToken(String username, String password, AuthorizationGrantType grantType,
+                                  Authentication clientPrincipal, Set<String> scopes) {
+        super(Collections.emptyList());
         this.username = username;
         this.password = password;
         this.grantType = grantType;
         this.clientPrincipal = clientPrincipal;
+        this.scopes = Collections.unmodifiableSet(
+                scopes != null ?
+                        new HashSet<>(scopes) :
+                        Collections.emptySet());
     }
 
     @Override
