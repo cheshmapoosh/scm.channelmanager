@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.lang.Nullable;
@@ -77,7 +78,8 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         final String terminalCode = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
         boolean cacheWasUsed = true;
-        UserDetails userDetails = this.userCache.getUserFromCache(preAuthenticationToken.getName());
+        String cacheUserKey = extractCacheUserKey(preAuthenticationToken, terminalCode);
+        UserDetails userDetails = this.userCache.getUserFromCache(cacheUserKey);
         if (userDetails == null) {
             cacheWasUsed = false;
             try {
@@ -137,6 +139,11 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         return new OAuth2AccessTokenAuthenticationToken(
                 registeredClient, clientPrincipal, accessToken/*, refreshToken, additionalParameters*/);
 
+    }
+
+    private String extractCacheUserKey(PreAuthenticationToken authenticationToken, String terminalCode) {
+        return authenticationToken.getName() + StringUtils.DOUBLE_COLON +
+                terminalCode;
     }
 
     private User getAuthenticatedUserChannelElseThrowInvalidUsr(String username, String terminalCode) throws UsernameNotFoundException {

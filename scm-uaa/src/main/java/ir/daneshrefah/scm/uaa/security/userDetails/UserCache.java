@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.userDetails;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -15,20 +16,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserCache implements org.springframework.security.core.userdetails.UserCache {
 
-    /*private final CacheTemplate cacheTemplate;
+    private final CacheTemplate cacheTemplate;
+    private static final String USER_CACHE_NAME = "";
 
     public UserCache(CacheTemplate cacheTemplate) {
         this.cacheTemplate = cacheTemplate;
-    }*/
+    }
 
     @Override
     public UserDetails getUserFromCache(String username) {
-        return null;
+        return (UserDetails) cacheTemplate.getFromCache(USER_CACHE_NAME, username);
     }
 
     @Override
     public void putUserInCache(UserDetails user) {
-
+        String userKey = user.getUsername() + StringUtils.DOUBLE_COLON +
+                ((TerminalUserDetails) user).getUser().getTerminalCode();
+        cacheTemplate.putInCache(USER_CACHE_NAME, userKey, user);
     }
 
     @Override
