@@ -88,7 +88,7 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
 
     private static void throwError(String errorCode, String parameterName, String errorUri) {
         OAuth2Error error = new OAuth2Error(errorCode, "OAuth 2.0 Parameter: " + parameterName, errorUri);
-        throw new OAuth2AuthorizationCodeRequestAuthenticationException(error, null);
+        throw new OAuth2AuthenticationException(error);
     }
 
 }
