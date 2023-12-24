@@ -21,7 +21,7 @@ public class Client {
     private String title;
     private String clientId;
     private String clientSecret;
-    private ClientAuthenticationMethod authenticationMethod;
+    private List<ClientAuthenticationMethod> authenticationMethods;
     private List<AuthorizationGrantType> authorizationGrantTypes;
     private List<String> redirectUrls;
     private String terminalCode;

@@ -36,6 +36,7 @@ import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,10 +77,10 @@ public class SecurityConfig {
                                                                       OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider)
             throws Exception {
 
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                http.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
-
+                new OAuth2AuthorizationServerConfigurer();
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer
+                .getEndpointsMatcher();
 
         authorizationServerConfigurer
                 .authorizationEndpoint(authorizationEndpoint ->
@@ -101,6 +102,11 @@ public class SecurityConfig {
                 .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 
         http
+                .securityMatcher(endpointsMatcher)
+                .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/oauth2/token").permitAll()
+                        .anyRequest().authenticated()
+                )
                 // Redirect to the login page when not authenticated from the
                 // authorization endpoint
                 .exceptionHandling((exceptions) -> exceptions
@@ -111,7 +117,11 @@ public class SecurityConfig {
                 )
                 // Accept access tokens for User Info and/or Client Registration
                 .oauth2ResourceServer((resourceServer) -> resourceServer
-                        .jwt(Customizer.withDefaults()));
+                        .jwt(Customizer.withDefaults()))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                .apply(authorizationServerConfigurer);
+
+//        /*http
 
         return http.build();
     }
@@ -125,6 +135,7 @@ public class SecurityConfig {
                 .authenticationProvider(generalAuthenticationProvider)
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/login**").permitAll()
+//                        .requestMatchers("/oauth2/token").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Form login handles the redirect to the login page from the

@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.core;
 
-import ir.daneshrefah.scm.uaa.client.converter.AuthenticationConverter;
-import ir.daneshrefah.scm.uaa.client.converter.BasicAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.client.converter.BearerTokenResolver;
-import ir.daneshrefah.scm.uaa.client.converter.SessionKeyResolver;
+import ir.daneshrefah.scm.uaa.client.converter.*;
 import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +24,7 @@ public class AuthenticationClientTemplate {
     public AuthenticationClientTemplate(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
         this.authenticationConverters = Arrays.asList(new BasicAuthenticationConverter(), new BearerTokenResolver(),
-                new SessionKeyResolver());
+                new SessionKeyResolver(), new ClientAuthenticationConverter());
     }
 
 

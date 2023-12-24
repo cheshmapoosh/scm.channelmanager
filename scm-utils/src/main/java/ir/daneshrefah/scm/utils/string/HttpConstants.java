@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.constants;
+package ir.daneshrefah.scm.utils.string;
 
 /**
  * Description of the class or purpose of the file.

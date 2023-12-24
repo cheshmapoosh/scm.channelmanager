@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
+import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static ir.daneshrefah.scm.plugin.api.constants.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
+import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
 
 /**
  * Description of the class or purpose of the file.

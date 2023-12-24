@@ -26,7 +26,8 @@ public class ClientService {
         client.setTitle("Internet Bank");
         client.setClientId("ib");
         client.setClientSecret("{noop}myClientSecretValue");
-        client.setAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
+        client.setAuthenticationMethods((Arrays.asList(ClientAuthenticationMethod.CLIENT_SECRET_BASIC,
+                ClientAuthenticationMethod.CLIENT_SECRET_POST)));
         client.setAuthorizationGrantTypes(Arrays.asList(AuthorizationGrantType.AUTHORIZATION_CODE,
                 AuthorizationGrantType.REFRESH_TOKEN, AuthorizationGrantType.CLIENT_CREDENTIALS,
                 AuthorizationGrantType.FIRST_PASSWORD, AuthorizationGrantType.SECOND_PASSWORD));

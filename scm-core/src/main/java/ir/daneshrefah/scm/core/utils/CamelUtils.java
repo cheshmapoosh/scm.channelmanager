@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.utils;
 
-import ir.daneshrefah.scm.plugin.api.constants.HttpConstants;
+import ir.daneshrefah.scm.utils.string.HttpConstants;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 

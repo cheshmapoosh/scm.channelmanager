@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
+import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.ClientService;
@@ -66,8 +67,12 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
             RegisteredClient.Builder clientBuilder = RegisteredClient.withId(client.getId())
                     .clientId(client.getClientId())
                     .clientSecret(client.getClientSecret())
-                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
+//                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
                     .clientSettings(clientSetting);
+            for (Iterator<ClientAuthenticationMethod> iterator = client.getAuthenticationMethods().iterator(); iterator.hasNext(); ) {
+                ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();
+                clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
+            }
             for (Iterator<AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
                 AuthorizationGrantType authorizationGrantType = iterator.next();
                 clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.client.provider;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,11 +16,12 @@ import org.springframework.stereotype.Component;
  * @version 1.0
  * @since 2023-12-19
  */
+@ConditionalOnProperty(name = "scm.security.distributed", havingValue = "true", matchIfMissing = false)
 @Component
-public class BasicAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
+public class BasicRemoteAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
 
-    public BasicAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider) {
+    public BasicRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider) {
         super(remoteSecurityServiceProvider);
     }
 
