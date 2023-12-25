@@ -51,7 +51,7 @@ public class RemoteSecurityServiceProvider {
         this.jwtDecoder = jwtDecoder;
     }
 
-    public ClientAuthenticationToken authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
+    public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
         String headerAuthorization = "";
 
         HttpHeaders headers = new HttpHeaders();
@@ -71,13 +71,13 @@ public class RemoteSecurityServiceProvider {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
         int statusCode = response.getStatusCode().value();
-        boolean isAuthenticate = HttpStatusCode.SC_200.equals(statusCode)/* ||
+        boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
                 HttpStatusCode.SC_204.equals(statusCode)*/;
-        if (!isAuthenticate) {
+        if (!isAuthenticated) {
             return null;
         }
-        Jwt jwt = getJwt(response.getBody());
-        return null;
+//        Jwt jwt = getJwt(response.getBody());
+        return response.getBody();
     }
 
     public BasicAuthenticationToken authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
