@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.core;
 
-import ir.daneshrefah.scm.uaa.client.converter.*;
-import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
+import ir.daneshrefah.scm.uaa.client.converter.authentication.*;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -28,7 +28,7 @@ public class AuthenticationClientTemplate {
     }
 
 
-    public Authentication extractAuthenticationFromAuthorizationHeader(String terminalCode, String authorizationHeader) {
+    public UserAuthentication extractAuthenticationFromAuthorizationHeader(String terminalCode, String authorizationHeader) {
         AbstractAuthenticationToken authToken = null;
         for (Iterator<AuthenticationConverter> iterator = authenticationConverters.iterator(); iterator.hasNext(); ) {
             AuthenticationConverter converter = iterator.next();
@@ -44,7 +44,7 @@ public class AuthenticationClientTemplate {
 //        Authorization: Session sessionKey
 
         org.springframework.security.core.Authentication authResult = this.authenticationManager.authenticate(authToken);
-        return null;
+        return (UserAuthentication) authResult;
     }
 
 }

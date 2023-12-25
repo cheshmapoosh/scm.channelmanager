@@ -2,7 +2,11 @@ package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
+import ir.daneshrefah.scm.uaa.client.filter.BasicAuthenticationFilter;
+import ir.daneshrefah.scm.uaa.client.filter.BearerAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -16,8 +20,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
 
 import java.util.List;
 import java.util.Map;
@@ -54,9 +59,12 @@ public class AuthenticationClientAutoConfiguration {
                         .anyRequest().authenticated()
                 )
 //                .addFilter(anonymousAuthenticationFilter())
-                .addFilter(basicAuthenticationFilter(context))
+                .addFilterBefore(basicAuthenticationFilter(context), RequestCacheAwareFilter.class)
+                .addFilterAt(bearerAuthenticationFilter(context), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())));
+                        oauth2
+                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()))
+                );
 
         return http.build();
     }
@@ -65,6 +73,11 @@ public class AuthenticationClientAutoConfiguration {
     @ConditionalOnMissingBean
     public JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withJwkSetUri("http://localhost:8000/oauth2/jwks").build();
+    }
+
+    @Bean
+    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
+        return new SessionCache(cacheTemplate);
     }
 
     @Bean
@@ -84,9 +97,22 @@ public class AuthenticationClientAutoConfiguration {
 
     @Bean
     public BasicAuthenticationFilter basicAuthenticationFilter(ApplicationContext context) {
-        return new BasicAuthenticationFilter(authenticationManager(context));
+        BasicAuthenticationFilter filter = new BasicAuthenticationFilter(authenticationManager(context));
+        filter.setAuthenticationDetailsSource(authenticationDetailsSource());
+        return filter;
     }
 
+    @Bean
+    public BearerAuthenticationFilter bearerAuthenticationFilter(ApplicationContext context) {
+        BearerAuthenticationFilter filter = new BearerAuthenticationFilter(authenticationManager(context));
+        filter.setAuthenticationDetailsSource(authenticationDetailsSource());
+        return filter;
+    }
+
+    @Bean
+    public TerminalAuthenticationDetailsSource authenticationDetailsSource() {
+        return new TerminalAuthenticationDetailsSource();
+    }
     /*@Bean
     public AnonymousAuthenticationFilter anonymousAuthenticationFilter() {
         return new AnonymousAuthenticationFilter(ANONYMOUS_AUTH_KEY);

@@ -1,7 +1,9 @@
-package ir.daneshrefah.scm.uaa.client.converter;
+package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
-import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import java.nio.charset.StandardCharsets;
@@ -12,16 +14,22 @@ import java.util.Base64;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-12-19
+ * @since 2023-12-24
  */
-public class BasicAuthenticationConverter extends org.springframework.security.web.authentication.www.BasicAuthenticationConverter
+public class ClientAuthenticationConverter extends org.springframework.security.web.authentication.www.BasicAuthenticationConverter
         implements AuthenticationConverter {
 
+    public ClientAuthenticationToken convertByHttpRequest(String terminalCode, HttpServletRequest request) {
+        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (header == null) {
+            return null;
+        }
+        return convertByHeader(terminalCode, header);
+    }
+
     @Override
-    public BasicAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
-        return null;
-//        TODO this converter should work over request parameters instead of authorization header
-        /*if (StringUtils.isEmpty(terminalCode) || StringUtils.isNotEmpty(authorizationHeader)) {
+    public ClientAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+        if (/*StringUtils.isEmpty(terminalCode) || */StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }
         authorizationHeader = authorizationHeader.trim();
@@ -38,10 +46,14 @@ public class BasicAuthenticationConverter extends org.springframework.security.w
         if (delim == -1) {
             throw new BadCredentialsException("Invalid basic authentication token");
         }
-        BasicAuthenticationToken result = BasicAuthenticationToken
-                .unauthenticated(terminalCode, token.substring(0, delim), token.substring(delim + 1));
+        String clientId = token.substring(0, delim);
+        if (StringUtils.isEmpty(terminalCode)) {
+            terminalCode = clientId;
+        }
+        ClientAuthenticationToken result = ClientAuthenticationToken
+                .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
 //TODO        result.setDetails(this.getAuthenticationDetailsSource().buildDetails(request));
-        return result;*/
+        return result;
     }
 
     private byte[] decode(byte[] base64Token) {

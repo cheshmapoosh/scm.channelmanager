@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.userDetails;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;

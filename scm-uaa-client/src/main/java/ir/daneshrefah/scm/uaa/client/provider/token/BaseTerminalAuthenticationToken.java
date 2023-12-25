@@ -24,7 +24,7 @@ public abstract class BaseTerminalAuthenticationToken extends BaseAuthentication
      */
     public BaseTerminalAuthenticationToken(String terminalCode, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
-        Assert.hasText(terminalCode, "terminalCode cannot be empty");
+//        Assert.hasText(terminalCode, "terminalCode cannot be empty");
         this.terminalCode = terminalCode;
     }
 

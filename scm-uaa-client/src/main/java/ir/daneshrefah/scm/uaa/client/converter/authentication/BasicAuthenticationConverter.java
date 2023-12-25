@@ -1,10 +1,8 @@
-package ir.daneshrefah.scm.uaa.client.converter;
+package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
-import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
-import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -12,14 +10,16 @@ import java.util.Base64;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-12-24
+ * @since 2023-12-19
  */
-public class ClientAuthenticationConverter extends org.springframework.security.web.authentication.www.BasicAuthenticationConverter
+public class BasicAuthenticationConverter extends org.springframework.security.web.authentication.www.BasicAuthenticationConverter
         implements AuthenticationConverter {
 
     @Override
-    public ClientAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
-        if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
+    public BasicAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+        return null;
+//        TODO this converter should work over request parameters instead of authorization header
+        /*if (StringUtils.isEmpty(terminalCode) || StringUtils.isNotEmpty(authorizationHeader)) {
             return null;
         }
         authorizationHeader = authorizationHeader.trim();
@@ -36,10 +36,10 @@ public class ClientAuthenticationConverter extends org.springframework.security.
         if (delim == -1) {
             throw new BadCredentialsException("Invalid basic authentication token");
         }
-        ClientAuthenticationToken result = ClientAuthenticationToken
+        BasicAuthenticationToken result = BasicAuthenticationToken
                 .unauthenticated(terminalCode, token.substring(0, delim), token.substring(delim + 1));
 //TODO        result.setDetails(this.getAuthenticationDetailsSource().buildDetails(request));
-        return result;
+        return result;*/
     }
 
     private byte[] decode(byte[] base64Token) {

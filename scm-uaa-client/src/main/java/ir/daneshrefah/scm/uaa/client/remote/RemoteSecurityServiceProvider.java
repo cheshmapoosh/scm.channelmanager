@@ -6,14 +6,23 @@ import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -30,15 +39,19 @@ import org.springframework.web.client.RestTemplate;
 @ConditionalOnProperty(name = "scm.security.distributed", havingValue = "true", matchIfMissing = false)
 public class RemoteSecurityServiceProvider {
 
+    protected final Log logger = LogFactory.getLog(getClass());
+
     private final RestTemplate restTemplate;
     @Value("${scm.security.token-endpoint}")
     private String tokenEndpoint;
+    private final JwtDecoder jwtDecoder;
 
-    public RemoteSecurityServiceProvider(RestTemplate restTemplate) {
+    public RemoteSecurityServiceProvider(RestTemplate restTemplate, JwtDecoder jwtDecoder) {
         this.restTemplate = restTemplate;
+        this.jwtDecoder = jwtDecoder;
     }
 
-    public boolean authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
+    public ClientAuthenticationToken authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
         String headerAuthorization = "";
 
         HttpHeaders headers = new HttpHeaders();
@@ -58,10 +71,16 @@ public class RemoteSecurityServiceProvider {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
         int statusCode = response.getStatusCode().value();
-        return HttpConstants.HTTP_STATUS_OK == statusCode || HttpConstants.HTTP_STATUS_NO_CONTENT == statusCode;
+        boolean isAuthenticate = HttpStatusCode.SC_200.equals(statusCode)/* ||
+                HttpStatusCode.SC_204.equals(statusCode)*/;
+        if (!isAuthenticate) {
+            return null;
+        }
+        Jwt jwt = getJwt(response.getBody());
+        return null;
     }
 
-    public boolean authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
+    public BasicAuthenticationToken authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
         String headerAuthorization = "";
 
         HttpHeaders headers = new HttpHeaders();
@@ -81,8 +100,25 @@ public class RemoteSecurityServiceProvider {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
 
-        return HttpStatusCode.SC_200.equals(response.getStatusCode()) ||
+        boolean isAuthenticate = HttpStatusCode.SC_200.equals(response.getStatusCode()) ||
                 HttpStatusCode.SC_204.equals(response.getStatusCode());
+        if (!isAuthenticate) {
+            return null;
+        }
+        return null;
+    }
+
+    private Jwt getJwt(String token) {
+        try {
+            return this.jwtDecoder.decode(token);
+        }
+        catch (BadJwtException failed) {
+            this.logger.debug("Failed to authenticate since the JWT was invalid");
+            throw new InvalidBearerTokenException(failed.getMessage(), failed);
+        }
+        catch (JwtException failed) {
+            throw new AuthenticationServiceException(failed.getMessage(), failed);
+        }
     }
 
 }

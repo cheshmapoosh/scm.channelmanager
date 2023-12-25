@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.uaa.security.authenticationProvider.provider.AbstractA
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;

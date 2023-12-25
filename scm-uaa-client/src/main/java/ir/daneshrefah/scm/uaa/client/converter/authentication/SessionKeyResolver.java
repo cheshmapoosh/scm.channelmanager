@@ -1,6 +1,7 @@
-package ir.daneshrefah.scm.uaa.client.converter;
+package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
-import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.converter.authentication.AuthenticationConverter;
+import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.BearerTokenError;
@@ -16,13 +17,13 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @since 2023-12-19
  */
-public class BearerTokenResolver implements AuthenticationConverter {
+public class SessionKeyResolver implements AuthenticationConverter {
 
-    private static final Pattern authorizationPattern = Pattern.compile("^Bearer (?<token>[a-zA-Z0-9-._~+/]+=*)$",
+    private static final Pattern authorizationPattern = Pattern.compile("^Session (?<token>[a-zA-Z0-9-._~+/]+=*)$",
             Pattern.CASE_INSENSITIVE);
 
     @Override
-    public BearerAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public SessionAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }
@@ -36,7 +37,7 @@ public class BearerTokenResolver implements AuthenticationConverter {
                 throw new OAuth2AuthenticationException(error);
             }
 
-            BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(terminalCode,
+            SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(terminalCode,
                     authorizationHeaderToken);
 //            authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
@@ -50,12 +51,12 @@ public class BearerTokenResolver implements AuthenticationConverter {
     }
 
     private String resolveFromAuthorizationHeader(String authorization) {
-        if (!StringUtils.startsWithIgnoreCase(authorization, "bearer")) {
+        if (!StringUtils.startsWithIgnoreCase(authorization, "Session")) {
             return null;
         }
         Matcher matcher = authorizationPattern.matcher(authorization);
         if (!matcher.matches()) {
-            BearerTokenError error = BearerTokenErrors.invalidToken("Bearer token is malformed");
+            BearerTokenError error = BearerTokenErrors.invalidToken("Session key is malformed");
             throw new OAuth2AuthenticationException(error);
         }
         return matcher.group("token");

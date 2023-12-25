@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
-import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,27 +22,28 @@ import org.springframework.stereotype.Component;
 public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
 
-    public ClientRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider) {
-        super(remoteSecurityServiceProvider);
+    public ClientRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
+                                              SessionCache sessionCache) {
+        super(remoteSecurityServiceProvider, sessionCache);
     }
 
     @Override
-    protected UserDetails retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
-        boolean isAuthenticated = remoteSecurityServiceProvider.authenticateClient((ClientAuthenticationToken) authentication);
-        if (!isAuthenticated) {
+    protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
+        ClientAuthenticationToken authenticationResult = remoteSecurityServiceProvider.authenticateClient((ClientAuthenticationToken) authentication);
+        if (null == authenticationResult) {
             throw new InternalAuthenticationServiceException(
                     "remoteServiceProvider returned null, which is an interface contract violation");
         }
-        UserDetails loadedUser = getUserCache().getUserFromCache(authentication.getId());
-        if (loadedUser == null) {
-            throw new InternalAuthenticationServiceException(
-                    "userCache returned null, which is an interface contract violation");
-        }
-        return loadedUser;
+//        UserDetails loadedUser = getSessionCache().getUserFromCache(authentication.getId());
+//        if (loadedUser == null) {
+//            throw new InternalAuthenticationServiceException(
+//                    "userCache returned null, which is an interface contract violation");
+//        }
+        return null;
     }
 
     @Override
-    protected void additionalAuthenticationChecks(UserDetails userDetails, BaseAuthenticationToken authentication) throws AuthenticationException {
+    protected void additionalAuthenticationChecks(UserAuthentication userAuthentication, BaseAuthenticationToken authentication) throws AuthenticationException {
 
     }
 

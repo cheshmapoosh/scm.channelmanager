@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=ir.daneshrefah.scm.cache.client.config.HazelcastClientAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration

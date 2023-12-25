@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
 
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.authentication.*;

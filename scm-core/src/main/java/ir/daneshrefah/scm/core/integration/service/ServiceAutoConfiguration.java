@@ -60,6 +60,7 @@ public class ServiceAutoConfiguration extends RouteBuilder {
                 externalServiceExecutor.registerExternalServiceProvider(((ExternalService) service).getServiceProvider());
             }
 
+            LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
             RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
             routeDefinition.log("service call: " + service.getCode());
 //            routeDefinition = service.getImplementation().fullFill(routeDefinition);

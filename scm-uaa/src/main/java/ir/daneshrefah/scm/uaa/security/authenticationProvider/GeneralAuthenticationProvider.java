@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalWebAuthenticationDetails;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;

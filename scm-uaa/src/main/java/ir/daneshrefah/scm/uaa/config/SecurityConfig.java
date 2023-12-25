@@ -7,7 +7,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
-import ir.daneshrefah.scm.uaa.security.authenticationDetails.TerminalAuthenticationDetailsSource;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;

@@ -9,7 +9,7 @@ import java.io.Serializable;
  * @version 1.0
  * @since 2023-11-20
  */
-public interface AuthenticationHeader extends Serializable {
+public interface IAuthenticationHeader extends Serializable {
 
     public String getUsername();
 

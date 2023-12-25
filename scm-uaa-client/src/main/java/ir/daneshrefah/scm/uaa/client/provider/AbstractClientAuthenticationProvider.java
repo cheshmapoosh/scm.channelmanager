@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -10,11 +12,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
-import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.util.Assert;
 
 /**
@@ -28,7 +28,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     protected final Log logger = LogFactory.getLog(getClass());
 
-    private UserCache userCache = new NullUserCache();
+    private final SessionCache sessionCache;
 
     private UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
 
@@ -42,14 +42,18 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
+    protected AbstractClientAuthenticationProvider(SessionCache sessionCache) {
+        this.sessionCache = sessionCache;
+    }
+
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public UserAuthentication authenticate(Authentication authentication) throws AuthenticationException {
         Assert.isInstanceOf(BaseAuthenticationToken.class, authentication,
                 () -> this.messages.getMessage("AbstractClientAuthenticationProvider.onlySupports",
                         "Only BaseAuthenticationToken is supported"));
         String username = determineUsername(authentication);
         boolean cacheWasUsed = true;
-        UserDetails user = this.userCache.getUserFromCache(((BaseAuthenticationToken) authentication).getId());
+        UserAuthentication user = this.sessionCache.getSessionFromCache(((BaseAuthenticationToken) authentication).getId());
         if (user == null) {
             cacheWasUsed = false;
             try {
@@ -66,7 +70,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             Assert.notNull(user, "retrieveUser returned null - a violation of the interface contract");
         }
         try {
-            this.preAuthenticationChecks.check(user);
+            this.preAuthenticationChecks.check(user.getUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
         catch (AuthenticationException ex) {
@@ -77,28 +81,28 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             // we're using latest data (i.e. not from the cache)
             cacheWasUsed = false;
             user = retrieveUser(username, (BaseAuthenticationToken) authentication);
-            this.preAuthenticationChecks.check(user);
+            this.preAuthenticationChecks.check(user.getUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
-        this.postAuthenticationChecks.check(user);
+        this.postAuthenticationChecks.check(user.getUserDetails());
         if (!cacheWasUsed) {
-            this.userCache.putUserInCache(user);
+            this.sessionCache.putSessionInCache(user);
         }
         Object principalToReturn = user;
         if (this.forcePrincipalAsString) {
             principalToReturn = user.getUsername();
         }
-        return createSuccessAuthentication(principalToReturn, authentication, user);
+        return createSuccessAuthentication(user, authentication);
     }
 
     private String determineUsername(Authentication authentication) {
         return (authentication.getPrincipal() == null) ? "NONE_PROVIDED" : authentication.getName();
     }
 
-    protected abstract UserDetails retrieveUser(String username, BaseAuthenticationToken authentication)
+    protected abstract UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication)
             throws AuthenticationException;
 
-    protected abstract void additionalAuthenticationChecks(UserDetails userDetails,
+    protected abstract void additionalAuthenticationChecks(UserAuthentication userAuthentication,
                                                            BaseAuthenticationToken authentication) throws AuthenticationException;
 
     private class DefaultPreAuthenticationChecks implements UserDetailsChecker {
@@ -142,20 +146,20 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     }
 
-    protected Authentication createSuccessAuthentication(Object principal, Authentication authentication,
-                                                         UserDetails user) {
+    protected UserAuthentication createSuccessAuthentication(UserAuthentication user, Authentication authentication) {
         // Ensure we return the original credentials the user supplied,
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
-        UsernamePasswordAuthenticationToken result = UsernamePasswordAuthenticationToken.authenticated(principal,
-                authentication.getCredentials(), this.authoritiesMapper.mapAuthorities(user.getAuthorities()));
-        result.setDetails(authentication.getDetails());
-        this.logger.debug("Authenticated user");
-        return result;
+//        UsernamePasswordAuthenticationToken result = UsernamePasswordAuthenticationToken.authenticated(principal,
+//                authentication.getCredentials(), this.authoritiesMapper.mapAuthorities(user.getAuthorities()));
+//        result.setDetails(authentication.getDetails());
+//        this.logger.debug("Authenticated user");
+//        return result;
+        return user;
     }
 
-    protected UserCache getUserCache() {
-        return userCache;
+    protected SessionCache getSessionCache() {
+        return sessionCache;
     }
 }

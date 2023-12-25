@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
 
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;

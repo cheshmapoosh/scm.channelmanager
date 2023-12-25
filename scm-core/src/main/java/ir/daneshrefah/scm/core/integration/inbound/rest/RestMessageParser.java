@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
-import ir.daneshrefah.scm.uaa.common.model.authentication.Authentication;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
@@ -48,7 +48,7 @@ public class RestMessageParser {
 
         String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(exchange);
         String terminalHeader = CamelUtils.getTerminalHeaderFromExchange(exchange);
-        Authentication authentication = authenticationClientTemplate
+        UserAuthentication authentication = authenticationClientTemplate
                             .extractAuthenticationFromAuthorizationHeader(terminalHeader, authorizationHeader);
         header.setAuthentication(authentication);
 

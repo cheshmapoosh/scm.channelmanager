@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.authenticationDetails;
+package ir.daneshrefah.scm.uaa.common.security.authenticationDetails;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationDetailsSource;

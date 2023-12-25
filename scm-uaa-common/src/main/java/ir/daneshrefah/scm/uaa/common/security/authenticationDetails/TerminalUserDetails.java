@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.userDetails;
+package ir.daneshrefah.scm.uaa.common.security.authenticationDetails;
 
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,7 +29,8 @@ public class TerminalUserDetails implements UserDetails {
 
     public TerminalUserDetails(User user, Collection<? extends GrantedAuthority> authorities) {
         this.user = user;
-        this.authorities = Collections.unmodifiableSet(sortAuthorities(authorities));;
+        this.authorities = Collections.unmodifiableSet(sortAuthorities(authorities));
+        ;
     }
 
     private static SortedSet<GrantedAuthority> sortAuthorities(Collection<? extends GrantedAuthority> authorities) {
@@ -76,7 +77,7 @@ public class TerminalUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getActive();
+        return null != user.getActive() ? user.getActive() : false;
     }
 
     public User getUser() {

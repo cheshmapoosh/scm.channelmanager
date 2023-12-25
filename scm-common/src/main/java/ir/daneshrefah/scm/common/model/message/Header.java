@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class Header implements Serializable {
 
     private String contentType;
-    private AuthenticationHeader authentication;
+    private IAuthenticationHeader authentication;
     private Boolean secondLevelAuthenticated;
     private String clientCorrelationId;
     private String correlationId;
@@ -37,11 +37,11 @@ public class Header implements Serializable {
         this.contentType = contentType;
     }
 
-    public AuthenticationHeader getAuthentication() {
+    public IAuthenticationHeader getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(AuthenticationHeader authentication) {
+    public void setAuthentication(IAuthenticationHeader authentication) {
         this.authentication = authentication;
     }
 

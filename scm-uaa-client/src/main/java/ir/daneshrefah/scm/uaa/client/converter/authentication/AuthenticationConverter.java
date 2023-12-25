@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.client.converter;
+package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 

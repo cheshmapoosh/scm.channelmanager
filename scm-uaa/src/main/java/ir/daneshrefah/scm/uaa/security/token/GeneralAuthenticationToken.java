@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;

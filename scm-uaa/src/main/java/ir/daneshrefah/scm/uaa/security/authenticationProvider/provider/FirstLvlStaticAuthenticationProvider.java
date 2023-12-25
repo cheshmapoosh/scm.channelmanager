@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
 
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlStaticAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 

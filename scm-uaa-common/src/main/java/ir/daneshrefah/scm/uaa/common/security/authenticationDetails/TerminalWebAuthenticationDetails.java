@@ -1,7 +1,6 @@
-package ir.daneshrefah.scm.uaa.security.authenticationDetails;
+package ir.daneshrefah.scm.uaa.common.security.authenticationDetails;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 public class TerminalWebAuthenticationDetails extends WebAuthenticationDetails {

@@ -2,8 +2,9 @@ package ir.daneshrefah.scm.uaa.client.provider;
 
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,13 +16,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class SessionAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
 
+    protected SessionAuthenticationProvider(SessionCache sessionCache) {
+        super(sessionCache);
+    }
+
     @Override
-    protected UserDetails retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
+    protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         return null;
     }
 
     @Override
-    protected void additionalAuthenticationChecks(UserDetails userDetails, BaseAuthenticationToken authentication) throws AuthenticationException {
+    protected void additionalAuthenticationChecks(UserAuthentication userAuthentication, BaseAuthenticationToken authentication) throws AuthenticationException {
 
     }
 
