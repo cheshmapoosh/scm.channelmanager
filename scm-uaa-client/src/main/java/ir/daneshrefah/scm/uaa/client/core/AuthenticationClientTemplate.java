@@ -24,7 +24,7 @@ public class AuthenticationClientTemplate {
     public AuthenticationClientTemplate(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
         this.authenticationConverters = Arrays.asList(new BasicAuthenticationConverter(), new BearerTokenResolver(),
-                new SessionKeyResolver(), new ClientAuthenticationConverter());
+                new SessionKeyResolver(), new ClientAuthenticationConverter(), new AnonymousAuthenticationConverter());
     }
 
 
@@ -44,6 +44,7 @@ public class AuthenticationClientTemplate {
 //        Authorization: Session sessionKey
 
         org.springframework.security.core.Authentication authResult = this.authenticationManager.authenticate(authToken);
+        ((UserAuthentication) authResult).isAnonymous();
         return (UserAuthentication) authResult;
     }
 

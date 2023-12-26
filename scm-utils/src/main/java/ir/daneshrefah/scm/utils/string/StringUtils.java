@@ -14,6 +14,7 @@ import java.util.UUID;
 public class StringUtils {
 
     public static final String SPACE = org.apache.commons.lang3.StringUtils.SPACE;
+    public static final String EMPTY = org.apache.commons.lang3.StringUtils.EMPTY;
     public static final String DOUBLE_COLON = "::";
 
     public static boolean isEmpty(final CharSequence cs) {
@@ -69,6 +70,15 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.substringBefore(str, separator);
     }
 
+    public static String replaceNull(String value, String replaceWith) {
+        if (null == value) {
+            return replaceWith;
+        }
+        return value;
+    }
 
+    public static String replaceNullWithSpace(String value) {
+        return replaceNull(value, SPACE);
+    }
 
 }

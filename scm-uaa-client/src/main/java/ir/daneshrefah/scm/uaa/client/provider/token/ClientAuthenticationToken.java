@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider.token;
 
+import ir.daneshrefah.scm.utils.string.HashUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.util.Collections;
@@ -39,7 +40,8 @@ public class ClientAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     @Override
     public String getId() {
-        return getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
+        return this.getClass().getSimpleName() + "_" + HashUtils.hashMD5ToString(getName() +
+                StringUtils.replaceNullWithSpace((String) credentials));
     }
 
 }

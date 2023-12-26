@@ -17,6 +17,8 @@ import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.Assert;
 
+import java.io.InvalidClassException;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -53,7 +55,8 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
                         "Only BaseAuthenticationToken is supported"));
         String username = determineUsername(authentication);
         boolean cacheWasUsed = true;
-        UserAuthentication user = this.sessionCache.getSessionFromCache(((BaseAuthenticationToken) authentication).getId());
+        String sessionKey = ((BaseAuthenticationToken) authentication).getId();
+        UserAuthentication user = this.sessionCache.getSessionFromCache(sessionKey);
         if (user == null) {
             cacheWasUsed = false;
             try {
@@ -86,7 +89,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
         }
         this.postAuthenticationChecks.check(user.getUserDetails());
         if (!cacheWasUsed) {
-            this.sessionCache.putSessionInCache(user);
+            this.sessionCache.putSessionInCache(sessionKey, user);
         }
         Object principalToReturn = user;
         if (this.forcePrincipalAsString) {

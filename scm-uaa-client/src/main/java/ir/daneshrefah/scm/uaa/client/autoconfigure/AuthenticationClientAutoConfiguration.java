@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -48,7 +49,7 @@ public class AuthenticationClientAutoConfiguration {
 //
 //    @Value("${uaa.server.token-endpoint}")
 //    private String tokenEndpoint;
-    private String ANONYMOUS_AUTH_KEY = UUID.randomUUID().toString();
+    private String ANONYMOUS_AUTH_KEY = "scm_anonymous";//UUID.randomUUID().toString();
     @Autowired
     private CacheTemplate cacheTemplate;
 
@@ -87,6 +88,7 @@ public class AuthenticationClientAutoConfiguration {
         List<AuthenticationProvider> providers = providersMap.entrySet().stream()
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
+//        providers.add(new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_KEY));
         return new ProviderManager(providers
 //                new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_KEY),
 //                new BearerAuthenticationProvider(),

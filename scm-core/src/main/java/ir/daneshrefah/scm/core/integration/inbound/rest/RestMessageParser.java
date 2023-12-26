@@ -47,7 +47,7 @@ public class RestMessageParser {
         header.setContentType(CamelUtils.getContentTypeHeaderFromExchange(exchange));
 
         String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(exchange);
-        String terminalHeader = CamelUtils.getTerminalHeaderFromExchange(exchange);
+        String terminalHeader = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
         UserAuthentication authentication = authenticationClientTemplate
                             .extractAuthenticationFromAuthorizationHeader(terminalHeader, authorizationHeader);
         header.setAuthentication(authentication);

@@ -58,4 +58,15 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
         return (TerminalUserDetails) getDetails();
     }
 
+    public boolean isAnonymous() {
+        return hasAuthority("ROLE_ANONYMOUS");
+    }
+
+    public boolean hasAuthority(String authorityName) {
+        Collection<GrantedAuthority> authorities = getAuthorities();
+        if (null == authorities || authorities.isEmpty()) {
+            return false;
+        }
+        return getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equals(authorityName));
+    }
 }
