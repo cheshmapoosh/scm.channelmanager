@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+
 
 public abstract class AbstractOtpDeviceAuthenticationProvider extends AbstractAuthenticationProvider{
 //    private final OtpService otpService;
