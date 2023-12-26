@@ -1,16 +1,17 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.provider.AbstractAuthenticationProvider;
+
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationRequestTokenGenerator;
+import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.lang.Nullable;
+import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -18,20 +19,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
-import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-
-import java.util.List;
 
 import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
 
@@ -43,26 +35,16 @@ import static ir.daneshrefah.scm.uaa.constants.UAAConstants.CLIENT_SETTING_KEY_T
  * @since 2023-12-18
  */
 @Component
+@AllArgsConstructor
 public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvider {
 
-    private final Log logger = LogFactory.getLog(getClass());
+    private final static Logger logger = LoggerFactory.getLogger(OAuth2GeneralAuthenticationProvider.class);
+    private AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final UserCache userCache;
-    private final AuthenticationTokenGenerator authenticationTokenGenerator = new AuthenticationTokenGenerator();
     private final UserDetailsService userDetailsService;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
-    private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
+    private final AuthenticationResponseTokenGenerator responseTokenGenerator;
 
-    public OAuth2GeneralAuthenticationProvider(UserDetailsService userDetailsService,
-                                               OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
-                                               List<AbstractAuthenticationProvider> providers,
-                                               @Nullable UserCache userCache) {
-        Assert.notNull(userDetailsService, "userDetailsService cannot be null");
-        Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
-        this.userDetailsService = userDetailsService;
-        this.delegatorAuthenticationProvider = new DelegatorAuthenticationProvider(providers);
-        this.tokenGenerator = tokenGenerator;
-        this.userCache = null != userCache ? userCache : new NullUserCache();
-    }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -108,7 +90,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             token = authenticationTokenGenerator.generateToken(
                     preAuthenticationToken, (TerminalUserDetails) userDetails);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.getMessage());
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
         }
 
@@ -120,36 +102,15 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             this.logger.trace("authentication completed successfully.");
         }
 
-        DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
-                .registeredClient(registeredClient)
-                .principal(authorization)
-                .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-//                .authorization(authorization)
-//                .authorizedScopes(authorization.getAuthorizedScopes())
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrant(authentication);
-
-        OAuth2TokenContext tokenContext = tokenContextBuilder.tokenType(OAuth2TokenType.ACCESS_TOKEN).build();
-        OAuth2Token generatedAccessToken = this.tokenGenerator.generate(tokenContext);
-
-        OAuth2AccessToken accessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,
-                generatedAccessToken.getTokenValue(), generatedAccessToken.getIssuedAt(),
-                generatedAccessToken.getExpiresAt(), tokenContext.getAuthorizedScopes());
-
-        return new OAuth2AccessTokenAuthenticationToken(
-                registeredClient, clientPrincipal, accessToken/*, refreshToken, additionalParameters*/);
+        return responseTokenGenerator.getAccessToken(authentication, clientPrincipal, registeredClient, authorization);
 
     }
-
     private String extractCacheUserKey(PreAuthenticationToken authenticationToken, String terminalCode) {
         return authenticationToken.getName() + StringUtils.DOUBLE_COLON +
                 terminalCode;
     }
 
-    private User getAuthenticatedUserChannelElseThrowInvalidUsr(String username, String terminalCode) throws UsernameNotFoundException {
-        // Ensure the user is authenticated
-        return null;
-    }
+
 
     private static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(PreAuthenticationToken authentication) {
         OAuth2ClientAuthenticationToken clientPrincipal = null;

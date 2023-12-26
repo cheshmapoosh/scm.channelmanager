@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.security.converter;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import jakarta.servlet.http.HttpServletRequest;
+import ir.daneshrefah.scm.uaa.common.model.UaaConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -66,7 +67,12 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
                     Arrays.asList(StringUtils.delimitedListToStringArray(scope, " ")));
         }
 
-        return new PreAuthenticationToken(username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal, scopes);
+        //Claim Code
+        String claimCode = request.getHeader(UaaConstants.OTP_HEADER);
+
+        PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal, scopes);
+        preAuthenticationToken.setClaimCode(claimCode);
+        return preAuthenticationToken;
     }
 
     private static MultiValueMap<String, String> getParameters(HttpServletRequest request) {

@@ -1,10 +1,10 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
+package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,11 +15,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 public abstract class AbstractStaticAuthenticationProvider extends AbstractAuthenticationProvider {
 
-    protected final PasswordEncoder passwordEncoder;
+    protected final CustomMD5Encoder encoder;
 
-    protected AbstractStaticAuthenticationProvider(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
+    protected AbstractStaticAuthenticationProvider(CustomMD5Encoder encoder) {
+        this.encoder = encoder;
     }
+
 
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails,
@@ -29,7 +30,8 @@ public abstract class AbstractStaticAuthenticationProvider extends AbstractAuthe
             throw new BadCredentialsException("AbstractStaticAuthenticationProvider.badCredentials");
         }
         String presentedPassword = authentication.getCredentials().toString();
-        if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
+        String encodedPassword= encoder.encodePassword(presentedPassword, userDetails.getUsername());
+        if (!userDetails.getPassword().equals(encodedPassword)){
             this.logger.debug("Failed to authenticate since password does not match stored value");
             throw new BadCredentialsException("AbstractStaticAuthenticationProvider.badCredentials");
         }

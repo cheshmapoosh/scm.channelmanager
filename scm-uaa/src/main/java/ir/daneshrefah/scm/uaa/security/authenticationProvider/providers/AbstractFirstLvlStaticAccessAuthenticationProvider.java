@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
+package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
+import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 
 /**
  * Description of the class or purpose of the file.
@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * @since 2023-12-23
  */
 public abstract class AbstractFirstLvlStaticAccessAuthenticationProvider extends AbstractStaticAuthenticationProvider {
-    public AbstractFirstLvlStaticAccessAuthenticationProvider(PasswordEncoder encoder) {
+    protected AbstractFirstLvlStaticAccessAuthenticationProvider(CustomMD5Encoder encoder) {
         super(encoder);
     }
 }

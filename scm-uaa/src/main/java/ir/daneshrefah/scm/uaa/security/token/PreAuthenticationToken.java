@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 
@@ -19,9 +21,14 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
 
     private String username;
     private String password;
+    @Getter
+    @Setter
     private String claimCode;
+    @Getter
     private AuthorizationGrantType grantType;
+    @Getter
     private Authentication clientPrincipal;
+    @Getter
     private final Set<String> scopes;
 
     public PreAuthenticationToken(String username, String password, AuthorizationGrantType grantType,
@@ -47,15 +54,6 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
         return username;
     }
 
-    public AuthorizationGrantType getGrantType() {
-        return grantType;
-    }
 
-    public Authentication getClientPrincipal() {
-        return clientPrincipal;
-    }
 
-    public String getClaimCode() {
-        return claimCode;
-    }
 }

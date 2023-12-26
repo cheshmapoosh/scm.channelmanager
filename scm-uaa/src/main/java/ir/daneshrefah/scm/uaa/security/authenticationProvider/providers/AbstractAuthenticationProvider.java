@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
+package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -57,7 +57,7 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
                 (TerminalUserDetails) authentication.getDetails(),
                 ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken());
         result.setDetails(authentication.getDetails());
-        this.logger.debug("Authenticated user");
+        this.logger.debug("Unauthenticated user");
         return result;
     }
 
