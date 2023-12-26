@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.provider.AbstractAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.providers.AbstractAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderNotFoundException;

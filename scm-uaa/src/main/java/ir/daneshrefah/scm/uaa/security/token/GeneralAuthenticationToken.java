@@ -18,11 +18,11 @@ public abstract class GeneralAuthenticationToken extends AbstractAuthenticationT
     private final PreAuthenticationToken preAuthenticationToken;
 
 
-    protected GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken) {
+    public GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken) {
         this(user, preAuthenticationToken, Collections.emptyList());
     }
 
-    protected GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
+    public GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                          Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.setDetails(user);

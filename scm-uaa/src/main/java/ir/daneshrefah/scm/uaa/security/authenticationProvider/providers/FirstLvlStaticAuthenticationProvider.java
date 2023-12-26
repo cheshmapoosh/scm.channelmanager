@@ -1,7 +1,7 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider.provider;
+package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlStaticAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class FirstLvlStaticAuthenticationProvider extends AbstractFirstLvlStaticAccessAuthenticationProvider {
 
-    public FirstLvlStaticAuthenticationProvider(PasswordEncoder encoder) {
+
+    protected FirstLvlStaticAuthenticationProvider(CustomMD5Encoder encoder) {
         super(encoder);
     }
 

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.security.userDetails.TerminalUserDetails;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -14,6 +15,7 @@ import java.util.Collection;
  */
 public class PostAuthenticationToken extends GeneralAuthenticationToken {
 
+    @Getter
     private final AuthenticationStatus authenticationStatus;
 
     protected PostAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
@@ -32,6 +34,20 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     public static PostAuthenticationToken unauthenticated(TerminalUserDetails user,
                                                           PreAuthenticationToken preAuthenticationToken) {
         return new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.UN_AUTHENTICATED);
+    }
+    public static PostAuthenticationToken incomplete(TerminalUserDetails user,
+                                                          PreAuthenticationToken preAuthenticationToken) {
+        PostAuthenticationToken postAuthenticationToken = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.INCOMPLETE);
+        postAuthenticationToken.setAuthenticated(true);
+        return postAuthenticationToken;
+
+    }
+    public static PostAuthenticationToken secondLvlAuthenticated(TerminalUserDetails user,
+                                                          PreAuthenticationToken preAuthenticationToken) {
+        PostAuthenticationToken postAuthenticationToken = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.SECOND_LEVEL_AUTHENTICATED);
+        postAuthenticationToken.setAuthenticated(true);
+        return postAuthenticationToken;
+
     }
 
     public static PostAuthenticationToken authenticated(TerminalUserDetails user,
@@ -52,7 +68,13 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
 
     public enum AuthenticationStatus {
         UN_AUTHENTICATED,
-        CONTINUE,
-        AUTHENTICATED
+        INCOMPLETE,
+        AUTHENTICATED,
+        SECOND_LEVEL_AUTHENTICATED
+    }
+
+    @Override
+    public String getName() {
+        return String.valueOf(this.getPreAuthenticationToken().getPrincipal());
     }
 }
