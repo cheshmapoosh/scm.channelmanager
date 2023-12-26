@@ -30,7 +30,7 @@ public class UserService {
         User user = new User();
         user.setTerminalCode(terminalCode);
         user.setNickName(username);
-        user.setFirstPassword("600206cc0021aba85739333707ae33fe");
+        user.setFirstPassword("427fb3b98395b962e15831b75c88ad7f");
         user.setActive(true);
         user.setLoginAuthenticationMethod(AuthenticationMethod.STATIC_PASSWORD);
         return Optional.of(user);

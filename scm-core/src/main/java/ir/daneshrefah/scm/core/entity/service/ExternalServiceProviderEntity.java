@@ -1,11 +1,17 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import ir.daneshrefah.scm.core.converter.CustomerProvideMethodConverter;
 import ir.daneshrefah.scm.core.entity.AbstractEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import ir.daneshrefah.scm.plugin.api.model.service.external.CustomerProvideMethod;
+import jakarta.persistence.*;
 
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-12-26
+ */
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
 public class ExternalServiceProviderEntity extends AbstractEntity<String> {
@@ -16,6 +22,9 @@ public class ExternalServiceProviderEntity extends AbstractEntity<String> {
     private String title;
     private String providerClassName;
     private String metadata;
+    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)
+    @Convert(converter = CustomerProvideMethodConverter.class)
+    private CustomerProvideMethod customerProvideMethod;
 
     @Override
     public String getId() {
@@ -59,4 +68,11 @@ public class ExternalServiceProviderEntity extends AbstractEntity<String> {
         this.metadata = metadata;
     }
 
+    public CustomerProvideMethod getCustomerProvideMethod() {
+        return customerProvideMethod;
+    }
+
+    public void setCustomerProvideMethod(CustomerProvideMethod customerProvideMethod) {
+        this.customerProvideMethod = customerProvideMethod;
+    }
 }

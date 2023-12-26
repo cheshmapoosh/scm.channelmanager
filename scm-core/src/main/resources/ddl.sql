@@ -51,12 +51,13 @@ VALUES('c2eb2878-2f0e-4e82-9037-f8b7cfab7f95', 'SCM', 'مدیریت کانال',
 
 
 
-CREATE TABLE REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER (
-                                                       EXTERNAL_SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL,
+CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER (
+                                                       SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL,
                                                        CODE VARCHAR(255),
                                                        TITLE VARCHAR(255),
                                                        PROVIDER_CLASS_NAME VARCHAR(255),
                                                        METADATA VARCHAR(255),
+                                                       CUSTOMER_PROVIDE_METHOD_CODE SMALLINT NOT NULL,
                                                        CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                                        LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                                        CREATOR VARCHAR(255),
