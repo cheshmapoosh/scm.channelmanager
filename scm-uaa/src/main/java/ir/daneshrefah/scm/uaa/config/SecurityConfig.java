@@ -62,12 +62,7 @@ import java.util.Map;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${uaa.key-store.name}")
-    private String keyStoreFilePath;
-    @Value("${uaa.key-store.password}")
-    private String keyStorePassword;
-    @Value("${uaa.key-store.alias}")
-    private String keyStoreAlias;
+
 //    @Autowired
 //    private UserDetailsService userDetailsService;
 
@@ -166,79 +161,6 @@ public class SecurityConfig {
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
                     });
         return http.build();
-    }
-
-    @Bean
-    @Primary
-    OAuth2TokenGenerator<?> uaaTokenGenerator(JWKSource<SecurityContext> jwkSource) {
-        NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
-        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
-        jwtGenerator.setJwtCustomizer(jwtCustomizer());
-        return new DelegatingOAuth2TokenGenerator(jwtGenerator);
-    }
-
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
-        return context -> {
-            /*JwtClaimsSet.Builder claims = context.getClaims();
-            if (GeneralAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
-                String sessionKey = ((GeneralAuthenticationToken) context.getPrincipal()).getSessionKey();
-                String username = context.getPrincipal().getName();
-                String appVersion = ((GeneralAuthenticationToken) context.getPrincipal()).getAuthenticationRequest().getClientVersion();
-                Authentication delegatorAuthentication = ((GeneralAuthenticationToken) context.getPrincipal()).getAuthenticationRequest().getDelegatorAuthentication();
-                String delegatorUser= Objects.nonNull(delegatorAuthentication)? delegatorAuthentication.getName() : null;
-
-                if (StringUtils.isNotEmpty(sessionKey))
-                    claims.claim(TOKEN_SESSION_KEY_TAG, sessionKey);
-                claims.claim(TOKEN_USERNAME_TAG, username);
-                claims.claim(TOKEN_APP_VERSION_TAG, appVersion);
-                claims.claim(DELEGATOR_USER_INFO, Optional.ofNullable(delegatorUser).orElse(username));
-            }*/
-        };
-    }
-
-    @Bean
-    public JWKSource<SecurityContext> jwkSource(JWKSet jwkSet) {
-        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-    }
-
-    @Bean
-    public JWKSet jwkSet() throws GeneralSecurityException, IOException {
-        RSAKey rsaKey = generateRsa();
-        JWKSet jwkSet=new JWKSet(rsaKey);
-        return jwkSet;
-    }
-
-    private RSAKey generateRsa() throws GeneralSecurityException, IOException {
-        KeyPair keyPair = generateRsaKey();
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        return new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
-//                .keyID(UUID.randomUUID().toString())
-                .algorithm(Algorithm.parse("RS256"))
-                .build();
-    }
-
-    private KeyPair generateRsaKey() throws GeneralSecurityException, IOException {
-        InputStream p12FileInputStream = JwtDecoder.class.getClassLoader().getResourceAsStream(keyStoreFilePath);
-
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(p12FileInputStream, keyStorePassword.toCharArray());
-
-        KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(keyStoreAlias,
-                new KeyStore.PasswordProtection(keyStorePassword.toCharArray()));
-        PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-        X509Certificate certificate = (X509Certificate) privateKeyEntry.getCertificate();
-
-        KeyPair keyPair = new KeyPair(certificate.getPublicKey(), privateKey);
-
-        return keyPair;
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
     }
 
     @Bean

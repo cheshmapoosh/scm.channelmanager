@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.token.generator;
 
+import ir.daneshrefah.scm.uaa.security.OAuthScopeHandler;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import lombok.AllArgsConstructor;
@@ -18,22 +19,31 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.util.Set;
+
 @Component
 @AllArgsConstructor
 public class AuthenticationResponseTokenGenerator {
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
+    private final OAuthScopeHandler OAuthScopeHandler;
 
     public OAuth2AccessTokenAuthenticationToken getAccessToken(Authentication authentication, OAuth2ClientAuthenticationToken clientPrincipal, RegisteredClient registeredClient, GeneralAuthenticationToken authorization) {
+        Set<String> scopes = authorization.getPreAuthenticationToken().getScopes();
         DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
                 .registeredClient(registeredClient)
                 .principal(authorization)
                 .authorizationServerContext(AuthorizationServerContextHolder.getContext())
 //                .authorization(authorization)
-//                .authorizedScopes(authorization.getAuthorizedScopes())
+                .authorizedScopes(scopes)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrant(authentication);
 
-        OAuth2TokenContext tokenContext = tokenContextBuilder.tokenType(OAuth2TokenType.ACCESS_TOKEN).build();
+
+        OAuthScopeHandler.doJobs(authorization,scopes);
+
+        OAuth2TokenContext tokenContext = tokenContextBuilder
+                .tokenType(OAuth2TokenType.ACCESS_TOKEN)
+                .build();
         OAuth2Token generatedAccessToken = this.tokenGenerator.generate(tokenContext);
 
         OAuth2AccessToken accessToken = getAccessTokenValue(tokenContext, generatedAccessToken);
@@ -56,6 +66,8 @@ public class AuthenticationResponseTokenGenerator {
                 generatedAccessToken.getExpiresAt(), tokenContext.getAuthorizedScopes());
         return accessToken;
     }
+
+
 
 
 }
