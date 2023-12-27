@@ -134,6 +134,7 @@ public class SecurityConfig {
         http
                 .authenticationProvider(generalAuthenticationProvider)
                 .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/token_key").permitAll()
                         .requestMatchers("/login**").permitAll()
 //                        .requestMatchers("/oauth2/token").permitAll()
                         .anyRequest().authenticated()
