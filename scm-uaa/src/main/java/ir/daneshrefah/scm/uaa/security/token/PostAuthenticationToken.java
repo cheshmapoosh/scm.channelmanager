@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -17,6 +18,9 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
 
     @Getter
     private final AuthenticationStatus authenticationStatus;
+    @Getter
+    @Setter
+    private String sessionKey;
 
     protected PostAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                       AuthenticationStatus authenticationStatus) {
@@ -77,4 +81,5 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     public String getName() {
         return String.valueOf(this.getPreAuthenticationToken().getPrincipal());
     }
+
 }

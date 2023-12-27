@@ -12,10 +12,13 @@ public class UaaConstants {
     public final static String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
     public final static String AUTH_HEADER ="X_UserAuthorization";
     public final static String IP_HEADER ="X-Forwarded-For";
+    public static final String CLIENT_SETTING_KEY_TERMINAL_CODE = "terminalCode";
     public final static String OTP_HEADER ="x-otp-code";
     public final static String ACCESS_PARAM_HEADER ="AccessParameter";
     public final static String REG_TOKEN_HEADER ="RegistryToken";
     public final static String FIRST_LVL_AUTH_GRANT="cm-first-password";
     public final static String SECOND_LVL_AUTH_GRANT="cm-second-password";
+    public final static String TERMINAL_TAG="terminal";
+    public final static String GRANT_TYPE_TAG="grant";
 
 }
