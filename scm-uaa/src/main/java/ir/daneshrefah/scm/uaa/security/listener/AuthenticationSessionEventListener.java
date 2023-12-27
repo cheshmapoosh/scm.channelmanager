@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,13 @@ import java.util.UUID;
 @Component
 public class AuthenticationSessionEventListener extends BaseAuthenticationListener {
 
+    private final SessionCache sessionCache;
+
+    public AuthenticationSessionEventListener(SessionCache sessionCache) {
+        this.sessionCache = sessionCache;
+    }
+
+
     @Override
     protected void onSuccessAuthenticationEvent(PostAuthenticationToken authentication) {
         if (!authentication.isSessionRequired()) {
@@ -26,6 +35,15 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         authentication.setSessionKey(generateSessionKey(
                 authentication.getName(), null,
                 authentication.getTerminalCode()));
+        UserAuthentication userAuthentication = new UserAuthentication(authentication.getDetails(),
+                authentication.getAuthorities());
+//        userAuthentication.setIssuer(issuer.toString());
+        userAuthentication.setUsername(authentication.getName());
+//        userAuthentication.setIssuedAt(issuedAt);
+//        userAuthentication.setExpiresAt(expiresAt);
+        userAuthentication.setAuthenticated(true);
+//        userAuthentication.setLoginData(jwt);
+        sessionCache.putSessionInCache(authentication.getSessionKey(), userAuthentication);
     }
 
     private String generateSessionKey(String username, String delegator, String terminalCode) {

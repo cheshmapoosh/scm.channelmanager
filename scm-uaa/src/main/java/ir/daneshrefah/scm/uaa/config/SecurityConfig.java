@@ -5,6 +5,8 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
@@ -180,4 +182,10 @@ public class SecurityConfig {
         passwordEncoder.setDefaultPasswordEncoderForMatches(defaultPasswordEncoder);
         return passwordEncoder;
     }
+
+    @Bean
+    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
+        return new SessionCache(cacheTemplate);
+    }
+
 }
