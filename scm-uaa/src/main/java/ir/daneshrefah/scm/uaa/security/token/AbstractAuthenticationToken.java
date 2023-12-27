@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -11,7 +13,13 @@ import java.util.Collection;
  * @version 1.0
  * @since 2023-12-19
  */
+@Setter
+@Getter
 public abstract class AbstractAuthenticationToken extends org.springframework.security.authentication.AbstractAuthenticationToken {
+
+    private boolean sessionRequired;
+    private boolean notificationRequired;
+
     /**
      * Creates a token with the supplied array of authorities.
      *
@@ -21,4 +29,5 @@ public abstract class AbstractAuthenticationToken extends org.springframework.se
     public AbstractAuthenticationToken(Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
     }
+
 }

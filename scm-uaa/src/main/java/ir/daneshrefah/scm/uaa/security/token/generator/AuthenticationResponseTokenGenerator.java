@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.security.token.generator;
 
-import ir.daneshrefah.scm.uaa.security.OAuthScopeHandler;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import lombok.AllArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.Set;
 @AllArgsConstructor
 public class AuthenticationResponseTokenGenerator {
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
-    private final OAuthScopeHandler OAuthScopeHandler;
 
     public OAuth2AccessTokenAuthenticationToken getAccessToken(Authentication authentication, OAuth2ClientAuthenticationToken clientPrincipal, RegisteredClient registeredClient, GeneralAuthenticationToken authorization) {
         Set<String> scopes = authorization.getPreAuthenticationToken().getScopes();
@@ -38,8 +36,6 @@ public class AuthenticationResponseTokenGenerator {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrant(authentication);
 
-
-        OAuthScopeHandler.doJobs(authorization,scopes);
 
         OAuth2TokenContext tokenContext = tokenContextBuilder
                 .tokenType(OAuth2TokenType.ACCESS_TOKEN)

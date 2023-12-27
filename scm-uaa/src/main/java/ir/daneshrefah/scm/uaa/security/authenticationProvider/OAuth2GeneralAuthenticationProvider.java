@@ -95,6 +95,10 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
         }
 
+//        TODO check session required
+        token.setSessionRequired(true);
+        token.setNotificationRequired(true);
+
         GeneralAuthenticationToken authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         if (authorization == null || !authorization.isAuthenticated()) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);

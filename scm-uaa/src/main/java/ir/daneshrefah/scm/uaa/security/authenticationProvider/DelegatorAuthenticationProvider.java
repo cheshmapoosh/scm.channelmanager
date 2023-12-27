@@ -2,8 +2,10 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.providers.AbstractAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderNotFoundException;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
@@ -22,8 +24,11 @@ import java.util.Objects;
 public class DelegatorAuthenticationProvider implements AuthenticationProvider {
 
     private final List<AbstractAuthenticationProvider> providers;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public DelegatorAuthenticationProvider(List<AbstractAuthenticationProvider> providers) {
+    public DelegatorAuthenticationProvider(ApplicationEventPublisher applicationEventPublisher,
+                                           List<AbstractAuthenticationProvider> providers) {
+        this.applicationEventPublisher = applicationEventPublisher;
         this.providers = providers;
     }
 
@@ -44,6 +49,10 @@ public class DelegatorAuthenticationProvider implements AuthenticationProvider {
 
         if (Objects.isNull(result))
             throw new ProviderNotFoundException("DelegatorAuthenticationProvider.providerNotFound");
+
+        if (result.isAuthenticated()) {
+            applicationEventPublisher.publishEvent(new AuthenticationSuccessEvent(result));
+        }
 
         return result;
     }

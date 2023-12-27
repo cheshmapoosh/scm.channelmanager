@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import ir.daneshrefah.scm.uaa.controller.dto.PublicKeyResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +22,7 @@ import java.util.Base64;
  * @since 2023-12-27
  */
 @RestController
+@RequestMapping("/public/token")
 public class TokenController extends BaseController {
 
     private final JWKSet jwkSet;
@@ -31,7 +33,7 @@ public class TokenController extends BaseController {
         response = generatePublicKey();
     }
 
-    @RequestMapping("/token_key")
+    @GetMapping
     public ResponseEntity<PublicKeyResponse> publicKey() {
         return ResponseEntity.ok(response);
     }

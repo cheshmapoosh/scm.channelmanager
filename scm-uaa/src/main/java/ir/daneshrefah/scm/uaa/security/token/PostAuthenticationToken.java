@@ -39,15 +39,17 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
                                                           PreAuthenticationToken preAuthenticationToken) {
         return new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.UN_AUTHENTICATED);
     }
+
     public static PostAuthenticationToken incomplete(TerminalUserDetails user,
-                                                          PreAuthenticationToken preAuthenticationToken) {
+                                                     PreAuthenticationToken preAuthenticationToken) {
         PostAuthenticationToken postAuthenticationToken = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.INCOMPLETE);
         postAuthenticationToken.setAuthenticated(true);
         return postAuthenticationToken;
 
     }
+
     public static PostAuthenticationToken secondLvlAuthenticated(TerminalUserDetails user,
-                                                          PreAuthenticationToken preAuthenticationToken) {
+                                                                 PreAuthenticationToken preAuthenticationToken) {
         PostAuthenticationToken postAuthenticationToken = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.SECOND_LEVEL_AUTHENTICATED);
         postAuthenticationToken.setAuthenticated(true);
         return postAuthenticationToken;
@@ -80,6 +82,13 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     @Override
     public String getName() {
         return String.valueOf(this.getPreAuthenticationToken().getPrincipal());
+    }
+
+    public String getTerminalCode() {
+        if (null == getDetails() || null == getDetails().getUser()) {
+            return null;
+        }
+        return getDetails().getUser().getTerminalCode();
     }
 
 }

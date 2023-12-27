@@ -16,7 +16,7 @@ import java.util.Collections;
 public abstract class GeneralAuthenticationToken extends AbstractAuthenticationToken {
 
     private final PreAuthenticationToken preAuthenticationToken;
-    private TerminalUserDetails userDetails;
+//    private TerminalUserDetails userDetails;
 
 
     public GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken) {
@@ -26,7 +26,7 @@ public abstract class GeneralAuthenticationToken extends AbstractAuthenticationT
     public GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                          Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
-        this.userDetails=user;
+        this.setDetails(user);
         this.preAuthenticationToken = preAuthenticationToken;
     }
 
@@ -46,6 +46,6 @@ public abstract class GeneralAuthenticationToken extends AbstractAuthenticationT
 
     @Override
     public TerminalUserDetails getDetails() {
-        return this.userDetails;
+        return (TerminalUserDetails) super.getDetails();
     }
 }
