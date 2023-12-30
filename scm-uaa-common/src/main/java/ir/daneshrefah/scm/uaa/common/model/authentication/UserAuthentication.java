@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -22,10 +23,12 @@ import java.util.Collection;
 public class UserAuthentication extends AbstractAuthenticationToken implements IAuthenticationHeader {
 
     private String issuer;
-    private String username;
+//    private String username;
     private Instant issuedAt;
     private Instant expiresAt;
+    private Duration maxIdle;
     private Object loginData;
+    private String loginAccessParameter;
 
     /**
      * Creates a token with the supplied array of authorities.
@@ -41,7 +44,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
 
     @Override
     public String getUsername() {
-        return username;
+        return getUserDetails().getUsername();
     }
 
     @Override

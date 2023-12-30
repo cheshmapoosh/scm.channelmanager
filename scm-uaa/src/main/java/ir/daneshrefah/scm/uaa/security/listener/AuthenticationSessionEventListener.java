@@ -38,7 +38,7 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         UserAuthentication userAuthentication = new UserAuthentication(authentication.getDetails(),
                 authentication.getAuthorities());
 //        userAuthentication.setIssuer(issuer.toString());
-        userAuthentication.setUsername(authentication.getName());
+//        userAuthentication.setUsername(authentication.getName());
 //        userAuthentication.setIssuedAt(issuedAt);
 //        userAuthentication.setExpiresAt(expiresAt);
         userAuthentication.setAuthenticated(true);
