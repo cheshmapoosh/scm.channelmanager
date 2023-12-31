@@ -59,13 +59,19 @@ public class JwtTokenConverter implements TokenConverter<String> {
         URL issuer = jwt.getIssuer(); //JwtClaimNames.ISS
         String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);
         String sessionId = jwt.getClaimAsString(Constants.CLAIM_KEY_SESSION);
-        AuthenticationMethod loginAuthenticationMethod = AuthenticationMethod.valueOf(
-                jwt.getClaimAsString(Constants.CLAIM_KEY_LOGIN_AUTH_METHOD));
+        AuthenticationMethod loginAuthenticationMethod = null;
+        if (StringUtils.isNotEmpty(jwt.getClaimAsString(Constants.CLAIM_KEY_LOGIN_AUTH_METHOD))) {
+            loginAuthenticationMethod = AuthenticationMethod.valueOf(
+                    jwt.getClaimAsString(Constants.CLAIM_KEY_LOGIN_AUTH_METHOD));
+        }
+        AuthenticationMethod transactionAuthenticationMethod = null;
+        if (StringUtils.isNotEmpty(jwt.getClaimAsString(Constants.CLAIM_KEY_TRANSACTION_AUTH_METHOD))) {
+            transactionAuthenticationMethod = AuthenticationMethod.valueOf(
+                    jwt.getClaimAsString(Constants.CLAIM_KEY_TRANSACTION_AUTH_METHOD));
+        }
 //        "scope" -> {ArrayList@23632}  size = 2
         Instant issuedAt = jwt.getIssuedAt();
         Instant expiresAt = jwt.getExpiresAt();
-        AuthenticationMethod transactionAuthenticationMethod = AuthenticationMethod.valueOf(
-                jwt.getClaimAsString(Constants.CLAIM_KEY_TRANSACTION_AUTH_METHOD));
 
 
         User user = new User();
