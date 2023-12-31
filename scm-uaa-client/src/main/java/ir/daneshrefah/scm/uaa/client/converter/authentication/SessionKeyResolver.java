@@ -23,7 +23,7 @@ public class SessionKeyResolver implements AuthenticationConverter {
             Pattern.CASE_INSENSITIVE);
 
     @Override
-    public SessionAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public SessionAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }
@@ -37,7 +37,7 @@ public class SessionKeyResolver implements AuthenticationConverter {
                 throw new OAuth2AuthenticationException(error);
             }
 
-            SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(terminalCode,
+            SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(username, terminalCode,
                     authorizationHeaderToken);
 //            authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 

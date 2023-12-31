@@ -11,6 +11,6 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
  */
 public interface AuthenticationConverter {
 
-    public AbstractAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader);
+    public AbstractAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader);
     
 }

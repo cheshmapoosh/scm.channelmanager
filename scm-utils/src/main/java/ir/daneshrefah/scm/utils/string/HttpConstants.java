@@ -20,6 +20,7 @@ public class HttpConstants {
     public static final String HTTP_HEADER_CLIENT_TIMESTAMP = "X-SCM-Client-Timestamp";
     public static final String HTTP_HEADER_RECEIVE_TIMESTAMP = "X-SCM-receive-Timestamp";
     public static final String HTTP_HEADER_ACCESS_PARAMETER = "X-SCM-Access-Parameter";
+    public static final String HTTP_HEADER_USERNAME = "X-SCM-Username";
 
 
     public static final String HTTP_HEADER_CONTENT_TYPE_JSON = "application/json";

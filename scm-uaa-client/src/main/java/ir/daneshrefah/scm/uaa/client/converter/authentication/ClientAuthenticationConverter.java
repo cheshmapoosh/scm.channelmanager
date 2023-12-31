@@ -24,11 +24,11 @@ public class ClientAuthenticationConverter extends org.springframework.security.
         if (header == null) {
             return null;
         }
-        return convertByHeader(terminalCode, header);
+        return convertByHeader(null, terminalCode, header);
     }
 
     @Override
-    public ClientAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public ClientAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (/*StringUtils.isEmpty(terminalCode) || */StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }

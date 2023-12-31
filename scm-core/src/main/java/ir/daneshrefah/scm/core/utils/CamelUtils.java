@@ -29,6 +29,10 @@ public class CamelUtils {
         return getStringHeaderFromMessage(exchange.getMessage(), name);
     }
 
+    public static String getUsernameHeaderFromExchange(Exchange exchange) {
+        return getStringHeaderFromExchange(exchange, HttpConstants.HTTP_HEADER_USERNAME);
+    }
+
     public static String getAuthorizationHeaderFromExchange(Exchange exchange) {
         return getStringHeaderFromExchange(exchange, HttpConstants.HTTP_HEADER_AUTHORIZATION);
     }

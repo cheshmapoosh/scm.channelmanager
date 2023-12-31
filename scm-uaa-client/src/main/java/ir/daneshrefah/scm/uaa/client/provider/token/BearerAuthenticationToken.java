@@ -17,8 +17,8 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String token;
 
-    public BearerAuthenticationToken(String terminalCode, String token) {
-        super(terminalCode, Collections.emptyList());
+    public BearerAuthenticationToken(String username, String terminalCode, String token) {
+        super(username, terminalCode, Collections.emptyList());
         Assert.hasText(token, "token cannot be empty");
         this.token = token;
     }
@@ -33,12 +33,7 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
     }
 
     @Override
-    public Object getPrincipal() {
-        return this.getToken();
-    }
-
-    @Override
     public String getId() {
-        return HashUtils.hashMD5ToString(getName()) + StringUtils.DOUBLE_COLON + getTerminalCode();
+        return HashUtils.hashMD5ToString(getToken()) + StringUtils.DOUBLE_COLON + getTerminalCode();
     }
 }

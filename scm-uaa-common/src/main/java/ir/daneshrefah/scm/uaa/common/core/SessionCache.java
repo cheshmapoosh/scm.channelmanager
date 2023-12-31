@@ -25,6 +25,11 @@ public class SessionCache {
         this.cacheTemplate = cacheTemplate;
     }
 
+    public UserAuthentication getSessionFromCache(String username, String terminalCode) {
+        String sessionKey = username + StringUtils.DOUBLE_COLON + terminalCode;
+        return getSessionFromCache(sessionKey);
+    }
+
     public UserAuthentication getSessionFromCache(String sessionKey) {
         UserAuthentication result = null;
         try {

@@ -28,11 +28,11 @@ public class AuthenticationClientTemplate {
     }
 
 
-    public UserAuthentication extractAuthenticationFromAuthorizationHeader(String terminalCode, String authorizationHeader) {
+    public UserAuthentication extractAuthenticationFromAuthorizationHeader(String username, String terminalCode, String authorizationHeader) {
         AbstractAuthenticationToken authToken = null;
         for (Iterator<AuthenticationConverter> iterator = authenticationConverters.iterator(); iterator.hasNext(); ) {
             AuthenticationConverter converter = iterator.next();
-            authToken = converter.convertByHeader(terminalCode, authorizationHeader);
+            authToken = converter.convertByHeader(username, terminalCode, authorizationHeader);
             if (null != authToken) {
                 break;
             }

@@ -25,7 +25,7 @@ public class UserService {
     }
 
     public Optional<User> loadUserByUsername(String username, String terminalCode) {
-        if (!"reza".equals(username) || !"MB".equalsIgnoreCase(terminalCode)) {
+        if (!"reza".equals(username) || !"IB".equalsIgnoreCase(terminalCode)) {
             return Optional.empty();
         }
         User user = new User();

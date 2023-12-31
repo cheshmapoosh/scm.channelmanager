@@ -23,7 +23,7 @@ public class BearerTokenResolver implements AuthenticationConverter {
             Pattern.CASE_INSENSITIVE);
 
     @Override
-    public BearerAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public BearerAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }
@@ -38,7 +38,7 @@ public class BearerTokenResolver implements AuthenticationConverter {
             }
 
             BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(
-                    terminalCode, authorizationHeaderToken);
+                    username, terminalCode, authorizationHeaderToken);
 //            authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
 

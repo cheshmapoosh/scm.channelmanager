@@ -46,10 +46,11 @@ public class RestMessageParser {
         header.setService(channelAccess);
         header.setContentType(CamelUtils.getContentTypeHeaderFromExchange(exchange));
 
+        String username = CamelUtils.getUsernameHeaderFromExchange(exchange);
         String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(exchange);
         String terminalHeader = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
         UserAuthentication authentication = authenticationClientTemplate
-                            .extractAuthenticationFromAuthorizationHeader(terminalHeader, authorizationHeader);
+                            .extractAuthenticationFromAuthorizationHeader(username, terminalHeader, authorizationHeader);
         header.setAuthentication(authentication);
 
         header.setClientCorrelationId(exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CLIENT_CORRELATION_ID, String.class));

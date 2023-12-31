@@ -18,11 +18,11 @@ public class AnonymousAuthenticationConverter extends org.springframework.securi
 
     public AnonymousAuthenticationToken convertByHttpRequest(String terminalCode, HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        return convertByHeader(terminalCode, header);
+        return convertByHeader(null, terminalCode, header);
     }
 
     @Override
-    public AnonymousAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public AnonymousAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (StringUtils.isNotEmpty(authorizationHeader)) {
             return null;
         }

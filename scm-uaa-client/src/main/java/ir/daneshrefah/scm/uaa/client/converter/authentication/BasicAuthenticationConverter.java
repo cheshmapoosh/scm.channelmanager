@@ -16,7 +16,7 @@ public class BasicAuthenticationConverter extends org.springframework.security.w
         implements AuthenticationConverter {
 
     @Override
-    public BasicAuthenticationToken convertByHeader(String terminalCode, String authorizationHeader) {
+    public BasicAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         return null;
 //        TODO this converter should work over request parameters instead of authorization header
         /*if (StringUtils.isEmpty(terminalCode) || StringUtils.isNotEmpty(authorizationHeader)) {

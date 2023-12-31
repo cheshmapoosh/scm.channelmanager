@@ -101,8 +101,9 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        String username = null;//todo
         String terminalCode = null;//todo
-        BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(terminalCode, token);
+        BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(username, terminalCode, token);
         authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
         try {

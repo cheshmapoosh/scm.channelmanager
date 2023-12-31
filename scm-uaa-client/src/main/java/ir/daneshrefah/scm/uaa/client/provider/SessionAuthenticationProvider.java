@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,6 +14,7 @@ import org.springframework.security.core.AuthenticationException;
  * @version 1.0
  * @since 2023-12-19
  */
+@Component
 public class SessionAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
 
@@ -22,7 +24,11 @@ public class SessionAuthenticationProvider extends AbstractClientAuthenticationP
 
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
-        return null;
+        SessionAuthenticationToken authenticationToken = (SessionAuthenticationToken) authentication;
+        String terminalCode = authenticationToken.getTerminalCode();
+        String sessionId = authenticationToken.getSessionId();
+        UserAuthentication userAuthentication = getSessionCache().getSessionFromCache(username, terminalCode);
+        return userAuthentication;
     }
 
     @Override

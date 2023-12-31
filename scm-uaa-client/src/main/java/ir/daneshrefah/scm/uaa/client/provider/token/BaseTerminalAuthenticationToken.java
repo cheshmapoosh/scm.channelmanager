@@ -14,6 +14,7 @@ import java.util.Collection;
  */
 public abstract class BaseTerminalAuthenticationToken extends BaseAuthenticationToken {
 
+    private String username;
     private String terminalCode;
 
     /**
@@ -22,14 +23,24 @@ public abstract class BaseTerminalAuthenticationToken extends BaseAuthentication
      * @param authorities the collection of <tt>GrantedAuthority</tt>s for the principal
      *                    represented by this authentication object.
      */
-    public BaseTerminalAuthenticationToken(String terminalCode, Collection<? extends GrantedAuthority> authorities) {
+    public BaseTerminalAuthenticationToken(String username, String terminalCode, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
 //        Assert.hasText(terminalCode, "terminalCode cannot be empty");
+        this.username = username;
         this.terminalCode = terminalCode;
     }
 
     public String getTerminalCode() {
         return terminalCode;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    public Object getPrincipal() {
+        return this.getUsername();
     }
 
 }

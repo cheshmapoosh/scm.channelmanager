@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider.token;
 
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.util.Assert;
 
 /**
@@ -15,36 +14,31 @@ import java.util.Collections;
 
 public class SessionAuthenticationToken extends BaseTerminalAuthenticationToken {
 
-    private final String sessionKey;
+    private final String sessionId;
 
     /**
      * Creates a token with the supplied array of authorities.
      *
-     * @param sessionKey
+     * @param sessionId
      *
      */
-    public SessionAuthenticationToken(String terminalCode, String sessionKey) {
-        super(terminalCode, Collections.emptyList());
-        Assert.hasText(sessionKey, "sessionKey cannot be empty");
-        this.sessionKey = sessionKey;
+    public SessionAuthenticationToken(String username, String terminalCode, String sessionId) {
+        super(username, terminalCode, Collections.emptyList());
+        Assert.hasText(sessionId, "sessionKey cannot be empty");
+        this.sessionId = sessionId;
     }
 
-    public String getSessionKey() {
-        return sessionKey;
+    public String getSessionId() {
+        return sessionId;
     }
 
     @Override
     public Object getCredentials() {
-        return this.getSessionKey();
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return this.getSessionKey();
+        return this.getSessionId();
     }
 
     @Override
     public String getId() {
-        return getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
+        return getSessionId() + StringUtils.DOUBLE_COLON + getTerminalCode();
     }
 }

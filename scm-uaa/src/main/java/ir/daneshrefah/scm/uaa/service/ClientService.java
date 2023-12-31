@@ -26,7 +26,7 @@ public class ClientService {
         Client client = new Client();
         client.setId(UUID.randomUUID().toString());
         client.setTitle("Mobile Bank");
-        client.setClientId("mb");
+        client.setClientId("ib");
         client.setClientSecret("{noop}myClientSecretValue");
         client.setAuthenticationMethods((Arrays.asList(ClientAuthenticationMethod.CLIENT_SECRET_BASIC,
                 ClientAuthenticationMethod.CLIENT_SECRET_POST)));
@@ -35,7 +35,7 @@ public class ClientService {
                 AuthorizationGrantType.FIRST_PASSWORD, AuthorizationGrantType.SECOND_PASSWORD));
         client.setRedirectUrls(Arrays.asList("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc",
                 "http://127.0.0.1:8080/authorized"));
-        client.setTerminalCode("MB");
+        client.setTerminalCode("IB");
         client.setScopes(Arrays.asList(OidcScopes.OPENID, OidcScopes.PROFILE));
         client.setRequireAuthorizationConsent(true);
         client.setRequireClientAuthentication(false);

@@ -18,7 +18,7 @@ public class BasicAuthenticationToken extends BaseTerminalAuthenticationToken {
     private final Object credentials;
 
     public BasicAuthenticationToken(String terminalCode, Object principal, Object credentials) {
-        super(terminalCode, Collections.emptyList());
+        super((String) principal, terminalCode, Collections.emptyList());
         this.principal = principal;
         this.credentials = credentials;
     }
@@ -30,11 +30,6 @@ public class BasicAuthenticationToken extends BaseTerminalAuthenticationToken {
     @Override
     public Object getCredentials() {
         return this.credentials;
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return this.principal;
     }
 
     @Override
