@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class UserCache implements org.springframework.security.core.userdetails.UserCache {
 
     private final CacheTemplate cacheTemplate;
-    private static final String USER_CACHE_NAME = "";
+    private static final String USER_CACHE_NAME = "user_cache";
 
     public UserCache(CacheTemplate cacheTemplate) {
         this.cacheTemplate = cacheTemplate;

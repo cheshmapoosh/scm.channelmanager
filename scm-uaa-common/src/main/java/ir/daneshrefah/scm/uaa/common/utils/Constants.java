@@ -23,8 +23,8 @@ public class Constants {
     public final static String CLAIM_KEY_TERMINAL = "trm";
     public final static String CLAIM_KEY_GRANT = "grn";
     public final static String CLAIM_KEY_SESSION = "sni";
-    public final static String CLAIM_KEY_LOGIN_AUTH_METHOD = "fam";
-    public final static String CLAIM_KEY_TRANSACTION_AUTH_METHOD = "sam";
+    public final static String CLAIM_KEY_LOGIN_AUTH_METHOD = "lam";
+    public final static String CLAIM_KEY_TRANSACTION_AUTH_METHOD = "tam";
     public final static String CLAIM_KEY_AUTHORITIES = "aut";
     public final static String CLAIM_KEY_ACCESS_PARAMETER = "acp";
 
@@ -33,6 +33,7 @@ public class Constants {
     public final static String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
     public final static String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
     public final static String OAUTH2_PARAM_NAME_USER_USERNAME = "user_username";
+    public final static String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
 
     public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
 

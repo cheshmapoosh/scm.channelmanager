@@ -13,4 +13,10 @@ public interface IAuthenticationHeader extends Serializable {
 
     public String getUsername();
 
+    public boolean isAnonymous();
+
+    public boolean isAuthenticated();
+
+    public boolean hasAuthority(String authorityName);
+
 }

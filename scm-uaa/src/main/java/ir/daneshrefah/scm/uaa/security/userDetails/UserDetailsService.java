@@ -68,7 +68,8 @@ public class UserDetailsService {
     }
 
     protected List<GrantedAuthority> loadUserAuthorities(String username, String terminalCode) {
-        return Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+        return Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"),
+                new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 
     protected List<GrantedAuthority> loadGroupAuthorities(String username, String terminalCode) {

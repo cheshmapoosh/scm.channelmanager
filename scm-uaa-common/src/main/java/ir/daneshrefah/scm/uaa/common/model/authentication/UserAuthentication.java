@@ -30,6 +30,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
     private Object loginData;
     private String loginAccessParameter;
     private String sessionId;
+    private String clientId;
 
     /**
      * Creates a token with the supplied array of authorities.

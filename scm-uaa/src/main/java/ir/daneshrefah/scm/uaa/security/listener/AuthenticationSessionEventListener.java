@@ -42,6 +42,7 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         userAuthentication.setIssuedAt(authentication.getIssuedAt());
         userAuthentication.setExpiresAt(authentication.getExpiresAt());
         userAuthentication.setSessionId(sessionId);
+        userAuthentication.setClientId(authentication.getPreAuthenticationToken().getClientId());
         userAuthentication.setAuthenticated(true);
 //        userAuthentication.setLoginData(authentication.get);
         sessionCache.putSessionInCache(userAuthentication);

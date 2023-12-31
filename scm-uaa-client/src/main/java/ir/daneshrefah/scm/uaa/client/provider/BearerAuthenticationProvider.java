@@ -2,12 +2,17 @@ package ir.daneshrefah.scm.uaa.client.provider;
 
 import ir.daneshrefah.scm.uaa.client.converter.token.TokenConverter;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
+
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
  * Description of the class or purpose of the file.
@@ -30,25 +35,32 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
     }
 
-    /*@Override
-    public AuthenticationHeader authenticate(Authentication authentication) throws AuthenticationException {
-        BearerTokenAuthenticationToken bearer = (BearerTokenAuthenticationToken) authentication;
-        Jwt jwt = getJwt(bearer);
-        AbstractAuthenticationToken token = this.jwtAuthenticationConverter.convert(jwt);
-        if (token.getDetails() == null) {
-            token.setDetails(bearer.getDetails());
-        }
-        return token;
-    }*/
-
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         BearerAuthenticationToken bearer = (BearerAuthenticationToken) authentication;
         UserAuthentication userAuthentication = jwtAuthenticationConverter.convert(bearer.getToken());
-//        AbstractAuthenticationToken token = this.jwtAuthenticationConverter.convert(jwt);
+        validateUserAuthentication(authentication, userAuthentication);
+        if (StringUtils.isNotEmpty(userAuthentication.getSessionId())) {
+            String sessionKey = userAuthentication.getUsername() + StringUtils.DOUBLE_COLON +
+                    userAuthentication.getUserDetails().getUser().getTerminalCode();
+            userAuthentication = getSessionCache().getSessionFromCache(sessionKey);
+        }
+
         return userAuthentication;
     }
 
+    private void validateUserAuthentication(BaseAuthenticationToken authentication, UserAuthentication userAuthentication) {
+        if (null == userAuthentication) {
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
+        }
+        String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
+        String authenticationTerminalCode = userAuthentication.getUserDetails().getUser().getTerminalCode();
+//        TODO must be enable
+        /*if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
+        }*/
+
+    }
 
 
     @Override
