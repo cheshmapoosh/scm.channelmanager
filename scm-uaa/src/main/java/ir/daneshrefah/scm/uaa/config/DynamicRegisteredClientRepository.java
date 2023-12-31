@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.uaa.common.model.UaaConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
 
 
 /**

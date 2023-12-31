@@ -1,16 +1,14 @@
 package ir.daneshrefah.scm.uaa.security.converter;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import jakarta.servlet.http.HttpServletRequest;
-import ir.daneshrefah.scm.uaa.common.model.UaaConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -21,6 +19,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -30,7 +30,6 @@ import java.util.Set;
  */
 public class FirstPasswordGrantAuthenticationConverter implements AuthenticationConverter {
 
-    private static final String DEFAULT_ERROR_URI = "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1";
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -67,11 +66,11 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
                     Arrays.asList(StringUtils.delimitedListToStringArray(scope, " ")));
         }
 
-        //Claim Code
-        String claimCode = request.getHeader(UaaConstants.OTP_HEADER);
-
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal, scopes);
-        preAuthenticationToken.setClaimCode(claimCode);
+        preAuthenticationToken.setClaimCode(request.getHeader(Constants.LOGIN_HEADER_OTP_CODE));
+        preAuthenticationToken.setClientVersion(request.getHeader(Constants.LOGIN_HEADER_CLIENT_VERSION));
+        preAuthenticationToken.setClientSignature(request.getHeader(Constants.LOGIN_HEADER_CLIENT_SIGNATURE));
+        preAuthenticationToken.setActivationCode(request.getHeader(Constants.LOGIN_HEADER_ACTIVATION_CODE));
         return preAuthenticationToken;
     }
 
@@ -86,15 +85,6 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
             }
         });
         return parameters;
-    }
-
-    private static void throwError(String errorCode, String parameterName) {
-        throwError(errorCode, parameterName, DEFAULT_ERROR_URI);
-    }
-
-    private static void throwError(String errorCode, String parameterName, String errorUri) {
-        OAuth2Error error = new OAuth2Error(errorCode, "OAuth 2.0 Parameter: " + parameterName, errorUri);
-        throw new OAuth2AuthenticationException(error);
     }
 
 }

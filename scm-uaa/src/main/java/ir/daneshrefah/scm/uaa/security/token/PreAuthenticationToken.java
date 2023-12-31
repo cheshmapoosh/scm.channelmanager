@@ -30,6 +30,15 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     private Authentication clientPrincipal;
     @Getter
     private final Set<String> scopes;
+    @Getter
+    @Setter
+    private String clientVersion;
+    @Getter
+    @Setter
+    private String clientSignature;
+    @Getter
+    @Setter
+    private String activationCode;
 
     public PreAuthenticationToken(String username, String password, AuthorizationGrantType grantType,
                                   Authentication clientPrincipal, Set<String> scopes) {

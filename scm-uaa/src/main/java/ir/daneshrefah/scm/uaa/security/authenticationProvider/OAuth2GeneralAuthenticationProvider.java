@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 
+import ir.daneshrefah.scm.uaa.domain.client.Client;
+import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -8,6 +10,7 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.service.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -20,12 +23,16 @@ import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import static ir.daneshrefah.scm.uaa.common.model.UaaConstants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import java.util.Optional;
+
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 
 /**
@@ -45,6 +52,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
     private final UserDetailsService userDetailsService;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
     private final AuthenticationResponseTokenGenerator responseTokenGenerator;
+    private final ClientService clientService;
 
 
     @Override
@@ -57,6 +65,8 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         if (this.logger.isTraceEnabled()) {
             this.logger.trace("Retrieved registered client");
         }
+
+        checkClientRequirementsElseThrowInvalidClient(registeredClient, preAuthenticationToken);
 
         final String terminalCode = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
@@ -115,7 +125,27 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
                 terminalCode;
     }
 
+    private void checkClientRequirementsElseThrowInvalidClient(RegisteredClient registeredClient,
+                                                               PreAuthenticationToken preAuthenticationToken) {
+        if (null == registeredClient) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        }
+        Client client = clientService.findByClientId(registeredClient.getClientId());
+        if (!client.isCheckVersion()) {
+            return;
+        }
+        Optional<ClientVersion> clientVersion = client.getVersions().stream()
+                .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
+                .findFirst();
 
+        if (clientVersion.isEmpty()) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        }
+        if (null != clientVersion.get().getSignature() &&
+                !clientVersion.get().getSignature().equals(preAuthenticationToken.getClientSignature())) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        }
+    }
 
     private static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(PreAuthenticationToken authentication) {
         OAuth2ClientAuthenticationToken clientPrincipal = null;

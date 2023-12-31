@@ -29,6 +29,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
     private Duration maxIdle;
     private Object loginData;
     private String loginAccessParameter;
+    private String sessionId;
 
     /**
      * Creates a token with the supplied array of authorities.

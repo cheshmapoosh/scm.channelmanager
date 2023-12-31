@@ -40,7 +40,7 @@ public class JwtTokenConverter implements TokenConverter<String> {
         String username = StringUtils.isNotEmpty(jwt.getSubject()) ? jwt.getSubject() : clientId;
         Instant issuedAt = jwt.getIssuedAt();
         Instant expiresAt = jwt.getExpiresAt();
-        String terminalCode = jwt.getClaimAsString(Constants.JWT_CLAIM_NAME_TERMINAL);
+        String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);
         Collection<GrantedAuthority> authorities = Collections.emptyList();
 
         User user = new User();
@@ -50,7 +50,7 @@ public class JwtTokenConverter implements TokenConverter<String> {
         TerminalUserDetails userDetails = new TerminalUserDetails(user);
         UserAuthentication result = new UserAuthentication(userDetails, authorities);
         result.setIssuer(issuer.toString());
-        result.setUsername(username);
+//        result.setUsername(username);
         result.setIssuedAt(issuedAt);
         result.setExpiresAt(expiresAt);
         result.setAuthenticated(true);

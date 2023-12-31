@@ -22,6 +22,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
     implementation 'org.springframework.security:spring-security-core'
     implementation 'org.springframework.security:spring-security-web'
+    implementation 'org.springframework.security:spring-security-oauth2-core'
     api project(':scm-common')
     api project(':scm-cache-client')
 }

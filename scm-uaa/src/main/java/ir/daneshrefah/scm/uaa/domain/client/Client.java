@@ -28,6 +28,8 @@ public class Client {
     private List<String> scopes;
     private boolean requireAuthorizationConsent;
     private boolean requireProofKey;
-
+    private boolean checkVersion;
+    private boolean checkActivation;
+    private List<ClientVersion> versions;
 
 }

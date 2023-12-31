@@ -5,17 +5,13 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import ir.daneshrefah.scm.uaa.common.model.UaaConstants;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UaaScopes;
-import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -31,8 +27,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Objects;
-import java.util.Optional;
+
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_GRANT;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_TERMINAL;
 
 
 @Configuration
@@ -67,8 +64,8 @@ public class JWTConfig {
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 String terminalCode = principal.getDetails().getUser().getTerminalCode();
-                claims.claim(UaaConstants.TERMINAL_TAG,terminalCode);
-                claims.claim(UaaConstants.GRANT_TYPE_TAG,principal.getPreAuthenticationToken().getGrantType());
+                claims.claim(CLAIM_KEY_TERMINAL,terminalCode);
+                claims.claim(CLAIM_KEY_GRANT,principal.getPreAuthenticationToken().getGrantType());
                 String sessionKey = principal.getSessionKey();
                 if(StringUtils.isNotEmpty(sessionKey))
                     claims.claim(UaaScopes.SESSION_KEY_SCOPE.getScopeCode(), sessionKey);
