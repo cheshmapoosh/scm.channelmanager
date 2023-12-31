@@ -11,6 +11,7 @@ public class Constants {
 
     public static final String DEFAULT_ERROR_URI = "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1";
 
+    public final static String LOGIN_HEADER_CLIENT_ID = "x-client-id";
     public final static String LOGIN_HEADER_OTP_CODE = "x-otp-code";
     public final static String LOGIN_HEADER_ACTIVATION_CODE = "RegistryToken";
     public final static String LOGIN_HEADER_CLIENT_SIGNATURE = "Signature";
@@ -19,8 +20,21 @@ public class Constants {
 
     public static final String CLIENT_SETTING_KEY_TERMINAL_CODE = "terminalCode";
 
-    public final static String CLAIM_KEY_TERMINAL = "terminal";
-    public final static String CLAIM_KEY_GRANT = "grant";
+    public final static String CLAIM_KEY_TERMINAL = "trm";
+    public final static String CLAIM_KEY_GRANT = "grn";
+    public final static String CLAIM_KEY_SESSION = "sni";
+    public final static String CLAIM_KEY_LOGIN_AUTH_METHOD = "fam";
+    public final static String CLAIM_KEY_TRANSACTION_AUTH_METHOD = "sam";
+    public final static String CLAIM_KEY_AUTHORITIES = "aut";
+    public final static String CLAIM_KEY_ACCESS_PARAMETER = "acp";
+
+
+    public final static String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
+    public final static String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
+    public final static String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
+    public final static String OAUTH2_PARAM_NAME_USER_USERNAME = "user_username";
+
+    public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
 
 //    public final static String CHANNEL_HEADER ="Channel";
 //    public final static String AGENT_HEADER ="Agent";

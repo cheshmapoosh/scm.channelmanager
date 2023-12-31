@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.time.Instant;
 import java.util.Collection;
 
 /**
@@ -20,7 +21,13 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     private final AuthenticationStatus authenticationStatus;
     @Getter
     @Setter
-    private String sessionKey;
+    private String sessionId;
+    @Getter
+    @Setter
+    private Instant issuedAt;
+    @Getter
+    @Setter
+    private Instant expiresAt;
 
     protected PostAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                       AuthenticationStatus authenticationStatus) {

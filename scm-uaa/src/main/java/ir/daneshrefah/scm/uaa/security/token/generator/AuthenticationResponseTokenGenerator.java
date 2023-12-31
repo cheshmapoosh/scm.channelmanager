@@ -25,7 +25,9 @@ import java.util.Set;
 public class AuthenticationResponseTokenGenerator {
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
 
-    public OAuth2AccessTokenAuthenticationToken getAccessToken(Authentication authentication, OAuth2ClientAuthenticationToken clientPrincipal, RegisteredClient registeredClient, GeneralAuthenticationToken authorization) {
+    public OAuth2AccessTokenAuthenticationToken getAccessToken(Authentication authentication, Authentication clientPrincipal,
+                                                               RegisteredClient registeredClient,
+                                                               GeneralAuthenticationToken authorization) {
         Set<String> scopes = authorization.getPreAuthenticationToken().getScopes();
         DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
                 .registeredClient(registeredClient)

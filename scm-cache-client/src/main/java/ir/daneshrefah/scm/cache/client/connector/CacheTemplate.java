@@ -9,7 +9,7 @@ public interface CacheTemplate {
 
     void putInCache(String mapName, String key, Object value);
 
-    void putInCache(String mapName, String key, Object value, int timeToLiveSeconds);
+    void putInCache(String mapName, String key, Object value, long timeToLiveMinutes);
 
     Object removeFromCache(String mapName, String key);
 

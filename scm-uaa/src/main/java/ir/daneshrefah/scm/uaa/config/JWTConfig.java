@@ -27,9 +27,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Optional;
 
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_GRANT;
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_TERMINAL;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 
 @Configuration
@@ -66,10 +66,14 @@ public class JWTConfig {
                 String terminalCode = principal.getDetails().getUser().getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL,terminalCode);
                 claims.claim(CLAIM_KEY_GRANT,principal.getPreAuthenticationToken().getGrantType());
-                String sessionKey = principal.getSessionKey();
-                if(StringUtils.isNotEmpty(sessionKey))
-                    claims.claim(UaaScopes.SESSION_KEY_SCOPE.getScopeCode(), sessionKey);
-
+                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, principal.getDetails().getUser().getLoginAuthenticationMethod());
+                claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
+                        Optional.ofNullable(principal.getDetails().getUser().getTransactionAuthenticationMethod()).map(Object::toString).orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
+                claims.claim(CLAIM_KEY_AUTHORITIES, principal.getDetails().getAuthorities().toString());
+                String sessionKey = principal.getSessionId();
+                if (StringUtils.isNotEmpty(sessionKey)) {
+                    claims.claim(CLAIM_KEY_SESSION, sessionKey);
+                }
             }
         };
     }

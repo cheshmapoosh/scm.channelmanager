@@ -28,8 +28,8 @@ public class CacheTemplateImpl implements CacheTemplate {
     }
 
     @Override
-    public void putInCache(String mapName, String key, Object value, int timeToLiveSeconds) {
-        hazelcastInstance.getMap(mapName).put(key, value, timeToLiveSeconds, TimeUnit.SECONDS);
+    public void putInCache(String mapName, String key, Object value, long timeToLiveMinutes) {
+        hazelcastInstance.getMap(mapName).put(key, value, timeToLiveMinutes, TimeUnit.MINUTES);
     }
 
     @Override

@@ -27,9 +27,11 @@ public class Client {
     private String terminalCode;
     private List<String> scopes;
     private boolean requireAuthorizationConsent;
+    private boolean requireClientAuthentication;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
     private List<ClientVersion> versions;
+    private Long sessionTimeToLive;
 
 }

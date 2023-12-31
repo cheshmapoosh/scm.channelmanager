@@ -24,7 +24,7 @@ public class UserService {
     }
 
     public Optional<User> loadUserByUsername(String username, String terminalCode) {
-        if (!"reza".equals(username) || !"IB".equalsIgnoreCase(terminalCode)) {
+        if (!"reza".equals(username) || !"MB".equalsIgnoreCase(terminalCode)) {
             return Optional.empty();
         }
         User user = new User();
@@ -33,6 +33,7 @@ public class UserService {
         user.setFirstPassword("427fb3b98395b962e15831b75c88ad7f");
         user.setActive(true);
         user.setLoginAuthenticationMethod(AuthenticationMethod.STATIC_PASSWORD);
+        user.setTransactionAuthenticationMethod(AuthenticationMethod.STATIC_PASSWORD);
         return Optional.of(user);
     }
 

@@ -38,8 +38,10 @@ public class ClientService {
         client.setTerminalCode("MB");
         client.setScopes(Arrays.asList(OidcScopes.OPENID, OidcScopes.PROFILE));
         client.setRequireAuthorizationConsent(true);
+        client.setRequireClientAuthentication(false);
         client.setCheckVersion(true);
         client.setCheckActivation(true);
+        client.setSessionTimeToLive(15L);
         client.setVersions(Arrays.asList(
                 new ClientVersion("MB-3.3.4",
                         "DF2A4EB3A644FE1F43DFBD9D818991B8262AD45982D5A9BD81A1D5CDB0EA0A0A132ADF9AC3097E07734942817A0A6CE32155F106C6D613999412A266B0A6B0A4",

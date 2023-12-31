@@ -41,11 +41,11 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
 
         AbstractExternalServiceProvider provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
                 AbstractExternalServiceProvider.class, serviceProviderModel);
-        provider.setExternalServiceProvider(serviceProviderModel);
         if (null == provider) {
 //            LOGGER.warn("error on create instance of '{}' provider with className '{}'", componentName, componentClassName);
             return;
         }
+        provider.setExternalServiceProvider(serviceProviderModel);
         provider.initServerConfigs();
         serviceProviderMap.put(serviceProviderModel.getCode(), provider);
 //        LOGGER.info("provider '{}' successfully added to context with '{}' class and '{}' metadata", componentName,

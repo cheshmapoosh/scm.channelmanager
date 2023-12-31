@@ -32,35 +32,31 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         if (!authentication.isSessionRequired()) {
             return;
         }
-        authentication.setSessionKey(generateSessionKey(
-                authentication.getName(), null,
-                authentication.getTerminalCode()));
+        String sessionId = generateSessionId(
+                authentication.getName(), authentication.getTerminalCode());
+        authentication.setSessionId(sessionId);
+//        authentication.set(sessionId);
         UserAuthentication userAuthentication = new UserAuthentication(authentication.getDetails(),
                 authentication.getAuthorities());
 //        userAuthentication.setIssuer(issuer.toString());
-//        userAuthentication.setUsername(authentication.getName());
-//        userAuthentication.setIssuedAt(issuedAt);
-//        userAuthentication.setExpiresAt(expiresAt);
+        userAuthentication.setIssuedAt(authentication.getIssuedAt());
+        userAuthentication.setExpiresAt(authentication.getExpiresAt());
+        userAuthentication.setSessionId(sessionId);
         userAuthentication.setAuthenticated(true);
-//        userAuthentication.setLoginData(jwt);
-        sessionCache.putSessionInCache(authentication.getSessionKey(), userAuthentication);
+//        userAuthentication.setLoginData(authentication.get);
+        sessionCache.putSessionInCache(userAuthentication);
     }
 
-    private String generateSessionKey(String username, String delegator, String terminalCode) {
+    private String generateSessionId(String name, String terminalCode) {
+        return UUID.randomUUID().toString();
+    }
+
+    private String generateSessionKey(String username, String terminalCode) {
         LOGGER.debug("Generating sessionKey for user: " + username);
-        boolean delegatorNotEmpty = StringUtils.isNotEmpty(delegator);
-        String mainUser = delegatorNotEmpty ? delegator : username;
-        String secondaryUser = delegatorNotEmpty ? username : null;
-        String plainSession = mainUser
+        String result = username
                 .concat(StringUtils.DOUBLE_COLON)
-                .concat(Optional.ofNullable(secondaryUser).orElse("null"))
-                .concat(StringUtils.DOUBLE_COLON)
-                .concat(terminalCode)
-                .concat(StringUtils.DOUBLE_COLON)
-                .concat(UUID.randomUUID().toString());
-        byte[] encodedBytes = Base64.getEncoder().encode(plainSession.getBytes());
-        String encodedSession = new String(encodedBytes);
-        return encodedSession;
+                .concat(terminalCode);
+        return result;
     }
 
 }

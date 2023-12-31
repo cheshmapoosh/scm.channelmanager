@@ -1,12 +1,14 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
+import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
@@ -15,6 +17,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -22,12 +25,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
 import java.util.Optional;
 
@@ -53,22 +56,28 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
     private final AuthenticationResponseTokenGenerator responseTokenGenerator;
     private final ClientService clientService;
+    private final RegisteredClientRepository clientRepository;
 
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         PreAuthenticationToken preAuthenticationToken = (PreAuthenticationToken) authentication;
-        OAuth2ClientAuthenticationToken clientPrincipal =
+        Authentication clientPrincipal =
                 getAuthenticatedClientElseThrowInvalidClient(preAuthenticationToken);
-        RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
+        if (null != clientPrincipal && clientPrincipal instanceof OAuth2ClientAuthenticationToken) {
+            preAuthenticationToken.setRegisteredClient(((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient());
+        } else {
+            preAuthenticationToken.setRegisteredClient(clientRepository.findByClientId(preAuthenticationToken.getClientId()));
+        }
 
         if (this.logger.isTraceEnabled()) {
             this.logger.trace("Retrieved registered client");
         }
 
-        checkClientRequirementsElseThrowInvalidClient(registeredClient, preAuthenticationToken);
+        checkClientRequirementsElseThrowInvalidClient(preAuthenticationToken);
 
-        final String terminalCode = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
+        final String terminalCode = preAuthenticationToken.getRegisteredClient()
+                .getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
         boolean cacheWasUsed = true;
         String cacheUserKey = extractCacheUserKey(preAuthenticationToken, terminalCode);
@@ -81,11 +90,11 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
                 this.logger.debug("Failed to find user '" + preAuthenticationToken.getName() + "'");
                 throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
             }
-            Assert.notNull(userDetails, "retrieveUser returned null - a violation of the interface contract");
+//            Assert.notNull(userDetails, "retrieveUser returned null - a violation of the interface contract");
         }
 
         if (userDetails == null) {
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
 
         if (!cacheWasUsed) {
@@ -117,20 +126,31 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             this.logger.trace("authentication completed successfully.");
         }
 
-        return responseTokenGenerator.getAccessToken(authentication, clientPrincipal, registeredClient, authorization);
+        return responseTokenGenerator.getAccessToken(authentication, clientPrincipal,
+                preAuthenticationToken.getRegisteredClient(), authorization);
 
     }
+
     private String extractCacheUserKey(PreAuthenticationToken authenticationToken, String terminalCode) {
         return authenticationToken.getName() + StringUtils.DOUBLE_COLON +
                 terminalCode;
     }
 
-    private void checkClientRequirementsElseThrowInvalidClient(RegisteredClient registeredClient,
-                                                               PreAuthenticationToken preAuthenticationToken) {
+    private void checkClientRequirementsElseThrowInvalidClient(PreAuthenticationToken preAuthenticationToken) {
+        RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
         if (null == registeredClient) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
         }
         Client client = clientService.findByClientId(registeredClient.getClientId());
+
+        if (client.isRequireClientAuthentication()) {
+            Authentication clientAuthentication = preAuthenticationToken.getClientPrincipal();
+            if (null == clientAuthentication || !clientAuthentication.isAuthenticated() ||
+                    clientAuthentication instanceof AnonymousAuthenticationToken) {
+                throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION);
+            }
+        }
+
         if (!client.isCheckVersion()) {
             return;
         }
@@ -138,24 +158,25 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
                 .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
                 .findFirst();
 
-        if (clientVersion.isEmpty()) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        if (clientVersion.isEmpty() || ClientVersionStatus.INVALID.equals(clientVersion.get().getStatus())) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
         }
         if (null != clientVersion.get().getSignature() &&
                 !clientVersion.get().getSignature().equals(preAuthenticationToken.getClientSignature())) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE);
         }
     }
 
-    private static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(PreAuthenticationToken authentication) {
-        OAuth2ClientAuthenticationToken clientPrincipal = null;
-        if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getClientPrincipal().getClass())) {
-            clientPrincipal = (OAuth2ClientAuthenticationToken) authentication.getClientPrincipal();
-        }
-        if (clientPrincipal != null && clientPrincipal.isAuthenticated()) {
-            return clientPrincipal;
-        }
-        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+    private static Authentication getAuthenticatedClientElseThrowInvalidClient(PreAuthenticationToken authentication) {
+        return authentication.getClientPrincipal();
+//        OAuth2ClientAuthenticationToken clientPrincipal = null;
+//        if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getClientPrincipal().getClass())) {
+//            clientPrincipal = (OAuth2ClientAuthenticationToken) authentication.getClientPrincipal();
+//        }
+//        if (clientPrincipal != null && clientPrincipal.isAuthenticated()) {
+//            return clientPrincipal;
+//        }
+//        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
     }
 
     protected UserDetails retrieveUser(String username, String terminalCode)

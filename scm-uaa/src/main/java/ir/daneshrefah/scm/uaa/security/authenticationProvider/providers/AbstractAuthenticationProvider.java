@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.authentication.*;
@@ -14,6 +13,8 @@ import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
+
+import java.time.Instant;
 
 /**
  * Description of the class or purpose of the file.
@@ -67,13 +68,20 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
+        GeneralAuthenticationToken authenticationToken = (GeneralAuthenticationToken) authentication;
+        authenticationToken.getPreAuthenticationToken().getClientPrincipal();
         PostAuthenticationToken result = PostAuthenticationToken.authenticated(
                 (TerminalUserDetails) authentication.getDetails(),
                 ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken(),
                 ((TerminalUserDetails) authentication.getDetails()).getAuthorities());
-        result.setSessionRequired(((AbstractAuthenticationToken) authentication).isSessionRequired());
-        result.setNotificationRequired(((AbstractAuthenticationToken) authentication).isNotificationRequired());
+        result.setSessionRequired(authenticationToken.isSessionRequired());
+        result.setNotificationRequired(authenticationToken.isNotificationRequired());
         result.setDetails(authentication.getDetails());
+        Instant issuedAt = Instant.now();
+        Instant expiresAt = issuedAt.plus(authenticationToken.getPreAuthenticationToken()
+                .getRegisteredClient().getTokenSettings().getAccessTokenTimeToLive());
+        result.setIssuedAt(issuedAt);
+        result.setExpiresAt(expiresAt);
         this.logger.debug("Authenticated user");
         return result;
     }

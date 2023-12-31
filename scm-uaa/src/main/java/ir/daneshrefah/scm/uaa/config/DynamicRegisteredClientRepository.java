@@ -9,8 +9,10 @@ import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,7 +54,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
     public RegisteredClient findByClientId(String clientId) {
         return findAll().stream()
                 .filter(registeredClient -> registeredClient.getClientId().equals(clientId))
-                .findFirst().orElseThrow();
+                .findFirst().orElse(null);
     }
 
     private List<RegisteredClient> findAll() {
@@ -61,7 +63,12 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
         }
 
         return clients.stream().map(client -> {
-            ClientSettings  clientSetting = ClientSettings.builder()
+            Duration accessTokenTimeToLive = null != client.getSessionTimeToLive() ?
+                    Duration.ofMinutes(client.getSessionTimeToLive()) : Duration.ofMinutes(5);
+            TokenSettings tokenSettings = TokenSettings.builder()
+                    .accessTokenTimeToLive(accessTokenTimeToLive)
+                    .build();
+            ClientSettings clientSetting = ClientSettings.builder()
                     .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
                     .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
                     .build();
@@ -69,6 +76,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     .clientId(client.getClientId())
                     .clientSecret(client.getClientSecret())
 //                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
+                    .tokenSettings(tokenSettings)
                     .clientSettings(clientSetting);
             for (Iterator<ClientAuthenticationMethod> iterator = client.getAuthenticationMethods().iterator(); iterator.hasNext(); ) {
                 ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();

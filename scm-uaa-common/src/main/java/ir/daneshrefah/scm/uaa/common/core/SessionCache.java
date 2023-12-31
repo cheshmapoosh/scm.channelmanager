@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.uaa.common.core;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.utils.string.DateUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.InvalidClassException;
 
 /**
  * Description of the class or purpose of the file.
@@ -36,8 +36,10 @@ public class SessionCache {
         return result;
     }
 
-    public void putSessionInCache(String sessionKey, UserAuthentication user) {
-        cacheTemplate.putInCache(DEFAULT_CACHE_NAME, sessionKey, user);
+    public void putSessionInCache(UserAuthentication user) {
+        String sessionKey = user.getUsername() + StringUtils.DOUBLE_COLON + user.getUserDetails().getUser().getTerminalCode();
+        long timeToLiveMinutes = DateUtils.calculateMinutesBetween(user.getIssuedAt(), user.getExpiresAt());
+        cacheTemplate.putInCache(DEFAULT_CACHE_NAME, sessionKey, user, timeToLiveMinutes);
     }
 
     public void removeSessionFromCache(String sessionKey) {

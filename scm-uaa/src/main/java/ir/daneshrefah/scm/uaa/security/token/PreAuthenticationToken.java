@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,7 +30,16 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     @Getter
     private Authentication clientPrincipal;
     @Getter
+    @Setter
+    private RegisteredClient registeredClient;
+    @Getter
     private final Set<String> scopes;
+    /**
+     * if in user authentication time, client doesn't authenticate. user must send client's id
+     * */
+    @Getter
+    @Setter
+    private String clientId;
     @Getter
     @Setter
     private String clientVersion;

@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -66,11 +67,18 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
                     Arrays.asList(StringUtils.delimitedListToStringArray(scope, " ")));
         }
 
-        PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password, AuthorizationGrantType.FIRST_PASSWORD, clientPrincipal, scopes);
+        PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
+                AuthorizationGrantType.FIRST_PASSWORD,
+                clientPrincipal, scopes);
         preAuthenticationToken.setClaimCode(request.getHeader(Constants.LOGIN_HEADER_OTP_CODE));
         preAuthenticationToken.setClientVersion(request.getHeader(Constants.LOGIN_HEADER_CLIENT_VERSION));
         preAuthenticationToken.setClientSignature(request.getHeader(Constants.LOGIN_HEADER_CLIENT_SIGNATURE));
         preAuthenticationToken.setActivationCode(request.getHeader(Constants.LOGIN_HEADER_ACTIVATION_CODE));
+        if (null == clientPrincipal || clientPrincipal instanceof AnonymousAuthenticationToken) {
+            preAuthenticationToken.setClientId(request.getHeader(Constants.LOGIN_HEADER_CLIENT_ID));
+        } else {
+            preAuthenticationToken.setClientId(clientPrincipal.getName());
+        }
         return preAuthenticationToken;
     }
 

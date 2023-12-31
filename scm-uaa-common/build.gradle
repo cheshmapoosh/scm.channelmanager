@@ -24,5 +24,6 @@ dependencies {
     implementation 'org.springframework.security:spring-security-web'
     implementation 'org.springframework.security:spring-security-oauth2-core'
     api project(':scm-common')
+    api project(':scm-utils')
     api project(':scm-cache-client')
 }
