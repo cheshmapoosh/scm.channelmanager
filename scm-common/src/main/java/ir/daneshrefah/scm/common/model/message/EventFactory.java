@@ -24,6 +24,9 @@ public class EventFactory {
             case SERVICE_CALL:
                 event = new ServiceCallEvent(startTime, endTime, error, input, output, isSuccessful);
                 break;
+            case AUTHENTICATION:
+                event = new AuthenticationEvent(startTime, endTime, error, input, output, isSuccessful);
+                break;
         }
         return event;
     }

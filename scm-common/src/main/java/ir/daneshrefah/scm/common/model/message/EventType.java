@@ -10,7 +10,7 @@ package ir.daneshrefah.scm.common.model.message;
  */
 public enum EventType {
 
-    WHOLE("whl"), TRANSFORM("trf"), SERVICE_CALL("scc");
+    WHOLE("whl"), TRANSFORM("trf"), SERVICE_CALL("scc"), AUTHENTICATION("aut");
 
     EventType(String code) {
         this.code = code;

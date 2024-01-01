@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
     public void serialize(Message value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
         gen.writeStringField("status", value.getStatus().name());
+        writeAuthentication(value, gen);
         if (Status.SC_SUCCESS.equals(value.getStatus())) {
             JsonNode payload = value.getPayload();
 //            if (null != payload && payload.isArray()) {
@@ -48,6 +51,18 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         }
         gen.writeObjectField("events", value.getEvents());
         gen.writeObjectField("responseTimestamp", LocalDateTime.now());
+        gen.writeEndObject();
+    }
+
+    private void writeAuthentication(Message value, JsonGenerator gen) throws IOException {
+        UserAuthentication authentication = (UserAuthentication) value.getHeader().getAuthentication();
+        gen.writeFieldName("authentication");
+        gen.writeStartObject();
+        gen.writeStringField("isAuthenticated", String.valueOf(authentication.isAuthenticated()));
+        gen.writeStringField("isAnonymous", String.valueOf(authentication.isAnonymous()));
+        gen.writeStringField("hasError", String.valueOf(authentication.hasError()));
+        gen.writeStringField("username", authentication.getUsername());
+        gen.writeStringField("sessionId", authentication.getSessionId());
         gen.writeEndObject();
     }
 

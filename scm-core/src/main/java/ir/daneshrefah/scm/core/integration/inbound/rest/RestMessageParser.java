@@ -49,6 +49,7 @@ public class RestMessageParser {
         String username = CamelUtils.getUsernameHeaderFromExchange(exchange);
         String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(exchange);
         String terminalHeader = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
+        LocalDateTime authenticationStartTime = LocalDateTime.now();
         UserAuthentication authentication = authenticationClientTemplate
                             .extractAuthenticationFromAuthorizationHeader(username, terminalHeader, authorizationHeader);
         header.setAuthentication(authentication);
@@ -64,6 +65,8 @@ public class RestMessageParser {
         Message message = new Message();
         message.setHeader(header);
         message.setStatus(Status.SC_PROCESSING);
+        message.addAuthenticationEvent(authenticationStartTime, LocalDateTime.now(),
+                authentication.isAuthenticated(), authentication.getException(), authorizationHeader, null);
 
         String contentType = exchange.getMessage().getHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, String.class);
         BodyExtractor bodyExtractor = bodyExtractorMap.get(contentType);

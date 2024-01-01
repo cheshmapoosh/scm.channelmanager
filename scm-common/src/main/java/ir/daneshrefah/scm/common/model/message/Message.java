@@ -90,6 +90,14 @@ public class Message implements Serializable {
         event.setAdditionalInfo(service.getServiceInfo());
 
     }
+
+    public void addAuthenticationEvent(LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful,
+                                    Object error, Object input, Object output) {
+
+        AuthenticationEvent event = (AuthenticationEvent) addEvent(EventType.AUTHENTICATION, startTime, endTime, isSuccessful,
+                error, input, output);
+    }
+
     public Event addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful,
                           Object error, Object input, Object output) {
         if (null == events)
