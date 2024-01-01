@@ -26,6 +26,8 @@ import org.springframework.security.oauth2.server.resource.authentication.Bearer
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -68,16 +70,28 @@ public class RemoteSecurityServiceProvider {
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
 
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
-        int statusCode = response.getStatusCode().value();
+        int statusCode = 0;
+        String responseBody = null;
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
+            statusCode = response.getStatusCode().value();
+            responseBody = response.getBody();
+        } catch (RestClientResponseException e) {
+            logger.warn("response error on remote authenticate for user: " + authentication.getPrincipal(), e);
+            statusCode = e.getStatusCode().value();
+        } catch (RestClientException e) {
+            logger.warn("error on remote authenticate for user: " + authentication.getPrincipal(), e);
+            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
+            e.printStackTrace();
+        }
         boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
                 HttpStatusCode.SC_204.equals(statusCode)*/;
         if (!isAuthenticated) {
             return null;
         }
 //        Jwt jwt = getJwt(response.getBody());
-        return response.getBody();
+        return responseBody;
     }
 
     public BasicAuthenticationToken authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {

@@ -2,10 +2,14 @@ package ir.daneshrefah.scm.uaa.client.core;
 
 import ir.daneshrefah.scm.uaa.client.converter.authentication.*;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.AuthenticationException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -43,9 +47,24 @@ public class AuthenticationClientTemplate {
 //        Authorization: Bearer token
 //        Authorization: Session sessionKey
 
-        org.springframework.security.core.Authentication authResult = this.authenticationManager.authenticate(authToken);
-        ((UserAuthentication) authResult).isAnonymous();
+        org.springframework.security.core.Authentication authResult = null;
+        try {
+            authResult = this.authenticationManager.authenticate(authToken);
+        } catch (AuthenticationException e) {
+            return generateFailAuthentication(authToken, e);
+        }
         return (UserAuthentication) authResult;
+    }
+
+    private UserAuthentication generateFailAuthentication(AbstractAuthenticationToken authToken, AuthenticationException e) {
+        User user = new User();
+        user.setNickName(authToken.getName());
+//        user.setTerminalCode(authToken.);
+        TerminalUserDetails userDetails = new TerminalUserDetails(user);
+        UserAuthentication result = new UserAuthentication(userDetails, Collections.emptyList());
+        result.setAuthenticated(false);
+        result.setException(e);
+        return result;
     }
 
 }

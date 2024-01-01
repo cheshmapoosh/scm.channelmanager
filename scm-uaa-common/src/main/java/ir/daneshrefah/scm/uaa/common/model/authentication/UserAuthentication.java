@@ -31,6 +31,8 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
     private String loginAccessParameter;
     private String sessionId;
     private String clientId;
+    private Exception exception;
+    private String exceptionMessage;
 
     /**
      * Creates a token with the supplied array of authorities.
@@ -63,15 +65,22 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
         return (TerminalUserDetails) getDetails();
     }
 
+    @Override
     public boolean isAnonymous() {
         return hasAuthority("ROLE_ANONYMOUS");
     }
 
+    @Override
     public boolean hasAuthority(String authorityName) {
         Collection<GrantedAuthority> authorities = getAuthorities();
         if (null == authorities || authorities.isEmpty()) {
             return false;
         }
         return getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equals(authorityName));
+    }
+
+    @Override
+    public boolean hasError() {
+        return null != exception;
     }
 }

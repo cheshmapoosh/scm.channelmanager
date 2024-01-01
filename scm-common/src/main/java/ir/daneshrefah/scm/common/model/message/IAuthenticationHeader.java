@@ -19,4 +19,6 @@ public interface IAuthenticationHeader extends Serializable {
 
     public boolean hasAuthority(String authorityName);
 
+    public boolean hasError();
+
 }

@@ -9,8 +9,8 @@ import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -42,7 +42,7 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         String authenticationResult = remoteSecurityServiceProvider.authenticateClient((ClientAuthenticationToken) authentication);
         if (null == authenticationResult) {
-            throw new InternalAuthenticationServiceException(
+            throw new UsernameNotFoundException(
                     "remoteServiceProvider returned null, which is an interface contract violation");
         }
         String accessToken = extractAccessToken(authenticationResult);

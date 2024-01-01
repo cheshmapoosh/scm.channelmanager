@@ -4,7 +4,10 @@ import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,10 +27,21 @@ public class SessionAuthenticationProvider extends AbstractClientAuthenticationP
 
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
-        SessionAuthenticationToken authenticationToken = (SessionAuthenticationToken) authentication;
-        String terminalCode = authenticationToken.getTerminalCode();
-        String sessionId = authenticationToken.getSessionId();
+        SessionAuthenticationToken sessionAuthenticationToken = (SessionAuthenticationToken) authentication;
+        String terminalCode = sessionAuthenticationToken.getTerminalCode();
+        String sessionId = sessionAuthenticationToken.getSessionId();
+        if (StringUtils.isEmpty(username) || StringUtils.equalsIgnoreCase(NONE_PROVIDED_USERNAME, username)) {
+            throw new UsernameNotFoundException("empty username for sessionId: " + sessionId);
+        }
         UserAuthentication userAuthentication = getSessionCache().getSessionFromCache(username, terminalCode);
+        if (null == userAuthentication) {
+            throw new SessionAuthenticationException(String.format("invalid sessionId %s for user %s.",
+                    sessionId, username));
+        }
+        if (!StringUtils.equals(sessionId, userAuthentication.getSessionId())) {
+            throw new SessionAuthenticationException(String.format("invalid sessionId %s for user %s.",
+                    sessionId, username));
+        }
         return userAuthentication;
     }
 

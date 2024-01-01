@@ -28,6 +28,7 @@ import java.io.InvalidClassException;
  */
 public abstract class AbstractClientAuthenticationProvider implements AuthenticationProvider {
 
+    public static final String NONE_PROVIDED_USERNAME = "NONE_PROVIDED";
     protected final Log logger = LogFactory.getLog(getClass());
 
     private final SessionCache sessionCache;
@@ -99,7 +100,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
     }
 
     private String determineUsername(Authentication authentication) {
-        return (authentication.getPrincipal() == null) ? "NONE_PROVIDED" : authentication.getName();
+        return (authentication.getPrincipal() == null) ? NONE_PROVIDED_USERNAME : authentication.getName();
     }
 
     protected abstract UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication)

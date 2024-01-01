@@ -2,7 +2,7 @@ Endpoints ===========================================================
 
 http://127.0.0.1:8000/.well-known/oauth-authorization-server
 
-Client Credential ===================================================
+Server Client Credential ===================================================
 
 url: http://127.0.0.1:8000/oauth2/token
 http-method:POST
@@ -38,7 +38,7 @@ Token: OAuth2ClientCredentialsAuthenticationToken
 AuthenticationProvider: OAuth2ClientCredentialsAuthenticationProvider
 
 
-First Password ======================================================
+Server First Password ======================================================
 
 url: http://127.0.0.1:8000/oauth2/token
 http-method:POST
@@ -62,7 +62,7 @@ Converter: FirstPasswordGrantAuthenticationConverter
 Token: PreAuthenticationToken
 AuthenticationProvider: OAuth2GeneralAuthenticationProvider
 
-Authorization Code ==================================================
+Server Authorization Code ==================================================
 
 sample authorization code start url:
 1) redirect to uaa server
@@ -77,3 +77,26 @@ body: grant_type=authorization_code & code & redirect_uri
 http://127.0.0.1:8000/oauth2/token
 
 
+UAAClient Basic ===============================================================
+
+this method call service client_credential
+
+request shold cotain Authorization Basic Header
+cache key: ClientAuthenticationToken + MD5(username + password)
+
+
+UAAClient Bearer ==============================================================
+
+request shold contain Authorization Bearer Header
+cache key: MD5(token) + :: + terminalCode
+
+this method verify jwt token and create Authentication from it
+if jwt conatins sessionId claim(sni) it fetch session from sessionCache by 
+
+
+UAAClient Session =============================================================
+
+request shold contain Authorization Session Header
+request shold contain X-SCM-Username Header
+
+cache key: sessionId + :: + terminalCode

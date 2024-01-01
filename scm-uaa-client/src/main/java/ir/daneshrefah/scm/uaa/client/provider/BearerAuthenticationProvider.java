@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Component;
 
 import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
@@ -41,9 +42,12 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
         UserAuthentication userAuthentication = jwtAuthenticationConverter.convert(bearer.getToken());
         validateUserAuthentication(authentication, userAuthentication);
         if (StringUtils.isNotEmpty(userAuthentication.getSessionId())) {
-            String sessionKey = userAuthentication.getUsername() + StringUtils.DOUBLE_COLON +
-                    userAuthentication.getUserDetails().getUser().getTerminalCode();
-            userAuthentication = getSessionCache().getSessionFromCache(sessionKey);
+            String tokenUsername = userAuthentication.getUsername();
+            String tokenTerminalCode = userAuthentication.getUserDetails().getUser().getTerminalCode();
+            userAuthentication = getSessionCache().getSessionFromCache(tokenUsername, tokenTerminalCode);
+            if (null == userAuthentication) {
+                throw new SessionAuthenticationException("invalid session id for user: " + tokenUsername);
+            }
         }
 
         return userAuthentication;
@@ -55,10 +59,9 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
         }
         String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
         String authenticationTerminalCode = userAuthentication.getUserDetails().getUser().getTerminalCode();
-//        TODO must be enable
-        /*if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
+        if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
-        }*/
+        }
 
     }
 
