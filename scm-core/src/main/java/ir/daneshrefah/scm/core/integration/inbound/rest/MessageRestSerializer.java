@@ -63,6 +63,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         gen.writeStringField("hasError", String.valueOf(authentication.hasError()));
         gen.writeStringField("username", authentication.getUsername());
         gen.writeStringField("sessionId", authentication.getSessionId());
+        gen.writeStringField("terminal", authentication.getTerminalCode());
         gen.writeEndObject();
     }
 

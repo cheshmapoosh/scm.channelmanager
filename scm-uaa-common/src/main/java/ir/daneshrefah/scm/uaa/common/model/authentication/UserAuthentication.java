@@ -48,7 +48,18 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
 
     @Override
     public String getUsername() {
+        if (null == getUserDetails()) {
+            return null;
+        }
         return getUserDetails().getUsername();
+    }
+
+    @Override
+    public String getTerminalCode() {
+        if (null == getUserDetails() || null == getUserDetails().getUser()) {
+            return null;
+        }
+        return getUserDetails().getUser().getTerminalCode();
     }
 
     @Override
