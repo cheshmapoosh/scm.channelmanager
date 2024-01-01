@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.web.authentication.AuthenticationConverter;
@@ -46,13 +45,13 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
         String username = parameters.getFirst(OAuth2ParameterNames.USERNAME);
         if (!StringUtils.hasText(username) ||
                 parameters.get(OAuth2ParameterNames.USERNAME).size() != 1) {
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
 
         String password = parameters.getFirst(OAuth2ParameterNames.PASSWORD);
         if (!StringUtils.hasText(password) ||
                 parameters.get(OAuth2ParameterNames.PASSWORD).size() != 1) {
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_PASSWORD);
         }
 
         // scope (OPTIONAL)
@@ -67,18 +66,24 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
                     Arrays.asList(StringUtils.delimitedListToStringArray(scope, " ")));
         }
 
+        String clientId = null;
+        if (null == clientPrincipal || clientPrincipal instanceof AnonymousAuthenticationToken) {
+            clientId = request.getParameter(OAuth2ParameterNames.CLIENT_ID);
+        } else {
+            clientId = clientPrincipal.getName();
+        }
+        if (!StringUtils.hasText(clientId)) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        }
+
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
                 AuthorizationGrantType.FIRST_PASSWORD,
                 clientPrincipal, scopes);
-        preAuthenticationToken.setClaimCode(request.getHeader(Constants.LOGIN_HEADER_OTP_CODE));
-        preAuthenticationToken.setClientVersion(request.getHeader(Constants.LOGIN_HEADER_CLIENT_VERSION));
-        preAuthenticationToken.setClientSignature(request.getHeader(Constants.LOGIN_HEADER_CLIENT_SIGNATURE));
-        preAuthenticationToken.setActivationCode(request.getHeader(Constants.LOGIN_HEADER_ACTIVATION_CODE));
-        if (null == clientPrincipal || clientPrincipal instanceof AnonymousAuthenticationToken) {
-            preAuthenticationToken.setClientId(request.getHeader(Constants.LOGIN_HEADER_CLIENT_ID));
-        } else {
-            preAuthenticationToken.setClientId(clientPrincipal.getName());
-        }
+        preAuthenticationToken.setClaimCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_CLAIM));
+        preAuthenticationToken.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));
+        preAuthenticationToken.setClientSignature(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE));
+        preAuthenticationToken.setActivationCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_REGISTER_CODE));
+        preAuthenticationToken.setClientId(clientId);
         return preAuthenticationToken;
     }
 

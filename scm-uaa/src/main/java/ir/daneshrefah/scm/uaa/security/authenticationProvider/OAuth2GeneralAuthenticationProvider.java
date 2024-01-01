@@ -27,6 +27,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -76,16 +77,16 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
         checkClientRequirementsElseThrowInvalidClient(preAuthenticationToken);
 
-        final String terminalCode = preAuthenticationToken.getRegisteredClient()
+        final String clientTerminalCode = preAuthenticationToken.getRegisteredClient()
                 .getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
         boolean cacheWasUsed = true;
-        String cacheUserKey = extractCacheUserKey(preAuthenticationToken, terminalCode);
+        String cacheUserKey = extractCacheUserKey(preAuthenticationToken, clientTerminalCode);
         UserDetails userDetails = this.userCache.getUserFromCache(cacheUserKey);
         if (userDetails == null) {
             cacheWasUsed = false;
             try {
-                userDetails = retrieveUser(preAuthenticationToken.getName(), terminalCode);
+                userDetails = retrieveUser(preAuthenticationToken.getName(), clientTerminalCode);
             } catch (UsernameNotFoundException ex) {
                 this.logger.debug("Failed to find user '" + preAuthenticationToken.getName() + "'");
                 throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
@@ -102,7 +103,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         }
 
         if (this.logger.isTraceEnabled()) {
-            this.logger.trace("Retrieved userDetails with username: " + preAuthenticationToken.getName() + ":" + terminalCode);
+            this.logger.trace("Retrieved userDetails with username: " + preAuthenticationToken.getName() + ":" + clientTerminalCode);
         }
 
         AbstractAuthenticationToken token = null;
@@ -120,7 +121,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
         GeneralAuthenticationToken authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         if (authorization == null || !authorization.isAuthenticated()) {
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_PASSWORD);
         }
         if (this.logger.isTraceEnabled()) {
             this.logger.trace("authentication completed successfully.");
@@ -139,7 +140,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
     private void checkClientRequirementsElseThrowInvalidClient(PreAuthenticationToken preAuthenticationToken) {
         RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
         if (null == registeredClient) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
         }
         Client client = clientService.findByClientId(registeredClient.getClientId());
 
