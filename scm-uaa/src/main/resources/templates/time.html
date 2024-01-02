@@ -11,17 +11,18 @@
 </head>
 <body>
 <div class="container">
-    <form class="row g-3">
+    <br/>
+    <form th:action="@{/public/tools/time}" th:method="post">
         <div class="col-auto">
-            <label for="staticEmail2" class="visually-hidden">Email</label>
-            <input type="text" readonly class="form-control-plaintext" id="staticEmail2" value="email@example.com">
+            <label for="inputLongTime">Time</label>
+            <input type="text" class="form-control" id="inputLongTime" th:value="*{encodedValue}" name="encodedValue" placeholder="Time as long value">
         </div>
         <div class="col-auto">
-            <label for="inputPassword2" class="visually-hidden">Password</label>
-            <input type="password" class="form-control" id="inputPassword2" placeholder="Password">
+            <button type="submit" class="btn btn-primary mb-3">Convert</button>
         </div>
         <div class="col-auto">
-            <button type="submit" class="btn btn-primary mb-3">Confirm identity</button>
+            <label for="inputLongFormattedTime">Date/Time</label>
+            <input type="text" readonly class="form-control-plaintext" id="inputLongFormattedTime" th:value="*{decodedValue}">
         </div>
     </form>
 </div>

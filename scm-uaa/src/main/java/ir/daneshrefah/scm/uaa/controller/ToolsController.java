@@ -1,8 +1,5 @@
 package ir.daneshrefah.scm.uaa.controller;
 
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,8 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.text.ParseException;
 import java.util.Base64;
+import java.util.Date;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,8 +32,10 @@ public class ToolsController extends BaseController {
     }
 
     @PostMapping("/time")
-    public String decodeTime(@RequestParam String encodedValue, Model model) {
-        model.addAttribute("decodedValue", decodeBase64(encodedValue));
+    public String decodeTime(@RequestParam Long encodedValue, Model model) {
+        model.addAttribute("encodedValue", encodedValue);
+        model.addAttribute("decodedValue", new Date(encodedValue * 1000));
+//        model.addAttribute("decodedValue", Instant.ofEpochSecond(encodedValue));
         return TEMPLATE_NAME_TIME;
     }
 
@@ -61,6 +60,11 @@ public class ToolsController extends BaseController {
 
     @PostMapping("/jwt")
     public String decodeJwt(@RequestParam String encodedValue, Model model) {
+        /*try {
+            JWTParser.parse(encodedValue).getJWTClaimsSet();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }*/
         String decodedString = null;
         final int firstDotPos = encodedValue.indexOf(".");
 
