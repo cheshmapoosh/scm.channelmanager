@@ -1,9 +1,13 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import java.nio.charset.StandardCharsets;
@@ -52,7 +56,29 @@ public class ClientAuthenticationConverter extends org.springframework.security.
         }
         ClientAuthenticationToken result = ClientAuthenticationToken
                 .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
-//TODO        result.setDetails(this.getAuthenticationDetailsSource().buildDetails(request));
+        return result;
+    }
+
+    @Override
+    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
+        if (null == request || !ClientAuthenticationType.BASIC.equals(request.getType())) {
+            return null;
+        }
+
+        String terminalCode = request.getTerminalCode();
+        byte[] base64Token = request.getValue().getBytes(StandardCharsets.UTF_8);
+        byte[] decoded = decode(base64Token);
+        String token = new String(decoded, getCredentialsCharset());
+        int delim = token.indexOf(":");
+        if (delim == -1) {
+            throw new BadCredentialsException("Invalid basic authentication token");
+        }
+        String clientId = token.substring(0, delim);
+        if (StringUtils.isEmpty(terminalCode)) {
+            terminalCode = clientId;
+        }
+        ClientAuthenticationToken result = ClientAuthenticationToken
+                .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
         return result;
     }
 

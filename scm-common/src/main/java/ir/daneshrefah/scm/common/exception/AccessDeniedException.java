@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.exception;
+package ir.daneshrefah.scm.common.exception;
 
 public class AccessDeniedException extends RuntimeException{
 }

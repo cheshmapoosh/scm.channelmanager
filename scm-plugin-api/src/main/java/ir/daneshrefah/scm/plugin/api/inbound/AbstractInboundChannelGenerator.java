@@ -1,18 +1,36 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.error.ErrorReason;
+import ir.daneshrefah.scm.common.model.error.ErrorType;
+import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.EventPhase;
+import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
+import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.utils.constant.Constants;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.AccessLevel;
+import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,28 +41,57 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2023-07-22
  */
-public abstract class AbstractInboundChannelGenerator {
+public abstract class AbstractInboundChannelGenerator<T> {
 
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractInboundChannelGenerator.class);
 
-    protected DecisionManager decisionManager;
-
-    protected Channel channel;
-    protected List<TerminalServiceChannelAccess> channelAccesses;
-    protected ServiceProducerTemplate producerTemplate;
-    protected TransformerService transformerService;
+    @Getter(AccessLevel.PROTECTED)
+    private final ObjectMapper objectMapper;
+    @Getter(AccessLevel.PROTECTED)
+    private final EventProducer eventProducer;
+    @Getter(AccessLevel.PROTECTED)
+    private Channel channel;
+    @Getter(AccessLevel.PROTECTED)
+    private JsonNode metadata;
+    @Getter(AccessLevel.PROTECTED)
+    private List<TerminalServiceChannelAccess> services;
+    private final AuthenticationClientTemplate authenticationTemplate;
+    private final MessageBuilder<T> messageBuilder;
+    private final ResponseBuilder<T> responseBuilder;
+    private final DecisionManager decisionManager;
+    private final ServiceProducerTemplate producerTemplate;
+    private final TransformerService transformerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
-    public final void initInbound(ServiceProducerTemplate producerTemplate,
-                                  DecisionManager decisionManager,
-                                  Channel channel, List<TerminalServiceChannelAccess> channelAccesses,
-                                  TransformerService transformerService) {
+    protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, EventProducer eventProducer,
+                                              AuthenticationClientTemplate authenticationTemplate,
+                                              ServiceProducerTemplate producerTemplate,
+                                              TransformerService transformerService,
+                                              MessageBuilder<T> messageBuilder, ResponseBuilder<T> responseBuilder,
+                                              DecisionManager decisionManager) {
+        this.objectMapper = objectMapper;
+        this.eventProducer = eventProducer;
+        this.authenticationTemplate = authenticationTemplate;
         this.producerTemplate = producerTemplate;
-        this.channel = channel;
-        this.channelAccesses = channelAccesses;
         this.transformerService = transformerService;
-        this.decisionManager = decisionManager;
-        initConfig();
-        for (Iterator<TerminalServiceChannelAccess> iterator = channelAccesses.iterator(); iterator.hasNext(); ) {
+        this.messageBuilder = messageBuilder;
+        this.responseBuilder = responseBuilder;
+        this.decisionManager = null != decisionManager ? decisionManager : new PermitAllDecisionManager();
+    }
+
+    public final boolean initConfig(Channel channel, JsonNode metadata) {
+        this.channel = channel;
+        this.metadata = metadata;
+
+        return initConfig();
+    }
+
+    public abstract boolean initConfig();
+
+    public final boolean registerEndpoints(List<TerminalServiceChannelAccess> services) {
+        this.services = services;
+
+        for (Iterator<TerminalServiceChannelAccess> iterator = services.iterator(); iterator.hasNext(); ) {
             TerminalServiceChannelAccess channelAccess = iterator.next();
             String terminalId = channelAccess.getTerminalServiceAccess().getTerminal().getId();
             List<TransformerRelation> terminalServiceRequestTransformers = transformerService
@@ -58,98 +105,176 @@ public abstract class AbstractInboundChannelGenerator {
                 requestTransformers = terminalServiceRequestTransformers.stream().map(t -> new TransformerExecutionWrapper(t)).collect(Collectors.toList());
                 requestTransformerMap.put(terminalId, requestTransformers);
             }
-            registerTerminalService(channelAccess);
         }
-        finalizeConfig();
+
+        return registerEndpoints();
     }
 
-    private boolean checkServiceCallAllowed(TerminalServiceChannelAccess service, Message message) {
-        decisionManager.decide(service,message);
+    protected abstract boolean registerEndpoints();
+
+    protected final TerminalServiceChannelAccess findService(String terminalCode, String serviceCode) {
+        if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(serviceCode))
+            return null;
+
+        if (null == serviceCode || services.size() < 1)
+            return null;
+
+        return services.stream()
+                .filter(service ->
+                        service.getTerminalServiceAccess().getTerminal().getCode().equals(terminalCode) &&
+                                service.getTerminalServiceAccess().getService().getCode().equals(serviceCode))
+                .findFirst()
+                .orElse(null);
+    }
+
+    protected final Message buildMessage(T input, TerminalServiceChannelAccess service) {
+        Message message = messageBuilder.build(input, service);
+        ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
+        IAuthenticationHeader authentication = authenticateUser(message, authenticationRequest);
+        message.getHeader().setAuthentication(authentication);
+        if (message.getHeader().getAuthentication().hasError()) {
+            message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, Constants.SCM_PARAMETER_AUTHORIZATION,
+                    ErrorReason.IS_INVALID), Status.SC_UNAUTHORIZED);
+            message.setPayload(objectMapper.nullNode());
+        }
+        logIncomingMessage(message);
+        return message;
+    }
+
+    protected final T buildResponse(T input, Message message) {
+        T response = responseBuilder.build(input, message);
+        logOutgoingMessage(message, message.getPayload());
+        return response;
+    }
+
+    protected abstract ClientAuthenticationRequest extractAuthenticationRequest(T input);
+
+    private boolean checkServiceCallAllowed(Message message) {
+        decisionManager.decide(message);
         return true;
     }
 
-    private boolean isServiceSecondAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
-        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
-        Service service = serviceAccess.getTerminalServiceAccess().getService();
-        if (!terminal.getSupportCheckSecondAuthentication()) {
-            return true;
-        }
-        if (!service.getCheckAccessSecondAuthentication()) {
-            return true;
-        }
-//        TODO
-//        3) if second authentication matched return true
-        return true;
+    private final void logIncomingMessage(Message message) {
+        Event event = Event.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .timestamp(Instant.now())
+                .username(null)
+                .type(EventType.INBOUND)
+                .phase(EventPhase.IN)
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .clientId(null)
+                .threadName(Thread.currentThread().getName())
+                .assetIdentifier(null)
+                .sourceIdentifier(getChannel().getCode())
+                .sourceClassName(this.getClass().getSimpleName())
+                .accessParameter(message.getHeader().getAccessParameter())
+                .data(message.getPayload())
+                .serverHost(null)
+                .targetUrl(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+                .clientAgent(message.getHeader().getClientAgent())
+                .clientUrl(message.getHeader().getClientAddress())
+//        private String loginAuthenticationMethod;
+//        private String transactionAuthenticationMethod;
+                .build();
+        getEventProducer().sendEvent(event);
     }
 
-    private boolean checkServiceAccessAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
-        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
-        Service service = serviceAccess.getTerminalServiceAccess().getService();
-        if (!terminal.getSupportCheckServiceAccess()) {
-            return true;
-        }
-        if (!service.getCheckAccessService()) {
-            return true;
-        }
-//        TODO
-//        3) check AccountAccessAuthority of user
-        return true;
+    private final void logOutgoingMessage(Message message, JsonNode response) {
+        Event event = Event.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .timestamp(Instant.now())
+                .username(null)
+                .type(EventType.INBOUND)
+                .phase(EventPhase.OUT)
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .clientId(null)
+                .threadName(Thread.currentThread().getName())
+                .assetIdentifier(null)
+                .sourceIdentifier(getChannel().getCode())
+                .sourceClassName(this.getClass().getSimpleName())
+                .accessParameter(message.getHeader().getAccessParameter())
+                .data(response)
+                .serverHost(null)
+                .targetUrl(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+                .clientAgent(message.getHeader().getClientAgent())
+                .clientUrl(message.getHeader().getClientAddress())
+//        private String loginAuthenticationMethod;
+//        private String transactionAuthenticationMethod;
+                .build();
+        getEventProducer().sendEvent(event);
     }
 
-    private boolean checkServiceAuthenticationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
-        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
-        Service service = serviceAccess.getTerminalServiceAccess().getService();
-        if (!terminal.getSupportCheckAuthentication()) {
-            return true;
-        }
-        if (!service.getCheckAccessFirstAuthentication()) {
-            return true;
-        }
-
-        //TODO uaa check authority
-//        AuthenticationResponse authenticationResponse = (AuthenticationResponse) SecurityContextHolder.getContext().getAuthentication();
-//        AuthorizationDecision decision = AuthorityAuthorizationManager.hasAnyAuthority("").check(() -> authenticationResponse, null);
-//        if (decision != null && !decision.isGranted()) {
-//            throw new AccessDeniedException("Access Denied");
-//        }
-//        TODO
-//        3) if authentication matched return true
-        return true;
+    protected IAuthenticationHeader authenticateUser(Message message, ClientAuthenticationRequest authenticationRequest) {
+        logIncomingAuthentication(message, authenticationRequest);
+        IAuthenticationHeader authentication = authenticationTemplate.authenticateByAuthenticationRequest(
+                authenticationRequest);
+        logOutgoingAuthentication(message, authentication);
+        return authentication;
     }
 
-    private boolean checkAccountAuthorizationAllowed(TerminalServiceChannelAccess serviceAccess, Message message) {
-        Terminal terminal = serviceAccess.getTerminalServiceAccess().getTerminal();
-        Service service = serviceAccess.getTerminalServiceAccess().getService();
-        if (!terminal.getSupportCheckAssetAccess()) {
-            return true;
-        }
-        if (!service.getCheckAccessAsset()) {
-            return true;
-        }
-//        TODO
-//        3) check AccountAccessAuthority of user
-        return true;
+    private void logOutgoingAuthentication(Message message, IAuthenticationHeader authentication) {
+        Event event = Event.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .timestamp(Instant.now())
+                .username(message.getHeader().getUsername())
+                .type(EventType.AUTHENTICATION)
+                .phase(EventPhase.OUT)
+                .terminalCode(message.getHeader().getTerminalCode())
+                .clientId(null)
+                .threadName(Thread.currentThread().getName())
+                .assetIdentifier(null)
+                .sourceIdentifier(getChannel().getCode())
+                .sourceClassName(this.getClass().getSimpleName())
+                .accessParameter(message.getHeader().getAccessParameter())
+                .data(authentication.getUsername())
+                .serverHost(null)
+                .targetUrl(null)
+                .clientAgent(message.getHeader().getClientAgent())
+                .clientUrl(message.getHeader().getClientAddress())
+//        private String loginAuthenticationMethod;
+//        private String transactionAuthenticationMethod;
+                .build();
+        getEventProducer().sendEvent(event);
     }
 
-    private boolean isServiceWithdrawAllowed(TerminalServiceChannelAccess service, Message message) {
-//        for (Iterator<TerminalServiceWithdrawAuthority> iterator = serviceLimitations.iterator(); iterator.hasNext(); ) {
-//            TerminalServiceWithdrawAuthority serviceLimitation = iterator.next();
-//            if (!serviceLimitation.isGranted(service, message))
-//                return false;
-//        }
-        return true;
+    private void logIncomingAuthentication(Message message, ClientAuthenticationRequest authenticationRequest) {
+        Event event = Event.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .timestamp(Instant.now())
+                .username(authenticationRequest.getUsername())
+                .type(EventType.AUTHENTICATION)
+                .phase(EventPhase.IN)
+                .terminalCode(message.getHeader().getTerminalCode())
+                .clientId(null)
+                .threadName(Thread.currentThread().getName())
+                .assetIdentifier(null)
+                .sourceIdentifier(getChannel().getCode())
+                .sourceClassName(this.getClass().getSimpleName())
+                .accessParameter(message.getHeader().getAccessParameter())
+                .data(authenticationRequest.getValue())
+                .serverHost(null)
+                .targetUrl(null)
+                .clientAgent(message.getHeader().getClientAgent())
+                .clientUrl(message.getHeader().getClientAddress())
+//        private String loginAuthenticationMethod;
+//        private String transactionAuthenticationMethod;
+                .build();
+        getEventProducer().sendEvent(event);
     }
 
-    protected abstract void finalizeConfig();
-
-    protected abstract void initConfig();
-
-    protected abstract void registerTerminalService(TerminalServiceChannelAccess channelAccess);
-
-    protected final Message invokeService(TerminalServiceChannelAccess service, Message message) {
-        if (!checkServiceCallAllowed(service, message)) {
+    protected final Message executeService(Message message) {
+        if (!checkServiceCallAllowed(message)) {
+            message.addError(new Error(ErrorType.ACCESS_DENIED, Constants.SCM_PARAMETER_AUTHORIZATION,
+                    ErrorReason.IS_INVALID), Status.SC_ACCESS_DENIED);
+            message.setPayload(objectMapper.nullNode());
             return message;
         }
+
+        TerminalServiceChannelAccess service = message.getHeader().getService();
         List<TransformerExecutionWrapper> transformerRelations = extractRequestTransformerList(service);
         JsonNode payload = message.getPayload();
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
@@ -160,6 +285,7 @@ public abstract class AbstractInboundChannelGenerator {
         }
         message.setPayload(payload);
         producerTemplate.callService(service.getTerminalServiceAccess().getService(), message);
+
         return message;
     }
 

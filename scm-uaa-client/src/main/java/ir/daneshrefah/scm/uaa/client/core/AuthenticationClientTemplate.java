@@ -32,7 +32,20 @@ public class AuthenticationClientTemplate {
     }
 
 
-    public UserAuthentication extractAuthenticationFromAuthorizationHeader(String username, String terminalCode, String authorizationHeader) {
+    public UserAuthentication authenticateByAuthenticationRequest(ClientAuthenticationRequest request) {
+        AbstractAuthenticationToken authToken = null;
+        for (Iterator<AuthenticationConverter> iterator = authenticationConverters.iterator(); iterator.hasNext(); ) {
+            AuthenticationConverter converter = iterator.next();
+            authToken = converter.convertByRequest(request);
+            if (null != authToken) {
+                break;
+            }
+        }
+
+        return authenticateByAuthenticationToken(authToken);
+    }
+
+    public UserAuthentication authenticateByAuthorizationHeader(String username, String terminalCode, String authorizationHeader) {
         AbstractAuthenticationToken authToken = null;
         for (Iterator<AuthenticationConverter> iterator = authenticationConverters.iterator(); iterator.hasNext(); ) {
             AuthenticationConverter converter = iterator.next();
@@ -42,6 +55,10 @@ public class AuthenticationClientTemplate {
             }
         }
 
+        return authenticateByAuthenticationToken(authToken);
+    }
+
+    private UserAuthentication authenticateByAuthenticationToken(AbstractAuthenticationToken authToken) {
 //        Authorization: Basic base64(username:password)
 //        Authorization: Digest username="username", realm="realm", nonce="nonce", uri="uri", response="hash"
 //        Authorization: Bearer token

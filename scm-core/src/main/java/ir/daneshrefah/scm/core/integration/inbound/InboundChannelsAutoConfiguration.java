@@ -1,6 +1,10 @@
 package ir.daneshrefah.scm.core.integration.inbound;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.service.ChannelService;
 import ir.daneshrefah.scm.core.service.TerminalService;
@@ -9,6 +13,7 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -30,27 +35,87 @@ import java.util.List;
  * @since 2023-08-06
  */
 @Configuration
-public class InboundChannelsAutoConfiguration implements ApplicationContextAware {
+public class InboundChannelsAutoConfiguration /*implements ApplicationContextAware */{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InboundChannelsAutoConfiguration.class);
 
     @Autowired
-    private ConfigurableBeanFactory beanFactory;
+    private ObjectMapper objectMapper;
     @Autowired
     private ChannelService channelService;
     @Autowired
     private TerminalService terminalService;
+    /*@Autowired
+    private ConfigurableBeanFactory beanFactory;
     @Autowired
     private ServiceProducerTemplate producerTemplate;
     @Autowired
     private DecisionManager decisionManager;
     @Autowired
     private TransformerService transformerService;
-    private ApplicationContext applicationContext;
+    private ApplicationContext applicationContext;*/
 
     @Bean
     public void registerInboundBeans() {
-        LOGGER.info("=================== start InboundChannelsAutoConfiguration ===================");
+        List<Channel> channels = channelService.findAllChannelList();
+
+        for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
+
+            Channel channel = iterator.next();
+            LOGGER.info("start initialize channel '{}'", channel.getCode());
+            /*TODO query is very slow and should be improved.*/
+            List<TerminalServiceChannelAccess> terminalServiceChannelAccessList = terminalService.
+                    findTerminalServiceChannelAccessByChannelId(channel.getId());
+            LOGGER.info("'{}' terminalService found to register.", terminalServiceChannelAccessList.size());
+            if (terminalServiceChannelAccessList.size() < 1) {
+                LOGGER.info("no terminalService found for channel '{}'. skip initialization.", channel.getCode());
+                continue;
+            }
+
+            /* TODO this section is for test and must be remove */
+//            channel.setProtocol(ChannelProtocol.SPRING_REST);
+//            channel.setMetadata("{\"contextPath\": \"/ib4dev\", \"port\": 8082, \"controllers\": [\"bean:newTerminalController\"]}");
+
+            channel.setProtocol(ChannelProtocol.DYNAMIC_REST);
+            channel.setMetadata("{\"contextPath\": \"/ib4dev\", \"port\": 8082}");
+            /**/
+
+            String className = extractChannelClassName(channel);
+            AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.findBeanOrCreateInstanceOfClass(
+                    className, AbstractInboundChannelGenerator.class);
+            if (null == inboundChannelGenerator) {
+                LOGGER.warn("error on create instance of inboundChannelGenerator found for channel '{}' with protocolCode '{}' with ClassName '{}'",
+                        channel.getCode(), channel.getProtocol(), channel.getChannelClassName());
+                continue;
+            }
+
+            JsonNode jsonMetadata = null;
+            try {
+                if (StringUtils.isNotEmpty(channel.getMetadata())) {
+                    jsonMetadata = objectMapper.readTree(channel.getMetadata());
+                }
+            } catch (JsonProcessingException e) {
+                LOGGER.error("error parse metadata for channel '{}'. skip initialization.", channel.getCode(), e);
+                continue;
+            }
+
+            boolean isContinue = inboundChannelGenerator.initConfig(channel, jsonMetadata);
+            if (!isContinue) {
+                LOGGER.error("error found in channel '{}' initialization. skip initialization.", channel.getCode());
+                continue;
+            }
+            LOGGER.info("channel '{}' initialization completed successfully.", channel.getCode());
+
+            LOGGER.info("start register endpoints for channel '{}'", channel.getCode());
+            isContinue = inboundChannelGenerator.registerEndpoints(terminalServiceChannelAccessList);
+            if (!isContinue) {
+                LOGGER.error("error found in channel '{}' endpoint registration. skip registration.", channel.getCode());
+                continue;
+            }
+            LOGGER.info("channel '{}' endpoint registration completed successfully.", channel.getCode());
+
+        }
+        /*LOGGER.info("=================== start InboundChannelsAutoConfiguration ===================");
 
 //        Map<String, Class<? extends AbstractInboundChannelGenerator>> inboundChannelGeneratorMap = extractInboundChannelGeneratorMap();
 //        LOGGER.info("found '{}' inboundChannelGenerator.", null != inboundChannelGeneratorMap ? inboundChannelGeneratorMap.size() : "null");
@@ -93,7 +158,7 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
                     channel.getChannelClassName(), channel.getCode(), channel.getChannelClassName());
 
         }
-
+*/
         LOGGER.info("=================== end InboundChannelsAutoConfiguration ===================");
     }
 
@@ -115,8 +180,32 @@ public class InboundChannelsAutoConfiguration implements ApplicationContextAware
 //        return resultMap;
 //    }
 
-    @Override
+    /*@Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }*/
+
+    private String extractChannelClassName(Channel channel) {
+        if (null == channel || null == channel.getProtocol()) {
+            return null;
+        }
+        switch (channel.getProtocol()) {
+            case SPRING_REST:
+                return "bean:springRestInboundChanelGenerator";
+            case DYNAMIC_REST:
+                return "bean:dynamicRestInboundChanelGenerator";
+            case SOAP:
+                System.out.println("The color is blue.");
+                break;
+            case JMS:
+                System.out.println("The color is blue.");
+                break;
+            case CUSTOM:
+                return channel.getChannelClassName();
+            default:
+                return null;
+        }
+        return null;
     }
+
 }

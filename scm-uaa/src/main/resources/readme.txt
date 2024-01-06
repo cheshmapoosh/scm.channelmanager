@@ -10,12 +10,12 @@ http-method:POST
 it is possible in two method
 
 1) Basic Method
-Basic Authorization Header should be send. 
+Basic Authorization Header should be sent.
 grant_type=client_credentials
 
 
 2) Post Method
-following parameters should be send as (form-data/x-www-form-urlencoded/querystring):
+following parameters should be sent as (form-data/x-www-form-urlencoded/querystring):
 client_id=mb
 client_secret=myClientSecretValue
 grant_type=client_credentials
@@ -40,13 +40,13 @@ AuthenticationProvider: OAuth2ClientCredentialsAuthenticationProvider
 
 Server First Password ======================================================
 
-url: http://127.0.0.1:8000/oauth2/token
+restUrl: http://127.0.0.1:8000/oauth2/token
 http-method:POST
 grant_type=first_password
 
-following parameters should be send:
+following parameters should be sent:
 1) ClientId 
-if client  marked as 'requireClientAuthentication', client should send as Authrorization Basic header
+if client  marked as 'requireClientAuthentication', client should send as Authorization Basic header
 else should send as 'client_id' parameter
 2) username
 3) password
@@ -64,13 +64,13 @@ AuthenticationProvider: OAuth2GeneralAuthenticationProvider
 
 Server Authorization Code ==================================================
 
-sample authorization code start url:
+sample authorization code start restUrl:
 1) redirect to uaa server
 http://127.0.0.1:8000/oauth2/authorize?response_type=code&client_id=ib&redirect_uri=http://127.0.0.1:8080/authorized&scope=openid
 http://127.0.0.1:8000/oauth2/authorize?response_type=code&client_id=ib&redirect_uri=http://127.0.0.1:8080/authorized&scope=openid profile
 
-2) get access token from rest endoint
-url: POST:http://127.0.0.1:8000/oauth2/token
+2) get access token from rest endpoint
+restUrl: POST:http://127.0.0.1:8000/oauth2/token
 Authorization header: Basic ...
 body: grant_type=authorization_code & code & redirect_uri
 
@@ -81,22 +81,22 @@ UAAClient Basic ===============================================================
 
 this method call service client_credential
 
-request shold cotain Authorization Basic Header
+request should contain Authorization Basic Header
 cache key: ClientAuthenticationToken + MD5(username + password)
 
 
 UAAClient Bearer ==============================================================
 
-request shold contain Authorization Bearer Header
+request should contain Authorization Bearer Header
 cache key: MD5(token) + :: + terminalCode
 
 this method verify jwt token and create Authentication from it
-if jwt conatins sessionId claim(sni) it fetch session from sessionCache by 
+if jwt contains sessionId claim(sni) it fetch session from sessionCache by
 
 
 UAAClient Session =============================================================
 
-request shold contain Authorization Session Header
-request shold contain X-SCM-Username Header
+request should contain Authorization Session Header
+request should contain X-SCM-Username Header
 
 cache key: sessionId + :: + terminalCode

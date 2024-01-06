@@ -1,8 +1,11 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 
@@ -24,6 +27,16 @@ public class AnonymousAuthenticationConverter extends org.springframework.securi
     @Override
     public AnonymousAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (StringUtils.isNotEmpty(authorizationHeader)) {
+            return null;
+        }
+        return new AnonymousAuthenticationToken(
+                "scm_anonymous", "anonymousUser",
+                AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
+    }
+
+    @Override
+    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
+        if (null != request && !ClientAuthenticationType.ANONYMOUS.equals(request.getType())) {
             return null;
         }
         return new AnonymousAuthenticationToken(

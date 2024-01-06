@@ -3,6 +3,9 @@ scm:
   inbound:
     host: localhost
     port: 8582
+  log:
+    enabled: true
+    type: file
   security:
     distributed: true
     token-endpoint: http://127.0.0.1:8000/oauth2/token

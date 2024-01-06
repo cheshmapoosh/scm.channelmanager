@@ -14,6 +14,7 @@ public class Channel extends BaseModel<String> {
 
     private String code;
     private String title;
+    private ChannelProtocol protocol;
     private String channelClassName;
     private String metadata;
 
@@ -49,4 +50,11 @@ public class Channel extends BaseModel<String> {
         this.metadata = metadata;
     }
 
+    public ChannelProtocol getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(ChannelProtocol protocol) {
+        this.protocol = protocol;
+    }
 }

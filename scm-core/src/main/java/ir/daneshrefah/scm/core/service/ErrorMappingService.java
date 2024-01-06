@@ -1,18 +1,18 @@
 package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
+import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
 import ir.daneshrefah.scm.plugin.api.constants.ErrorCodes;
-import ir.daneshrefah.scm.plugin.api.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
-import ir.daneshrefah.scm.plugin.api.exception.ValidationException;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
-import ir.daneshrefah.scm.common.model.message.Error;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,18 +43,18 @@ public class ErrorMappingService {
     }
 
     public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors) {
-        for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
+       /* for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
             ValidationMessage validationMessage = iterator.next();
             Error error = new Error(ErrorCodes.ERROR_VALIDATION, validationMessage.getMessage(),
                     validationMessage.getCode(), validationMessage.getCode(), validationMessage.getMessage(), null);
             message.addError(error, Status.SC_ERROR_VALIDATION);
-        }
+        }*/
         return message;
     }
 
     public Message resolveMessageByException(Message message, Exception exception) {
 
-        if (exception instanceof TransformException) {
+        /*if (exception instanceof TransformException) {
             TransformException transformException = (TransformException) exception;
             Exception cause = null != transformException.getCause() ? (Exception) transformException.getCause() : transformException;
             cause = ClassLoader.cloneExceptionWithoutStackTrace(cause);
@@ -90,12 +90,12 @@ public class ErrorMappingService {
             return message;
         }
 
-        Object source = exception instanceof BaseException ? ((BaseException) exception).getSourceCode() : null;
+        Object source = exception instanceof BaseException ? ((BaseException) exception).getSource() : null;
         String sourceErrorCode = exception instanceof ExternalProviderException ? ((ExternalProviderException) exception).getSourceErrorCode() : null;
         String sourceErrorMessage = exception instanceof ExternalProviderException ? ((ExternalProviderException) exception).getSourceErrorMessage() : sourceExceptionMessage;
         Error error = new Error(ErrorCodes.ERROR_UNKNOWN, exception.getMessage(),
                 source, sourceErrorCode, sourceErrorMessage, ClassLoader.cloneExceptionWithoutStackTrace(exception));
-        message.addError(error, Status.SC_ERROR_SYSTEM);
+        message.addError(error, Status.SC_ERROR_SYSTEM);*/
 
         return message;
     }

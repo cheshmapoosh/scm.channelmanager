@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.core.authority.decision.manager;
 
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.core.authority.decision.voter.DecisionVoter;
 import ir.daneshrefah.scm.core.authority.decision.constant.Priority;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
-import ir.daneshrefah.scm.plugin.api.exception.AccessDeniedException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +32,10 @@ public class DecisionManagerImpl implements DecisionManager {
     }
 
     @Override
-    public void decide(TerminalServiceChannelAccess terminalServiceChannelAccess, Message message) throws AuthorityBaseException {
+    public void decide(Message message) throws AuthorityBaseException {
+        TerminalServiceChannelAccess service = message.getHeader().getService();
         for (DecisionVoter voter : DecisionVoter.DECISION_VOTER_LIST) {
-            int vote = voter.vote(message, terminalServiceChannelAccess);
+            int vote = voter.vote(message, service);
             if (vote == DecisionVoter.ACCESS_GRANTED) {
                 return;
             } else if (vote == DecisionVoter.ACCESS_DENIED) {

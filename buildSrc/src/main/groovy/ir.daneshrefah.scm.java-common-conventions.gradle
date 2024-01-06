@@ -22,11 +22,18 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 dependencies {
     constraints {
         // Define dependency versions as constraints
         implementation 'org.apache.commons:commons-text:1.9'
     }
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
     implementation platform("org.springframework.boot:spring-boot-dependencies:3.1.1")
     implementation platform("org.springframework.cloud:spring-cloud-dependencies:2022.0.4")
     implementation platform("org.apache.camel.springboot:camel-spring-boot-bom:4.0.0-RC1")

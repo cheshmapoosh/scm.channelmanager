@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.Base64;
@@ -40,6 +42,11 @@ public class BasicAuthenticationConverter extends org.springframework.security.w
                 .unauthenticated(terminalCode, token.substring(0, delim), token.substring(delim + 1));
 //TODO        result.setDetails(this.getAuthenticationDetailsSource().buildDetails(request));
         return result;*/
+    }
+
+    @Override
+    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
+        return null;
     }
 
     private byte[] decode(byte[] base64Token) {

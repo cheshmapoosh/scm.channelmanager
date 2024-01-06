@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.BearerTokenError;
 import org.springframework.security.oauth2.server.resource.BearerTokenErrors;
@@ -47,6 +50,21 @@ public class BearerTokenResolver implements AuthenticationConverter {
         /*if (parameterToken != null && isParameterTokenEnabledForRequest(request)) {
             return parameterToken;
         }*/
+        return null;
+    }
+
+    @Override
+    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
+        if (null == request || !ClientAuthenticationType.BEARER.equals(request.getType())) {
+            return null;
+        }
+
+        if (StringUtils.isNotEmpty(request.getValue())) {
+            BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(
+                    request.getUsername(), request.getTerminalCode(), request.getValue());
+            return authenticationRequest;
+        }
+
         return null;
     }
 

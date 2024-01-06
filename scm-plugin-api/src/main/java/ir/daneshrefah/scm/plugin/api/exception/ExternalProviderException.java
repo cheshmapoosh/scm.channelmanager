@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 
 /**
@@ -17,6 +18,7 @@ public class ExternalProviderException extends BaseException {
 
     public ExternalProviderException(ExternalServiceProvider externalServiceProvider, String providerErrorCode,
                                      String providerErrorMessage) {
+        super(null, externalServiceProvider.getClass().getSimpleName());
         this.externalServiceProvider = externalServiceProvider;
         this.providerErrorCode = providerErrorCode;
         this.providerErrorMessage = providerErrorMessage;
@@ -24,16 +26,6 @@ public class ExternalProviderException extends BaseException {
 
     public String getSourceErrorCode() {
         return providerErrorCode;
-    }
-
-    @Override
-    public Object getSource() {
-        return externalServiceProvider.getId();
-    }
-
-    @Override
-    public Object getSourceCode() {
-        return externalServiceProvider.getCode();
     }
 
     public String getSourceErrorMessage() {

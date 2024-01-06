@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 
 /**
@@ -14,17 +15,8 @@ public class TransformException extends BaseException {
     private AbstractTransformer transformer;
 
     public TransformException(AbstractTransformer transformer) {
+        super(null, transformer.getClass().getSimpleName());
         this.transformer = transformer;
     }
 
-
-    @Override
-    public Object getSource() {
-        return transformer;
-    }
-
-    @Override
-    public Object getSourceCode() {
-        return transformer;
-    }
 }

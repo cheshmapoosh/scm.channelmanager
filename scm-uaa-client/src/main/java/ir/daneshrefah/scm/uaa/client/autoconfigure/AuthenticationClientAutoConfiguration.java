@@ -57,7 +57,7 @@ public class AuthenticationClientAutoConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context) throws Exception {
         http
                 .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
 //                .addFilter(anonymousAuthenticationFilter())
                 .addFilterBefore(basicAuthenticationFilter(context), RequestCacheAwareFilter.class)
