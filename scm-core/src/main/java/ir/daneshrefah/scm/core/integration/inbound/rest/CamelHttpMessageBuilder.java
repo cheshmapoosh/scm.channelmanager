@@ -14,10 +14,6 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.EventPhase;
-import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.inbound.MessageBuilder;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -41,58 +37,8 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
 
     private final ObjectMapper objectMapper;
 
-    public CamelHttpMessageBuilder(ObjectMapper objectMapper, EventProducer eventProducer) {
-        super(eventProducer);
+    public CamelHttpMessageBuilder(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-    }
-
-    @Override
-    protected Event logIncomingRequest(Exchange input, Object body, TerminalServiceChannelAccess service) {
-        return Event.builder()
-                .correlationId(CamelUtils.getCorrelationFromExchange(input))
-                .clientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input))
-                .timestamp(Instant.now())
-                .username(null)
-                .type(EventType.MESSAGE_TRANSFORM)
-                .phase(EventPhase.IN)
-                .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
-                .clientId(null)
-                .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(service.getChannel().getCode())
-                .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(CamelUtils.getAccessParameterFromExchange(input))
-                .data(body)
-                .serverHost(CamelUtils.getServerHostFromExchange(input))
-                .targetUrl(CamelUtils.getHttpMethodFromExchange(input) + ":" +
-                        CamelUtils.getHttpUrlFromExchange(input))
-                .clientAgent(CamelUtils.getClientAgentFromExchange(input))
-                .clientUrl(CamelUtils.getRemoteAddressFromExchange(input))
-                .build();
-    }
-
-    @Override
-    protected Event logOutgoingResponse(Message input) {
-        return Event.builder()
-                .correlationId(input.getHeader().getCorrelationId())
-                .clientCorrelationId(input.getHeader().getClientCorrelationId())
-                .timestamp(Instant.now())
-                .username(input.getHeader().getUsername())
-                .type(EventType.MESSAGE_TRANSFORM)
-                .phase(EventPhase.OUT)
-                .terminalCode(input.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .clientId(null)
-                .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(input.getHeader().getService().getChannel().getCode())
-                .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(input.getHeader().getAccessParameter())
-                .data(input.getPayload())
-                .serverHost(null)
-                .targetUrl(null)
-                .clientAgent(input.getHeader().getClientAgent())
-                .clientUrl(input.getHeader().getClientAddress())
-                .build();
     }
 
     @Override
@@ -112,6 +58,7 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
                 .receiveTimestamp(Instant.now())
                 .accessParameter(CamelUtils.getAccessParameterFromExchange(input))
                 .clientAgent(CamelUtils.getClientAgentFromExchange(input))
+                .serverHost(CamelUtils.getServerHostFromExchange(input))
                 .service(service)
                 .clientAddress(CamelUtils.getRemoteAddressFromExchange(input))
                 .build();

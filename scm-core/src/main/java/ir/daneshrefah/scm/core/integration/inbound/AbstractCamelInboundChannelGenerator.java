@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
-import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.MessageBuilder;
@@ -30,13 +29,13 @@ public abstract class AbstractCamelInboundChannelGenerator extends AbstractInbou
     @Getter(AccessLevel.PROTECTED)
     private CamelContext context;
 
-    protected AbstractCamelInboundChannelGenerator(ObjectMapper objectMapper, EventProducer eventProducer,
-                                                   CamelContext context, AuthenticationClientTemplate authenticationTemplate,
+    protected AbstractCamelInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
+                                                   AuthenticationClientTemplate authenticationTemplate,
                                                    ServiceProducerTemplate producerTemplate,
                                                    TransformerService transformerService,
                                                    MessageBuilder<Exchange> messageBuilder, ResponseBuilder<Exchange> responseBuilder,
                                                    DecisionManager decisionManager) {
-        super(objectMapper, eventProducer, authenticationTemplate, producerTemplate, transformerService,
+        super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
                 messageBuilder, responseBuilder, decisionManager);
         this.context = context;
     }

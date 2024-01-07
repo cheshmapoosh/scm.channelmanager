@@ -2,10 +2,8 @@ package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.service.Service;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +18,6 @@ public class Message implements Serializable {
     private Header header;
     private Status status;
     private List<Error> errors;
-    private List<Event> events;
     private JsonNode payload;
 
     public Header getHeader() {
@@ -47,14 +44,6 @@ public class Message implements Serializable {
         this.errors = errors;
     }
 
-    public List<Event> getEvents() {
-        return events;
-    }
-
-    public void setEvents(List<Event> events) {
-        this.events = events;
-    }
-
     public JsonNode getPayload() {
         return payload;
     }
@@ -68,53 +57,6 @@ public class Message implements Serializable {
             errors = new ArrayList<>();
         errors.add(error);
         setStatus(status);
-    }
-
-    public void addTransformEvent(LocalDateTime startTime, LocalDateTime endTime, String transformerClass,
-                                  boolean isSuccessful, Object error, Object input, Object output, String outputType,
-                                  String invokerClassName) {
-
-        TransformEvent event = (TransformEvent) addEvent(EventType.TRANSFORM, startTime, endTime, isSuccessful, error,
-                input, output);
-        event.setTransformerClassName(transformerClass);
-        event.setOutputType(outputType);
-        event.setInvokerClassName(invokerClassName);
-
-    }
-    public void addServiceCallEvent(LocalDateTime startTime, LocalDateTime endTime, Service service, boolean isSuccessful,
-                                    Object error, Object input, Object output) {
-
-        ServiceCallEvent event = (ServiceCallEvent) addEvent(EventType.SERVICE_CALL, startTime, endTime, isSuccessful,
-                error, input, output);
-        event.setServiceCode(service.getCode());
-        event.setImplementationType(service.getImplementationType());
-        event.setAdditionalInfo(service.getServiceInfo());
-
-    }
-
-    public void addAuthenticationEvent(LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful,
-                                    Object error, Object input, Object output) {
-
-        AuthenticationEvent event = (AuthenticationEvent) addEvent(EventType.AUTHENTICATION, startTime, endTime, isSuccessful,
-                error, input, output);
-    }
-
-    public Event addEvent(EventType type, LocalDateTime startTime, LocalDateTime endTime, boolean isSuccessful,
-                          Object error, Object input, Object output) {
-        if (null == events)
-            events = new ArrayList<>();
-        Event event = EventFactory.createNewEvent(type, startTime, endTime, error, input, output, isSuccessful);
-        events.add(event);
-        return event;
-    }
-
-    public void addEvents(List<Event> events) {
-        if (null == events)
-            return;
-
-        if (null == this.events)
-            this.events = new ArrayList<>();
-        this.events.addAll(events);
     }
 
     public void addErrors(List<Error> errors) {

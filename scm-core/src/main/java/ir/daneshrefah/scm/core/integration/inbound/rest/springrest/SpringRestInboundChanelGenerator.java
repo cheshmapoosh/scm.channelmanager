@@ -3,8 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.springrest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import ir.daneshrefah.scm.core.integration.inbound.generator.rest.AbstractRestInboundChannelGenerator;
-import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -23,7 +22,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 
-import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.*;
+import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_SPRING_CONTROLLER;
 
 /**
  * Description of the class or purpose of the file.
@@ -40,10 +39,10 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     private ArrayNode controllersArrayNode;
 
     public SpringRestInboundChanelGenerator(ObjectMapper objectMapper, RequestMappingHandlerMapping handlerMapping,
-                                            EventProducer eventProducer, AuthenticationClientTemplate authenticationTemplate,
+                                            AuthenticationClientTemplate authenticationTemplate,
                                             ServiceProducerTemplate producerTemplate,
                                             TransformerService transformerService) {
-        super(objectMapper, eventProducer, authenticationTemplate, producerTemplate, transformerService,
+        super(objectMapper,authenticationTemplate, producerTemplate, transformerService,
                 null, null, null);
         this.handlerMapping = handlerMapping;
     }

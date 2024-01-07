@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.MessageBuilder;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
@@ -27,13 +26,13 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected String contextPath;
     protected Integer port;
 
-    protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, EventProducer eventProducer,
-                                                       CamelContext context, AuthenticationClientTemplate authenticationTemplate,
+    protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
+                                                       AuthenticationClientTemplate authenticationTemplate,
                                                        ServiceProducerTemplate producerTemplate,
                                                        TransformerService transformerService,
                                                        MessageBuilder<Exchange> messageBuilder, ResponseBuilder<Exchange> responseBuilder,
                                                        DecisionManager decisionManager) {
-        super(objectMapper, eventProducer, context, authenticationTemplate, producerTemplate, transformerService,
+        super(objectMapper, context, authenticationTemplate, producerTemplate, transformerService,
                 messageBuilder, responseBuilder, decisionManager);
     }
 

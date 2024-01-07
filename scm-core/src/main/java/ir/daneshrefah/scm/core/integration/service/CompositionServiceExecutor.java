@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
@@ -61,10 +61,10 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
             Message tempMessage = SerializationUtils.clone(message);
             tempMessage.setErrors(null);
-            tempMessage.setEvents(null);
+//            tempMessage.setEvents(null);
             tempMessage.setPayload((JsonNode) relationRequestPayload);
             serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
-            message.addEvents(tempMessage.getEvents());
+//            message.addEvents(tempMessage.getEvents());
             message.addErrors(tempMessage.getErrors());
             if (!Status.SC_SUCCESS.equals(tempMessage.getStatus())) {
                 message.setStatus(tempMessage.getStatus());

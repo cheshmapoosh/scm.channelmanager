@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
-import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
@@ -32,14 +31,13 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     protected String contextPath;
     protected Integer port;
 
-    public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper, EventProducer eventProducer,
-                                               AuthenticationClientTemplate authenticationTemplate,
+    public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
                                                ServiceProducerTemplate producerTemplate,
                                                TransformerService transformerService,
                                                MessageBuilder<HttpServletRequest> messageBuilder,
                                                ResponseBuilder<HttpServletRequest> responseBuilder,
                                                DecisionManager decisionManager) {
-        super(objectMapper, eventProducer, authenticationTemplate, producerTemplate, transformerService,
+        super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
                 messageBuilder, responseBuilder, decisionManager);
     }
 

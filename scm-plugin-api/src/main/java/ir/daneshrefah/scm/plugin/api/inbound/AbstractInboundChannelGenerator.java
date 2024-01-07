@@ -13,9 +13,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.EventPhase;
-import ir.daneshrefah.scm.logging.domain.event.EventType;
+import ir.daneshrefah.scm.logging.domain.event.*;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -30,6 +28,7 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,8 +47,6 @@ public abstract class AbstractInboundChannelGenerator<T> {
     @Getter(AccessLevel.PROTECTED)
     private final ObjectMapper objectMapper;
     @Getter(AccessLevel.PROTECTED)
-    private final EventProducer eventProducer;
-    @Getter(AccessLevel.PROTECTED)
     private Channel channel;
     @Getter(AccessLevel.PROTECTED)
     private JsonNode metadata;
@@ -63,14 +60,12 @@ public abstract class AbstractInboundChannelGenerator<T> {
     private final TransformerService transformerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
-    protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, EventProducer eventProducer,
-                                              AuthenticationClientTemplate authenticationTemplate,
+    protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
                                               ServiceProducerTemplate producerTemplate,
                                               TransformerService transformerService,
                                               MessageBuilder<T> messageBuilder, ResponseBuilder<T> responseBuilder,
                                               DecisionManager decisionManager) {
         this.objectMapper = objectMapper;
-        this.eventProducer = eventProducer;
         this.authenticationTemplate = authenticationTemplate;
         this.producerTemplate = producerTemplate;
         this.transformerService = transformerService;
@@ -142,8 +137,9 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     protected final T buildResponse(T input, Message message) {
+        Instant startTime = Instant.now();
         T response = responseBuilder.build(input, message);
-        logOutgoingMessage(message, message.getPayload());
+        logResponseGenerationEvent(message, message.getPayload(), startTime);
         return response;
     }
 
@@ -155,115 +151,63 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     private final void logIncomingMessage(Message message) {
-        Event event = Event.builder()
+        Event event = InboundEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .timestamp(Instant.now())
-                .username(null)
-                .type(EventType.INBOUND)
-                .phase(EventPhase.IN)
+                .startTimestamp(Instant.now())
                 .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .clientId(null)
                 .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(getChannel().getCode())
                 .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(message.getHeader().getAccessParameter())
-                .data(message.getPayload())
-                .serverHost(null)
-                .targetUrl(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+//                .input(message)
+                .serverHost(message.getHeader().getServerHost())
                 .clientAgent(message.getHeader().getClientAgent())
-                .clientUrl(message.getHeader().getClientAddress())
-//        private String loginAuthenticationMethod;
-//        private String transactionAuthenticationMethod;
                 .build();
-        getEventProducer().sendEvent(event);
+        EventProducer.getInstance().sendEvent(event);
     }
 
-    private final void logOutgoingMessage(Message message, JsonNode response) {
-        Event event = Event.builder()
+    private final void logResponseGenerationEvent(Message message, JsonNode response, Instant startTime) {
+        Instant endTime = Instant.now();
+        Event event = ResponseBuildEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .timestamp(Instant.now())
-                .username(null)
-                .type(EventType.INBOUND)
-                .phase(EventPhase.OUT)
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .clientId(null)
+                .startTimestamp(startTime)
+                .terminalCode(message.getHeader().getTerminalCode())
                 .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(getChannel().getCode())
                 .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(message.getHeader().getAccessParameter())
-                .data(response)
-                .serverHost(null)
-                .targetUrl(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+//                .input(response)
                 .clientAgent(message.getHeader().getClientAgent())
-                .clientUrl(message.getHeader().getClientAddress())
-//        private String loginAuthenticationMethod;
-//        private String transactionAuthenticationMethod;
+                .endTimestamp(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .build();
-        getEventProducer().sendEvent(event);
+        EventProducer.getInstance().sendEvent(event);
     }
 
     protected IAuthenticationHeader authenticateUser(Message message, ClientAuthenticationRequest authenticationRequest) {
-        logIncomingAuthentication(message, authenticationRequest);
+        Instant startTime = Instant.now();
+
         IAuthenticationHeader authentication = authenticationTemplate.authenticateByAuthenticationRequest(
                 authenticationRequest);
-        logOutgoingAuthentication(message, authentication);
+
+        logAuthenticationEvent(message, authentication, startTime);
+
         return authentication;
     }
 
-    private void logOutgoingAuthentication(Message message, IAuthenticationHeader authentication) {
-        Event event = Event.builder()
+    private void logAuthenticationEvent(Message message, IAuthenticationHeader authentication, Instant startTime) {
+        Instant endTime = Instant.now();
+        Event event = AuthenticationEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .timestamp(Instant.now())
-                .username(message.getHeader().getUsername())
-                .type(EventType.AUTHENTICATION)
-                .phase(EventPhase.OUT)
+                .startTimestamp(startTime)
                 .terminalCode(message.getHeader().getTerminalCode())
-                .clientId(null)
                 .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(getChannel().getCode())
                 .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(message.getHeader().getAccessParameter())
-                .data(authentication.getUsername())
-                .serverHost(null)
-                .targetUrl(null)
+//                .input(authentication.getUsername())
                 .clientAgent(message.getHeader().getClientAgent())
-                .clientUrl(message.getHeader().getClientAddress())
-//        private String loginAuthenticationMethod;
-//        private String transactionAuthenticationMethod;
+                .endTimestamp(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .build();
-        getEventProducer().sendEvent(event);
-    }
-
-    private void logIncomingAuthentication(Message message, ClientAuthenticationRequest authenticationRequest) {
-        Event event = Event.builder()
-                .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .timestamp(Instant.now())
-                .username(authenticationRequest.getUsername())
-                .type(EventType.AUTHENTICATION)
-                .phase(EventPhase.IN)
-                .terminalCode(message.getHeader().getTerminalCode())
-                .clientId(null)
-                .threadName(Thread.currentThread().getName())
-                .assetIdentifier(null)
-                .sourceIdentifier(getChannel().getCode())
-                .sourceClassName(this.getClass().getSimpleName())
-                .accessParameter(message.getHeader().getAccessParameter())
-                .data(authenticationRequest.getValue())
-                .serverHost(null)
-                .targetUrl(null)
-                .clientAgent(message.getHeader().getClientAgent())
-                .clientUrl(message.getHeader().getClientAddress())
-//        private String loginAuthenticationMethod;
-//        private String transactionAuthenticationMethod;
-                .build();
-        getEventProducer().sendEvent(event);
+        EventProducer.getInstance().sendEvent(event);
     }
 
     protected final Message executeService(Message message) {

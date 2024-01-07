@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
-import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -13,29 +13,19 @@ import java.time.Instant;
  * @since 2024-01-06
  */
 @Getter
-@Builder
-public class Event {
+@SuperBuilder
+public abstract class Event<T> {
 
     private String correlationId;
     private String clientCorrelationId;
-    private Instant timestamp;
-    private String username;
-    private EventType type;
-    private EventPhase phase;
-    private String terminalCode;
-    private String clientId;
+    private Instant startTimestamp;
+    private T input;
     private String threadName;
-    private String assetIdentifier;
-    private String sourceIdentifier;
     private String sourceClassName;
-    private String accessParameter;
-    private Object data;
-    private String serverHost;
-    private String targetUrl;
     private String clientAgent;
-    private String clientUrl;
-//    private String loginAuthenticationMethod;
-//    private String transactionAuthenticationMethod;
+    private String serverHost;
+    private String terminalCode;
 
+    public abstract EventType getType();
 
 }

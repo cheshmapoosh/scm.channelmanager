@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 @Component
 //@ConditionalOnProperty(name = "scm.log.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(name = "scm.log.type", havingValue = "file", matchIfMissing = true)
-public class FileEventProducer implements EventProducer {
+public class FileEventProducer extends EventProducer {
 
     @Value("${scm.log.file:events.log}")
     private String logFileName;
@@ -31,6 +31,7 @@ public class FileEventProducer implements EventProducer {
 
     public FileEventProducer(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        super.instance = this;
     }
 
     @Override

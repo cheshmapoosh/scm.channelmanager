@@ -49,7 +49,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
             }*/
             gen.writeObjectField("errors", value.getErrors());
         }
-        gen.writeObjectField("events", value.getEvents());
+//        gen.writeObjectField("events", value.getEvents());
         gen.writeObjectField("responseTimestamp", LocalDateTime.now());
         gen.writeEndObject();
     }

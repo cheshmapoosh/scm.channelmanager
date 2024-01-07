@@ -11,10 +11,15 @@ import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.service.TransformerService;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.ServiceCallEvent;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,11 +37,12 @@ public abstract class ServiceExecutor {
     protected ErrorMappingService errorMappingService;
     @Autowired
     protected TransformerService transformerService;
+
     private final Map<String, ServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     public void executeService(Service service, Message message) {
 
-        LocalDateTime startTime = LocalDateTime.now();
+        Instant startTime = Instant.now();
         boolean isSuccessful = true;
         Exception exception = null;
         Object response = null;
@@ -60,7 +66,8 @@ public abstract class ServiceExecutor {
         Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequestSchema(message);
         if (!errors.isEmpty()) {
             errorMappingService.resolveMessageByValidationMessage(message, errors.get());
-            addServiceCallEvent(message, service, false, startTime, exception, message.getPayload(), response);
+            logServiceCallEvent(message, service, startTime);
+//            addServiceCallEvent(message, service, false, startTime, exception, message.getPayload(), response);
             return;
         }
 
@@ -82,7 +89,8 @@ public abstract class ServiceExecutor {
             return;
         } finally {
             LocalDateTime endTime = LocalDateTime.now();
-            addServiceCallEvent(message, service, isSuccessful, startTime, exception, requestPayload, response);
+            logServiceCallEvent(message, service, startTime);
+//            addServiceCallEvent(message, service, isSuccessful, startTime, exception, requestPayload, response);
         }
 
         try {
@@ -115,13 +123,6 @@ public abstract class ServiceExecutor {
                 service.getId().equals(message.getHeader().getService().getTerminalServiceAccess().getService().getId())*/) {
             message.setStatus(Status.SC_SUCCESS);
         }
-    }
-
-    private void addServiceCallEvent(Message message, Service service, boolean isSuccessful, LocalDateTime startTime,
-                                     Exception exception, Object requestPayload, Object response) {
-        message.addServiceCallEvent(startTime, LocalDateTime.now(),
-                service,
-                isSuccessful, exception, requestPayload, response);
     }
 
     public Object transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
@@ -176,4 +177,20 @@ public abstract class ServiceExecutor {
 
     protected abstract Object executeInternal(Service service, Message message, Object requestPayload);
 
+    private void logServiceCallEvent(Message message, Service service, Instant startTime) {
+        Instant endTime = Instant.now();
+        Event event = ServiceCallEvent.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .startTimestamp(startTime)
+                .terminalCode(message.getHeader().getTerminalCode())
+                .threadName(Thread.currentThread().getName())
+                .sourceClassName(this.getClass().getSimpleName())
+                .input(null)
+                .clientAgent(message.getHeader().getClientAgent())
+                .endTimestamp(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
+    }
 }

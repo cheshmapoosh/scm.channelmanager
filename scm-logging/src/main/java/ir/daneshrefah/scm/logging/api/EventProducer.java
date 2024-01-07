@@ -9,8 +9,14 @@ import ir.daneshrefah.scm.logging.domain.event.Event;
  * @version 1.0
  * @since 2024-01-04
  */
-public interface EventProducer {
+public abstract class EventProducer {
 
-    public void sendEvent(Event event);
+    protected static EventProducer instance;
+
+    public abstract void sendEvent(Event event);
+
+    public static final EventProducer getInstance() {
+        return instance;
+    }
 
 }

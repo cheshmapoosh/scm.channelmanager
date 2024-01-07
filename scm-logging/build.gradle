@@ -13,4 +13,5 @@ plugins {
 dependencies {
     compileOnly 'org.springframework:spring-context'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly project(':scm-common')
 }

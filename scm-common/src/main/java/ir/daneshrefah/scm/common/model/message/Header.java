@@ -32,6 +32,7 @@ public class Header implements Serializable {
     private String clientAgent;
     private Instant receiveTimestamp;
     private String accessParameter;
+    private String serverHost;
     private TerminalServiceChannelAccess service;
     private String clientAddress;
 

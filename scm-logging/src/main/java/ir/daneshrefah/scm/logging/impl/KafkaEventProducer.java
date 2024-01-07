@@ -14,7 +14,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConditionalOnProperty(name = "scm.log.type", havingValue = "kafka")
-public class KafkaEventProducer implements EventProducer {
+public class KafkaEventProducer extends EventProducer {
+
+    public KafkaEventProducer() {
+        super.instance= this;
+    }
 
     @Override
     public void sendEvent(Event event) {
