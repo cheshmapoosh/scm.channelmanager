@@ -31,7 +31,6 @@ public class FileEventProducer extends EventProducer {
 
     public FileEventProducer(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        super.instance = this;
     }
 
     @Override

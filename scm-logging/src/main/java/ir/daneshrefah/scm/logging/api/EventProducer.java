@@ -11,12 +11,20 @@ import ir.daneshrefah.scm.logging.domain.event.Event;
  */
 public abstract class EventProducer {
 
-    protected static EventProducer instance;
+    private static EventProducer singletonInstance;
+
+    public EventProducer() {
+        if (null != singletonInstance) {
+            throw new RuntimeException("eventProducer instance already exist with type: " +
+                    singletonInstance.getClass().getName());
+        }
+        singletonInstance = this;
+    }
 
     public abstract void sendEvent(Event event);
 
     public static final EventProducer getInstance() {
-        return instance;
+        return singletonInstance;
     }
 
 }
