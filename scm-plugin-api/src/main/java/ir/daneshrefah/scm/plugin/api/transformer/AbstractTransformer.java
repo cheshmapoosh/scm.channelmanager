@@ -2,12 +2,12 @@ package ir.daneshrefah.scm.plugin.api.transformer;
 
 
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.TransformEvent;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.utils.ClassUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,7 +37,7 @@ public abstract class AbstractTransformer {
             result = internalTransform(payload, message, metadata);
         } catch (Exception e) {
             isSuccessful = false;
-            error = ClassLoader.cloneExceptionWithoutStackTrace(e);
+            error = ClassUtils.cloneExceptionWithoutStackTrace(e);
             if (e instanceof BaseException) {
                 throw e;
             } else {

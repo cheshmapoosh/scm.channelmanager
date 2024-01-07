@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public interface IAuthenticationHeader extends Serializable {
 
-    public String getUsername();
+    public String getName();
 
     public String getTerminalCode();
 
@@ -22,5 +22,7 @@ public interface IAuthenticationHeader extends Serializable {
     public boolean hasAuthority(String authorityName);
 
     public boolean hasError();
+
+//    public Exception getException();
 
 }

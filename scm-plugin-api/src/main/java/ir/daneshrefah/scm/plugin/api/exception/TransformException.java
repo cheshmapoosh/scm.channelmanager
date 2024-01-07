@@ -15,7 +15,7 @@ public class TransformException extends BaseException {
     private AbstractTransformer transformer;
 
     public TransformException(AbstractTransformer transformer) {
-        super(null, transformer.getClass().getSimpleName());
+        super(null, null);
         this.transformer = transformer;
     }
 

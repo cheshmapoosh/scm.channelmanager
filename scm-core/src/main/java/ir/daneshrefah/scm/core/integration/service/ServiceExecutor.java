@@ -15,7 +15,7 @@ import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.ServiceCallEvent;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.utils.ClassUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
@@ -85,7 +85,7 @@ public abstract class ServiceExecutor {
         } catch (Exception e) {
             errorMappingService.resolveMessageByException(message, e);
             isSuccessful = false;
-            exception = ClassLoader.cloneExceptionWithoutStackTrace(e);
+            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
             return;
         } finally {
             LocalDateTime endTime = LocalDateTime.now();

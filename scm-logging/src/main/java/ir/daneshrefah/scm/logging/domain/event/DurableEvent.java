@@ -21,4 +21,10 @@ public abstract class DurableEvent<T, S> extends Event<T> {
     private S output;
     private Exception error;
 
+    public String getErrorClass() {
+        if (null == error)
+            return null;
+        return error.getClass().getSimpleName();
+    }
+
 }

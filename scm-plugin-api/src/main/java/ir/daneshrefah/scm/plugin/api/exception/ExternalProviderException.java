@@ -18,7 +18,7 @@ public class ExternalProviderException extends BaseException {
 
     public ExternalProviderException(ExternalServiceProvider externalServiceProvider, String providerErrorCode,
                                      String providerErrorMessage) {
-        super(null, externalServiceProvider.getClass().getSimpleName());
+        super(null, null);
         this.externalServiceProvider = externalServiceProvider;
         this.providerErrorCode = providerErrorCode;
         this.providerErrorMessage = providerErrorMessage;

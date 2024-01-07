@@ -17,8 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.Assert;
 
-import java.io.InvalidClassException;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -74,7 +72,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             Assert.notNull(user, "retrieveUser returned null - a violation of the interface contract");
         }
         try {
-            this.preAuthenticationChecks.check(user.getUserDetails());
+//            this.preAuthenticationChecks.check(user.findUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
         catch (AuthenticationException ex) {
@@ -85,16 +83,16 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             // we're using latest data (i.e. not from the cache)
             cacheWasUsed = false;
             user = retrieveUser(username, (BaseAuthenticationToken) authentication);
-            this.preAuthenticationChecks.check(user.getUserDetails());
+//            this.preAuthenticationChecks.check(user.findUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
-        this.postAuthenticationChecks.check(user.getUserDetails());
+//        this.postAuthenticationChecks.check(user.findUserDetails());
         if (!cacheWasUsed) {
             this.sessionCache.putSessionInCache(sessionKey, user);
         }
         Object principalToReturn = user;
         if (this.forcePrincipalAsString) {
-            principalToReturn = user.getUsername();
+            principalToReturn = user.getName(); //TODO username
         }
         return createSuccessAuthentication(user, authentication);
     }

@@ -1,15 +1,22 @@
 package ir.daneshrefah.scm.uaa.common.model.authentication;
 
 import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.util.Assert;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,61 +26,50 @@ import java.util.Collection;
  * @since 2023-08-14
  */
 @Getter
-@Setter
-public class UserAuthentication extends AbstractAuthenticationToken implements IAuthenticationHeader {
+public class UserAuthentication implements Authentication, IAuthenticationHeader {
 
-    private String issuer;
-//    private String username;
-    private Instant issuedAt;
-    private Instant expiresAt;
-    private Duration maxIdle;
-    private Object loginData;
-    private String loginAccessParameter;
-    private String sessionId;
-    private String clientId;
-    private Exception exception;
-    private String exceptionMessage;
+    private final Collection<GrantedAuthority> authorities;
+    private AuthenticationDetail details;
+    private boolean authenticated = false;
+    private User principal;
+    @Setter
+    private String error;
 
     /**
      * Creates a token with the supplied array of authorities.
      *
+     * @param principal
+     *
+     */
+    public UserAuthentication(AuthenticationDetail details, User principal) {
+        this(details, principal, null);
+    }
+
+    /**
+     * Creates a token with the supplied array of authorities.
+     *
+     * @param principal
      * @param authorities the collection of <tt>GrantedAuthority</tt>s for the principal
      *                    represented by this authentication object.
      */
-    public UserAuthentication(TerminalUserDetails principal, Collection<? extends GrantedAuthority> authorities) {
-        super(authorities);
-        this.setDetails(principal);
-    }
-
-
-    @Override
-    public String getUsername() {
-        if (null == getUserDetails()) {
-            return null;
+    public UserAuthentication(AuthenticationDetail details, User principal, Collection<? extends GrantedAuthority> authorities) {
+        this.details = details;
+        this.principal = principal;
+        setAuthenticated(null != authorities);
+        if (authorities == null) {
+            this.authorities = AuthorityUtils.NO_AUTHORITIES;
+            return;
         }
-        return getUserDetails().getUsername();
+        for (GrantedAuthority a : authorities) {
+            Assert.notNull(a, "Authorities collection cannot contain any null elements");
+        }
+        this.authorities = Collections.unmodifiableList(new ArrayList<>(authorities));
     }
+
 
     @Override
     public String getTerminalCode() {
-        if (null == getUserDetails() || null == getUserDetails().getUser()) {
-            return null;
-        }
-        return getUserDetails().getUser().getTerminalCode();
-    }
-
-    @Override
-    public Object getCredentials() {
-        return null;
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return getDetails();
-    }
-
-    public TerminalUserDetails getUserDetails() {
-        return (TerminalUserDetails) getDetails();
+        return null != principal ? principal.getTerminalCode() : null;
     }
 
     @Override
@@ -92,6 +88,35 @@ public class UserAuthentication extends AbstractAuthenticationToken implements I
 
     @Override
     public boolean hasError() {
-        return null != exception;
+        return StringUtils.isNotEmpty(error);
+    }
+
+    @Override
+    public Object getCredentials() {
+        return null;
+    }
+
+    @Override
+    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+        authenticated = isAuthenticated;
+    }
+
+    @Override
+    public String getName() {
+        return null != principal ? principal.getNickName() : null;
+    }
+
+
+    @Builder
+    @Getter
+    public static class AuthenticationDetail implements Serializable {
+        private String issuer;
+        private Instant issuedAt;
+        private Instant expiresAt;
+        private Duration maxIdle;
+        private Object loginData;
+        private String loginAccessParameter;
+        private String sessionId;
+        private String clientId;
     }
 }

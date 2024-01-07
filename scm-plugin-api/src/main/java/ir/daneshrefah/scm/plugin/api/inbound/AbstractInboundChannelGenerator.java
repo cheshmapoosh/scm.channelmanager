@@ -13,14 +13,19 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.*;
+import ir.daneshrefah.scm.logging.domain.event.AuthenticationEvent;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.InboundEvent;
+import ir.daneshrefah.scm.logging.domain.event.ResponseBuildEvent;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.utils.ClassUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AccessLevel;
@@ -185,15 +190,25 @@ public abstract class AbstractInboundChannelGenerator<T> {
     protected IAuthenticationHeader authenticateUser(Message message, ClientAuthenticationRequest authenticationRequest) {
         Instant startTime = Instant.now();
 
-        IAuthenticationHeader authentication = authenticationTemplate.authenticateByAuthenticationRequest(
-                authenticationRequest);
-
-        logAuthenticationEvent(message, authentication, startTime);
+        IAuthenticationHeader authentication = null;
+        Exception error = null;
+        try {
+            authentication = authenticationTemplate.authenticateByAuthenticationRequest(
+                    authenticationRequest);
+        } catch (ClientAuthenticationException e) {
+            authentication = e.getAuthentication();
+            error = (Exception) ClassUtils.cloneExceptionWithoutStackTrace(null != e.getCause() ? e.getCause() : e);
+        } catch (Exception e) {
+            LOGGER.error("error on authentication", e);
+            error = ClassUtils.cloneExceptionWithoutStackTrace(e);
+        }
+        logAuthenticationEvent(message, authenticationRequest, authentication, startTime, error);
 
         return authentication;
     }
 
-    private void logAuthenticationEvent(Message message, IAuthenticationHeader authentication, Instant startTime) {
+    private void logAuthenticationEvent(Message message, ClientAuthenticationRequest authenticationRequest,
+                                        IAuthenticationHeader authentication, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
         Event event = AuthenticationEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
@@ -202,8 +217,11 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .terminalCode(message.getHeader().getTerminalCode())
                 .threadName(Thread.currentThread().getName())
                 .sourceClassName(this.getClass().getSimpleName())
-//                .input(authentication.getUsername())
+                .input(authenticationRequest)
+                .output(authentication)
+                .error(error)
                 .clientAgent(message.getHeader().getClientAgent())
+                .serverHost(message.getHeader().getServerHost())
                 .endTimestamp(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .build();

@@ -44,7 +44,7 @@ public class AnonymousAuthenticationProvider extends AbstractClientAuthenticatio
             throw new BadCredentialsException(this.messages.getMessage("AnonymousAuthenticationProvider.incorrectKey",
                     "The presented AnonymousAuthenticationToken does not contain the expected key"));
         }
-        return new UserAuthentication(null, authentication.getAuthorities());
+        return new UserAuthentication(null, null, authentication.getAuthorities());
     }
 
     @Override

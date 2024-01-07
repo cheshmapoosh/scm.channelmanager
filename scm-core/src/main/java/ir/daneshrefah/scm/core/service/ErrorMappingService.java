@@ -105,13 +105,14 @@ public class ErrorMappingService {
             errorMappings = findErrorMappingList();
         }
         Optional<ErrorMapping> errorMappingOptional = Optional.empty();
+        /* TODO
         if (exception instanceof ExternalProviderException) {
             ExternalProviderException providerException = (ExternalProviderException) exception;
             errorMappingOptional = errorMappings.stream()
                     .filter(errorMapping -> (providerException.getSource().equals(errorMapping.getExternalServiceProvider().getCode()) &&
                             providerException.getSourceErrorCode().equals(errorMapping.getProviderErrorCode())))
                     .findFirst();
-        }
+        }*/
         if (errorMappingOptional.isEmpty()) {
             errorMappingOptional = errorMappings.stream()
                     .filter(errorMapping -> (exception.getClass().getName().equals(errorMapping.getExceptionClassName()) &&

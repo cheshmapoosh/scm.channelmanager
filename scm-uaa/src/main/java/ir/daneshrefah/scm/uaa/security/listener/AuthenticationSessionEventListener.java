@@ -6,8 +6,6 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -35,17 +33,29 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         String sessionId = generateSessionId(
                 authentication.getName(), authentication.getTerminalCode());
         authentication.setSessionId(sessionId);
-//        authentication.set(sessionId);
-        UserAuthentication userAuthentication = new UserAuthentication(authentication.getDetails(),
-                authentication.getAuthorities());
-//        userAuthentication.setIssuer(issuer.toString());
-        userAuthentication.setIssuedAt(authentication.getIssuedAt());
-        userAuthentication.setExpiresAt(authentication.getExpiresAt());
-        userAuthentication.setSessionId(sessionId);
-        userAuthentication.setClientId(authentication.getPreAuthenticationToken().getClientId());
-        userAuthentication.setAuthenticated(true);
-//        userAuthentication.setLoginData(authentication.get);
-        sessionCache.putSessionInCache(userAuthentication);
+
+        UserAuthentication sessionAuthentication = createUserSessionData(authentication);
+        sessionCache.putSessionInCache(sessionAuthentication);
+    }
+
+    private UserAuthentication createUserSessionData(PostAuthenticationToken authentication) {
+        UserAuthentication.AuthenticationDetail detail = UserAuthentication.AuthenticationDetail.builder()
+                .issuer(null)
+                .issuedAt(authentication.getIssuedAt())
+                .expiresAt(authentication.getExpiresAt())
+                .maxIdle(null)
+                .loginData(null)
+                .loginAccessParameter(null)
+                .sessionId(authentication.getSessionId())
+                .clientId(authentication.getPreAuthenticationToken().getClientId())
+                .build();
+
+        UserAuthentication userAuthentication = new UserAuthentication(detail,
+                authentication.getDetails().getUser(),
+                PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(authentication.getAuthenticationStatus()) ?
+                        authentication.getAuthorities() : null);
+
+        return userAuthentication;
     }
 
     private String generateSessionId(String name, String terminalCode) {

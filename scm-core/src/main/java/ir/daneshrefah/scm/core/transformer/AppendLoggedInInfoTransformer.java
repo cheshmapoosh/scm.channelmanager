@@ -59,7 +59,7 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
 
     private String extractUsername(Message message) {
         if (null != message.getHeader().getAuthentication())
-            return message.getHeader().getAuthentication().getUsername();
+            return message.getHeader().getAuthentication().getName();//TODO username
         else
             return null;
     }

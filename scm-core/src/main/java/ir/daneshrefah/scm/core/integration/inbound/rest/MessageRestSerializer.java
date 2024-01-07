@@ -61,8 +61,8 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         gen.writeStringField("isAuthenticated", String.valueOf(authentication.isAuthenticated()));
         gen.writeStringField("isAnonymous", String.valueOf(authentication.isAnonymous()));
         gen.writeStringField("hasError", String.valueOf(authentication.hasError()));
-        gen.writeStringField("username", authentication.getUsername());
-        gen.writeStringField("sessionId", authentication.getSessionId());
+        gen.writeStringField("username", authentication.getName()); //TODO username
+        gen.writeStringField("sessionId", authentication.getDetails().getSessionId());
         gen.writeStringField("terminal", authentication.getTerminalCode());
         gen.writeEndObject();
     }

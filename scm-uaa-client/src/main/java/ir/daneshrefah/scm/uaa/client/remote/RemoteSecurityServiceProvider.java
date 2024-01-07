@@ -78,12 +78,12 @@ public class RemoteSecurityServiceProvider {
             statusCode = response.getStatusCode().value();
             responseBody = response.getBody();
         } catch (RestClientResponseException e) {
-            logger.warn("response error on remote authenticate for user: " + authentication.getPrincipal(), e);
+            logger.error("response error on remote authenticate for user: " + authentication.getPrincipal(), e);
             statusCode = e.getStatusCode().value();
         } catch (RestClientException e) {
-            logger.warn("error on remote authenticate for user: " + authentication.getPrincipal(), e);
-            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
-            e.printStackTrace();
+            logger.error("error on remote authenticate for user: " + authentication.getPrincipal(), e);
+            throw new AuthenticationServiceException("error on client authentication.", e);
+//            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
         }
         boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
                 HttpStatusCode.SC_204.equals(statusCode)*/;

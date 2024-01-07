@@ -9,8 +9,8 @@ package ir.daneshrefah.scm.common.exception;
  */
 public class ValidationException extends BaseException {
 
-    public ValidationException(String errorCode, String source) {
-        super(errorCode, source);
+    public ValidationException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

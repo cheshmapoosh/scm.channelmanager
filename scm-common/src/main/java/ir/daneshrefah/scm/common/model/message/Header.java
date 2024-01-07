@@ -37,8 +37,8 @@ public class Header implements Serializable {
     private String clientAddress;
 
     public String getUsername() {
-        if (null != authentication) {
-            return authentication.getUsername();
+        if (null != authentication) { //TODO username
+            return authentication.getName();
         }
         return null;
     }

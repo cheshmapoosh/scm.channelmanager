@@ -12,25 +12,10 @@ import lombok.Getter;
 @Getter
 public abstract class BaseException extends RuntimeException {
 
+    public BaseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     public static final String DEFAULT_ERROR_URI = null;
 
-    private final String errorCode;
-    private String uri;
-    private String source;
-
-
-    protected BaseException(String errorCode, String source) {
-        this(errorCode, DEFAULT_ERROR_URI, source);
-    }
-
-    protected BaseException(String errorCode, String uri, String source) {
-        super("Error Code: " + errorCode);
-        this.errorCode = errorCode;
-        this.uri = uri;
-        this.source = source;
-    }
-
-    public String getErrorDetails() {
-        return errorCode;
-    }
 }

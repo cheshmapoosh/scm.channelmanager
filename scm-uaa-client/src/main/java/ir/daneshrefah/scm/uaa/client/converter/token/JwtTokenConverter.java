@@ -80,16 +80,20 @@ public class JwtTokenConverter implements TokenConverter<String> {
         user.setLoginAuthenticationMethod(loginAuthenticationMethod);
         user.setTransactionAuthenticationMethod(transactionAuthenticationMethod);
         user.setActive(true); //TODO
-        TerminalUserDetails userDetails = new TerminalUserDetails(user, authorities);
-        UserAuthentication result = new UserAuthentication(userDetails, authorities);
-//        grantType
-        result.setIssuer(issuer.toString());
-        result.setSessionId(sessionId);
-        result.setIssuedAt(issuedAt);
-        result.setExpiresAt(expiresAt);
-        result.setClientId(clientId);
-        result.setAuthenticated(true);
-        result.setLoginData(jwt);
+
+        UserAuthentication.AuthenticationDetail detail = UserAuthentication.AuthenticationDetail.builder()
+                .issuer(issuer.toString())
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .maxIdle(null)
+                .loginData(jwt)
+                .loginAccessParameter(null)
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .build();
+
+        UserAuthentication result = new UserAuthentication(detail,
+                user, authorities);
 
         return result;
     }

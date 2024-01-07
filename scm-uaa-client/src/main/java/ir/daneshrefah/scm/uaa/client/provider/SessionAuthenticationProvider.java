@@ -38,7 +38,7 @@ public class SessionAuthenticationProvider extends AbstractClientAuthenticationP
             throw new SessionAuthenticationException(String.format("invalid sessionId %s for user %s.",
                     sessionId, username));
         }
-        if (!StringUtils.equals(sessionId, userAuthentication.getSessionId())) {
+        if (!StringUtils.equals(sessionId, userAuthentication.getDetails().getSessionId())) {
             throw new SessionAuthenticationException(String.format("invalid sessionId %s for user %s.",
                     sessionId, username));
         }

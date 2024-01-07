@@ -41,9 +41,9 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
         BearerAuthenticationToken bearer = (BearerAuthenticationToken) authentication;
         UserAuthentication userAuthentication = jwtAuthenticationConverter.convert(bearer.getToken());
         validateUserAuthentication(authentication, userAuthentication);
-        if (StringUtils.isNotEmpty(userAuthentication.getSessionId())) {
-            String tokenUsername = userAuthentication.getUsername();
-            String tokenTerminalCode = userAuthentication.getUserDetails().getUser().getTerminalCode();
+        if (StringUtils.isNotEmpty(userAuthentication.getDetails().getSessionId())) {
+            String tokenUsername = userAuthentication.getName(); //TODO username
+            String tokenTerminalCode = userAuthentication.getPrincipal().getTerminalCode();
             userAuthentication = getSessionCache().getSessionFromCache(tokenUsername, tokenTerminalCode);
             if (null == userAuthentication) {
                 throw new SessionAuthenticationException("invalid session id for user: " + tokenUsername);
@@ -58,7 +58,7 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
         String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
-        String authenticationTerminalCode = userAuthentication.getUserDetails().getUser().getTerminalCode();
+        String authenticationTerminalCode = userAuthentication.getPrincipal().getTerminalCode();
         if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
         }

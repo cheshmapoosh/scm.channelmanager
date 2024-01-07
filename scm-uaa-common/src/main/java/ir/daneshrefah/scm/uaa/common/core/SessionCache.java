@@ -42,12 +42,13 @@ public class SessionCache {
     }
 
     public void putSessionInCache(UserAuthentication user) {
-        String sessionKey = user.getUsername() + StringUtils.DOUBLE_COLON + user.getUserDetails().getUser().getTerminalCode();
+        //TODO username
+        String sessionKey = user.getName() + StringUtils.DOUBLE_COLON + user.getPrincipal().getTerminalCode();
         putSessionInCache(sessionKey, user);
     }
 
     public void putSessionInCache(String sessionKey, UserAuthentication user) {
-        long timeToLiveMinutes = DateUtils.calculateMinutesBetween(user.getIssuedAt(), user.getExpiresAt());
+        long timeToLiveMinutes = DateUtils.calculateMinutesBetween(user.getDetails().getIssuedAt(), user.getDetails().getExpiresAt());
         cacheTemplate.putInCache(DEFAULT_CACHE_NAME, sessionKey, user, timeToLiveMinutes);
     }
 

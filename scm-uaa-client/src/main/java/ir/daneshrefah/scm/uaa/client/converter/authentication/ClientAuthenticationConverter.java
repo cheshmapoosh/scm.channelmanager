@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -66,19 +67,27 @@ public class ClientAuthenticationConverter extends org.springframework.security.
         }
 
         String terminalCode = request.getTerminalCode();
-        byte[] base64Token = request.getValue().getBytes(StandardCharsets.UTF_8);
-        byte[] decoded = decode(base64Token);
-        String token = new String(decoded, getCredentialsCharset());
-        int delim = token.indexOf(":");
-        if (delim == -1) {
-            throw new BadCredentialsException("Invalid basic authentication token");
+        byte[] base64Token = null != request.getValue() ?
+                request.getValue().getBytes(StandardCharsets.UTF_8) : null;
+        ClientAuthenticationToken result = null;
+        try {
+            byte[] decoded = decoded = decode(base64Token);
+            String token = new String(decoded, getCredentialsCharset());
+            int delim = token.indexOf(":");
+            if (delim == -1) {
+                throw new BadCredentialsException("Invalid basic authentication token");
+            }
+            String clientId = token.substring(0, delim);
+            if (StringUtils.isEmpty(terminalCode)) {
+                terminalCode = clientId;
+            }
+            result = ClientAuthenticationToken
+                    .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
+        } catch (AuthenticationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadCredentialsException("Invalid basic authentication token", e);
         }
-        String clientId = token.substring(0, delim);
-        if (StringUtils.isEmpty(terminalCode)) {
-            terminalCode = clientId;
-        }
-        ClientAuthenticationToken result = ClientAuthenticationToken
-                .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
         return result;
     }
 

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
+import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
 import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
@@ -13,7 +14,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class AuthenticationEvent extends DurableEvent<Object, Message> {
+public class AuthenticationEvent extends DurableEvent<Object, IAuthenticationHeader> {
 
     @Override
     public EventType getType() {
