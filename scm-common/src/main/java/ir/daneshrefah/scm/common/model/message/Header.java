@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -23,9 +22,10 @@ public class Header implements Serializable {
 
     private String contentType;
     @Setter
-    private IAuthenticationHeader authentication;
+    private Authentication authentication;
     @Setter
-    private Boolean secondLevelAuthenticated;
+    private boolean isTransactionAuthenticated = false;
+    @Setter
     private String correlationId;
     private String clientCorrelationId;
     private Instant clientTimestamp;

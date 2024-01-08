@@ -51,7 +51,7 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
         Header header = Header.builder()
                 .contentType(CamelUtils.getContentTypeHeaderFromExchange(input))
                 .authentication(null)
-                .secondLevelAuthenticated(null)
+                .isTransactionAuthenticated(false)
                 .correlationId(StringUtils.generateGuid())
                 .clientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input))
                 .clientTimestamp(CamelUtils.getClientTimestampFromExchange(input))

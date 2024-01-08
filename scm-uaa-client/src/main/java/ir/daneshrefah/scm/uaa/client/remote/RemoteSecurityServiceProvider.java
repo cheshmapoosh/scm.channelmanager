@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.client.remote;
 
 import com.hazelcast.internal.ascii.rest.HttpStatusCode;
 import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.provider.token.ClaimAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
@@ -51,6 +52,10 @@ public class RemoteSecurityServiceProvider {
     public RemoteSecurityServiceProvider(RestTemplate restTemplate, JwtDecoder jwtDecoder) {
         this.restTemplate = restTemplate;
         this.jwtDecoder = jwtDecoder;
+    }
+
+    public String authenticateClaim(ClaimAuthenticationToken authentication) throws AuthenticationException {
+        return (String) authentication.getCredentials();
     }
 
     public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {

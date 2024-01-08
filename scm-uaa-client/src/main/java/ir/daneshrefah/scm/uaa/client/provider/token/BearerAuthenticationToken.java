@@ -33,7 +33,7 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
     }
 
     @Override
-    public String getId() {
+    public String getSessionCacheKey() {
         return HashUtils.hashMD5ToString(getToken()) + StringUtils.DOUBLE_COLON + getTerminalCode();
     }
 }

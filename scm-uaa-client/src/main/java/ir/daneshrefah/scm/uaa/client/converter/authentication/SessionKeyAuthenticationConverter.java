@@ -2,14 +2,10 @@ package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
+import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.server.resource.BearerTokenError;
-import org.springframework.security.oauth2.server.resource.BearerTokenErrors;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -19,19 +15,19 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @since 2023-12-19
  */
-public class SessionKeyResolver implements AuthenticationConverter {
+public class SessionKeyAuthenticationConverter implements AuthenticationConverter {
 
     private static final Pattern authorizationPattern = Pattern.compile("^Session (?<token>[a-zA-Z0-9-._~+/]+=*)$",
             Pattern.CASE_INSENSITIVE);
 
-    @Override
+    /*@Override
     public SessionAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }
         final String authorizationHeaderToken = resolveFromAuthorizationHeader(authorizationHeader);
-        final String parameterToken = null; /*isParameterTokenSupportedForRequest(request)
-                ? resolveFromRequestParameters(request) : null;*/
+        final String parameterToken = null; *//*isParameterTokenSupportedForRequest(request)
+                ? resolveFromRequestParameters(request) : null;*//*
         if (authorizationHeaderToken != null) {
             if (parameterToken != null) {
                 final BearerTokenError error = BearerTokenErrors
@@ -46,28 +42,28 @@ public class SessionKeyResolver implements AuthenticationConverter {
 
             return authenticationRequest;
         }
-        /*if (parameterToken != null && isParameterTokenEnabledForRequest(request)) {
+        *//*if (parameterToken != null && isParameterTokenEnabledForRequest(request)) {
             return parameterToken;
-        }*/
+        }*//*
         return null;
-    }
+    }*/
 
     @Override
-    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !ClientAuthenticationType.SESSION.equals(request.getType())) {
+    public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
+        if (null == request || !ClientAuthenticationType.SESSION.equals(request.getAuthenticationType())) {
             return null;
         }
 
-        if (StringUtils.isNotEmpty(request.getValue())) {
+        if (StringUtils.isNotEmpty(request.getAuthenticationValue())) {
             SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(request.getUsername(),
-                    request.getTerminalCode(), request.getValue());
+                    request.getTerminalCode(), request.getAuthenticationValue());
             return authenticationRequest;
         }
 
         return null;
     }
 
-    private String resolveFromAuthorizationHeader(String authorization) {
+/*    private String resolveFromAuthorizationHeader(String authorization) {
         if (!StringUtils.startsWithIgnoreCase(authorization, "Session")) {
             return null;
         }
@@ -77,6 +73,6 @@ public class SessionKeyResolver implements AuthenticationConverter {
             throw new OAuth2AuthenticationException(error);
         }
         return matcher.group("token");
-    }
+    }*/
 
 }

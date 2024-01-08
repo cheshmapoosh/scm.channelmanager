@@ -44,12 +44,23 @@ public abstract class AbstractCamelInboundChannelGenerator extends AbstractInbou
     protected ClientAuthenticationRequest extractAuthenticationRequest(Exchange input) {
         String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(input);
 
-        ClientAuthenticationType type = extractAuthenticationType(authorizationHeader);
         String username = CamelUtils.getUsernameHeaderFromExchange(input);
         String terminalCode = CamelUtils.getTerminalCodeFromExchange(input);
-        String value = extractAuthenticationValue(authorizationHeader);
+        String authenticationValue = extractAuthenticationValue(authorizationHeader);
+        ClientAuthenticationType authenticationType = extractAuthenticationType(authorizationHeader);
+        String transactionValue = CamelUtils.getClaimCodeFromExchange(input);
+        ClientAuthenticationType transactionType = StringUtils.isEmpty(transactionValue) ?
+                ClientAuthenticationType.ANONYMOUS : ClientAuthenticationType.BASIC;
 
-        ClientAuthenticationRequest request = new ClientAuthenticationRequest(type, username, terminalCode, value);
+        ClientAuthenticationRequest request = ClientAuthenticationRequest.builder()
+                .username(username)
+                .terminalCode(terminalCode)
+                .authenticationType(authenticationType)
+                .authenticationValue(authenticationValue)
+                .transactionType(transactionType)
+                .transactionValue(transactionValue)
+                .build();
+
         return request;
     }
 

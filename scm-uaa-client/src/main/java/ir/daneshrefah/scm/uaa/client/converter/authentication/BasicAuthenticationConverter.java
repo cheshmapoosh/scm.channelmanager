@@ -1,11 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.BadCredentialsException;
-
-import java.util.Base64;
+import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,43 +14,8 @@ public class BasicAuthenticationConverter extends org.springframework.security.w
         implements AuthenticationConverter {
 
     @Override
-    public BasicAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader) {
+    public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
         return null;
-//        TODO this converter should work over request parameters instead of authorization header
-        /*if (StringUtils.isEmpty(terminalCode) || StringUtils.isNotEmpty(authorizationHeader)) {
-            return null;
-        }
-        authorizationHeader = authorizationHeader.trim();
-        if (!StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return null;
-        }
-        if (authorizationHeader.equalsIgnoreCase(AUTHENTICATION_SCHEME_BASIC)) {
-            throw new BadCredentialsException("Empty basic authentication token");
-        }
-        byte[] base64Token = authorizationHeader.substring(6).getBytes(StandardCharsets.UTF_8);
-        byte[] decoded = decode(base64Token);
-        String token = new String(decoded, getCredentialsCharset());
-        int delim = token.indexOf(":");
-        if (delim == -1) {
-            throw new BadCredentialsException("Invalid basic authentication token");
-        }
-        BasicAuthenticationToken result = BasicAuthenticationToken
-                .unauthenticated(terminalCode, token.substring(0, delim), token.substring(delim + 1));
-//TODO        result.setDetails(this.getAuthenticationDetailsSource().buildDetails(request));
-        return result;*/
-    }
-
-    @Override
-    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        return null;
-    }
-
-    private byte[] decode(byte[] base64Token) {
-        try {
-            return Base64.getDecoder().decode(base64Token);
-        } catch (IllegalArgumentException ex) {
-            throw new BadCredentialsException("Failed to decode basic authentication token");
-        }
     }
 
 }

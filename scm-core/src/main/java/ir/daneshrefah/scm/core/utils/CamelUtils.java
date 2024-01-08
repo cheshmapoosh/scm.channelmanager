@@ -38,6 +38,10 @@ public class CamelUtils {
         return getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_USERNAME);
     }
 
+    public static String getClaimCodeFromExchange(Exchange exchange) {
+        return getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_CLAIM_CODE);
+    }
+
     public static String getClientCorrelationFromExchange(Exchange exchange) {
         return getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID);
     }

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.client.provider;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -54,8 +55,11 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
                         "Only BaseAuthenticationToken is supported"));
         String username = determineUsername(authentication);
         boolean cacheWasUsed = true;
-        String sessionKey = ((BaseAuthenticationToken) authentication).getId();
-        UserAuthentication user = this.sessionCache.getSessionFromCache(sessionKey);
+        String sessionKey = ((BaseAuthenticationToken) authentication).getSessionCacheKey();
+        UserAuthentication user = null;
+        if (StringUtils.isNotEmpty(sessionKey)) {
+            user = this.sessionCache.getSessionFromCache(sessionKey);
+        }
         if (user == null) {
             cacheWasUsed = false;
             try {
@@ -87,7 +91,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
 //        this.postAuthenticationChecks.check(user.findUserDetails());
-        if (!cacheWasUsed) {
+        if (!cacheWasUsed && StringUtils.isNotEmpty(sessionKey)) {
             this.sessionCache.putSessionInCache(sessionKey, user);
         }
         Object principalToReturn = user;

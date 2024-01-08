@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorReason;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
-import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
@@ -25,6 +25,7 @@ import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.ClassUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -130,9 +131,12 @@ public abstract class AbstractInboundChannelGenerator<T> {
     protected final Message buildMessage(T input, TerminalServiceChannelAccess service) {
         Message message = messageBuilder.build(input, service);
         ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
-        IAuthenticationHeader authentication = authenticateUser(message, authenticationRequest);
+        UserAuthentication authentication = authenticateUser(message, authenticationRequest, false);
+        UserAuthentication transactionAuthentication = authenticateUser(message, authenticationRequest, true);
         message.getHeader().setAuthentication(authentication);
-        if (message.getHeader().getAuthentication().hasError()) {
+        message.getHeader().setTransactionAuthenticated(null != transactionAuthentication &&
+                transactionAuthentication.isAuthenticated() && !transactionAuthentication.isAnonymous());
+        if (authentication.hasError() || transactionAuthentication.hasError()) {
             message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, Constants.SCM_PARAMETER_AUTHORIZATION,
                     ErrorReason.IS_INVALID), Status.SC_UNAUTHORIZED);
             message.setPayload(objectMapper.nullNode());
@@ -187,14 +191,20 @@ public abstract class AbstractInboundChannelGenerator<T> {
         EventProducer.getInstance().sendEvent(event);
     }
 
-    protected IAuthenticationHeader authenticateUser(Message message, ClientAuthenticationRequest authenticationRequest) {
+    protected UserAuthentication authenticateUser(Message message, ClientAuthenticationRequest authenticationRequest,
+                                                  boolean isTransaction) {
         Instant startTime = Instant.now();
 
-        IAuthenticationHeader authentication = null;
+        UserAuthentication authentication = null;
         Exception error = null;
         try {
-            authentication = authenticationTemplate.authenticateByAuthenticationRequest(
-                    authenticationRequest);
+            if (isTransaction) {
+                authentication = authenticationTemplate.authenticateTransactionByAuthenticationRequest(
+                        authenticationRequest);
+            } else {
+                authentication = authenticationTemplate.authenticateUserByAuthenticationRequest(
+                        authenticationRequest);
+            }
         } catch (ClientAuthenticationException e) {
             authentication = e.getAuthentication();
             error = (Exception) ClassUtils.cloneExceptionWithoutStackTrace(null != e.getCause() ? e.getCause() : e);
@@ -208,7 +218,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     private void logAuthenticationEvent(Message message, ClientAuthenticationRequest authenticationRequest,
-                                        IAuthenticationHeader authentication, Instant startTime, Exception error) {
+                                        Authentication authentication, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
         Event event = AuthenticationEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
@@ -230,9 +240,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
     protected final Message executeService(Message message) {
         if (!checkServiceCallAllowed(message)) {
-            message.addError(new Error(ErrorType.ACCESS_DENIED, Constants.SCM_PARAMETER_AUTHORIZATION,
-                    ErrorReason.IS_INVALID), Status.SC_ACCESS_DENIED);
-            message.setPayload(objectMapper.nullNode());
+            message.addAccessDeniedError(Constants.SCM_PARAMETER_AUTHORIZATION);
             return message;
         }
 

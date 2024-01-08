@@ -24,9 +24,9 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
     private String generateServiceUrl(TerminalServiceChannelAccess channelAccess) {
         String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
         String serviceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService());
-        StringBuilder urlBuilder = new StringBuilder("api/");
+        StringBuilder urlBuilder = new StringBuilder("api");
         urlBuilder
-                .append(terminalCode)
+//                .append(terminalCode)
                 .append(serviceUrl);
         return urlBuilder.toString();
     }

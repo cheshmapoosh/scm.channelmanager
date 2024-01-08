@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,8 +12,6 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
  */
 public interface AuthenticationConverter {
 
-    public AbstractAuthenticationToken convertByHeader(String username, String terminalCode, String authorizationHeader);
-
-    public AbstractAuthenticationToken convertByRequest(ClientAuthenticationRequest request);
+    public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request);
 
 }

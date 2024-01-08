@@ -9,22 +9,22 @@ import java.util.Collections;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-12-19
+ * @since 2024-01-08
  */
-public class BasicAuthenticationToken extends BaseTerminalAuthenticationToken {
+public class ClaimAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String username;
 
     private final String credentials;
 
-    public BasicAuthenticationToken(String terminalCode, String username, String credentials) {
+    public ClaimAuthenticationToken(String terminalCode, String username, String credentials) {
         super(username, terminalCode, Collections.emptyList());
         this.username = username;
         this.credentials = credentials;
     }
 
-    public static BasicAuthenticationToken unauthenticated(String terminalCode, String username, String credentials) {
-        return new BasicAuthenticationToken(terminalCode, username, credentials);
+    public static ClaimAuthenticationToken unauthenticated(String terminalCode, String username, String credentials) {
+        return new ClaimAuthenticationToken(terminalCode, username, credentials);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class BasicAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     @Override
     public String getSessionCacheKey() {
-        return getClass().getSimpleName() + "_" + getName() + StringUtils.DOUBLE_COLON + getTerminalCode();
+        return null; // return null that token not be cached.
     }
 
 }

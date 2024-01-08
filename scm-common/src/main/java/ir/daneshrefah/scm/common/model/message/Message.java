@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.error.ErrorReason;
+import ir.daneshrefah.scm.common.model.error.ErrorType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -57,6 +60,12 @@ public class Message implements Serializable {
             errors = new ArrayList<>();
         errors.add(error);
         setStatus(status);
+    }
+
+    public void addAccessDeniedError(String source) {
+        addError(new Error(ErrorType.ACCESS_DENIED, source,
+                ErrorReason.IS_INVALID), Status.SC_ACCESS_DENIED);
+        setPayload(JsonNodeFactory.instance.nullNode());
     }
 
     public void addErrors(List<Error> errors) {

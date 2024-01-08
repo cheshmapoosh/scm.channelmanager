@@ -24,6 +24,9 @@ public abstract class BaseAuthenticationToken extends AbstractAuthenticationToke
         super(authorities);
     }
 
-    public abstract String getId();
+    /*
+    * for none cacheable thi method return null
+    * */
+    public abstract String getSessionCacheKey();
 
 }

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.core;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -10,13 +10,15 @@ import lombok.Getter;
  * @version 1.0
  * @since 2024-01-06
  */
-@AllArgsConstructor
+@Builder
 @Getter
 public class ClientAuthenticationRequest {
 
-    private ClientAuthenticationType type;
     private String username;
     private String terminalCode;
-    private String value;
+    private ClientAuthenticationType authenticationType;
+    private String authenticationValue;
+    private ClientAuthenticationType transactionType;
+    private String transactionValue;
 
 }

@@ -1,12 +1,11 @@
 package ir.daneshrefah.scm.uaa.common.model.authentication;
 
-import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.util.Assert;
@@ -26,7 +25,7 @@ import java.util.Collections;
  * @since 2023-08-14
  */
 @Getter
-public class UserAuthentication implements Authentication, IAuthenticationHeader {
+public class UserAuthentication implements org.springframework.security.core.Authentication, Authentication {
 
     private final Collection<GrantedAuthority> authorities;
     private AuthenticationDetail details;

@@ -38,7 +38,7 @@ public class SessionAuthenticationToken extends BaseTerminalAuthenticationToken 
     }
 
     @Override
-    public String getId() {
+    public String getSessionCacheKey() {
         return getSessionId() + StringUtils.DOUBLE_COLON + getTerminalCode();
     }
 }

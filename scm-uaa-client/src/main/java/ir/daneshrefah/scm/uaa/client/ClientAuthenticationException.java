@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client;
 
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import lombok.Getter;
 
 /**
@@ -14,9 +14,9 @@ import lombok.Getter;
 @Getter
 public class ClientAuthenticationException extends BaseException {
 
-    private final IAuthenticationHeader authentication;
+    private final UserAuthentication authentication;
 
-    public ClientAuthenticationException(String message, Throwable cause, IAuthenticationHeader authentication) {
+    public ClientAuthenticationException(String message, Throwable cause, UserAuthentication authentication) {
         super(message, cause);
         this.authentication = authentication;
     }

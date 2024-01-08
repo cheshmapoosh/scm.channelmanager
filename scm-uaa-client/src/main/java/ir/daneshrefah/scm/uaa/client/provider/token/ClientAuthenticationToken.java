@@ -34,7 +34,7 @@ public class ClientAuthenticationToken extends BaseTerminalAuthenticationToken {
     }
 
     @Override
-    public String getId() {
+    public String getSessionCacheKey() {
         return this.getClass().getSimpleName() + "_" + HashUtils.hashMD5ToString(getName() +
                 StringUtils.replaceNullWithSpace((String) credentials));
     }

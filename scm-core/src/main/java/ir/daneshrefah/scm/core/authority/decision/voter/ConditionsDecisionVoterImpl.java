@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.common.model.message.IAuthenticationHeader;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -49,7 +49,7 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
     private AuthenticationMethod realizeFirstAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
         Service service = authObject.getTerminalServiceAccess().getService();
         Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        IAuthenticationHeader userFirstAuth = message.getHeader().getAuthentication();
+        Authentication userFirstAuth = message.getHeader().getAuthentication();
         // TODO HEADER DOES NOT HAVE METHOD AUTH!
         if (service.getCheckAccessFirstAuthentication() && terminal.getSupportCheckAuthentication()) {
             //SAMPLE RET
@@ -61,7 +61,7 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
     private AuthenticationMethod realizeSecondAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
         Service service = authObject.getTerminalServiceAccess().getService();
         Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        IAuthenticationHeader userSecondAuth = message.getHeader().getAuthentication();
+        Authentication userSecondAuth = message.getHeader().getAuthentication();
         // TODO HEADER DOES NOT HAVE METHOD AUTH!
         if (service.getCheckAccessSecondAuthentication() && terminal.getSupportCheckSecondAuthentication()) {
             return AuthenticationMethod.STATIC_PASSWORD;
