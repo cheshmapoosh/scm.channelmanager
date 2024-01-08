@@ -14,8 +14,8 @@ import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 public class PermitAllDecisionManager implements DecisionManager {
 
     @Override
-    public void decide(Message message) throws AuthorityBaseException {
-        return;
+    public boolean decide(Message message) throws AuthorityBaseException {
+        return true;
     }
 
 }

@@ -22,7 +22,7 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
             return null;
         }
 
-        if (StringUtils.isEmpty(request.getAuthenticationValue())) {
+        if (StringUtils.isEmpty(request.getTransactionValue())) {
             throw new BadCredentialsException("invalid claim code");
         }
 

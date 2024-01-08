@@ -155,8 +155,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
     protected abstract ClientAuthenticationRequest extractAuthenticationRequest(T input);
 
     private boolean checkServiceCallAllowed(Message message) {
-        decisionManager.decide(message);
-        return true;
+        return decisionManager.decide(message);
     }
 
     private final void logIncomingMessage(Message message) {

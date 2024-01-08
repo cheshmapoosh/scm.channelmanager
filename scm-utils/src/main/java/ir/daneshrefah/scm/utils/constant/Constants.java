@@ -14,7 +14,9 @@ public class Constants {
     public static final String SCM_PARAMETER_TERMINAL = "X-SCM-Terminal";
     public static final String SCM_PARAMETER_CLIENT_CORRELATION_ID = "X-Client-Correlation-ID";
     public static final String SCM_PARAMETER_CLIENT_TIMESTAMP = "X-SCM-Client-Timestamp";
-    public static final String SCM_PARAMETER_RECEIVE_TIMESTAMP = "X-SCM-receive-Timestamp";
+    public static final String SCM_PARAMETER_RECEIVE_TIMESTAMP = "X-SCM-Receive-Timestamp";
+    public static final String SCM_PARAMETER_RESPONSE_TIMESTAMP = "X-SCM-Response-Timestamp";
+    public static final String SCM_PARAMETER_RESPONSE_DURATION = "X-SCM-Response-Duration";
     public static final String SCM_PARAMETER_ACCESS_PARAMETER = "X-SCM-Access-Parameter";
     public static final String SCM_PARAMETER_CLAIM_CODE = "X-SCM-Claim";
     public static final String SCM_PARAMETER_AUTHORIZATION = "Authorization";

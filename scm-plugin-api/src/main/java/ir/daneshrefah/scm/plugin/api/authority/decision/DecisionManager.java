@@ -7,6 +7,6 @@ import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 
 public interface DecisionManager {
 
-    void decide(Message message) throws AuthorityBaseException;
+    boolean decide(Message message) throws AuthorityBaseException;
 
 }

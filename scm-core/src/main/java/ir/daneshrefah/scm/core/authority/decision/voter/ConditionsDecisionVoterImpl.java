@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.cache.CacheConditionService;
 import ir.daneshrefah.scm.core.authority.decision.constant.ConditionCacheType;
-import ir.daneshrefah.scm.core.authority.decision.constant.Priority;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +23,13 @@ import java.util.Objects;
 @Qualifier
 @RequiredArgsConstructor
 @Slf4j
-public class ConditionsDecisionVoterImpl implements DecisionVoter {
+public class ConditionsDecisionVoterImpl extends DecisionVoter {
 
     private final CacheConditionService cacheConditionService;
 
     @Override
-    public int vote(Message message, TerminalServiceChannelAccess authObject) throws AuthorityBaseException {
+    public int vote(Message message) throws AuthorityBaseException {
+        TerminalServiceChannelAccess authObject = message.getHeader().getService();
         //checking terminal and service auth and second auth.
         AuthenticationMethod firstAuth = realizeFirstAuthenticationMethod(authObject,message);
         AuthenticationMethod secondAuth = realizeSecondAuthenticationMethod(authObject,message);
@@ -44,6 +44,11 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
             return serviceAndTerminalVote;
         }
         return ACCESS_DENIED;
+    }
+
+    @Override
+    protected boolean support(TerminalServiceChannelAccess service) {
+        return true;
     }
 
     private AuthenticationMethod realizeFirstAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
@@ -120,11 +125,5 @@ public class ConditionsDecisionVoterImpl implements DecisionVoter {
         result.addAll(terminalServiceSecondAuthentication);
         return result;
     }
-
-    @Override
-    public Priority priority() {
-        return Priority.MEDIUM;
-    }
-
 
 }

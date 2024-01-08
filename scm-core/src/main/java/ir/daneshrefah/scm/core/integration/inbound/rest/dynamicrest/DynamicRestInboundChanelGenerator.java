@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChann
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpMessageBuilder;
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
+import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -39,11 +40,12 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
     public DynamicRestInboundChanelGenerator(ObjectMapper objectMapper, CamelContext camelContext,
                                              AuthenticationClientTemplate authenticationTemplate,
                                              ServiceProducerTemplate producerTemplate,
-                                             TransformerService transformerService) {
+                                             TransformerService transformerService,
+                                             DecisionManager decisionManager) {
         super(objectMapper, camelContext, authenticationTemplate,
                 producerTemplate, transformerService,
                 new CamelHttpMessageBuilder(objectMapper),
-                new CamelHttpResponseBuilder(objectMapper), null);
+                new CamelHttpResponseBuilder(objectMapper), decisionManager);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }
 

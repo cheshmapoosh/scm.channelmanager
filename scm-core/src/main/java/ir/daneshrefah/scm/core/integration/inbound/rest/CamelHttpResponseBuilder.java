@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +29,7 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
     static {
         statusMappingMap.put(Status.SC_PROCESSING, 500);
         statusMappingMap.put(Status.SC_SUCCESS, 200);
-        statusMappingMap.put(Status.SC_ACCESS_DENIED, 401);
+        statusMappingMap.put(Status.SC_ACCESS_DENIED, 403);
         statusMappingMap.put(Status.SC_UNAUTHORIZED, 401);
         statusMappingMap.put(Status.SC_NOT_FOUND, 404);
         statusMappingMap.put(Status.SC_ERROR_VALIDATION, 400);
@@ -67,6 +69,10 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
         responseMessage.setHeader(Constants.SCM_PARAMETER_CORRELATION_ID, message.getHeader().getCorrelationId());
         responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_TIMESTAMP, message.getHeader().getClientTimestamp());
         responseMessage.setHeader(Constants.SCM_PARAMETER_RECEIVE_TIMESTAMP, message.getHeader().getReceiveTimestamp());
+        Instant responseTime = Instant.now();
+        responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_TIMESTAMP, responseTime);
+        String duration = Duration.between(message.getHeader().getReceiveTimestamp(), responseTime).toSeconds() + "(s)";
+        responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_DURATION, duration);
 //        exchange.getMessage().setHeader("Access-Control-Allow-Credentials", "true");
 //        exchange.getMessage().setHeader("Access-Control-Allow-Headers", "*");
 //        exchange.getMessage().setHeader("Access-Control-Allow-Methods", "*");
