@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.common.model.message.Authentication;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.cache.CacheConditionService;
 import ir.daneshrefah.scm.core.authority.decision.constant.ConditionCacheType;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,17 +30,20 @@ public class ConditionsDecisionVoterImpl extends DecisionVoter {
 
     @Override
     public int vote(Message message) throws AuthorityBaseException {
+//        check withdraw
+//        check authority
         TerminalServiceChannelAccess authObject = message.getHeader().getService();
+
         //checking terminal and service auth and second auth.
-        AuthenticationMethod firstAuth = realizeFirstAuthenticationMethod(authObject,message);
-        AuthenticationMethod secondAuth = realizeSecondAuthenticationMethod(authObject,message);
+        AuthenticationMethod loginAuthenticationMethod = realizeLoginAuthenticationMethod(authObject, message);
+        AuthenticationMethod transactionAuthenticationMethod = realizeTransactionAuthenticationMethod(authObject, message);
         //checking Terminal-service-auth-secondAuth conditions
-        int terminalServiceVote = checkTerminalServiceAccess(firstAuth, secondAuth,authObject);
+        int terminalServiceVote = checkTerminalServiceAccess(loginAuthenticationMethod, transactionAuthenticationMethod,authObject);
         if (terminalServiceVote >= ACCESS_ABSTAIN) {
             return terminalServiceVote;
         }
         //checking terminal & service
-        int serviceAndTerminalVote = checkServiceAccessAndTerminalAccess(firstAuth,secondAuth, authObject);
+        int serviceAndTerminalVote = checkServiceAccessAndTerminalAccess(loginAuthenticationMethod,transactionAuthenticationMethod, authObject);
         if (serviceAndTerminalVote >= ACCESS_ABSTAIN) {
             return serviceAndTerminalVote;
         }
@@ -51,27 +55,26 @@ public class ConditionsDecisionVoterImpl extends DecisionVoter {
         return true;
     }
 
-    private AuthenticationMethod realizeFirstAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
-        Service service = authObject.getTerminalServiceAccess().getService();
-        Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        Authentication userFirstAuth = message.getHeader().getAuthentication();
-        // TODO HEADER DOES NOT HAVE METHOD AUTH!
-        if (service.getCheckAccessFirstAuthentication() && terminal.getSupportCheckAuthentication()) {
-            //SAMPLE RET
-           return AuthenticationMethod.STATIC_PASSWORD;
+    private AuthenticationMethod realizeLoginAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) {
+        UserAuthentication authentication = (UserAuthentication) message.getHeader().getAuthentication();
+        TerminalServiceAccess service = message.getHeader().getService().getTerminalServiceAccess();
+        boolean isAuthenticationSupport = authentication.isAuthenticated() && !authentication.isAnonymous() &&
+                service.getService().getCheckAccessFirstAuthentication() && service.getTerminal().getSupportCheckAuthentication();
+        if (!isAuthenticationSupport) {
+            return null;
         }
-        return null;
+        return authentication.getPrincipal().getLoginAuthenticationMethod();
     }
 
-    private AuthenticationMethod realizeSecondAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
-        Service service = authObject.getTerminalServiceAccess().getService();
-        Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
-        Authentication userSecondAuth = message.getHeader().getAuthentication();
-        // TODO HEADER DOES NOT HAVE METHOD AUTH!
-        if (service.getCheckAccessSecondAuthentication() && terminal.getSupportCheckSecondAuthentication()) {
-            return AuthenticationMethod.STATIC_PASSWORD;
+    private AuthenticationMethod realizeTransactionAuthenticationMethod(TerminalServiceChannelAccess authObject, Message message) throws NullPointerException {
+        UserAuthentication authentication = (UserAuthentication) message.getHeader().getAuthentication();
+        TerminalServiceAccess service = message.getHeader().getService().getTerminalServiceAccess();
+        boolean isAuthenticationSupport = authentication.isAuthenticated() && !authentication.isAnonymous() &&
+                service.getService().getCheckAccessSecondAuthentication() && service.getTerminal().getSupportCheckSecondAuthentication();
+        if (!isAuthenticationSupport) {
+            return null;
         }
-        return null;
+        return authentication.getPrincipal().getTransactionAuthenticationMethod();
     }
 
     private int checkServiceAccessAndTerminalAccess(AuthenticationMethod firstAuth,AuthenticationMethod secondAuth, TerminalServiceChannelAccess authObject) {
