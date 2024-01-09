@@ -1,33 +1,47 @@
-package ir.daneshrefah.scm.core.authority.decision.cache;
+package ir.daneshrefah.scm.core.authority.decision.helper;
 
+import ir.daneshrefah.scm.common.model.message.Authentication;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.constant.ConditionCacheType;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2024-01-09
+ */
 @Component
 @RequiredArgsConstructor
-@Slf4j
-public class CacheConditionService {
+public class DecisionHelper {
+    public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,
+                                              Authentication authentication) {
+        return Collections.emptyList();
+    }
 
-    private final ConditionService conditionService;
+    public List<Condition> findTerminalConditions(ConditionType conditionType, TerminalServiceChannelAccess service,
+                                                  Authentication authentication) {
+        return Collections.emptyList();
+    }
 
-    /* cache terminal condition by terminal id */
+    /*private final ConditionService conditionService;
+
+    *//* cache terminal condition by terminal id *//*
     private static final Map<String, List<BaseCondition<String>>> TERMINAL_CONDITION_CACHE = new ConcurrentHashMap<>();
-    /* cache service condition by service id */
+    *//* cache service condition by service id *//*
     private static final Map<String, List<BaseCondition<String>>> SERVICE_CONDITION_CACHE = new ConcurrentHashMap<>();
-    /* cache terminal-service condition by terminal-service-access id */
+    *//* cache terminal-service condition by terminal-service-access id *//*
     private static final Map<String, List<BaseCondition<String>>> TERMINAL_SERVICE_CONDITION_CACHE = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -134,6 +148,6 @@ public class CacheConditionService {
             valueList.add(value);
             cache.put(key,valueList);
         }
-    }
+    }*/
 
 }

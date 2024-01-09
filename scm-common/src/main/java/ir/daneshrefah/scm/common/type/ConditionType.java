@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.type;
 
 public enum ConditionType {
-    RATE(1), WITHDRAW(2);
+    RATE(1), WITHDRAW(2), AUTHORITY(3);
     ConditionType(int code) {
         this.code = code;
     }

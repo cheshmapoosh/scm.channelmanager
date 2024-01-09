@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.authority.decision.voter.*;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
@@ -16,13 +17,15 @@ public class DecisionManagerImpl implements DecisionManager {
 
     private final List<DecisionVoter> DECISION_VOTER_LIST;
 
-    public DecisionManagerImpl(ConditionsDecisionVoterImpl conditionsDecisionVoter) {
+    public DecisionManagerImpl(DecisionHelper decisionHelper) {
         List<DecisionVoter> voterList = new ArrayList<>();
         voterList.add(new AuthenticationDecisionVoter());
         voterList.add(new TransactionAuthenticationDecisionVoter());
         voterList.add(new ServiceAssignmentDecisionVoter());
         voterList.add(new AssetAssignmentDecisionVoter());
-        voterList.add(conditionsDecisionVoter);
+        voterList.add(new RateLimitConditionalDecisionVoter(decisionHelper));
+        voterList.add(new AuthorityConditionalDecisionVoter(decisionHelper));
+        voterList.add(new WithdrawConditionalDecisionVoter(decisionHelper));
         DECISION_VOTER_LIST = Collections.unmodifiableList(voterList);
     }
 
