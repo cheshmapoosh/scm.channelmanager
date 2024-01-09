@@ -21,8 +21,8 @@ public class DecisionManagerImpl implements DecisionManager {
         List<DecisionVoter> voterList = new ArrayList<>();
         voterList.add(new AuthenticationDecisionVoter());
         voterList.add(new TransactionAuthenticationDecisionVoter());
-        voterList.add(new ServiceAssignmentDecisionVoter());
-        voterList.add(new AssetAssignmentDecisionVoter());
+        voterList.add(new ServiceAssignmentDecisionVoter(decisionHelper));
+        voterList.add(new AssetAssignmentDecisionVoter(decisionHelper));
         voterList.add(new RateLimitConditionalDecisionVoter(decisionHelper));
         voterList.add(new AuthorityConditionalDecisionVoter(decisionHelper));
         voterList.add(new WithdrawConditionalDecisionVoter(decisionHelper));

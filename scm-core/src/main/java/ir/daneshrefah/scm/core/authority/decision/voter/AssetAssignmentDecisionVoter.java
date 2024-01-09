@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Description of the class or purpose of the file.
@@ -10,7 +12,10 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
  * @version 1.0
  * @since 2024-01-08
  */
+@RequiredArgsConstructor
 public class AssetAssignmentDecisionVoter extends DecisionVoter {
+
+    private final DecisionHelper decisionHelper;
 
     @Override
     protected int vote(Message message) {
