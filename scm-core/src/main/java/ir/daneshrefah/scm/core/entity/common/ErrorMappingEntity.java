@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.common;
 
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.core.converter.MessageStatusTypeConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
 import ir.daneshrefah.scm.common.model.message.Status;
 import jakarta.persistence.*;
@@ -15,7 +15,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "TBL_SCM_ERROR_MAPPING")
-public class ErrorMappingEntity extends AbstractEntity<String> {
+public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "ERROR_MAPPING_ID")

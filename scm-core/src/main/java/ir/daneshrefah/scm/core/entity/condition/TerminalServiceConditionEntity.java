@@ -1,8 +1,5 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

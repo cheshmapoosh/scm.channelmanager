@@ -76,7 +76,7 @@ public class JwtTokenConverter implements TokenConverter<String> {
 
         User user = new User();
         user.setTerminalCode(terminalCode);
-        user.setNickName(username);
+        user.setNickname(username);
         user.setLoginAuthenticationMethod(loginAuthenticationMethod);
         user.setTransactionAuthenticationMethod(transactionAuthenticationMethod);
         user.setActive(true); //TODO

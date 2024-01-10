@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.entity.transformer;
 
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.converter.TransformerRelationTypeConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;
 
 /**
@@ -14,7 +14,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER_RELATION")
-public class TransformerRelationEntity extends AbstractEntity<String> {
+public class TransformerRelationEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "TRANSFORMER_RELATION_ID")

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
-import ir.daneshrefah.scm.core.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
+import ir.daneshrefah.scm.core.entity.condition.*;
 import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
@@ -8,11 +9,9 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
-import ir.daneshrefah.scm.core.entity.condition.ServiceConditionEntity;
 import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
-import ir.daneshrefah.scm.core.entity.condition.TerminalServiceConditionEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

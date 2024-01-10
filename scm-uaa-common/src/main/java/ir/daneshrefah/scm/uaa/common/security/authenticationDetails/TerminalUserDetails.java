@@ -52,12 +52,12 @@ public class TerminalUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getFirstPassword();
+        return user.getLoginStaticPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getNickName();
+        return user.getNickname();
     }
 
     @Override

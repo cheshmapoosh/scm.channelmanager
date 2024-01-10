@@ -1,14 +1,13 @@
 package ir.daneshrefah.scm.core.service;
 
 
+import ir.daneshrefah.scm.core.entity.condition.*;
 import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
 import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
-import ir.daneshrefah.scm.core.entity.condition.ServiceConditionEntity;
 import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
-import ir.daneshrefah.scm.core.entity.condition.TerminalServiceConditionEntity;
 import ir.daneshrefah.scm.core.mapper.ConditionMapper;
 import ir.daneshrefah.scm.core.repository.ConditionRepository;
 import ir.daneshrefah.scm.core.repository.ServiceConditionRepository;

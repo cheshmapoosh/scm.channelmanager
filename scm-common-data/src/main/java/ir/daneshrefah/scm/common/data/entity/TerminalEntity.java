@@ -1,6 +1,5 @@
-package ir.daneshrefah.scm.core.entity.terminal;
+package ir.daneshrefah.scm.common.data.entity;
 
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -8,7 +7,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "TBL_SCM_TERMINAL")
-public class TerminalEntity extends AbstractEntity<String> {
+public class TerminalEntity extends AbstractDefaultEntity<String> {
     @Id
     @Column(name = "TERMINAL_ID")
     private String id;

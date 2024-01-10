@@ -2,23 +2,14 @@ package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
-import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
-import ir.daneshrefah.scm.plugin.api.constants.ErrorCodes;
-import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
-import ir.daneshrefah.scm.plugin.api.exception.TransformException;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;

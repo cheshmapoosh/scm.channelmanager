@@ -1,11 +1,24 @@
 
-
-uaa:
-  key-store:
-    name: config/keystore.p12
-    password: password
-    alias: selfsigned
 scm:
+  security:
+    key-store:
+      name: config/keystore.p12
+      password: password
+      alias: selfsigned
+    authenticationDatasource:
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF
+    activationDatasource:
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 6
+      default-schema: REF
   cache:
     client:
       config:
@@ -18,12 +31,18 @@ scm:
 #  cloud:
 #    config:
 #      profile: default
-spring:
-  datasource:
-    url: jdbc:db2://10.10.4.104:50001/DBREFSW
-    username: db2inst1
-    password: db2inst1
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
+
+
+
+
+#spring:
+#  datasource:
+#    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+#    username: db2inst1
+#    password: db2inst1
+#    driver-class-name: com.ibm.db2.jcc.DB2Driver
+#    hikari:
+#      maximum-pool-size: 10
 
 server:
   port: 8000

@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
-import ir.daneshrefah.scm.core.entity.service.ParentServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;

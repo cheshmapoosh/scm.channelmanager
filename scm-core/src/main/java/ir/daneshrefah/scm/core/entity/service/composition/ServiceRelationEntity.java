@@ -1,14 +1,10 @@
 package ir.daneshrefah.scm.core.entity.service.composition;
 
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.core.converter.ServiceRelationTypeConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.transformer.TransformerRelationEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import jakarta.persistence.*;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,7 +15,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "TBL_SCM_SERVICE_RELATION")
-public class ServiceRelationEntity extends AbstractEntity<String> {
+public class ServiceRelationEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "SERVICE_RELATION_ID")

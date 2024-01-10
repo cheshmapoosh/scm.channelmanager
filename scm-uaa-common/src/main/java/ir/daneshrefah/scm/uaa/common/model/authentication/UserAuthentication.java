@@ -102,7 +102,7 @@ public class UserAuthentication implements org.springframework.security.core.Aut
 
     @Override
     public String getName() {
-        return null != principal ? principal.getNickName() : null;
+        return null != principal ? principal.getNickname() : null;
     }
 
 

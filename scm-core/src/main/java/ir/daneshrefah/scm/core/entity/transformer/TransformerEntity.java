@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.transformer;
 
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER")
-public class TransformerEntity extends AbstractEntity<String> {
+public class TransformerEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "TRANSFORMER_ID")

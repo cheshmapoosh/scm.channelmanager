@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.core.converter.CustomerProvideMethodConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.external.CustomerProvideMethod;
 import jakarta.persistence.*;
 
@@ -14,7 +14,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
-public class ExternalServiceProviderEntity extends AbstractEntity<String> {
+public class ExternalServiceProviderEntity extends AbstractDefaultEntity<String> {
     @Id
     @Column(name = "SERVICE_PROVIDER_ID")
     private String id;

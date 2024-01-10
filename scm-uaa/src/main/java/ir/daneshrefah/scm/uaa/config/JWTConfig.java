@@ -35,11 +35,11 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 @Configuration
 public class JWTConfig {
-    @Value("${uaa.key-store.name}")
+    @Value("${scm.security.key-store.name}")
     private String keyStoreFilePath;
-    @Value("${uaa.key-store.password}")
+    @Value("${scm.security.key-store.password}")
     private String keyStorePassword;
-    @Value("${uaa.key-store.alias}")
+    @Value("${scm.security.key-store.alias}")
     private String keyStoreAlias;
 
 

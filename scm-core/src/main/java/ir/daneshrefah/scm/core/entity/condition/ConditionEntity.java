@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.entity.condition;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.common.type.PeriodType;
 import ir.daneshrefah.scm.core.converter.PeriodTypeConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,7 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_CONDITION")
 @Setter
 @Getter
-public class ConditionEntity extends AbstractEntity<String> {
+public class ConditionEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import jakarta.persistence.*;
 
@@ -11,7 +11,7 @@ import jakarta.persistence.*;
 @Table(name = "TBL_SCM_SERVICE")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "SERVICE_IMPLEMENTATION_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
-public abstract class ServiceEntity extends AbstractEntity<String> {
+public abstract class ServiceEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "SERVICE_ID")

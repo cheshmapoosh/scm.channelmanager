@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.terminal;
 
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import jakarta.persistence.*;
 
@@ -13,7 +14,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "TBL_SCM_TERMINAL_SERVICE_ACCESS")
-public class TerminalServiceAccessEntity extends AbstractEntity<String> {
+public class TerminalServiceAccessEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "TERMINAL_SERVICE_ACCESS_ID")

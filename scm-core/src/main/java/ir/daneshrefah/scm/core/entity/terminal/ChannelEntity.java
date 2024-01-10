@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.core.entity.terminal;
 
-import ir.daneshrefah.scm.core.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "TBL_SCM_CHANNEL")
-public class ChannelEntity extends AbstractEntity<String> {
+public class ChannelEntity extends AbstractDefaultEntity<String> {
     @Id
     @Column(name = "CHANNEL_ID")
     private String id;

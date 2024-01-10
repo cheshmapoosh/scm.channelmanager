@@ -1,5 +1,9 @@
 package ir.daneshrefah.scm.uaa.common.type;
 
+import lombok.Getter;
+
+import java.util.Arrays;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,38 +11,35 @@ package ir.daneshrefah.scm.uaa.common.type;
  * @version 1.0
  * @since 2023-07-19
  */
+@Getter
 public enum AuthenticationMethod {
-    STATIC_PASSWORD("SPD", "resource.uaa.authentication-method.spd"),
-    OTP("OTP", "resource.uaa.authentication-method.otp"),
-    PUBLIC_KEY("PKI", "resource.uaa.authentication-method.pki"),
-    PIN("PIN", "resource.uaa.authentication-method.pin"),
-    PATTERN("PTN", "resource.uaa.authentication-method.ptn"),
-    SMS("SMS", "resource.uaa.authentication-method.sms");
+    STATIC_PASSWORD("SPD", 1),
+    OTP("OTP", 2),
+    PUBLIC_KEY("PKI", 3),
+    PIN("PIN", 4),
+    PATTERN("PTN", 5),
+    SMS("SMS", 6);
 
-    AuthenticationMethod(String code, String title) {
+    AuthenticationMethod(String code, Integer dbRef) {
         this.code = code;
-        this.title = title;
+        this.dbRef = dbRef;
     }
 
     private final String code;
-    private final String title;
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getTitle() {
-        return title;
-    }
+    private final Integer dbRef;
 
     public static AuthenticationMethod findByCode(String code) {
-        AuthenticationMethod[] attrs = AuthenticationMethod.values();
-        for (AuthenticationMethod attr : attrs) {
-            if (attr.getCode().equals(code)) {
-                return attr;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(m -> m.code.equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static AuthenticationMethod findByDbRef(Integer dbref) {
+        return Arrays.stream(values())
+                .filter(m -> m.dbRef.equals(dbref))
+                .findFirst()
+                .orElse(null);
     }
 
 }
