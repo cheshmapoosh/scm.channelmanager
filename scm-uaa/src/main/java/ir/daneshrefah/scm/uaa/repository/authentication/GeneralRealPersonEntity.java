@@ -1,8 +1,14 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
+import ir.daneshrefah.scm.uaa.common.type.Gender;
 import ir.daneshrefah.scm.uaa.common.type.MaritalStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,8 +19,24 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@Entity
 public abstract class GeneralRealPersonEntity extends GeneralPersonEntity {
 
+    private String firstName;
+    private String firstNameEnglish;
+    private String lastName;
+    private String lastNameEnglish;
+    private String fatherName;
+    @Column(name = "GENDER_ID")
+    @Convert(converter = GenderConverter.class)
+    private Gender gender;
+    @Convert(converter = MaritalStatusConverter.class)
     private MaritalStatus maritalStatus;
+    @Column(name = "NATIONAL_CODE")
+    private String nationalCode;
+    @Column(name = "BIRTH_DATE")
+    private LocalDate birthDate;
+
+
 
 }

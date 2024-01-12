@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+
+import java.time.LocalDate;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,5 +17,10 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("3")
 public class CorporatePersonEntity extends GeneralPersonEntity {
 
+    @Column(name = "NATIONAL_CODE")
+    private String nationalId;
+    private String subOrganizationId;
+    @Column(name = "BIRTH_DATE")
+    private LocalDate registerDate;
 
 }

@@ -5,8 +5,10 @@ import ir.daneshrefah.scm.uaa.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,17 +20,19 @@ import java.util.Objects;
 @Data
 public class User extends BaseModel {
 
-    private GeneralPerson person; // USER_CHANNEL_AUTHENTICATION.USER_ID
+    private String nickname;
     private Integer terminalId;
     private String terminalCode;
-//    private Client client; // USER_CHANNEL_AUTHENTICATION.CHANNEL_ID
-    private String nickname;
     private AuthenticationMethod loginAuthenticationMethod;
     private AuthenticationMethod transactionAuthenticationMethod;
+    private Set<String> accessParameters;
     private Boolean active;
     private String loginStaticPassword;
     private String transactionStaticPassword;
-    private List<String> accessParameters;
+    private String otpSerialNumber;
+    private GeneralPerson person;
+
+
 
     @Override
     public boolean equals(Object o) {

@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.uaa.common.type;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,27 +10,14 @@ package ir.daneshrefah.scm.uaa.common.type;
  * @version 1.0
  * @since 2023-07-19
  */
+@RequiredArgsConstructor
+@Getter
 public enum Nationality {
 
-    IRANIAN("I", "resource.uaa.nationality.iranian"),
-    FOREIGN("F", "resource.uaa.nationality.foreign");
-
-    Nationality(String code, String title) {
-        this.code = code;
-        this.title = title;
-    }
+    IRANIAN("I"),
+    FOREIGN("F");
 
     private final String code;
-    private final String title;
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
     public static Nationality findByCode(String code) {
         Nationality[] attrs = Nationality.values();
         for (Nationality attr : attrs) {

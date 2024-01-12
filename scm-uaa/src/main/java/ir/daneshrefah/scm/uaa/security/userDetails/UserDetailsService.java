@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -45,7 +46,7 @@ public class UserDetailsService {
         TerminalUserDetails user = users.get(0); // contains no GrantedAuthority[]
         Set<GrantedAuthority> dbAuthsSet = new HashSet<>();
         if (this.enableAuthorities) {
-            dbAuthsSet.addAll(loadUserAuthorities(user.getUsername(), terminalCode));
+            dbAuthsSet.addAll(loadUserAuthorities(Long.valueOf(user.getUser().getPerson().getId())));
         }
         if (this.enableGroups) {
             dbAuthsSet.addAll(loadGroupAuthorities(user.getUsername(), terminalCode));
@@ -67,9 +68,13 @@ public class UserDetailsService {
         return Arrays.asList(new TerminalUserDetails(optionalUser.get()));
     }
 
-    protected List<GrantedAuthority> loadUserAuthorities(String username, String terminalCode) {
-        return Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"));
+    protected List<GrantedAuthority> loadUserAuthorities(Long personId) {
+        Optional<List<String>> authorities = userService.loadUserAuthorities(personId);
+        if (authorities.isEmpty())
+            return Collections.emptyList();
+        return authorities.get().stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 
     protected List<GrantedAuthority> loadGroupAuthorities(String username, String terminalCode) {

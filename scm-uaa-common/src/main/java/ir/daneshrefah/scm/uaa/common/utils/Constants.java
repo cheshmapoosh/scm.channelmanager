@@ -31,6 +31,8 @@ public class Constants {
     public final static String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
     public final static String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
 
+    public final static String OAUTH2_SCOPE_NAME_SESSION = "session";
+
     public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
 
 //    public final static String CHANNEL_HEADER ="Channel";

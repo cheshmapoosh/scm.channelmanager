@@ -67,9 +67,10 @@ public class JWTConfig {
                 String terminalCode = principal.getDetails().getUser().getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL,terminalCode);
                 claims.claim(CLAIM_KEY_GRANT,principal.getPreAuthenticationToken().getGrantType());
-                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, principal.getDetails().getUser().getLoginAuthenticationMethod());
+                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, principal.getDetails().getUser().getLoginAuthenticationMethod().getCode());
                 claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
-                        Optional.ofNullable(principal.getDetails().getUser().getTransactionAuthenticationMethod()).map(Object::toString).orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
+                        Optional.ofNullable(principal.getDetails().getUser().getTransactionAuthenticationMethod().getCode())
+                                .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
                 claims.claim(CLAIM_KEY_AUTHORITIES, principal.getDetails().getAuthorities().toString());
                 String sessionKey = principal.getSessionId();
                 if (StringUtils.isNotEmpty(sessionKey)) {

@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_SCOPE_NAME_SESSION;
 import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 
@@ -116,7 +117,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         }
 
 //        TODO check session required
-        token.setSessionRequired(true);
+        token.setSessionRequired(preAuthenticationToken.getScopes().contains(OAUTH2_SCOPE_NAME_SESSION));
         token.setNotificationRequired(true);
 
         GeneralAuthenticationToken authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);

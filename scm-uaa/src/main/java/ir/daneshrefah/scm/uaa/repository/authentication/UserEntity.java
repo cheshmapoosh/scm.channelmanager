@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Set;
 
 /**
@@ -42,27 +44,31 @@ public class UserEntity extends AbstractEntity<Integer> {
     private String loginStaticPassword;
     @Column(name = "SECOND_PASSWORD")
     private String transactionStaticPassword;
+    @Column(name = "OTP_SERIAL_NO")
+    private String otpSerialNumber;
     @ManyToOne
     @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
+    @Column(name = "CREATED_BY")
+    private String creator;
+    @Column(name = "MODIFIED_BY")
+    private String lastEditor;
+    @Column(name = "CREATION_DATE")
+    private LocalDateTime createDate;
+    @Column(name = "MODIFICATION_DATE")
+    private LocalDateTime lastEditDate;
+
+
+
 //    ARCHIVE_NO
-//    ACTIVE
-//    USER_AUTHENTICATION_TYPE
-//    USER_ID
+//    USER_AUTHENTICATION_TYPE => 1:UserChannelAuthentication, 2:EmployeeAuthentication
 //    FROM_DATE
 //    TO_DATE
-//    FIRST_PASSWORD
-//    SECOND_PASSWORD
-//    CHANNEL_ACCESS_PARAM
 //    PRINT_COUNT
 //    PASSWORD_SET_PRINTED
-//    CREATED_BY
-//    MODIFIED_BY
-//    CREATION_DATE
-//    MODIFICATION_DATE
 //    EFFECTIVE_DATE
 //    OTP_SERIAL_NO
-//    STATE
+//    STATE => unused
 //    BRANCH_CODE
 //    PIN_BASED_PASSWORD
 //    PATTERN_BASED_PASSWORD

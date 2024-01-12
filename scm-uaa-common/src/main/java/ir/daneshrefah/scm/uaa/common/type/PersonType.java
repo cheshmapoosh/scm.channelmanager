@@ -1,5 +1,9 @@
 package ir.daneshrefah.scm.uaa.common.type;
 
+import lombok.Getter;
+
+import java.util.Arrays;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,37 +11,24 @@ package ir.daneshrefah.scm.uaa.common.type;
  * @version 1.0
  * @since 2023-07-19
  */
+@Getter
 public enum PersonType {
 
-    INDIVIDUAL_CUSTOMER("1", "resource.uaa.person-type.individual"), //real
-    EMPLOYEE("2", "resource.uaa.person-type.employee"),
-    CORPORATE_CUSTOMER("3", "resource.uaa.person-type.corporate"), //legal;
-    SYSTEM("4", "resource.uaa.person-type.system");
+    INDIVIDUAL_CUSTOMER("1"), //real
+    EMPLOYEE("2"),
+    CORPORATE_CUSTOMER("3"), //legal;
+    SYSTEM("4"); // Unused and should be removed.
 
-    PersonType(String code, String title) {
+    PersonType(String code) {
         this.code = code;
-        this.title = title;
     }
 
     private final String code;
-    private final String title;
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
     public static PersonType findByCode(String code) {
-        PersonType[] attrs = PersonType.values();
-        for (PersonType attr : attrs) {
-            if (attr.getCode().equals(code)) {
-                return attr;
-            }
-        }
-        return null;
+        return Arrays.stream(PersonType.values())
+                .filter(s -> s.code.equals(code))
+                .findFirst()
+                .orElse(null);
     }
 
 }
