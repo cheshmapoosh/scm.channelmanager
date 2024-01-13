@@ -54,7 +54,7 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
 
     @Override
     protected boolean support(TerminalServiceChannelAccess service) {
-        return false;
+        return true;
     }
 
 }

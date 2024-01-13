@@ -6,6 +6,11 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.model.person.CorporatePerson;
+import ir.daneshrefah.scm.uaa.common.model.person.EmployeePerson;
+import ir.daneshrefah.scm.uaa.common.model.person.IndividualPerson;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.type.PersonType;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,17 +69,42 @@ public class JWTConfig {
             JwtClaimsSet.Builder claims = context.getClaims();
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 PostAuthenticationToken principal = context.getPrincipal();
-                String terminalCode = principal.getDetails().getUser().getTerminalCode();
-                claims.claim(CLAIM_KEY_TERMINAL,terminalCode);
-                claims.claim(CLAIM_KEY_GRANT,principal.getPreAuthenticationToken().getGrantType());
-                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, principal.getDetails().getUser().getLoginAuthenticationMethod().getCode());
+                User user = principal.getDetails().getUser();
+                String terminalCode = user.getTerminalCode();
+                claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
+                claims.claim(CLAIM_KEY_GRANT, principal.getPreAuthenticationToken().getGrantType());
+                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
                 claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
-                        Optional.ofNullable(principal.getDetails().getUser().getTransactionAuthenticationMethod().getCode())
+                        Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
                                 .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
                 claims.claim(CLAIM_KEY_AUTHORITIES, principal.getDetails().getAuthorities().toString());
                 String sessionKey = principal.getSessionId();
                 if (StringUtils.isNotEmpty(sessionKey)) {
                     claims.claim(CLAIM_KEY_SESSION, sessionKey);
+                }
+                if (null != user.getAccessParameters() && !user.getAccessParameters().isEmpty())
+                    claims.claim(CLAIM_KEY_ACCESS_PARAMETER, user.getAccessParameters());
+                PersonType personType = user.getPerson().getType();
+                claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
+                claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getType().getCode());
+                switch (personType) {
+                    case INDIVIDUAL_CUSTOMER:
+                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((IndividualPerson) user.getPerson()).getNationalCode());
+                        claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((IndividualPerson) user.getPerson()).getFirstName());
+                        claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((IndividualPerson) user.getPerson()).getLastName());
+                        break;
+                    case EMPLOYEE:
+                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((EmployeePerson) user.getPerson()).getNationalCode());
+                        claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((EmployeePerson) user.getPerson()).getFirstName());
+                        claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((EmployeePerson) user.getPerson()).getLastName());
+                        break;
+                    case CORPORATE_CUSTOMER:
+                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((CorporatePerson) user.getPerson()).getNationalId());
+                        if (StringUtils.isNotEmpty(((CorporatePerson) user.getPerson()).getSubOrganizationId())) {
+                            claims.claim(CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID, ((CorporatePerson) user.getPerson()).getSubOrganizationId());
+                        }
+                        claims.claim(CLAIM_KEY_PERSON_TITLE, ((CorporatePerson) user.getPerson()).getTitle());
+                        break;
                 }
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
@@ -94,12 +124,12 @@ public class JWTConfig {
     @Bean
     public JWKSet jwkSet() throws GeneralSecurityException, IOException {
         RSAKey rsaKey = generateRsa();
-        JWKSet jwkSet=new JWKSet(rsaKey);
+        JWKSet jwkSet = new JWKSet(rsaKey);
         return jwkSet;
     }
 
 
-    private  RSAKey generateRsa() throws GeneralSecurityException, IOException {
+    private RSAKey generateRsa() throws GeneralSecurityException, IOException {
         KeyPair keyPair = generateRsaKey();
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();

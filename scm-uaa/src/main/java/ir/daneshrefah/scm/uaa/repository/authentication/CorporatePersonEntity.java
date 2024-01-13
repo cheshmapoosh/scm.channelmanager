@@ -17,6 +17,8 @@ import java.time.LocalDate;
 @DiscriminatorValue("3")
 public class CorporatePersonEntity extends GeneralPersonEntity {
 
+    @Column(name = "FIRST_NAME")
+    private String title;
     @Column(name = "NATIONAL_CODE")
     private String nationalId;
     private String subOrganizationId;

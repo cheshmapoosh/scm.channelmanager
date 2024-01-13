@@ -68,7 +68,7 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
         }
 
         String terminalCode = CamelUtils.getTerminalCodeFromExchange(input);
-        if (StringUtils.isNotEmpty(terminalCode) &&
+        if (StringUtils.isEmpty(terminalCode) ||
                 !StringUtils.equals(service.getTerminalServiceAccess().getTerminal().getCode(), terminalCode)) {
             return createValidationErrorMessage(header, Constants.SCM_PARAMETER_TERMINAL, ErrorReason.IS_INVALID);
         }

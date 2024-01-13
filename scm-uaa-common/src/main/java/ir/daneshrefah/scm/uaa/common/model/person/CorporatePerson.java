@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.common.model.person;
 
 import ir.daneshrefah.scm.uaa.common.type.PersonType;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -11,8 +13,11 @@ import java.time.LocalDate;
  * @version 1.0
  * @since 2023-07-19
  */
+@Getter
+@Setter
 public class CorporatePerson extends GeneralPerson {
 
+    private String title;
     private String nationalId;
     private String subOrganizationId;
     private LocalDate registerDate;

@@ -20,6 +20,13 @@ public class Constants {
     public final static String CLAIM_KEY_TRANSACTION_AUTH_METHOD = "tam";
     public final static String CLAIM_KEY_AUTHORITIES = "aut";
     public final static String CLAIM_KEY_ACCESS_PARAMETER = "acp";
+    public final static String CLAIM_KEY_PERSON_TYPE = "pty";
+    public final static String CLAIM_KEY_PERSON_NATIONALITY = "pnt";
+    public final static String CLAIM_KEY_PERSON_NATIONAL_ID = "pni";
+    public final static String CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID = "psi";
+    public final static String CLAIM_KEY_PERSON_FIRST_NAME = "pfn";
+    public final static String CLAIM_KEY_PERSON_LAST_NAME = "pln";
+    public final static String CLAIM_KEY_PERSON_TITLE = "ptl";
 
 
     public final static String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";

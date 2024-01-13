@@ -22,6 +22,7 @@ import java.time.LocalDate;
 @Entity
 public abstract class GeneralRealPersonEntity extends GeneralPersonEntity {
 
+    @Column(name = "FIRST_NAME")
     private String firstName;
     private String firstNameEnglish;
     private String lastName;
