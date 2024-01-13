@@ -3,7 +3,12 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.VoteEvent;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,15 +27,36 @@ public abstract class DecisionVoter {
     public static final int ACCESS_DENIED = -1;
 
     public final int vote(Message message, TerminalServiceChannelAccess authObject) {
+        Instant startTime = Instant.now();
         boolean isSupport = support(authObject);
         if (!isSupport) {
             return ACCESS_ABSTAIN;
         }
-        return vote(message);
+        int response = vote(message);
+        logVotingEvent(message, this.getClass().getSimpleName(), response, startTime);
+        return response;
     }
 
     protected abstract int vote(Message message);
 
     protected abstract boolean support(TerminalServiceChannelAccess service);
+
+    private final void logVotingEvent(Message message, String input, int output, Instant startTime) {
+        Instant endTime = Instant.now();
+        Event event = VoteEvent.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .clientCorrelationId(message.getHeader().getClientCorrelationId())
+                .startTimestamp(startTime)
+                .terminalCode(message.getHeader().getTerminalCode())
+                .threadName(Thread.currentThread().getName())
+                .sourceClassName(this.getClass().getSimpleName())
+                .input(input)
+                .output(output)
+                .clientAgent(message.getHeader().getClientAgent())
+                .endTimestamp(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
+    }
 
 }

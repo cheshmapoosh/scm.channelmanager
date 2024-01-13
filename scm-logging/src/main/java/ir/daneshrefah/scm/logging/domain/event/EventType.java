@@ -10,6 +10,6 @@ package ir.daneshrefah.scm.logging.domain.event;
 public enum EventType {
 
     MESSAGE_BUILD, INBOUND, TRANSFORM, SERVICE_CALL, OUTBOUND,
-    AUTHENTICATION, RESPONSE_BUILD, ENTITY;
+    AUTHENTICATION, RESPONSE_BUILD, ENTITY, VOTE;
 
 }

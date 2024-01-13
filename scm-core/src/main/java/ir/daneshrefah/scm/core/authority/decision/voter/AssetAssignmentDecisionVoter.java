@@ -25,8 +25,8 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     @Override
     protected int vote(PersonProfile personProfile, Service service, Object asset) {
         String serviceProviderId = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider().getId() : null;
-        boolean isServiceAssigned = personProfile.hasAssetAccess(serviceProviderId, asset);
-        return isServiceAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
+        boolean isAssetAssigned = personProfile.hasAssetAccess(serviceProviderId, asset);
+        return isAssetAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
     }
 
     @Override

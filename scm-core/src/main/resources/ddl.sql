@@ -603,3 +603,18 @@ ALTER TABLE REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER ADD COLUMN STATUS   SMALLINT;
 
 --/////////////////////////////////////////////////////////
 
+CREATE TABLE REF.TBL_SCM_PERSON_SERVICE_ACCESS (
+                                                   PERSON_SERVICE_ACCESS_ID DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY,
+                                                   PERSON_PROFILE_ID VARCHAR(10) NOT NULL,
+                                                   SERVICE_ID VARCHAR(36) NOT NULL,
+                                                   TERMINAL_ID VARCHAR(36),
+                                                   ASSET_ID VARCHAR(100),
+                                                   CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                   LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                   CREATOR VARCHAR(255),
+                                                   LAST_EDITOR VARCHAR(255),
+                                                   FOREIGN KEY (SERVICE_ID) REFERENCES REF.TBL_SCM_SERVICE (SERVICE_ID),
+                                                   FOREIGN KEY (TERMINAL_ID) REFERENCES REF.TBL_SCM_TERMINAL (TERMINAL_ID),
+--     FOREIGN KEY (PERSON_PROFILE_ID) REFERENCES REF.USER (USERNAME),
+                                                   PRIMARY KEY (PERSON_SERVICE_ACCESS_ID)
+);

@@ -8,8 +8,8 @@ import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.model.person.PersonProfile;
 import ir.daneshrefah.scm.core.service.ConditionService;
+import ir.daneshrefah.scm.core.service.PersonProfileService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 public class DecisionHelper {
 
     private final ConditionService conditionService;
+    private final PersonProfileService personProfileService;
 
     private static final Map<Class<? extends BaseCondition>, Map<String, List<BaseCondition>>> CONDITIONS_CACHE =
             new ConcurrentHashMap<>();
@@ -43,7 +44,7 @@ public class DecisionHelper {
     }
 
     public PersonProfile findPersonProfileById(String personProfileId) {
-        return null;
+        return personProfileService.findPersonProfileById(personProfileId);
     }
 
     public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,
