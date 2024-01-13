@@ -1,13 +1,9 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.model.person.PersonProfile;
-import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.utils.string.StringUtils;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Description of the class or purpose of the file.
@@ -23,7 +19,8 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(PersonProfile personProfile, Service service, Object asset) {
+    protected int vote(String personProfileId, Service service, Object asset) {
+        PersonProfile personProfile = fetchPersonProfile(personProfileId);
         boolean isServiceAssigned = personProfile.hasServiceAccess(service.getCode(), asset);
         return isServiceAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
     }

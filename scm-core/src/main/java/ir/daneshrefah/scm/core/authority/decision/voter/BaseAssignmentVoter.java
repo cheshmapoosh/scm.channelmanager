@@ -27,13 +27,16 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
             return ACCESS_DENIED;
         }
 
-        PersonProfile personProfile = decisionHelper.findPersonProfileById(personProfileId);
         Object asset = getAssetValue(message);
 
-        return vote(personProfile, message.getHeader().getService().getTerminalServiceAccess().getService(), asset);
+        return vote(personProfileId, message.getHeader().getService().getTerminalServiceAccess().getService(), asset);
     }
 
-    protected abstract int vote(PersonProfile personProfile, Service service, Object asset);
+    protected final PersonProfile fetchPersonProfile(String personProfileId) {
+        return decisionHelper.findPersonProfileById(personProfileId);
+    }
+
+    protected abstract int vote(String personProfileId, Service service, Object asset);
 
     private boolean isAssetSupport(Message message) {
         return message.getHeader().getService().getTerminalServiceAccess().getTerminal().getSupportCheckAssetAccess() &&
