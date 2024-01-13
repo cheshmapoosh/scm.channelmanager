@@ -13,6 +13,8 @@ public interface Authentication extends Serializable {
 
     public String getName();
 
+    public String getPersonIdentifier();
+
     public String getTerminalCode();
 
     public boolean isAnonymous();

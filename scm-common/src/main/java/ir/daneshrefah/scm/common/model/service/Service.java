@@ -11,6 +11,8 @@ import ir.daneshrefah.scm.common.BaseModel;
  */
 public abstract class Service extends BaseModel<String> {
 
+    private static final String DEFAULT_ASSET_PROPERTY = "account";
+
     private String code;
     private String title;
     private String alias;
@@ -158,7 +160,7 @@ public abstract class Service extends BaseModel<String> {
     }
 
     public String getAssetProperty() {
-        return assetProperty;
+        return null != assetProperty ? assetProperty : DEFAULT_ASSET_PROPERTY;
     }
 
     public void setAssetProperty(String assetProperty) {

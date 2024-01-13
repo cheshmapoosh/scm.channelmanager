@@ -43,6 +43,13 @@ public class Header implements Serializable {
         return null;
     }
 
+    public String getPersonIdentifier() {
+        if (null != authentication) {
+            return authentication.getPersonIdentifier();
+        }
+        return null;
+    }
+
     public String getTerminalCode() {
         if (null == service || null == service.getTerminalServiceAccess() ||
                 null == service.getTerminalServiceAccess().getTerminal()) {

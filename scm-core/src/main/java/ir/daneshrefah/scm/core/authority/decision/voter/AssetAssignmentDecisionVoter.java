@@ -1,8 +1,12 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
+import ir.daneshrefah.scm.core.model.person.PersonProfile;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -12,14 +16,17 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @since 2024-01-08
  */
-@RequiredArgsConstructor
-public class AssetAssignmentDecisionVoter extends DecisionVoter {
+public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
 
-    private final DecisionHelper decisionHelper;
+    public AssetAssignmentDecisionVoter(DecisionHelper decisionHelper) {
+        super(decisionHelper);
+    }
 
     @Override
-    protected int vote(Message message) {
-        return ACCESS_ABSTAIN;
+    protected int vote(PersonProfile personProfile, Service service, Object asset) {
+        String serviceProviderId = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider().getId() : null;
+        boolean isServiceAssigned = personProfile.hasAssetAccess(serviceProviderId, asset);
+        return isServiceAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
     }
 
     @Override

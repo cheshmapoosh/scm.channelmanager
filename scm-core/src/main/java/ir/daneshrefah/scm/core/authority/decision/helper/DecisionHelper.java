@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.model.condition.*;
+import ir.daneshrefah.scm.core.model.person.PersonProfile;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -39,6 +40,10 @@ public class DecisionHelper {
     @PostConstruct
     private void prepare() {
         reloadCache();
+    }
+
+    public PersonProfile findPersonProfileById(String personProfileId) {
+        return null;
     }
 
     public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,

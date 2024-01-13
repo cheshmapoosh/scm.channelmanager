@@ -105,6 +105,13 @@ public class UserAuthentication implements org.springframework.security.core.Aut
         return null != principal ? principal.getNickname() : null;
     }
 
+    @Override
+    public String getPersonIdentifier() {
+        if (!isAuthenticated() || isAnonymous() || null == principal)
+            return null;
+        return principal.getPerson().getUsername();
+    }
+
 
     @Builder
     @Getter
