@@ -12,11 +12,11 @@ import lombok.Setter;
 public class ServiceConditionEntity extends ConditionBaseEntity<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "SERVICE_CONDITION_ID")
     private Long id;
     @ManyToOne
     @JoinColumn(name = "SERVICE_ID")
-    private ServiceEntity serviceEntity;
+    private ServiceEntity service;
 
 }

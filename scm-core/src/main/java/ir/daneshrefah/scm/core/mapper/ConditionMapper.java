@@ -25,16 +25,16 @@ public interface ConditionMapper {
 
     Condition toCondition(ConditionEntity conditionEntity);
 
-    @Mapping(source = "serviceEntity", target = "service", qualifiedByName = "mapService")
-    @Mapping(source = "conditionEntity",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "service", target = "service", qualifiedByName = "mapService")
+    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
     ServiceCondition toServiceCondition(ServiceConditionEntity serviceConditionEntity);
 
-    @Mapping(source = "terminalEntity", target = "terminal", qualifiedByName = "mapTerminal")
-    @Mapping(source = "conditionEntity",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "terminal", target = "terminal", qualifiedByName = "mapTerminal")
+    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
     TerminalCondition toTerminalCondition(TerminalConditionEntity conditionEntity);
 
-    @Mapping(source = "terminalServiceAccessEntity", target = "terminalServiceAccess", qualifiedByName = "mapTerminalService")
-    @Mapping(source = "conditionEntity",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess", qualifiedByName = "mapTerminalService")
+    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
     TerminalServiceCondition toTerminalServiceCondition(TerminalServiceConditionEntity serviceConditionEntity);
 
     @Named("mapService")

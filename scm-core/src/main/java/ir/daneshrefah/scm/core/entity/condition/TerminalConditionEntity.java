@@ -12,12 +12,12 @@ import lombok.Setter;
 public class TerminalConditionEntity extends ConditionBaseEntity<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TERMINAL_CONDITION_ID")
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "TERMINAL_ID")
-    private TerminalEntity terminalEntity;
+    private TerminalEntity terminal;
 
 }
