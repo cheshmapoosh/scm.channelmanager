@@ -12,17 +12,17 @@ import lombok.Setter;
 @Getter
 public abstract class ConditionBaseEntity<T> extends AbstractDefaultEntity<T> {
 
-    @Column(name = "AUTH_METHOD_ID")
+    @Column(name = "LOGIN_AUTHENTICATION_METHOD_ID")
     @Convert(converter = AuthenticationMethodConverter.class)
-    private AuthenticationMethod authenticationMethod;
+    private AuthenticationMethod loginAuthenticationMethod;
 
-    @Column(name = "SEC_AUTH_METHOD_ID")
+    @Column(name = "TRANSACTION_AUTHENTICATION_METHOD_ID")
     @Convert(converter = AuthenticationMethodConverter.class)
-    private AuthenticationMethod secondAuthenticationMethod;
+    private AuthenticationMethod transactionAuthenticationMethod;
 
     @ManyToOne
     @JoinColumn(name = "CONDITION_ID")
-    private ConditionEntity conditionEntity;
+    private ConditionEntity condition;
 
     @Column(name = "STATUS")
     private Boolean status;

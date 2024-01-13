@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.common.type;
 
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -8,18 +11,13 @@ package ir.daneshrefah.scm.common.type;
  * @version 1.0
  * @since 2023-08-12
  */
+@RequiredArgsConstructor
+@Getter
 public enum PeriodType {
-    REQUEST(1),SECOND(2),MINUTE(3),HOUR(4),DAY(5), WEEK(6), MONTH(7), YEAR(8);
+    REQUEST(1), SECOND(2), MINUTE(3), HOUR(4), DAY(5), WEEK(6),
+    MONTH(7), YEAR(8);
 
-    PeriodType(int code) {
-        this.code = code;
-    }
-
-    private int code;
-
-    public int getCode() {
-        return code;
-    }
+    private final int code;
 
     public static PeriodType findByCode(Integer code) {
         for (PeriodType enumValue : PeriodType.values()) {

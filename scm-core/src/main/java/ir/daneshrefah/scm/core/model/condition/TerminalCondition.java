@@ -1,30 +1,13 @@
 package ir.daneshrefah.scm.core.model.condition;
 
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import lombok.Getter;
+import lombok.Setter;
 
-public class TerminalCondition extends BaseCondition<String> {
+@Getter
+@Setter
+public class TerminalCondition extends BaseCondition {
 
-
-    private String id;
     private Terminal terminal;
-
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Terminal getTerminal() {
-        return terminal;
-    }
-
-    public void setTerminal(Terminal terminal) {
-        this.terminal = terminal;
-    }
 
 }

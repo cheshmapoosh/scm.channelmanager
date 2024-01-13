@@ -9,12 +9,12 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_TERMINAL_SERVICE_CONDITION")
 @Getter
 @Setter
-public class TerminalServiceConditionEntity extends ConditionBaseEntity<String> {
+public class TerminalServiceConditionEntity extends ConditionBaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "TERMINAL_SERVICE_CONDITION_ID")
-    private String id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "TERMINAL_SERVICE_ACCESS_ID")

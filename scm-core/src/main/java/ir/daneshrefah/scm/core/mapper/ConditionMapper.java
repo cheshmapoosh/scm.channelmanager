@@ -20,6 +20,7 @@ import org.mapstruct.factory.Mappers;
 
 @Mapper
 public interface ConditionMapper {
+
     ConditionMapper INSTANCE = Mappers.getMapper(ConditionMapper.class);
 
     Condition toCondition(ConditionEntity conditionEntity);

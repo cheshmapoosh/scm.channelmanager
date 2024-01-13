@@ -1,18 +1,13 @@
 package ir.daneshrefah.scm.core.model.condition;
 
 import ir.daneshrefah.scm.common.model.service.Service;
+import lombok.Getter;
+import lombok.Setter;
 
-
-public class ServiceCondition extends BaseCondition<String> {
+@Getter
+@Setter
+public class ServiceCondition extends BaseCondition {
 
     private Service service;
 
-
-    public Service getService() {
-        return service;
-    }
-
-    public void setService(Service service) {
-        this.service = service;
-    }
 }

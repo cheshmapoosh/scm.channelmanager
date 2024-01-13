@@ -27,26 +27,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ConditionService {
 
-    private final ConditionRepository conditionRepository;
     private final ServiceConditionRepository serviceConditionRepository;
     private final TerminalConditionRepository terminalConditionRepository;
     private final TerminalServiceConditionRepository serviceTerminalConditionRepository;
-
-    //-- cached data
-    private static final Map<String,TerminalCondition> TERMINAL_CONDITION_MAP = new ConcurrentHashMap<>();
-    private static final Map<String,TerminalCondition> SERVICE_CONDITION_MAP = new ConcurrentHashMap<>();
-    private static final Map<String,TerminalCondition> TERMINAL_SERVICE_CONDITION_MAP = new ConcurrentHashMap<>();
-
-
-
-    public List<Condition> fetchAllCondition(){
-        List<ConditionEntity> allConditions = conditionRepository.findAll();
-        log.info(">>> all {} [conditions] successfully fetched",allConditions.size());
-        return allConditions
-                .stream()
-                .map(ConditionMapper.INSTANCE::toCondition)
-                .collect(Collectors.toList());
-    }
 
     public List<ServiceCondition> fetchAllServiceConditions(){
         List<ServiceConditionEntity> allServiceConditions = serviceConditionRepository.findAll();

@@ -3,73 +3,20 @@ package ir.daneshrefah.scm.core.model.condition;
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.common.type.PeriodType;
+import lombok.Getter;
+import lombok.Setter;
 
 
-public class Condition extends BaseModel<String> {
+@Getter
+@Setter
+public class Condition extends BaseModel<Long> {
 
-    private String id;
+    private Long id;
     private String title;
     private String desc;
     private ConditionType type;
-    private Long value;
+    private String value;
     private PeriodType periodType;
     private Integer periodValue;
 
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public ConditionType getType() {
-        return type;
-    }
-
-    public void setType(ConditionType type) {
-        this.type = type;
-    }
-
-    public Long getValue() {
-        return value;
-    }
-
-    public void setValue(Long value) {
-        this.value = value;
-    }
-
-    public PeriodType getPeriodType() {
-        return periodType;
-    }
-
-    public void setPeriodType(PeriodType periodType) {
-        this.periodType = periodType;
-    }
-
-    public Integer getPeriodValue() {
-        return periodValue;
-    }
-
-    public void setPeriodValue(Integer periodValue) {
-        this.periodValue = periodValue;
-    }
 }

@@ -396,91 +396,78 @@ VALUES ('f3e0ebe042f244b09be0581ac05351d0', 'Reza Jamshidi', 'Reza Jamshidi', 'M
 --Added By Mehdi----------------------------------------------------------------
 --------------------------------------------------------------------------------
 --Definition of max/limitation for amount and rate
-CREATE TABLE REF.TBL_SCM_CONDITION(
-    --Definition
-                                      CONDITION_ID VARCHAR(36) NOT NULL,
-                                      TITLE VARCHAR(255),
-                                      DESC VARCHAR(255),
-    --Attribute
-                                      TYPE SMALLINT DEFAULT 1,--1: MaxAmount, 2: CallRate
-                                      VALUE DECIMAL(20,2),-- value refer to @TYPE
-                                      PERIOD_TYPE SMALLINT,--time periods such as 1: sec, 2: min, 3: hr,...
-                                      PERIOD_VALUE SMALLINT,--value refer to @PERIOD_TYPE
-    --Versioning
-                                      CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                      LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                      CREATOR VARCHAR(255),
-                                      LAST_EDITOR VARCHAR(255),
-    --Relation
-                                      PRIMARY KEY (CONDITION_ID)
+CREATE TABLE REF.TBL_SCM_CONDITION
+(
+    CONDITION_ID   DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY primary key,
+    TITLE          VARCHAR(255) NOT NULL,
+    DESC           VARCHAR(255),
+    TYPE           SMALLINT NOT NULL,
+    VALUE          VARCHAR(255) NOT NULL,
+    PERIOD_TYPE    SMALLINT,
+    PERIOD_VALUE   SMALLINT,
+    CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CREATOR VARCHAR(255),
+    LAST_EDITOR VARCHAR(255)
 );
-LABEL ON COLUMN CORPDATA.REF.TBL_SCM_CONDITION.TYPE IS '1: MaxAmount, 2: CallRate';
+LABEL ON COLUMN CORPDATA.REF.TBL_SCM_CONDITION.TYPE IS '1: MaxAmount, 2: CallRate, 3: Authority';
 -- LABEL ON COLUMN CORPDATA.REF.TBL_SCM_CONDITION.TYPE IS 'Reports to Dept.';
 --/////////////////////////////////////////////////////////
 --Conditioning terminal per auth and sec.auth method
 CREATE TABLE REF.TBL_SCM_TERMINAL_CONDITION(
-    --Definition
-                                               TERMINAL_CONDITION_ID VARCHAR(36) NOT NULL,
-                                               TERMINAL_ID VARCHAR(36) NOT NULL,
-    --Attribute
-                                               STATUS SMALLINT,
-                                               AUTH_METHOD_ID SMALLINT,
-                                               SEC_AUTH_METHOD_ID SMALLINT,
-                                               CONDITION_ID VARCHAR(36),
-    --Versioning
-                                               CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                               LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                               CREATOR VARCHAR(255),
-                                               LAST_EDITOR VARCHAR(255),
-    --Relation
-                                               FOREIGN KEY (TERMINAL_ID) REFERENCES "REF".TBL_SCM_TERMINAL(TERMINAL_ID),
-                                               FOREIGN KEY (AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                               FOREIGN KEY (SEC_AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                               PRIMARY KEY (TERMINAL_CONDITION_ID)
+    TERMINAL_CONDITION_ID DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY,
+    TERMINAL_ID VARCHAR(36) NOT NULL,
+    STATUS SMALLINT NOT NULL,
+    LOGIN_AUTHENTICATION_METHOD_ID SMALLINT,
+    TRANSACTION_AUTHENTICATION_METHOD_ID SMALLINT,
+    CONDITION_ID DECIMAL(22) NOT NULL,
+    CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    CREATOR VARCHAR(255),
+    LAST_EDITOR VARCHAR(255),
+    FOREIGN KEY (TERMINAL_ID) REFERENCES "REF".TBL_SCM_TERMINAL(TERMINAL_ID),
+    FOREIGN KEY (LOGIN_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (TRANSACTION_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (CONDITION_ID) REFERENCES "REF".TBL_SCM_CONDITION(CONDITION_ID),
+    PRIMARY KEY (TERMINAL_CONDITION_ID)
 );
 --/////////////////////////////////////////////////////////
 --Conditioning service per auth and sec.auth method
 CREATE TABLE REF.TBL_SCM_SERVICE_CONDITION(
-    --Definition
-                                              SERVICE_CONDITION_ID VARCHAR(36) NOT NULL,
-                                              SERVICE_ID VARCHAR(36) NOT NULL,
-    --Attribute
-                                              STATUS SMALLINT,
-                                              AUTH_METHOD_ID SMALLINT,
-                                              SEC_AUTH_METHOD_ID SMALLINT,
-                                              CONDITION_ID VARCHAR(36),
-    --Versioning
-                                              CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                              LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                              CREATOR VARCHAR(255),
-                                              LAST_EDITOR VARCHAR(255),
-    --Relation
-                                              FOREIGN KEY (SERVICE_ID) REFERENCES "REF".TBL_SCM_SERVICE(SERVICE_ID),
-                                              FOREIGN KEY (AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                              FOREIGN KEY (SEC_AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                              PRIMARY KEY (SERVICE_CONDITION_ID)
+    SERVICE_CONDITION_ID DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY,
+    SERVICE_ID VARCHAR(36) NOT NULL,
+    STATUS SMALLINT NOT NULL,
+    LOGIN_AUTHENTICATION_METHOD_ID SMALLINT,
+    TRANSACTION_AUTHENTICATION_METHOD_ID SMALLINT,
+    CONDITION_ID DECIMAL(22) NOT NULL,
+    CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    CREATOR VARCHAR(255),
+    LAST_EDITOR VARCHAR(255),
+    FOREIGN KEY (SERVICE_ID) REFERENCES "REF".TBL_SCM_SERVICE(SERVICE_ID),
+    FOREIGN KEY (LOGIN_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (TRANSACTION_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (CONDITION_ID) REFERENCES "REF".TBL_SCM_CONDITION(CONDITION_ID),
+    PRIMARY KEY (SERVICE_CONDITION_ID)
 );
 --/////////////////////////////////////////////////////////
 --Conditioning the combination of terminal and service, per auth and sec.auth method
 CREATE TABLE REF.TBL_SCM_TERMINAL_SERVICE_CONDITION(
-    --Definition
-                                                       TERMINAL_SERVICE_CONDITION_ID VARCHAR(36) NOT NULL,
-                                                       TERMINAL_SERVICE_ACCESS_ID VARCHAR(36) NOT NULL,
-    --Attribute
-                                                       STATUS SMALLINT,
-                                                       AUTH_METHOD_ID SMALLINT,
-                                                       SEC_AUTH_METHOD_ID SMALLINT,
-                                                       CONDITION_ID VARCHAR(36),
-    --Versioning
-                                                       CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                                       LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                                       CREATOR VARCHAR(255),
-                                                       LAST_EDITOR VARCHAR(255),
-    --Relation
-                                                       FOREIGN KEY (TERMINAL_SERVICE_ACCESS_ID) REFERENCES "REF".TBL_SCM_TERMINAL_SERVICE_ACCESS(TERMINAL_SERVICE_ACCESS_ID),
-                                                       FOREIGN KEY (AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                                       FOREIGN KEY (SEC_AUTH_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
-                                                       PRIMARY KEY (TERMINAL_SERVICE_CONDITION_ID)
+    TERMINAL_SERVICE_CONDITION_ID DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY,
+    TERMINAL_SERVICE_ACCESS_ID VARCHAR(36) NOT NULL,
+    STATUS SMALLINT NOT NULL,
+    LOGIN_AUTHENTICATION_METHOD_ID SMALLINT,
+    TRANSACTION_AUTHENTICATION_METHOD_ID SMALLINT,
+    CONDITION_ID DECIMAL(22) NOT NULL,
+    CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
+    CREATOR VARCHAR(255),
+    LAST_EDITOR VARCHAR(255),
+    FOREIGN KEY (TERMINAL_SERVICE_ACCESS_ID) REFERENCES "REF".TBL_SCM_TERMINAL_SERVICE_ACCESS(TERMINAL_SERVICE_ACCESS_ID),
+    FOREIGN KEY (LOGIN_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (TRANSACTION_AUTHENTICATION_METHOD_ID) REFERENCES "REF".AUTHENTICATION_METHOD(AUTHENTICATION_METHOD_ID),
+    FOREIGN KEY (CONDITION_ID) REFERENCES "REF".TBL_SCM_CONDITION(CONDITION_ID),
+    PRIMARY KEY (TERMINAL_SERVICE_CONDITION_ID)
 );
 --/////////////////////////////////////////////////////////
 CREATE TABLE REF.TBL_UAA_USER_GROUP (
