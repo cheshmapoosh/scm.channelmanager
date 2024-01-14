@@ -3,7 +3,9 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.core.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,9 +21,9 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(String personProfileId, Service service, Object asset) {
-        PersonProfile personProfile = fetchPersonProfile(personProfileId);
-        boolean isServiceAssigned = personProfile.hasServiceAccess(service.getCode(), asset);
+    protected int vote(PersonProfile profile, Service service, Object asset) {
+        profile = fillServiceAccessForProfile(profile);
+        boolean isServiceAssigned = profile.hasServiceAccess(service.getCode(), asset);
         return isServiceAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
     }
 

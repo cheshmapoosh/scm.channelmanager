@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
+
 import java.io.Serializable;
 
 /**
@@ -13,7 +15,7 @@ public interface Authentication extends Serializable {
 
     public String getName();
 
-    public String getPersonIdentifier();
+    public PersonProfile getPersonProfile();
 
     public String getTerminalCode();
 

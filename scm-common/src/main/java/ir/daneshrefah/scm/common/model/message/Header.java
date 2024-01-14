@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,9 +44,9 @@ public class Header implements Serializable {
         return null;
     }
 
-    public String getPersonIdentifier() {
+    public PersonProfile getPersonIdentifier() {
         if (null != authentication) {
-            return authentication.getPersonIdentifier();
+            return authentication.getPersonProfile();
         }
         return null;
     }

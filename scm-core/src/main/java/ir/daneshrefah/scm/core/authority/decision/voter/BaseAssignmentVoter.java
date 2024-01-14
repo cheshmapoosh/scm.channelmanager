@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.core.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -22,21 +23,25 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
     @Override
     protected final int vote(Message message) {
-        String personProfileId = message.getHeader().getPersonIdentifier();
-        if (StringUtils.isEmpty(personProfileId)) {
+        PersonProfile profile = message.getHeader().getPersonIdentifier();
+        if (null == profile) {
             return ACCESS_DENIED;
         }
 
         Object asset = getAssetValue(message);
 
-        return vote(personProfileId, message.getHeader().getService().getTerminalServiceAccess().getService(), asset);
+        return vote(profile, message.getHeader().getService().getTerminalServiceAccess().getService(), asset);
     }
 
-    protected final PersonProfile fetchPersonProfile(String personProfileId) {
-        return decisionHelper.findPersonProfileById(personProfileId);
+    protected final PersonProfile fillServiceAccessForProfile(PersonProfile profile) {
+        return decisionHelper.fillServiceAccessForProfile(profile);
     }
 
-    protected abstract int vote(String personProfileId, Service service, Object asset);
+    protected final PersonProfile fillCustomerForProfile(PersonProfile profile, ExternalServiceProvider serviceProvider) {
+        return decisionHelper.fillCustomerForProfile(profile, serviceProvider);
+    }
+
+    protected abstract int vote(PersonProfile profile, Service service, Object asset);
 
     private boolean isAssetSupport(Message message) {
         return message.getHeader().getService().getTerminalServiceAccess().getTerminal().getSupportCheckAssetAccess() &&

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
 /**
  * Description of the class or purpose of the file.
@@ -7,8 +7,6 @@ package ir.daneshrefah.scm.core.model.person;
  * @version 1.0
  * @since 2024-01-13
  */
-public enum AssetType {
-
-    ACCOUNT, CARD
-
+// REF.CARD_TYPE
+public class CardType {
 }

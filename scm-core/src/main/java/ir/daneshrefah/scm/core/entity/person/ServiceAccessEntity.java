@@ -22,6 +22,7 @@ public class ServiceAccessEntity extends AbstractDefaultEntity<Long> {
 
     @Id
     @Column(name = "PERSON_SERVICE_ACCESS_ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String personProfileId;
     @ManyToOne

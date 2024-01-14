@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -15,10 +15,11 @@ import java.util.List;
  */
 // REF.CUSTOMER
 @Getter
+@Setter
 public class Customer extends BaseModel {
 
-    private ExternalServiceProvider provider;
+    private String providerId;
     private String customerNo;
-    private List<Asset> assets;
+    private List<? extends Asset> assets;
 
 }

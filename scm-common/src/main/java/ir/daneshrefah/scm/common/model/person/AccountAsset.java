@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -15,13 +16,14 @@ import lombok.Getter;
 // REF.MEMBERSHIP_CHANNEL_ACCESS_AUTHENTICATION_METHOD
 // REF.MEMBERSHIP_CHANNEL_SERVICE_ACCESS
 @Getter
+@Builder
 public class AccountAsset extends Asset<String> {
 
     private Account account;
 
     @Override
     public String getValue() {
-        return account.getAccountNumber();
+        return account.getAccountNo();
     }
 
     @Override

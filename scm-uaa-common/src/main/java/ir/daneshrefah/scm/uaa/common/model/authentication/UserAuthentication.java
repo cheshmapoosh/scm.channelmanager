@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.common.model.authentication;
 
 import ir.daneshrefah.scm.common.model.message.Authentication;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;
@@ -31,6 +32,7 @@ public class UserAuthentication implements org.springframework.security.core.Aut
     private AuthenticationDetail details;
     private boolean authenticated = false;
     private User principal;
+    private PersonProfile profile;
     @Setter
     private String error;
 
@@ -63,6 +65,9 @@ public class UserAuthentication implements org.springframework.security.core.Aut
             Assert.notNull(a, "Authorities collection cannot contain any null elements");
         }
         this.authorities = Collections.unmodifiableList(new ArrayList<>(authorities));
+        if (null != principal && isAuthenticated()) {
+            profile = new PersonProfile(principal.getPerson().getUsername());
+        }
     }
 
 
@@ -106,10 +111,8 @@ public class UserAuthentication implements org.springframework.security.core.Aut
     }
 
     @Override
-    public String getPersonIdentifier() {
-        if (!isAuthenticated() || isAnonymous() || null == principal)
-            return null;
-        return principal.getPerson().getUsername();
+    public PersonProfile getPersonProfile() {
+        return profile;
     }
 
 

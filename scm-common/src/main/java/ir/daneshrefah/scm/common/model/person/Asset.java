@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;

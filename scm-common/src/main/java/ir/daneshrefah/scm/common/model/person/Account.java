@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -11,9 +12,12 @@ import lombok.Getter;
  */
 // REF.ACCOUNT
 @Getter
+@Builder
 public class Account {
 
     private AccountType accountType;
-    private String accountNumber;
+    private String accountNo;
+    private String nickname;
+    private boolean close;
 
 }

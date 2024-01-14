@@ -87,6 +87,7 @@ public class JWTConfig {
                 PersonType personType = user.getPerson().getType();
                 claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
                 claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getType().getCode());
+                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, user.getPerson().getUsername());
                 switch (personType) {
                     case INDIVIDUAL_CUSTOMER:
                         claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((IndividualPerson) user.getPerson()).getNationalCode());

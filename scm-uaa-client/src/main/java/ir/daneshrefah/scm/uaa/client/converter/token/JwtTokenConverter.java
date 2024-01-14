@@ -109,6 +109,7 @@ public class JwtTokenConverter implements TokenConverter<String> {
                 ((CorporatePerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
                 break;
         }
+        person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER));
         person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
 
         String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);

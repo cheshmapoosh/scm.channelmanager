@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.model.person;
+package ir.daneshrefah.scm.common.model.person;
 
 /**
  * Description of the class or purpose of the file.
