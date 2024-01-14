@@ -22,15 +22,16 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
 
     @Override
     protected int vote(PersonProfile profile, Service service, Object asset) {
+        ExternalServiceProvider serviceProvider = service instanceof ExternalService ?
+                ((ExternalService) service).getServiceProvider() : null;
+        if (null == serviceProvider || !serviceProvider.isCustomerProvided()) {
+            return ACCESS_ABSTAIN;
+        }
         if (null == asset) {
             return ACCESS_DENIED;
         }
-        ExternalServiceProvider serviceProvider = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider() : null;
-        if (!serviceProvider.isCustomerProvided()) {
-            return ACCESS_DENIED;
-        }
         profile = fillCustomerForProfile(profile, serviceProvider);
-        boolean isAssetAssigned = profile.hasAssetAccess(null != serviceProvider ? serviceProvider.getId() : null, asset);
+        boolean isAssetAssigned = profile.hasAssetAccess(serviceProvider.getId(), asset);
         return isAssetAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
     }
 
