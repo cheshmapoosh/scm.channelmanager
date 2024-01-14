@@ -26,6 +26,9 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
             return ACCESS_DENIED;
         }
         ExternalServiceProvider serviceProvider = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider() : null;
+        if (!serviceProvider.isCustomerProvided()) {
+            return ACCESS_DENIED;
+        }
         profile = fillCustomerForProfile(profile, serviceProvider);
         boolean isAssetAssigned = profile.hasAssetAccess(null != serviceProvider ? serviceProvider.getId() : null, asset);
         return isAssetAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;

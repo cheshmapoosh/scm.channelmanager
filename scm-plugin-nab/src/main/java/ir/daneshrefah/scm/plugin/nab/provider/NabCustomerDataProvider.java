@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
  */
 @RequiredArgsConstructor
 @Service
-public class NabDataProvider extends ServiceProviderDataProvider {
+public class NabCustomerDataProvider extends ServiceProviderDataProvider {
 
     private final CustomerRepository customerRepository;
 

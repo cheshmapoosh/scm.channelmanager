@@ -32,11 +32,10 @@ public class DelegatorDataProvider {
     public PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider) {
         if (null != profile.getCustomer(provider.getId()))
             return profile;
-        provider.setDataProviderClassName("nabDataProvider"); //TODO
-        ServiceProviderDataProvider dataProvider = providersMap.get(provider.getDataProviderClassName());
+        ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCustomerProviderClassName());
         if (null == dataProvider) {
             log.warn("no data provider found for provider '{}", provider.getCode());
-            return null;
+            return profile;
         }
         Customer customer = dataProvider.findCustomerByPersonProfile(profile.getPersonProfileId());
         profile.addCustomer(provider.getId(), customer);
