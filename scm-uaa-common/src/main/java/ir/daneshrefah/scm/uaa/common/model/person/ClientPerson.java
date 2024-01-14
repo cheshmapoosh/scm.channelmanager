@@ -7,12 +7,12 @@ import ir.daneshrefah.scm.uaa.common.type.PersonType;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-07-19
+ * @since 2024-01-14
  */
-public class SystemPerson extends GeneralPerson {
+public class ClientPerson extends GeneralPerson {
 
     @Override
     public PersonType getType() {
-        return PersonType.SYSTEM;
+        return PersonType.CLIENT;
     }
 }

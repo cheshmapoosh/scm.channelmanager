@@ -2,10 +2,7 @@ package ir.daneshrefah.scm.uaa.client.converter.token;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.common.model.person.CorporatePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.EmployeePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.common.model.person.IndividualPerson;
+import ir.daneshrefah.scm.uaa.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.type.Nationality;
@@ -107,6 +104,9 @@ public class JwtTokenConverter implements TokenConverter<String> {
                 ((CorporatePerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
                 ((CorporatePerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
                 ((CorporatePerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
+                break;
+            case CLIENT:
+                person = new ClientPerson();
                 break;
         }
         person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER));

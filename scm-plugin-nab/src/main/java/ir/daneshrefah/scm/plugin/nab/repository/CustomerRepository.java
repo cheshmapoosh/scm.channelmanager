@@ -26,11 +26,18 @@ public class CustomerRepository {
 
     public Long findPersonIdByPersonProfileId(String personProfileId) {
         String sql = "SELECT USER_ID FROM REF.USER WHERE USERNAME = ? ";
-        return jdbcTemplate.queryForObject(sql, Long.class, personProfileId);
+        List<Long> ids = jdbcTemplate.queryForList(sql, Long.class, personProfileId);
+        if (null == ids || ids.size() < 1) {
+            return null;
+        }
+        return ids.get(0);
     }
 
     public Customer findAccountListByPersonId(String personProfileId) {
         Long personId = findPersonIdByPersonProfileId(personProfileId);
+        if (null == personId) {
+            return null;
+        }
 
         String sql = "SELECT C.CUSTOMER_NO, C.PROVIDER_ID, AT.NAME as TYPE_NAME, AT.CODE as TYPE_CODE, A.ACCOUNT_NO, A.CLOSE, CA.ACCOUNT_ID, " +
                 "M.NICK_NAME, M.DEFAULT_ACCOUNT " +

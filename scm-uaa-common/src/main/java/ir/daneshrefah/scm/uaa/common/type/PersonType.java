@@ -17,7 +17,7 @@ public enum PersonType {
     INDIVIDUAL_CUSTOMER("1"), //real
     EMPLOYEE("2"),
     CORPORATE_CUSTOMER("3"), //legal;
-    SYSTEM("4"); // Unused and should be removed.
+    CLIENT("4");
 
     PersonType(String code) {
         this.code = code;
