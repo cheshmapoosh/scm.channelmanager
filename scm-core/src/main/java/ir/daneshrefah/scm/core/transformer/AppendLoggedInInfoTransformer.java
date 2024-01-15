@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
@@ -44,7 +48,7 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
                 String value = element.get("value").asText();
 
                 if (StringUtils.equalsIgnoreCase("${customerNo}", value)) {
-                    ((ObjectNode) result).put(propertyName, "11342422");
+                    ((ObjectNode) result).put(propertyName, extractCustomerNo(message));
                 } else if (StringUtils.equalsIgnoreCase("${username}", value)) {
                     ((ObjectNode) result).put(propertyName, extractUsername(message));
                 }
@@ -55,6 +59,21 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
         }
 
         return result;
+    }
+
+    private String extractCustomerNo(Message message) {
+        PersonProfile profile = message.getHeader().getPersonIdentifier();
+        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService().getTerminalServiceAccess().getService();
+        ExternalServiceProvider provider = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider() : null;
+        if (null == provider || !provider.isCustomerProvided() || null == profile) {
+            return null;
+        }
+        Customer customer = profile.getCustomer(provider.getId());
+        if (null == customer) {
+            return null;
+        }
+        return customer.getCustomerNo();
+//        return "11342422";
     }
 
     private String extractUsername(Message message) {

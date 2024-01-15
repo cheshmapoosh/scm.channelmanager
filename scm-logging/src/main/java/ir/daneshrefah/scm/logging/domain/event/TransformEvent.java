@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
-import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -13,7 +12,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class TransformEvent extends DurableEvent<Object, Message> {
+public class TransformEvent extends DurableEvent<Object, Object> {
 
     @Override
     public EventType getType() {

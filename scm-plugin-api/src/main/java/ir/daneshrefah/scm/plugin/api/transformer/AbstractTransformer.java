@@ -45,7 +45,7 @@ public abstract class AbstractTransformer {
             }
         } finally {
             String invokerClassName = Thread.currentThread().getStackTrace()[2].getClassName();
-            logTransformEvent(message, startTime, error);
+            logTransformEvent(message, result, startTime, error);
 //            message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, error, payload, result,
 //                    (null != result ? result.getClass().getName() : "null"), invokerClassName);
         }
@@ -54,13 +54,13 @@ public abstract class AbstractTransformer {
 
     public abstract Object internalTransform(Object payload, Message message, String metadata);
 
-    private void logTransformEvent(Message message, Instant startTime, Exception error) {
+    private void logTransformEvent(Message message, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
         Event event = TransformEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .clientCorrelationId(message.getHeader().getClientCorrelationId())
                 .startTimestamp(startTime)
-//                .input(input)
+                .input(message.getPayload())
                 .error(error)
                 .threadName(Thread.currentThread().getName())
                 .sourceClassName(this.getClass().getSimpleName())
@@ -69,7 +69,7 @@ public abstract class AbstractTransformer {
                 .terminalCode(message.getHeader().getTerminalCode())
                 .endTimestamp(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
-                .output(message)
+                .output(output)
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }
