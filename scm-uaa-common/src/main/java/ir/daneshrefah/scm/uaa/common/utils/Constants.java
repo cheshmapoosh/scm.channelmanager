@@ -27,6 +27,7 @@ public class Constants {
     public final static String CLAIM_KEY_PERSON_FIRST_NAME = "pfn";
     public final static String CLAIM_KEY_PERSON_LAST_NAME = "pln";
     public final static String CLAIM_KEY_PERSON_TITLE = "ptl";
+    public final static String CLAIM_KEY_PERSON_PROFILE_IDENTIFIER = "ppi";
     public final static String CLAIM_KEY_PERSON_IDENTIFIER = "pid";
 
 

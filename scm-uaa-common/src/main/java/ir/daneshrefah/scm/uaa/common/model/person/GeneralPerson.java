@@ -13,7 +13,7 @@ import lombok.Data;
  * @since 2023-07-19
  */
 @Data
-public abstract class GeneralPerson extends BaseModel<Integer> {
+public abstract class GeneralPerson extends BaseModel<Long> {
 
     private String username;
     private Boolean active;

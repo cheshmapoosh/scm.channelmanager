@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
@@ -30,18 +31,18 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
         Object asset = getAssetValue(message);
 
-        return vote(profile, message.getHeader().getService().getTerminalServiceAccess().getService(), asset);
+        return vote(profile, message.getHeader().getService().getTerminalServiceAccess(), asset);
     }
 
-    protected final PersonProfile fillServiceAccessForProfile(PersonProfile profile) {
-        return decisionHelper.fillServiceAccessForProfile(profile);
+    protected final PersonProfile fillServiceAccessForProfile(PersonProfile profile, String terminalCode) {
+        return decisionHelper.fillServiceAccessForProfile(profile, terminalCode);
     }
 
     protected final PersonProfile fillCustomerForProfile(PersonProfile profile, ExternalServiceProvider serviceProvider) {
         return decisionHelper.fillCustomerForProfile(profile, serviceProvider);
     }
 
-    protected abstract int vote(PersonProfile profile, Service service, Object asset);
+    protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, Object asset);
 
     private boolean isAssetSupport(Message message) {
         return message.getHeader().getService().getTerminalServiceAccess().getTerminal().getSupportCheckAssetAccess() &&

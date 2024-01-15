@@ -27,16 +27,17 @@ public class PersonProfile implements Serializable {
     /**
      * ref to USER.USER_ID
      */
+    @Getter
     private Long personId;
-    private Map<String, Customer> customers;
+    private Map<String, Customer> customers = new HashMap<>();
 
     @Getter
     @Setter
     private List<ServiceAccess> serviceAccesses;
 
-    public PersonProfile(@NonNull String personProfileId) {
+    public PersonProfile(@NonNull String personProfileId, @NonNull Long personId) {
         this.personProfileId = personProfileId;
-        customers = new HashMap<>();
+        this.personId = personId;
     }
 
     public Customer getCustomer(String providerId) {
@@ -47,7 +48,7 @@ public class PersonProfile implements Serializable {
         customers.put(providerId, customer);
     }
 
-    public boolean hasServiceAccess(String serviceCode, Object asset) {
+    public boolean hasServiceAccess(String terminalCode, String serviceCode, Object asset) {
         if (null == serviceAccesses || serviceAccesses.isEmpty()) {
             return false;
         }

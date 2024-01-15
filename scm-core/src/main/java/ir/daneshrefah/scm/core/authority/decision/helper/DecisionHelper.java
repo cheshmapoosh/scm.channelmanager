@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
-import ir.daneshrefah.scm.core.integration.provider.DelegatorDataProvider;
+import ir.daneshrefah.scm.core.integration.provider.CustomerDataProviderDelegator;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
@@ -37,7 +37,7 @@ public class DecisionHelper {
 
     private final ConditionService conditionService;
     private final ServiceAccessService serviceAccessService;
-    private final DelegatorDataProvider delegatorDataProvider;
+    private final CustomerDataProviderDelegator delegatorDataProvider;
 
     private static final Map<Class<? extends BaseCondition>, Map<String, List<BaseCondition>>> CONDITIONS_CACHE =
             new ConcurrentHashMap<>();
@@ -47,7 +47,10 @@ public class DecisionHelper {
         reloadCache();
     }
 
-    public PersonProfile fillServiceAccessForProfile(PersonProfile profile) {
+    public PersonProfile fillServiceAccessForProfile(PersonProfile profile, String terminalCode) {
+        /*
+        * Controls if the 'service access' data has already been loaded, does not reload.
+        * */
         if (null != profile.getServiceAccesses()) {
             return profile;
         }

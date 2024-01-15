@@ -19,11 +19,11 @@ import java.util.Map;
  */
 @Service
 @Slf4j
-public class DelegatorDataProvider {
+public class CustomerDataProviderDelegator {
 
     private Map<String, ServiceProviderDataProvider> providersMap;
 
-    public DelegatorDataProvider(ApplicationContext context) {
+    public CustomerDataProviderDelegator(ApplicationContext context) {
         log.info("start loading ServiceProviderDataProvider");
         providersMap = context.getBeansOfType(ServiceProviderDataProvider.class);
         log.info("end loading ServiceProviderDataProvider '{}'", providersMap.size());
@@ -37,7 +37,7 @@ public class DelegatorDataProvider {
             log.warn("no data provider found for provider '{}", provider.getCode());
             return profile;
         }
-        Customer customer = dataProvider.findCustomerByPersonProfile(profile.getPersonProfileId());
+        Customer customer = dataProvider.findCustomerByPersonProfile(profile);
         profile.addCustomer(provider.getId(), customer);
         return profile;
     }

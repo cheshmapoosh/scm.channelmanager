@@ -7,8 +7,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.person.CorporatePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.EmployeePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.IndividualPerson;
+import ir.daneshrefah.scm.uaa.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.PersonType;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -87,17 +86,13 @@ public class JWTConfig {
                 PersonType personType = user.getPerson().getType();
                 claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
                 claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getType().getCode());
-                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, user.getPerson().getUsername());
+                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, user.getPerson().getId());
+                claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, user.getPerson().getUsername());
                 switch (personType) {
-                    case INDIVIDUAL_CUSTOMER:
-                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((IndividualPerson) user.getPerson()).getNationalCode());
-                        claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((IndividualPerson) user.getPerson()).getFirstName());
-                        claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((IndividualPerson) user.getPerson()).getLastName());
-                        break;
-                    case EMPLOYEE:
-                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((EmployeePerson) user.getPerson()).getNationalCode());
-                        claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((EmployeePerson) user.getPerson()).getFirstName());
-                        claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((EmployeePerson) user.getPerson()).getLastName());
+                    case INDIVIDUAL_CUSTOMER, EMPLOYEE:
+                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((GeneralRealPerson) user.getPerson()).getNationalCode());
+                        claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((GeneralRealPerson) user.getPerson()).getFirstName());
+                        claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((GeneralRealPerson) user.getPerson()).getLastName());
                         break;
                     case CORPORATE_CUSTOMER:
                         claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((CorporatePerson) user.getPerson()).getNationalId());
@@ -111,8 +106,8 @@ public class JWTConfig {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
                 claims.claim(CLAIM_KEY_TERMINAL, principal.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
                 claims.claim(CLAIM_KEY_GRANT, AuthorizationGrantType.CLIENT_CREDENTIALS);
-                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.CLIENT.getCode());
-                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, principal.getRegisteredClient().getClientId());
+                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, principal.getRegisteredClient().getId());
+                claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, principal.getRegisteredClient().getClientId());
             }
         };
     }

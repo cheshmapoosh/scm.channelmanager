@@ -66,7 +66,7 @@ public class UserAuthentication implements org.springframework.security.core.Aut
         }
         this.authorities = Collections.unmodifiableList(new ArrayList<>(authorities));
         if (null != principal && isAuthenticated()) {
-            profile = new PersonProfile(principal.getPerson().getUsername());
+            profile = new PersonProfile(principal.getPerson().getUsername(), principal.getPerson().getId().longValue());
         }
     }
 

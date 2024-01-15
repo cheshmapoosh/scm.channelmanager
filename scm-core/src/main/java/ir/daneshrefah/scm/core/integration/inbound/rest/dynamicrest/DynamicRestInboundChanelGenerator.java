@@ -87,6 +87,9 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
             RestUrl restUrl = urlBuilder.build(service);
             String inboundUrl = "rest:" + restUrl.getHttpMethod() + ":" + restUrl.getUrl();
             from(inboundUrl)
+                    .threads(10, 20, "inbound-rest-" +
+                            service.getTerminalServiceAccess().getService().getCode().toLowerCase())
+                    .end()
                     .doTry()
                     .process(exchange -> {
                         Message message = buildMessage(exchange, service);

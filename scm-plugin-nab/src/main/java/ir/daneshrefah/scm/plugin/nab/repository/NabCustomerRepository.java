@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @RequiredArgsConstructor
 @Repository
-public class CustomerRepository {
+public class NabCustomerRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -33,8 +33,8 @@ public class CustomerRepository {
         return ids.get(0);
     }
 
-    public Customer findAccountListByPersonId(String personProfileId) {
-        Long personId = findPersonIdByPersonProfileId(personProfileId);
+    public Customer findAccountListByPersonId(Long personId) {
+//        Long personId = findPersonIdByPersonProfileId(personProfileId);
         if (null == personId) {
             return null;
         }

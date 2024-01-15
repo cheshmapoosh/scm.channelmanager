@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
 import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -13,6 +14,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class ServiceProviderDataProvider {
 
-    public abstract Customer findCustomerByPersonProfile(String id);
+    public abstract Customer findCustomerByPersonProfile(PersonProfile profile);
 
 }
