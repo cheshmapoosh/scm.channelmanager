@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.VoteEvent;
+import ir.daneshrefah.scm.logging.domain.event.EventType;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,8 +32,16 @@ public abstract class DecisionVoter {
         if (!isSupport) {
             return ACCESS_ABSTAIN;
         }
-        int response = vote(message);
-        logVotingEvent(message, this.getClass().getSimpleName(), response, startTime);
+        int response = 0;
+        Exception error = null;
+        try {
+            response = vote(message);
+        } catch (Exception e) {
+            error = e;
+            throw e;
+        } finally {
+            logVotingEvent(message, response, error, startTime);
+        }
         return response;
     }
 
@@ -41,20 +49,23 @@ public abstract class DecisionVoter {
 
     protected abstract boolean support(TerminalServiceChannelAccess service);
 
-    private final void logVotingEvent(Message message, String input, int output, Instant startTime) {
+    private final void logVotingEvent(Message message, int output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = VoteEvent.builder()
+        Event event = Event.builder()
+                .type(EventType.VOTE)
+                .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(startTime)
-                .terminalCode(message.getHeader().getTerminalCode())
-                .threadName(Thread.currentThread().getName())
-                .sourceClassName(this.getClass().getSimpleName())
-                .input(input)
-                .output(output)
-                .clientAgent(message.getHeader().getClientAgent())
-                .endTimestamp(endTime)
+                .source(null)
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .startTime(startTime)
+                .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .threadName(Thread.currentThread().getName())
+//                .input(request)
+                .output(output)
+                .error(error)
+                .sourceClassName(this.getClass().getSimpleName())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }

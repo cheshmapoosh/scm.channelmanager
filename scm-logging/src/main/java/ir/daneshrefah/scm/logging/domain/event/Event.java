@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
+import ir.daneshrefah.scm.common.model.message.Status;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -13,19 +14,22 @@ import java.time.Instant;
  * @since 2024-01-06
  */
 @Getter
-@SuperBuilder
-public abstract class Event<T> {
+@Builder
+public class Event {
 
+    private EventType type;
+    private Status status;
     private String correlationId;
-    private String clientCorrelationId;
-    private Instant startTimestamp;
-    private T input;
-    private String threadName;
-    private String sourceClassName;
-    private String clientAgent;
-    private String serverHost;
+    private String source;
     private String terminalCode;
-
-    public abstract EventType getType();
+    private String channelCode;
+    private Instant startTime;
+    private Instant endTime;
+    private Long durationMillis;
+    private String sourceClassName;
+    private String threadName;
+    private Object input;
+    private Object output;
+    private Exception error;
 
 }

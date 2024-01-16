@@ -7,7 +7,6 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
-import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpMessageBuilder;
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
@@ -44,7 +43,6 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                                              DecisionManager decisionManager) {
         super(objectMapper, camelContext, authenticationTemplate,
                 producerTemplate, transformerService,
-                new CamelHttpMessageBuilder(objectMapper),
                 new CamelHttpResponseBuilder(objectMapper), decisionManager);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }

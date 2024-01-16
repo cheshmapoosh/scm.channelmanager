@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.inbound.MessageBuilder;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -33,10 +32,10 @@ public abstract class AbstractCamelInboundChannelGenerator extends AbstractInbou
                                                    AuthenticationClientTemplate authenticationTemplate,
                                                    ServiceProducerTemplate producerTemplate,
                                                    TransformerService transformerService,
-                                                   MessageBuilder<Exchange> messageBuilder, ResponseBuilder<Exchange> responseBuilder,
+                                                   ResponseBuilder<Exchange> responseBuilder,
                                                    DecisionManager decisionManager) {
         super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
-                messageBuilder, responseBuilder, decisionManager);
+                responseBuilder, decisionManager);
         this.context = context;
     }
 

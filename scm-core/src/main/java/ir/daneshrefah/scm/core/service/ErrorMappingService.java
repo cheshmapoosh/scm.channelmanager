@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
@@ -67,6 +68,14 @@ public class ErrorMappingService {
             Error error = new Error(ErrorType.HOST_UNREACHABLE, providerUnreachableException.getProvider().getCode(),
                     null, ErrorType.HOST_UNREACHABLE.getCode(), providerUnreachableException.getCause().getMessage());
             message.addError(error, Status.SC_ERROR_UNREACHABLE_PROVIDER);
+            return message;
+        }
+        if (exception instanceof TransformException) {
+            TransformException transformException = (TransformException) exception;
+            Error error = new Error(ErrorType.SYSTEM_ERROR, transformException.getTransformer().getClass().getSimpleName(),
+                    null, ErrorType.SYSTEM_ERROR.getCode(), transformException.getCause().getMessage());
+            message.addError(error, Status.SC_ERROR_SYSTEM);
+            message.nullPayload();
             return message;
         }
         if (exception instanceof InvalidProviderResponseException) {

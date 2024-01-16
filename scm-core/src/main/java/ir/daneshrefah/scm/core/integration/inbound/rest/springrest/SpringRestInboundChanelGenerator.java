@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
+import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -43,7 +44,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
                                             ServiceProducerTemplate producerTemplate,
                                             TransformerService transformerService) {
         super(objectMapper,authenticationTemplate, producerTemplate, transformerService,
-                null, null, null);
+                null, null);
         this.handlerMapping = handlerMapping;
     }
 
@@ -78,6 +79,11 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
             registerControllerMapping(inboundSpringController);
         }
         return true;
+    }
+
+    @Override
+    protected MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input) {
+        return null;
     }
 
     @Override

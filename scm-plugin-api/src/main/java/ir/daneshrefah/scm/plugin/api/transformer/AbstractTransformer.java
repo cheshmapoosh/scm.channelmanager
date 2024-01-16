@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.TransformEvent;
+import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
 import ir.daneshrefah.scm.utils.ClassUtils;
 
@@ -37,15 +37,15 @@ public abstract class AbstractTransformer {
             result = internalTransform(payload, message, metadata);
         } catch (Exception e) {
             isSuccessful = false;
-            error = ClassUtils.cloneExceptionWithoutStackTrace(e);
+            error = e;
             if (e instanceof BaseException) {
                 throw e;
             } else {
-                throw new TransformException(this);
+                throw new TransformException(this, e);
             }
         } finally {
             String invokerClassName = Thread.currentThread().getStackTrace()[2].getClassName();
-            logTransformEvent(message, result, startTime, error);
+            logTransformEvent(message, payload, result, startTime, error);
 //            message.addTransformEvent(startTime, endTime, this.getClass().getName(), isSuccessful, error, payload, result,
 //                    (null != result ? result.getClass().getName() : "null"), invokerClassName);
         }
@@ -54,22 +54,23 @@ public abstract class AbstractTransformer {
 
     public abstract Object internalTransform(Object payload, Message message, String metadata);
 
-    private void logTransformEvent(Message message, Object output, Instant startTime, Exception error) {
+    private void logTransformEvent(Message message, Object input, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
-        Event event = TransformEvent.builder()
+        Event event = Event.builder()
+                .type(EventType.TRANSFORM)
+                .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(startTime)
-                .input(message.getPayload())
-                .error(error)
-                .threadName(Thread.currentThread().getName())
-                .sourceClassName(this.getClass().getSimpleName())
-                .clientAgent(message.getHeader().getClientAgent())
-                .serverHost(message.getHeader().getServerHost())
-                .terminalCode(message.getHeader().getTerminalCode())
-                .endTimestamp(endTime)
+                .source(null)
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .startTime(startTime)
+                .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .threadName(Thread.currentThread().getName())
+                .input(input)
                 .output(output)
+                .error(error)
+                .sourceClassName(this.getClass().getSimpleName())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }

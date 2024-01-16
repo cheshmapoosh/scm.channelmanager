@@ -5,18 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
-import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.AuthenticationEvent;
 import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.InboundEvent;
-import ir.daneshrefah.scm.logging.domain.event.ResponseBuildEvent;
+import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -26,7 +22,6 @@ import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.utils.ClassUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AccessLevel;
@@ -59,7 +54,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
     @Getter(AccessLevel.PROTECTED)
     private List<TerminalServiceChannelAccess> services;
     private final AuthenticationClientTemplate authenticationTemplate;
-    private final MessageBuilder<T> messageBuilder;
+//    private final MessageBuilder<T> messageBuilder;
     private final ResponseBuilder<T> responseBuilder;
     private final DecisionManager decisionManager;
     private final ServiceProducerTemplate producerTemplate;
@@ -69,13 +64,12 @@ public abstract class AbstractInboundChannelGenerator<T> {
     protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
                                               ServiceProducerTemplate producerTemplate,
                                               TransformerService transformerService,
-                                              MessageBuilder<T> messageBuilder, ResponseBuilder<T> responseBuilder,
+                                              ResponseBuilder<T> responseBuilder,
                                               DecisionManager decisionManager) {
         this.objectMapper = objectMapper;
         this.authenticationTemplate = authenticationTemplate;
         this.producerTemplate = producerTemplate;
         this.transformerService = transformerService;
-        this.messageBuilder = messageBuilder;
         this.responseBuilder = responseBuilder;
         this.decisionManager = null != decisionManager ? decisionManager : new PermitAllDecisionManager();
     }
@@ -129,7 +123,11 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     protected final Message buildMessage(T input, TerminalServiceChannelAccess service) {
-        Message message = messageBuilder.build(input, service);
+        Instant startTime = Instant.now();
+        MessageBuildRequest request = extractMessageBuildRequest(input);
+        Message message = buildMessage(request, service);
+        logIncomingMessage(request, message, null, startTime);
+
         ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
         UserAuthentication authentication = authenticateUser(message, authenticationRequest, false);
         UserAuthentication transactionAuthentication = authenticateUser(message, authenticationRequest, true);
@@ -143,16 +141,58 @@ public abstract class AbstractInboundChannelGenerator<T> {
             }
             message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, null, Constants.SCM_PARAMETER_AUTHORIZATION,
                     ErrorType.AUTHENTICATION_FAILED.getCode(), errorMessage), Status.SC_UNAUTHORIZED);
-            message.setPayload(objectMapper.nullNode());
+            message.nullPayload();
         }
-        logIncomingMessage(message);
         return message;
+    }
+
+    protected abstract MessageBuildRequest extractMessageBuildRequest(T input);
+
+    private Message buildMessage(MessageBuildRequest request, TerminalServiceChannelAccess service) {
+        Header header = Header.builder()
+                .contentType(request.getContentType())
+                .authentication(null)
+                .isTransactionAuthenticated(false)
+                .correlationId(StringUtils.generateGuid())
+                .clientCorrelationId(request.getClientCorrelationId())
+                .clientTimestamp(request.getClientTimestamp())
+                .receiveTimestamp(request.getReceiveTimestamp())
+                .accessParameter(request.getAccessParameter())
+                .clientAgent(request.getClientAgent())
+                .serverHost(request.getServerHost())
+                .service(service)
+                .clientAddress(request.getClientAddress())
+                .build();
+
+        if (StringUtils.isEmpty(header.getAccessParameter())) {
+            return createValidationErrorMessage(request, header, Constants.SCM_PARAMETER_ACCESS_PARAMETER);
+        }
+
+        if (StringUtils.isEmpty(request.getTerminalCode()) ||
+                !StringUtils.equals(service.getTerminalServiceAccess().getTerminal().getCode(), request.getTerminalCode())) {
+            return createValidationErrorMessage(request, header, Constants.SCM_PARAMETER_TERMINAL);
+        }
+
+        Message message = new Message(request);
+        message.setHeader(header);
+        message.setStatus(Status.SC_PROCESSING);
+        message.setPayload(request.getPayload());
+
+        return message;
+    }
+
+    private Message createValidationErrorMessage(MessageBuildRequest request, Header header, String source) {
+        Message result = new Message(request);
+        result.setHeader(header);
+        result.addError(new Error(ErrorType.VALIDATION, null, source, ErrorType.VALIDATION.getCode(), null), Status.SC_ERROR_VALIDATION);
+        result.setPayload(objectMapper.nullNode());
+        return result;
     }
 
     protected final T buildResponse(T input, Message message) {
         Instant startTime = Instant.now();
         T response = responseBuilder.build(input, message);
-        logResponseGenerationEvent(message, message.getPayload(), startTime);
+        logResponseGenerationEvent(message);
         return response;
     }
 
@@ -162,34 +202,66 @@ public abstract class AbstractInboundChannelGenerator<T> {
         return decisionManager.decide(message);
     }
 
-    private final void logIncomingMessage(Message message) {
-        Event event = InboundEvent.builder()
+    private final void logIncomingMessage(MessageBuildRequest request, Message message, Exception error, Instant startTime) {
+        Instant endTime = Instant.now();
+        Event event = Event.builder()
+                .type(EventType.INBOUND)
+                .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(Instant.now())
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .source(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+                .terminalCode(request.getTerminalCode())
+                .channelCode(request.getChannelCode())
+                .startTime(startTime)
+                .endTime(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .threadName(Thread.currentThread().getName())
+                .input(request)
+                .output(message.getPayload())
+                .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
-//                .input(message)
-                .serverHost(message.getHeader().getServerHost())
-                .clientAgent(message.getHeader().getClientAgent())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }
 
-    private final void logResponseGenerationEvent(Message message, JsonNode response, Instant startTime) {
+    private void logAuthenticationEvent(ClientAuthenticationRequest request, Message message,
+                                        Authentication authentication, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = ResponseBuildEvent.builder()
+        Event event = Event.builder()
+                .type(EventType.AUTHENTICATION)
+                .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(startTime)
-                .terminalCode(message.getHeader().getTerminalCode())
-                .threadName(Thread.currentThread().getName())
-                .sourceClassName(this.getClass().getSimpleName())
-//                .input(response)
-                .clientAgent(message.getHeader().getClientAgent())
-                .endTimestamp(endTime)
+                .source(null)
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .startTime(startTime)
+                .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .threadName(Thread.currentThread().getName())
+                .input(request)
+                .output(authentication)
+                .error(error)
+                .sourceClassName(this.getClass().getSimpleName())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
+    }
+
+    private final void logResponseGenerationEvent(Message message) {
+        Instant endTime = Instant.now();
+        Event event = Event.builder()
+                .type(EventType.OUTBOUND)
+                .status(message.getStatus())
+                .correlationId(message.getHeader().getCorrelationId())
+                .source(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .startTime(message.getHeader().getReceiveTimestamp())
+                .endTime(endTime)
+                .durationMillis(Duration.between(message.getHeader().getReceiveTimestamp(), endTime).toMillis())
+                .threadName(Thread.currentThread().getName())
+                .input(message.getRequest())
+                .output(Status.SC_SUCCESS.equals(message.getStatus()) ? message.getPayload() : message.getErrors())
+                .error(null)
+                .sourceClassName(this.getClass().getSimpleName())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }
@@ -210,36 +282,16 @@ public abstract class AbstractInboundChannelGenerator<T> {
             }
         } catch (ClientAuthenticationException e) {
             authentication = e.getAuthentication();
-            error = (Exception) ClassUtils.cloneExceptionWithoutStackTrace(null != e.getCause() ? e.getCause() : e);
+            error = null != e.getCause() ? (Exception) e.getCause() : e;
         } catch (Exception e) {
             LOGGER.error("error on authentication", e);
-            error = ClassUtils.cloneExceptionWithoutStackTrace(e);
+            error = e;
         }
-        logAuthenticationEvent(message, authenticationRequest, authentication, startTime, error);
+        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
 
         return authentication;
     }
 
-    private void logAuthenticationEvent(Message message, ClientAuthenticationRequest authenticationRequest,
-                                        Authentication authentication, Instant startTime, Exception error) {
-        Instant endTime = Instant.now();
-        Event event = AuthenticationEvent.builder()
-                .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(startTime)
-                .terminalCode(message.getHeader().getTerminalCode())
-                .threadName(Thread.currentThread().getName())
-                .sourceClassName(this.getClass().getSimpleName())
-                .input(authenticationRequest)
-                .output(authentication)
-                .error(error)
-                .clientAgent(message.getHeader().getClientAgent())
-                .serverHost(message.getHeader().getServerHost())
-                .endTimestamp(endTime)
-                .durationMillis(Duration.between(startTime, endTime).toMillis())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
-    }
 
     protected final Message executeService(Message message) {
         try {

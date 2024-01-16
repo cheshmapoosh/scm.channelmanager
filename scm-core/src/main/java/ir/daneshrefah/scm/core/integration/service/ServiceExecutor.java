@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.ServiceCallEvent;
+import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.ClassUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +66,7 @@ public abstract class ServiceExecutor {
         Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequestSchema(message);
         if (!errors.isEmpty()) {
             errorMappingService.resolveMessageByValidationMessage(message, errors.get());
-            logServiceCallEvent(message, service, startTime);
+            logServiceCallEvent(message, service, errors, null, startTime);
 //            addServiceCallEvent(message, service, false, startTime, exception, message.getPayload(), response);
             return;
         }
@@ -84,13 +84,10 @@ public abstract class ServiceExecutor {
             response = executeInternal(service, message, requestPayload);
         } catch (Exception e) {
             errorMappingService.resolveMessageByException(message, e);
-            isSuccessful = false;
             exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
             return;
         } finally {
-            LocalDateTime endTime = LocalDateTime.now();
-            logServiceCallEvent(message, service, startTime);
-//            addServiceCallEvent(message, service, isSuccessful, startTime, exception, requestPayload, response);
+            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
         }
 
         try {
@@ -177,19 +174,23 @@ public abstract class ServiceExecutor {
 
     protected abstract Object executeInternal(Service service, Message message, Object requestPayload);
 
-    private void logServiceCallEvent(Message message, Service service, Instant startTime) {
+    private void logServiceCallEvent(Message message, Service service, Object output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = ServiceCallEvent.builder()
+        Event event = Event.builder()
+                .type(EventType.SERVICE_CALL)
+                .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .clientCorrelationId(message.getHeader().getClientCorrelationId())
-                .startTimestamp(startTime)
-                .terminalCode(message.getHeader().getTerminalCode())
-                .threadName(Thread.currentThread().getName())
-                .sourceClassName(this.getClass().getSimpleName())
-                .input(null)
-                .clientAgent(message.getHeader().getClientAgent())
-                .endTimestamp(endTime)
+                .source(service.getCode())
+                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .startTime(startTime)
+                .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .threadName(Thread.currentThread().getName())
+                .input(service.getCode())
+                .output(output)
+                .error(error)
+                .sourceClassName(this.getClass().getSimpleName())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }

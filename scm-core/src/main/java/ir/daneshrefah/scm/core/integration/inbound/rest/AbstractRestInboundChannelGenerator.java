@@ -7,7 +7,6 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
-import ir.daneshrefah.scm.plugin.api.inbound.MessageBuilder;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -34,11 +33,10 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
                                                ServiceProducerTemplate producerTemplate,
                                                TransformerService transformerService,
-                                               MessageBuilder<HttpServletRequest> messageBuilder,
                                                ResponseBuilder<HttpServletRequest> responseBuilder,
                                                DecisionManager decisionManager) {
         super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
-                messageBuilder, responseBuilder, decisionManager);
+                responseBuilder, decisionManager);
     }
 
     @Override
@@ -70,7 +68,7 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     @Override
     public final Message executeService(HttpServletRequest request, String serviceCode, JsonNode payload) {
         TerminalServiceChannelAccess service = findService(request, serviceCode);
-        Message message = new Message();
+        Message message = new Message(null);
         message.setPayload(null != payload ? payload : getObjectMapper().nullNode());
         return executeService(message);
     }
