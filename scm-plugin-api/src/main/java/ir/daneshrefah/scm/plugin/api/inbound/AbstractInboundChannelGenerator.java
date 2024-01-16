@@ -123,12 +123,16 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     protected final Message buildMessage(T input, TerminalServiceChannelAccess service) {
-        Instant startTime = Instant.now();
         MessageBuildRequest request = extractMessageBuildRequest(input);
-        Message message = buildMessage(request, service);
-        logIncomingMessage(request, message, null, startTime);
-
         ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
+        return buildMessage(request, authenticationRequest, service);
+    }
+
+    protected final Message buildMessage(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest,
+                                         TerminalServiceChannelAccess service) {
+        Message message = buildMessageObject(request, service);
+        logIncomingMessage(request, message, null, request.getReceiveTimestamp());
+
         UserAuthentication authentication = authenticateUser(message, authenticationRequest, false);
         UserAuthentication transactionAuthentication = authenticateUser(message, authenticationRequest, true);
         message.getHeader().setAuthentication(authentication);
@@ -148,7 +152,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
     protected abstract MessageBuildRequest extractMessageBuildRequest(T input);
 
-    private Message buildMessage(MessageBuildRequest request, TerminalServiceChannelAccess service) {
+    private Message buildMessageObject(MessageBuildRequest request, TerminalServiceChannelAccess service) {
         Header header = Header.builder()
                 .contentType(request.getContentType())
                 .authentication(null)

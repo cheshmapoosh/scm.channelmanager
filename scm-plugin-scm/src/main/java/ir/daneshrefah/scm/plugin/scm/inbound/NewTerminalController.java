@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.plugin.scm.inbound;
 
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
+import ir.daneshrefah.scm.plugin.api.model.message.DefaultHttpMessageRequestBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +24,8 @@ public class NewTerminalController extends AbstractSpringRestInboundController {
 
     @GetMapping()
     public ResponseEntity<List<String>> getAllProfiles(HttpServletRequest request) {
-        Message message = executeService(request, "ACCOUNT-LIST");
+        MessageBuildRequest buildRequest = DefaultHttpMessageRequestBuilder.builder(request, getChannel()).build();
+        Message message = executeService(buildRequest, null, "ACCOUNT-LIST");
         return ResponseEntity.status(HttpStatus.OK).body(Arrays.asList(new String[] {"hi", "hello"}));
     }
 
