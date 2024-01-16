@@ -1,12 +1,14 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.nab.provider.Bind;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,17 @@ public class NabResponseTransformer extends AbstractTransformer {
             return null;
         }
 
-        ObjectNode payloadTmp = (ObjectNode) payload;
+        ObjectNode payloadTmp = null;
+        try {
+            payloadTmp = payload instanceof ObjectNode ? (ObjectNode) payload : (ObjectNode) objectMapper.readTree((String) payload);
+        } catch (Exception e) {
+            ExternalServiceProvider provider = null;
+            ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService().getTerminalServiceAccess().getService();
+            if (service instanceof ExternalService) {
+                provider = ((ExternalService) service).getServiceProvider();
+            }
+            throw new InvalidProviderResponseException(e, provider);
+        }
         JsonNode resultNab = payloadTmp.get("result");
         ArrayNode arrayResult = JsonNodeFactory.instance.arrayNode();
         ObjectNode objectResult = JsonNodeFactory.instance.objectNode();

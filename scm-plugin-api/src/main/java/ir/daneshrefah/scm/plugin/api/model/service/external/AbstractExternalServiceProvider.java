@@ -104,7 +104,7 @@ public abstract class AbstractExternalServiceProvider {
         List<AbstractTransformer> responseTransformers = prepareResponseTransformers();
         for (Iterator<AbstractTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
-            response = transformer.transform(response, message, null);
+            response = transformer.transform(response, message, message.getHeader().getService().getTerminalServiceAccess().getService().getMetadata());
         }
         return response;
     }
