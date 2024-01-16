@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.error.ErrorReason;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -64,13 +63,13 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
                 .build();
 
         if (StringUtils.isEmpty(header.getAccessParameter())) {
-            return createValidationErrorMessage(header, Constants.SCM_PARAMETER_ACCESS_PARAMETER, ErrorReason.IS_EMPTY);
+            return createValidationErrorMessage(header, Constants.SCM_PARAMETER_ACCESS_PARAMETER);
         }
 
         String terminalCode = CamelUtils.getTerminalCodeFromExchange(input);
         if (StringUtils.isEmpty(terminalCode) ||
                 !StringUtils.equals(service.getTerminalServiceAccess().getTerminal().getCode(), terminalCode)) {
-            return createValidationErrorMessage(header, Constants.SCM_PARAMETER_TERMINAL, ErrorReason.IS_INVALID);
+            return createValidationErrorMessage(header, Constants.SCM_PARAMETER_TERMINAL);
         }
 
         Message message = new Message();
@@ -81,10 +80,10 @@ public class CamelHttpMessageBuilder extends MessageBuilder<Exchange> {
         return message;
     }
 
-    private Message createValidationErrorMessage(Header header, String source, ErrorReason reason) {
+    private Message createValidationErrorMessage(Header header, String source) {
         Message result = new Message();
         result.setHeader(header);
-        result.addError(new Error(ErrorType.VALIDATION, source, reason), Status.SC_ERROR_VALIDATION);
+        result.addError(new Error(ErrorType.VALIDATION, null, source, ErrorType.VALIDATION.getCode(), null), Status.SC_ERROR_VALIDATION);
         result.setPayload(objectMapper.nullNode());
         return result;
     }

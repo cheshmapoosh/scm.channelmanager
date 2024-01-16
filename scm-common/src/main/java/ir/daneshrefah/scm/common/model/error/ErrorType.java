@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.common.model.error;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -13,7 +15,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ErrorType {
 
-    VALIDATION("SCM-1001"), ACCESS_DENIED("SCM-1002"), AUTHENTICATION_FAILED("SCM-1003");
+    VALIDATION(ERROR_CODE_VALIDATION), ACCESS_DENIED(ERROR_CODE_ACCESS_DENIED), AUTHENTICATION_FAILED(ERROR_CODE_AUTHENTICATION_FAILED),
+    HOST_UNREACHABLE(ERROR_CODE_HOST_UNREACHABLE), INVALID_PROVIDER_RESPONSE(ERROR_CODE_INVALID_PROVIDER_RESPONSE);
 
     @Getter
     private String code;

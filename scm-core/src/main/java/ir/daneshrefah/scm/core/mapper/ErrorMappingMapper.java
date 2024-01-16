@@ -12,7 +12,6 @@ import java.util.List;
 public interface ErrorMappingMapper {
     ErrorMappingMapper INSTANCE = Mappers.getMapper(ErrorMappingMapper.class);
 
-    @Mapping(source = "externalServiceProviderEntity", target = "externalServiceProvider")
     ErrorMapping toModel(ErrorMappingEntity entity);
 
     List<ErrorMapping> entitiesToModels(Iterable<ErrorMappingEntity> entities);

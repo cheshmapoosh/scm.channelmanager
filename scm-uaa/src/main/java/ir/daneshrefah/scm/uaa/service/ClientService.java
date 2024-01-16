@@ -24,7 +24,7 @@ public class ClientService {
 
     private Client prepareMockClient() {
         Client client = new Client();
-        client.setId(UUID.randomUUID().toString());
+        client.setId(9876L);
         client.setTitle("Mobile Bank");
         client.setClientId("ib");
         client.setClientSecret("{noop}myClientSecretValue");

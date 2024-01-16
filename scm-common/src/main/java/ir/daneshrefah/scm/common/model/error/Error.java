@@ -21,10 +21,12 @@ public class Error {
     /**
      * It contains 'propertyName' that has error in 'VALIDATION' type
      * */
+    private String provider;
+    /**
+     * It contains 'propertyName' that has error in 'VALIDATION' type
+     * */
     private String source;
-    private ErrorReason reason;
+    private String errorCode;
+    private String message;
 
-    public String getErrorCode() {
-        return type.getCode();
-    }
 }

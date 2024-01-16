@@ -20,6 +20,9 @@ public class Constants {
     public static final String SCM_PARAMETER_ACCESS_PARAMETER = "X-SCM-Access-Parameter";
     public static final String SCM_PARAMETER_CLAIM_CODE = "X-SCM-Claim";
     public static final String SCM_PARAMETER_AUTHORIZATION = "Authorization";
+    public static final String SCM_PARAMETER_AUTHENTICATION = "Authentication";
+    public static final String SCM_PARAMETER_ASSET = "Asset";
+    public static final String SCM_PARAMETER_SERVICE = "Service";
 
     public static final String CAMEL_PARAMETER_HTTP_URL = "CamelHttpUrl";
     public static final String CAMEL_PARAMETER_HTTP_METHOD = "CamelHttpMethod";

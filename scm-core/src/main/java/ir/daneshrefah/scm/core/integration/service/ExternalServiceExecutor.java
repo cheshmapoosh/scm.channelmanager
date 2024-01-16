@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServ
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -20,6 +21,7 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-08-07
  */
+@Slf4j
 @Service
 public class ExternalServiceExecutor extends ServiceExecutor implements ApplicationContextAware {
 
@@ -45,12 +47,13 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
 //            LOGGER.warn("error on create instance of '{}' provider with className '{}'", componentName, componentClassName);
             return;
         }
-        provider.setExternalServiceProvider(serviceProviderModel);
-        provider.initServerConfigs();
-        serviceProviderMap.put(serviceProviderModel.getCode(), provider);
-//        LOGGER.info("provider '{}' successfully added to context with '{}' class and '{}' metadata", componentName,
-//                componentClassName, componentMetadata);
-
+        boolean isConfigured = provider.initServerConfigs(serviceProviderModel);
+        if (isConfigured) {
+            serviceProviderMap.put(serviceProviderModel.getCode(), provider);
+            log.info("serviceProvider '{}' configured successfully.", serviceProviderModel.getCode());
+        } else {
+            log.error("error on config serviceProvider '{}'", serviceProviderModel.getCode());
+        }
     }
 
     @Override

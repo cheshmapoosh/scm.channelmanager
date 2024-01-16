@@ -35,7 +35,7 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
         statusMappingMap.put(Status.SC_ERROR_VALIDATION, 400);
         statusMappingMap.put(Status.SC_ERROR_SYSTEM, 500);
         statusMappingMap.put(Status.SC_ERROR_BUSINESS, 400);
-        statusMappingMap.put(Status.SC_ERROR_UNAVAILABLE_PROVIDER, 502);
+        statusMappingMap.put(Status.SC_ERROR_UNREACHABLE_PROVIDER, 502);
     }
 
     private final ObjectMapper objectMapper;

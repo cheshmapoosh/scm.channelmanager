@@ -72,7 +72,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
                     .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
                     .build();
-            RegisteredClient.Builder clientBuilder = RegisteredClient.withId(client.getId())
+            RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
                     .clientId(client.getClientId())
                     .clientSecret(client.getClientSecret())
 //                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))

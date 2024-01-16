@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 public class Client {
 
-    private String id;
+    private Long id;
     private String title;
     private String clientId;
     private String clientSecret;

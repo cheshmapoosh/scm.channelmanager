@@ -9,7 +9,6 @@ import lombok.Getter;
  * @version 1.0
  * @since 2023-07-26
  */
-@Getter
 public abstract class BaseException extends RuntimeException {
 
     public BaseException(String message, Throwable cause) {

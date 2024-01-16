@@ -3,16 +3,20 @@ package ir.daneshrefah.scm.plugin.nab.provider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.http.HttpResponse;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -24,7 +28,7 @@ import java.net.http.HttpResponse;
 @Component("nabCoreServiceProvider")
 public class NabServiceProvider extends AbstractRestExternalServiceProvider {
 
-    private final String PROPERTIES = "properties";
+//    private final String PROPERTIES = "properties";
 
     @Autowired
     private NabRequestTransformer nabRequestTransformer;
@@ -32,6 +36,52 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
     private NabResponseTransformer nabResponseTransformer;
 
     @Override
+    protected List<AbstractTransformer> prepareRequestTransformers() {
+        return Arrays.asList(nabRequestTransformer);
+    }
+
+    @Override
+    protected List<AbstractTransformer> prepareResponseTransformers() {
+        return Arrays.asList(nabResponseTransformer);
+    }
+
+    @Override
+    protected String extractMethodByService(Service service) {
+        return "POST";
+    }
+
+    @Override
+    protected String extractUrlByService(Service service) {
+        try {
+            JsonNode componentMetadata = getObjectMapper().readTree(service.getMetadata());
+            return componentMetadata.get("serviceName").asText();
+        } catch (JsonProcessingException e) {
+            LOGGER.error("error extract serviceUrl for '{}'.", service.getCode(), e);
+            return null;
+        }
+    }
+
+    @Override
+    protected Object handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
+        try {
+            JsonNode node = getObjectMapper().readTree(response.body());
+            JsonNode errorNode = node.has("errors") ? node.get("errors") : getObjectMapper().nullNode();
+            if (errorNode.isArray() && errorNode.size() > 0) {
+                ArrayNode errorsNode = (ArrayNode) errorNode;
+                for (JsonNode element : errorsNode) {
+                    // Read the data from the array element (assuming they are integers in this example)
+                    String errorCode = element.get("id").asText();
+                    String errorMessage = element.get("message").asText();
+                    throw new ProviderErrorResponseException(getProvider(), errorCode, errorMessage);
+                }
+            }
+            return response.body();
+        } catch (JsonProcessingException e) {
+            throw new InvalidProviderResponseException(e, getProvider());
+        }
+    }
+
+/*@Override
     protected Object processResponse(HttpResponse<String> response, int statusCode) throws Exception {
         JsonNode node = objectMapper.readTree(response.body());
         if (node.has("errors") && node.get("errors").isArray() && node.get("errors").size() > 0) {
@@ -41,7 +91,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
                     // Read the data from the array element (assuming they are integers in this example)
                     String errorCode = element.get("id").asText();
                     String errorMessage = element.get("message").asText();
-                    throw new ExternalProviderException(externalServiceProvider, errorCode, errorMessage);
+                    throw new ExternalProviderException(provider, errorCode, errorMessage);
                 }
             }
         }
@@ -59,7 +109,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
                     // Read the data from the array element (assuming they are integers in this example)
                     String errorCode = element.get("id").asText();
                     String errorMessage = element.get("message").asText();
-                    throw new ExternalProviderException(externalServiceProvider, errorCode, errorMessage);
+                    throw new ExternalProviderException(provider, errorCode, errorMessage);
                 }
             }
         }else
@@ -91,6 +141,6 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
     @Override
     protected String extractServiceHttpMethod(Service service) {
         return "POST";
-    }
+    }*/
 
 }

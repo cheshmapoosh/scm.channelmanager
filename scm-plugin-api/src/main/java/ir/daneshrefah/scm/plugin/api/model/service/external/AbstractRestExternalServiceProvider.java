@@ -1,12 +1,13 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderUnSuccessfulResponseException;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderUnknownException;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderUnreachableException;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
-import ir.daneshrefah.scm.plugin.api.exception.ExternalProviderException;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -26,47 +27,56 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  * @version 1.0
  * @since 2023-08-06
  */
-public abstract class AbstractRestExternalServiceProvider extends AbstractExternalServiceProvider<JsonNode> {
+public abstract class AbstractRestExternalServiceProvider extends AbstractExternalServiceProvider {
 
+    private static final String PROPERTY_METADATA_ENDPOINT = "endpointUri";
+    private static final String PROPERTY_TIMEOUT_CONNECTION = "connectTimeout";
+    private static final String PROPERTY_TIMEOUT_RESPONSE = "responseTimeout";
     private String endpointUri;
     private HttpClient httpClient;
-    private Integer connectTimeout = 3000;
-    private Integer responseTimeout = 3000;
-    protected final ObjectMapper objectMapper = new ObjectMapper();
+    private Integer connectTimeout;
+    private Integer responseTimeout;
 
     @Override
-    public void initServerConfigs() {
-        try {
-            metadata = objectMapper.readTree(externalServiceProvider.getMetadata());
-            endpointUri = metadata.get("endpointUri").asText();
-            httpClient = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofMillis(connectTimeout))
-                    .build();
-        } catch (Exception e) {
-            LOGGER.error("error on init externalServiceProvider: " + externalServiceProvider.getCode(), e);
-            throw new RuntimeException(e);
-        }
+    public boolean initServerConfigs() {
+        endpointUri = getMetadataValue(PROPERTY_METADATA_ENDPOINT);
+        connectTimeout = getMetadataIntegerValue(PROPERTY_TIMEOUT_CONNECTION);
+        connectTimeout = null != connectTimeout ? connectTimeout : 3000;
+        responseTimeout = getMetadataIntegerValue(PROPERTY_TIMEOUT_RESPONSE);
+        responseTimeout = null != responseTimeout ? responseTimeout : 3000;
+        httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectTimeout))
+                .build();
+        return StringUtils.isNotEmpty(endpointUri);
     }
 
     @Override
-    protected Object executeInternal(Message message, Object requestBody, Service service) {
-        String serviceUrl = extractServiceUrl(service);
-        String serviceHttpMethod = extractServiceUrl(service);
+    protected Object executeInternal(Message message, Service service, Object requestBody) {
+        String serviceUrl = extractUrlByService(service);
+        String serviceHttpMethod = extractMethodByService(service);
         String serviceRequestHeaderContentType = extractServiceRequestHeaderContentType(service);
         String targetUrl = endpointUri + serviceUrl;
-        requestBody = prepareRequest(message, requestBody, service);
 
         HttpRequest.BodyPublisher requestBodyPublisher = null;
         if (null != requestBody)
             requestBodyPublisher = HttpRequest.BodyPublishers.ofString(requestBody.toString());
         else
             requestBodyPublisher = HttpRequest.BodyPublishers.noBody();
+
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(targetUrl))
                 .timeout(Duration.ofMillis(responseTimeout))
                 .header(HTTP_HEADER_CONTENT_TYPE, serviceRequestHeaderContentType);
 
-        builder.POST(requestBodyPublisher); //TODO check by serviceHttpMethod
+        if ("POST".equalsIgnoreCase(serviceHttpMethod)) {
+            builder.POST(requestBodyPublisher);
+        } else if ("GET".equalsIgnoreCase(serviceHttpMethod)) {
+            builder.GET();
+        } else if ("PUT".equalsIgnoreCase(serviceHttpMethod)) {
+            builder.PUT(requestBodyPublisher);
+        } else if ("DELETE".equalsIgnoreCase(serviceHttpMethod)) {
+            builder.DELETE();
+        }
 
         HttpRequest httpRequest = builder.build();
 
@@ -77,29 +87,41 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
             if (statusCode != HttpConstants.HTTP_STATUS_OK && statusCode != HttpConstants.HTTP_STATUS_NO_CONTENT) {
-                Object result = processError(response, response.statusCode());
+                Object result = handleUnSuccessfulResponseStatus(response, response.statusCode());
                 if (null != result) {
                     return result;
                 }
-                throw new ExternalProviderException(externalServiceProvider, String.valueOf(response.statusCode()), response.body());
-//                throw new ServiceProviderBusinessException(message.getHeader().getClientCorrelationId(),
-//                        message.getMessageComponent().getServiceComponent().getServiceComponentProvider().getCode(),
-//                        String.valueOf(statusCode), "http status: " + statusCode);
+                throw new ProviderUnSuccessfulResponseException(getProvider(), response.statusCode(), response.body());
             }
-            return prepareResponse(response, message, service);
-
+            return handleSuccessfulResponseStatus(message, service, response);
         } catch (BaseException e) {
             throw e;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ProviderUnreachableException(getProvider(), e);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new ProviderUnreachableException(getProvider(), e);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ProviderUnknownException(getProvider(), e);
         }
     }
 
-    protected Object prepareResponse(HttpResponse<String> response, Message message, Service service) {
+    protected Object handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
+        return response;
+    }
+
+    protected Object handleUnSuccessfulResponseStatus(HttpResponse<String> response, int statusCode) {
+        return null;
+    }
+
+    protected abstract String extractMethodByService(Service service);
+
+    protected abstract String extractUrlByService(Service service);
+
+    protected String extractServiceRequestHeaderContentType(Service service) {
+        return HTTP_HEADER_CONTENT_TYPE_JSON;
+    }
+
+    /*protected Object prepareResponse(HttpResponse<String> response, Message message, Service service) {
         return response.body();
     }
 
@@ -108,16 +130,16 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
     }
 
     protected abstract Object processResponse(HttpResponse<String> response, int statusCode) throws Exception;
+
     protected Object processError(HttpResponse<String> response, int statusCode) throws Exception {
         return null;
     }
 
-    protected String extractServiceRequestHeaderContentType(Service service) {
-        return HTTP_HEADER_CONTENT_TYPE_JSON;
-    };
+
+    ;
 
     protected abstract String extractServiceUrl(Service service);
 
-    protected abstract String extractServiceHttpMethod(Service service);
+    protected abstract String extractServiceHttpMethod(Service service);*/
 
 }

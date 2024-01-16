@@ -106,7 +106,8 @@ public class JWTConfig {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
                 claims.claim(CLAIM_KEY_TERMINAL, principal.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
                 claims.claim(CLAIM_KEY_GRANT, AuthorizationGrantType.CLIENT_CREDENTIALS);
-                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, principal.getRegisteredClient().getId());
+                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.CLIENT.getCode());
+                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, Long.valueOf(principal.getRegisteredClient().getId()));
                 claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, principal.getRegisteredClient().getClientId());
             }
         };

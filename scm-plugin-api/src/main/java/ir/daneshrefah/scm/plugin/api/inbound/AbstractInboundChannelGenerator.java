@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.error.ErrorReason;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -137,8 +137,12 @@ public abstract class AbstractInboundChannelGenerator<T> {
         message.getHeader().setTransactionAuthenticated(null != transactionAuthentication &&
                 transactionAuthentication.isAuthenticated() && !transactionAuthentication.isAnonymous());
         if (authentication.hasError() || transactionAuthentication.hasError()) {
-            message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, Constants.SCM_PARAMETER_AUTHORIZATION,
-                    ErrorReason.IS_INVALID), Status.SC_UNAUTHORIZED);
+            String errorMessage = authentication.hasError() ? authentication.getError() : transactionAuthentication.getError();
+            if (StringUtils.isEmpty(errorMessage)) {
+                errorMessage = "error on authenticate user.";
+            }
+            message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, null, Constants.SCM_PARAMETER_AUTHORIZATION,
+                    ErrorType.AUTHENTICATION_FAILED.getCode(), errorMessage), Status.SC_UNAUTHORIZED);
             message.setPayload(objectMapper.nullNode());
         }
         logIncomingMessage(message);
@@ -238,8 +242,13 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     protected final Message executeService(Message message) {
-        if (!checkServiceCallAllowed(message)) {
-            message.addAccessDeniedError(Constants.SCM_PARAMETER_AUTHORIZATION);
+        try {
+            if (!checkServiceCallAllowed(message)) {
+                message.addAccessDeniedError(Constants.SCM_PARAMETER_AUTHORIZATION, null, null);
+                return message;
+            }
+        } catch (AccessDeniedException e) {
+            message.addAccessDeniedError(e.getSource(), e.getErrorCode(), e.getMessage());
             return message;
         }
 

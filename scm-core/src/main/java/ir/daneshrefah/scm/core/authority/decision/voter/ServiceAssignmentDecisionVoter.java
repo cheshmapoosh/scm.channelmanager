@@ -1,12 +1,13 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_SERVICE_NOT_ASSIGNED;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_SERVICE;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,7 +27,10 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
         profile = fillServiceAccessForProfile(profile, service.getTerminal().getCode());
         boolean isServiceAssigned = profile.hasServiceAccess(service.getTerminal().getCode(),
                 service.getService().getCode(), asset);
-        return isServiceAssigned ? ACCESS_ABSTAIN : ACCESS_DENIED;
+        if (isServiceAssigned) {
+            return ACCESS_ABSTAIN;
+        }
+        throw new AccessDeniedException(SCM_PARAMETER_SERVICE, ERROR_CODE_SERVICE_NOT_ASSIGNED, "service not assigned.");
     }
 
     @Override

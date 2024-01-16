@@ -5,6 +5,8 @@ import ir.daneshrefah.scm.core.converter.MessageStatusTypeConverter;
 import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
 import ir.daneshrefah.scm.common.model.message.Status;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,6 +15,8 @@ import jakarta.persistence.*;
  * @version 1.0
  * @since 2023-07-30
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "TBL_SCM_ERROR_MAPPING")
 public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
@@ -23,7 +27,7 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
 
     @ManyToOne
     @JoinColumn(name = "SERVICE_PROVIDER_ID")
-    private ExternalServiceProviderEntity externalServiceProviderEntity;
+    private ExternalServiceProviderEntity provider;
     private String providerErrorCode;
     private String scmErrorCode;
     @Column(name = "STATUS_CODE")
@@ -31,53 +35,4 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
     private Status status;
     private String message;
 
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public ExternalServiceProviderEntity getExternalServiceProviderEntity() {
-        return externalServiceProviderEntity;
-    }
-
-    public void setExternalServiceProviderEntity(ExternalServiceProviderEntity serviceComponentProviderEntity) {
-        this.externalServiceProviderEntity = serviceComponentProviderEntity;
-    }
-
-    public String getProviderErrorCode() {
-        return providerErrorCode;
-    }
-
-    public void setProviderErrorCode(String providerErrorCode) {
-        this.providerErrorCode = providerErrorCode;
-    }
-
-    public String getScmErrorCode() {
-        return scmErrorCode;
-    }
-
-    public void setScmErrorCode(String scmErrorCode) {
-        this.scmErrorCode = scmErrorCode;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }
