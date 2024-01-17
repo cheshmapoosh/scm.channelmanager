@@ -224,9 +224,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
                 .build();
-        System.out.println("11: " + Instant.now());
         EventProducer.getInstance().sendEvent(event);
-        System.out.println("12: " + Instant.now());
     }
 
     private void logAuthenticationEvent(ClientAuthenticationRequest request, Message message,
@@ -248,9 +246,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
                 .build();
-        System.out.println("13: " + Instant.now());
         EventProducer.getInstance().sendEvent(event);
-        System.out.println("14: " + Instant.now());
     }
 
     private final void logResponseGenerationEvent(Message message) {
