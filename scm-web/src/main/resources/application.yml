@@ -39,4 +39,6 @@ spring:
 #    servlet:
 #      load-on-startup: 1
 #      path: /
+logging:
+  config: classpath:logback-spring.xml
 
