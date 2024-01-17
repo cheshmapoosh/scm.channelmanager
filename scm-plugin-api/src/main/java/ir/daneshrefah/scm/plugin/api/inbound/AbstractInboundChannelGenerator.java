@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.logging.api.EventProducer;
@@ -34,6 +35,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -52,7 +56,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
     @Getter(AccessLevel.PROTECTED)
     private JsonNode metadata;
     @Getter(AccessLevel.PROTECTED)
-    private List<TerminalServiceChannelAccess> services;
+    private List<TerminalServiceAccess> services;
     private final AuthenticationClientTemplate authenticationTemplate;
 //    private final MessageBuilder<T> messageBuilder;
     private final ResponseBuilder<T> responseBuilder;
@@ -83,19 +87,19 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
     public abstract boolean initConfig();
 
-    public final boolean registerEndpoints(List<TerminalServiceChannelAccess> services) {
+    public final boolean registerEndpoints(List<TerminalServiceAccess> services) {
         this.services = services;
 
-        for (Iterator<TerminalServiceChannelAccess> iterator = services.iterator(); iterator.hasNext(); ) {
-            TerminalServiceChannelAccess channelAccess = iterator.next();
-            String terminalId = channelAccess.getTerminalServiceAccess().getTerminal().getId();
+        for (Iterator<TerminalServiceAccess> iterator = services.iterator(); iterator.hasNext(); ) {
+            TerminalServiceAccess serviceAccess = iterator.next();
+            String terminalId = serviceAccess.getTerminal().getId();
             List<TransformerRelation> terminalServiceRequestTransformers = transformerService
-                    .findAllTransformerRelationsBySourceAndType(channelAccess.getTerminalServiceAccess().getId(), TransformerRelationType.TERMINAL_SERVICE_REQUEST);
+                    .findAllTransformerRelationsBySourceAndType(serviceAccess.getId(), TransformerRelationType.TERMINAL_SERVICE_REQUEST);
             List<TransformerExecutionWrapper> requestTransformers = terminalServiceRequestTransformers.stream().map(t -> new TransformerExecutionWrapper(t)).collect(Collectors.toList());
-            requestTransformerMap.put(terminalId + "_" + channelAccess.getTerminalServiceAccess().getService().getId(), requestTransformers);
+            requestTransformerMap.put(terminalId + "_" + serviceAccess.getService().getId(), requestTransformers);
             if (!requestTransformerMap.containsKey(terminalId)) {
                 terminalServiceRequestTransformers = transformerService
-                        .findAllTransformerRelationsBySourceAndType(channelAccess.getTerminalServiceAccess().getTerminal().getId(),
+                        .findAllTransformerRelationsBySourceAndType(serviceAccess.getTerminal().getId(),
                                 TransformerRelationType.TERMINAL_REQUEST);
                 requestTransformers = terminalServiceRequestTransformers.stream().map(t -> new TransformerExecutionWrapper(t)).collect(Collectors.toList());
                 requestTransformerMap.put(terminalId, requestTransformers);
@@ -107,7 +111,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
     protected abstract boolean registerEndpoints();
 
-    protected final TerminalServiceChannelAccess findService(String terminalCode, String serviceCode) {
+    protected final TerminalServiceAccess findService(String terminalCode, String serviceCode) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(serviceCode))
             return null;
 
@@ -116,22 +120,26 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
         return services.stream()
                 .filter(service ->
-                        service.getTerminalServiceAccess().getTerminal().getCode().equals(terminalCode) &&
-                                service.getTerminalServiceAccess().getService().getCode().equals(serviceCode))
+                        service.getTerminal().getCode().equals(terminalCode) &&
+                                service.getService().getCode().equals(serviceCode))
                 .findFirst()
                 .orElse(null);
     }
 
-    protected final Message buildMessage(T input, TerminalServiceChannelAccess service) {
-        MessageBuildRequest request = extractMessageBuildRequest(input);
+    protected final Message buildMessage(T input, TerminalServiceAccess serviceAccess) {
+        MessageBuildRequest request = extractMessageBuildRequest(input, serviceAccess);
         ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
-        return buildMessage(request, authenticationRequest, service);
+        return buildMessage(request, authenticationRequest, serviceAccess);
     }
 
     protected final Message buildMessage(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest,
-                                         TerminalServiceChannelAccess service) {
-        Message message = buildMessageObject(request, service);
+                                         TerminalServiceAccess serviceAccess) {
+        Message message = buildMessageObject(request, serviceAccess);
         logIncomingMessage(request, message, null, request.getReceiveTimestamp());
+
+        if (!Status.SC_PROCESSING.equals(message.getStatus())) {
+            return message;
+        }
 
         UserAuthentication authentication = authenticateUser(message, authenticationRequest, false);
         UserAuthentication transactionAuthentication = authenticateUser(message, authenticationRequest, true);
@@ -150,9 +158,9 @@ public abstract class AbstractInboundChannelGenerator<T> {
         return message;
     }
 
-    protected abstract MessageBuildRequest extractMessageBuildRequest(T input);
+    protected abstract MessageBuildRequest extractMessageBuildRequest(T input, TerminalServiceAccess serviceAccess);
 
-    private Message buildMessageObject(MessageBuildRequest request, TerminalServiceChannelAccess service) {
+    private Message buildMessageObject(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {
         Header header = Header.builder()
                 .contentType(request.getContentType())
                 .authentication(null)
@@ -164,17 +172,23 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .accessParameter(request.getAccessParameter())
                 .clientAgent(request.getClientAgent())
                 .serverHost(request.getServerHost())
-                .service(service)
+                .serviceAccess(serviceAccess)
+                .channel(getChannel())
                 .clientAddress(request.getClientAddress())
                 .build();
 
         if (StringUtils.isEmpty(header.getAccessParameter())) {
-            return createValidationErrorMessage(request, header, Constants.SCM_PARAMETER_ACCESS_PARAMETER);
+            return createValidationErrorMessage(request, header, SCM_PARAMETER_ACCESS_PARAMETER,
+                    ErrorCodes.ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY, SCM_PARAMETER_ACCESS_PARAMETER + " is empty.");
+        }
+        if (StringUtils.isEmpty(request.getTerminalCode())) {
+            return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
+                    ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_EMPTY, SCM_PARAMETER_TERMINAL + " is empty.");
         }
 
-        if (StringUtils.isEmpty(request.getTerminalCode()) ||
-                !StringUtils.equals(service.getTerminalServiceAccess().getTerminal().getCode(), request.getTerminalCode())) {
-            return createValidationErrorMessage(request, header, Constants.SCM_PARAMETER_TERMINAL);
+        if (!StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
+            return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
+                    ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_INVALID, SCM_PARAMETER_TERMINAL + " is invalid.");
         }
 
         Message message = new Message(request);
@@ -185,10 +199,11 @@ public abstract class AbstractInboundChannelGenerator<T> {
         return message;
     }
 
-    private Message createValidationErrorMessage(MessageBuildRequest request, Header header, String source) {
+    private Message createValidationErrorMessage(MessageBuildRequest request, Header header, String source,
+                                                 String errorCode, String errorMessage) {
         Message result = new Message(request);
         result.setHeader(header);
-        result.addError(new Error(ErrorType.VALIDATION, null, source, ErrorType.VALIDATION.getCode(), null), Status.SC_ERROR_VALIDATION);
+        result.addError(new Error(ErrorType.VALIDATION, null, source, errorCode, errorMessage), Status.SC_ERROR_VALIDATION);
         result.setPayload(objectMapper.nullNode());
         return result;
     }
@@ -212,7 +227,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .type(EventType.INBOUND)
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .source(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
+                .source(message.getHeader().getServiceAccess().getService().getCode())
                 .terminalCode(request.getTerminalCode())
                 .channelCode(request.getChannelCode())
                 .startTime(startTime)
@@ -235,8 +250,8 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(null)
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(startTime)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
@@ -255,9 +270,9 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .type(EventType.OUTBOUND)
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
-                .source(message.getHeader().getService().getTerminalServiceAccess().getService().getCode())
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .source(message.getHeader().getServiceAccess().getService().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(message.getHeader().getReceiveTimestamp())
                 .endTime(endTime)
                 .durationMillis(Duration.between(message.getHeader().getReceiveTimestamp(), endTime).toMillis())
@@ -308,8 +323,8 @@ public abstract class AbstractInboundChannelGenerator<T> {
             return message;
         }
 
-        TerminalServiceChannelAccess service = message.getHeader().getService();
-        List<TransformerExecutionWrapper> transformerRelations = extractRequestTransformerList(service);
+        TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
+        List<TransformerExecutionWrapper> transformerRelations = extractRequestTransformerList(serviceAccess);
         JsonNode payload = message.getPayload();
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
@@ -318,14 +333,14 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
         }
         message.setPayload(payload);
-        producerTemplate.callService(service.getTerminalServiceAccess().getService(), message);
+        producerTemplate.callService(serviceAccess.getService(), message);
 
         return message;
     }
 
-    private List<TransformerExecutionWrapper> extractRequestTransformerList(TerminalServiceChannelAccess service) {
-        String terminalId = service.getTerminalServiceAccess().getTerminal().getId();
-        String serviceId = service.getTerminalServiceAccess().getService().getId();
+    private List<TransformerExecutionWrapper> extractRequestTransformerList(TerminalServiceAccess serviceAccess) {
+        String terminalId = serviceAccess.getTerminal().getId();
+        String serviceId = serviceAccess.getService().getId();
         List<TransformerExecutionWrapper> result = new ArrayList<>(requestTransformerMap.get(terminalId));
         result.addAll(requestTransformerMap.get(terminalId + "_" + serviceId));
         return result;

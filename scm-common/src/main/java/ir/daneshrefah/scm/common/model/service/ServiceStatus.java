@@ -1,6 +1,5 @@
-package ir.daneshrefah.scm.common.model.terminal;
+package ir.daneshrefah.scm.common.model.service;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
@@ -10,22 +9,17 @@ import java.util.Arrays;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-01-02
+ * @since 2024-01-17
  */
-@Getter
 @RequiredArgsConstructor
-public enum ChannelProtocol {
+public enum ServiceStatus {
 
-    SPRING_REST(1),
-    DYNAMIC_REST(2),
-    SOAP(3),
-    JMS(4),
-    CUSTOM(5);
+    INACTIVE(0), ACTIVE(1);
 
     private final Integer code;
 
-    public static ChannelProtocol findByCode(Integer code) {
-        return Arrays.stream(ChannelProtocol.values())
+    public static ServiceStatus findByCode(int code) {
+        return Arrays.stream(ServiceStatus.values())
                 .filter(s -> s.code.equals(code))
                 .findFirst()
                 .orElse(null);

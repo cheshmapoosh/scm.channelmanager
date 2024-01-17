@@ -10,4 +10,5 @@ plugins {
 
 dependencies {
     compileOnly 'jakarta.persistence:jakarta.persistence-api'
+    compileOnly project(':scm-common')
 }

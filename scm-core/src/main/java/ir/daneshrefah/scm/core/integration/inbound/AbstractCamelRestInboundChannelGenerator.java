@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
@@ -17,6 +20,7 @@ import org.apache.camel.Exchange;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,7 +71,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     }
 
     @Override
-    protected MessageBuildRequest extractMessageBuildRequest(Exchange input) {
+    protected MessageBuildRequest extractMessageBuildRequest(Exchange input, TerminalServiceAccess serviceAccess) {
         return MessageBuildRequest.builder()
                 .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
                 .channelCode(getChannel().getCode())
@@ -79,11 +83,11 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .clientAgent(CamelUtils.getClientAgentFromExchange(input))
                 .serverHost(CamelUtils.getServerHostFromExchange(input))
                 .clientAddress(CamelUtils.getRemoteAddressFromExchange(input))
-                .payload(extractMessagePayload(input))
+                .payload(extractMessagePayload(input, serviceAccess))
                 .build();
     }
 
-    private JsonNode extractMessagePayload(Exchange exchange) {
+    private JsonNode extractMessagePayload(Exchange exchange, TerminalServiceAccess serviceAccess) {
         String body = exchange.getMessage().getBody(String.class);
         JsonNode payload = null;
         if (StringUtils.isNotEmpty(body)) {
@@ -96,7 +100,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         if (null == payload) {
             payload = JsonNodeFactory.instance.nullNode();
         }
-        /*List<String> pathVariables = extractPathVariables(service.getTerminalServiceAccess().getService().getAlias());
+        List<String> pathVariables = extractPathVariables(serviceAccess.getService().getAlias());
         for (Iterator<String> iterator = pathVariables.iterator(); iterator.hasNext(); ) {
             String pathVariable = iterator.next();
             String pathVariableValue = exchange.getMessage().getHeader(pathVariable, String.class);
@@ -104,7 +108,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 payload = JsonNodeFactory.instance.objectNode();
             }
             ((ObjectNode) payload).put(pathVariable, pathVariableValue);
-        }*/
+        }
         return payload;
     }
 

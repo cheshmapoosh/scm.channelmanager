@@ -16,12 +16,10 @@ public interface TerminalServiceAccessMapper {
 
     TerminalServiceAccessMapper INSTANCE = Mappers.getMapper(TerminalServiceAccessMapper.class);
 
-    @Mapping(source = "serviceEntity", target = "service", qualifiedByName = "mapService")
-    @Mapping(source = "terminalEntity", target = "terminal")
-//    @Mapping(source = "terminalEntity", target = "terminal")
+    @Mapping(source = "service", target = "service", qualifiedByName = "mapService")
     TerminalServiceAccess toModel(TerminalServiceAccessEntity entity);
 
-    @Mapping(source = "serviceEntity", target = "service")
+    @Mapping(source = "service", target = "service")
 //    @Mapping(source = "terminalEntity", target = "terminal")
     List<TerminalServiceAccess> entitiesToModels(List<TerminalServiceAccessEntity> entities);
 

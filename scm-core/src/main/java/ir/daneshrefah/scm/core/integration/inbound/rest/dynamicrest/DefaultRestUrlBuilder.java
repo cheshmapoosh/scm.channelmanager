@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 /**
@@ -15,27 +15,38 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 public class DefaultRestUrlBuilder implements RestUrlBuilder {
 
     @Override
-    public RestUrl build(TerminalServiceChannelAccess service) {
-        String httpMethod = findHttpMethodByServiceType(service.getTerminalServiceAccess().getService().getType());
-        String url = generateServiceUrl(service);
+    public RestUrl build(TerminalServiceAccess serviceAccess) {
+        String httpMethod = findHttpMethodByServiceType(serviceAccess.getService().getType());
+        String url = generateServiceUrl(serviceAccess);
         return new RestUrl(httpMethod, url);
     }
 
-    private String generateServiceUrl(TerminalServiceChannelAccess channelAccess) {
-        String terminalCode = channelAccess.getTerminalServiceAccess().getTerminal().getCode();
-        String serviceUrl = extractServiceUrl(channelAccess.getTerminalServiceAccess().getService());
+    private String generateServiceUrl(TerminalServiceAccess serviceAccess) {
+        String terminalCode = serviceAccess.getTerminal().getCode();
+        String parentServiceUrl = extractServiceUrl(serviceAccess.getService().getParent());
+        String serviceUrl = extractServiceUrl(serviceAccess.getService());
+        String version = extractServiceVersion(serviceAccess.getService());
         StringBuilder urlBuilder = new StringBuilder("api");
         urlBuilder
-//                .append(terminalCode)
-                .append(serviceUrl);
+                .append(version)
+                .append(StringUtils.isEmpty(parentServiceUrl) ? "" : fixUrlPattern(parentServiceUrl))
+                .append(fixUrlPattern(serviceUrl));
         return urlBuilder.toString();
+    }
+
+    private String extractServiceVersion(Service service) {
+        if (null == service) {
+            return null;
+        }
+        String result = null != service.getVersion() ? String.valueOf(service.getVersion()) : "1";
+        return "/v" + result;
     }
 
     private String extractServiceUrl(Service service) {
         if (null == service) {
             return null;
         }
-        String serviceUrl = StringUtils.isNotEmpty(service.getAlias()) ? service.getAlias() : service.getCode();
+        String serviceUrl = null != service.getAlias() ? service.getAlias() : service.getCode();
         if (!StringUtils.startsWith(serviceUrl, "/", true)) {
             serviceUrl = "/" + serviceUrl;
         }
@@ -59,4 +70,17 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
         }
     }
 
+    private String fixUrlPattern(String inputString) {
+        if (StringUtils.isEmpty(inputString)) {
+            return inputString;
+        }
+        if (!StringUtils.startsWith(inputString, "/", false)) {
+            inputString = "/" + inputString;
+        }
+        if (inputString.endsWith("/")) {
+            return inputString.substring(0, inputString.length() - 1);
+        } else {
+            return inputString; // Already in the desired format
+        }
+    }
 }

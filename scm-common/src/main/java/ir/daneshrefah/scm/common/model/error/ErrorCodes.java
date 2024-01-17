@@ -13,4 +13,9 @@ public class ErrorCodes {
     public static final String ERROR_CODE_AUTHENTICATION_TRANSACTION_REQUIRED = "SCM-1009";
     public static final String ERROR_CODE_SERVICE_NOT_ASSIGNED = "SCM-1010";
     public static final String ERROR_CODE_SYSTEM_ERROR = "SCM-1011";
+    public static final String ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY = "SCM-1012";
+    public static final String ERROR_CODE_TERMINAL_CODE_IS_EMPTY = "SCM-1013";
+    public static final String ERROR_CODE_TERMINAL_CODE_IS_INVALID = "SCM-1014";
+    public static final String ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND = "SCM-1015";
+    public static final String ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND = "SCM-1016";
 }

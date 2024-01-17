@@ -10,22 +10,18 @@ import java.util.Arrays;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-01-02
+ * @since 2024-01-17
  */
 @Getter
 @RequiredArgsConstructor
-public enum ChannelProtocol {
+public enum TerminalStatus {
 
-    SPRING_REST(1),
-    DYNAMIC_REST(2),
-    SOAP(3),
-    JMS(4),
-    CUSTOM(5);
+    INACTIVE(0), ACTIVE(1);
 
     private final Integer code;
 
-    public static ChannelProtocol findByCode(Integer code) {
-        return Arrays.stream(ChannelProtocol.values())
+    public static TerminalStatus findByCode(int code) {
+        return Arrays.stream(TerminalStatus.values())
                 .filter(s -> s.code.equals(code))
                 .findFirst()
                 .orElse(null);

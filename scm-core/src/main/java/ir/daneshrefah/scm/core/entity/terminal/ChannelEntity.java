@@ -1,58 +1,30 @@
 package ir.daneshrefah.scm.core.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
+import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
+import ir.daneshrefah.scm.core.converter.ChannelProtocolConverter;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "TBL_SCM_CHANNEL")
 public class ChannelEntity extends AbstractDefaultEntity<String> {
+
     @Id
     @Column(name = "CHANNEL_ID")
     private String id;
     private String code;
     private String title;
+    @ManyToOne
+    @JoinColumn(name = "TERMINAL_ID")
+    private TerminalEntity terminal;
+    @Convert(converter = ChannelProtocolConverter.class)
+    private ChannelProtocol protocol;
     private String channelClassName;
     private String metadata;
 
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getChannelClassName() {
-        return channelClassName;
-    }
-
-    public void setChannelClassName(String protocol) {
-        this.channelClassName = protocol;
-    }
-
-    public String getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(String metadata) {
-        this.metadata = metadata;
-    }
 }

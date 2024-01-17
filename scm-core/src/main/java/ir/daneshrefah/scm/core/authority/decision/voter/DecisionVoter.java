@@ -1,19 +1,18 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
 
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.EventType;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class DecisionVoter {
-    List<DecisionVoter>  DECISION_VOTER_LIST = new ArrayList<>();
+
     /**
      * if any voter return a ACCESS_GRANTED value, the manager accept it and end the checking another voter
      */
@@ -26,7 +25,7 @@ public abstract class DecisionVoter {
      */
     public static final int ACCESS_DENIED = -1;
 
-    public final int vote(Message message, TerminalServiceChannelAccess authObject) {
+    public final int vote(Message message, TerminalServiceAccess authObject) {
         Instant startTime = Instant.now();
         boolean isSupport = support(authObject);
         if (!isSupport) {
@@ -47,7 +46,7 @@ public abstract class DecisionVoter {
 
     protected abstract int vote(Message message);
 
-    protected abstract boolean support(TerminalServiceChannelAccess service);
+    protected abstract boolean support(TerminalServiceAccess serviceAccess);
 
     private final void logVotingEvent(Message message, int output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
@@ -56,15 +55,15 @@ public abstract class DecisionVoter {
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(null)
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(startTime)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .threadName(Thread.currentThread().getName())
 //                .input(request)
-                .output(output)
-                .error(error)
+                .output(null != error && error instanceof AccessDeniedException ? ACCESS_DENIED : output)
+                .error(null == error || error instanceof AccessDeniedException ? null : error)
                 .sourceClassName(this.getClass().getSimpleName())
                 .build();
         EventProducer.getInstance().sendEvent(event);

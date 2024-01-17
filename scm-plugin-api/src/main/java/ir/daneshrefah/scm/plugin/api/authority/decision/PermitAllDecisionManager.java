@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.authority.decision;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 
 /**

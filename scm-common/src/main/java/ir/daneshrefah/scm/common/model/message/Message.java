@@ -57,4 +57,9 @@ public class Message implements Serializable {
         this.errors.addAll(errors);
     }
 
+    public String getPayloadValue(String property) {
+        if (null == property || null == payload || payload.isNull())
+            return null;
+        return (payload.has(property) && payload.get(property).isTextual()) ? payload.get(property).asText() : null;
+    }
 }

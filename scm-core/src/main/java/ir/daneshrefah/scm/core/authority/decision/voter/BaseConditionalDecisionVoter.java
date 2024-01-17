@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.model.condition.Condition;
@@ -33,7 +33,7 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
         }
 
         List<Condition> terminalConditions = decisionHelper.findTerminalConditions(conditionType,
-                message.getHeader().getService(), message.getHeader().getAuthentication());
+                message.getHeader().getServiceAccess(), message.getHeader().getAuthentication());
         return checkConditions(message, terminalConditions);
     }
 
@@ -53,7 +53,7 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
     protected abstract ConditionType getConditionType();
 
     @Override
-    protected boolean support(TerminalServiceChannelAccess service) {
+    protected boolean support(TerminalServiceAccess serviceAccess) {
         return true;
     }
 

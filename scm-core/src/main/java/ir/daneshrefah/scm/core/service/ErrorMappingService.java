@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.service;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
@@ -56,13 +56,20 @@ public class ErrorMappingService {
 
     public Message resolveMessageByException(Message message, Exception exception) {
         String providerCode = StringUtils.EMPTY;
-        Terminal terminal = message.getHeader().getService().getTerminalServiceAccess().getTerminal();
-        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService().getTerminalServiceAccess().getService();
+        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
+        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
         if (service instanceof ExternalService) {
             providerCode = ((ExternalService) service).getServiceProvider().getCode();
         }
         String finalProviderCode = providerCode;
 
+        if (exception instanceof JavaServiceMethodNotFoundException) {
+            JavaServiceMethodNotFoundException javaServiceMethodNotFoundException = (JavaServiceMethodNotFoundException) exception;
+            Error error = new Error(ErrorType.SYSTEM_ERROR, javaServiceMethodNotFoundException.getService().getCode(),
+                    null, ErrorCodes.ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND, javaServiceMethodNotFoundException.getCause().getMessage());
+            message.addError(error, Status.SC_ERROR_SYSTEM);
+            return message;
+        }
         if (exception instanceof ProviderUnreachableException) {
             ProviderUnreachableException providerUnreachableException = (ProviderUnreachableException) exception;
             Error error = new Error(ErrorType.HOST_UNREACHABLE, providerUnreachableException.getProvider().getCode(),

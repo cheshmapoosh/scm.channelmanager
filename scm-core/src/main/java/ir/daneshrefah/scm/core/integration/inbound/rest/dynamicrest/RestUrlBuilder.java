@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,6 +11,6 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
  */
 public interface RestUrlBuilder {
 
-    public RestUrl build(TerminalServiceChannelAccess service);
+    public RestUrl build(TerminalServiceAccess serviceAccess);
 
 }

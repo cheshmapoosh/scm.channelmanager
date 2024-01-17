@@ -2,7 +2,8 @@ package ir.daneshrefah.scm.common.model.message;
 
 
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,7 +35,8 @@ public class Header implements Serializable {
     private Instant receiveTimestamp;
     private String accessParameter;
     private String serverHost;
-    private TerminalServiceChannelAccess service;
+    private Channel channel;
+    private TerminalServiceAccess serviceAccess;
     private String clientAddress;
 
     public String getUsername() {
@@ -52,10 +54,9 @@ public class Header implements Serializable {
     }
 
     public String getTerminalCode() {
-        if (null == service || null == service.getTerminalServiceAccess() ||
-                null == service.getTerminalServiceAccess().getTerminal()) {
+        if (null == serviceAccess || null == serviceAccess.getTerminal()) {
             return null;
         }
-        return service.getTerminalServiceAccess().getTerminal().getCode();
+        return serviceAccess.getTerminal().getCode();
     }
 }

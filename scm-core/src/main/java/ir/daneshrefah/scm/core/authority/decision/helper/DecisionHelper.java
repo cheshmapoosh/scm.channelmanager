@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.person.ServiceAccess;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.integration.provider.CustomerDataProviderDelegator;
 import ir.daneshrefah.scm.core.model.condition.*;
@@ -68,12 +68,12 @@ public class DecisionHelper {
         return Collections.emptyList();
     }
 
-    public List<Condition> findTerminalConditions(ConditionType conditionType, TerminalServiceChannelAccess service,
+    public List<Condition> findTerminalConditions(ConditionType conditionType, TerminalServiceAccess serviceAccess,
                                                   Authentication authentication) {
         //checking terminal and service auth and second auth.
-        AuthenticationMethod loginAuth = realizeAuthenticationMethod(service, authentication, true);
-        AuthenticationMethod transactionAuth = realizeAuthenticationMethod(service, authentication, false);
-        return filterByConditionType(findCompatibleConditions(service, loginAuth, transactionAuth), conditionType);
+        AuthenticationMethod loginAuth = realizeAuthenticationMethod(serviceAccess, authentication, true);
+        AuthenticationMethod transactionAuth = realizeAuthenticationMethod(serviceAccess, authentication, false);
+        return filterByConditionType(findCompatibleConditions(serviceAccess, loginAuth, transactionAuth), conditionType);
     }
 
     public void reloadCache() {
@@ -129,7 +129,7 @@ public class DecisionHelper {
         }
     }
 
-    private AuthenticationMethod realizeAuthenticationMethod(TerminalServiceChannelAccess authObject,
+    private AuthenticationMethod realizeAuthenticationMethod(TerminalServiceAccess authObject,
                                                              Authentication authentication, boolean isLogin) {
         AuthenticationMethod authenticationMethod = null;
         if (null != authentication && authentication instanceof UserAuthentication) {
@@ -140,26 +140,26 @@ public class DecisionHelper {
             }
         }
 
-        Service service = authObject.getTerminalServiceAccess().getService();
-        Terminal terminal = authObject.getTerminalServiceAccess().getTerminal();
+        Service service = authObject.getService();
+        Terminal terminal = authObject.getTerminal();
 
-        if (service.getCheckAccessFirstAuthentication() && terminal.getSupportCheckAuthentication()) {
+        if (service.getCheckAccessFirstAuthentication() && terminal.isSupportCheckAuthentication()) {
             return authenticationMethod;
         }
 
         return null;
     }
 
-    private List<Condition> findCompatibleConditions(TerminalServiceChannelAccess terminalService, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
+    private List<Condition> findCompatibleConditions(TerminalServiceAccess serviceAccess, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
         /* checking Terminal-service-auth-secondAuth conditions */
-        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalServiceCondition.class, terminalService.getId());
+        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalServiceCondition.class, serviceAccess.getId());
         if (!conditions.isEmpty()) {
             return conditions;
         }
         /* checking terminal & service */
         //getting auth status from message header.
-        Service service = terminalService.getTerminalServiceAccess().getService();
-        Terminal terminal = terminalService.getTerminalServiceAccess().getTerminal();
+        Service service = serviceAccess.getService();
+        Terminal terminal = serviceAccess.getTerminal();
         List<Condition> serviceConditions = getInnerRoutingCondition(loginAuth, transactionAuth, ServiceCondition.class, service.getId());
         List<Condition> terminalConditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalCondition.class, terminal.getId());
         return mergeConditions(serviceConditions, terminalConditions);

@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
-import ir.daneshrefah.scm.core.service.ServiceService;
+import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
@@ -31,7 +31,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     @Autowired
     private ServiceProducerTemplate serviceProducerTemplate;
     @Autowired
-    private ServiceService serviceService;
+    private ServiceServiceImpl serviceService;
     private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override

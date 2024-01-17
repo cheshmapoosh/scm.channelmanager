@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 
 /**
  * Description of the class or purpose of the file.

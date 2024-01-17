@@ -77,8 +77,8 @@ public abstract class AbstractExternalServiceProvider {
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(provider.getCode())
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(startTime)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
@@ -95,7 +95,7 @@ public abstract class AbstractExternalServiceProvider {
         List<AbstractTransformer> requestTransformers = prepareRequestTransformers();
         for (Iterator<AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
-            requestBody = transformer.transform(requestBody, message, message.getHeader().getService().getTerminalServiceAccess().getService().getMetadata());
+            requestBody = transformer.transform(requestBody, message, message.getHeader().getServiceAccess().getService().getMetadata());
         }
         return requestBody;
     }
@@ -104,7 +104,7 @@ public abstract class AbstractExternalServiceProvider {
         List<AbstractTransformer> responseTransformers = prepareResponseTransformers();
         for (Iterator<AbstractTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
-            response = transformer.transform(response, message, message.getHeader().getService().getTerminalServiceAccess().getService().getMetadata());
+            response = transformer.transform(response, message, message.getHeader().getServiceAccess().getService().getMetadata());
         }
         return response;
     }

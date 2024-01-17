@@ -7,6 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ServiceRepository extends CrudRepository<ServiceEntity, String> {
@@ -16,5 +17,7 @@ public interface ServiceRepository extends CrudRepository<ServiceEntity, String>
     List<ServiceEntity> findCallableServiceList();
 
     List<ServiceEntity> findServiceListByImplementationType(ServiceImplementationType implementationType);
+
+    Optional<ServiceEntity> findByCode(String code);
 
 }

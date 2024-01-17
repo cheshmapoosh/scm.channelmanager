@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.core.service.ServiceService;
+import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import org.apache.camel.builder.RouteBuilder;
@@ -30,7 +30,7 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);
 
     @Autowired
-    private ServiceService serviceService;
+    private ServiceServiceImpl serviceService;
     @Autowired
     private ExternalServiceExecutor externalServiceExecutor;
     @Autowired

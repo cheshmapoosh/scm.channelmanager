@@ -1,15 +1,17 @@
 package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.authority.decision.voter.*;
-import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
+import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -31,7 +33,7 @@ public class DecisionManagerImpl implements DecisionManager {
 
     @Override
     public boolean decide(Message message) throws AuthorityBaseException {
-        TerminalServiceChannelAccess service = message.getHeader().getService();
+        TerminalServiceAccess service = message.getHeader().getServiceAccess();
         for (DecisionVoter voter : DECISION_VOTER_LIST) {
             int vote = voter.vote(message, service);
             if (vote == DecisionVoter.ACCESS_GRANTED) {

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
@@ -14,11 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class ServiceService {
+public class ServiceServiceImpl implements ServiceService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceServiceImpl.class);
     @Autowired
     ServiceRepository serviceRepository;
     @Autowired
@@ -28,6 +30,14 @@ public class ServiceService {
         Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();
         List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
         return services;
+    }
+
+    @Override
+    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String code) {
+        Optional<ServiceEntity> entity = serviceRepository.findByCode(code);
+        if (entity.isEmpty())
+            return null;
+        return ServiceMapper.INSTANCE.toService(entity.get());
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {

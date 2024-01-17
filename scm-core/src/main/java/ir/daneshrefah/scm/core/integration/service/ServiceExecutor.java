@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +36,8 @@ public abstract class ServiceExecutor {
     protected ErrorMappingService errorMappingService;
     @Autowired
     protected TransformerService transformerService;
+    @Autowired
+    protected ObjectMapper objectMapper;
 
     private final Map<String, ServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
@@ -53,11 +54,11 @@ public abstract class ServiceExecutor {
             List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
                     service.getId());
             serviceExecutionWrapper.setRequestTransformers(transformerRelations.stream().filter(
-                    t -> TransformerRelationType.SERVICE_REQUEST.equals(t.getRelationType()))
+                            t -> TransformerRelationType.SERVICE_REQUEST.equals(t.getRelationType()))
                     .map(t -> new TransformerExecutionWrapper(t))
                     .collect(Collectors.toList()));
             serviceExecutionWrapper.setResponseTransformers(transformerRelations.stream().filter(
-                    t -> TransformerRelationType.SERVICE_RESPONSE.equals(t.getRelationType()))
+                            t -> TransformerRelationType.SERVICE_RESPONSE.equals(t.getRelationType()))
                     .map(t -> new TransformerExecutionWrapper(t))
                     .collect(Collectors.toList()));
             serviceExecutionMap.put(service.getCode(), serviceExecutionWrapper);
@@ -97,11 +98,10 @@ public abstract class ServiceExecutor {
             return;
         }
         if (null == response)
-            return;
-        if (response.getClass().isAssignableFrom(JsonNode.class)) {
+            message.nullPayload();
+        else if (response.getClass().isAssignableFrom(JsonNode.class)) {
             message.setPayload((JsonNode) response);
         } else {
-            ObjectMapper objectMapper = new ObjectMapper();
             try {
                 JsonNode node = null;
                 if (response instanceof String) {
@@ -181,8 +181,8 @@ public abstract class ServiceExecutor {
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(service.getCode())
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(startTime)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())

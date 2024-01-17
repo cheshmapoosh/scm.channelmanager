@@ -7,7 +7,6 @@ import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
-import ir.daneshrefah.scm.utils.ClassUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -61,8 +60,8 @@ public abstract class AbstractTransformer {
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(null)
-                .terminalCode(message.getHeader().getService().getTerminalServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getService().getChannel().getCode())
+                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .channelCode(message.getHeader().getChannel().getCode())
                 .startTime(startTime)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())

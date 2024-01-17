@@ -63,7 +63,7 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
 
     private String extractCustomerNo(Message message) {
         PersonProfile profile = message.getHeader().getPersonIdentifier();
-        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService().getTerminalServiceAccess().getService();
+        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
         ExternalServiceProvider provider = service instanceof ExternalService ? ((ExternalService) service).getServiceProvider() : null;
         if (null == provider || !provider.isCustomerProvided() || null == profile) {
             return null;

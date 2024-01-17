@@ -4,23 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.service.ChannelService;
-import ir.daneshrefah.scm.core.service.TerminalService;
-import ir.daneshrefah.scm.core.service.TransformerService;
-import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -64,21 +56,13 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
             Channel channel = iterator.next();
             LOGGER.info("start initialize channel '{}'", channel.getCode());
             /*TODO query is very slow and should be improved.*/
-            List<TerminalServiceChannelAccess> terminalServiceChannelAccessList = terminalService.
-                    findTerminalServiceChannelAccessByChannelId(channel.getId());
-            LOGGER.info("'{}' terminalService found to register.", terminalServiceChannelAccessList.size());
-            if (terminalServiceChannelAccessList.size() < 1) {
+            List<TerminalServiceAccess> terminalServiceAccessList = terminalService.
+                    findTerminalServiceAccessByTerminalId(channel.getTerminal().getId());
+            LOGGER.info("'{}' terminalService found to register.", terminalServiceAccessList.size());
+            if (terminalServiceAccessList.size() < 1) {
                 LOGGER.info("no terminalService found for channel '{}'. skip initialization.", channel.getCode());
                 continue;
             }
-
-            /* TODO this section is for test and must be remove */
-//            channel.setProtocol(ChannelProtocol.SPRING_REST);
-//            channel.setMetadata("{\"contextPath\": \"/ib4dev\", \"port\": 8082, \"controllers\": [\"bean:newTerminalController\"]}");
-
-            channel.setProtocol(ChannelProtocol.DYNAMIC_REST);
-            channel.setMetadata("{\"contextPath\": \"/ib4dev\", \"port\": 8082}");
-            /**/
 
             String className = extractChannelClassName(channel);
             AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.findBeanOrCreateInstanceOfClass(
@@ -107,7 +91,7 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
             LOGGER.info("channel '{}' initialization completed successfully.", channel.getCode());
 
             LOGGER.info("start register endpoints for channel '{}'", channel.getCode());
-            isContinue = inboundChannelGenerator.registerEndpoints(terminalServiceChannelAccessList);
+            isContinue = inboundChannelGenerator.registerEndpoints(terminalServiceAccessList);
             if (!isContinue) {
                 LOGGER.error("error found in channel '{}' endpoint registration. skip registration.", channel.getCode());
                 continue;

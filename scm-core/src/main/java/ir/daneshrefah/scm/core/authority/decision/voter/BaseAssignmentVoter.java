@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
@@ -31,7 +30,7 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
         Object asset = getAssetValue(message);
 
-        return vote(profile, message.getHeader().getService().getTerminalServiceAccess(), asset);
+        return vote(profile, message.getHeader().getServiceAccess(), asset);
     }
 
     protected final PersonProfile fillServiceAccessForProfile(PersonProfile profile, String terminalCode) {
@@ -45,15 +44,15 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
     protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, Object asset);
 
     private boolean isAssetSupport(Message message) {
-        return message.getHeader().getService().getTerminalServiceAccess().getTerminal().getSupportCheckAssetAccess() &&
-                message.getHeader().getService().getTerminalServiceAccess().getService().getCheckAccessAsset();
+        return message.getHeader().getServiceAccess().getTerminal().isSupportCheckServiceAccess() &&
+                message.getHeader().getServiceAccess().getService().getCheckAccessAsset();
     }
 
     private Object getAssetValue(Message message) {
         if (!isAssetSupport(message)) {
             return null;
         }
-        String assetProperty = message.getHeader().getService().getTerminalServiceAccess().getService().getAssetProperty();
+        String assetProperty = message.getHeader().getServiceAccess().getService().getAssetProperty();
         if (StringUtils.isEmpty(assetProperty)) {
             return null;
         }

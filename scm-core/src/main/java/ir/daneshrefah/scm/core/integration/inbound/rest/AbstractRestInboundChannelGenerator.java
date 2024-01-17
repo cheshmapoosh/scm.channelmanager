@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
@@ -63,14 +63,14 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     }
 
     @Override
-    public final TerminalServiceChannelAccess findService(HttpServletRequest request, String serviceCode) {
+    public final TerminalServiceAccess findService(HttpServletRequest request, String serviceCode) {
         String terminalCode = HttpUtils.extractTerminalCode(request);
         return findService(terminalCode, serviceCode);
     }
 
     @Override
     public final Message executeService(HttpServletRequest request, String serviceCode, JsonNode payload) {
-        TerminalServiceChannelAccess service = findService(request, serviceCode);
+        TerminalServiceAccess service = findService(request, serviceCode);
         Message message = new Message(null);
         message.setPayload(null != payload ? payload : getObjectMapper().nullNode());
         return executeService(message);
@@ -78,7 +78,7 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
 
     @Override
     public Message executeService(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest, String serviceCode) {
-        TerminalServiceChannelAccess service = findService(request.getTerminalCode(), serviceCode);
+        TerminalServiceAccess service = findService(request.getTerminalCode(), serviceCode);
         Message message = buildMessage(request, authenticationRequest, service);
         return executeService(message);
     }

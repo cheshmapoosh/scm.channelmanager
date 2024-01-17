@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
@@ -50,12 +50,12 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
     @Override
     protected boolean registerEndpoints() {
 
-        List<TerminalServiceChannelAccess> services = getServices();
+        List<TerminalServiceAccess> serviceAccesses = getServices();
 
         DynamicRouteBuilder routeBuilder = new DynamicRouteBuilder();
-        for (Iterator<TerminalServiceChannelAccess> iterator = services.iterator(); iterator.hasNext(); ) {
-            TerminalServiceChannelAccess service = iterator.next();
-            if (ServiceImplementationType.PARENT.equals(service.getTerminalServiceAccess().getService().getImplementationType())) {
+        for (Iterator<TerminalServiceAccess> iterator = serviceAccesses.iterator(); iterator.hasNext(); ) {
+            TerminalServiceAccess service = iterator.next();
+            if (ServiceImplementationType.PARENT.equals(service.getService().getImplementationType())) {
                 continue;
             }
             routeBuilder.registerService(service);
@@ -81,16 +81,17 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     .contextPath(contextPath);
         }
 
-        public void registerService(TerminalServiceChannelAccess service) {
-            RestUrl restUrl = urlBuilder.build(service);
+        public void registerService(TerminalServiceAccess serviceAccess) {
+            RestUrl restUrl = urlBuilder.build(serviceAccess);
             String inboundUrl = "rest:" + restUrl.getHttpMethod() + ":" + restUrl.getUrl();
             from(inboundUrl)
+                    .routeId("ROUTE_DRST_" + serviceAccess.getId())
                     .threads(10, 20, "inbound-rest-" +
-                            service.getTerminalServiceAccess().getService().getCode().toLowerCase())
+                            serviceAccess.getService().getCode().toLowerCase())
                     .end()
                     .doTry()
                     .process(exchange -> {
-                        Message message = buildMessage(exchange, service);
+                        Message message = buildMessage(exchange, serviceAccess);
                         exchange.getMessage().setBody(message, Message.class);
                     })
                     .process(exchange -> {

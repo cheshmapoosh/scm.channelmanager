@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.springrest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
@@ -82,7 +83,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     }
 
     @Override
-    protected MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input) {
+    protected MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input, TerminalServiceAccess serviceAccess) {
         return null;
     }
 

@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_SERVICE_NOT_ASSIGNED;
@@ -34,9 +33,9 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected boolean support(TerminalServiceChannelAccess service) {
-        return service.getTerminalServiceAccess().getTerminal().getSupportCheckServiceAccess() &&
-                service.getTerminalServiceAccess().getService().getCheckAccessService();
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return serviceAccess.getTerminal().isSupportCheckServiceAccess() &&
+                serviceAccess.getService().getCheckAccessService();
     }
 
 }

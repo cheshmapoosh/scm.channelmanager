@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceChannelAccess;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public interface HttpInboundExecutor {
 
-    TerminalServiceChannelAccess findService(HttpServletRequest request, String serviceCode);
+    TerminalServiceAccess findService(HttpServletRequest request, String serviceCode);
 
     public Message executeService(HttpServletRequest request, String serviceCode, JsonNode payload);
     public Message executeService(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest, String serviceCode);
