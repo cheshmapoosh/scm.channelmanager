@@ -13,9 +13,9 @@ import lombok.Getter;
 public class AccessDeniedException extends BaseException {
 
     private final String source;
-    private final String errorCode;
+    private final Integer errorCode;
 
-    public AccessDeniedException(String source, String errorCode, String message) {
+    public AccessDeniedException(String source, Integer errorCode, String message) {
         super(message, null);
         this.source = source;
         this.errorCode = errorCode;

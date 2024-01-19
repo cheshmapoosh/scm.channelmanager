@@ -11,10 +11,12 @@ import lombok.Getter;
  */
 public abstract class BaseException extends RuntimeException {
 
+    public static final String DEFAULT_ERROR_URI = null;
+
     public BaseException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public static final String DEFAULT_ERROR_URI = null;
+    public abstract String getSource();
 
 }

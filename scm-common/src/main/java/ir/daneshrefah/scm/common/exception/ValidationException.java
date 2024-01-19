@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
+import lombok.Getter;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,8 +9,10 @@ package ir.daneshrefah.scm.common.exception;
  * @version 1.0
  * @since 2023-08-09
  */
+@Getter
 public class ValidationException extends BaseException {
 
+    private String source;
     public ValidationException(String message, Throwable cause) {
         super(message, cause);
     }

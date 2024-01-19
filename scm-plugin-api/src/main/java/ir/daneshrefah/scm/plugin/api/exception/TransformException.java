@@ -21,4 +21,8 @@ public class TransformException extends BaseException {
         this.transformer = transformer;
     }
 
+    @Override
+    public String getSource() {
+        return transformer.getClass().getSimpleName();
+    }
 }

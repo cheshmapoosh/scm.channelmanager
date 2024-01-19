@@ -1,16 +1,17 @@
 package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
+import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
-import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
+import ir.daneshrefah.scm.core.mapper.ExceptionMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
-import ir.daneshrefah.scm.plugin.api.exception.*;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -47,7 +48,7 @@ public class ErrorMappingService {
     public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors) {
         for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
             ValidationMessage validationMessage = iterator.next();
-            Error error = new Error(ErrorType.VALIDATION, null, validationMessage.getPath(),
+            Error error = new Error(validationMessage.getPath(),
                     validationMessage.getCode(), validationMessage.getMessage());
             message.addError(error, Status.SC_ERROR_VALIDATION);
         }
@@ -63,69 +64,35 @@ public class ErrorMappingService {
         }
         String finalProviderCode = providerCode;
 
-        if (exception instanceof JavaServiceMethodNotFoundException) {
-            JavaServiceMethodNotFoundException javaServiceMethodNotFoundException = (JavaServiceMethodNotFoundException) exception;
-            Error error = new Error(ErrorType.SYSTEM_ERROR, javaServiceMethodNotFoundException.getService().getCode(),
-                    null, ErrorCodes.ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND, javaServiceMethodNotFoundException.getCause().getMessage());
-            message.addError(error, Status.SC_ERROR_SYSTEM);
-            return message;
-        }
-        if (exception instanceof ProviderUnreachableException) {
-            ProviderUnreachableException providerUnreachableException = (ProviderUnreachableException) exception;
-            Error error = new Error(ErrorType.HOST_UNREACHABLE, providerUnreachableException.getProvider().getCode(),
-                    null, ErrorType.HOST_UNREACHABLE.getCode(), providerUnreachableException.getCause().getMessage());
-            message.addError(error, Status.SC_ERROR_UNREACHABLE_PROVIDER);
-            return message;
-        }
-        if (exception instanceof TransformException) {
-            TransformException transformException = (TransformException) exception;
-            Error error = new Error(ErrorType.SYSTEM_ERROR, transformException.getTransformer().getClass().getSimpleName(),
-                    null, ErrorType.SYSTEM_ERROR.getCode(), transformException.getCause().getMessage());
-            message.addError(error, Status.SC_ERROR_SYSTEM);
-            message.nullPayload();
-            return message;
-        }
-        if (exception instanceof InvalidProviderResponseException) {
-            InvalidProviderResponseException invalidProviderResponseException = (InvalidProviderResponseException) exception;
-            Error error = new Error(ErrorType.INVALID_PROVIDER_RESPONSE, invalidProviderResponseException.getProvider().getCode(),
-                    null, ErrorType.INVALID_PROVIDER_RESPONSE.getCode(), invalidProviderResponseException.getCause().getMessage());
-            message.addError(error, Status.SC_ERROR_UNREACHABLE_PROVIDER);
-            return message;
-        }
-        if (exception instanceof ProviderUnSuccessfulResponseException) {
-            ProviderUnSuccessfulResponseException providerUnSuccessfulResponseException = (ProviderUnSuccessfulResponseException) exception;
-            Error error = new Error(ErrorType.INVALID_PROVIDER_RESPONSE, providerUnSuccessfulResponseException.getProvider().getCode(),
-                    null, ErrorType.INVALID_PROVIDER_RESPONSE.getCode(), "invalid status code: " + providerUnSuccessfulResponseException.getStatusCode());
-            message.addError(error, Status.SC_ERROR_UNREACHABLE_PROVIDER);
-            return message;
-        }
-        if (exception instanceof ProviderUnknownException) {
-            ProviderUnknownException providerUnknownException = (ProviderUnknownException) exception;
-            Error error = new Error(ErrorType.INVALID_PROVIDER_RESPONSE, providerUnknownException.getProvider().getCode(),
-                    null, ErrorType.INVALID_PROVIDER_RESPONSE.getCode(), providerUnknownException.getMessage());
-            message.addError(error, Status.SC_ERROR_UNREACHABLE_PROVIDER);
-            return message;
-        }
         if (exception instanceof ProviderErrorResponseException) {
             ProviderErrorResponseException providerErrorResponseException = (ProviderErrorResponseException) exception;
             String errorCode = providerErrorResponseException.getErrorCode();
             Optional<ErrorMapping> mapping = listErrorMappings().stream()
-                    .filter(errorMapping -> (errorMapping.getExceptionClassName().equals(exception.getClass())) &&
-                            (null == errorMapping.getProvider() || errorMapping.getProvider().getCode().equals(finalProviderCode)) &&
+                    .filter(errorMapping -> (errorMapping.getProvider().getCode().equals(finalProviderCode)) &&
                             errorMapping.getProviderErrorCode().equals(errorCode))
                     .findFirst();
             Error error = null;
             if (mapping.isPresent()) {
                 String errorMessage = StringUtils.isNotEmpty(mapping.get().getMessage()) ? mapping.get().getMessage() :
                         providerErrorResponseException.getErrorMessage();
-                error = new Error(ErrorType.VALIDATION, providerCode,
-                        null, mapping.get().getScmErrorCode(), errorMessage);
+                error = new Error(providerCode, mapping.get().getScmErrorCode(), errorMessage);
             } else {
-                error = new Error(ErrorType.VALIDATION, providerCode,
-                        null, errorCode, providerErrorResponseException.getErrorMessage());
+                error = new Error(providerCode, errorCode, providerErrorResponseException.getErrorMessage());
             }
             message.addError(error, Status.SC_ERROR_VALIDATION);
             return message;
+        }
+
+        Optional<ExceptionMapper> mapper = ExceptionMapper.findByException(exception.getClass());
+        if (mapper.isPresent()) {
+            Error error = new Error(exception instanceof BaseException ? ((BaseException) exception).getSource() : null,
+                    mapper.get().getErrorCode(),
+                    null != exception.getCause() ? exception.getCause().getMessage() : exception.getMessage());
+            message.addError(error, mapper.get().getStatus());
+        } else {
+            Error error = new Error(null, ErrorCodes.ERROR_CODE_SYSTEM_ERROR,
+                    null != exception.getCause() ? exception.getCause().getMessage() : exception.getMessage());
+            message.addError(error, Status.SC_ERROR_SYSTEM);
         }
 
         return message;

@@ -18,9 +18,8 @@ import lombok.Setter;
 public class ErrorMapping extends BaseModel<String> {
 
     private ExternalServiceProvider provider;
-    private String exceptionClassName;
     private String providerErrorCode;
-    private String scmErrorCode;
+    private Integer scmErrorCode;
     private Status status;
     private String message;
 

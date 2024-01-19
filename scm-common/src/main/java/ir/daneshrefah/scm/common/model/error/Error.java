@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.common.model.error;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -10,23 +9,23 @@ import lombok.Getter;
  * @version 1.0
  * @since 2023-07-23
  */
-@AllArgsConstructor
 @Getter
 public class Error {
 
     /**
-     * It contains scm error code that list exist in {@link ErrorType}
-     * */
-    private ErrorType type;
-    /**
      * It contains 'propertyName' that has error in 'VALIDATION' type
      * */
-    private String provider;
-    /**
-     * It contains 'propertyName' that has error in 'VALIDATION' type
-     * */
-    private String source;
-    private String errorCode;
-    private String message;
+    private final String source;
+    private final String errorCode;
+    private final String message;
 
+    public Error(String source, Integer errorCode, String message) {
+        this(source, "SCM-" + errorCode, message);
+    }
+
+    public Error(String source, String errorCode, String message) {
+        this.source = source;
+        this.errorCode = errorCode;
+        this.message = message;
+    }
 }

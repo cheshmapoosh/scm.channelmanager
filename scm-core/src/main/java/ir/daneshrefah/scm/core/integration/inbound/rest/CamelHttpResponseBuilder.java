@@ -51,6 +51,7 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
 
         prepareResponseHeader(message, responseMessage);
         ObjectNode result = objectMapper.createObjectNode();
+        result.putPOJO("status", message.getStatus());
         result.putPOJO("errors", message.getErrors());
         result.set("result", message.getPayload());
         responseMessage.setBody(result);

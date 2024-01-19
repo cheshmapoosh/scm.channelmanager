@@ -1,6 +1,13 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.headers.Header;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -14,6 +21,7 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePropertyKey;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -22,6 +30,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
 import java.util.List;
+
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CORRELATION_ID;
+import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_HTML;
+import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
 
 /**
  * Description of the class or purpose of the file.
@@ -60,6 +72,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
             }
             routeBuilder.registerService(service);
         }
+        routeBuilder.registerServiceDocumentation(serviceAccesses);
         try {
             getContext().addRoutes(routeBuilder);
         } catch (Exception e) {
@@ -79,6 +92,72 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     .corsHeaderProperty("Access-Control-Allow-Origin", "*")
                     .corsHeaderProperty("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization")
                     .contextPath(contextPath);
+        }
+
+        public void registerServiceDocumentation(List<TerminalServiceAccess> serviceAccesses) {
+            OpenAPI openAPI = new OpenAPI();
+            openAPI.info(new Info().title(getChannel().getTitle()).version("1.0.0"));
+            Components components = new Components();
+            Header myHeader = new Header().$ref("correlationId").description("Correlation ID Header");
+            components.addHeaders(SCM_PARAMETER_CORRELATION_ID, myHeader);
+            openAPI.setComponents(components);
+            for (Iterator<TerminalServiceAccess> iterator = serviceAccesses.iterator(); iterator.hasNext(); ) {
+                TerminalServiceAccess serviceAccess = iterator.next();
+                RestUrl restUrl = urlBuilder.build(serviceAccess);
+                PathItem pathItem = null;
+                if (null != openAPI.getPaths() && null != openAPI.getPaths().get(restUrl.getUrl())) {
+                    pathItem = openAPI.getPaths().get(restUrl.getUrl());
+                } else {
+                    pathItem = new PathItem();
+                    openAPI.path(restUrl.getUrl(), pathItem);
+                }
+
+                // Create Operation object
+                Operation operation = new Operation();
+
+                // Extract basic information
+                operation.setSummary(serviceAccess.getService().getCode());
+                operation.setDescription(serviceAccess.getService().getTitle());
+                operation.setOperationId(restUrl.getUrl());
+                operation.addParametersItem(new HeaderParameter().$ref("#/components/headers/correlationId"));
+//                operation.setTags(extractTags(method));
+
+                /*// Extract parameters (ensure proper validation and sanitization)
+                List<Parameter> parameters = extractParameters(method);
+                for (Parameter parameter : parameters) {
+                    // Validate parameter values and apply necessary sanitization to prevent potential vulnerabilities
+                    // ... (Implement validation and sanitization logic here)
+                    operation.addParametersItem(parameter);
+                }
+
+                // Extract responses
+                List<ApiResponse> responses = extractResponses(method);
+                for (ApiResponse response : responses) {
+                    operation.addResponsesItem(response);
+                }
+
+                // Extract security requirements (if applicable)
+                extractSecurityRequirements(method, operation);*/
+
+
+                pathItem.operation(PathItem.HttpMethod.valueOf(restUrl.getHttpMethod().toUpperCase()), operation);
+            }
+
+            String inboundUrl = "rest:GET:/api-docs/swagger.json";
+            from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger.json")
+                    .routeId("swagger_generator_" + getChannel().getCode())
+                    .process(exchange -> {
+                        exchange.getMessage().setBody(getObjectMapper().writeValueAsString(openAPI));
+                        exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
+                    })
+                    .end();
+            from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger-ui.html")
+                    .routeId("swagger_ui_generator_" + getChannel().getCode())
+                    .process(exchange -> {
+                        exchange.getMessage().setBody("<h1>Swagger UI</h1>");
+                        exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_HTML);
+                    })
+                    .end();
         }
 
         public void registerService(TerminalServiceAccess serviceAccess) {

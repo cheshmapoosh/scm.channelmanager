@@ -110,7 +110,7 @@ public class AuthenticationClientTemplate {
                 .clientId(null)
                 .build();
         UserAuthentication result = new UserAuthentication(detail, null);
-        result.setError(e.getMessage());
+        result.setError(null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
         return result;
     }
 

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
-import ir.daneshrefah.scm.common.model.error.ErrorType;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -151,8 +150,8 @@ public abstract class AbstractInboundChannelGenerator<T> {
             if (StringUtils.isEmpty(errorMessage)) {
                 errorMessage = "error on authenticate user.";
             }
-            message.addError(new Error(ErrorType.AUTHENTICATION_FAILED, null, Constants.SCM_PARAMETER_AUTHORIZATION,
-                    ErrorType.AUTHENTICATION_FAILED.getCode(), errorMessage), Status.SC_UNAUTHORIZED);
+            message.addError(new Error(Constants.SCM_PARAMETER_AUTHORIZATION,
+                    ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED, errorMessage), Status.SC_UNAUTHORIZED);
             message.nullPayload();
         }
         return message;
@@ -200,10 +199,10 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     private Message createValidationErrorMessage(MessageBuildRequest request, Header header, String source,
-                                                 String errorCode, String errorMessage) {
+                                                 Integer errorCode, String errorMessage) {
         Message result = new Message(request);
         result.setHeader(header);
-        result.addError(new Error(ErrorType.VALIDATION, null, source, errorCode, errorMessage), Status.SC_ERROR_VALIDATION);
+        result.addError(new Error(source, errorCode, errorMessage), Status.SC_ERROR_VALIDATION);
         result.setPayload(objectMapper.nullNode());
         return result;
     }

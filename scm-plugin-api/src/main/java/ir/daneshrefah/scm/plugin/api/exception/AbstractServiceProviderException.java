@@ -11,7 +11,7 @@ import lombok.Getter;
  * @version 1.0
  * @since 2023-01-15
  */
-public class AbstractServiceProviderException extends BaseException {
+public abstract class AbstractServiceProviderException extends BaseException {
 
     @Getter
     private final ExternalServiceProvider provider;
@@ -21,4 +21,8 @@ public class AbstractServiceProviderException extends BaseException {
         this.provider = provider;
     }
 
+    @Override
+    public String getSource() {
+        return provider.getCode();
+    }
 }

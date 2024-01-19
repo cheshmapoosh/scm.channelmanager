@@ -21,4 +21,9 @@ public class AbstractJavaServiceException extends BaseException {
         this.service = service;
     }
 
+    @Override
+    public String getSource() {
+        return service.getCode();
+    }
+
 }
