@@ -95,55 +95,8 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         }
 
         public void registerServiceDocumentation(List<TerminalServiceAccess> serviceAccesses) {
-            OpenAPI openAPI = new OpenAPI();
-            openAPI.info(new Info().title(getChannel().getTitle()).version("1.0.0"));
-            Components components = new Components();
-            Header myHeader = new Header().$ref("correlationId").description("Correlation ID Header");
-            components.addHeaders(SCM_PARAMETER_CORRELATION_ID, myHeader);
-            openAPI.setComponents(components);
-            for (Iterator<TerminalServiceAccess> iterator = serviceAccesses.iterator(); iterator.hasNext(); ) {
-                TerminalServiceAccess serviceAccess = iterator.next();
-                RestUrl restUrl = urlBuilder.build(serviceAccess);
-                PathItem pathItem = null;
-                if (null != openAPI.getPaths() && null != openAPI.getPaths().get(restUrl.getUrl())) {
-                    pathItem = openAPI.getPaths().get(restUrl.getUrl());
-                } else {
-                    pathItem = new PathItem();
-                    openAPI.path(restUrl.getUrl(), pathItem);
-                }
+            OpenAPI openAPI = SwaggerGenerator.generateOpenAPI(getChannel(), serviceAccesses, urlBuilder);
 
-                // Create Operation object
-                Operation operation = new Operation();
-
-                // Extract basic information
-                operation.setSummary(serviceAccess.getService().getCode());
-                operation.setDescription(serviceAccess.getService().getTitle());
-                operation.setOperationId(restUrl.getUrl());
-                operation.addParametersItem(new HeaderParameter().$ref("#/components/headers/correlationId"));
-//                operation.setTags(extractTags(method));
-
-                /*// Extract parameters (ensure proper validation and sanitization)
-                List<Parameter> parameters = extractParameters(method);
-                for (Parameter parameter : parameters) {
-                    // Validate parameter values and apply necessary sanitization to prevent potential vulnerabilities
-                    // ... (Implement validation and sanitization logic here)
-                    operation.addParametersItem(parameter);
-                }
-
-                // Extract responses
-                List<ApiResponse> responses = extractResponses(method);
-                for (ApiResponse response : responses) {
-                    operation.addResponsesItem(response);
-                }
-
-                // Extract security requirements (if applicable)
-                extractSecurityRequirements(method, operation);*/
-
-
-                pathItem.operation(PathItem.HttpMethod.valueOf(restUrl.getHttpMethod().toUpperCase()), operation);
-            }
-
-            String inboundUrl = "rest:GET:/api-docs/swagger.json";
             from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger.json")
                     .routeId("swagger_generator_" + getChannel().getCode())
                     .process(exchange -> {
