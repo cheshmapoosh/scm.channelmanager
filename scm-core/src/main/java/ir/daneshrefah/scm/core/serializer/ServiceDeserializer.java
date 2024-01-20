@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
@@ -40,7 +41,8 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
         else if (node.has("implementationType") && node.get("implementationType").isTextual())
             implementationType = ServiceImplementationType.valueOf(node.get("implementationType").asText());
         if (null == implementationType)
-            return null;
+            throw new ValidationException(null, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_EMPTY,
+                    "service 'implementationType' must be set.");
         ir.daneshrefah.scm.common.model.service.Service newService = null;
         try {
             switch (implementationType) {

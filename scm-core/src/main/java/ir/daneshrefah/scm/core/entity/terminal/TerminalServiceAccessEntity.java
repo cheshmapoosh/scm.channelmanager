@@ -22,6 +22,7 @@ public class TerminalServiceAccessEntity extends AbstractDefaultEntity<String> {
 
     @Id
     @Column(name = "TERMINAL_SERVICE_ACCESS_ID")
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     @ManyToOne
     @JoinColumn(name = "service_id")

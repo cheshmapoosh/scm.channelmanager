@@ -94,6 +94,10 @@ public class ServiceServiceImpl implements ServiceService {
         }
         boolean isModified = false;
         ServiceEntity serviceEntity = entity.get();
+        if (!serviceEntity.getImplementationType().equals(service.getImplementationType())) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_INVALID,
+                    "service implementation type is invalid.");
+        }
         if (StringUtils.isNotEmpty(service.getTitle()) && !service.getTitle().equals(serviceEntity.getTitle())) {
             serviceEntity.setTitle(service.getTitle());
             isModified = true;

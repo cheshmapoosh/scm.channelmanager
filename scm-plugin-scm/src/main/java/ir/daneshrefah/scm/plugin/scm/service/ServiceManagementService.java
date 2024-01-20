@@ -76,24 +76,8 @@ public class ServiceManagementService extends AbstractJavaService {
         }
         ir.daneshrefah.scm.common.model.service.Service newService = null;
         try {
-            switch (implementationType) {
-                case EXTERNAL:
-                    newService = objectMapper.treeToValue(message.getPayload(), ExternalService.class);
-                    break;
-                case JAVA:
-                    newService = objectMapper.treeToValue(message.getPayload(), JavaService.class);
-                    break;
-                case COMPOSITION:
-                    newService = objectMapper.treeToValue(message.getPayload(), CompositionService.class);
-                    break;
-                case PARENT:
-                    newService = objectMapper.treeToValue(message.getPayload(), ParentService.class);
-                    break;
-                case BPMN:
-                    throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID, "service implementation type is invalid.");
-                default:
-                    throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID, "service implementation type is invalid.");
-            }
+            newService = objectMapper.treeToValue(message.getPayload(),
+                    ir.daneshrefah.scm.common.model.service.Service.class);
         } catch (JsonProcessingException e) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_INVALID, e.getMessage(), e);
         }

@@ -18,4 +18,6 @@ public interface TerminalService {
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
 
+    public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId);
+
 }

@@ -19,6 +19,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
@@ -111,6 +112,11 @@ public class ErrorMappingService {
                     error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DATA_INTEGRITY_VIOLATION, ex.getMessage());
                 }
                 message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
+                message.nullPayload();
+                return message;
+            } else if (e instanceof JpaSystemException) {
+                JpaSystemException ex = (JpaSystemException) e;
+                message.addError(new Error(null, ERROR_CODE_JPA_SYSTEM, ex.getMessage()), Status.SC_ERROR_SYSTEM);
                 message.nullPayload();
                 return message;
             }
