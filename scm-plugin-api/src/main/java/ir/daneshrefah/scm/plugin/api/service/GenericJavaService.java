@@ -20,12 +20,10 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
  */
 public abstract class GenericJavaService<S, T> extends AbstractJavaService {
 
-    private final ObjectMapper objectMapper;
     private Class<S> sourceClass;
 
     public GenericJavaService(ServiceProducerTemplate serviceComponentExecutor, ObjectMapper objectMapper) {
-        super(serviceComponentExecutor);
-        this.objectMapper = objectMapper;
+        super(serviceComponentExecutor, objectMapper);
         TypeToken<S> typeToken = new TypeToken<S>() {};
         this.sourceClass = (Class<S>) typeToken.getRawType();
     }

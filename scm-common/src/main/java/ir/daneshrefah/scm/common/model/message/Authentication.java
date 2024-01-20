@@ -15,6 +15,8 @@ public interface Authentication extends Serializable {
 
     public String getName();
 
+    public String getPersonUsername();
+
     public PersonProfile getPersonProfile();
 
     public String getTerminalCode();

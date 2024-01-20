@@ -61,4 +61,10 @@ public class Message implements Serializable {
             return null;
         return (payload.has(property) && payload.get(property).isTextual()) ? payload.get(property).asText() : null;
     }
+
+    public Integer getIntegerPayloadValue(String property) {
+        if (null == property || null == payload || payload.isNull())
+            return null;
+        return (payload.has(property) && payload.get(property).isInt()) ? payload.get(property).asInt() : null;
+    }
 }

@@ -14,6 +14,7 @@ import jakarta.persistence.*;
 public abstract class ServiceEntity extends AbstractDefaultEntity<String> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "SERVICE_ID")
     private String id;
     private String code;

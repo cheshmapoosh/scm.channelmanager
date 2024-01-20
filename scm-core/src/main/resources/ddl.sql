@@ -69,7 +69,7 @@ EXTERNAL(1), JAVA(2), COMPOSITION(3), BPMN(4), PARENT(5);
 CREATE TABLE REF.TBL_SCM_SERVICE (
     --Definition
                                      SERVICE_ID VARCHAR(36) NOT NULL,
-                                     CODE VARCHAR(255),
+                                     CODE VARCHAR(255) NOT NULL,
                                      TITLE VARCHAR(255),
                                      "ALIAS" VARCHAR(255),
                                      VERSION SMALLINT DEFAULT 1,
@@ -98,6 +98,7 @@ CREATE TABLE REF.TBL_SCM_SERVICE (
                                      LAST_EDITOR VARCHAR(255),
                                      METADATA VARCHAR(5500),
     --Relation
+                                     CONSTRAINT CNST_UNIQUE_CODE UNIQUE (CODE),
                                      FOREIGN KEY (PARENT_SERVICE_ID) REFERENCES REF.TBL_SCM_SERVICE (SERVICE_ID),
                                      FOREIGN KEY (IMPLEMENTATION_EXTERNAL_SERVICE_PROVIDER_ID) REFERENCES REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER (EXTERNAL_SERVICE_PROVIDER_ID),
                                      PRIMARY KEY (SERVICE_ID)

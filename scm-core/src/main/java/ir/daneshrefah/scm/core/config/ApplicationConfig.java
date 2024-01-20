@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ir.daneshrefah.scm.core.serializer.ScmObjectModule;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -33,6 +34,7 @@ public class ApplicationConfig implements ApplicationContextAware {
     private synchronized static void initObjectMapper() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new ScmObjectModule());
         SimpleModule simpleModule = new SimpleModule();
 //        simpleModule.addSerializer(Message.class, new MessageRestSerializer());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

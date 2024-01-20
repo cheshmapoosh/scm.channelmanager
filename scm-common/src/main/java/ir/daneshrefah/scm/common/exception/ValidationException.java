@@ -13,8 +13,15 @@ import lombok.Getter;
 public class ValidationException extends BaseException {
 
     private String source;
-    public ValidationException(String message, Throwable cause) {
+    private Integer errorCode;
+    public ValidationException(String source, Integer errorCode, String message) {
+        this(source, errorCode, message, null);
+    }
+
+    public ValidationException(String source, Integer errorCode, String message, Throwable cause) {
         super(message, cause);
+        this.source = source;
+        this.errorCode = errorCode;
     }
 
 }

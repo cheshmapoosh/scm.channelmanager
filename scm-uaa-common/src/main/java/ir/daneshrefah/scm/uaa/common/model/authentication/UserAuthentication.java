@@ -111,6 +111,11 @@ public class UserAuthentication implements org.springframework.security.core.Aut
     }
 
     @Override
+    public String getPersonUsername() {
+        return null != principal && null != principal.getPerson() ? principal.getPerson().getUsername() : null;
+    }
+
+    @Override
     public PersonProfile getPersonProfile() {
         return profile;
     }

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -11,17 +12,21 @@ import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.mapper.ExceptionMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
+import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_DUPLICATE_RECORD;
 
 /**
  * Description of the class or purpose of the file.
@@ -83,6 +88,29 @@ public class ErrorMappingService {
             return message;
         }
 
+        if (exception instanceof ValidationException) {
+            ValidationException validationException = (ValidationException) exception;
+            String source = validationException.getSource();
+            Integer errorCode = null != validationException.getErrorCode() ? validationException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION;
+            String errorMessage = validationException.getMessage();
+            Error error = new Error(source, errorCode, errorMessage);
+            message.addError(error, Status.SC_ERROR_VALIDATION);
+            message.nullPayload();
+            return message;
+        }
+
+        if (exception instanceof JavaServiceExecutionException) {
+            Exception e = (Exception) exception.getCause();
+            if (e instanceof DataIntegrityViolationException) {
+                DataIntegrityViolationException ex = (DataIntegrityViolationException) e;
+                if (ex.getMessage().contains("SQLCODE=-803")) {
+                    Error error = new Error(null, ERROR_CODE_DUPLICATE_RECORD, "recode is duplicate");
+                    message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
+                    message.nullPayload();
+                    return message;
+                }
+            }
+        }
         Optional<ExceptionMapper> mapper = ExceptionMapper.findByException(exception.getClass());
         if (mapper.isPresent()) {
             Error error = new Error(exception instanceof BaseException ? ((BaseException) exception).getSource() : null,
@@ -93,6 +121,7 @@ public class ErrorMappingService {
             Error error = new Error(null, ErrorCodes.ERROR_CODE_SYSTEM_ERROR,
                     null != exception.getCause() ? exception.getCause().getMessage() : exception.getMessage());
             message.addError(error, Status.SC_ERROR_SYSTEM);
+            message.nullPayload();
         }
 
         return message;

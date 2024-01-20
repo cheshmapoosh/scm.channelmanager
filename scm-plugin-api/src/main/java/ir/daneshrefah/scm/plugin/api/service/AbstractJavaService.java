@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -13,14 +14,13 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public abstract class AbstractJavaService {
 
-    private ServiceProducerTemplate serviceProducerTemplate;
+    protected final ObjectMapper objectMapper;
+    private final ServiceProducerTemplate serviceProducerTemplate;
 
 
-    public AbstractJavaService() {
-    }
-
-    public AbstractJavaService(ServiceProducerTemplate serviceComponentExecutor) {
-        this.serviceProducerTemplate = serviceComponentExecutor;
+    public AbstractJavaService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper) {
+        this.serviceProducerTemplate = producerTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public Object execute(Message message, Service service, Object payload) {

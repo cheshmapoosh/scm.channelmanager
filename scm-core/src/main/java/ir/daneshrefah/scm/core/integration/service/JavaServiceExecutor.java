@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -62,7 +63,12 @@ public class JavaServiceExecutor extends ServiceExecutor {
             throw new JavaServiceMethodNotFoundException(e, javaService);
         } catch (BaseException e) {
             throw e;
+        } catch (InvocationTargetException e) {
+            throw new JavaServiceExecutionException(e.getTargetException(), javaService);
         } catch (Exception e) {
+            if (e.getCause() instanceof BaseException) {
+                throw (BaseException) e.getCause();
+            }
             throw new JavaServiceExecutionException(e, javaService);
         }
     }
