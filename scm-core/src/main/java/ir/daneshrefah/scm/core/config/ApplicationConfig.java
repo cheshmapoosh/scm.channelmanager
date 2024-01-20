@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.core.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.core.serializer.ScmObjectModule;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -36,11 +36,10 @@ public class ApplicationConfig implements ApplicationContextAware {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.registerModule(new ScmObjectModule());
-        SimpleModule simpleModule = new SimpleModule();
-//        simpleModule.addSerializer(Message.class, new MessageRestSerializer());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        objectMapper.registerModule(simpleModule);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//        objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     @Bean
     public ObjectMapper objectMapper() {
