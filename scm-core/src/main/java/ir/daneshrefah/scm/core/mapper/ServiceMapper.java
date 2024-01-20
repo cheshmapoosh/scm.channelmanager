@@ -33,7 +33,6 @@ public interface ServiceMapper {
     JavaServiceEntity toEntity(JavaService model);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
-    @Mapping(source = "externalServiceProviderEntity", target = "serviceProvider")
     ExternalService toModel(ExternalServiceEntity entity);
     List<ExternalService> externalEntitiesToModels(Iterable<ExternalServiceEntity> entities);
 

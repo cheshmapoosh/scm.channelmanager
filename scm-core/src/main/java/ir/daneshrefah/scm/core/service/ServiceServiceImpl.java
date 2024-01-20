@@ -8,13 +8,17 @@ import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
+import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
+import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,15 +29,24 @@ import java.util.Optional;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
+@RequiredArgsConstructor
 @Service
 public class ServiceServiceImpl implements ServiceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceServiceImpl.class);
-    @Autowired
-    ServiceRepository serviceRepository;
-    @Autowired
-    ServiceRelationRepository serviceRelationRepository;
+
+    private final ServiceRepository serviceRepository;
+    private final ServiceRelationRepository serviceRelationRepository;
+    private final ServiceProviderRepository serviceProviderRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
+    private List<ExternalServiceProvider> serviceProviders;
+
+    public List<ExternalServiceProvider> findServiceProviderList() {
+        if (null == serviceProviders) {
+            serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
+        }
+        return serviceProviders;
+    }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         if (null == services) {
@@ -66,8 +79,12 @@ public class ServiceServiceImpl implements ServiceService {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY, "service java class name is empty.");
         }
         if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
-                null == ((ExternalService) service).getServiceProvider()) {
+                (null == ((ExternalService) service).getServiceProvider() || StringUtils.isEmpty(((ExternalService) service).getServiceProvider().getId()))) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY, "service provider is empty.");
+        }
+        if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
+                !checkServiceProviderExistById(((ExternalService) service).getServiceProvider().getId())) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_INVALID, "service provider is invalid.");
         }
         if (null == service.getVersion()) {
             service.setVersion(1);
@@ -174,6 +191,14 @@ public class ServiceServiceImpl implements ServiceService {
             return false;
         }
         return findServiceList().stream().anyMatch(service -> serviceId.equals(service.getId()));
+    }
+
+    @Override
+    public boolean checkServiceProviderExistById(String serviceProviderId) {
+        if (StringUtils.isEmpty(serviceProviderId)) {
+            return false;
+        }
+        return findServiceProviderList().stream().anyMatch(serviceProvider -> serviceProviderId.equals(serviceProvider.getId()));
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {

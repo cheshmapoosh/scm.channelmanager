@@ -23,4 +23,6 @@ public interface ServiceService {
 
     public boolean checkServiceExistById(String serviceId);
 
+    public boolean checkServiceProviderExistById(String serviceProviderId);
+
 }

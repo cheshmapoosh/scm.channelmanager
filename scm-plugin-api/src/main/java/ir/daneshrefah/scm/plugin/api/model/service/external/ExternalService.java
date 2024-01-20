@@ -23,6 +23,8 @@ public class ExternalService extends Service {
 
     @Override
     public Object getServiceInfo() {
+        if (null == serviceProvider)
+            return "serviceProviderCode:null";
         return "serviceProviderCode:" + serviceProvider.getCode();
     }
 }
