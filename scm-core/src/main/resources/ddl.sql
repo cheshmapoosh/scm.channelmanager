@@ -174,6 +174,7 @@ CREATE TABLE REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (
                                                      LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                                      CREATOR VARCHAR(255),
                                                      LAST_EDITOR VARCHAR(255),
+                                                     CONSTRAINT CNST_UNIQUE_TERMINAL_SERVICE UNIQUE (TERMINAL_ID, SERVICE_ID),
                                                      FOREIGN KEY (TERMINAL_ID) REFERENCES REF.TBL_SCM_TERMINAL (TERMINAL_ID),
                                                      FOREIGN KEY (SERVICE_ID) REFERENCES REF.TBL_SCM_SERVICE (SERVICE_ID),
                                                      PRIMARY KEY (TERMINAL_SERVICE_ACCESS_ID)

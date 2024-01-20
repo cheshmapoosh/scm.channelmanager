@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.service;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.Arrays;
  * @version 1.0
  * @since 2024-01-17
  */
+@Getter
 @RequiredArgsConstructor
 public enum ServiceStatus {
 

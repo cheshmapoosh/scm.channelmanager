@@ -22,6 +22,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND = 1018;
     public static final int ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND = 1019;
     public static final int ERROR_CODE_DUPLICATE_RECORD = 1020;
+    public static final int ERROR_CODE_DATA_INTEGRITY_VIOLATION = 1021;
     public static final int ERROR_CODE_VALIDATION_BODY_IS_EMPTY = 1050;
     public static final int ERROR_CODE_VALIDATION_BODY_IS_INVALID = 1051;
     public static final int ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_EMPTY = 1052;
@@ -32,5 +33,8 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_SERVICE_TYPE_IS_EMPTY = 1057;
     public static final int ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY = 1058;
     public static final int ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY = 1059;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY = 1060;
+    public static final int ERROR_CODE_VALIDATION_OBJECT_NOT_FOUND = 1061;
+    public static final int ERROR_CODE_VALIDATION_NO_CHANGE = 1062;
 //    public static final int ERROR_CODE_PARAMETER_SERVICE_CODE_IS_EMPTY = 1051;
 }

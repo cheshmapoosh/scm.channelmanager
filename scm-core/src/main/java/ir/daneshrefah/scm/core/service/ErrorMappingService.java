@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_DUPLICATE_RECORD;
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -103,12 +103,16 @@ public class ErrorMappingService {
             Exception e = (Exception) exception.getCause();
             if (e instanceof DataIntegrityViolationException) {
                 DataIntegrityViolationException ex = (DataIntegrityViolationException) e;
+                Error error = null;
                 if (ex.getMessage().contains("SQLCODE=-803")) {
-                    Error error = new Error(null, ERROR_CODE_DUPLICATE_RECORD, "recode is duplicate");
-                    message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
-                    message.nullPayload();
-                    return message;
+                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DUPLICATE_RECORD, "recode is duplicate");
                 }
+                if (null == error) {
+                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DATA_INTEGRITY_VIOLATION, ex.getMessage());
+                }
+                message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
+                message.nullPayload();
+                return message;
             }
         }
         Optional<ExceptionMapper> mapper = ExceptionMapper.findByException(exception.getClass());

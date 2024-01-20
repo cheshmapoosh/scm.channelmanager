@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
@@ -83,6 +84,82 @@ public class ServiceServiceImpl implements ServiceService {
             service.setCheckAccessAsset(false);
         ServiceEntity entity = ServiceMapper.INSTANCE.toServiceEntity(service);
         return ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
+    }
+
+    @Override
+    public ir.daneshrefah.scm.common.model.service.Service updateService(String serviceId, ir.daneshrefah.scm.common.model.service.Service service) {
+        Optional<ServiceEntity> entity = serviceRepository.findById(serviceId);
+        if (entity.isEmpty()) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_OBJECT_NOT_FOUND, "service entity not found.");
+        }
+        boolean isModified = false;
+        ServiceEntity serviceEntity = entity.get();
+        if (StringUtils.isNotEmpty(service.getTitle()) && !service.getTitle().equals(serviceEntity.getTitle())) {
+            serviceEntity.setTitle(service.getTitle());
+            isModified = true;
+        }
+        if (StringUtils.isNotEmpty(service.getAlias()) && !service.getAlias().equals(serviceEntity.getAlias())) {
+            serviceEntity.setAlias(service.getAlias());
+            isModified = true;
+        }
+        if (StringUtils.isNotEmpty(service.getMetadata()) && !service.getMetadata().equals(serviceEntity.getMetadata())) {
+            serviceEntity.setMetadata(service.getMetadata());
+            isModified = true;
+        }
+        if (null != service.getType() && !service.getType().equals(serviceEntity.getType())) {
+            serviceEntity.setType(service.getType());
+            isModified = true;
+        }
+        if (null != service.getStatus() && !service.getStatus().equals(serviceEntity.getStatus())) {
+            serviceEntity.setStatus(service.getStatus());
+            isModified = true;
+        }
+        if (StringUtils.isNotEmpty(service.getRequestJsonSchema()) && !service.getRequestJsonSchema().equals(serviceEntity.getRequestJsonSchema())) {
+            serviceEntity.setRequestJsonSchema(service.getResponseJsonSchema());
+            isModified = true;
+        }
+        if (StringUtils.isNotEmpty(service.getResponseJsonSchema()) && !service.getResponseJsonSchema().equals(serviceEntity.getResponseJsonSchema())) {
+            serviceEntity.setResponseJsonSchema(service.getResponseJsonSchema());
+            isModified = true;
+        }
+        if (null != service.getCheckAccessFirstAuthentication()) {
+            serviceEntity.setCheckAccessFirstAuthentication(service.getCheckAccessFirstAuthentication());
+            isModified = true;
+        }
+        if (null != service.getCheckAccessSecondAuthentication()) {
+            serviceEntity.setCheckAccessSecondAuthentication(service.getCheckAccessSecondAuthentication());
+            isModified = true;
+        }
+        if (null != service.getCheckAccessService()) {
+            serviceEntity.setCheckAccessService(service.getCheckAccessService());
+            isModified = true;
+        }
+        if (null != service.getCheckAccessAsset()) {
+            serviceEntity.setCheckAccessAsset(service.getCheckAccessAsset());
+            isModified = true;
+        }
+//        private Integer version;
+//        private ir.daneshrefah.scm.common.model.service.Service parent;
+//        private ServiceImplementationType implementationType;
+        if (StringUtils.isNotEmpty(service.getAmountProperty()) && !service.getAmountProperty().equals(serviceEntity.getAmountProperty())) {
+            serviceEntity.setAmountProperty(service.getAmountProperty());
+            isModified = true;
+        }
+        if (StringUtils.isNotEmpty(service.getAssetProperty()) && !service.getAssetProperty().equals(serviceEntity.getAssetProperty())) {
+            serviceEntity.setAssetProperty(service.getAssetProperty());
+            isModified = true;
+        }
+        if (serviceEntity instanceof JavaServiceEntity && StringUtils.isNotEmpty(((JavaService) service).getJavaImplementationClassName()) &&
+                !((JavaService) service).getJavaImplementationClassName().equals(((JavaServiceEntity) serviceEntity).getJavaImplementationClassName())) {
+            ((JavaServiceEntity) serviceEntity).setAssetProperty(((JavaService) service).getJavaImplementationClassName());
+            isModified = true;
+        }
+        if (!isModified) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_NO_CHANGE, "object has no change.");
+        }
+//        private ExternalServiceProvider serviceProvider;
+
+        return ServiceMapper.INSTANCE.toService(serviceRepository.save(serviceEntity));
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {

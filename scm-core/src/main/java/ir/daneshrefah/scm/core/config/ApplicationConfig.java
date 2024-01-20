@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -39,6 +40,7 @@ public class ApplicationConfig implements ApplicationContextAware {
 //        simpleModule.addSerializer(Message.class, new MessageRestSerializer());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.registerModule(simpleModule);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
     @Bean
     public ObjectMapper objectMapper() {

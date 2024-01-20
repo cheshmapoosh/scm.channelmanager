@@ -48,6 +48,24 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
+    public ir.daneshrefah.scm.common.model.service.Service updateService(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+        if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
+        }
+        String serviceId = message.getPayloadValue("serviceId");
+        if (StringUtils.isEmpty(serviceId)) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY, "service id is not specified.");
+        }
+        ir.daneshrefah.scm.common.model.service.Service newService = null;
+        try {
+            newService = objectMapper.treeToValue(message.getPayload(),
+                    ir.daneshrefah.scm.common.model.service.Service.class);
+        } catch (JsonProcessingException e) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_INVALID, e.getMessage(), e);
+        }
+        return this.service.updateService(serviceId, newService);
+    }
+
     public ir.daneshrefah.scm.common.model.service.Service createService(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");

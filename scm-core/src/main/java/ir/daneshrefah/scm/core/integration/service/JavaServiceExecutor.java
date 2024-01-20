@@ -64,6 +64,9 @@ public class JavaServiceExecutor extends ServiceExecutor {
         } catch (BaseException e) {
             throw e;
         } catch (InvocationTargetException e) {
+            if (null != e.getTargetException() && e.getTargetException() instanceof BaseException) {
+                throw (BaseException) e.getTargetException();
+            }
             throw new JavaServiceExecutionException(e.getTargetException(), javaService);
         } catch (Exception e) {
             if (e.getCause() instanceof BaseException) {
