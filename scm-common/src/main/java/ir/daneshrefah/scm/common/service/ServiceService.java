@@ -21,4 +21,6 @@ public interface ServiceService {
 
     public Service updateService(String serviceId, Service service);
 
+    public boolean checkServiceExistById(String serviceId);
+
 }

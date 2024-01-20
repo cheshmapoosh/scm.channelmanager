@@ -33,10 +33,12 @@ public class ServiceServiceImpl implements ServiceService {
     ServiceRepository serviceRepository;
     @Autowired
     ServiceRelationRepository serviceRelationRepository;
+    private List<ir.daneshrefah.scm.common.model.service.Service> services;
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
-        Iterable<ServiceEntity> serviceEntities = serviceRepository.findAll();
-        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+        if (null == services) {
+            services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+        }
         return services;
     }
 
@@ -164,6 +166,14 @@ public class ServiceServiceImpl implements ServiceService {
 //        private ExternalServiceProvider serviceProvider;
 
         return ServiceMapper.INSTANCE.toService(serviceRepository.save(serviceEntity));
+    }
+
+    @Override
+    public boolean checkServiceExistById(String serviceId) {
+        if (StringUtils.isEmpty(serviceId)) {
+            return false;
+        }
+        return findServiceList().stream().anyMatch(service -> serviceId.equals(service.getId()));
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
