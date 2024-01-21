@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL;
 
@@ -330,7 +331,12 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
 
-        checkCustomerInfoIsLoaded(message);
+        boolean isCustomerLoadedIfRequired = checkCustomerInfoIsLoaded(message);
+        if (!isCustomerLoadedIfRequired) {
+            message.addAccessDeniedError(null, ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND,
+                    "no customer found for provider.");
+            return message;
+        }
 
         List<TransformerExecutionWrapper> transformerRelations = extractRequestTransformerList(serviceAccess);
         JsonNode payload = message.getPayload();
@@ -346,18 +352,21 @@ public abstract class AbstractInboundChannelGenerator<T> {
         return message;
     }
 
-    private void checkCustomerInfoIsLoaded(Message message) {
+    private boolean checkCustomerInfoIsLoaded(Message message) {
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
         PersonProfile profile = message.getHeader().getPersonProfile();
         ExternalService service = serviceAccess.getService() instanceof ExternalService ? (ExternalService) serviceAccess.getService() : null;
-        if (null == profile || null == service || !service.getServiceProvider().isCustomerProvided() /*|| !service.isCustomerBased()*/) {
-            return;
+        if (null == service || !service.getServiceProvider().isCustomerProvided() /*|| !service.isCustomerBased()*/) {
+            return true;
+        }
+        if (null == profile) {
+            return false;
         }
         if (profile.isCustomerLoaded(service.getServiceProvider().getId())) {
-            return;
+            return true;
         }
         customerService.fillCustomerForPersonProfile(profile, service.getServiceProvider());
-
+        return profile.isCustomerLoaded(service.getServiceProvider().getId());
     }
 
     private List<TransformerExecutionWrapper> extractRequestTransformerList(TerminalServiceAccess serviceAccess) {
