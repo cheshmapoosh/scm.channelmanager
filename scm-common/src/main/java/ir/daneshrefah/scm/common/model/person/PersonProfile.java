@@ -44,6 +44,10 @@ public class PersonProfile implements Serializable {
         return customers.get(providerId);
     }
 
+    public boolean isCustomerLoaded(String providerId) {
+        return null != customers && customers.containsKey(providerId);
+    }
+
     public void addCustomer(String providerId, Customer customer) {
         customers.put(providerId, customer);
     }

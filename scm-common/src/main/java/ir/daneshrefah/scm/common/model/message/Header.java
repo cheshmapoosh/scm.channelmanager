@@ -46,7 +46,7 @@ public class Header implements Serializable {
         return null;
     }
 
-    public PersonProfile getPersonIdentifier() {
+    public PersonProfile getPersonProfile() {
         if (null != authentication) {
             return authentication.getPersonProfile();
         }

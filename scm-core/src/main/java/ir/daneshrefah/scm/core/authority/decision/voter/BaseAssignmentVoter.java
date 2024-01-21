@@ -24,7 +24,7 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
     @Override
     protected final int vote(Message message) {
-        PersonProfile profile = message.getHeader().getPersonIdentifier();
+        PersonProfile profile = message.getHeader().getPersonProfile();
         if (null == profile) {
             return ACCESS_DENIED;
         }

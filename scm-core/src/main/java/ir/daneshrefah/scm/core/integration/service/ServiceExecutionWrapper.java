@@ -6,6 +6,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
@@ -33,6 +34,9 @@ public class ServiceExecutionWrapper {
         if (StringUtils.isNotEmpty(service.getRequestJsonSchema())) {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             requestJsonSchema = factory.getSchema(service.getRequestJsonSchema());
+        }
+        if (null == requestJsonSchema && service instanceof JavaService) {
+            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo((JavaService) service);
         }
         if (StringUtils.isNotEmpty(service.getResponseJsonSchema())) {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);

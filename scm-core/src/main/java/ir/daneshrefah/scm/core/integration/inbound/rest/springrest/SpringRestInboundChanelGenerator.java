@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChann
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -43,9 +44,10 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     public SpringRestInboundChanelGenerator(ObjectMapper objectMapper, RequestMappingHandlerMapping handlerMapping,
                                             AuthenticationClientTemplate authenticationTemplate,
                                             ServiceProducerTemplate producerTemplate,
-                                            TransformerService transformerService) {
+                                            TransformerService transformerService,
+                                            CustomerDataProviderService customerService) {
         super(objectMapper,authenticationTemplate, producerTemplate, transformerService,
-                null, null);
+                null, null, customerService);
         this.handlerMapping = handlerMapping;
     }
 

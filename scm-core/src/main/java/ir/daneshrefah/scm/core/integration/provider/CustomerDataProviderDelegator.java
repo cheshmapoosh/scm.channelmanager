@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.common.model.person.Customer;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import java.util.Map;
  */
 @Service
 @Slf4j
-public class CustomerDataProviderDelegator {
+public class CustomerDataProviderDelegator implements CustomerDataProviderService {
 
     private Map<String, ServiceProviderDataProvider> providersMap;
 
@@ -29,8 +30,9 @@ public class CustomerDataProviderDelegator {
         log.info("end loading ServiceProviderDataProvider '{}'", providersMap.size());
     }
 
+    @Override
     public PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider) {
-        if (null != profile.getCustomer(provider.getId()))
+        if (profile.isCustomerLoaded(provider.getId()))
             return profile;
         ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCustomerProviderClassName());
         if (null == dataProvider) {

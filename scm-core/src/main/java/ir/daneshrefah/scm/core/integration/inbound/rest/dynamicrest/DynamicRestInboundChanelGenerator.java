@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import org.apache.camel.CamelContext;
@@ -44,7 +45,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 @Component
 @Scope("prototype")
-public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
+    public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
 
     private final RestUrlBuilder urlBuilder;
 
@@ -52,10 +53,11 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                                              AuthenticationClientTemplate authenticationTemplate,
                                              ServiceProducerTemplate producerTemplate,
                                              TransformerService transformerService,
-                                             DecisionManager decisionManager) {
+                                             DecisionManager decisionManager,
+                                             CustomerDataProviderService customerService) {
         super(objectMapper, camelContext, authenticationTemplate,
                 producerTemplate, transformerService,
-                new CamelHttpResponseBuilder(objectMapper), decisionManager);
+                new CamelHttpResponseBuilder(objectMapper), decisionManager, customerService);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }
 

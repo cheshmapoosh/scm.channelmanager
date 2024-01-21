@@ -132,7 +132,7 @@ public class DecisionHelper {
     private AuthenticationMethod realizeAuthenticationMethod(TerminalServiceAccess authObject,
                                                              Authentication authentication, boolean isLogin) {
         AuthenticationMethod authenticationMethod = null;
-        if (null != authentication && authentication instanceof UserAuthentication) {
+        if (null != authentication && !authentication.isAnonymous() && authentication instanceof UserAuthentication) {
             if (isLogin) {
                 authenticationMethod = ((UserAuthentication) authentication).getPrincipal().getLoginAuthenticationMethod();
             } else {

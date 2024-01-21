@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.*;
+import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
@@ -16,6 +17,8 @@ import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
@@ -62,19 +65,22 @@ public abstract class AbstractInboundChannelGenerator<T> {
     private final DecisionManager decisionManager;
     private final ServiceProducerTemplate producerTemplate;
     private final TransformerService transformerService;
+    private final CustomerDataProviderService customerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
     protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
                                               ServiceProducerTemplate producerTemplate,
                                               TransformerService transformerService,
                                               ResponseBuilder<T> responseBuilder,
-                                              DecisionManager decisionManager) {
+                                              DecisionManager decisionManager,
+                                              CustomerDataProviderService customerService) {
         this.objectMapper = objectMapper;
         this.authenticationTemplate = authenticationTemplate;
         this.producerTemplate = producerTemplate;
         this.transformerService = transformerService;
         this.responseBuilder = responseBuilder;
         this.decisionManager = null != decisionManager ? decisionManager : new PermitAllDecisionManager();
+        this.customerService = customerService;
     }
 
     public final boolean initConfig(Channel channel, JsonNode metadata) {
@@ -323,6 +329,9 @@ public abstract class AbstractInboundChannelGenerator<T> {
         }
 
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
+
+        checkCustomerInfoIsLoaded(message);
+
         List<TransformerExecutionWrapper> transformerRelations = extractRequestTransformerList(serviceAccess);
         JsonNode payload = message.getPayload();
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
@@ -335,6 +344,20 @@ public abstract class AbstractInboundChannelGenerator<T> {
         producerTemplate.callService(serviceAccess.getService(), message);
 
         return message;
+    }
+
+    private void checkCustomerInfoIsLoaded(Message message) {
+        TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
+        PersonProfile profile = message.getHeader().getPersonProfile();
+        ExternalService service = serviceAccess.getService() instanceof ExternalService ? (ExternalService) serviceAccess.getService() : null;
+        if (null == profile || null == service || !service.getServiceProvider().isCustomerProvided() /*|| !service.isCustomerBased()*/) {
+            return;
+        }
+        if (profile.isCustomerLoaded(service.getServiceProvider().getId())) {
+            return;
+        }
+        customerService.fillCustomerForPersonProfile(profile, service.getServiceProvider());
+
     }
 
     private List<TransformerExecutionWrapper> extractRequestTransformerList(TerminalServiceAccess serviceAccess) {

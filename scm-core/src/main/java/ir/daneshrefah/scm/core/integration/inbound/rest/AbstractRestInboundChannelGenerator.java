@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.HttpUtils;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -37,9 +38,10 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
                                                ServiceProducerTemplate producerTemplate,
                                                TransformerService transformerService,
                                                ResponseBuilder<HttpServletRequest> responseBuilder,
-                                               DecisionManager decisionManager) {
+                                               DecisionManager decisionManager,
+                                               CustomerDataProviderService customerService) {
         super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
-                responseBuilder, decisionManager);
+                responseBuilder, decisionManager, customerService);
     }
 
     @Override
