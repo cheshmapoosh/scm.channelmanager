@@ -89,6 +89,7 @@ CREATE TABLE REF.TBL_SCM_SERVICE (
                                      CHECK_ACCESS_SECOND_AUTHENTICATION SMALLINT DEFAULT 0 NOT NULL,
                                      CHECK_ACCESS_SERVICE SMALLINT DEFAULT 0 NOT NULL,
                                      CHECK_ACCESS_ASSET SMALLINT DEFAULT 0 NOT NULL,
+                                     IS_CUSTOMER_BASED SMALLINT DEFAULT 0 NOT NULL,
                                      PROPERTY_NAME_AMOUNT VARCHAR(100),
                                      PROPERTY_NAME_ASSET VARCHAR(100),
     --Versioning

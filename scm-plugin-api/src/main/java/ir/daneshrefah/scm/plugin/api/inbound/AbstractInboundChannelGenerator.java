@@ -356,7 +356,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
         PersonProfile profile = message.getHeader().getPersonProfile();
         ExternalService service = serviceAccess.getService() instanceof ExternalService ? (ExternalService) serviceAccess.getService() : null;
-        if (null == service || !service.getServiceProvider().isCustomerProvided() /*|| !service.isCustomerBased()*/) {
+        if (null == service || !service.getServiceProvider().isCustomerProvided() || !service.isCustomerBased()) {
             return true;
         }
         if (null == profile) {
