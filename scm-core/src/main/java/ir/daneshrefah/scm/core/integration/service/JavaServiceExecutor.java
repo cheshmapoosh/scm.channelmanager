@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -30,7 +32,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
         }
 
         try {
-            Object[] args = prepareMethodArgs(message, service, requestPayload, methodInfo.getParamTypes());
+            Object[] args = prepareMethodArgs(message, service, requestPayload, methodInfo);
             return methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
         } catch (BaseException e) {
             throw e;
@@ -48,14 +50,31 @@ public class JavaServiceExecutor extends ServiceExecutor {
     }
 
     private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,
-                                       Object payload, Class<?>[] paramTypes) {
-        if (null == paramTypes) {
+                                       Object payload, JavaServiceFinder.MethodInfo methodInfo) {
+        if (null == methodInfo || null == methodInfo.getParamTypes()) {
             return null;
         }
+
+        Iterator<Map.Entry<String, JsonNode>> fields = message.getPayload().fields();
+        Class<?>[] paramTypes = methodInfo.getParamTypes();
         Object[] result = new Object[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
+            Map.Entry<String, JsonNode> field = null;
+            if (fields.hasNext()) {
+                field = fields.next();
+            }
             Class parameterType = paramTypes[i];
-            if (parameterType.equals(Message.class)) {
+            if (parameterType.equals(String.class)) {
+//                JsonNode node = message.getPayload().get(methodInfo.getMethod().getParameters()[i].getName());
+                JsonNode node = null != field ? field.getValue() : null;
+                result[i] = null != node && !node.isNull() && node.isTextual() ? node.asText() : null;
+            } else if (parameterType.equals(Integer.class)) {
+                JsonNode node = null != field ? field.getValue() : null;
+                result[i] = null != node && !node.isNull() && node.isInt() ? node.asInt() : null;
+            } else if (parameterType.equals(Long.class)) {
+                JsonNode node = null != field ? field.getValue() : null;
+                result[i] = null != node && !node.isNull() && node.isLong() ? node.asLong() : null;
+            } else if (parameterType.equals(Message.class)) {
                 result[i] = message;
             } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {
                 result[i] = service;

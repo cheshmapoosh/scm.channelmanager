@@ -91,7 +91,13 @@ public class JavaServiceFinder {
         String[] paramTypesStr = methodParameters.split(",");
         Class<?>[] paramTypes = new Class<?>[paramTypesStr.length];
         for (int i = 0; i < paramTypesStr.length; i++) {
-            if ("Message".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            if ("String".equalsIgnoreCase(paramTypesStr[i].trim())) {
+                paramTypes[i] = String.class;
+            } else if ("Integer".equalsIgnoreCase(paramTypesStr[i].trim())) {
+                paramTypes[i] = Integer.class;
+            } else if ("Long".equalsIgnoreCase(paramTypesStr[i].trim())) {
+                paramTypes[i] = Long.class;
+            } else if ("Message".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Message.class;
             } else if ("Service".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Service.class;

@@ -40,8 +40,8 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceList();
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(Message message) {
-        String serviceCode = message.getPayloadValue("serviceCode");
+    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String serviceCode) {
+//        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
         }
