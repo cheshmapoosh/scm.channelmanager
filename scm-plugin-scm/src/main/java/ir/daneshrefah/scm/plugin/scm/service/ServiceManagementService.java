@@ -36,11 +36,11 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    public List<ir.daneshrefah.scm.common.model.service.Service> serviceList(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public List<ir.daneshrefah.scm.common.model.service.Service> serviceList() {
         return this.service.findServiceList();
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(Message message) {
         String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
@@ -48,7 +48,7 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service updateService(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public ir.daneshrefah.scm.common.model.service.Service updateService(Message message) {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
         }
@@ -66,7 +66,7 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.updateService(serviceId, newService);
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service createService(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public ir.daneshrefah.scm.common.model.service.Service createService(Message message) {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
         }

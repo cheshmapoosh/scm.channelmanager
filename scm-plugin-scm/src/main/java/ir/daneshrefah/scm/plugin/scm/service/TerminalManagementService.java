@@ -24,14 +24,18 @@ public class TerminalManagementService extends AbstractJavaService {
         this.terminalService = terminalService;
     }
 
-    public Object listTerminal(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public Object listTerminal() {
         return terminalService.findAllTerminals();
     }
 
-    public Object addService(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    public Object addService(Message message) {
         String terminalId = message.getPayloadValue("terminalId");
         String serviceId = message.getPayloadValue("serviceId");
         return terminalService.assignServiceToTerminal(terminalId, serviceId);
+    }
+
+    public Object createTerminal(Message message) {
+        return null;
     }
 
 }

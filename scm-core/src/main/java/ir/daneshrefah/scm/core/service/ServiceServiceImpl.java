@@ -21,11 +21,11 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
@@ -57,10 +57,14 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String code) {
-        Optional<ServiceEntity> entity = serviceRepository.findByCode(code);
-        if (entity.isEmpty())
+        if (StringUtils.isEmpty(code)) {
             return null;
-        return ServiceMapper.INSTANCE.toService(entity.get());
+        }
+        return findServiceList().stream().filter(service -> code.equals(service.getCode())).findFirst().orElse(null);
+//        Optional<ServiceEntity> entity = serviceRepository.findByCode(code);
+//        if (entity.isEmpty())
+//            return null;
+//        return ServiceMapper.INSTANCE.toService(entity.get());
     }
 
     @Override
@@ -202,15 +206,19 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
-        Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
-        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
-        return services;
+        return findServiceList().stream().filter(service -> !ServiceImplementationType.PARENT.equals(service.getImplementationType()))
+                .collect(Collectors.toList());
+//        Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
+//        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+//        return services;
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList() {
-        Iterable<ServiceEntity> serviceEntities = serviceRepository.findServiceListByImplementationType(ServiceImplementationType.PARENT);
-        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
-        return services;
+        return findServiceList().stream().filter(service -> ServiceImplementationType.PARENT.equals(service.getImplementationType()))
+                .collect(Collectors.toList());
+//        Iterable<ServiceEntity> serviceEntities = serviceRepository.findServiceListByImplementationType(ServiceImplementationType.PARENT);
+//        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
+//        return services;
     }
 
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId, ServiceRelationType relationType) {

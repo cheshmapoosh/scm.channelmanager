@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
  */
 public class JavaServiceMethodNotFoundException extends AbstractJavaServiceException {
 
-    public JavaServiceMethodNotFoundException(Throwable cause, JavaService service) {
+    public JavaServiceMethodNotFoundException(JavaService service, Throwable cause) {
         super("method not found for java service.", cause, service);
     }
 

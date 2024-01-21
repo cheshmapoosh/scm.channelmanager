@@ -2,18 +2,13 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException;
-import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotFoundException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
-import ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
-import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -25,54 +20,58 @@ import java.lang.reflect.Method;
 @Service
 public class JavaServiceExecutor extends ServiceExecutor {
 
+    private Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
+
     @Override
     protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message, Object requestPayload) {
-        JavaService javaService = (JavaService) service;
-        String classNameOrg = javaService.getJavaImplementationClassName();
-        String className = classNameOrg;
-        String methodName = null;
-        if (StringUtils.isEmpty(classNameOrg)) {
-            throw new JavaServiceClassNotDefinedException(javaService);
-        }
-        if (classNameOrg.contains(".")) {
-            className = classNameOrg.split("\\.")[0];
-            methodName = classNameOrg.split("\\.")[1];
-        }
-        AbstractJavaService javaServiceInstance = null;
-        try {
-            javaServiceInstance = ClassLoader.findBeanOrCreateInstanceOfClass(className, AbstractJavaService.class);
-        } catch (Exception e) {
-            throw new JavaServiceClassNotFoundException(e, javaService);
+        JavaServiceFinder.MethodInfo methodInfo = findServiceMethodInfo((JavaService) service);
+        if (null != methodInfo.getError()) {
+            throw methodInfo.getError();
         }
 
         try {
-            if (StringUtils.isEmpty(methodName)) {
-                return javaServiceInstance.execute(message, service, requestPayload);
-            }
-        } catch (Exception e) {
-            throw new JavaServiceExecutionException(e, javaService);
-        }
-
-
-        Method method = null;
-        try {
-            method = javaServiceInstance.getClass().getMethod(methodName, Message.class,
-                    ir.daneshrefah.scm.common.model.service.Service.class, Object.class);
-            return method.invoke(javaServiceInstance, message, service, requestPayload);
-        } catch (NoSuchMethodException e) {
-            throw new JavaServiceMethodNotFoundException(e, javaService);
+            Object[] args = prepareMethodArgs(message, service, requestPayload, methodInfo.getParamTypes());
+            return methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
         } catch (BaseException e) {
             throw e;
         } catch (InvocationTargetException e) {
             if (null != e.getTargetException() && e.getTargetException() instanceof BaseException) {
                 throw (BaseException) e.getTargetException();
             }
-            throw new JavaServiceExecutionException(e.getTargetException(), javaService);
+            throw new JavaServiceExecutionException(e.getTargetException(), (JavaService) service);
         } catch (Exception e) {
             if (e.getCause() instanceof BaseException) {
                 throw (BaseException) e.getCause();
             }
-            throw new JavaServiceExecutionException(e, javaService);
+            throw new JavaServiceExecutionException(e, (JavaService) service);
         }
     }
+
+    private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,
+                                       Object payload, Class<?>[] paramTypes) {
+        if (null == paramTypes) {
+            return null;
+        }
+        Object[] result = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class parameterType = paramTypes[i];
+            if (parameterType.equals(Message.class)) {
+                result[i] = message;
+            } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {
+                result[i] = service;
+            } else if (parameterType.equals(Object.class)) {
+                result[i] = payload;
+            }
+        }
+        return result;
+    }
+
+    private JavaServiceFinder.MethodInfo findServiceMethodInfo(JavaService service) {
+        if (!serviceCache.containsKey(service.getId())) {
+            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(service);
+            serviceCache.put(service.getId(), methodInfo);
+        }
+        return serviceCache.get(service.getId());
+    }
+
 }

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class BaseAssignmentVoter extends DecisionVoter {
 
+    private static final String DEFAULT_ASSET_PROPERTY = "account";
     private final DecisionHelper decisionHelper;
 
     @Override
@@ -53,6 +54,9 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
             return null;
         }
         String assetProperty = message.getHeader().getServiceAccess().getService().getAssetProperty();
+        if (StringUtils.isEmpty(assetProperty)) {
+            assetProperty = DEFAULT_ASSET_PROPERTY;
+        }
         if (StringUtils.isEmpty(assetProperty)) {
             return null;
         }

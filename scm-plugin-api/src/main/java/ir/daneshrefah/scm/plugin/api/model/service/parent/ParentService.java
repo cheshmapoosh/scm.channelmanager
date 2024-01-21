@@ -10,8 +10,5 @@ import ir.daneshrefah.scm.common.model.service.Service;
  * @since 2023-08-06
  */
 public class ParentService extends Service {
-    @Override
-    public Object getServiceInfo() {
-        return null;
-    }
+
 }

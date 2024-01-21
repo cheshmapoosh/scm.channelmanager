@@ -15,8 +15,6 @@ import lombok.Setter;
 @Setter
 public abstract class Service extends BaseModel<String> {
 
-    private static final String DEFAULT_ASSET_PROPERTY = "account";
-
     private String code;
     private String title;
     private String alias;
@@ -35,11 +33,5 @@ public abstract class Service extends BaseModel<String> {
     private Boolean checkAccessAsset;
     private String amountProperty;
     private String assetProperty;
-
-    public String getAssetProperty() {
-        return null != assetProperty ? assetProperty : DEFAULT_ASSET_PROPERTY;
-    }
-
-    public abstract Object getServiceInfo();
 
 }

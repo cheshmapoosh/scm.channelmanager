@@ -21,10 +21,4 @@ public class ExternalService extends Service {
         this.serviceProvider = serviceProvider;
     }
 
-    @Override
-    public Object getServiceInfo() {
-        if (null == serviceProvider)
-            return "serviceProviderCode:null";
-        return "serviceProviderCode:" + serviceProvider.getCode();
-    }
 }

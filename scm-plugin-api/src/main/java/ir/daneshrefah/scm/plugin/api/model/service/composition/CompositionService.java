@@ -32,8 +32,4 @@ public class CompositionService extends Service {
         this.relations = relations;
     }
 
-    @Override
-    public Object getServiceInfo() {
-        return null;
-    }
 }
