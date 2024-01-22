@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.mapper.TerminalMapper;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
@@ -64,12 +65,14 @@ public class TerminalServiceImpl implements TerminalService {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_TERMINAL_ID_IS_INVALID,
                     "terminal id is invalid.");
         }
-        if (!serviceService.checkServiceExistById(serviceId)) {
+        ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceById(serviceId);
+        if (null == service) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_INVALID,
                     "service id is invalid.");
         }
-        TerminalEntity terminalEntity = entityManager.getReference(TerminalEntity.class, terminalId);
-        ServiceEntity serviceEntity = entityManager.getReference(ServiceEntity.class, serviceId);
+        TerminalEntity terminalEntity = new TerminalEntity();
+        terminalEntity.setId(terminalId);
+        ServiceEntity serviceEntity = ServiceEntityFactory.createEmptyServiceEntity(serviceId, service.getImplementationType());
         TerminalServiceAccessEntity entity = new TerminalServiceAccessEntity();
         entity.setTerminal(terminalEntity);
         entity.setService(serviceEntity);

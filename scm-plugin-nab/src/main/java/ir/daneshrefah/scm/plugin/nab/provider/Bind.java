@@ -27,12 +27,18 @@ public class Bind {
 
     public ObjectNode request() {
         ObjectNode meta = jsonStringToJsonNode(this.metaDataJson);
+        if (!meta.has(RQ)) {
+            return this.body;
+        }
         ObjectNode root = (ObjectNode) meta.get(RQ);
         return traverse(root, "");
     }
 
     public ObjectNode response() {
         ObjectNode meta = jsonStringToJsonNode(this.metaDataJson);
+        if (!meta.has(RS)) {
+            return this.body;
+        }
         ObjectNode root = (ObjectNode) meta.get(RS);
         return traverse(root, "");
     }

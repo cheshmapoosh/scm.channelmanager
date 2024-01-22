@@ -68,6 +68,14 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    public ir.daneshrefah.scm.common.model.service.Service findServiceById(String id) {
+        if (StringUtils.isEmpty(id)) {
+            return null;
+        }
+        return findServiceList().stream().filter(service -> id.equals(service.getId())).findFirst().orElse(null);
+    }
+
+    @Override
     public ir.daneshrefah.scm.common.model.service.Service createService(ir.daneshrefah.scm.common.model.service.Service service) {
         if (StringUtils.isEmpty(service.getCode())) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_CODE_IS_EMPTY, "service code is empty.");

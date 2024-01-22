@@ -17,6 +17,8 @@ public interface ServiceService {
 
     public Service findServiceByCode(String code);
 
+    public Service findServiceById(String id);
+
     public Service createService(Service service);
 
     public Service updateService(String serviceId, Service service);
