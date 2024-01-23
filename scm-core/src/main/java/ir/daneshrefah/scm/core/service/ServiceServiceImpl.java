@@ -194,7 +194,9 @@ public class ServiceServiceImpl implements ServiceService {
         }
 //        private ExternalServiceProvider serviceProvider;
 
-        return ServiceMapper.INSTANCE.toService(serviceRepository.save(serviceEntity));
+        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(serviceEntity));
+        emptyServiceListCache();
+        return result;
     }
 
     @Override
@@ -233,6 +235,10 @@ public class ServiceServiceImpl implements ServiceService {
         Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceIdAndRelationType(sourceServiceId, relationType);
         List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
         return relations;
+    }
+
+    private void emptyServiceListCache() {
+        this.services = null;
     }
 
 }

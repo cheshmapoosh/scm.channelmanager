@@ -48,7 +48,7 @@ public class ServiceManagementService extends AbstractJavaService {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
         }
-        String serviceId = message.getPayloadValue("serviceId");
+        String serviceId = message.getPayloadValue("id");
         if (StringUtils.isEmpty(serviceId)) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY, "service id is not specified.");
         }
