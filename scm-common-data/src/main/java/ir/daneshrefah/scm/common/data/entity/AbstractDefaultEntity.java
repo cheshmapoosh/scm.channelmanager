@@ -20,9 +20,9 @@ public abstract class AbstractDefaultEntity<T> extends AbstractEntity<T> {
     private String creator;
     @Column(name = "LAST_EDITOR")
     private String lastEditor;
-    @Column(name = "CREATE_DATE")
+    @Column(name = "CREATE_DATE", insertable = false, updatable = false)
     private LocalTime createDate;
-    @Column(name = "LAST_EDIT_DATE")
+    @Column(name = "LAST_EDIT_DATE", insertable = false)
     private LocalTime lastEditDate;
 
     public String getCreator() {

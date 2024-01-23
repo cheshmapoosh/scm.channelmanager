@@ -7,11 +7,11 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
-import ir.daneshrefah.scm.core.integration.provider.CustomerDataProviderDelegator;
+import ir.daneshrefah.scm.core.integration.provider.CustomerServiceImpl;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;
@@ -37,7 +37,7 @@ public class DecisionHelper {
 
     private final ConditionService conditionService;
     private final ServiceAccessService serviceAccessService;
-    private final CustomerDataProviderDelegator delegatorDataProvider;
+    private final CustomerServiceImpl customerService;
 
     private static final Map<Class<? extends BaseCondition>, Map<String, List<BaseCondition>>> CONDITIONS_CACHE =
             new ConcurrentHashMap<>();
@@ -60,7 +60,7 @@ public class DecisionHelper {
     }
 
     public PersonProfile fillCustomerForProfile(PersonProfile profile, ExternalServiceProvider serviceProvider) {
-        return delegatorDataProvider.fillCustomerForPersonProfile(profile, serviceProvider);
+        return customerService.fillCustomerForPersonProfile(profile, serviceProvider);
     }
 
     public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,

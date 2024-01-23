@@ -15,7 +15,7 @@ import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +41,7 @@ public class ServiceServiceImpl implements ServiceService {
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ExternalServiceProvider> serviceProviders;
 
+    @Override
     public List<ExternalServiceProvider> findServiceProviderList() {
         if (null == serviceProviders) {
             serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
@@ -48,6 +49,15 @@ public class ServiceServiceImpl implements ServiceService {
         return serviceProviders;
     }
 
+    @Override
+    public ExternalServiceProvider findServiceProviderById(String id) {
+        if (StringUtils.isEmpty(id)) {
+            return null;
+        }
+        return findServiceProviderList().stream().filter(serviceProvider -> id.equals(serviceProvider.getId())).findFirst().orElse(null);
+    }
+
+    @Override
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         if (null == services) {
             services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());

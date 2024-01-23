@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;

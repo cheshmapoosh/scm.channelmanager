@@ -18,7 +18,7 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
@@ -66,7 +66,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
     private final DecisionManager decisionManager;
     private final ServiceProducerTemplate producerTemplate;
     private final TransformerService transformerService;
-    private final CustomerDataProviderService customerService;
+    private final CustomerService customerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
     protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
@@ -74,7 +74,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
                                               TransformerService transformerService,
                                               ResponseBuilder<T> responseBuilder,
                                               DecisionManager decisionManager,
-                                              CustomerDataProviderService customerService) {
+                                              CustomerService customerService) {
         this.objectMapper = objectMapper;
         this.authenticationTemplate = authenticationTemplate;
         this.producerTemplate = producerTemplate;

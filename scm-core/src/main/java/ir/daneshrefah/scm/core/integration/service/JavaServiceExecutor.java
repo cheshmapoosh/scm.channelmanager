@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -77,7 +78,11 @@ public class JavaServiceExecutor extends ServiceExecutor {
                 result[i] = null != node && !node.isNull() && node.isInt() ? node.asInt() : null;
             } else if (parameterType.equals(Long.class)) {
                 JsonNode node = null != field ? field.getValue() : null;
-                result[i] = null != node && !node.isNull() && node.isLong() ? node.asLong() : null;
+                Long value = null != node && !node.isNull() && node.isLong() ? node.asLong() : null;
+                if (null == value && !node.isNull() && node.isTextual() && StringUtils.isNumeric(node.asText())) {
+                    value = Long.valueOf(node.asText());
+                }
+                result[i] = value;
             } else if (parameterType.equals(Message.class)) {
                 result[i] = message;
             } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {

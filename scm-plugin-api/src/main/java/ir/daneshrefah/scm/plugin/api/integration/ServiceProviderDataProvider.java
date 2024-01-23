@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class ServiceProviderDataProvider {
 
-    public abstract Customer findCustomerByPersonProfile(PersonProfile profile);
+    public abstract Customer findCustomerByPersonId(Long personId);
+
+    public abstract Customer findCustomerByPersonProfileId(String personProfileId);
 
 }

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.service;
 
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 import java.util.List;
@@ -12,6 +13,10 @@ import java.util.List;
  * @since 2024-01-17
  */
 public interface ServiceService {
+
+    List<ExternalServiceProvider> findServiceProviderList();
+
+    ExternalServiceProvider findServiceProviderById(String id);
 
     public List<Service> findServiceList();
 

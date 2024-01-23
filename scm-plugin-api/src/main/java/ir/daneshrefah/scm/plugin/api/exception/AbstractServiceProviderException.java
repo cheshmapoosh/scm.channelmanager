@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import lombok.Getter;
 
 /**

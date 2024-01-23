@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 

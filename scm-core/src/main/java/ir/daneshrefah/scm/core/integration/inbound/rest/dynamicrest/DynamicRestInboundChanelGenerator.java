@@ -1,13 +1,7 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.headers.Header;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -18,7 +12,7 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import org.apache.camel.CamelContext;
@@ -32,7 +26,6 @@ import org.springframework.stereotype.Component;
 import java.util.Iterator;
 import java.util.List;
 
-import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CORRELATION_ID;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_HTML;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
 
@@ -45,7 +38,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 @Component
 @Scope("prototype")
-    public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
+public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
 
     private final RestUrlBuilder urlBuilder;
 
@@ -54,7 +47,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
                                              ServiceProducerTemplate producerTemplate,
                                              TransformerService transformerService,
                                              DecisionManager decisionManager,
-                                             CustomerDataProviderService customerService) {
+                                             CustomerService customerService) {
         super(objectMapper, camelContext, authenticationTemplate,
                 producerTemplate, transformerService,
                 new CamelHttpResponseBuilder(objectMapper), decisionManager, customerService);
@@ -118,6 +111,8 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
         public void registerService(TerminalServiceAccess serviceAccess) {
             RestUrl restUrl = urlBuilder.build(serviceAccess);
             String inboundUrl = "rest:" + restUrl.getHttpMethod() + ":" + restUrl.getUrl();
+            LOGGER.info("register inbound {} for terminal {} with url '{}.'", serviceAccess.getService().getCode(),
+                    serviceAccess.getTerminal().getCode(), restUrl.getHttpMethod() + ":" + restUrl.getUrl());
             from(inboundUrl)
                     .routeId("ROUTE_DRST_" + serviceAccess.getId())
                     .threads(10, 20, "inbound-rest-" +

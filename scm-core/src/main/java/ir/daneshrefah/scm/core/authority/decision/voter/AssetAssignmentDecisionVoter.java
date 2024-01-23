@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ASSET_IS_EMPTY;
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ASSET_NOT_ASSIGNED;

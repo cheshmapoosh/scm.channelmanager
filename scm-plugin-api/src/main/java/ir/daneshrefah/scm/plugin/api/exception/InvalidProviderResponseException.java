@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 
 /**
  * Description of the class or purpose of the file.

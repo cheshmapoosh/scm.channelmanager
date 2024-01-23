@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.model.service.external;
+package ir.daneshrefah.scm.common.model.service;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;

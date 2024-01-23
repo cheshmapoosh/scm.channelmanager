@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.error;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.message.Status;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.Customer;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;

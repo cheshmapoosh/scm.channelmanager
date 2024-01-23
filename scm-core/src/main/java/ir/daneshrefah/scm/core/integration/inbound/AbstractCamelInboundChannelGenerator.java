@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.service.CustomerDataProviderService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
@@ -35,7 +35,7 @@ public abstract class AbstractCamelInboundChannelGenerator extends AbstractInbou
                                                    TransformerService transformerService,
                                                    ResponseBuilder<Exchange> responseBuilder,
                                                    DecisionManager decisionManager,
-                                                   CustomerDataProviderService customerService) {
+                                                   CustomerService customerService) {
         super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
                 responseBuilder, decisionManager, customerService);
         this.context = context;

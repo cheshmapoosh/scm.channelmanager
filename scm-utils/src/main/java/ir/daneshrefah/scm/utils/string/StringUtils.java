@@ -56,6 +56,11 @@ public class StringUtils {
             return org.apache.commons.lang3.StringUtils.startsWith(str, prefix);
         }
     }
+
+    public static boolean isNumeric(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNumeric(cs);
+    }
+
     public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {
         return org.apache.commons.lang3.StringUtils.appendIfMissing(str, suffix, suffixes);
     }  

@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.plugin.nab.provider;
 
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
-import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.nab.repository.NabCustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,12 @@ public class NabCustomerDataProvider extends ServiceProviderDataProvider {
     private final NabCustomerRepository customerRepository;
 
     @Override
-    public Customer findCustomerByPersonProfile(PersonProfile profile) {
-        return customerRepository.findAccountListByPersonId(profile.getPersonId());
+    public Customer findCustomerByPersonId(Long personId) {
+        return customerRepository.findAccountListByPersonId(personId);
+    }
+
+    @Override
+    public Customer findCustomerByPersonProfileId(String personProfileId) {
+        return null;
     }
 }
