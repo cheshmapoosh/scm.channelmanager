@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.job.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.job.model.JobDefinitionStatus;
+import ir.daneshrefah.scm.job.model.JobImplementationType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -28,7 +28,8 @@ public class JobDefinitionEntity extends AbstractDefaultEntity<Long> {
     private String name;
     private String title;
     private JobDefinitionStatus status;
-    private Service service;
+    private JobImplementationType implementationType;
+    private String implementationSource;
     private JsonNode payload;
     private String cronExpression;
 

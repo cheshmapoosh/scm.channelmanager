@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -17,6 +19,8 @@ public class JobExecution extends BaseModel<Long> {
 
     private JobDefinition jobDefinition;
     private JobExecutionStatus status;
+    private Instant startTime;
+    private Instant endTime;
     private Integer durationMillis;
     private String exceptionClass;
     private String exceptionMessage;

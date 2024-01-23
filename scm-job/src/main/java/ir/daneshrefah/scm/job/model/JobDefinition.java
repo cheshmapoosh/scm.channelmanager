@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.job.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.common.model.service.Service;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +20,8 @@ public class JobDefinition extends BaseModel<Long> {
     private String name;
     private String title;
     private JobDefinitionStatus status;
-    private Service service;
+    private JobImplementationType implementationType;
+    private String implementationSource;
     private JsonNode payload;
     private String cronExpression;
 

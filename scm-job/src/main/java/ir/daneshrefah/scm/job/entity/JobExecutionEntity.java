@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -25,6 +27,8 @@ public class JobExecutionEntity extends AbstractDefaultEntity<Long> {
     @ManyToOne
     private JobDefinitionEntity jobDefinition;
     private JobExecutionStatus status;
+    private Instant startTime;
+    private Instant endTime;
     private Integer durationMillis;
     private String exceptionClass;
     private String exceptionMessage;

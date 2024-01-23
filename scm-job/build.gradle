@@ -9,8 +9,9 @@ configurations {
 }
 
 dependencies {
+    compileOnly 'org.springframework:spring-context'
     compileOnly 'jakarta.persistence:jakarta.persistence-api'
-    implementation "org.quartz-scheduler:quartz"
     compileOnly project(':scm-common')
     compileOnly project(':scm-common-data')
+    implementation "org.quartz-scheduler:quartz"
 }
