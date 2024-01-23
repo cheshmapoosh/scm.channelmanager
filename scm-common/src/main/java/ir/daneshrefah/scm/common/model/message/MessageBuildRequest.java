@@ -28,5 +28,6 @@ public class MessageBuildRequest {
     private String serverHost;
     private String clientAddress;
     private JsonNode payload;
+    private boolean isForCheck;
 
 }

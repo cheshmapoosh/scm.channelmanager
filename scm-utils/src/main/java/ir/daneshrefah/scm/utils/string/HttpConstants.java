@@ -15,6 +15,11 @@ public class HttpConstants {
 //    public static final String HTTP_HEADER_AUTHORIZATION_DELEGATED = "AuthorizationD";
 
 
+    public static final String HTTP_METHOD_GET = "GET";
+    public static final String HTTP_METHOD_POST = "POST";
+    public static final String HTTP_METHOD_PUT = "PUT";
+    public static final String HTTP_METHOD_DELETE = "DELETE";
+    public static final String HTTP_METHOD_OPTIONS = "OPTIONS";
     public static final String HTTP_HEADER_CONTENT_TYPE_JSON = "application/json";
 //    public static final String HTTP_HEADER_CONTENT_TYPE_XML = "application/xml";
 //    public static final String HTTP_HEADER_CONTENT_TYPE_TEXT = "text/plain";

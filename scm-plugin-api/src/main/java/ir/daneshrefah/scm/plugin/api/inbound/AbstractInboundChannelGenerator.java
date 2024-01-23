@@ -199,7 +199,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
         Message message = new Message(request);
         message.setHeader(header);
-        message.setStatus(Status.SC_PROCESSING);
+        message.setStatus(request.isForCheck() ? Status.SC_SUCCESS : Status.SC_PROCESSING);
         message.setPayload(request.getPayload());
 
         return message;

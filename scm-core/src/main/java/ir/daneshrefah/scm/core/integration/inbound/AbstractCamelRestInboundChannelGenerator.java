@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_PORT;
+import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
 
 /**
  * Description of the class or purpose of the file.
@@ -86,6 +87,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .serverHost(CamelUtils.getServerHostFromExchange(input))
                 .clientAddress(CamelUtils.getRemoteAddressFromExchange(input))
                 .payload(extractMessagePayload(input, serviceAccess))
+                .isForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(CamelUtils.getHttpMethodFromExchange(input)))
                 .build();
     }
 
