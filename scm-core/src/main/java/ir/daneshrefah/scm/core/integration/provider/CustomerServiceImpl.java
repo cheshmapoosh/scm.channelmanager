@@ -67,4 +67,9 @@ public class CustomerServiceImpl implements CustomerService {
         return dataProvider.findCustomerByPersonId(personId);
     }
 
+    @Override
+    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Long personId) {
+        return null;
+    }
+
 }

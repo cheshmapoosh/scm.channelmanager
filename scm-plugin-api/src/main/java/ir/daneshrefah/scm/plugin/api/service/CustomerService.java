@@ -19,4 +19,6 @@ public interface CustomerService {
 
     Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
 
+    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Long personId);
+
 }

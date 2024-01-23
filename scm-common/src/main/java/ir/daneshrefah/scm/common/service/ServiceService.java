@@ -18,6 +18,8 @@ public interface ServiceService {
 
     ExternalServiceProvider findServiceProviderById(String id);
 
+    ExternalServiceProvider findServiceProviderByCode(String id);
+
     public List<Service> findServiceList();
 
     public Service findServiceByCode(String code);

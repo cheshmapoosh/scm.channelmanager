@@ -71,4 +71,23 @@ public class PersonManagementService extends AbstractJavaService {
         return customerService.findCustomerByPersonProfileId(provider, personProfileId);
     }
 
+    public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Long personId) {
+        if (StringUtils.isEmpty(providerId)) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY, "provider id is empty.");
+        }
+        if (null == personId) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_PERSON_ID_IS_EMPTY, "person id is empty.");
+        }
+        ExternalServiceProvider provider = serviceService.findServiceProviderById(providerId);
+        if (null == provider) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_INVALID, "provider id not found.");
+        }
+        if (!provider.isCustomerProvided()) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_NOT_SUPPORT_CUSTOMER,
+                    "provider don't support customer.");
+        }
+
+        return customerService.synchronizeProviderCustomerInfoByPersonId(provider, personId);
+    }
+
 }

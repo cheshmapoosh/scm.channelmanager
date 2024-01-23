@@ -2,8 +2,9 @@ package ir.daneshrefah.scm.common.data.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.LocalTime;
 
 /**
@@ -13,6 +14,8 @@ import java.time.LocalTime;
  * @version 1.0
  * @since 2024-01-10
  */
+@Getter
+@Setter
 @MappedSuperclass
 public abstract class AbstractDefaultEntity<T> extends AbstractEntity<T> {
 
@@ -24,37 +27,5 @@ public abstract class AbstractDefaultEntity<T> extends AbstractEntity<T> {
     private LocalTime createDate;
     @Column(name = "LAST_EDIT_DATE", insertable = false)
     private LocalTime lastEditDate;
-
-    public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public String getLastEditor() {
-        return lastEditor;
-    }
-
-    public void setLastEditor(String lastEditor) {
-        this.lastEditor = lastEditor;
-    }
-
-    public LocalTime getCreateDate() {
-        return createDate;
-    }
-
-    public void setCreateDate(LocalTime createDate) {
-        this.createDate = createDate;
-    }
-
-    public LocalTime getLastEditDate() {
-        return lastEditDate;
-    }
-
-    public void setLastEditDate(LocalTime lastEditDate) {
-        this.lastEditDate = lastEditDate;
-    }
 
 }
