@@ -183,16 +183,16 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .clientAddress(request.getClientAddress())
                 .build();
 
-        if (StringUtils.isEmpty(header.getAccessParameter())) {
+        if (!request.isForCheck() && StringUtils.isEmpty(header.getAccessParameter())) {
             return createValidationErrorMessage(request, header, SCM_PARAMETER_ACCESS_PARAMETER,
                     ErrorCodes.ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY, SCM_PARAMETER_ACCESS_PARAMETER + " is empty.");
         }
-        if (StringUtils.isEmpty(request.getTerminalCode())) {
+        if (!request.isForCheck() && StringUtils.isEmpty(request.getTerminalCode())) {
             return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
                     ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_EMPTY, SCM_PARAMETER_TERMINAL + " is empty.");
         }
 
-        if (!StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
+        if (!request.isForCheck() && !StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
             return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
                     ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_INVALID, SCM_PARAMETER_TERMINAL + " is invalid.");
         }
