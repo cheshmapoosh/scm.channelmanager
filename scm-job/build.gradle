@@ -1,0 +1,16 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'
+    implementation "org.quartz-scheduler:quartz:2.3.2"
+    compileOnly project(':scm-common')
+    compileOnly project(':scm-common-data')
+}
