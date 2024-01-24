@@ -62,7 +62,7 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
             case INQUIRY:
                 return "get";
             case REPORT:
-                return "get";
+                return "post";
             case FINANCE:
                 return "post";
             case ENTITY_CREATE:

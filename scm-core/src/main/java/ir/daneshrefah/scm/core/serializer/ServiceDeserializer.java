@@ -46,8 +46,12 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
             implementationType = ServiceImplementationType.valueOf(node.get("implementationType").asText());
         if (null == implementationType && node.has("id") && !node.get("id").isNull()) {
             Service s = service.findServiceById(node.get("id").asText());
-            if (null != s)
+            if (null != s) {
                 implementationType = s.getImplementationType();
+            } else {
+                throw new ValidationException(null, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND,
+                        "service by 'id' not found.");
+            }
         }
         if (null == implementationType)
             throw new ValidationException(null, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_EMPTY,

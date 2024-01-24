@@ -5,7 +5,7 @@ import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,13 +19,13 @@ import java.time.LocalTime;
 @MappedSuperclass
 public abstract class AbstractDefaultEntity<T> extends AbstractEntity<T> {
 
-    @Column(name = "CREATOR")
+    @Column(name = "CREATOR", updatable = false)
     private String creator;
     @Column(name = "LAST_EDITOR")
     private String lastEditor;
     @Column(name = "CREATE_DATE", insertable = false, updatable = false)
-    private LocalTime createDate;
+    private LocalDateTime createDate;
     @Column(name = "LAST_EDIT_DATE", insertable = false)
-    private LocalTime lastEditDate;
+    private LocalDateTime lastEditDate;
 
 }

@@ -27,6 +27,7 @@ public abstract class ServiceEntity extends AbstractDefaultEntity<String> {
     private String title;
     private String alias;
     private Integer version;
+    @Column(insertable = false, updatable = false)
     private Boolean isSystemic;
     private String metadata;
     @Column(name = "SERVICE_TYPE_CODE")

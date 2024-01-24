@@ -38,6 +38,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_NOT_SUPPORT_CUSTOMER = 1070;
     public static final int ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY = 1060;
     public static final int ERROR_CODE_VALIDATION_SERVICE_ID_IS_INVALID = 1061;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND = 1072;
     public static final int ERROR_CODE_VALIDATION_OBJECT_NOT_FOUND = 1062;
     public static final int ERROR_CODE_VALIDATION_NO_CHANGE = 1063;
     public static final int ERROR_CODE_VALIDATION_TERMINAL_ID_IS_EMPTY = 1064;

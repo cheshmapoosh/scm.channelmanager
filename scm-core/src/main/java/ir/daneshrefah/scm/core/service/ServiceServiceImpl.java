@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
@@ -17,6 +18,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationTy
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
+import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -91,6 +93,17 @@ public class ServiceServiceImpl implements ServiceService {
             return null;
         }
         return findServiceList().stream().filter(service -> id.equals(service.getId())).findFirst().orElse(null);
+    }
+
+    public ParentService findParentServiceById(String id) {
+        if (StringUtils.isEmpty(id)) {
+            return null;
+        }
+        ir.daneshrefah.scm.common.model.service.Service result = findServiceList().stream().filter(service -> id.equals(service.getId())).findFirst().orElse(null);
+        if (null != result && result instanceof ParentService) {
+            return (ParentService) result;
+        }
+        return null;
     }
 
     @Override
@@ -196,6 +209,23 @@ public class ServiceServiceImpl implements ServiceService {
 //        private ServiceImplementationType implementationType;
         if (StringUtils.isNotEmpty(service.getAmountProperty()) && !service.getAmountProperty().equals(serviceEntity.getAmountProperty())) {
             serviceEntity.setAmountProperty(service.getAmountProperty());
+            isModified = true;
+        }
+        ParentService parentService = null;
+        if (null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
+            parentService = findParentServiceById(service.getParent().getId());
+        }
+        if (null == parentService && StringUtils.isNotEmpty(service.getParent().getId())) {
+            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND,
+                    "no parent service found with id.");
+        }
+        if (null != parentService &&
+                null != serviceEntity.getParent() && !StringUtils.equals(parentService.getId(), serviceEntity.getParent().getId())) {
+            serviceEntity.setParent(ServiceEntityFactory.createEmptyServiceEntity(service.getParent().getId(), ServiceImplementationType.PARENT));
+            isModified = true;
+        }
+        if (null != parentService && null == serviceEntity.getParent()) {
+            serviceEntity.setParent(ServiceEntityFactory.createEmptyServiceEntity(service.getParent().getId(), ServiceImplementationType.PARENT));
             isModified = true;
         }
         if (StringUtils.isNotEmpty(service.getAssetProperty()) && !service.getAssetProperty().equals(serviceEntity.getAssetProperty())) {
