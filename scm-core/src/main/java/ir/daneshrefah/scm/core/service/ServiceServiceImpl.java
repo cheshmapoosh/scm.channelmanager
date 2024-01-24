@@ -215,7 +215,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
             parentService = findParentServiceById(service.getParent().getId());
         }
-        if (null == parentService && StringUtils.isNotEmpty(service.getParent().getId())) {
+        if (null == parentService && null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND,
                     "no parent service found with id.");
         }
@@ -234,7 +234,7 @@ public class ServiceServiceImpl implements ServiceService {
         }
         if (serviceEntity instanceof JavaServiceEntity && StringUtils.isNotEmpty(((JavaService) service).getJavaImplementationClassName()) &&
                 !((JavaService) service).getJavaImplementationClassName().equals(((JavaServiceEntity) serviceEntity).getJavaImplementationClassName())) {
-            ((JavaServiceEntity) serviceEntity).setAssetProperty(((JavaService) service).getJavaImplementationClassName());
+            ((JavaServiceEntity) serviceEntity).setJavaImplementationClassName(((JavaService) service).getJavaImplementationClassName());
             isModified = true;
         }
         if (!isModified) {
