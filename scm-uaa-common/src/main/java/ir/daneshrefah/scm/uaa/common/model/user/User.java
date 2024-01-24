@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.uaa.common.model.user;
 
+import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.model.BaseModel;
-import ir.daneshrefah.scm.uaa.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 

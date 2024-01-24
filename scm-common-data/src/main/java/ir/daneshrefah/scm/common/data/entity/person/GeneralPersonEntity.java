@@ -1,7 +1,8 @@
-package ir.daneshrefah.scm.uaa.repository.authentication;
+package ir.daneshrefah.scm.common.data.entity.person;
 
+import ir.daneshrefah.scm.common.data.converter.NationalityConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.uaa.common.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.Nationality;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

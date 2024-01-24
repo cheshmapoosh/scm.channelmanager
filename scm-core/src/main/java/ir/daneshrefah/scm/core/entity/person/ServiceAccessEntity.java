@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.person;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

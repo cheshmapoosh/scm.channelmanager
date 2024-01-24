@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
-import ir.daneshrefah.scm.uaa.common.model.person.CorporatePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.EmployeePerson;
-import ir.daneshrefah.scm.uaa.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.common.model.person.IndividualPerson;
-import ir.daneshrefah.scm.uaa.repository.authentication.CorporatePersonEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.EmployeePersonEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.GeneralPersonEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
+import ir.daneshrefah.scm.common.data.model.person.EmployeePerson;
+import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.data.model.person.IndividualPerson;
+import ir.daneshrefah.scm.common.data.entity.person.CorporatePersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.EmployeePersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;

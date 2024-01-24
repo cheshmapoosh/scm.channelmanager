@@ -1,7 +1,7 @@
-package ir.daneshrefah.scm.uaa.common.model.person;
+package ir.daneshrefah.scm.common.data.model.person;
 
-import ir.daneshrefah.scm.uaa.common.type.Gender;
-import ir.daneshrefah.scm.uaa.common.type.MaritalStatus;
+import ir.daneshrefah.scm.common.data.type.Gender;
+import ir.daneshrefah.scm.common.data.type.MaritalStatus;
 import lombok.Getter;
 import lombok.Setter;
 

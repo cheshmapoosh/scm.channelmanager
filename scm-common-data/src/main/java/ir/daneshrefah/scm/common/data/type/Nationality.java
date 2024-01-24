@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.common.type;
+package ir.daneshrefah.scm.common.data.type;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

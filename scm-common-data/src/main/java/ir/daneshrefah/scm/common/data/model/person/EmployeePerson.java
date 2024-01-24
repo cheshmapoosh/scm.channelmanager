@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.uaa.common.model.person;
+package ir.daneshrefah.scm.common.data.model.person;
 
-import ir.daneshrefah.scm.uaa.common.type.PersonType;
+import ir.daneshrefah.scm.common.data.type.PersonType;
 
 /**
  * Description of the class or purpose of the file.

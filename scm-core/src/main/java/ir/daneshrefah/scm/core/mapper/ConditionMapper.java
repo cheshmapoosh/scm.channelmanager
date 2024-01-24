@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
 import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

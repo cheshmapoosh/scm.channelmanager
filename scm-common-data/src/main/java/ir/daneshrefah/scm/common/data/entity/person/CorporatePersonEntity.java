@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.repository.authentication;
+package ir.daneshrefah.scm.common.data.entity.person;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;

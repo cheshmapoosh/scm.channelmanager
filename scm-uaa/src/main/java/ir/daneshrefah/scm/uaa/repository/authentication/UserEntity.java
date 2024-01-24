@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Set;
 
 /**

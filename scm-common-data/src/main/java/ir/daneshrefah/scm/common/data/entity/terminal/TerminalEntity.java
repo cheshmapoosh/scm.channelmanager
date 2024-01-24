@@ -1,6 +1,7 @@
-package ir.daneshrefah.scm.common.data.entity;
+package ir.daneshrefah.scm.common.data.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.converter.TerminalStatusConverter;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import jakarta.persistence.*;
 import lombok.Getter;

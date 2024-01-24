@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.core.entity.person.ServiceAccessEntity;

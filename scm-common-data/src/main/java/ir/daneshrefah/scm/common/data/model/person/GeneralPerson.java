@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.uaa.common.model.person;
+package ir.daneshrefah.scm.common.data.model.person;
 
-import ir.daneshrefah.scm.uaa.common.model.BaseModel;
-import ir.daneshrefah.scm.uaa.common.type.Nationality;
-import ir.daneshrefah.scm.uaa.common.type.PersonType;
+import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.PersonType;
 import lombok.Data;
 
 /**

@@ -1,8 +1,9 @@
-package ir.daneshrefah.scm.uaa.common.model.person;
-
-import ir.daneshrefah.scm.uaa.common.model.BaseModel;
+package ir.daneshrefah.scm.common.data.model.person;
 
 // MAJOR Table
+
+import ir.daneshrefah.scm.common.BaseModel;
+
 /**
  * Description of the class or purpose of the file.
  *

@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.uaa.client.converter.token;
 
+import ir.daneshrefah.scm.common.data.model.person.*;
+import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
-import ir.daneshrefah.scm.uaa.common.type.Nationality;
-import ir.daneshrefah.scm.uaa.common.type.PersonType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.authentication.AuthenticationServiceException;

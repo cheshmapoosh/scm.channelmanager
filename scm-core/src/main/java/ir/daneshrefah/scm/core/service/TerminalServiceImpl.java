@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
-import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;

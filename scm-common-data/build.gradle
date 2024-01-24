@@ -13,4 +13,5 @@ dependencies {
     compileOnly 'org.springframework.data:spring-data-commons'
     compileOnly 'jakarta.persistence:jakarta.persistence-api'
     compileOnly project(':scm-common')
+    compileOnly project(':scm-utils')
 }

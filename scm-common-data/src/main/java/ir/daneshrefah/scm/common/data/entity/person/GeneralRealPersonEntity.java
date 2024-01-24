@@ -1,7 +1,9 @@
-package ir.daneshrefah.scm.uaa.repository.authentication;
+package ir.daneshrefah.scm.common.data.entity.person;
 
-import ir.daneshrefah.scm.uaa.common.type.Gender;
-import ir.daneshrefah.scm.uaa.common.type.MaritalStatus;
+import ir.daneshrefah.scm.common.data.converter.GenderConverter;
+import ir.daneshrefah.scm.common.data.converter.MaritalStatusConverter;
+import ir.daneshrefah.scm.common.data.type.Gender;
+import ir.daneshrefah.scm.common.data.type.MaritalStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

@@ -1,6 +1,9 @@
-package ir.daneshrefah.scm.uaa.common.model.person;
+package ir.daneshrefah.scm.common.data.model.person;
 
-import ir.daneshrefah.scm.uaa.common.model.BaseModel;
+
+// EDUCATION Table
+
+import ir.daneshrefah.scm.common.BaseModel;
 
 /**
  * Description of the class or purpose of the file.
@@ -9,7 +12,7 @@ import ir.daneshrefah.scm.uaa.common.model.BaseModel;
  * @version 1.0
  * @since 2023-07-19
  */
-public class Loyalty extends BaseModel {
+public class Education extends BaseModel {
 
     private String code;
     private String title;
@@ -32,7 +35,7 @@ public class Loyalty extends BaseModel {
 
     @Override
     public String toString() {
-        return "Loyalty{" +
+        return "Education{" +
                 "code='" + code + '\'' +
                 ", title='" + title + '\'' +
                 ", id=" + getId() +
