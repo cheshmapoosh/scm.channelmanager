@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.mapper.TerminalMapper;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
-import ir.daneshrefah.scm.core.repository.TerminalRepository;
+import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.EntityManager;

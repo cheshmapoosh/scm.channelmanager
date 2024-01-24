@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.repository.authentication;
+package ir.daneshrefah.scm.common.data.repository;
 
 import ir.daneshrefah.scm.common.data.entity.TerminalEntity;
 import org.springframework.data.repository.CrudRepository;
