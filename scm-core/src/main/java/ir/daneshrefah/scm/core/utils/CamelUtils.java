@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.utils;
 
+import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
@@ -75,7 +77,12 @@ public class CamelUtils {
         String clientTimestamp = getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_CLIENT_TIMESTAMP);
         if (StringUtils.isEmpty(clientTimestamp))
             return null;
-        return Instant.parse(clientTimestamp);
+        try {
+            return Instant.parse(clientTimestamp);
+        } catch (Exception e) {
+            throw new ValidationException(Constants.SCM_PARAMETER_CLIENT_TIMESTAMP, ErrorCodes.ERROR_CODE_VALIDATION_INVALID_INSTANT_FORMAT,
+                    e.getMessage());
+        }
     }
 
     public static String getServerHostFromExchange(Exchange exchange) {

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.*;
@@ -16,6 +17,8 @@ import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.authority.decision.PermitAllDecisionManager;
+import ir.daneshrefah.scm.plugin.api.exception.MessageBuildException;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
@@ -67,6 +70,8 @@ public abstract class AbstractInboundChannelGenerator<T> {
     private final ServiceProducerTemplate producerTemplate;
     private final TransformerService transformerService;
     private final CustomerService customerService;
+    @Getter(AccessLevel.PROTECTED)
+    private final ErrorHandlerService errorHandlerService;
     private Map<String, List<TransformerExecutionWrapper>> requestTransformerMap = new HashMap<>();
 
     protected AbstractInboundChannelGenerator(ObjectMapper objectMapper, AuthenticationClientTemplate authenticationTemplate,
@@ -74,6 +79,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
                                               TransformerService transformerService,
                                               ResponseBuilder<T> responseBuilder,
                                               DecisionManager decisionManager,
+                                              ErrorHandlerService errorHandlerService,
                                               CustomerService customerService) {
         this.objectMapper = objectMapper;
         this.authenticationTemplate = authenticationTemplate;
@@ -81,6 +87,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
         this.transformerService = transformerService;
         this.responseBuilder = responseBuilder;
         this.decisionManager = null != decisionManager ? decisionManager : new PermitAllDecisionManager();
+        this.errorHandlerService = errorHandlerService;
         this.customerService = customerService;
     }
 
@@ -133,9 +140,14 @@ public abstract class AbstractInboundChannelGenerator<T> {
     }
 
     protected final Message buildMessage(T input, TerminalServiceAccess serviceAccess) {
-        MessageBuildRequest request = extractMessageBuildRequest(input, serviceAccess);
-        ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
-        return buildMessage(request, authenticationRequest, serviceAccess);
+        MessageBuildRequest request = null;
+        try {
+            request = extractMessageBuildRequest(input, serviceAccess);
+            ClientAuthenticationRequest authenticationRequest = extractAuthenticationRequest(input);
+            return buildMessage(request, authenticationRequest, serviceAccess);
+        } catch (Exception e) {
+            return errorHandlerService.resolveMessageByException(null, new MessageBuildException(request, serviceAccess, e));
+        }
     }
 
     protected final Message buildMessage(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest,
@@ -184,17 +196,16 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .build();
 
         if (!request.isForCheck() && StringUtils.isEmpty(header.getAccessParameter())) {
-            return createValidationErrorMessage(request, header, SCM_PARAMETER_ACCESS_PARAMETER,
-                    ErrorCodes.ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY, SCM_PARAMETER_ACCESS_PARAMETER + " is empty.");
+            throw new ValidationException(SCM_PARAMETER_ACCESS_PARAMETER, ErrorCodes.ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY,
+                    SCM_PARAMETER_ACCESS_PARAMETER + " is empty.");
         }
         if (!request.isForCheck() && StringUtils.isEmpty(request.getTerminalCode())) {
-            return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
-                    ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_EMPTY, SCM_PARAMETER_TERMINAL + " is empty.");
+            throw new ValidationException(SCM_PARAMETER_TERMINAL, ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_EMPTY,
+                    SCM_PARAMETER_TERMINAL + " is empty.");
         }
-
         if (!request.isForCheck() && !StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
-            return createValidationErrorMessage(request, header, SCM_PARAMETER_TERMINAL,
-                    ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_INVALID, SCM_PARAMETER_TERMINAL + " is invalid.");
+            throw new ValidationException(SCM_PARAMETER_TERMINAL, ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_INVALID,
+                    SCM_PARAMETER_TERMINAL + " is invalid.");
         }
 
         Message message = new Message(request);
@@ -278,10 +289,11 @@ public abstract class AbstractInboundChannelGenerator<T> {
                 .correlationId(message.getHeader().getCorrelationId())
                 .source(message.getHeader().getServiceAccess().getService().getCode())
                 .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
-                .channelCode(message.getHeader().getChannel().getCode())
+                .channelCode(channel.getCode())
                 .startTime(message.getHeader().getReceiveTimestamp())
                 .endTime(endTime)
-                .durationMillis(Duration.between(message.getHeader().getReceiveTimestamp(), endTime).toMillis())
+                .durationMillis(null != message.getHeader().getReceiveTimestamp() ?
+                        Duration.between(message.getHeader().getReceiveTimestamp(), endTime).toMillis() : null)
                 .threadName(Thread.currentThread().getName())
                 .input(message.getRequest())
                 .output(Status.SC_SUCCESS.equals(message.getStatus()) ? message.getPayload() : message.getErrors())

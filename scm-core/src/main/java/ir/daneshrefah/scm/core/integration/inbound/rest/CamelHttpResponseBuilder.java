@@ -73,7 +73,10 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
         responseMessage.setHeader(Constants.SCM_PARAMETER_RECEIVE_TIMESTAMP, message.getHeader().getReceiveTimestamp());
         Instant responseTime = Instant.now();
         responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_TIMESTAMP, responseTime);
-        String duration = Duration.between(message.getHeader().getReceiveTimestamp(), responseTime).toSeconds() + "(s)";
+        String duration = null;
+        if (null != message.getHeader().getReceiveTimestamp()) {
+            duration = Duration.between(message.getHeader().getReceiveTimestamp(), responseTime).toSeconds() + "(s)";
+        }
         responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_DURATION, duration);
 //        exchange.getMessage().setHeader("Access-Control-Allow-Credentials", "true");
 //        exchange.getMessage().setHeader("Access-Control-Allow-Headers", "*");

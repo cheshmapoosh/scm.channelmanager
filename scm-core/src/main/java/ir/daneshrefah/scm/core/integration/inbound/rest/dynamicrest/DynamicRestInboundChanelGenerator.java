@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.OpenAPI;
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -11,6 +10,7 @@ import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChann
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -47,10 +47,11 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                                              ServiceProducerTemplate producerTemplate,
                                              TransformerService transformerService,
                                              DecisionManager decisionManager,
+                                             ErrorHandlerService errorHandlerService,
                                              CustomerService customerService) {
         super(objectMapper, camelContext, authenticationTemplate,
                 producerTemplate, transformerService,
-                new CamelHttpResponseBuilder(objectMapper), decisionManager, customerService);
+                new CamelHttpResponseBuilder(objectMapper), decisionManager, errorHandlerService, customerService);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }
 
@@ -90,7 +91,8 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         }
 
         public void registerServiceDocumentation(List<TerminalServiceAccess> serviceAccesses) {
-            OpenAPI openAPI = SwaggerGenerator.generateOpenAPI(getChannel(), serviceAccesses, urlBuilder);
+            OpenAPI openAPI = SwaggerGenerator.getInstance().generateOpenAPI(getChannel(), serviceAccesses, urlBuilder,
+                    contextPath, port);
 
             from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger.json")
                     .routeId("swagger_generator_" + getChannel().getCode())
@@ -114,7 +116,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
             LOGGER.info("register inbound {} for terminal {} with url '{}.'", serviceAccess.getService().getCode(),
                     serviceAccess.getTerminal().getCode(), restUrl.getHttpMethod() + ":" + restUrl.getUrl());
             from(inboundUrl)
-                    .routeId("ROUTE_DRST_" + serviceAccess.getId())
+                    .routeId("ROUTE_INBOUND_" + serviceAccess.getTerminal().getCode() + "_" + serviceAccess.getService().getCode())
                     .threads(10, 20, "inbound-rest-" +
                             serviceAccess.getService().getCode().toLowerCase())
                     .end()
@@ -132,15 +134,12 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                         Message message = exchange.getMessage().getBody(Message.class);
                         exchange = buildResponse(exchange, message);
                     })
-                    .doCatch(BaseException.class)
-                    .process(exchange -> {
-                        BaseException e = exchange.getProperty(ExchangePropertyKey.EXCEPTION_CAUGHT, BaseException.class);
-                        exchange.getMessage().setBody(e.getMessage());
-                    })
                     .doCatch(Exception.class)
                     .process(exchange -> {
-                        ValidationException e = exchange.getProperty(ExchangePropertyKey.EXCEPTION_CAUGHT, ValidationException.class);
-                        exchange.getMessage().setBody("errrorrrrr");
+                        Exception e = exchange.getProperty(ExchangePropertyKey.EXCEPTION_CAUGHT, BaseException.class);
+                        Message message = exchange.getMessage().getBody(Message.class);
+                        message = getErrorHandlerService().resolveMessageByException(message, e);
+                        exchange = buildResponse(exchange, message);
                     })
                     .end();
         }

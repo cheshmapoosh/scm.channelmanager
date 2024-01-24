@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -39,9 +40,10 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
                                                TransformerService transformerService,
                                                ResponseBuilder<HttpServletRequest> responseBuilder,
                                                DecisionManager decisionManager,
+                                               ErrorHandlerService errorHandlerService,
                                                CustomerService customerService) {
         super(objectMapper, authenticationTemplate, producerTemplate, transformerService,
-                responseBuilder, decisionManager, customerService);
+                responseBuilder, decisionManager, errorHandlerService, customerService);
     }
 
     @Override

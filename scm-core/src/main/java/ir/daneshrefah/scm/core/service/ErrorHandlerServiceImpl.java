@@ -5,15 +5,19 @@ import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.message.Status;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.mapper.ExceptionMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
+import ir.daneshrefah.scm.plugin.api.exception.MessageBuildException;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -37,7 +41,7 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
  * @since 2023-07-29
  */
 @Service
-public class ErrorMappingService {
+public class ErrorHandlerServiceImpl implements ErrorHandlerService {
 
     @Autowired
     private ErrorMappingRepository repository;
@@ -46,11 +50,12 @@ public class ErrorMappingService {
     public List<ErrorMapping> listErrorMappings() {
         if (null == errorMappings) {
             Iterable<ErrorMappingEntity> errorMappingEntities = repository.findAll();
-            errorMappings =  ErrorMappingMapper.INSTANCE.entitiesToModels(errorMappingEntities);
+            errorMappings = ErrorMappingMapper.INSTANCE.entitiesToModels(errorMappingEntities);
         }
         return errorMappings;
     }
 
+    @Override
     public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors) {
         for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
             ValidationMessage validationMessage = iterator.next();
@@ -61,16 +66,25 @@ public class ErrorMappingService {
         return message;
     }
 
+    @Override
     public Message resolveMessageByException(Message message, Exception exception) {
-        String providerCode = StringUtils.EMPTY;
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
-        if (service instanceof ExternalService) {
-            providerCode = ((ExternalService) service).getServiceProvider().getCode();
+        if (null == message) {
+            message = createEmptyMessage(null, null);
         }
-        String finalProviderCode = providerCode;
-
+        if (exception instanceof MessageBuildException) {
+            MessageBuildRequest request = ((MessageBuildException) exception).getRequest();
+            TerminalServiceAccess serviceAccess = ((MessageBuildException) exception).getServiceAccess();
+            message = createEmptyMessage(request, serviceAccess);
+            return resolveMessageByException(message, (Exception) exception.getCause());
+        }
         if (exception instanceof ProviderErrorResponseException) {
+            String providerCode = StringUtils.EMPTY;
+            ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
+            if (service instanceof ExternalService) {
+                providerCode = ((ExternalService) service).getServiceProvider().getCode();
+            }
+            String finalProviderCode = providerCode;
+
             ProviderErrorResponseException providerErrorResponseException = (ProviderErrorResponseException) exception;
             String errorCode = providerErrorResponseException.getErrorCode();
             Optional<ErrorMapping> mapping = listErrorMappings().stream()
@@ -135,6 +149,13 @@ public class ErrorMappingService {
         }
 
         return message;
+    }
+
+    private Message createEmptyMessage(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {
+        Message result = new Message(request);
+        Header header = Header.builder().serviceAccess(serviceAccess).build();
+        result.setHeader(header);
+        return result;
     }
 
 }

@@ -9,11 +9,11 @@ import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
-import ir.daneshrefah.scm.core.service.ErrorMappingService;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.EventType;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.ClassUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public abstract class ServiceExecutor {
 
     @Autowired
-    protected ErrorMappingService errorMappingService;
+    protected ErrorHandlerService errorHandlerService;
     @Autowired
     protected TransformerService transformerService;
     @Autowired
@@ -66,7 +66,7 @@ public abstract class ServiceExecutor {
 
         Optional<Set<ValidationMessage>> errors = serviceExecutionWrapper.validateRequestSchema(message);
         if (!errors.isEmpty()) {
-            errorMappingService.resolveMessageByValidationMessage(message, errors.get());
+            errorHandlerService.resolveMessageByValidationMessage(message, errors.get());
             logServiceCallEvent(message, service, errors, null, startTime);
 //            addServiceCallEvent(message, service, false, startTime, exception, message.getPayload(), response);
             return;
@@ -76,7 +76,7 @@ public abstract class ServiceExecutor {
         try {
             requestPayload = transformRequest(serviceExecutionWrapper.getRequestTransformers(), message);
         } catch (Exception e) {
-            errorMappingService.resolveMessageByException(message, e);
+            errorHandlerService.resolveMessageByException(message, e);
             return;
         }
 
@@ -84,7 +84,7 @@ public abstract class ServiceExecutor {
         try {
             response = executeInternal(service, message, requestPayload);
         } catch (Exception e) {
-            errorMappingService.resolveMessageByException(message, e);
+            errorHandlerService.resolveMessageByException(message, e);
             exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
             return;
         } finally {
@@ -94,7 +94,7 @@ public abstract class ServiceExecutor {
         try {
             response = transformResponse(serviceExecutionWrapper.getResponseTransformers(), message, response);
         } catch (Exception e) {
-            errorMappingService.resolveMessageByException(message, e);
+            errorHandlerService.resolveMessageByException(message, e);
             return;
         }
         if (null == response)

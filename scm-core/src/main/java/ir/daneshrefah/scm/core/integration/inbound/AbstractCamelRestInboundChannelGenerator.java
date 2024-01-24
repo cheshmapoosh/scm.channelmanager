@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
+import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
@@ -48,9 +49,10 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                                                        TransformerService transformerService,
                                                        ResponseBuilder<Exchange> responseBuilder,
                                                        DecisionManager decisionManager,
+                                                       ErrorHandlerService errorHandlerService,
                                                        CustomerService customerService) {
         super(objectMapper, context, authenticationTemplate, producerTemplate, transformerService,
-                responseBuilder, decisionManager, customerService);
+                responseBuilder, decisionManager, errorHandlerService, customerService);
     }
 
     @Override

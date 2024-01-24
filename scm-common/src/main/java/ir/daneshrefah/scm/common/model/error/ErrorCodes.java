@@ -45,4 +45,5 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1067;
     public static final int ERROR_CODE_VALIDATION_PERSON_ID_IS_EMPTY = 1068;
     public static final int ERROR_CODE_VALIDATION_PERSON_PROFILE_ID_IS_EMPTY = 1069;
+    public static final int ERROR_CODE_VALIDATION_INVALID_INSTANT_FORMAT = 1071;
 }

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.utils.string;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.text.CaseUtils;
 
 import java.util.UUID;
 
@@ -49,6 +49,14 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.startsWithIgnoreCase(str, prefix);
     }
 
+    public static String toCamelCase(String str) {
+        return toCamelCase(str, true, '_');
+    }
+
+    public static String toCamelCase(String str, final boolean capitalizeFirstLetter, final char... delimiters) {
+        return CaseUtils.toCamelCase(str, capitalizeFirstLetter, delimiters);
+    }
+
     public static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
         if (ignoreCase) {
             return org.apache.commons.lang3.StringUtils.startsWithIgnoreCase(str, prefix);
@@ -88,6 +96,22 @@ public class StringUtils {
 
     public static String replaceNullWithSpace(String value) {
         return replaceNull(value, SPACE);
+    }
+
+    public static String cleanUpJsonCharacters(String json) {
+        if (json.startsWith("\"") && json.endsWith("\"")) {
+            //remove start and end quotations
+            json = json.substring(1, json.length() - 1);
+        }
+        //remove text gap
+        json = json.replace(" ", "");
+        if (json.contains("\\n") || json.contains("\\r")) {
+            //remove \n\r characters
+            json = json.replace("\\n", "").replace("\\r", "");
+        }
+        //clean slash chars
+        json = json.replace("\\", "");
+        return json;
     }
 
 }

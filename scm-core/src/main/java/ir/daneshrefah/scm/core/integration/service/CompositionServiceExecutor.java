@@ -55,7 +55,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             try {
                 relationRequestPayload = transformRequest(serviceExecutionWrapper.getTargetServiceRequestTransformers(), message);
             } catch (Exception e) {
-                errorMappingService.resolveMessageByException(message, e);
+                errorHandlerService.resolveMessageByException(message, e);
                 break;
             }
 
