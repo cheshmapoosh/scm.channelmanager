@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 /**
@@ -15,7 +16,7 @@ import java.time.Instant;
  */
 @Getter
 @Builder
-public class MessageBuildRequest {
+public class MessageBuildRequest implements Serializable {
 
     private String terminalCode;
     private String channelCode;

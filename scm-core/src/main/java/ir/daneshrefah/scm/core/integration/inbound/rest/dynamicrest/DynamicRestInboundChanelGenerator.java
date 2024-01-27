@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
@@ -64,6 +65,9 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         for (Iterator<TerminalServiceAccess> iterator = serviceAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceAccess service = iterator.next();
             if (ServiceImplementationType.PARENT.equals(service.getService().getImplementationType())) {
+                continue;
+            }
+            if (!ServiceStatus.ACTIVE.equals(service.getService().getStatus())) {
                 continue;
             }
             routeBuilder.registerService(service);

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.BaseServiceException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import lombok.Getter;
 
@@ -11,19 +12,10 @@ import lombok.Getter;
  * @version 1.0
  * @since 2023-01-17
  */
-public class AbstractJavaServiceException extends BaseException {
-
-    @Getter
-    private final JavaService service;
+public class AbstractJavaServiceException extends BaseServiceException {
 
     public AbstractJavaServiceException(String message, Throwable cause, JavaService service) {
-        super(message, cause);
-        this.service = service;
-    }
-
-    @Override
-    public String getSource() {
-        return service.getCode();
+        super(message, cause, service);
     }
 
 }

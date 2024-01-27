@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
@@ -52,6 +53,9 @@ public class ServiceAutoConfiguration extends RouteBuilder {
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
             Service service = iterator.next();
             if (ServiceImplementationType.PARENT.equals(service.getImplementationType())) {
+                continue;
+            }
+            if (ServiceStatus.INACTIVE.equals(service.getStatus())) {
                 continue;
             }
             String fromUri = "SVI_" + service.getCode();

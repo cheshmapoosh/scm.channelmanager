@@ -27,33 +27,33 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     private Integer id;
     private String username;
     private Boolean active;
-    private String phone;
-    private String mobile;
+    @Column(name = "phone")
+    private String phone1;
+    @Transient
+    private String phone2;
+    @Column(name = "MOBILE")
+    private String mobile1;
+    @Transient
+    private String mobile2;
+    @Transient
+    private String mobile3;
     private String email;
     @Column(name = "FAX_NUMBER")
     private String fax;
-    private String address;
-    private String postalCode;
+    @Column(name = "ADDRESS")
+    private String address1;
+    @Transient
+    private String address2;
+    @Transient
+    private String address3;
+    @Transient
+    private String address4;
+    @Column(name = "POSTAL_CODE")
+    private String postalCode1;
+    @Transient
+    private String postalCode2;
     @Column(name = "NATIONALITY_CODE")
     @Convert(converter = NationalityConverter.class)
     private Nationality nationality;
-
-//TODO    private String CUSTOMER_TYPE_CODE => REF.CUSTOMER_TYPE_CODE.CODE
-//TODO    private String IDENTITY_DOCUMENT_TYPE
-//TODO    private String JOB_CODE => REF.CUSTOMER_JOB.CODE
-//TODO    private String REGION_CODE => REF.REGION.CODE
-//TODO    private String EDUCATION_CODE => REF.EDUCATION.CODE = > diplom, lisans, ...
-//TODO    private String MAJOR_CODE => REF.MAJOR
-//TODO    private String CITY_CODE => REF.CITY
-//TODO    private String BRANCH_CODE => REF.BRANCH
-//TODO    private String IDENTIFICATION_NO => String
-//TODO    private String ISSUE_PLACE
-//TODO    private String IDENTIFICATION_SERIAL => String
-//TODO    private String IDENTIFICATION_SERIAL_NO => String
-//TODO    private String BIRTH_PLACE => String
-//TODO    private String ISSUE_DATE
-
-//UnUsed    private String TITLE_CODE => Mr/Ms
-//UnUsed    private String CARD_TYPE_CODE
 
 }

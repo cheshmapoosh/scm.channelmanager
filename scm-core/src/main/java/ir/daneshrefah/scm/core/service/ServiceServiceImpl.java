@@ -164,7 +164,7 @@ public class ServiceServiceImpl implements ServiceService {
             serviceEntity.setTitle(service.getTitle());
             isModified = true;
         }
-        if (StringUtils.isNotEmpty(service.getAlias()) && !service.getAlias().equals(serviceEntity.getAlias())) {
+        if (null != service.getAlias() && !service.getAlias().equals(serviceEntity.getAlias())) {
             serviceEntity.setAlias(service.getAlias());
             isModified = true;
         }

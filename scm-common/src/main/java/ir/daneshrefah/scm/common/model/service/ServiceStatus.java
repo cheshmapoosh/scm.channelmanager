@@ -16,7 +16,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum ServiceStatus {
 
-    INACTIVE(0), ACTIVE(1);
+    INACTIVE(0), ACTIVE(1), INTERNAL(2);
 
     private final Integer code;
 

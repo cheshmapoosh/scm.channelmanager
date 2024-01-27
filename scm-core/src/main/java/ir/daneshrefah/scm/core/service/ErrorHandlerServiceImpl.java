@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.ServiceExecutionException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
@@ -149,6 +150,16 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
         }
 
         return message;
+    }
+
+    @Override
+    public BaseException resolveExceptionByError(Message message) {
+        List<Error> errors = message.getErrors();
+        if (null == errors || errors.isEmpty()) {
+            return null;
+        }
+        return new ServiceExecutionException(message.getHeader().getServiceAccess().getService(),
+                errors.get(0).getErrorCode(), errors.get(0).getMessage());
     }
 
     private Message createEmptyMessage(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {

@@ -9,5 +9,5 @@ plugins {
 }
 
 dependencies {
-
+    compileOnly project(":scm-common")
 }

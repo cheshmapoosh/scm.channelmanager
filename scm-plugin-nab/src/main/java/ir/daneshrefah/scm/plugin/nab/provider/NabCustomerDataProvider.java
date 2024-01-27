@@ -1,6 +1,16 @@
 package ir.daneshrefah.scm.plugin.nab.provider;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
+import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.data.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.nab.repository.NabCustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +28,30 @@ import org.springframework.stereotype.Service;
 public class NabCustomerDataProvider extends ServiceProviderDataProvider {
 
     private final NabCustomerRepository customerRepository;
+    private final ServiceProducerTemplate serviceProducerTemplate;
+
+    @Override
+    public Customer inquireCustomerByPerson(GeneralPerson person) {
+        String nationalId = person instanceof GeneralRealPerson ?
+                ((GeneralRealPerson) person).getNationalCode() : ((CorporatePerson) person).getNationalId();
+        String subOrganizationId = person instanceof GeneralRealPerson ?
+                "0" : ((CorporatePerson) person).getSubOrganizationId();
+        return inquireCustomerByPerson(person.getType(), person.getNationality(), nationalId, subOrganizationId);
+    }
+
+    @Override
+    public Customer inquireCustomerByPerson(PersonType personType, Nationality nationality, String nationalId, String subOrganizationId) {
+        ObjectNode payload = JsonNodeFactory.instance.objectNode();
+        payload.put("customerType", "-1");
+        payload.put("nationalId", nationalId);
+        payload.put("subOrganizationId", subOrganizationId);
+        Message message = serviceProducerTemplate.callService("SVC_NAB_FIND_CUSTOMER", payload);
+        JsonNode customerNode = message.getPayload();
+        Customer result = new Customer();
+        result.setProviderId(provider.getId());
+        result.setCustomerNo(customerNode.get(0).get("customerId").asText());
+        return result;
+    }
 
     @Override
     public Customer findCustomerByPersonId(Long personId) {

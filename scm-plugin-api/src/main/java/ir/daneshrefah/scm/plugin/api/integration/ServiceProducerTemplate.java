@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 
@@ -12,6 +13,10 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public interface ServiceProducerTemplate {
 
-    public void callService(Service service, Message message);
+    public Message callService(Service service, Message message);
+
+    public Message callService(String serviceCode, JsonNode payload);
+
+    public Message callService(String serviceCode);
 
 }

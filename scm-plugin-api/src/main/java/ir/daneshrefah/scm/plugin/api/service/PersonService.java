@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.PersonType;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,8 +13,12 @@ import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
  */
 public interface PersonService {
 
-    public GeneralPerson findPersonByPersonId(Long id);
+    GeneralPerson findPersonByPersonInfo(PersonType personType, Nationality nationality, String nationalId, String subOrganizationId);
 
-    public GeneralPerson findPersonByPersonProfileId(String id);
+    GeneralPerson findPersonByPersonId(Long id);
+
+    GeneralPerson findPersonByPersonProfileId(String id);
+
+    GeneralPerson defineOrUpdatePersonInfo(PersonType personType, Nationality nationality, String nationalId, String subOrganizationId);
 
 }

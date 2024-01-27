@@ -1,13 +1,18 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.data.type.PersonType;
 import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.Customer;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.plugin.api.service.PersonService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +30,14 @@ public class PersonManagementService extends AbstractJavaService {
 
     private final ServiceService serviceService;
     private final CustomerService customerService;
+    private final PersonService personService;
 
-    public PersonManagementService(CustomerService customerService, ServiceService serviceService,
+    public PersonManagementService(CustomerService customerService, ServiceService serviceService, PersonService personService,
                                    ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper) {
         super(producerTemplate, objectMapper);
         this.customerService = customerService;
         this.serviceService = serviceService;
+        this.personService = personService;
     }
 
     public Customer findCustomerByProviderAndPersonId(String providerId, Long personId) {
@@ -69,6 +76,22 @@ public class PersonManagementService extends AbstractJavaService {
         }
 
         return customerService.findCustomerByPersonProfileId(provider, personProfileId);
+    }
+
+    public GeneralPerson defineOrUpdatePersonInfo(Message message) {
+        String personTypeCode = message.getPayloadValue("personType");
+        if (StringUtils.isEmpty(personTypeCode)) {
+            throw new ValidationException("personType", ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY, "personType is empty.");
+        }
+        PersonType personType = PersonType.findByCode(personTypeCode);
+        String nationalityCode = message.getPayloadValue("nationality");
+//        if (StringUtils.isEmpty(nationalityCode)) {
+//            throw new ValidationException("nationality", ERROR_CODE_VALIDATION_PERSON_NATIONALITY_IS_EMPTY, "nationality is empty.");
+//        }
+        Nationality nationality = Nationality.findByCode(nationalityCode);
+        String nationalId = message.getPayloadValue("nationalId");
+        String subOrganizationId = message.getPayloadValue("subOrganizationId");
+        return personService.defineOrUpdatePersonInfo(personType, nationality, nationalId, subOrganizationId);
     }
 
     public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Long personId) {

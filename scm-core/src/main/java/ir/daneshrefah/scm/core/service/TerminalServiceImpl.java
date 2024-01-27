@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
@@ -31,6 +33,14 @@ public class TerminalServiceImpl implements TerminalService {
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final EntityManager entityManager;
     private List<Terminal> terminals;
+    private List<TerminalServiceAccess> terminalServiceAccesses;
+
+    public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
+        if (null == terminalServiceAccesses) {
+            terminalServiceAccesses = TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll());
+        }
+        return terminalServiceAccesses;
+    }
 
     public List<Terminal> findAllTerminals() {
         if (null == terminals) {
@@ -40,8 +50,21 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId) {
-        List<TerminalServiceAccessEntity> entityList = terminalServiceAccessRepository.findAllByTerminalId(terminalId);
-        return TerminalServiceAccessMapper.INSTANCE.entitiesToModels(entityList);
+        return findAllTerminalServiceAccesses().stream().filter(serviceAccess ->
+                        terminalId.equals(serviceAccess.getTerminal().getId())
+                )
+                .collect(Collectors.toList());
+//        List<TerminalServiceAccessEntity> entityList = terminalServiceAccessRepository.findAllByTerminalId(terminalId);
+//        return TerminalServiceAccessMapper.INSTANCE.entitiesToModels(entityList);
+    }
+
+    @Override
+    public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode) {
+        return findAllTerminalServiceAccesses().stream().filter(serviceAccess ->
+                        terminalCode.equals(serviceAccess.getTerminal().getCode()) &&
+                                serviceCode.equals(serviceAccess.getService().getCode())
+                )
+                .findFirst();
     }
 
     public boolean checkTerminalExistById(String terminalId) {

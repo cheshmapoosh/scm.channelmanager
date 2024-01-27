@@ -3,11 +3,13 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.common.exception.DisableServiceExecutionException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
@@ -212,6 +214,7 @@ public abstract class AbstractInboundChannelGenerator<T> {
         message.setHeader(header);
         message.setStatus(request.isForCheck() ? Status.SC_SUCCESS : Status.SC_PROCESSING);
         message.setPayload(request.getPayload());
+        MessageContext.init(message);
 
         return message;
     }
@@ -331,6 +334,9 @@ public abstract class AbstractInboundChannelGenerator<T> {
 
 
     protected final Message executeService(Message message) {
+        if (!ServiceStatus.ACTIVE.equals(message.getHeader().getServiceAccess().getService().getStatus())) {
+            throw new DisableServiceExecutionException(message.getHeader().getServiceAccess().getService());
+        }
         try {
             if (!checkServiceCallAllowed(message)) {
                 message.addAccessDeniedError(Constants.SCM_PARAMETER_AUTHORIZATION, null, null);

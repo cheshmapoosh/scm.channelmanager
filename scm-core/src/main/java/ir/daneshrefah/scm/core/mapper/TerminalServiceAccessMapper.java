@@ -23,6 +23,8 @@ public interface TerminalServiceAccessMapper {
 //    @Mapping(source = "terminalEntity", target = "terminal")
     List<TerminalServiceAccess> entitiesToModels(List<TerminalServiceAccessEntity> entities);
 
+    List<TerminalServiceAccess> entitiesToModels(Iterable<TerminalServiceAccessEntity> entities);
+
     @Named("mapService")
     default Service mapService(ServiceEntity entity) {
         // Delegate the mapping to the method in ServiceMapper

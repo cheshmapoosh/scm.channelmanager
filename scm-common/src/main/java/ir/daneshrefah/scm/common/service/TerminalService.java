@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,6 +18,8 @@ public interface TerminalService {
     public List<Terminal> findAllTerminals();
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
+
+    public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
 
     public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId);
 

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.repository.authentication;
+package ir.daneshrefah.scm.common.data.converter;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

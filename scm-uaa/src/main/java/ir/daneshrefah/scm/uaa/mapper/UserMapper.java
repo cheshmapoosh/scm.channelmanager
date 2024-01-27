@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
+import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;

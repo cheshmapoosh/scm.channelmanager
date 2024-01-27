@@ -27,5 +27,25 @@ public abstract class GeneralRealPerson extends GeneralPerson {
     private MaritalStatus maritalStatus;
     private String nationalCode;
     private LocalDate birthDate;
+    private LocalDate deadDate;
+    private LocalDate registerIssueDate;
+    private String identificationNo;
+    private String registerSeries;
+    private String registerSerial;
+    private String jobCode;
+    private String jobTitle;
+    private String educationCode;
+    private String educationTitle;
+    private String stateCode;
+    private String stateTitle;
+    private String cityCode;
+    private String cityTitle;
+    private String branchCode;
+    private String shahabCode;
+    private String courseCode;
+    private String courseTitle;
+    private String documentTypeCode;
+    private String documentTypeTitle;
+    private boolean isLived;
 
 }

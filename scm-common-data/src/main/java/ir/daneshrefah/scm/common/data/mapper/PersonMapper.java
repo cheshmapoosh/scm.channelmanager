@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.mapper;
+package ir.daneshrefah.scm.common.data.mapper;
 
 import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
 import ir.daneshrefah.scm.common.data.model.person.EmployeePerson;
