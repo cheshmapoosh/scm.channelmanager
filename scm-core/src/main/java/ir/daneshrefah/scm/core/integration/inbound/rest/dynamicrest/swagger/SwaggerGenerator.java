@@ -1,6 +1,10 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.module.jsonSchema.jakarta.JsonSchema;
+import com.fasterxml.jackson.module.jsonSchema.jakarta.JsonSchemaGenerator;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -18,11 +22,14 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
-import ir.daneshrefah.scm.utils.string.DateUtils;
+import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
+import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.net.InetAddress;
@@ -43,10 +50,17 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 public class SwaggerGenerator {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER;
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.0";
 
+    static {
+        OBJECT_MAPPER = new ObjectMapper();
+        OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS,false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS,false);
+    }
     private SwaggerGenerator() {
     }
 
@@ -78,7 +92,7 @@ public class SwaggerGenerator {
             //path parameter
             generatePathParameters(restUrl.getUrl(),operation);
             //request body
-            generateRequestSchema(serviceAccess, operation, components);
+            generateRequestSchema(restUrl,serviceAccess, operation, components);
             //response body
             generateResponseSchema(serviceAccess, operation, components);
             //request headers
@@ -103,18 +117,12 @@ public class SwaggerGenerator {
     private void generateSecurityComponent(Components components) {
         //bearer component
         Map<String, SecurityScheme> securityRequirementMap = new HashMap<>();
-        //bearer key header
-        SecurityScheme bearerKeySecurityScheme = new SecurityScheme();
-        bearerKeySecurityScheme.setType(SecurityScheme.Type.HTTP);
-        bearerKeySecurityScheme.setScheme("bearer");
-        bearerKeySecurityScheme.bearerFormat("JWT");
         //api key header
         SecurityScheme apiKeySecurityScheme = new SecurityScheme();
         apiKeySecurityScheme.setType(SecurityScheme.Type.APIKEY);
         apiKeySecurityScheme.in(SecurityScheme.In.HEADER);
         apiKeySecurityScheme.setName(SCM_PARAMETER_AUTHORIZATION);
         //create security map
-        securityRequirementMap.put("Bearer",bearerKeySecurityScheme);
         securityRequirementMap.put("Authorization",apiKeySecurityScheme);
         components.securitySchemes(securityRequirementMap);
     }
@@ -137,7 +145,6 @@ public class SwaggerGenerator {
         }
         if (Objects.nonNull(loginAuthentication) && loginAuthentication){
             SecurityRequirement securityRequirement = new SecurityRequirement();
-            securityRequirement.addList("Bearer");
             securityRequirement.addList("Authorization");
             operation.addSecurityItem(securityRequirement);
         }
@@ -242,27 +249,67 @@ public class SwaggerGenerator {
         operation.setResponses(apiResponses);
     }
 
-    private void generateRequestSchema(TerminalServiceAccess serviceAccess, Operation operation, Components components) {
-        String requestJsonSchema = serviceAccess.getService().getRequestJsonSchema();
-        if (Objects.nonNull(requestJsonSchema) && !requestJsonSchema.isBlank()) {
-            try {
-                //parse json
-                RequestBody requestBody = new RequestBody();
-                Content reqContent = new Content();
-                MediaType reqMediaType = new MediaType();
-                Schema<Object> objectSchema = new Schema<>();
-                String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode())+ "ReqTO";
-                objectSchema.set$ref(schemaName);
-                reqMediaType.schema(objectSchema);
-                reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
-                requestBody.setContent(reqContent);
-                operation.setRequestBody(requestBody);
-                //create schema
-                Schema<?> schemaItem = OBJECT_MAPPER.readValue(StringUtils.cleanUpJsonCharacters(requestJsonSchema), Schema.class);
-                components.addSchemas(schemaName, schemaItem);
-            } catch (Exception ignore) {
+    private void generateRequestSchema(RestUrl restUrl,TerminalServiceAccess serviceAccess, Operation operation, Components components) {
+        if (!restUrl.getHttpMethod().equalsIgnoreCase("get")){
+            Service service = serviceAccess.getService();
+            String requestJsonSchema = service.getRequestJsonSchema();
+            ServiceImplementationType implementationType = service.getImplementationType();
+            if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)){
+                requestJsonSchema = generateJavaServiceRequestSchema(service);
+            }
+            if (Objects.nonNull(requestJsonSchema) && !requestJsonSchema.isBlank()) {
+                try {
+                    //parse json
+                    RequestBody requestBody = new RequestBody();
+                    Content reqContent = new Content();
+                    MediaType reqMediaType = new MediaType();
+                    Schema<Object> objectSchema = new Schema<>();
+                    String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode())+ "ReqTO";
+                    objectSchema.set$ref(schemaName);
+                    reqMediaType.schema(objectSchema);
+                    reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
+                    requestBody.setContent(reqContent);
+                    operation.setRequestBody(requestBody);
+                    //create schema
+                    Schema<?> schemaItem = OBJECT_MAPPER.readValue(StringUtils.cleanUpJsonCharacters(requestJsonSchema), Schema.class);
+                    components.addSchemas(schemaName, schemaItem);
+                } catch (Exception ignore) {
+                }
+            }else {
+                generateDefaultRequestSchema(operation);
             }
         }
+    }
+
+    private String generateJavaServiceRequestSchema(Service service) {
+        try {
+            final String basePackage = "ir.daneshrefah";
+            final String ignoreType = "Message";
+            JavaService javaService = (JavaService) service;
+            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService);
+            Class<?>[] parameterTypes = methodInfo.getMethod().getParameterTypes();
+            for (Class<?> parameterType : parameterTypes) {
+                if (parameterType.toString().contains(basePackage) && !parameterType.toString().contains(ignoreType)){
+                    Class<?> modelClass = Class.forName(parameterType.getName());
+                    JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
+                    JsonSchema schema = schemaGen.generateSchema(modelClass);
+                    return OBJECT_MAPPER.writeValueAsString(schema);
+                }
+            }
+        }catch (Exception ignore){}
+        return null;
+    }
+
+    private void generateDefaultRequestSchema(Operation operation) {
+        RequestBody requestBody = new RequestBody();
+        Content reqContent = new Content();
+        MediaType reqMediaType = new MediaType();
+        Schema<Object> objectSchema = new Schema<>();
+        objectSchema.setType("object");
+        reqMediaType.schema(objectSchema);
+        reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
+        requestBody.setContent(reqContent);
+        operation.setRequestBody(requestBody);
     }
 
 
