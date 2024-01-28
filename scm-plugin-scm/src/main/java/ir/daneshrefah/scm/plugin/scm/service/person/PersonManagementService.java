@@ -1,18 +1,17 @@
-package ir.daneshrefah.scm.plugin.scm.service;
+package ir.daneshrefah.scm.plugin.scm.service.person;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.exception.ResultNotFoundException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.Customer;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.PersonService;
+import ir.daneshrefah.scm.plugin.api.service.person.PersonInfoRequest;
+import ir.daneshrefah.scm.plugin.api.service.person.PersonService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +38,36 @@ public class PersonManagementService extends AbstractJavaService {
         this.serviceService = serviceService;
         this.personService = personService;
     }
+
+    public GeneralPerson findPersonInfo(PersonInfoRequest request) {
+        GeneralPerson result = personService.findPersonInfo(request);
+        if (null == result) {
+            throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND,
+                    String.format("person not found for personType: '%s', nationality: '%s', nationalId: '%s', subOrganizationId: '%s'.",
+                            request.getPersonType(), request.getNationality(), request.getNationalId(), request.getSubOrganizationId()));
+        }
+        return result;
+    }
+
+    public GeneralPerson findCIFPersonInfo(PersonInfoRequest request) {
+        GeneralPerson result = personService.findCIFPersonInfo(request);
+        if (null == result) {
+            throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND,
+                    String.format("person not found for personType: '%s', nationality: '%s', nationalId: '%s', subOrganizationId: '%s'.",
+                            request.getPersonType(), request.getNationality(), request.getNationalId(), request.getSubOrganizationId()));
+        }
+        return result;
+    }
+
+    public GeneralPerson saveOrUpdateLocalPersonInfoFromCIF(PersonInfoRequest request) {
+        return personService.saveOrUpdateLocalPersonInfoFromCIF(request);
+    }
+
+
+
+
+
+
 
     public Customer findCustomerByProviderAndPersonId(String providerId, Long personId) {
         if (StringUtils.isEmpty(providerId)) {
@@ -76,22 +105,6 @@ public class PersonManagementService extends AbstractJavaService {
         }
 
         return customerService.findCustomerByPersonProfileId(provider, personProfileId);
-    }
-
-    public GeneralPerson defineOrUpdatePersonInfo(Message message) {
-        String personTypeCode = message.getPayloadValue("personType");
-        if (StringUtils.isEmpty(personTypeCode)) {
-            throw new ValidationException("personType", ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY, "personType is empty.");
-        }
-        PersonType personType = PersonType.findByCode(personTypeCode);
-        String nationalityCode = message.getPayloadValue("nationality");
-//        if (StringUtils.isEmpty(nationalityCode)) {
-//            throw new ValidationException("nationality", ERROR_CODE_VALIDATION_PERSON_NATIONALITY_IS_EMPTY, "nationality is empty.");
-//        }
-        Nationality nationality = Nationality.findByCode(nationalityCode);
-        String nationalId = message.getPayloadValue("nationalId");
-        String subOrganizationId = message.getPayloadValue("subOrganizationId");
-        return personService.defineOrUpdatePersonInfo(personType, nationality, nationalId, subOrganizationId);
     }
 
     public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Long personId) {

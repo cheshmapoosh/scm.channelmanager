@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.ResultNotFoundException;
 import ir.daneshrefah.scm.common.exception.ServiceExecutionException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
@@ -111,6 +112,17 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
             String errorMessage = validationException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
             message.addError(error, Status.SC_ERROR_VALIDATION);
+            message.nullPayload();
+            return message;
+        }
+
+        if (exception instanceof ResultNotFoundException) {
+            ResultNotFoundException resultNotFoundException = (ResultNotFoundException) exception;
+            String source = resultNotFoundException.getSource();
+            Integer errorCode = null != resultNotFoundException.getErrorCode() ? resultNotFoundException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION;
+            String errorMessage = resultNotFoundException.getMessage();
+            Error error = new Error(source, errorCode, errorMessage);
+            message.addError(error, Status.SC_NOT_FOUND);
             message.nullPayload();
             return message;
         }

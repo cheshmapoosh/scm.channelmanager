@@ -4,14 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.ResultNotFoundException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.service.PersonService;
+import ir.daneshrefah.scm.plugin.api.service.person.PersonInfoRequest;
+import ir.daneshrefah.scm.plugin.api.service.person.PersonService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -30,12 +30,12 @@ public abstract class AbstractPersonService implements PersonService {
     private final ServiceProducerTemplate serviceProducerTemplate;
     private final ErrorHandlerService errorHandlerService;
 
-    public final GeneralPerson inquirePersonFromCIFByPersonInfo(PersonType personType, Nationality nationality,
-                                                                String nationalId, String subOrganizationId) {
+    @Override
+    public final GeneralPerson findCIFPersonInfo(PersonInfoRequest request) {
         ObjectNode payload = JsonNodeFactory.instance.objectNode();
         payload.put("customerType", "-1");
-        payload.put("nationalId", nationalId);
-        payload.put("subOrganizationId", null != subOrganizationId ? subOrganizationId : "0");
+        payload.put("nationalId", request.getNationalId());
+        payload.put("subOrganizationId", null != request.getSubOrganizationId() ? request.getSubOrganizationId() : "0");
         Message message = serviceProducerTemplate.callService("SVC_NAB_FIND_CUSTOMER", payload);
         if (null != message.getErrors() && !message.getErrors().isEmpty()) {
             BaseException exception = errorHandlerService.resolveExceptionByError(message);
@@ -44,11 +44,8 @@ public abstract class AbstractPersonService implements PersonService {
             }
         }
         JsonNode personNode = message.getPayload();
-        if (null == personNode || personNode.isNull()) {
-            throw new ValidationException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND,
-                    String.format("person not found for personType: '%s', nationality: '%s', nationalId: '%s', subOrganizationId: '%s'.",
-                            null != personType ? personType.getCode() : "null",
-                            null != nationality ? nationality.getCode() : "null", nationalId, subOrganizationId));
+        if (null == personNode || personNode.isNull() || personNode.isEmpty()) {
+            return null;
         }
         if (personNode.isArray() && !personNode.isEmpty()) {
             personNode = personNode.get(0);
@@ -56,15 +53,18 @@ public abstract class AbstractPersonService implements PersonService {
         return PersonCIFMapper.getInstance().toPerson(personNode);
     }
 
-    public GeneralPerson defineOrUpdatePersonInfo(PersonType personType, Nationality nationality, String nationalId, String subOrganizationId) {
-        if (null == personType) {
+    public GeneralPerson saveOrUpdateLocalPersonInfoFromCIF(PersonInfoRequest request) {
+        if (null == request.getPersonType()) {
             throw new ValidationException("personType", ERROR_CODE_VALIDATION_PERSON_TYPE_IS_INVALID, "personType is invalid.");
         }
-        if (StringUtils.isEmpty(nationalId)) {
+        if (StringUtils.isEmpty(request.getNationalId())) {
             throw new ValidationException("nationalId", ERROR_CODE_VALIDATION_PERSON_NATIONAL_ID_IS_EMPTY, "nationalId is empty.");
         }
-        GeneralPerson remotePerson = inquirePersonFromCIFByPersonInfo(personType, nationality, nationalId, subOrganizationId);
-        GeneralPerson localPerson = findPersonByPersonInfo(personType, nationality, nationalId, subOrganizationId);
+        GeneralPerson remotePerson = findCIFPersonInfo(request);
+        if (null == remotePerson) {
+            throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND, "CIF person not found.");
+        }
+        GeneralPerson localPerson = findPersonInfo(request);
         return null;
     }
 

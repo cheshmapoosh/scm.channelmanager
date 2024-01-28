@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
 import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.person.Customer;
 import ir.daneshrefah.scm.common.model.person.PersonProfile;
@@ -10,7 +8,7 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.PersonService;
+import ir.daneshrefah.scm.plugin.api.service.person.PersonService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
