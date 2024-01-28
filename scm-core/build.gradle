@@ -29,7 +29,6 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.projectlombok:lombok:1.18.20"
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
-    implementation 'org.apache.commons:commons-text:1.11.0'
 
     // JUnit 5
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
