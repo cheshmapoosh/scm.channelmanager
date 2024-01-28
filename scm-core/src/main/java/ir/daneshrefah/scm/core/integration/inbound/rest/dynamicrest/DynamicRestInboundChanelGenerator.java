@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.CamelHttpResponseBuilder;
+import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerGenerator;
+import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerUIGenerator;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
@@ -98,17 +100,19 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
             OpenAPI openAPI = SwaggerGenerator.getInstance().generateOpenAPI(getChannel(), serviceAccesses, urlBuilder,
                     contextPath, port);
 
-            from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger.json")
+            String swaggerUrl = "/api-docs/swagger.json";
+            from("netty-http:http://0.0.0.0:" + port + contextPath + swaggerUrl)
                     .routeId("swagger_generator_" + getChannel().getCode())
                     .process(exchange -> {
                         exchange.getMessage().setBody(getObjectMapper().writeValueAsString(openAPI));
                         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
                     })
                     .end();
+            String swaggerUIBody = SwaggerUIGenerator.getInstance().generateCamelUIBody(port, contextPath, swaggerUrl);
             from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger-ui.html")
                     .routeId("swagger_ui_generator_" + getChannel().getCode())
                     .process(exchange -> {
-                        exchange.getMessage().setBody("<h1>Swagger UI</h1>");
+                        exchange.getMessage().setBody(swaggerUIBody);
                         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_HTML);
                     })
                     .end();

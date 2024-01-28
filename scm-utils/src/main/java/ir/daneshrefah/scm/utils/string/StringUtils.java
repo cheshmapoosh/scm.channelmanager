@@ -2,7 +2,11 @@ package ir.daneshrefah.scm.utils.string;
 
 import org.apache.commons.text.CaseUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Description of the class or purpose of the file.
@@ -112,6 +116,22 @@ public class StringUtils {
         //clean slash chars
         json = json.replace("\\", "");
         return json;
+    }
+
+    /**
+     * @apiNote this method find list of parameters from input text. for example if input "hello {name},what is your{phone}"
+     * the return list is "name,phone"
+     * @param input
+     * @return found parameters
+     */
+    public static List<String> findAllParameters(String input){
+        Pattern pattern = Pattern.compile("\\{(.*?)}");
+        Matcher matcher = pattern.matcher(input);
+        List<String> parameters = new ArrayList<>();
+        while (matcher.find()) {
+            parameters.add(matcher.group(1));
+        }
+        return parameters;
     }
 
 }

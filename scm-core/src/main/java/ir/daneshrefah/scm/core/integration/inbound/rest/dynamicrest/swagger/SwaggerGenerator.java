@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
+package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.Components;
@@ -11,17 +11,23 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.PathParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
+import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.apache.commons.text.CaseUtils;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
@@ -36,11 +42,6 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 public class SwaggerGenerator {
 
-    /*
-       //TODO FOR TEST RESULT
-       1.please get swagger json from : http://localhost:8082/ib4dev/api-docs/swagger.json
-       2.paste the json on online viewer : https://editor-next.swagger.io/
-     */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.0";
@@ -62,33 +63,76 @@ public class SwaggerGenerator {
         generateServerInformation(openAPI,channel, contextPath, port);
         //create components
         Components components = new Components();
+        //generate security component
+        generateSecurityComponent(components);
         openAPI.setComponents(components);
-        //generate component headers
-
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
             RestUrl restUrl = urlBuilder.build(serviceAccess);
-            PathItem pathItem = null;
-            if (null != openAPI.getPaths() && null != openAPI.getPaths().get(restUrl.getUrl())) {
-                pathItem = openAPI.getPaths().get(restUrl.getUrl());
-            } else {
-                pathItem = new PathItem();
-                openAPI.path("/" + restUrl.getUrl(), pathItem);
-            }
-
-            // Create Operation object
+            //Create Operation object
             Operation operation = new Operation();
-            // Extract basic information
+            //path item
+            generatePathItems(openAPI,operation,restUrl);
+            //Extract basic information
             generateBasicInformation(channel,serviceAccess, operation, restUrl);
+            //path parameter
+            generatePathParameters(restUrl.getUrl(),operation);
             //request body
             generateRequestSchema(serviceAccess, operation, components);
             //response body
             generateResponseSchema(serviceAccess, operation, components);
             //request headers
             generateRequestHeaders(operation);
-            pathItem.operation(PathItem.HttpMethod.valueOf(restUrl.getHttpMethod().toUpperCase()), operation);
-
+            //security headers
+            generateSecurityHeaders(operation,serviceAccess);
         }
         return openAPI;
+    }
+
+    private void generatePathItems(OpenAPI openAPI, Operation operation,RestUrl restUrl) {
+        PathItem pathItem ;
+        if (null != openAPI.getPaths() && null != openAPI.getPaths().get(restUrl.getUrl())) {
+            pathItem = openAPI.getPaths().get(restUrl.getUrl());
+        } else {
+            pathItem = new PathItem();
+            openAPI.path("/" + restUrl.getUrl(), pathItem);
+        }
+        pathItem.operation(PathItem.HttpMethod.valueOf(restUrl.getHttpMethod().toUpperCase()), operation);
+    }
+
+    private void generateSecurityComponent(Components components) {
+        //bearer component
+        Map<String, SecurityScheme> securityRequirementMap = new HashMap<>();
+        //api key header
+        SecurityScheme apiKeySecurityScheme = new SecurityScheme();
+        apiKeySecurityScheme.setType(SecurityScheme.Type.HTTP);
+        apiKeySecurityScheme.setScheme("bearer");
+        apiKeySecurityScheme.bearerFormat("JWT");
+        //create security map
+        securityRequirementMap.put("Bearer",apiKeySecurityScheme);
+        components.securitySchemes(securityRequirementMap);
+    }
+
+    private void generatePathParameters(String url, Operation operation) {
+        if (url.contains("{") ){
+            List<String> allParameters = StringUtils.findAllParameters(url);
+            allParameters.forEach(param->{
+                addPathParameter(operation,param);
+            });
+        }
+    }
+
+
+    private void generateSecurityHeaders(Operation operation, TerminalServiceAccess serviceAccess) {
+        Boolean loginAuthentication = serviceAccess.getService().getCheckAccessFirstAuthentication();
+        Boolean transactionAuthentication = serviceAccess.getService().getCheckAccessSecondAuthentication();
+        if (Objects.nonNull(transactionAuthentication) && transactionAuthentication){
+            addHeaderParameter(operation,SCM_PARAMETER_CLAIM_CODE,"Transaction claim",true);
+        }
+        if (Objects.nonNull(loginAuthentication) && loginAuthentication){
+            SecurityRequirement securityRequirement = new SecurityRequirement();
+            securityRequirement.addList("Bearer");
+            operation.addSecurityItem(securityRequirement);
+        }
     }
 
     private void generateServerInformation(OpenAPI openAPI,Channel channel, String contextPath, Integer port) {
@@ -110,7 +154,6 @@ public class SwaggerGenerator {
         addHeaderParameter(operation,SCM_PARAMETER_CLIENT_CORRELATION_ID,"Correlation ID Header",false);
         addHeaderParameter(operation,SCM_PARAMETER_CLIENT_TIMESTAMP,"Client timestamp",false);
         addHeaderParameter(operation,SCM_PARAMETER_ACCESS_PARAMETER,"Access parameter",true);
-        addHeaderParameter(operation,SCM_PARAMETER_AUTHENTICATION,"Authentication parameter",true);
     }
 
     private void addHeaderParameter(Operation operation,String ref,String description,boolean required){
@@ -123,6 +166,17 @@ public class SwaggerGenerator {
         schema.setName(ref);
         parameter.setSchema(schema);
         parameter.setRequired(required);
+        operation.addParametersItem(parameter);
+    }
+
+    private void addPathParameter(Operation operation,String param){
+        Parameter parameter = new PathParameter();
+        parameter.setIn("path");
+        parameter.setName(param);
+        Schema<String> schema = new Schema<>();
+        schema.setType("string");
+        schema.setName(param);
+        parameter.setSchema(schema);
         operation.addParametersItem(parameter);
     }
 
@@ -146,11 +200,12 @@ public class SwaggerGenerator {
                 Content respContent = new Content();
                 MediaType respMediaType = new MediaType();
                 Schema<Object> objectSchema = new Schema<>();
-                String schemaName = CaseUtils.toCamelCase(serviceAccess.getService().getCode(), true, '_') + "RespTO";
+                String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode()) + "RespTO";
                 objectSchema.set$ref(schemaName);
                 respMediaType.schema(objectSchema);
                 respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, respMediaType);
                 apiResponse.setContent(respContent);
+                apiResponse.setDescription("successful");
                 apiResponses.addApiResponse("200", apiResponse);
                 operation.setResponses(apiResponses);
                 //create schema
@@ -171,8 +226,9 @@ public class SwaggerGenerator {
         Schema<Object> objectSchema = new Schema<>();
         objectSchema.setType("object");
         value.schema(objectSchema);
-        respContent.put("*/*", value);
+        respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, value);
         apiResponse.setContent(respContent);
+        apiResponse.setDescription("successful");
         apiResponses.addApiResponse("200", apiResponse);
         apiResponses.setExtensions(null);
         operation.setResponses(apiResponses);
@@ -187,7 +243,7 @@ public class SwaggerGenerator {
                 Content reqContent = new Content();
                 MediaType reqMediaType = new MediaType();
                 Schema<Object> objectSchema = new Schema<>();
-                String schemaName = CaseUtils.toCamelCase(serviceAccess.getService().getCode(), true, '_') + "ReqTO";
+                String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode())+ "ReqTO";
                 objectSchema.set$ref(schemaName);
                 reqMediaType.schema(objectSchema);
                 reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
@@ -201,4 +257,13 @@ public class SwaggerGenerator {
         }
     }
 
+
+    public String cleanupSwaggerJson(String swaggerJson)  {
+        swaggerJson  = swaggerJson.replace(SecurityScheme.Type.APIKEY.name(), SecurityScheme.Type.APIKEY.toString());
+        swaggerJson = swaggerJson.replace(SecurityScheme.In.HEADER.name(),SecurityScheme.In.HEADER.toString());
+        swaggerJson = swaggerJson.replace(SecurityScheme.Type.HTTP.name(),SecurityScheme.Type.HTTP.toString());
+        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":false","");
+        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":true","");
+        return swaggerJson;
+    }
 }
