@@ -21,4 +21,8 @@ public interface PersonService {
 
     GeneralPerson saveOrUpdateLocalPersonInfoFromCIF(PersonInfoRequest request);
 
+    GeneralPerson updatePerson(GeneralPerson person);
+
+    GeneralPerson savePerson(GeneralPerson person);
+
 }

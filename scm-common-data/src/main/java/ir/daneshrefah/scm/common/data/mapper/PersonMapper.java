@@ -36,11 +36,24 @@ public interface PersonMapper {
         return null;
     }
 
+    @Named("toPersonEntity")
+    default GeneralPersonEntity toPersonEntity(GeneralPerson person) {
+        if (person instanceof CorporatePerson) {
+            return toEntity((CorporatePerson) person);
+        } else if (person instanceof IndividualPerson) {
+            return toEntity((IndividualPerson) person);
+        } else if (person instanceof EmployeePerson) {
+            return toEntity((EmployeePerson) person);
+        }
+        return null;
+    }
+
     CorporatePerson toModel(CorporatePersonEntity entity);
     IndividualPerson toModel(IndividualPersonEntity entity);
     EmployeePerson toModel(EmployeePersonEntity entity);
-//    List<User> entitiesToModels(Iterable<UserEntity> entities);
 
-//    UserEntity toEntity(User model);
+    CorporatePersonEntity toEntity(CorporatePerson person);
+    IndividualPersonEntity toEntity(IndividualPerson person);
+    EmployeePersonEntity toEntity(EmployeePerson person);
 
 }

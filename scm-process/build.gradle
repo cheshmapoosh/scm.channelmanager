@@ -1,0 +1,15 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    compileOnly 'org.springframework:spring-context'
+    compileOnly project(':scm-common')
+    compileOnly project(':scm-common-data')
+}

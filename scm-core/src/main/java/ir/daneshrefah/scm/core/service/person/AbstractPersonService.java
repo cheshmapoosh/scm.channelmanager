@@ -60,12 +60,19 @@ public abstract class AbstractPersonService implements PersonService {
         if (StringUtils.isEmpty(request.getNationalId())) {
             throw new ValidationException("nationalId", ERROR_CODE_VALIDATION_PERSON_NATIONAL_ID_IS_EMPTY, "nationalId is empty.");
         }
+        GeneralPerson result = null;
         GeneralPerson remotePerson = findCIFPersonInfo(request);
         if (null == remotePerson) {
             throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND, "CIF person not found.");
         }
         GeneralPerson localPerson = findPersonInfo(request);
-        return null;
+        if (null == localPerson || null == localPerson.getId()) {
+            result = savePerson(remotePerson);
+        } else {
+            remotePerson.setId(localPerson.getId());
+            result = updatePerson(remotePerson);
+        }
+        return result;
     }
 
 }

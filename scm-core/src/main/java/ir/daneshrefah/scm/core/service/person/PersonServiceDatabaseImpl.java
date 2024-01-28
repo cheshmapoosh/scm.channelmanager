@@ -67,4 +67,16 @@ public class PersonServiceDatabaseImpl extends AbstractPersonService {
         return null;
     }
 
+    @Override
+    public GeneralPerson updatePerson(GeneralPerson person) {
+        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
+        return PersonMapper.INSTANCE.toPerson(entity);
+    }
+
+    @Override
+    public GeneralPerson savePerson(GeneralPerson person) {
+        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
+        return PersonMapper.INSTANCE.toPerson(entity);
+    }
+
 }
