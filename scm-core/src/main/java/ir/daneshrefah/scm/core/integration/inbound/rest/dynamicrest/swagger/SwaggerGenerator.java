@@ -22,6 +22,7 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
+import ir.daneshrefah.scm.utils.string.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.net.InetAddress;
@@ -102,13 +103,19 @@ public class SwaggerGenerator {
     private void generateSecurityComponent(Components components) {
         //bearer component
         Map<String, SecurityScheme> securityRequirementMap = new HashMap<>();
+        //bearer key header
+        SecurityScheme bearerKeySecurityScheme = new SecurityScheme();
+        bearerKeySecurityScheme.setType(SecurityScheme.Type.HTTP);
+        bearerKeySecurityScheme.setScheme("bearer");
+        bearerKeySecurityScheme.bearerFormat("JWT");
         //api key header
         SecurityScheme apiKeySecurityScheme = new SecurityScheme();
-        apiKeySecurityScheme.setType(SecurityScheme.Type.HTTP);
-        apiKeySecurityScheme.setScheme("bearer");
-        apiKeySecurityScheme.bearerFormat("JWT");
+        apiKeySecurityScheme.setType(SecurityScheme.Type.APIKEY);
+        apiKeySecurityScheme.in(SecurityScheme.In.HEADER);
+        apiKeySecurityScheme.setName(SCM_PARAMETER_AUTHORIZATION);
         //create security map
-        securityRequirementMap.put("Bearer",apiKeySecurityScheme);
+        securityRequirementMap.put("Bearer",bearerKeySecurityScheme);
+        securityRequirementMap.put("Authorization",apiKeySecurityScheme);
         components.securitySchemes(securityRequirementMap);
     }
 
@@ -131,6 +138,7 @@ public class SwaggerGenerator {
         if (Objects.nonNull(loginAuthentication) && loginAuthentication){
             SecurityRequirement securityRequirement = new SecurityRequirement();
             securityRequirement.addList("Bearer");
+            securityRequirement.addList("Authorization");
             operation.addSecurityItem(securityRequirement);
         }
     }

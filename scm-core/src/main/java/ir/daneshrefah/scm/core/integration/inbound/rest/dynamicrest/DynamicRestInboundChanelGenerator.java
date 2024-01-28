@@ -104,11 +104,15 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
             from("netty-http:http://0.0.0.0:" + port + contextPath + swaggerUrl)
                     .routeId("swagger_generator_" + getChannel().getCode())
                     .process(exchange -> {
-                        exchange.getMessage().setBody(getObjectMapper().writeValueAsString(openAPI));
+                        exchange.getMessage().setBody(SwaggerGenerator.getInstance().cleanupSwaggerJson(getObjectMapper().writeValueAsString(openAPI)));
                         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
+                        exchange.getMessage().setHeader("Access-Control-Allow-Credentials", "true");
+                        exchange.getMessage().setHeader("Access-Control-Allow-Headers", "*");
+                        exchange.getMessage().setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT");
+                        exchange.getMessage().setHeader("Access-Control-Allow-Origin", "*");
                     })
                     .end();
-            String swaggerUIBody = SwaggerUIGenerator.getInstance().generateCamelUIBody(port, contextPath, swaggerUrl);
+            String swaggerUIBody = SwaggerUIGenerator.getInstance().generateCamelUIBody(port,contextPath, swaggerUrl);
             from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger-ui.html")
                     .routeId("swagger_ui_generator_" + getChannel().getCode())
                     .process(exchange -> {
