@@ -380,11 +380,13 @@ public abstract class AbstractInboundChannelGenerator<T> {
         if (null == profile) {
             return false;
         }
-        if (profile.isCustomerLoaded(service.getServiceProvider().getId())) {
-            return true;
+        String providerId = service.getServiceProvider().getId();
+        if (!profile.isCustomerLoaded(providerId)) {
+            customerService.fillCustomerForPersonProfile(profile, service.getServiceProvider());
         }
-        customerService.fillCustomerForPersonProfile(profile, service.getServiceProvider());
-        return profile.isCustomerLoaded(service.getServiceProvider().getId());
+
+        return profile.isCustomerLoaded(providerId) && null != profile.getCustomer(providerId) &&
+                StringUtils.isNotEmpty(profile.getCustomer(providerId).getCustomerNo());
     }
 
     private List<TransformerExecutionWrapper> extractRequestTransformerList(TerminalServiceAccess serviceAccess) {

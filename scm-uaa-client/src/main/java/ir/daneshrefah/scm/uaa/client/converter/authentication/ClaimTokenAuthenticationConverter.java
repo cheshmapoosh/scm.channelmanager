@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClaimAuthenticationToken;
+import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 
@@ -22,11 +23,15 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
             return null;
         }
 
-        if (StringUtils.isEmpty(request.getTransactionValue())) {
-            throw new BadCredentialsException("invalid claim code");
+        if (StringUtils.isEmpty(request.getUsername())) {
+            throw new BadCredentialsException("Empty " + Constants.SCM_PARAMETER_USERNAME);
         }
 
-        return new ClaimAuthenticationToken(request.getUsername(), request.getTerminalCode(),
+        if (StringUtils.isEmpty(request.getTransactionValue())) {
+            throw new BadCredentialsException("Empty " + Constants.SCM_PARAMETER_CLAIM_CODE);
+        }
+
+        return new ClaimAuthenticationToken(request.getTerminalCode(), request.getUsername(),
                 request.getTransactionValue());
     }
 

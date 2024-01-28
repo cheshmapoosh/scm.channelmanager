@@ -24,4 +24,9 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
         this.logger.debug("Authenticated user");
         return result;
     }
+
+    @Override
+    public String extractCurrentPassword(TerminalUserDetails userDetails) {
+        return userDetails.getPassword();
+    }
 }

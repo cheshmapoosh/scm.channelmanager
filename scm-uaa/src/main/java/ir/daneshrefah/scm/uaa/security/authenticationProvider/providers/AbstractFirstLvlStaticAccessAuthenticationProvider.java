@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 
 /**
@@ -12,5 +13,10 @@ import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 public abstract class AbstractFirstLvlStaticAccessAuthenticationProvider extends AbstractStaticAuthenticationProvider {
     protected AbstractFirstLvlStaticAccessAuthenticationProvider(CustomMD5Encoder encoder) {
         super(encoder);
+    }
+
+    @Override
+    public String extractCurrentPassword(TerminalUserDetails userDetails) {
+        return userDetails.getPassword();
     }
 }

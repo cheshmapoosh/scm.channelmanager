@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
@@ -118,7 +119,8 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
 
 //        TODO check session required
         token.setSessionRequired(preAuthenticationToken.getScopes().contains(OAUTH2_SCOPE_NAME_SESSION));
-        token.setNotificationRequired(true);
+        token.setNotificationRequired(AuthorizationGrantType.AUTHORIZATION_CODE.equals(preAuthenticationToken.getGrantType()) ||
+                AuthorizationGrantType.FIRST_PASSWORD.equals(preAuthenticationToken.getGrantType()));
 
         GeneralAuthenticationToken authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         if (authorization == null || !authorization.isAuthenticated()) {
@@ -153,7 +155,7 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             }
         }
 
-        if (!client.isCheckVersion()) {
+        if (!client.isCheckVersion() || !preAuthenticationToken.getGrantType().isSupportClientCheck()) {
             return;
         }
         Optional<ClientVersion> clientVersion = client.getVersions().stream()

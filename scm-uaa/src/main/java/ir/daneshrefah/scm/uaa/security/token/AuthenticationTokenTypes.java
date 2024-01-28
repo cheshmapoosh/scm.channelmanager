@@ -16,13 +16,16 @@ import lombok.Getter;
 @Getter
 public enum AuthenticationTokenTypes {
 
-    LOGIN_STATIC(FirstLvlStaticAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.STATIC_PASSWORD, false),
-    LOGIN_SMS_REQUEST( FirstLvlSmsRequestAuthenticationToken.class ,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.SMS,false),
-    LOGIN_PIN(FirstLvlPinAuthenticationToken.class,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.PIN,false),
-    LOGIN_PATTERN(FirstLvlPatternAuthenticationToken.class,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.PATTERN,false),
-    LOGIN_SMS_VERIFY(FirstLvlSmsVerifyAuthenticationToken.class,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.SMS,true),
-    LOGIN_OTP_REQUEST(FirstLvlOtpDeviceRequestAuthenticationToken.class,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.OTP,false),
-    LOGIN_OTP_VERIFY(FirstLvlOtpDeviceVerifyAuthenticationToken.class,AuthorizationGrantType.FIRST_PASSWORD,AuthenticationMethod.OTP,true),
+    LOGIN_STATIC(FirstLvlStaticAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.STATIC_PASSWORD, false),
+    LOGIN_SMS_REQUEST(FirstLvlSmsRequestAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.SMS, false),
+    LOGIN_PIN(FirstLvlPinAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.PIN, false),
+    LOGIN_PATTERN(FirstLvlPatternAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.PATTERN, false),
+    LOGIN_SMS_VERIFY(FirstLvlSmsVerifyAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.SMS, true),
+    LOGIN_OTP_REQUEST(FirstLvlOtpDeviceRequestAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.OTP, false),
+    LOGIN_OTP_VERIFY(FirstLvlOtpDeviceVerifyAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.OTP, true),
+    TRANSACTION_STATIC(SecondLvlStaticAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.STATIC_PASSWORD, false),
+    TRANSACTION_SMS(SecondLvlSmsAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.SMS, false),
+    TRANSACTION_OTP(SecondLvlOtpAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.OTP, false),
     ;
 
     private Class<? extends GeneralAuthenticationToken> tokenClass;

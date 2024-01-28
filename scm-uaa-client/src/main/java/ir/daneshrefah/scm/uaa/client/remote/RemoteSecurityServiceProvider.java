@@ -55,7 +55,56 @@ public class RemoteSecurityServiceProvider {
     }
 
     public String authenticateClaim(ClaimAuthenticationToken authentication) throws AuthenticationException {
-        return (String) authentication.getCredentials();
+        return callServerAuthentication(AuthorizationGrantType.SECOND_PASSWORD, (String) authentication.getPrincipal(),
+                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+    }
+
+    public String callServerAuthentication(AuthorizationGrantType grantType, String principal, String credential,
+                                           String clientId) {
+        String headerAuthorization = "";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        if (StringUtils.isNotEmpty(headerAuthorization)) {
+            headers.set("Authorization", headerAuthorization); // Add authorization header
+        }
+
+        // Create form data
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add(OAuth2ParameterNames.GRANT_TYPE, grantType.getCode());
+        if (AuthorizationGrantType.CLIENT_CREDENTIALS.equals(grantType)) {
+            formData.add(OAuth2ParameterNames.CLIENT_ID, principal);
+            formData.add(OAuth2ParameterNames.CLIENT_SECRET, credential);
+        } else {
+            formData.add(OAuth2ParameterNames.CLIENT_ID, clientId);
+            formData.add("username", principal);
+            formData.add("password", credential);
+        }
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+
+        int statusCode = 0;
+        String responseBody = null;
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
+            statusCode = response.getStatusCode().value();
+            responseBody = response.getBody();
+        } catch (RestClientResponseException e) {
+            logger.error("response error on remote authenticate for user: " + principal, e);
+            statusCode = e.getStatusCode().value();
+        } catch (RestClientException e) {
+            logger.error("error on remote authenticate for user: " + principal, e);
+            throw new AuthenticationServiceException("error on client authentication.", e);
+//            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
+        }
+        boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
+                HttpStatusCode.SC_204.equals(statusCode)*/;
+        if (!isAuthenticated) {
+            return null;
+        }
+//        Jwt jwt = getJwt(response.getBody());
+        return responseBody;
     }
 
     public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {

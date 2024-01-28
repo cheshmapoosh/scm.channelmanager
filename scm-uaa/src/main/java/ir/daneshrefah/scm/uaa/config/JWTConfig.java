@@ -66,7 +66,8 @@ public class JWTConfig {
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
         return context -> {
             JwtClaimsSet.Builder claims = context.getClaims();
-            if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
+            if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+                    PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getDetails().getUser();
                 String terminalCode = user.getTerminalCode();

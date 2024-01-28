@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -70,10 +71,17 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         // authentication events after cache expiry contain the details
         GeneralAuthenticationToken authenticationToken = (GeneralAuthenticationToken) authentication;
         authenticationToken.getPreAuthenticationToken().getClientPrincipal();
-        PostAuthenticationToken result = PostAuthenticationToken.authenticated(
-                (TerminalUserDetails) authentication.getDetails(),
-                ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken(),
-                ((TerminalUserDetails) authentication.getDetails()).getAuthorities());
+        PostAuthenticationToken result = null;
+        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authenticationToken.getPreAuthenticationToken().getGrantType())) {
+            result = PostAuthenticationToken.secondLvlAuthenticated(
+                    (TerminalUserDetails) authentication.getDetails(),
+                    ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken());
+        } else {
+            result = PostAuthenticationToken.authenticated(
+                    (TerminalUserDetails) authentication.getDetails(),
+                    ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken(),
+                    ((TerminalUserDetails) authentication.getDetails()).getAuthorities());
+        }
         result.setSessionRequired(authenticationToken.isSessionRequired());
         result.setNotificationRequired(authenticationToken.isNotificationRequired());
         result.setDetails(authentication.getDetails());

@@ -53,7 +53,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
     @Override
     public RegisteredClient findByClientId(String clientId) {
         return findAll().stream()
-                .filter(registeredClient -> registeredClient.getClientId().equals(clientId))
+                .filter(registeredClient -> registeredClient.getClientId().equalsIgnoreCase(clientId))
                 .findFirst().orElse(null);
     }
 
