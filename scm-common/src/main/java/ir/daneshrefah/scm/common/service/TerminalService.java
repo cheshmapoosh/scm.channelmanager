@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.service;
 
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
@@ -16,6 +17,8 @@ import java.util.Optional;
 public interface TerminalService {
 
     public List<Terminal> findAllTerminals();
+
+    public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request);
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
 

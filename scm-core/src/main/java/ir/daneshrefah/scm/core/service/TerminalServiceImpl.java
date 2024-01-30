@@ -1,17 +1,19 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.mapper.TerminalMapper;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
-import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.EntityManager;
@@ -47,6 +49,18 @@ public class TerminalServiceImpl implements TerminalService {
             terminals = TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll());
         }
         return terminals;
+    }
+
+    public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request) {
+        List<Terminal> terminalList = findAllTerminals().stream()
+                .filter(terminal -> null == request || null == request.getCode() || request.getCode().equals(terminal.getCode()))
+                .filter(terminal -> null == request || null == request.getStatus() || request.getStatus().equals(terminal.getStatus()))
+                .filter(terminal -> null == request || null == request.getSupportCheckAuthentication() || request.getSupportCheckAuthentication().equals(terminal.isSupportCheckAuthentication()))
+                .filter(terminal -> null == request || null == request.getSupportCheckSecondAuthentication() || request.getSupportCheckSecondAuthentication().equals(terminal.isSupportCheckSecondAuthentication()))
+                .filter(terminal -> null == request || null == request.getSupportCheckServiceAccess() || request.getSupportCheckServiceAccess().equals(terminal.isSupportCheckServiceAccess()))
+                .filter(terminal -> null == request || null == request.getSupportCheckAssetAccess() || request.getSupportCheckAssetAccess().equals(terminal.isSupportCheckAssetAccess()))
+                .collect(Collectors.toList());
+        return new PagedResponseData<>(request, terminalList);
     }
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId) {

@@ -80,14 +80,14 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceInfoRequest request) {
         List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
-                .filter(service -> null == request.getCode() || request.getCode().equals(service.getCode()))
-                .filter(service -> null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
-                .filter(service -> null == request.getType() || request.getType().equals(service.getType()))
-                .filter(service -> null == request.getStatus() || request.getStatus().equals(service.getStatus()))
-//                .filter(service -> null == request.getParentId() || request.getStatus().equals(service.getStatus()))
-                .filter(service -> null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
+                .filter(service -> null == request || null == request.getCode() || request.getCode().equals(service.getCode()))
+                .filter(service -> null == request || null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
+                .filter(service -> null == request || null == request.getType() || request.getType().equals(service.getType()))
+                .filter(service -> null == request || null == request.getStatus() || request.getStatus().equals(service.getStatus()))
+//                .filter(service -> null == request || null == request.getParentId() || request.getStatus().equals(service.getStatus()))
+                .filter(service -> null == request || null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
                 .collect(Collectors.toList());
-        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), serviceList);
+        return new PagedResponseData<>(request, serviceList);
     }
 
     @Override

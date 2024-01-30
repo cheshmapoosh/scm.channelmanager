@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -24,8 +27,8 @@ public class TerminalManagementService extends AbstractJavaService {
         this.terminalService = terminalService;
     }
 
-    public Object listTerminal() {
-        return terminalService.findAllTerminals();
+    public PagedResponseData<Terminal> listTerminal(TerminalInfoRequest request) {
+        return terminalService.findAllTerminals(request);
     }
 
     public Object addService(Message message) {

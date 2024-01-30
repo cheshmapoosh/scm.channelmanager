@@ -12,7 +12,10 @@ import lombok.Data;
 @Data
 public class PagedRequestData implements RequestData {
 
-    private Integer pageNo = 1;
-    private Integer pageSize = 10;
+    public static final int DEFAULT_PAGE_NO = 1;
+    public static final int DEFAULT_PAGE_SIZE = 10;
+
+    private Integer pageNo = DEFAULT_PAGE_NO;
+    private Integer pageSize = DEFAULT_PAGE_SIZE;
 
 }
