@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.service;
 
+import ir.daneshrefah.scm.common.dto.PagedRequestData;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
@@ -13,7 +14,7 @@ import lombok.Data;
  * @since 2024-01-30
  */
 @Data
-public class ServiceInfoRequest {
+public class ServiceInfoRequest extends PagedRequestData {
 
     private String code;
     private Boolean isSystemic;

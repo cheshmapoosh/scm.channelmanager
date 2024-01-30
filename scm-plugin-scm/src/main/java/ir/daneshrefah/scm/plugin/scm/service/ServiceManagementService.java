@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
@@ -33,7 +34,7 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    public List<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceInfoRequest request) {
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceInfoRequest request) {
         return this.service.findServiceList(request);
     }
 

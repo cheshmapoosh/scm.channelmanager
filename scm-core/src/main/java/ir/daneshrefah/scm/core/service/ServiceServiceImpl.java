@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
@@ -77,8 +78,8 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceInfoRequest request) {
-        return findServiceList().stream()
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceInfoRequest request) {
+        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
                 .filter(service -> null == request.getCode() || request.getCode().equals(service.getCode()))
                 .filter(service -> null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
                 .filter(service -> null == request.getType() || request.getType().equals(service.getType()))
@@ -86,6 +87,7 @@ public class ServiceServiceImpl implements ServiceService {
 //                .filter(service -> null == request.getParentId() || request.getStatus().equals(service.getStatus()))
                 .filter(service -> null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
                 .collect(Collectors.toList());
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), serviceList);
     }
 
     @Override

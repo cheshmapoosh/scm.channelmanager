@@ -161,7 +161,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             throw new ServiceNotFoundException(request.getServiceCode());
         }
         TerminalServiceAccess serviceAccess = findServiceAccess(request.getTerminalCode(), request.getServiceCode());
-        if (null == serviceAccess) {
+        if (!request.isForCheck() && null == serviceAccess) {
             throw new TerminalServiceNotFoundException(request.getTerminalCode(), request.getServiceCode());
         }
         Header header = Header.builder()

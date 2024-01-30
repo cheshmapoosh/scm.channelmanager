@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.service;
 
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 
@@ -22,7 +23,7 @@ public interface ServiceService {
 
     public List<Service> findServiceList();
 
-    public List<Service> findServiceList(ServiceInfoRequest request);
+    public PagedResponseData<Service> findServiceList(ServiceInfoRequest request);
 
     public Service findServiceByCode(String code);
 
