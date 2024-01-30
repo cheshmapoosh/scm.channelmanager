@@ -159,8 +159,11 @@ public class ServiceServiceImpl implements ServiceService {
             service.setCheckAccessService(false);
         if (null == service.getCheckAccessAsset())
             service.setCheckAccessAsset(false);
+
         ServiceEntity entity = ServiceMapper.INSTANCE.toServiceEntity(service);
-        return ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
+        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
+        emptyServiceListCache();
+        return result;
     }
 
     @Override
