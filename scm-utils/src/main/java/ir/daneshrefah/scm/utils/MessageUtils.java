@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,30 +21,27 @@ public class MessageUtils {
         if (null == message || null == message.getHeader()) {
             return null;
         }
-        return message.getHeader().getTerminalCode();
+        return message.getHeader().getRequest().getTerminalCode();
     }
 
     public static Message generateInternalMessage(Message source, TerminalServiceAccess serviceAccess, JsonNode payload) {
         Header header = Header.builder()
-                .contentType(source.getHeader().getContentType())
+                .request(source.getHeader().getRequest())
                 .authentication(source.getHeader().getAuthentication())
                 .isTransactionAuthenticated(source.getHeader().isTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
-                .clientCorrelationId(source.getHeader().getClientCorrelationId())
-                .clientTimestamp(source.getHeader().getClientTimestamp())
-                .receiveTimestamp(source.getHeader().getReceiveTimestamp())
-                .accessParameter(source.getHeader().getAccessParameter())
-                .clientAgent(source.getHeader().getClientAgent())
-                .serverHost(source.getHeader().getServerHost())
-                .serviceAccess(serviceAccess)
                 .channel(source.getHeader().getChannel())
-                .clientAddress(source.getHeader().getClientAddress())
+                .serviceAccess(serviceAccess)
                 .build();
-        Message result = new Message(source.getRequest());
-        result.setHeader(header);
-        result.setStatus(Status.SC_PROCESSING);
-        result.setPayload(null != payload ? payload : NullNode.getInstance());
+        Message result = Message.builder()
+                .header(header)
+                .payload(null != payload ? payload : NullNode.getInstance())
+                .build();
         return result;
+    }
+
+    public static boolean isContinueAllowed(Message message) {
+        return null != message && Status.SC_PROCESSING.equals(message.getStatus());
     }
 
 }

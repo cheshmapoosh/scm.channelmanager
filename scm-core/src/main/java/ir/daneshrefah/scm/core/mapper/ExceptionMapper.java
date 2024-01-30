@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.core.mapper;
 
+import ir.daneshrefah.scm.common.exception.DisableServiceExecutionException;
+import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
+import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.exception.*;
@@ -30,7 +33,13 @@ public enum ExceptionMapper {
     PROVIDER_UNKNOWN_EXCEPTION(ProviderUnknownException.class, ErrorCodes.ERROR_CODE_PROVIDER_UNKNOWN_EXCEPTION,
             Status.SC_ERROR_UNREACHABLE_PROVIDER),
     PROVIDER_UNREACHABLE_EXCEPTION(ProviderUnreachableException.class, ErrorCodes.ERROR_CODE_HOST_UNREACHABLE,
-            Status.SC_ERROR_UNREACHABLE_PROVIDER);
+            Status.SC_ERROR_UNREACHABLE_PROVIDER),
+    SERVICE_NOT_FOUND_EXCEPTION(ServiceNotFoundException.class, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_NOT_ASSIGNED_TO_TERMINAL,
+            Status.SC_NOT_FOUND),
+    TERMINAL_SERVICE_NOT_FOUND_EXCEPTION(TerminalServiceNotFoundException.class, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_NOT_ASSIGNED_TO_TERMINAL,
+            Status.SC_NOT_FOUND),
+    DISABLE_SERVICE_EXCEPTION(DisableServiceExecutionException.class, ErrorCodes.ERROR_CODE_JAVA_SERVICE_IS_DISABLED,
+            Status.SC_NOT_FOUND);
 
     private final Class<? extends Exception> exception;
     @Getter

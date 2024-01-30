@@ -24,14 +24,14 @@ public class NewTerminalController extends AbstractSpringRestInboundController {
 
     @GetMapping()
     public ResponseEntity<List<String>> getAllProfiles(HttpServletRequest request) {
-        MessageBuildRequest buildRequest = DefaultHttpMessageRequestBuilder.builder(request, getChannel()).build();
-        Message message = executeService(buildRequest, null, "ACCOUNT-LIST");
+        MessageBuildRequest buildRequest = DefaultHttpMessageRequestBuilder.builder(request, getChannel(), "ACCOUNT-LIST").build();
+        Message message = executeService(buildRequest);
         return ResponseEntity.status(HttpStatus.OK).body(Arrays.asList(new String[] {"hi", "hello"}));
     }
 
     @PostMapping("/create-terminal")
     public String createTerminal(HttpServletRequest request, @RequestBody Terminal terminal) {
-        Message message = executeService(request, "ACCOUNT-LIST");
+//        Message message = executeService(request, "ACCOUNT-LIST");
         // ...
         return "user-created";  // Return view name
     }

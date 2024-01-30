@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.client.core;
+package ir.daneshrefah.scm.common.model.message;
 
 /**
  * Description of the class or purpose of the file.

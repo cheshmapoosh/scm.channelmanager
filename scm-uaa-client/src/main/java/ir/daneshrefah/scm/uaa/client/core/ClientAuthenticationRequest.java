@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.core;
 
+import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +19,5 @@ public class ClientAuthenticationRequest {
     private String terminalCode;
     private ClientAuthenticationType authenticationType;
     private String authenticationValue;
-    private ClientAuthenticationType transactionType;
-    private String transactionValue;
 
 }

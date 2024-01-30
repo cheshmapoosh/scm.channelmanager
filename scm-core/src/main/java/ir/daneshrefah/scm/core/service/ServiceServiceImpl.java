@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
@@ -16,7 +18,6 @@ import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -73,6 +74,18 @@ public class ServiceServiceImpl implements ServiceService {
             services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
         }
         return services;
+    }
+
+    @Override
+    public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceInfoRequest request) {
+        return findServiceList().stream()
+                .filter(service -> null == request.getCode() || request.getCode().equals(service.getCode()))
+                .filter(service -> null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
+                .filter(service -> null == request.getType() || request.getType().equals(service.getType()))
+                .filter(service -> null == request.getStatus() || request.getStatus().equals(service.getStatus()))
+//                .filter(service -> null == request.getParentId() || request.getStatus().equals(service.getStatus()))
+                .filter(service -> null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
+                .collect(Collectors.toList());
     }
 
     @Override

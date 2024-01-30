@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.person.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_SERVICE_NOT_ASSIGNED;
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_SERVICE;
 
 /**
@@ -29,7 +29,7 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
         if (isServiceAssigned) {
             return ACCESS_ABSTAIN;
         }
-        throw new AccessDeniedException(SCM_PARAMETER_SERVICE, ERROR_CODE_SERVICE_NOT_ASSIGNED, "service not assigned.");
+        throw new AccessDeniedException(SCM_PARAMETER_SERVICE, ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER, "service not assigned.");
     }
 
     @Override

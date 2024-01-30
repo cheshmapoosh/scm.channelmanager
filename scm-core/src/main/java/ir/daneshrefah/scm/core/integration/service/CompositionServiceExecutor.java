@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
@@ -11,7 +9,6 @@ import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionServic
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,19 +56,15 @@ public class CompositionServiceExecutor extends ServiceExecutor {
                 break;
             }
 
-            Message tempMessage = SerializationUtils.clone(message);
-            tempMessage.setErrors(null);
-//            tempMessage.setEvents(null);
-            tempMessage.setPayload((JsonNode) relationRequestPayload);
-            serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
-//            message.addEvents(tempMessage.getEvents());
-            message.addErrors(tempMessage.getErrors());
-            if (!Status.SC_SUCCESS.equals(tempMessage.getStatus())) {
-                message.setStatus(tempMessage.getStatus());
-                break;
-            }
+//            Message tempMessage =  MessageUtils.generateInternalMessage(message, serviceRelation.getTargetService(), (JsonNode) relationRequestPayload);
+//            serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
+//            message.addErrors(tempMessage.getErrors());
+//            if (!Status.SC_SUCCESS.equals(tempMessage.getStatus())) {
+//                message.status(tempMessage.getStatus());
+//                break;
+//            }
 
-            Object relationResponsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
+//            Object relationResponsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
 //            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
 //                    serviceRelation.getTargetServiceTransformerResponseClassName());
 //            Object relationResponsePayload = tempMessage.getPayload();
@@ -80,7 +73,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 //                        serviceRelation.getTargetServiceTransformerResponseMetadata());
 //            }
 
-            message.setPayload((JsonNode) relationResponsePayload);
+//            message.setPayload((JsonNode) relationResponsePayload);
 
             reverseServiceStack.push(serviceRelation);
             commitServiceQueueQueue.add(serviceRelation);

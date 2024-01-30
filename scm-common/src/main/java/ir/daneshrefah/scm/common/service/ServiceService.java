@@ -22,6 +22,8 @@ public interface ServiceService {
 
     public List<Service> findServiceList();
 
+    public List<Service> findServiceList(ServiceInfoRequest request);
+
     public Service findServiceByCode(String code);
 
     public Service findServiceById(String id);

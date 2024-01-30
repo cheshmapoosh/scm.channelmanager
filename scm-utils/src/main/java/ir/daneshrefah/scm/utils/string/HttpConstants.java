@@ -12,6 +12,7 @@ public class HttpConstants {
     public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
     public static final String HTTP_HEADER_USER_AGENT = "User-Agent";
     public static final String HTTP_HEADER_HOST = "Host";
+    public static final String HTTP_HEADER_AUTHORIZATION = "Authorization";
 //    public static final String HTTP_HEADER_AUTHORIZATION_DELEGATED = "AuthorizationD";
 
 

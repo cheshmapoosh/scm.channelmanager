@@ -6,6 +6,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_AUTHENTICATION_REQUIRED = 1002;
     public static final int ERROR_CODE_AUTHENTICATION_TRANSACTION_REQUIRED = 1003;
     public static final int ERROR_CODE_AUTHENTICATION_FAILED = 1004;
+    public static final int ERROR_CODE_TRANSACTION_AUTHENTICATION_FAILED = 1083;
     public static final int ERROR_CODE_VALIDATION = 1005;
     public static final int ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY = 1006;
     public static final int ERROR_CODE_TERMINAL_CODE_IS_EMPTY = 1007;
@@ -13,7 +14,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_ACCESS_DENIED = 1009;
     public static final int ERROR_CODE_ASSET_IS_EMPTY = 1010;
     public static final int ERROR_CODE_ASSET_NOT_ASSIGNED = 1011;
-    public static final int ERROR_CODE_SERVICE_NOT_ASSIGNED = 1012;
+    public static final int ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER = 1012;
     public static final int ERROR_CODE_TRANSFORMER_UNKNOWN_EXCEPTION = 1013;
     public static final int ERROR_CODE_HOST_UNREACHABLE = 1014;
     public static final int ERROR_CODE_PROVIDER_UNKNOWN_EXCEPTION = 1015;
@@ -21,6 +22,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_UNSUCCESSFUL_PROVIDER_RESPONSE = 1017;
     public static final int ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND = 1018;
     public static final int ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND = 1019;
+    public static final int ERROR_CODE_JAVA_SERVICE_IS_DISABLED = 1082;
     public static final int ERROR_CODE_DUPLICATE_RECORD = 1020;
     public static final int ERROR_CODE_DATA_INTEGRITY_VIOLATION = 1021;
     public static final int ERROR_CODE_JPA_SYSTEM = 1022;
@@ -39,6 +41,8 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY = 1060;
     public static final int ERROR_CODE_VALIDATION_SERVICE_ID_IS_INVALID = 1061;
     public static final int ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND = 1072;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_NOT_ASSIGNED_TO_TERMINAL = 1080;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_NOT_FOUND = 1081;
     public static final int ERROR_CODE_VALIDATION_OBJECT_NOT_FOUND = 1062;
     public static final int ERROR_CODE_VALIDATION_NO_CHANGE = 1063;
     public static final int ERROR_CODE_VALIDATION_TERMINAL_ID_IS_EMPTY = 1064;

@@ -17,10 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public interface HttpInboundExecutor {
 
-    TerminalServiceAccess findService(HttpServletRequest request, String serviceCode);
-
-    public Message executeService(HttpServletRequest request, String serviceCode, JsonNode payload);
-    public Message executeService(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest, String serviceCode);
+    public Message executeService(MessageBuildRequest request);
 
     public Channel getChannel();
 

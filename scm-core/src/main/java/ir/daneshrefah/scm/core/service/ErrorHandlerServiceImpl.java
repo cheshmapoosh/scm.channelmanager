@@ -1,10 +1,7 @@
 package ir.daneshrefah.scm.core.service;
 
 import com.networknt.schema.ValidationMessage;
-import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ResultNotFoundException;
-import ir.daneshrefah.scm.common.exception.ServiceExecutionException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Header;
@@ -112,7 +109,6 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
             String errorMessage = validationException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
             message.addError(error, Status.SC_ERROR_VALIDATION);
-            message.nullPayload();
             return message;
         }
 
@@ -123,7 +119,6 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
             String errorMessage = resultNotFoundException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
             message.addError(error, Status.SC_NOT_FOUND);
-            message.nullPayload();
             return message;
         }
 
@@ -139,12 +134,10 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
                     error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DATA_INTEGRITY_VIOLATION, ex.getMessage());
                 }
                 message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
-                message.nullPayload();
                 return message;
             } else if (e instanceof JpaSystemException) {
                 JpaSystemException ex = (JpaSystemException) e;
                 message.addError(new Error(null, ERROR_CODE_JPA_SYSTEM, ex.getMessage()), Status.SC_ERROR_SYSTEM);
-                message.nullPayload();
                 return message;
             }
         }
@@ -158,7 +151,6 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
             Error error = new Error(null, ErrorCodes.ERROR_CODE_SYSTEM_ERROR,
                     null != exception.getCause() ? exception.getCause().getMessage() : exception.getMessage());
             message.addError(error, Status.SC_ERROR_SYSTEM);
-            message.nullPayload();
         }
 
         return message;
@@ -175,9 +167,10 @@ public class ErrorHandlerServiceImpl implements ErrorHandlerService {
     }
 
     private Message createEmptyMessage(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {
-        Message result = new Message(request);
-        Header header = Header.builder().serviceAccess(serviceAccess).build();
-        result.setHeader(header);
+        Header header = Header.builder().request(request).serviceAccess(serviceAccess).build();
+        Message result = Message.builder()
+                .header(header)
+                .build();
         return result;
     }
 

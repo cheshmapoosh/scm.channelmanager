@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -14,21 +13,26 @@ import java.time.Instant;
  * @version 1.0
  * @since 2024-01-16
  */
-@Getter
-@Builder
+@Data
 public class MessageBuildRequest implements Serializable {
 
     private String terminalCode;
-    private String channelCode;
+    private String serviceCode;
     private String contentType;
+    private String clientRemoteAddress;
     private String clientCorrelationId;
     private Instant clientTimestamp;
-    private Instant receiveTimestamp;
-    private String accessParameter;
     private String clientAgent;
+    private String accessParameter;
+    private String username;
+    private ClientAuthenticationType authenticationType;
+    private String authenticationValue;
+    private ClientAuthenticationType transactionAuthenticationType;
+    private String transactionAuthenticationValue;
+    private Instant receiveTimestamp;
     private String serverHost;
-    private String clientAddress;
     private JsonNode payload;
     private boolean isForCheck;
+    private Exception error;
 
 }

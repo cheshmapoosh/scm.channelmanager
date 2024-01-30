@@ -100,7 +100,7 @@ public abstract class ServiceExecutor {
         if (null == response)
             message.nullPayload();
         else if (response.getClass().isAssignableFrom(JsonNode.class)) {
-            message.setPayload((JsonNode) response);
+            message.payload((JsonNode) response);
         } else {
             try {
                 JsonNode node = null;
@@ -109,16 +109,16 @@ public abstract class ServiceExecutor {
                 } else {
                     node = objectMapper.valueToTree(response);
                 }
-                message.setPayload(node);
+                message.payload(node);
             } catch (JsonProcessingException e) {
                 JsonNode node = objectMapper.valueToTree(response);
-                message.setPayload(node);
+                message.payload(node);
 //                throw new RuntimeException(e);
             }
         }
         if (Status.SC_PROCESSING.equals(message.getStatus()) /*&&
                 service.getId().equals(message.getHeader().getService().getTerminalServiceAccess().getService().getId())*/) {
-            message.setStatus(Status.SC_SUCCESS);
+            message.status(Status.SC_SUCCESS);
         }
     }
 

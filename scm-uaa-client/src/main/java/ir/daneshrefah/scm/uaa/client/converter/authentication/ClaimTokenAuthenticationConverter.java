@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClaimAuthenticationToken;
 import ir.daneshrefah.scm.utils.constant.Constants;
@@ -19,7 +19,7 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !ClientAuthenticationType.BASIC.equals(request.getTransactionType())) {
+        if (null == request || !ClientAuthenticationType.BASIC.equals(request.getAuthenticationType())) {
             return null;
         }
 
@@ -27,12 +27,12 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
             throw new BadCredentialsException("Empty " + Constants.SCM_PARAMETER_USERNAME);
         }
 
-        if (StringUtils.isEmpty(request.getTransactionValue())) {
+        if (StringUtils.isEmpty(request.getAuthenticationValue())) {
             throw new BadCredentialsException("Empty " + Constants.SCM_PARAMETER_CLAIM_CODE);
         }
 
         return new ClaimAuthenticationToken(request.getTerminalCode(), request.getUsername(),
-                request.getTransactionValue());
+                request.getAuthenticationValue());
     }
 
 }

@@ -1,11 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Description of the class or purpose of the file.
@@ -22,17 +19,8 @@ public abstract class AbstractRestInboundController {
         return executor.getChannel();
     }
 
-    protected final Message executeService(HttpServletRequest request, String serviceCode, JsonNode payload) {
-        return executor.executeService(request, serviceCode, payload);
-    }
-
-    protected final Message executeService(MessageBuildRequest request, ClientAuthenticationRequest authenticationRequest,
-                                           String serviceCode) {
-        return executor.executeService(request, authenticationRequest, serviceCode);
-    }
-
-    protected final Message executeService(HttpServletRequest request, String serviceCode) {
-        return executeService(request, serviceCode, null);
+    protected final Message executeService(MessageBuildRequest request) {
+        return executor.executeService(request);
     }
 
     public void setExecutor(HttpInboundExecutor executor) {

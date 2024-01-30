@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.uaa.client.provider.token.AnonymousAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -33,8 +33,7 @@ public class AnonymousAuthenticationConverter extends org.springframework.securi
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null != request && !ClientAuthenticationType.ANONYMOUS.equals(request.getAuthenticationType()) &&
-                !ClientAuthenticationType.ANONYMOUS.equals(request.getTransactionType())) {
+        if (null != request && !ClientAuthenticationType.ANONYMOUS.equals(request.getAuthenticationType())) {
             return null;
         }
         return new AnonymousAuthenticationToken(

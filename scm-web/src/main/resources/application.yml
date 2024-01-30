@@ -35,10 +35,10 @@ spring:
     properties:
       hibernate:
         default_schema: REF
+    show-sql: true
 #  mvc:
 #    servlet:
 #      load-on-startup: 1
 #      path: /
 logging:
   config: classpath:logback-spring.xml
-

@@ -22,28 +22,19 @@ import java.time.Instant;
 @Builder
 public class Header implements Serializable {
 
-    private String contentType;
-    @Setter
+    private final MessageBuildRequest request;
     private Authentication authentication;
-    @Setter
-    private boolean isTransactionAuthenticated = false;
-    @Setter
+    private boolean isTransactionAuthenticated;
     private String correlationId;
-    private String clientCorrelationId;
-    private Instant clientTimestamp;
-    private String clientAgent;
-    private Instant receiveTimestamp;
-    private String accessParameter;
-    private String serverHost;
     private Channel channel;
     private TerminalServiceAccess serviceAccess;
-    private String clientAddress;
 
-    public String getUsername() {
-        if (null != authentication) { //TODO username
-            return authentication.getName();
-        }
-        return null;
+    public void authenticate(Authentication authentication) {
+        this.authentication = authentication;
+    }
+
+    public void authenticateTransaction(boolean isTransactionAuthenticated) {
+        this.isTransactionAuthenticated = isTransactionAuthenticated;
     }
 
     public PersonProfile getPersonProfile() {
@@ -54,9 +45,23 @@ public class Header implements Serializable {
     }
 
     public String getTerminalCode() {
-        if (null == serviceAccess || null == serviceAccess.getTerminal()) {
-            return null;
-        }
-        return serviceAccess.getTerminal().getCode();
+        return request.getTerminalCode();
     }
+
+    public String getContentType() {
+        return request.getContentType();
+    }
+
+    public Instant getReceiveTimestamp() {
+        return request.getReceiveTimestamp();
+    }
+
+    public String getClientCorrelationId() {
+        return request.getClientCorrelationId();
+    }
+
+    public Instant getClientTimestamp() {
+        return request.getClientTimestamp();
+    }
+
 }

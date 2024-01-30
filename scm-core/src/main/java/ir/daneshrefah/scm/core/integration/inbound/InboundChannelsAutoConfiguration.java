@@ -6,9 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.*;
 import ir.daneshrefah.scm.core.service.ChannelService;
+import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -37,18 +44,21 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
     private ChannelService channelService;
     @Autowired
     private TerminalService terminalService;
-    /*@Autowired
-    private ConfigurableBeanFactory beanFactory;
-    @Autowired
-    private ServiceProducerTemplate producerTemplate;
-    @Autowired
-    private DecisionManager decisionManager;
-    @Autowired
-    private TransformerService transformerService;
-    private ApplicationContext applicationContext;*/
 
     @Bean
-    public void registerInboundBeans() {
+    public List<MessageInterceptor> requestInterceptors(AuthenticationClientTemplate authenticationClientTemplate,
+                                                        DecisionManager decisionManager, CustomerService customerService) {
+        List<MessageInterceptor> result = Arrays.asList(new RequestValidationInterceptor(),
+                new AuthenticationInterceptor(authenticationClientTemplate),
+                new TransactionAuthenticationInterceptor(authenticationClientTemplate),
+                new DecisionManagerInterceptor(decisionManager),
+                new CustomerInterceptor(customerService),
+                new RequestTransformerInterceptor());
+        return result;
+    }
+
+    @Bean
+    public boolean registerInboundBeans(List<MessageInterceptor> requestInterceptors) {
         List<Channel> channels = channelService.findAllChannelList();
 
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
@@ -83,7 +93,8 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
                 continue;
             }
 
-            boolean isContinue = inboundChannelGenerator.initConfig(channel, jsonMetadata);
+            boolean isContinue = inboundChannelGenerator.initConfig(requestInterceptors, Collections.emptyList(),
+                    channel, jsonMetadata);
             if (!isContinue) {
                 LOGGER.error("error found in channel '{}' initialization. skip initialization.", channel.getCode());
                 continue;
@@ -144,6 +155,7 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
         }
 */
         LOGGER.info("=================== end InboundChannelsAutoConfiguration ===================");
+        return true;
     }
 
 //    private Map<String, Class<? extends AbstractInboundChannelGenerator>> extractInboundChannelGeneratorMap() {

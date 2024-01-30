@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -32,8 +33,8 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    public List<ir.daneshrefah.scm.common.model.service.Service> serviceList() {
-        return this.service.findServiceList();
+    public List<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceInfoRequest request) {
+        return this.service.findServiceList(request);
     }
 
     public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String serviceCode) {

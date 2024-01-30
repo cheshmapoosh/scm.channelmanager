@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 /**
  * Description of the class or purpose of the file.
  *

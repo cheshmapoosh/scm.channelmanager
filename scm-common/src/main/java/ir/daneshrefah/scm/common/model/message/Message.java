@@ -4,9 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,40 +19,40 @@ import java.util.List;
  * @since 2023-07-19
  */
 @Getter
-@Setter
-@RequiredArgsConstructor
+@Builder
 public class Message implements Serializable {
+
     private Header header;
     private Status status;
-    private List<Error> errors;
     private JsonNode payload;
-    private final MessageBuildRequest request;
-
-    public void nullPayload() {
-        this.payload = JsonNodeFactory.instance.nullNode();
-    }
+    private List<Error> errors;
 
     public void addError(Error error, Status status) {
         if (null == errors)
             errors = new ArrayList<>();
         errors.add(error);
-        setStatus(status);
+        this.status = status;
+        nullPayload();
     }
 
     public void addAccessDeniedError(String source, Integer errorCode, String message) {
         addError(new Error(source, null != errorCode ? errorCode : ErrorCodes.ERROR_CODE_ACCESS_DENIED,
                         null != message ? message : "access denied."),
                 Status.SC_ACCESS_DENIED);
-        setPayload(JsonNodeFactory.instance.nullNode());
     }
 
-    public void addErrors(List<Error> errors) {
-        if (null == errors)
-            return;
+    public void nullPayload() {
+        this.payload = JsonNodeFactory.instance.nullNode();
+    }
 
-        if (null == this.errors)
-            this.errors = new ArrayList<>();
-        this.errors.addAll(errors);
+    public void payload(JsonNode payload) {
+        this.payload = null != payload ? payload : JsonNodeFactory.instance.nullNode();
+    }
+
+    public void status(Status status) {
+        if (null != status) {
+            this.status = status;
+        }
     }
 
     public String getPayloadValue(String property) {
@@ -67,4 +66,5 @@ public class Message implements Serializable {
             return null;
         return (payload.has(property) && payload.get(property).isInt()) ? payload.get(property).asInt() : null;
     }
+
 }

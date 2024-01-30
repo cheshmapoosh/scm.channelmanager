@@ -3,19 +3,16 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.springrest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
-import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
-import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +32,7 @@ import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANN
  * @version 1.0
  * @since 2024-01-02
  */
+@Slf4j
 @Component
 @Scope("prototype")
 public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannelGenerator {
@@ -43,13 +41,9 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     private ArrayNode controllersArrayNode;
 
     public SpringRestInboundChanelGenerator(ObjectMapper objectMapper, RequestMappingHandlerMapping handlerMapping,
-                                            AuthenticationClientTemplate authenticationTemplate,
                                             ServiceProducerTemplate producerTemplate,
-                                            TransformerService transformerService,
-                                            ErrorHandlerService errorHandlerService,
-                                            CustomerService customerService) {
-        super(objectMapper,authenticationTemplate, producerTemplate, transformerService,
-                null, null, errorHandlerService, customerService);
+                                            ErrorHandlerService errorHandlerService) {
+        super(objectMapper,producerTemplate, errorHandlerService);
         this.handlerMapping = handlerMapping;
     }
 
@@ -59,7 +53,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
         this.controllersArrayNode = (null != metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER) && metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER).isArray()) ?
                 (ArrayNode) metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER) : null;
         if (null == controllersArrayNode || controllersArrayNode.size() < 1) {
-            LOGGER.error("no controllers defined in metadata.");
+            log.error("no controllers defined in metadata.");
             return false;
         }
 
@@ -67,7 +61,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     }
 
     @Override
-    protected boolean registerEndpoints() {
+    public boolean registerEndpoints() {
         Iterator<JsonNode> controllersIterator = controllersArrayNode.elements();
         while (controllersIterator.hasNext()) {
             JsonNode controllerNode = controllersIterator.next();
@@ -78,7 +72,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
                         controllerClassName, AbstractSpringRestInboundController.class);
                 inboundSpringController.setExecutor(this);
             } catch (Exception e) {
-                LOGGER.error("error on get controller class '{}'", controllerClassName);
+                log.error("error on get controller class '{}'", controllerClassName);
             }
 
             registerControllerMapping(inboundSpringController);
@@ -87,13 +81,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     }
 
     @Override
-    protected MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input, TerminalServiceAccess serviceAccess) {
-        return null;
-    }
-
-    @Override
-    protected ClientAuthenticationRequest extractAuthenticationRequest(HttpServletRequest input) {
-        //TODO must be exclude from inbound layer and move to specific class
+    public MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input, Service service) {
         return null;
     }
 
@@ -101,7 +89,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
         if (null == inboundSpringController) {
             return;
         }
-        LOGGER.info("start register controller '{}'", inboundSpringController.getClass().getSimpleName());
+        log.info("start register controller '{}'", inboundSpringController.getClass().getSimpleName());
         Class<? extends AbstractSpringRestInboundController> controllerClass = inboundSpringController.getClass();
         RequestMapping controllerRequestMapping = controllerClass.getAnnotation(RequestMapping.class);
         String mappingPrefix = StringUtils.EMPTY;
@@ -175,7 +163,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
         if (paths.length > 0) {
             path = path + paths[0];
         }
-        LOGGER.info("register request mapping '{}:{}' for class '{}:{}'", requestMethod, path,
+        log.info("register request mapping '{}:{}' for class '{}:{}'", requestMethod, path,
                 inboundSpringController.getClass().getSimpleName(), method.getName());
         RequestMappingInfo info = RequestMappingInfo
                 .paths(path)
