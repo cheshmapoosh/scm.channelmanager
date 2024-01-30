@@ -283,8 +283,8 @@ public class SwaggerGenerator {
 
     private String generateJavaServiceRequestSchema(Service service) {
         try {
-            final String basePackage = "ir.daneshrefah";
             final String ignoreType = "Message";
+            final String basePackage = "ir.daneshrefah";
             JavaService javaService = (JavaService) service;
             JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService);
             Class<?>[] parameterTypes = methodInfo.getMethod().getParameterTypes();
