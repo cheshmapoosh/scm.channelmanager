@@ -29,7 +29,7 @@ public class AppendPropTransformer extends AbstractTransformer {
     }
 
     @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, String metadata) {
         JsonNode result = message.getPayload().deepCopy();
         try {
             JsonNode jsonMetadata = objectMapper.readTree(metadata);

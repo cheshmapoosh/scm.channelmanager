@@ -35,7 +35,6 @@ spring:
     properties:
       hibernate:
         default_schema: REF
-    show-sql: true
 #  mvc:
 #    servlet:
 #      load-on-startup: 1

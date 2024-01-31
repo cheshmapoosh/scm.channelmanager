@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
@@ -34,16 +35,26 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                 .authenticationType(request.getAuthenticationType())
                 .authenticationValue(request.getAuthenticationValue())
                 .build();
-        UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+        UserAuthentication authentication = null;
+        Exception error = null;
+        try {
+            authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+        } catch (ClientAuthenticationException e) {
+            authentication = e.getAuthentication();
+            error = null != e.getCause() ? (Exception) e.getCause() : e;
+        } catch (Exception e) {
+            throw e;
+        }
         message.getHeader().authenticate(authentication);
-        if (authentication.hasError()) {
-            String errorMessage = authentication.getError();
+        if (authentication.hasError() || null != error) {
+            String errorMessage = null != error ? error.getMessage() : authentication.getError();
             if (StringUtils.isEmpty(errorMessage)) {
                 errorMessage = "error on authenticate user.";
             }
             message.addError(new Error(Constants.SCM_PARAMETER_AUTHORIZATION,
                     ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED, errorMessage), Status.SC_UNAUTHORIZED);
         }
+//        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
         return message;
     }
 

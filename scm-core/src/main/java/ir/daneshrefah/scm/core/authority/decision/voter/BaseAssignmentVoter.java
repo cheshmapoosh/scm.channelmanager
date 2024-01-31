@@ -38,10 +38,6 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
         return decisionHelper.fillServiceAccessForProfile(profile, terminalCode);
     }
 
-    protected final PersonProfile fillCustomerForProfile(PersonProfile profile, ExternalServiceProvider serviceProvider) {
-        return decisionHelper.fillCustomerForProfile(profile, serviceProvider);
-    }
-
     protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, Object asset);
 
     private boolean isAssetSupport(Message message) {

@@ -24,7 +24,7 @@ public class EmptyTransformer extends AbstractTransformer {
     }
 
     @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, String metadata) {
         return emptyJsonNode;
     }
 }

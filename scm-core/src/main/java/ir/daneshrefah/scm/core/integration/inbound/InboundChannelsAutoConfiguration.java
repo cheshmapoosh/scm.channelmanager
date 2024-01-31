@@ -8,10 +8,8 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.*;
 import ir.daneshrefah.scm.core.service.ChannelService;
-import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -46,14 +44,11 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
     private TerminalService terminalService;
 
     @Bean
-    public List<MessageInterceptor> requestInterceptors(AuthenticationClientTemplate authenticationClientTemplate,
-                                                        DecisionManager decisionManager, CustomerService customerService) {
+    public List<MessageInterceptor> requestInterceptors(AuthenticationClientTemplate authenticationClientTemplate) {
         List<MessageInterceptor> result = Arrays.asList(new RequestValidationInterceptor(),
                 new AuthenticationInterceptor(authenticationClientTemplate),
                 new TransactionAuthenticationInterceptor(authenticationClientTemplate),
-                new DecisionManagerInterceptor(decisionManager),
-                new CustomerInterceptor(customerService),
-                new RequestTransformerInterceptor());
+                new TerminalRequestTransformerInterceptor());
         return result;
     }
 

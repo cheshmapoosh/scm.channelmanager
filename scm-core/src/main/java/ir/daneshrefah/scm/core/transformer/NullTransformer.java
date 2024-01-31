@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.transformer;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import org.springframework.stereotype.Service;
@@ -15,8 +17,8 @@ import org.springframework.stereotype.Service;
 public class NullTransformer extends AbstractTransformer {
 
     @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
-        return null;
+    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+        return NullNode.getInstance();
     }
 
 }

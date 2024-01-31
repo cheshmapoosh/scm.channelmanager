@@ -54,13 +54,9 @@ public class DecisionHelper {
         if (null != profile.getServiceAccesses()) {
             return profile;
         }
-        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonProfileId(profile.getPersonProfileId());
+        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonProfileId(profile.getPersonId().personProfileId());
         profile.setServiceAccesses(serviceAccesses);
         return profile;
-    }
-
-    public PersonProfile fillCustomerForProfile(PersonProfile profile, ExternalServiceProvider serviceProvider) {
-        return customerService.fillCustomerForPersonProfile(profile, serviceProvider);
     }
 
     public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,

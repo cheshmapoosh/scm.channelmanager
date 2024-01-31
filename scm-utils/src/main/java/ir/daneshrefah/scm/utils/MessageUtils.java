@@ -35,6 +35,7 @@ public class MessageUtils {
                 .build();
         Message result = Message.builder()
                 .header(header)
+                .status(Status.SC_PROCESSING)
                 .payload(null != payload ? payload : NullNode.getInstance())
                 .build();
         return result;

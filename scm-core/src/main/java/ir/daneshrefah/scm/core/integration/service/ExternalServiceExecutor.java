@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
@@ -29,10 +30,10 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     private final Map<String, AbstractExternalServiceProvider> serviceProviderMap = new HashMap<>();
 
     @Override
-    protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message, Object requestPayload) {
+    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
         ExternalService externalService = (ExternalService) service;
         AbstractExternalServiceProvider provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
-        return provider.execute(message, service, requestPayload);
+        return provider.execute(message, service);
     }
 
     public void registerExternalServiceProvider(ExternalServiceProvider serviceProviderModel) {

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.mock.provider;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
@@ -21,7 +22,7 @@ public class MockServiceProvider extends AbstractExternalServiceProvider {
     }
 
     @Override
-    protected Object executeInternal(Message message, Service service, Object requestBody) {
+    protected JsonNode executeInternal(Message message, Service service, Object requestBody) {
         return null;
     }
 

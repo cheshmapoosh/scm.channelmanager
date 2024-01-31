@@ -13,10 +13,11 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
  */
 public interface CustomerService {
 
-    PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider);
+//    PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider);
+
+    Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId);
 
     Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId);
-
     Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
 
     public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Long personId);

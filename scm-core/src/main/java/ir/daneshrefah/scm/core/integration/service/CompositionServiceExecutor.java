@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
@@ -32,8 +33,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override
-    protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message,
-                                     Object requestPayload) {
+    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
 
         CompositionService compositionService = (CompositionService) service;
         List<ServiceRelation> relations = compositionService.getRelations();
@@ -46,7 +46,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
-            CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
+            CompositeServiceExecutionWrapper serviceExecutionWrapper = null;//prepareServiceExecutionWrapper(serviceRelation);
 
             Object relationRequestPayload = null;
             try {
@@ -82,7 +82,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         return message.getPayload();
     }
-
+/*
     private CompositeServiceExecutionWrapper prepareServiceExecutionWrapper(ServiceRelation serviceRelation) {
         CompositeServiceExecutionWrapper serviceExecutionWrapper = serviceExecutionMap.get(serviceRelation.getId());
         if (null == serviceExecutionWrapper) {
@@ -124,5 +124,5 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             serviceExecutionMap.put(serviceRelation.getId(), serviceExecutionWrapper);
         }
         return serviceExecutionWrapper;
-    }
+    }*/
 }

@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -51,7 +54,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
     }
 
     @Override
-    protected Object executeInternal(Message message, Service service, Object requestBody) {
+    protected JsonNode executeInternal(Message message, Service service, Object requestBody) {
         String serviceUrl = extractUrlByService(service);
         String serviceHttpMethod = extractMethodByService(service);
         String serviceRequestHeaderContentType = extractServiceRequestHeaderContentType(service);
@@ -87,7 +90,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
             if (statusCode != HttpConstants.HTTP_STATUS_OK && statusCode != HttpConstants.HTTP_STATUS_NO_CONTENT) {
-                Object result = handleUnSuccessfulResponseStatus(response, response.statusCode());
+                JsonNode result = handleUnSuccessfulResponseStatus(response, response.statusCode());
                 if (null != result) {
                     return result;
                 }
@@ -105,11 +108,15 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
         }
     }
 
-    protected Object handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
-        return response;
+    protected JsonNode handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
+        try {
+            return getObjectMapper().readTree(response.body());
+        } catch (JsonProcessingException e) {
+            return JsonNodeFactory.instance.textNode(e.getMessage());
+        }
     }
 
-    protected Object handleUnSuccessfulResponseStatus(HttpResponse<String> response, int statusCode) {
+    protected JsonNode handleUnSuccessfulResponseStatus(HttpResponse<String> response, int statusCode) {
         return null;
     }
 

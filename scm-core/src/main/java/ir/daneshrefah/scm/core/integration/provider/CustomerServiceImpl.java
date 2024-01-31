@@ -62,15 +62,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider) {
-        if (profile.isCustomerLoaded(provider.getId()))
-            return profile;
-        Customer customer = findCustomerByPersonId(provider, profile.getPersonId());
+    public Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId) {
+        Customer customer = findCustomerByPersonId(provider, personId.personId());
         if (null == customer) {
-            customer = findCustomerByPersonProfileId(provider, profile.getPersonProfileId());
+            customer = findCustomerByPersonProfileId(provider, personId.personProfileId());
         }
-        profile.addCustomer(provider.getId(), customer);
-        return profile;
+        return customer;
     }
 
     public Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId) {

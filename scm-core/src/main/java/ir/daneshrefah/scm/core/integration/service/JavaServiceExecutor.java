@@ -30,15 +30,22 @@ public class JavaServiceExecutor extends ServiceExecutor {
     private Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
 
     @Override
-    protected Object executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message, Object requestPayload) {
+    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
         JavaServiceFinder.MethodInfo methodInfo = findServiceMethodInfo((JavaService) service);
         if (null != methodInfo.getError()) {
             throw methodInfo.getError();
         }
 
         try {
-            Object[] args = prepareMethodArgs(message, service, requestPayload, methodInfo);
-            return methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
+            Object[] args = prepareMethodArgs(message, service, methodInfo);
+            Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
+            if (response instanceof JsonNode) {
+                return (JsonNode) response;
+            } else if (response instanceof String) {
+                return objectMapper.readTree((String) response);
+            } else {
+                return objectMapper.valueToTree(response);
+            }
         } catch (BaseException e) {
             throw e;
         } catch (InvocationTargetException e) {
@@ -55,7 +62,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
     }
 
     private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,
-                                       Object payload, JavaServiceFinder.MethodInfo methodInfo) {
+                                       JavaServiceFinder.MethodInfo methodInfo) {
         if (null == methodInfo || null == methodInfo.getParamTypes()) {
             return null;
         }
@@ -88,7 +95,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
             } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {
                 result[i] = service;
             } else if (parameterType.equals(Object.class)) {
-                result[i] = payload;
+                result[i] = message.getPayload();
             } else {
                 try {
                     result[i] = objectMapper.treeToValue(message.getPayload(), parameterType);

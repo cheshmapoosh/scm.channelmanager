@@ -40,7 +40,7 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
  * @since 2023-07-29
  */
 @Service
-public class ErrorHandlerServiceImpl implements ErrorHandlerService {
+public class ErrorHandlerServiceImpl extends ErrorHandlerService {
 
     @Autowired
     private ErrorMappingRepository repository;

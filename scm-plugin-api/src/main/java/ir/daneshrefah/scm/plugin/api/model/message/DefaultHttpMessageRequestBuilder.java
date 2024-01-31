@@ -25,7 +25,6 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
 public class DefaultHttpMessageRequestBuilder {
 
     private final HttpServletRequest request;
-    private final Channel channel;
     private final String serviceCode;
 
     public MessageBuildRequest build() {
@@ -59,8 +58,8 @@ public class DefaultHttpMessageRequestBuilder {
     }
 
     @Builder
-    public static DefaultHttpMessageRequestBuilder builder(HttpServletRequest request, Channel channel, String serviceCode) {
-        return new DefaultHttpMessageRequestBuilder(request, channel,serviceCode);
+    public static DefaultHttpMessageRequestBuilder builder(HttpServletRequest request, String serviceCode) {
+        return new DefaultHttpMessageRequestBuilder(request, serviceCode);
     }
 
     private ClientAuthenticationType extractAuthenticationType(String authorizationHeader) {

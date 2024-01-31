@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.inbound.interceptor;
+package ir.daneshrefah.scm.core.integration.service.interceptor;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;

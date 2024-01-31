@@ -135,12 +135,8 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             MessageInterceptor messageInterceptor = iterator.next();
             message = messageInterceptor.intercept(message);
             if (!MessageUtils.isContinueAllowed(message)) {
-                break;
+                return message;
             }
-        }
-
-        if (!MessageUtils.isContinueAllowed(message)) {
-            return message;
         }
 
         producerTemplate.callService(message.getHeader().getServiceAccess().getService(), message);

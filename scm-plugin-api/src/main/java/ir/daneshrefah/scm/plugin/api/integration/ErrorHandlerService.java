@@ -13,12 +13,22 @@ import java.util.Set;
  * @version 1.0
  * @since 2024-01-24
  */
-public interface ErrorHandlerService {
+public abstract class ErrorHandlerService {
 
-    public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors);
+    private static ErrorHandlerService INSTANCE;
 
-    public Message resolveMessageByException(Message message, Exception exception);
+    public ErrorHandlerService() {
+        INSTANCE = this;
+    }
 
-    public BaseException resolveExceptionByError(Message message);
+    public static ErrorHandlerService getInstance() {
+        return INSTANCE;
+    }
+
+    public abstract Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors);
+
+    public abstract Message resolveMessageByException(Message message, Exception exception);
+
+    public abstract BaseException resolveExceptionByError(Message message);
 
 }

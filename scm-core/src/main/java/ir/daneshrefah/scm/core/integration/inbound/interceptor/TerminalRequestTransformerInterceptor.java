@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
  * @version 1.0
  * @since 2024-01-29
  */
-public class RequestTransformerInterceptor extends MessageInterceptor {
+public class TerminalRequestTransformerInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {

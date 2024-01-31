@@ -19,16 +19,8 @@ import java.util.Map;
  */
 public class PersonProfile implements Serializable {
 
-    /**
-     * ref to USER.USERNAME
-     */
     @Getter
-    private String personProfileId;
-    /**
-     * ref to USER.USER_ID
-     */
-    @Getter
-    private Long personId;
+    private PersonId personId;
     private Map<String, Customer> customers = new HashMap<>();
 
     @Getter
@@ -36,8 +28,7 @@ public class PersonProfile implements Serializable {
     private List<ServiceAccess> serviceAccesses;
 
     public PersonProfile(@NonNull String personProfileId, @NonNull Long personId) {
-        this.personProfileId = personProfileId;
-        this.personId = personId;
+        this.personId = new PersonId(personProfileId, personId);
     }
 
     public Customer getCustomer(String providerId) {
@@ -46,6 +37,10 @@ public class PersonProfile implements Serializable {
 
     public boolean isCustomerLoaded(String providerId) {
         return null != customers && customers.containsKey(providerId);
+    }
+
+    public boolean isCustomerAssetLoaded(String providerId) {
+        return null != customers && null != customers.get(providerId) && null != customers.get(providerId).getAssets();
     }
 
     public void addCustomer(String providerId, Customer customer) {
@@ -83,5 +78,11 @@ public class PersonProfile implements Serializable {
     public boolean hasAssetAccess(String providerId, Object assetValue) {
         return null != findAsset(providerId, assetValue);
     }
+
+    /**
+     * personProfileId ref to USER.USERNAME
+     * personId ref to USER.USER_ID
+     */
+    public record PersonId(String personProfileId, Long personId) implements Serializable {}
 
 }

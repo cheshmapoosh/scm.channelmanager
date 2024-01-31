@@ -26,7 +26,7 @@ public class NabRequestTransformer extends AbstractTransformer {
     }
 
     @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, String metadata) {
         Bind bind=new Bind((ObjectNode) payload,metadata);
         return bind.request();
     }

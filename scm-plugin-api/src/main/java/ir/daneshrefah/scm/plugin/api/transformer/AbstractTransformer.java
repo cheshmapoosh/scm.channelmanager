@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.transformer;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.logging.api.EventProducer;
@@ -27,9 +28,9 @@ public abstract class AbstractTransformer {
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public Object transform(Object payload, Message message, String metadata) {
+    public JsonNode transform(Object payload, Message message, String metadata) {
         Instant startTime = Instant.now();
-        Object result = null;
+        JsonNode result = null;
         boolean isSuccessful = true;
         Exception error = null;
         try {
@@ -51,7 +52,7 @@ public abstract class AbstractTransformer {
         return result;
     }
 
-    public abstract Object internalTransform(Object payload, Message message, String metadata);
+    protected abstract JsonNode internalTransform(Object payload, Message message, String metadata);
 
     private void logTransformEvent(Message message, Object input, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();

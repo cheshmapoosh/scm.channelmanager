@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.nab.transformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
@@ -22,9 +23,9 @@ import java.util.Map;
 public class AccountWithdrawTableResponseTransformer extends AbstractTransformer {
 
     @Override
-    public Object internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, String metadata) {
         if (null == payload || !(payload instanceof JsonNode) || ((JsonNode) payload).isNull() || !((JsonNode) payload).isArray()) {
-            return payload;
+            return NullNode.getInstance();
         }
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode arrayNode = (ArrayNode) payload;

@@ -54,10 +54,11 @@ public abstract class AbstractExternalServiceProvider {
 
     protected abstract boolean initServerConfigs();
 
-    public Object execute(Message message, Service service, Object requestPayload) {
+    public JsonNode execute(Message message, Service service) {
+        Object requestPayload = message.getPayload();
         requestPayload = transformRequest(message, requestPayload);
         Instant startTime = Instant.now();
-        Object response = null;
+        JsonNode response = null;
         Exception error = null;
         try {
             response = executeInternal(message, service, requestPayload);
@@ -101,7 +102,7 @@ public abstract class AbstractExternalServiceProvider {
         return requestBody;
     }
 
-    private Object transformResponse(Message message, Object response) {
+    private JsonNode transformResponse(Message message, JsonNode response) {
         List<AbstractTransformer> responseTransformers = prepareResponseTransformers();
         for (Iterator<AbstractTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
@@ -118,7 +119,7 @@ public abstract class AbstractExternalServiceProvider {
         return Collections.emptyList();
     }
 
-    protected abstract Object executeInternal(Message message, Service service, Object requestBody);
+    protected abstract JsonNode executeInternal(Message message, Service service, Object requestBody);
 
     protected String getMetadataValue(String key) {
         if (null == metadata || !metadata.has(key)) {

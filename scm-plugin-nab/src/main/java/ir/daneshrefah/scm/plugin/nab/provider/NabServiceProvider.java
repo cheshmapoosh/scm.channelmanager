@@ -62,7 +62,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
     }
 
     @Override
-    protected Object handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
+    protected JsonNode handleSuccessfulResponseStatus(Message message, Service service, HttpResponse<String> response) {
         try {
             JsonNode node = getObjectMapper().readTree(response.body());
             JsonNode errorNode = node.has("errors") ? node.get("errors") : getObjectMapper().nullNode();
@@ -75,7 +75,7 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
                     throw new ProviderErrorResponseException(getProvider(), errorCode, errorMessage);
                 }
             }
-            return response.body();
+            return getObjectMapper().readTree(response.body());
         } catch (JsonProcessingException e) {
             throw new InvalidProviderResponseException(e, getProvider());
         }

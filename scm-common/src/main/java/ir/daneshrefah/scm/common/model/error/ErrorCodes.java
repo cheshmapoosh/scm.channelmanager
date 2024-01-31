@@ -48,6 +48,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_TERMINAL_ID_IS_EMPTY = 1064;
     public static final int ERROR_CODE_VALIDATION_TERMINAL_ID_IS_INVALID = 1065;
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1067;
+    public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND = 1084;
     public static final int ERROR_CODE_VALIDATION_PERSON_ID_IS_EMPTY = 1068;
     public static final int ERROR_CODE_VALIDATION_PERSON_PROFILE_ID_IS_EMPTY = 1069;
     public static final int ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY = 1073;
