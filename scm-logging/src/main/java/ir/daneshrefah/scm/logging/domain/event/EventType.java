@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.logging.domain.event;
  */
 public enum EventType {
 
-    INBOUND, TRANSFORM, SERVICE_CALL, OUTBOUND,
+    INBOUND, INTERCEPTOR, TRANSFORM, SERVICE_CALL, OUTBOUND,
     AUTHENTICATION, VOTE, PROVIDER_EXECUTION;
 
 }

@@ -78,11 +78,11 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
     @Override
     public T execute(T input, TerminalServiceAccess serviceAccess) {
         Instant startTime = Instant.now();
-        MessageBuildRequest request = null;
+        MessageBuildRequest request = new MessageBuildRequest(input);
         Message message = null;
         Exception exception = null;
         try {
-            request = extractMessageBuildRequest(input, serviceAccess.getService());
+            request = extractMessageBuildRequest(request, serviceAccess.getService());
             message = buildMessageInternal(request);
         } catch (Exception e) {
             message = errorHandlerService.resolveMessageByException(null, new MessageBuildException(request, serviceAccess, e));

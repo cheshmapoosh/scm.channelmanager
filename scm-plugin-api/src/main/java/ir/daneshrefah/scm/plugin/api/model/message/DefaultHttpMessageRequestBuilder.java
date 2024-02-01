@@ -27,8 +27,8 @@ public class DefaultHttpMessageRequestBuilder {
     private final HttpServletRequest request;
     private final String serviceCode;
 
-    public MessageBuildRequest build() {
-        MessageBuildRequest result = new MessageBuildRequest();
+    public MessageBuildRequest<HttpServletRequest> build() {
+        MessageBuildRequest<HttpServletRequest> result = new MessageBuildRequest(request);
         try {
             result.setTerminalCode(request.getHeader(SCM_PARAMETER_TERMINAL));
             result.setServiceCode(serviceCode);

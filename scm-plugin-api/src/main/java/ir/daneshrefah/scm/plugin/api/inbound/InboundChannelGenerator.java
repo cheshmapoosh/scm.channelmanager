@@ -22,7 +22,7 @@ public interface InboundChannelGenerator<T> {
 
     boolean registerEndpoints();
 
-    MessageBuildRequest extractMessageBuildRequest(T input, Service service);
+    MessageBuildRequest<T> extractMessageBuildRequest(MessageBuildRequest<T> request, Service service);
 
     public T execute(T input, TerminalServiceAccess serviceAccess);
 

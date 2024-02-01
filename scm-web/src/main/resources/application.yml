@@ -1,5 +1,30 @@
 scm:
   profile: IB4DEV
+  datasource:
+    primary:
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF
+    secondary:
+      -
+        name: default
+        url: jdbc:db2://10.10.4.104:50001/DBREFSW
+        username: db2inst1
+        password: db2inst1
+        driver-class-name: com.ibm.db2.jcc.DB2Driver
+        max-connection: 10
+        default-schema: REF
+      -
+        name: default2
+        url: jdbc:db2://10.10.4.104:50001/DBREFSW
+        username: db2inst1
+        password: db2inst1
+        driver-class-name: com.ibm.db2.jcc.DB2Driver
+        max-connection: 10
+        default-schema: REF
   inbound:
     host: localhost
     port: 8582
@@ -25,16 +50,16 @@ server:
   servlet:
     context-path: /scm
   port: 8086
-spring:
-  datasource:
-    url: jdbc:db2://10.10.4.104:50001/DBREFSW
-    username: db2inst1
-    password: db2inst1
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
-  jpa:
-    properties:
-      hibernate:
-        default_schema: REF
+#spring:
+#  datasource:
+#    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+#    username: db2inst1
+#    password: db2inst1
+#    driver-class-name: com.ibm.db2.jcc.DB2Driver
+#  jpa:
+#    properties:
+#      hibernate:
+#        default_schema: REF
 #  mvc:
 #    servlet:
 #      load-on-startup: 1

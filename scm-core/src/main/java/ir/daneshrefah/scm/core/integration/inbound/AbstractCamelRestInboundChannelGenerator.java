@@ -82,33 +82,33 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     }
 
     @Override
-    public MessageBuildRequest extractMessageBuildRequest(Exchange input, Service service) {
-        MessageBuildRequest result = new MessageBuildRequest();
+    public MessageBuildRequest<Exchange> extractMessageBuildRequest(MessageBuildRequest<Exchange> request, Service service) {
+        Exchange input = request.getInput();
         try {
-            result.setTerminalCode(CamelUtils.getTerminalCodeFromExchange(input));
-            result.setServiceCode(service.getCode());
-            result.setContentType(CamelUtils.getContentTypeHeaderFromExchange(input));
-            result.setClientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input));
-            result.setClientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input));
-            result.setClientTimestamp(CamelUtils.getClientTimestampFromExchange(input));
-            result.setClientAgent(CamelUtils.getClientAgentFromExchange(input));
-            result.setUsername(CamelUtils.getUsernameHeaderFromExchange(input));
-            result.setAccessParameter(CamelUtils.getAccessParameterFromExchange(input));
-            result.setForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(CamelUtils.getHttpMethodFromExchange(input)));
-            result.setReceiveTimestamp(Instant.now());
-            result.setServerHost(CamelUtils.getServerHostFromExchange(input));
+            request.setTerminalCode(CamelUtils.getTerminalCodeFromExchange(input));
+            request.setServiceCode(service.getCode());
+            request.setContentType(CamelUtils.getContentTypeHeaderFromExchange(input));
+            request.setClientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input));
+            request.setClientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input));
+            request.setClientTimestamp(CamelUtils.getClientTimestampFromExchange(input));
+            request.setClientAgent(CamelUtils.getClientAgentFromExchange(input));
+            request.setUsername(CamelUtils.getUsernameHeaderFromExchange(input));
+            request.setAccessParameter(CamelUtils.getAccessParameterFromExchange(input));
+            request.setForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(CamelUtils.getHttpMethodFromExchange(input)));
+            request.setReceiveTimestamp(Instant.now());
+            request.setServerHost(CamelUtils.getServerHostFromExchange(input));
             String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(input);
-            result.setAuthenticationType(extractAuthenticationType(authorizationHeader));
-            result.setAuthenticationValue(extractAuthenticationValue(authorizationHeader));
+            request.setAuthenticationType(extractAuthenticationType(authorizationHeader));
+            request.setAuthenticationValue(extractAuthenticationValue(authorizationHeader));
             String transactionValue = CamelUtils.getClaimCodeFromExchange(input);
-            result.setTransactionAuthenticationType(StringUtils.isEmpty(transactionValue) ?
+            request.setTransactionAuthenticationType(StringUtils.isEmpty(transactionValue) ?
                     ClientAuthenticationType.ANONYMOUS : ClientAuthenticationType.BASIC);
-            result.setTransactionAuthenticationValue(transactionValue);
-            result.setPayload(extractMessagePayload(input, service));
+            request.setTransactionAuthenticationValue(transactionValue);
+            request.setPayload(extractMessagePayload(input, service));
         } catch (Exception e) {
-            result.setError(e);
+            request.setError(e);
         }
-        return result;
+        return request;
     }
 
     private JsonNode extractMessagePayload(Exchange exchange, Service service) throws JsonProcessingException {

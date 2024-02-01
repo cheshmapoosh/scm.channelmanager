@@ -11,6 +11,8 @@ plugins {
 
 
 dependencies {
+    compileOnly 'org.apache.camel:camel-api'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
     compileOnly 'org.springframework:spring-context'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     compileOnly project(':scm-common')

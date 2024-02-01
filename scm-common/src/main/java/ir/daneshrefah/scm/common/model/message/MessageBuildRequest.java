@@ -14,8 +14,9 @@ import java.time.Instant;
  * @since 2024-01-16
  */
 @Data
-public class MessageBuildRequest implements Serializable {
+public class MessageBuildRequest<T> implements Serializable {
 
+    private final T input;
     private String terminalCode;
     private String serviceCode;
     private String contentType;

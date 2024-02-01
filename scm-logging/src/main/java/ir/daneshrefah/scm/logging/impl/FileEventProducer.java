@@ -4,9 +4,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ir.daneshrefah.scm.logging.serializer.ExchangeSerializer;
+import ir.daneshrefah.scm.logging.serializer.HttpServletRequestSerializer;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -38,6 +43,10 @@ public class FileEventProducer extends EventProducer {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(HttpServletRequest.class, HttpServletRequestSerializer.INSTANT);
+        module.addSerializer(Exchange.class, ExchangeSerializer.INSTANT);
+        objectMapper.registerModule(module);
         initLogThread();
     }
 

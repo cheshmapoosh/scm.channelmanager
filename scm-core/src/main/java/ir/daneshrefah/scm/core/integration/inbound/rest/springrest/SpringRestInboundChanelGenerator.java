@@ -81,7 +81,7 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     }
 
     @Override
-    public MessageBuildRequest extractMessageBuildRequest(HttpServletRequest input, Service service) {
+    public MessageBuildRequest extractMessageBuildRequest(MessageBuildRequest request, Service service) {
         return null;
     }
 
