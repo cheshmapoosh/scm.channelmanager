@@ -37,7 +37,7 @@ public class AnonymousAuthenticationConverter extends org.springframework.securi
             return null;
         }
         return new AnonymousAuthenticationToken(
-                "scm_anonymous", "anonymousUser",
+                "scm_anonymous", request.getTerminalCode(), request.getClientId(),
                 AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
     }
 

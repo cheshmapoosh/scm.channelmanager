@@ -57,18 +57,18 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
         if (null == userAuthentication) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
-        String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
-        String authenticationTerminalCode = userAuthentication.getPrincipal().getTerminalCode();
-//        if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
-//            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
-//        }
-
     }
 
 
     @Override
     protected void additionalAuthenticationChecks(UserAuthentication userAuthentication, BaseAuthenticationToken authentication) throws AuthenticationException {
-
+        String requestClientId = ((BaseTerminalAuthenticationToken) authentication).getClientId();
+        String authenticationClientId = userAuthentication.getDetails().getClientId();
+        String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
+        String authenticationTerminalCode = userAuthentication.getPrincipal().getTerminalCode();
+        if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
+        }
     }
 
     @Override

@@ -14,10 +14,11 @@ import java.time.Instant;
  * @since 2024-01-16
  */
 @Data
-public class MessageBuildRequest<T> implements Serializable {
+public class MessageBuildRequest<T extends MessageInput> implements Serializable {
 
-    private final T input;
+    private T input;
     private String terminalCode;
+    private String clientId;
     private String serviceCode;
     private String contentType;
     private String clientRemoteAddress;

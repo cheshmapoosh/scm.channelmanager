@@ -22,7 +22,7 @@ import java.time.Instant;
 @Builder
 public class Header implements Serializable {
 
-    private final MessageBuildRequest request;
+    private final MessageRequestInfo request;
     private Authentication authentication;
     private boolean isTransactionAuthenticated;
     private String correlationId;

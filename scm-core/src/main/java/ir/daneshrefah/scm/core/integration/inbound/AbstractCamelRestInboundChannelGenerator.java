@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_PORT;
@@ -82,10 +83,12 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     }
 
     @Override
-    public MessageBuildRequest<Exchange> extractMessageBuildRequest(MessageBuildRequest<Exchange> request, Service service) {
-        Exchange input = request.getInput();
+    public MessageBuildRequest extractMessageBuildRequest(Exchange input, MessageBuildRequest request, Service service) {
         try {
+            MessageInput messageInput = buildMessageInput(input);
+            request.setInput(messageInput);
             request.setTerminalCode(CamelUtils.getTerminalCodeFromExchange(input));
+            request.setClientId(CamelUtils.getClientIdFromExchange(input));
             request.setServiceCode(service.getCode());
             request.setContentType(CamelUtils.getContentTypeHeaderFromExchange(input));
             request.setClientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input));
@@ -104,15 +107,26 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
             request.setTransactionAuthenticationType(StringUtils.isEmpty(transactionValue) ?
                     ClientAuthenticationType.ANONYMOUS : ClientAuthenticationType.BASIC);
             request.setTransactionAuthenticationValue(transactionValue);
-            request.setPayload(extractMessagePayload(input, service));
+            request.setPayload(extractMessagePayload(input, service, messageInput.getBody()));
         } catch (Exception e) {
             request.setError(e);
         }
         return request;
     }
 
-    private JsonNode extractMessagePayload(Exchange exchange, Service service) throws JsonProcessingException {
-        String body = exchange.getMessage().getBody(String.class);
+    private MessageInput buildMessageInput(Exchange input) {
+        String body = input.getMessage().getBody(String.class);
+        Map<String, Object> headers = input.getMessage().getHeaders().entrySet().stream()
+                .filter(entry -> null != entry.getValue() && entry.getValue().getClass().isAssignableFrom(String.class))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        MessageInput result = new HttpMessageInput(headers, body,
+                CamelUtils.getHttpUrlFromExchange(input),
+                CamelUtils.getHttpMethodFromExchange(input));
+        return result;
+    }
+
+    private JsonNode extractMessagePayload(Exchange exchange, Service service, String body) throws JsonProcessingException {
         JsonNode payload = null;
         if (StringUtils.isNotEmpty(body)) {
             payload = objectMapper.readTree(body);

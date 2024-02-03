@@ -68,6 +68,10 @@ public class CamelUtils {
         return getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_TERMINAL);
     }
 
+    public static String getClientIdFromExchange(Exchange exchange) {
+        return getStringHeaderFromExchange(exchange, Constants.SCM_PARAMETER_CLIENT_ID);
+    }
+
     public static String getClientAgentFromExchange(Exchange exchange) {
         return getStringHeaderFromExchange(exchange, HttpConstants.HTTP_HEADER_USER_AGENT);
     }

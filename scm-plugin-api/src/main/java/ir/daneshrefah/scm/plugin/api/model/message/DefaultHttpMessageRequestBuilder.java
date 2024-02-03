@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
 import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.HttpMessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +27,10 @@ public class DefaultHttpMessageRequestBuilder {
     private final HttpServletRequest request;
     private final String serviceCode;
 
-    public MessageBuildRequest<HttpServletRequest> build() {
-        MessageBuildRequest<HttpServletRequest> result = new MessageBuildRequest(request);
+    public MessageBuildRequest<HttpMessageInput> build() {
+        MessageBuildRequest<HttpMessageInput> result = new MessageBuildRequest();
         try {
+            result.setInput(buildMessageInput(request));
             result.setTerminalCode(request.getHeader(SCM_PARAMETER_TERMINAL));
             result.setServiceCode(serviceCode);
             result.setContentType(request.getContentType());
@@ -55,6 +56,10 @@ public class DefaultHttpMessageRequestBuilder {
             result.setError(e);
         }
         return result;
+    }
+
+    private HttpMessageInput buildMessageInput(HttpServletRequest request) {
+        return null;
     }
 
     @Builder

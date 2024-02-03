@@ -56,7 +56,7 @@ public class SessionKeyAuthenticationConverter implements AuthenticationConverte
 
         if (StringUtils.isNotEmpty(request.getAuthenticationValue())) {
             SessionAuthenticationToken authenticationRequest = new SessionAuthenticationToken(request.getUsername(),
-                    request.getTerminalCode(), request.getAuthenticationValue());
+                    request.getTerminalCode(), request.getClientId(), request.getAuthenticationValue());
             return authenticationRequest;
         }
 

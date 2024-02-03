@@ -4,10 +4,7 @@ import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
-import ir.daneshrefah.scm.common.model.message.Header;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.common.ErrorMappingEntity;
 import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
@@ -167,7 +164,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
     }
 
     private Message createEmptyMessage(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {
-        Header header = Header.builder().request(request).serviceAccess(serviceAccess).build();
+        Header header = Header.builder().request(new MessageRequestInfo(request)).serviceAccess(serviceAccess).build();
         Message result = Message.builder()
                 .header(header)
                 .build();

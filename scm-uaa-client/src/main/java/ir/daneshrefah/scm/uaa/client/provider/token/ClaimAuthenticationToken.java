@@ -17,14 +17,15 @@ public class ClaimAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String credentials;
 
-    public ClaimAuthenticationToken(String terminalCode, String username, String credentials) {
-        super(username, terminalCode, Collections.emptyList());
+    public ClaimAuthenticationToken(String terminalCode, String clientId, String username, String credentials) {
+        super(username, terminalCode, clientId, Collections.emptyList());
         this.username = username;
         this.credentials = credentials;
     }
 
-    public static ClaimAuthenticationToken unauthenticated(String terminalCode, String username, String credentials) {
-        return new ClaimAuthenticationToken(terminalCode, username, credentials);
+    public static ClaimAuthenticationToken unauthenticated(String terminalCode, String clientId, String username,
+                                                           String credentials) {
+        return new ClaimAuthenticationToken(terminalCode, clientId, username, credentials);
     }
 
     @Override

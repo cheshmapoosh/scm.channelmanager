@@ -25,8 +25,8 @@ public class AnonymousAuthenticationToken extends BaseTerminalAuthenticationToke
      * @param authorities  the collection of <tt>GrantedAuthority</tt>s for the principal
      *                     represented by this authentication object.
      */
-    public AnonymousAuthenticationToken(String username, String terminalCode, Collection<? extends GrantedAuthority> authorities) {
-        super(username, terminalCode, authorities);
+    public AnonymousAuthenticationToken(String username, String terminalCode, String clientId, Collection<? extends GrantedAuthority> authorities) {
+        super(username, terminalCode, clientId, authorities);
         this.keyHash = extractKeyHash(username);
     }
 

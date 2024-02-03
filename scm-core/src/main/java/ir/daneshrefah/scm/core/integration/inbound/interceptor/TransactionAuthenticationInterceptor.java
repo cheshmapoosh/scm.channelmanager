@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
+import ir.daneshrefah.scm.common.model.message.MessageRequestInfo;
 import ir.daneshrefah.scm.common.model.message.Status;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
@@ -28,7 +28,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        MessageBuildRequest request = message.getHeader().getRequest();
+        MessageRequestInfo request = message.getHeader().getRequest();
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
                 .username(request.getUsername())
                 .terminalCode(request.getTerminalCode())

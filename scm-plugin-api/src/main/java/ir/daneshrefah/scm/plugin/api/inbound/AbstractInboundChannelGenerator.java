@@ -6,10 +6,7 @@ import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
-import ir.daneshrefah.scm.common.model.message.Header;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
@@ -78,11 +75,11 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
     @Override
     public T execute(T input, TerminalServiceAccess serviceAccess) {
         Instant startTime = Instant.now();
-        MessageBuildRequest request = new MessageBuildRequest(input);
+        MessageBuildRequest request = new MessageBuildRequest();
         Message message = null;
         Exception exception = null;
         try {
-            request = extractMessageBuildRequest(request, serviceAccess.getService());
+            request = extractMessageBuildRequest(input, request, serviceAccess.getService());
             message = buildMessageInternal(request);
         } catch (Exception e) {
             message = errorHandlerService.resolveMessageByException(null, new MessageBuildException(request, serviceAccess, e));
@@ -161,7 +158,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             throw new TerminalServiceNotFoundException(request.getTerminalCode(), request.getServiceCode());
         }
         Header header = Header.builder()
-                .request(request)
+                .request(new MessageRequestInfo(request))
                 .authentication(null)
                 .isTransactionAuthenticated(false)
                 .correlationId(StringUtils.generateGuid())

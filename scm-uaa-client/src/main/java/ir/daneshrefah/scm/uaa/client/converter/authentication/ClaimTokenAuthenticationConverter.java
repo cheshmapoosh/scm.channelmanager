@@ -31,7 +31,7 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
             throw new BadCredentialsException("Empty " + Constants.SCM_PARAMETER_CLAIM_CODE);
         }
 
-        return new ClaimAuthenticationToken(request.getTerminalCode(), request.getUsername(),
+        return new ClaimAuthenticationToken(request.getTerminalCode(), request.getClientId(), request.getUsername(),
                 request.getAuthenticationValue());
     }
 

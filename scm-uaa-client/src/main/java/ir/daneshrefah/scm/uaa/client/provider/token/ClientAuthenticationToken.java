@@ -19,7 +19,7 @@ public class ClientAuthenticationToken extends BaseTerminalAuthenticationToken {
     private final Object credentials;
 
     public ClientAuthenticationToken(String terminalCode, Object principal, Object credentials) {
-        super((String) principal, terminalCode, Collections.emptyList());
+        super((String) principal, terminalCode, (String) principal, Collections.emptyList());
         this.principal = principal;
         this.credentials = credentials;
     }
