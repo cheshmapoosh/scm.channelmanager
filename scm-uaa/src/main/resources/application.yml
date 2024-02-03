@@ -19,7 +19,7 @@ scm:
       password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 6
-      default-schema: REF
+      default-schema: MBUAA
   cache:
     client:
       config:

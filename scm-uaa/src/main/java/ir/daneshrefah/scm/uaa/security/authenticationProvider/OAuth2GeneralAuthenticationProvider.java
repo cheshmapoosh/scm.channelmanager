@@ -155,19 +155,23 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
             }
         }
 
-        if (!client.isCheckVersion() || !preAuthenticationToken.getGrantType().isSupportClientCheck()) {
-            return;
-        }
-        Optional<ClientVersion> clientVersion = client.getVersions().stream()
-                .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
-                .findFirst();
+        if (client.isCheckVersion() && preAuthenticationToken.getGrantType().isSupportClientCheck()) {
+            Optional<ClientVersion> clientVersion = client.getVersions().stream()
+                    .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
+                    .findFirst();
 
-        if (clientVersion.isEmpty() || ClientVersionStatus.INVALID.equals(clientVersion.get().getStatus())) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
+            if (clientVersion.isEmpty() || ClientVersionStatus.INVALID.equals(clientVersion.get().getStatus())) {
+                throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
+            }
+            if (null != clientVersion.get().getSignature() &&
+                    !clientVersion.get().getSignature().equals(preAuthenticationToken.getClientSignature())) {
+                throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE);
+            }
         }
-        if (null != clientVersion.get().getSignature() &&
-                !clientVersion.get().getSignature().equals(preAuthenticationToken.getClientSignature())) {
-            throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE);
+        if (client.isCheckActivation() && preAuthenticationToken.getGrantType().isSupportActivationCheck()) {
+            if (StringUtils.isEmpty(preAuthenticationToken.getActivationCode())) {
+                throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
+            }
         }
     }
 

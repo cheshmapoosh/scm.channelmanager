@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.SecondLvlStaticAuthenticationToken;
+import ir.daneshrefah.scm.uaa.service.UserService;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,8 +17,8 @@ import org.springframework.stereotype.Component;
 public class SecondLvlStaticAuthenticationProvider extends AbstractStaticAuthenticationProvider {
 
 
-    protected SecondLvlStaticAuthenticationProvider(CustomMD5Encoder encoder) {
-        super(encoder);
+    protected SecondLvlStaticAuthenticationProvider(UserService userService, CustomMD5Encoder encoder) {
+        super(userService, encoder);
     }
 
     @Override

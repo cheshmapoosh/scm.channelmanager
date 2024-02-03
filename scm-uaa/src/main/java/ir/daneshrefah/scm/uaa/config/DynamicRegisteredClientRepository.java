@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 
 /**
@@ -71,6 +71,8 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
             ClientSettings clientSetting = ClientSettings.builder()
                     .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
                     .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
+                    .setting(CLIENT_SETTING_KEY_CHECK_VERSION, client.isCheckVersion())
+                    .setting(CLIENT_SETTING_KEY_CHECK_ACTIVATION, client.isCheckActivation())
                     .build();
             RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
                     .clientId(client.getClientId())

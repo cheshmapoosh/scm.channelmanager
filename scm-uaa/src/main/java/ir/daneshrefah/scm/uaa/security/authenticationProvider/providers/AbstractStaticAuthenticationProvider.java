@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.service.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 
@@ -17,7 +18,8 @@ public abstract class AbstractStaticAuthenticationProvider extends AbstractAuthe
 
     protected final CustomMD5Encoder encoder;
 
-    protected AbstractStaticAuthenticationProvider(CustomMD5Encoder encoder) {
+    protected AbstractStaticAuthenticationProvider(UserService userService, CustomMD5Encoder encoder) {
+        super(userService);
         this.encoder = encoder;
     }
 

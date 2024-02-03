@@ -23,4 +23,8 @@ public abstract class MessageInput {
         this.body = body;
     }
 
+    public String getHeader(String key) {
+        return null != headers ? (String) headers.get(key) : null;
+    }
+
 }

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_PORT;
+import static ir.daneshrefah.scm.utils.constant.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
 
 /**
@@ -43,6 +44,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected Integer port;
 
     private static Map<Status, Integer> statusMappingMap = new HashMap<>();
+
     static {
         statusMappingMap.put(Status.SC_PROCESSING, 500);
         statusMappingMap.put(Status.SC_SUCCESS, 200);
@@ -95,18 +97,20 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
             request.setClientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input));
             request.setClientTimestamp(CamelUtils.getClientTimestampFromExchange(input));
             request.setClientAgent(CamelUtils.getClientAgentFromExchange(input));
-            request.setUsername(CamelUtils.getUsernameHeaderFromExchange(input));
             request.setAccessParameter(CamelUtils.getAccessParameterFromExchange(input));
             request.setForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(CamelUtils.getHttpMethodFromExchange(input)));
             request.setReceiveTimestamp(Instant.now());
             request.setServerHost(CamelUtils.getServerHostFromExchange(input));
-            String authorizationHeader = CamelUtils.getAuthorizationHeaderFromExchange(input);
-            request.setAuthenticationType(extractAuthenticationType(authorizationHeader));
-            request.setAuthenticationValue(extractAuthenticationValue(authorizationHeader));
+
+            request.setUsername(CamelUtils.getUsernameHeaderFromExchange(input));
+
+            request.setAuthenticationType(extractAuthenticationType(messageInput));
+            request.setAuthenticationValue(extractAuthenticationValue(messageInput));
             String transactionValue = CamelUtils.getClaimCodeFromExchange(input);
             request.setTransactionAuthenticationType(StringUtils.isEmpty(transactionValue) ?
                     ClientAuthenticationType.ANONYMOUS : ClientAuthenticationType.BASIC);
             request.setTransactionAuthenticationValue(transactionValue);
+
             request.setPayload(extractMessagePayload(input, service, messageInput.getBody()));
         } catch (Exception e) {
             request.setError(e);
@@ -146,7 +150,8 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         return payload;
     }
 
-    private ClientAuthenticationType extractAuthenticationType(String authorizationHeader) {
+    private ClientAuthenticationType extractAuthenticationType(MessageInput messageInput) {
+        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
         if (StringUtils.isEmpty(authorizationHeader)) {
             return ClientAuthenticationType.ANONYMOUS;
         }
@@ -156,16 +161,26 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         String AUTHENTICATION_SCHEME_SESSION = "Session";
 
         if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return ClientAuthenticationType.BASIC;
+            return ClientAuthenticationType.CLIENT;
         } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
             return ClientAuthenticationType.SESSION;
         } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
             return ClientAuthenticationType.BEARER;
+        } else {
+            String username = messageInput.getHeader(SCM_PARAMETER_USERNAME);
+            String credential = messageInput.getHeader(SCM_PARAMETER_CREDENTIAL);
+            String clientId = messageInput.getHeader(SCM_PARAMETER_CLIENT_ID);
+            String clientVersion = messageInput.getHeader(SCM_PARAMETER_CLIENT_VERSION);
+            String clientSignature = messageInput.getHeader(SCM_PARAMETER_CLIENT_SIGNATURE);
+            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(credential)) {
+                return ClientAuthenticationType.BASIC;
+            }
         }
         return ClientAuthenticationType.ANONYMOUS;
     }
 
-    private String extractAuthenticationValue(String authorizationHeader) {
+    private String extractAuthenticationValue(MessageInput messageInput) {
+        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
         if (StringUtils.isEmpty(authorizationHeader)) {
             return null;
         }

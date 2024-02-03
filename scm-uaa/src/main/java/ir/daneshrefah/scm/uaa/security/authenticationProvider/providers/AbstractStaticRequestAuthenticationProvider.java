@@ -4,12 +4,13 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.service.UserService;
 import org.springframework.security.core.Authentication;
 
 public abstract class AbstractStaticRequestAuthenticationProvider extends AbstractStaticAuthenticationProvider{
 
-    protected AbstractStaticRequestAuthenticationProvider(CustomMD5Encoder encoder) {
-        super(encoder);
+    protected AbstractStaticRequestAuthenticationProvider(UserService userService, CustomMD5Encoder encoder) {
+        super(userService, encoder);
     }
 
     protected Authentication createSuccessAuthentication(Authentication authentication) {

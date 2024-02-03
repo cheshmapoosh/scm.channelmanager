@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.uaa.service;
 
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
-import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
-import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
+import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
+import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,22 +19,18 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2023-12-18
  */
+@RequiredArgsConstructor
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserActivationRepository userActivationRepository;
     private final RoleRepository roleRepository;
     private final IntegrationService integrationService;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, IntegrationService integrationService) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.integrationService = integrationService;
-    }
-
     public Optional<User> loadUserByUsername(String username, String terminalCode) {
-        Integer terminalId = integrationService.findChannelIdByTerminalCode(terminalCode);
-        Iterable<UserEntity> userEntities = userRepository.findByNicknameAndTerminalId(username, terminalId);
+        Integer channelId = integrationService.findChannelIdByTerminalCode(terminalCode);
+        Iterable<UserEntity> userEntities = userRepository.findByNicknameAndTerminalId(username, channelId);
         if (!userEntities.iterator().hasNext()) {
             return Optional.empty();
         }
@@ -54,4 +50,9 @@ public class UserService {
                 .collect(Collectors.toList()));
     }
 
+    public void checkUserActivationCode(String username, String accessParameter, String activationCode) {
+        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(username,
+                accessParameter, activationCode);
+        return;
+    }
 }

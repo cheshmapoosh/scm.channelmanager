@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlPinAuthenticationToken;
+import ir.daneshrefah.scm.uaa.service.UserService;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -10,8 +11,8 @@ import org.springframework.stereotype.Component;
 public class FirstLvlPinAuthenticationProvider extends AbstractFirstLvlStaticAccessAuthenticationProvider {
 
 
-    protected FirstLvlPinAuthenticationProvider(CustomMD5Encoder encoder) {
-        super(encoder);
+    protected FirstLvlPinAuthenticationProvider(UserService userService, CustomMD5Encoder encoder) {
+        super(userService, encoder);
     }
 
     @Override

@@ -9,6 +9,6 @@ package ir.daneshrefah.scm.common.model.message;
  */
 public enum ClientAuthenticationType {
 
-    ANONYMOUS, BASIC, BEARER, SESSION;
+    ANONYMOUS, BASIC, CLIENT, BEARER, SESSION;
 
 }

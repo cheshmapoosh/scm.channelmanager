@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.authentication.*;
@@ -13,9 +15,12 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
+
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_CHECK_ACTIVATION;
 
 /**
  * Description of the class or purpose of the file.
@@ -24,9 +29,12 @@ import java.time.Instant;
  * @version 1.0
  * @since 2023-12-19
  */
+@RequiredArgsConstructor
 public abstract class AbstractAuthenticationProvider implements AuthenticationProvider {
 
     protected final Log logger = LogFactory.getLog(getClass());
+
+    private final UserService userService;
 
     private UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
 
@@ -48,7 +56,21 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
             return createFailAuthentication(authentication);
         }
         this.postAuthenticationChecks.check(user);
+        checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
         return createSuccessAuthentication(authentication);
+    }
+
+    private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
+        ClientSettings clientSettings = authentication.getPreAuthenticationToken().getRegisteredClient().getClientSettings();
+        boolean isClientSupportCheckActivation = clientSettings.getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
+        boolean isGrantTypeSupportCheckActivation = authentication.getPreAuthenticationToken().getGrantType().isSupportActivationCheck();
+        if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
+            return;
+        }
+        String username = authentication.getPreAuthenticationToken().getName();
+        String accessParameter = authentication.getPreAuthenticationToken().getAccessParameter();
+        String activationCode = authentication.getPreAuthenticationToken().getActivationCode();
+        userService.checkUserActivationCode(username, accessParameter, activationCode);
     }
 
     protected Authentication createFailAuthentication(Authentication authentication) {

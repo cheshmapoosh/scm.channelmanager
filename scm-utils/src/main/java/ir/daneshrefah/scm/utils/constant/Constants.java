@@ -11,8 +11,11 @@ public class Constants {
 
     public static final String SCM_PARAMETER_CORRELATION_ID = "X-SCM-Correlation-ID";
     public static final String SCM_PARAMETER_USERNAME = "X-SCM-Username";
+    public static final String SCM_PARAMETER_CREDENTIAL = "X-SCM-Credential";
     public static final String SCM_PARAMETER_TERMINAL = "X-SCM-Terminal";
     public static final String SCM_PARAMETER_CLIENT_ID = "X-SCM-Client";
+    public static final String SCM_PARAMETER_CLIENT_VERSION = "X-SCM-Client-Version";
+    public static final String SCM_PARAMETER_CLIENT_SIGNATURE = "X-SCM-Client-Signature";
     public static final String SCM_PARAMETER_CLIENT_CORRELATION_ID = "X-SCM-Client-Correlation-ID";
     public static final String SCM_PARAMETER_CLIENT_TIMESTAMP = "X-SCM-Client-Timestamp";
     public static final String SCM_PARAMETER_RECEIVE_TIMESTAMP = "X-SCM-Receive-Timestamp";

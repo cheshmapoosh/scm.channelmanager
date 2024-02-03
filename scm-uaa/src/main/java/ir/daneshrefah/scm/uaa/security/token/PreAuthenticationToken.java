@@ -24,6 +24,9 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     private String password;
     @Getter
     @Setter
+    private String accessParameter;
+    @Getter
+    @Setter
     private String claimCode;
     @Getter
     private AuthorizationGrantType grantType;

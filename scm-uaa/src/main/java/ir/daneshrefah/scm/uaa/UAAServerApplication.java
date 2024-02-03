@@ -17,7 +17,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  */
 @SpringBootApplication
 @EnableCaching
-@EnableJpaRepositories
+//@EnableJpaRepositories(basePackages = {"ir.daneshrefah.scm.uaa.repository"})
 @EnableConfigurationProperties(DataSourceConfigProperties.class)
 @ComponentScan(basePackages = "ir.daneshrefah.scm")
 public class UAAServerApplication {

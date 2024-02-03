@@ -63,7 +63,6 @@ public abstract class GeneralRealPersonEntity extends GeneralPersonEntity {
     private String cityCode;
     @Transient
     private String cityTitle;
-    private String branchCode;
     @Transient
     private String shahabCode;
 //    private String courseCode;

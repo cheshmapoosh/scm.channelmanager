@@ -12,6 +12,8 @@ public class Constants {
     public static final String DEFAULT_ERROR_URI = "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1";
 
     public static final String CLIENT_SETTING_KEY_TERMINAL_CODE = "terminalCode";
+    public static final String CLIENT_SETTING_KEY_CHECK_VERSION = "checkVersion";
+    public static final String CLIENT_SETTING_KEY_CHECK_ACTIVATION = "checkActivation";
 
     public final static String CLAIM_KEY_TERMINAL = "trm";
     public final static String CLAIM_KEY_GRANT = "grn";
@@ -37,6 +39,8 @@ public class Constants {
     public final static String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
     public final static String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
     public final static String OAUTH2_PARAM_NAME_USER_CLAIM = "claim_code";
+    public final static String OAUTH2_PARAM_NAME_ACCESS_PARAMETER = "access_parameter";
+    public final static String OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE = "activation_code";
     public final static String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
     public final static String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
 

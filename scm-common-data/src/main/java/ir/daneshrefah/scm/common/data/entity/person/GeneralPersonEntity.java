@@ -27,6 +27,7 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     private Integer id;
     private String username;
     private Boolean active;
+    private String branchCode;
     @Column(name = "phone")
     private String phone1;
     @Transient
