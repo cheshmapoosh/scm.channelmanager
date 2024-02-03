@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvid
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -54,7 +55,7 @@ public class AuthenticationClientAutoConfiguration {
     private CacheTemplate cacheTemplate;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context, JwtDecoder jwtDecoder) throws Exception {
         http
                 .authorizeHttpRequests((authorize) -> authorize
                         .anyRequest().permitAll()
@@ -64,7 +65,7 @@ public class AuthenticationClientAutoConfiguration {
                 .addFilterAt(bearerAuthenticationFilter(context), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 ->
                         oauth2
-                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()))
+                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder))
                 );
 
         return http.build();
@@ -72,8 +73,8 @@ public class AuthenticationClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSetUri("http://localhost:8000/oauth2/jwks").build();
+    public JwtDecoder jwtDecoder(@Value("${scm.security.issuer-uri}") String issuerUri) {
+        return NimbusJwtDecoder.withJwkSetUri(issuerUri + "/oauth2/jwks").build();
     }
 
     @Bean

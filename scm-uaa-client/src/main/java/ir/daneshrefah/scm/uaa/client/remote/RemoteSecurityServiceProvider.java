@@ -45,8 +45,8 @@ public class RemoteSecurityServiceProvider {
     protected final Log logger = LogFactory.getLog(getClass());
 
     private final RestTemplate restTemplate;
-    @Value("${scm.security.token-endpoint}")
-    private String tokenEndpoint;
+    @Value("${scm.security.issuer-uri}")
+    private String issuerUri;
     private final JwtDecoder jwtDecoder;
 
     public RemoteSecurityServiceProvider(RestTemplate restTemplate, JwtDecoder jwtDecoder) {
@@ -61,6 +61,7 @@ public class RemoteSecurityServiceProvider {
 
     public String callServerAuthentication(AuthorizationGrantType grantType, String principal, String credential,
                                            String clientId) {
+        String tokenEndpoint = issuerUri + "/oauth2/token";
         String headerAuthorization = "";
 
         HttpHeaders headers = new HttpHeaders();
@@ -108,85 +109,13 @@ public class RemoteSecurityServiceProvider {
     }
 
     public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
-        String headerAuthorization = "";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        if (StringUtils.isNotEmpty(headerAuthorization)) {
-            headers.set("Authorization", headerAuthorization); // Add authorization header
-        }
-
-        // Create form data
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add(OAuth2ParameterNames.GRANT_TYPE, AuthorizationGrantType.CLIENT_CREDENTIALS.getCode());
-        formData.add(OAuth2ParameterNames.CLIENT_ID, (String) authentication.getPrincipal());
-        formData.add(OAuth2ParameterNames.CLIENT_SECRET, (String) authentication.getCredentials());
-
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
-
-        int statusCode = 0;
-        String responseBody = null;
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
-            statusCode = response.getStatusCode().value();
-            responseBody = response.getBody();
-        } catch (RestClientResponseException e) {
-            logger.error("response error on remote authenticate for user: " + authentication.getPrincipal(), e);
-            statusCode = e.getStatusCode().value();
-        } catch (RestClientException e) {
-            logger.error("error on remote authenticate for user: " + authentication.getPrincipal(), e);
-            throw new AuthenticationServiceException("error on client authentication.", e);
-//            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
-        }
-        boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
-                HttpStatusCode.SC_204.equals(statusCode)*/;
-        if (!isAuthenticated) {
-            return null;
-        }
-//        Jwt jwt = getJwt(response.getBody());
-        return responseBody;
+        return callServerAuthentication(AuthorizationGrantType.CLIENT_CREDENTIALS, (String) authentication.getPrincipal(),
+                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
     }
 
-    public BasicAuthenticationToken authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
-        String headerAuthorization = "";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        if (StringUtils.isNotEmpty(headerAuthorization)) {
-            headers.set("Authorization", headerAuthorization); // Add authorization header
-        }
-
-        // Create form data
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("grant_type", AuthorizationGrantType.FIRST_PASSWORD.getCode());
-        formData.add("username", (String) authentication.getPrincipal());
-        formData.add("password", (String) authentication.getCredentials());
-
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
-
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
-
-        boolean isAuthenticate = HttpStatusCode.SC_200.equals(response.getStatusCode()) ||
-                HttpStatusCode.SC_204.equals(response.getStatusCode());
-        if (!isAuthenticate) {
-            return null;
-        }
-        return null;
-    }
-
-    private Jwt getJwt(String token) {
-        try {
-            return this.jwtDecoder.decode(token);
-        }
-        catch (BadJwtException failed) {
-            this.logger.debug("Failed to authenticate since the JWT was invalid");
-            throw new InvalidBearerTokenException(failed.getMessage(), failed);
-        }
-        catch (JwtException failed) {
-            throw new AuthenticationServiceException(failed.getMessage(), failed);
-        }
+    public String authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
+        return callServerAuthentication(AuthorizationGrantType.FIRST_PASSWORD, (String) authentication.getPrincipal(),
+                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
     }
 
 }

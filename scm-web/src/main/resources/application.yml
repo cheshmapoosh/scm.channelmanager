@@ -1,5 +1,6 @@
 scm:
   profile: IB4DEV
+  channels: SCM4DEV
   datasource:
     primary:
       url: jdbc:db2://10.10.4.104:50001/DBREFSW
@@ -25,15 +26,14 @@ scm:
         driver-class-name: com.ibm.db2.jcc.DB2Driver
         max-connection: 10
         default-schema: REF
-  inbound:
-    host: localhost
-    port: 8582
   log:
     enabled: true
     type: file
   security:
+    client-id: scm
+    client-secret:
     distributed: true
-    token-endpoint: http://127.0.0.1:8000/oauth2/token
+    issuer-uri: http://localhost:8000
   cache:
     client:
       config:

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.core.config.ApplicationProperties;
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.*;
 import ir.daneshrefah.scm.core.service.ChannelService;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
@@ -53,12 +54,18 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
     }
 
     @Bean
-    public boolean registerInboundBeans(List<MessageInterceptor> requestInterceptors) {
+    public boolean registerInboundBeans(ApplicationProperties applicationProperties, List<MessageInterceptor> requestInterceptors) {
+        List<String> activeChannelList = applicationProperties.getChannels();
+        if (null == activeChannelList || activeChannelList.isEmpty()) {
+            throw new RuntimeException("no active channel is defined.");
+        }
         List<Channel> channels = channelService.findAllChannelList();
-
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
 
             Channel channel = iterator.next();
+            if (!activeChannelList.contains(channel.getCode())) {
+                continue;
+            }
             LOGGER.info("start initialize channel '{}'", channel.getCode());
             /*TODO query is very slow and should be improved.*/
             List<TerminalServiceAccess> terminalServiceAccessList = terminalService.

@@ -30,7 +30,7 @@ public class BasicRemoteAuthenticationProvider extends AbstractRemoteClientAuthe
 
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
-        BasicAuthenticationToken authenticationResult = remoteSecurityServiceProvider.authenticateBasic((BasicAuthenticationToken) authentication);
+        String authenticationResult = remoteSecurityServiceProvider.authenticateBasic((BasicAuthenticationToken) authentication);
         if (null == authenticationResult) {
             throw new InternalAuthenticationServiceException(
                     "remoteServiceProvider returned null, which is an interface contract violation");
