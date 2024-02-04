@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.uaa.domain.client;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -19,5 +21,12 @@ public enum ClientVersionStatus {
     NOT_RECOMMENDED(3);
 
     private final int code;
+
+    public static ClientVersionStatus findByCode(int code) {
+        return Arrays.stream(ClientVersionStatus.values())
+                .filter(s -> s.code == code)
+                .findFirst()
+                .orElse(null);
+    }
 
 }

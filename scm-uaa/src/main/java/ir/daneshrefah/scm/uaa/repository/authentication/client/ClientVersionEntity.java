@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.uaa.converter.ClientVersionStatusConverter;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -26,6 +27,7 @@ public class ClientVersionEntity extends AbstractDefaultEntity<Long> {
     private String version;
     private boolean isForced;
     private String signature;
+    @Convert(converter = ClientVersionStatusConverter.class)
     private ClientVersionStatus status;
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "CLIENT_ID")
