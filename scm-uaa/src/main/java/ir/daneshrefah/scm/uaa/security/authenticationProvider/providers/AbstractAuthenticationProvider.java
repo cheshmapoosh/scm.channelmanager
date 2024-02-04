@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.UserService;
@@ -15,12 +16,16 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_CHECK_ACTIVATION;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
  * Description of the class or purpose of the file.
@@ -67,10 +72,14 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
             return;
         }
+        String terminalCode = clientSettings.getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
         String username = authentication.getPreAuthenticationToken().getName();
         String accessParameter = authentication.getPreAuthenticationToken().getAccessParameter();
         String activationCode = authentication.getPreAuthenticationToken().getActivationCode();
-        userService.checkUserActivationCode(username, accessParameter, activationCode);
+        boolean isActivated = userService.checkUserActivationCode(terminalCode, username, accessParameter, activationCode);
+        if (!isActivated) {
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
+        }
     }
 
     protected Authentication createFailAuthentication(Authentication authentication) {

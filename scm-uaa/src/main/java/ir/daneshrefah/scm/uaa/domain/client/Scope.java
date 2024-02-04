@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,15 +10,14 @@ import lombok.Setter;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-12-31
+ * @since 2024-02-04
  */
 @Getter
 @Setter
-public class ClientVersion extends BaseModel<Long> {
+@AllArgsConstructor
+public class Scope extends BaseModel<Long> {
 
-    private String version;
-    private boolean isForced;
-    private String signature;
-    private ClientVersionStatus status;
+    private String code;
+    private String title;
 
 }

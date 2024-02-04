@@ -16,8 +16,10 @@ import java.util.List;
 @Repository
 public interface UserActivationRepository extends CrudRepository<UserActivationEntity, Integer> {
 
-    List<UserActivationEntity> findAllByUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(String username,
-                                                                                                    String accessParameter,
-                                                                                                    String activationCode);
+    List<UserActivationEntity> findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+            String terminalCode,
+            String username,
+            String accessParameter,
+            String activationCode);
 
 }

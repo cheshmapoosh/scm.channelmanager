@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.config;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
+import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.ClientService;
@@ -63,8 +64,8 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
         }
 
         return clients.stream().map(client -> {
-            Duration accessTokenTimeToLive = null != client.getSessionTimeToLive() ?
-                    Duration.ofMinutes(client.getSessionTimeToLive()) : Duration.ofMinutes(5);
+            Duration accessTokenTimeToLive = null != client.getSessionTimeToLiveMinute() ?
+                    Duration.ofMinutes(client.getSessionTimeToLiveMinute()) : Duration.ofMinutes(5);
             TokenSettings tokenSettings = TokenSettings.builder()
                     .accessTokenTimeToLive(accessTokenTimeToLive)
                     .build();
@@ -88,13 +89,13 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 AuthorizationGrantType authorizationGrantType = iterator.next();
                 clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));
             }
-            for (Iterator<String> iterator = client.getRedirectUrls().iterator(); iterator.hasNext(); ) {
+            for (Iterator<String> iterator = client.getRedirectUris().iterator(); iterator.hasNext(); ) {
                 String redirectUri = iterator.next();
                 clientBuilder.redirectUri(redirectUri);
             }
-            for (Iterator<String> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
-                String scope = iterator.next();
-                clientBuilder.scope(scope);
+            for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
+                ClientScopeRelation scope = iterator.next();
+                clientBuilder.scope(scope.getScope().getCode());
             }
             return clientBuilder.build();
         }).collect(Collectors.toList());

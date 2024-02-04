@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.data.entity;
 
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 
@@ -11,6 +13,7 @@ import java.io.Serializable;
  * @version 1.0
  * @since 2024-01-10
  */
+@EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
 public abstract class AbstractEntity<T> implements Serializable {
 

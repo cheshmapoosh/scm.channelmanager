@@ -21,17 +21,17 @@ public class Client {
     private String title;
     private String clientId;
     private String clientSecret;
+    private String terminalCode;
     private List<ClientAuthenticationMethod> authenticationMethods;
     private List<AuthorizationGrantType> authorizationGrantTypes;
-    private List<String> redirectUrls;
-    private String terminalCode;
-    private List<String> scopes;
+    private List<String> redirectUris;
     private boolean requireAuthorizationConsent;
     private boolean requireClientAuthentication;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
+    private Long sessionTimeToLiveMinute;
     private List<ClientVersion> versions;
-    private Long sessionTimeToLive;
+    private List<ClientScopeRelation> scopes;
 
 }

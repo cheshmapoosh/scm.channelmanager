@@ -50,9 +50,9 @@ public class UserService {
                 .collect(Collectors.toList()));
     }
 
-    public void checkUserActivationCode(String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(username,
-                accessParameter, activationCode);
-        return;
+    public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
+        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+                terminalCode, username, accessParameter, activationCode);
+        return null != activationEntities && activationEntities.size() > 0;
     }
 }
