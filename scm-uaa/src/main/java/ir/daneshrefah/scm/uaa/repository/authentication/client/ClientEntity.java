@@ -58,8 +58,8 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean checkVersion;
     private boolean checkActivation;
     private Long sessionTimeToLiveMinute;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
-    private Set<ClientScopeRelation> scopes;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
-    private Set<ClientVersionEntity> versions;
+//    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+//    private Set<ClientScopeRelation> scopes;
+//    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+//    private Set<ClientVersionEntity> versions;
 }

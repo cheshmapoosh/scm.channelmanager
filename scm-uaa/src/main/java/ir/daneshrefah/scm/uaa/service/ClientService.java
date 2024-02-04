@@ -19,6 +19,7 @@ import java.util.List;
 public class ClientService {
 
     private List<Scope> scopeList = null;
+    private List<Client> clientList = null;
 
     private final ScopeRepository scopeRepository;
     private final ClientRepository clientRepository;
@@ -40,7 +41,10 @@ public class ClientService {
     }
 
     public List<Client> findAll() {
-        return Arrays.asList(prepareMockClient());
+        if (null == clientList) {
+            clientList = ClientMapper.INSTANCE.toModels(clientRepository.findAll());
+        }
+        return clientList;
     }
 
     public Client findByClientId(String clientId) {
@@ -81,14 +85,14 @@ public class ClientService {
         clientScopeRelation.setLastEditor("Reza Jamshidi");
         client.setScopes(Arrays.asList(clientScopeRelation));
 
-        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
-        client = ClientMapper.INSTANCE.toModel(clientRepository.save(entity));
+//        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
+//        client = ClientMapper.INSTANCE.toModel(clientRepository.save(entity));
         return client;
     }
 
     public Client updateClient(Client client) {
-        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
-        client = ClientMapper.INSTANCE.toModel(clientRepository.save(entity));
+//        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
+//        client = ClientMapper.INSTANCE.toModel(clientRepository.save(entity));
         return client;
     }
 

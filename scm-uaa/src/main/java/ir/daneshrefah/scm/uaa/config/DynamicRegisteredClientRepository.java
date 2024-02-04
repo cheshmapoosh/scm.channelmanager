@@ -93,9 +93,11 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 String redirectUri = iterator.next();
                 clientBuilder.redirectUri(redirectUri);
             }
-            for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
-                ClientScopeRelation scope = iterator.next();
-                clientBuilder.scope(scope.getScope().getCode());
+            if (null != client.getScopes()) {
+                for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
+                    ClientScopeRelation scope = iterator.next();
+                    clientBuilder.scope(scope.getScope().getCode());
+                }
             }
             return clientBuilder.build();
         }).collect(Collectors.toList());

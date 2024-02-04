@@ -67,7 +67,7 @@ public interface ClientMapper {
         return list;
     }
 
-    @Mapping(target = "clientAuthenticationMethodSecretBasic", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_BASIC))")
+    /*@Mapping(target = "clientAuthenticationMethodSecretBasic", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_BASIC))")
     @Mapping(target = "clientAuthenticationMethodSecretPost", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_POST))")
     @Mapping(target = "clientAuthenticationMethodSecretJwt", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_JWT))")
     @Mapping(target = "clientAuthenticationMethodKeyJwt", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.PRIVATE_KEY_JWT))")
@@ -77,7 +77,7 @@ public interface ClientMapper {
     @Mapping(target = "authorizationGrantTypeFirstPassword", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.FIRST_PASSWORD))")
     @Mapping(target = "authorizationGrantTypeSecondPassword", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.SECOND_PASSWORD))")
     @Mapping(source = "scopes", target = "scopes", qualifiedByName = "toScopeEntities")
-    ClientEntity toEntity(Client model);
+    ClientEntity toEntity(Client model);*/
 
     default boolean isClientAuthenticationMethodExist(Client model, ClientAuthenticationMethod clientAuthenticationMethod) {
         return null != model && null != model.getAuthenticationMethods() &&
@@ -93,8 +93,8 @@ public interface ClientMapper {
 
     ClientEntity toClientIdEntity(Client model);
 
-    @Mapping(source = "client", target = "client", qualifiedByName = "toClientIdEntity")
-    ClientScopeRelation toScopeEntity(ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation model);
+//    @Mapping(source = "client", target = "client", qualifiedByName = "toClientIdEntity")
+//    ClientScopeRelation toScopeEntity(ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation model);
 
     List<ClientScopeRelation> toScopeEntities(Iterable<ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation> entities);
 

@@ -156,9 +156,11 @@ public class OAuth2GeneralAuthenticationProvider implements AuthenticationProvid
         }
 
         if (client.isCheckVersion() && preAuthenticationToken.getGrantType().isSupportClientCheck()) {
-            Optional<ClientVersion> clientVersion = client.getVersions().stream()
-                    .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
-                    .findFirst();
+            Optional<ClientVersion> clientVersion = null == client.getVersions() ?
+                    Optional.empty() :
+                    client.getVersions().stream()
+                            .filter(c -> c.getVersion().equals(preAuthenticationToken.getClientVersion()))
+                            .findFirst();
 
             if (clientVersion.isEmpty() || ClientVersionStatus.INVALID.equals(clientVersion.get().getStatus())) {
                 throwError(OAuth2ErrorCodes.INVALID_CLIENT, Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION);
