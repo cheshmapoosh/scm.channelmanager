@@ -30,7 +30,7 @@ public class NotificationLogEntity extends AbstractEntity<Long> {
     private String username;
     private String recipient;
     private NotificationMedia media;
-    private NotificationData data;
+//    private NotificationData data;
     private MessageTemplate messageTemplate;
     private String body;
     private Integer status;

@@ -1,10 +1,10 @@
-package ir.daneshrefah.scm.uaa.controller;
+package ir.daneshrefah.scm.uaa.controller.token;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import ir.daneshrefah.scm.uaa.controller.dto.PublicKeyResponse;
+import ir.daneshrefah.scm.uaa.controller.BaseController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

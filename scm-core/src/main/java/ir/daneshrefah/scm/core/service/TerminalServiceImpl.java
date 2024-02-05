@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.ValidationException;
@@ -12,7 +13,6 @@ import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
-import ir.daneshrefah.scm.core.mapper.TerminalMapper;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
 import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;

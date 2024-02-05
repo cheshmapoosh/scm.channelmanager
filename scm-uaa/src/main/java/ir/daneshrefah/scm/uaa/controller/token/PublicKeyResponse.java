@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.controller.dto;
+package ir.daneshrefah.scm.uaa.controller.token;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

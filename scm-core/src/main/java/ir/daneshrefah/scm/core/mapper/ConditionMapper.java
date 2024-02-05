@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
+import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.core.entity.condition.*;
 import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
