@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.notification;
 
 import ir.daneshrefah.scm.uaa.domain.notification.*;
+import ir.daneshrefah.scm.uaa.exception.NotificationProviderNotFoundException;
 import ir.daneshrefah.scm.uaa.repository.authentication.notification.MessageTemplateEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.notification.MessageTemplateRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.notification.NotificationLogEntity;
@@ -73,9 +74,7 @@ public class NotificationService {
                 .build();
         NotificationProvider provider = providers.get(request.getMedia());
         if (null == provider) {
-            LOGGER.error("unsupported request media: " + request.getMedia());
-            throw new RuntimeException("Unsupported request media: " + request.getMedia());
-            //TODO create specific exception class
+            throw new NotificationProviderNotFoundException(request.getMedia().name());
         }
 
         provider.send(notification);
