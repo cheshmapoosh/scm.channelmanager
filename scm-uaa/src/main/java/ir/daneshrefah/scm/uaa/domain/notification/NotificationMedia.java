@@ -7,10 +7,10 @@ package ir.daneshrefah.scm.uaa.domain.notification;
  * @version 1.0
  * @since 2023-12-30
  */
-public enum MessageType {
+public enum NotificationMedia {
 
-    GENERAL,
-    AUTHENTICATION,
-    ACTIVATION;
+    SMS,
+    EMAIL,
+    FAX
 
 }

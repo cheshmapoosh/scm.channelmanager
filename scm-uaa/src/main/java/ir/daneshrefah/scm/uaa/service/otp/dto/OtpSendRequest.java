@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationType;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
+import ir.daneshrefah.scm.uaa.domain.notification.NotificationMedia;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +15,6 @@ import lombok.Setter;
 @Setter
 public class OtpSendRequest extends OtpBaseRequest {
 
-    private NotificationType notificationType;
+    private NotificationMedia notificationType;
 
 }

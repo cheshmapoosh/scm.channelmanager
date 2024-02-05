@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.notification.provider;
 
 import ir.daneshrefah.scm.uaa.domain.notification.Notification;
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationType;
+import ir.daneshrefah.scm.uaa.domain.notification.NotificationMedia;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,8 +20,8 @@ public class SmsNotificationProvider implements NotificationProvider {
     }
 
     @Override
-    public NotificationType getType() {
-        return NotificationType.SMS;
+    public NotificationMedia getType() {
+        return NotificationMedia.SMS;
     }
 
 }

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.notification;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -8,15 +8,16 @@ import lombok.Getter;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-12-30
+ * @since 2024-02-05
  */
 @Getter
-@AllArgsConstructor
-public abstract class Notification {
+@Builder
+public class Notification {
 
-    private NotificationType type;
-    private String message;
-    private String recipient;
-    private MessageType messageType;
+    private final NotificationRequest request;
+    private final NotificationMedia media;
+    private final String recipient;
+    private final MessageTemplate messageTemplate;
+    private final String body;
 
 }

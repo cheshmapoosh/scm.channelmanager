@@ -51,6 +51,14 @@ public class TerminalServiceImpl implements TerminalService {
         return terminals;
     }
 
+    @Override
+    public Optional<Terminal> findTerminalByCode(String code) {
+        if (StringUtils.isEmpty(code)) {
+            return Optional.empty();
+        }
+        return findAllTerminals().stream().filter(terminal -> code.equals(terminal.getCode())).findFirst();
+    }
+
     public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request) {
         List<Terminal> terminalList = findAllTerminals().stream()
                 .filter(terminal -> null == request || null == request.getCode() || request.getCode().equals(terminal.getCode()))

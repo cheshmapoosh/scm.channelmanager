@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.notification.provider;
 
 import ir.daneshrefah.scm.uaa.domain.notification.Notification;
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationType;
+import ir.daneshrefah.scm.uaa.domain.notification.NotificationMedia;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,6 +14,6 @@ public interface NotificationProvider {
 
     public void send(Notification notification);
 
-    public NotificationType getType();
+    public NotificationMedia getType();
 
 }
