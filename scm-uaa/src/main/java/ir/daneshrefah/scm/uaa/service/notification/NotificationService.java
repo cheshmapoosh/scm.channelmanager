@@ -63,13 +63,13 @@ public class NotificationService {
     }
 
     private void sendNotificationInternal(NotificationRequest request) {
-        MessageTemplate template = findMessageTemplateByCode(request.getMessageTemplateCode());
+        Optional<MessageTemplateEntity> template = findMessageTemplateByCode(request.getMessageTemplateCode());
         Notification notification = Notification.builder()
                 .request(request)
                 .media(request.getMedia())
                 .recipient(request.getRecipient())
-                .messageTemplate(template)
-                .body(extractNotificationBody(template, request.getData()))
+//                .messageTemplate(template)
+//                .body(extractNotificationBody(template, request.getData()))
                 .build();
         NotificationProvider provider = providers.get(request.getMedia());
         if (null == provider) {
