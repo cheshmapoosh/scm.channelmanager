@@ -17,7 +17,7 @@ import java.util.List;
 @Repository
 public interface IntegrationRepository extends CrudRepository<UserEntity,Long> {
 
-    @Query(value = "SELECT CODE AS key, CHANNEL_ID AS value FROM REF.CHANNEL " +
+    @Query(value = "SELECT CODE AS 'key', CHANNEL_ID AS value FROM REF.CHANNEL " +
             "WHERE PARENT_ID IS NULL AND ACTIVE = 1", nativeQuery = true)
     List<String[]> findAllTerminals();
 

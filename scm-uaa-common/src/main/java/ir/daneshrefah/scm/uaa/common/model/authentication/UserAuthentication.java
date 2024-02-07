@@ -7,16 +7,13 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,11 +23,8 @@ import java.util.Collections;
  * @since 2023-08-14
  */
 @Getter
-public class UserAuthentication implements org.springframework.security.core.Authentication, Authentication {
+public class UserAuthentication extends AbstractAuthenticationToken implements Authentication {
 
-    private final Collection<GrantedAuthority> authorities;
-    private AuthenticationDetail details;
-    private boolean authenticated = false;
     private User principal;
     private PersonProfile profile;
     @Setter
@@ -54,17 +48,10 @@ public class UserAuthentication implements org.springframework.security.core.Aut
      *                    represented by this authentication object.
      */
     public UserAuthentication(AuthenticationDetail details, User principal, Collection<? extends GrantedAuthority> authorities) {
-        this.details = details;
+        super(authorities);
+        setDetails(details);
         this.principal = principal;
         setAuthenticated(null != authorities);
-        if (authorities == null) {
-            this.authorities = AuthorityUtils.NO_AUTHORITIES;
-            return;
-        }
-        for (GrantedAuthority a : authorities) {
-            Assert.notNull(a, "Authorities collection cannot contain any null elements");
-        }
-        this.authorities = Collections.unmodifiableList(new ArrayList<>(authorities));
         if (null != principal && isAuthenticated()) {
             profile = new PersonProfile(principal.getPerson().getUsername(), principal.getPerson().getId().longValue());
         }
@@ -101,13 +88,13 @@ public class UserAuthentication implements org.springframework.security.core.Aut
     }
 
     @Override
-    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
-        authenticated = isAuthenticated;
+    public String getName() {
+        return null != principal ? principal.getNickname() : null;
     }
 
     @Override
-    public String getName() {
-        return null != principal ? principal.getNickname() : null;
+    public AuthenticationDetail getDetails() {
+        return (AuthenticationDetail) super.getDetails();
     }
 
     @Override
@@ -133,4 +120,5 @@ public class UserAuthentication implements org.springframework.security.core.Aut
         private String sessionId;
         private String clientId;
     }
+
 }

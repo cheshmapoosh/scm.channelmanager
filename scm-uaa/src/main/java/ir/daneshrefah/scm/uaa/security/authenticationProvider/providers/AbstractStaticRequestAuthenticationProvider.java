@@ -19,9 +19,8 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
         PostAuthenticationToken result = PostAuthenticationToken.incomplete(
-                (TerminalUserDetails) authentication.getDetails(),
-                ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken());
-        result.setDetails(authentication.getDetails());
+                (TerminalUserDetails) authentication.getPrincipal(),
+                ((GeneralAuthenticationToken) authentication).getDetails());
         this.logger.debug("Authenticated user");
         return result;
     }

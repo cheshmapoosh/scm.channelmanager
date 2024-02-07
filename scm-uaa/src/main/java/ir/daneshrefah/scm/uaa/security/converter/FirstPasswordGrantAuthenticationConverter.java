@@ -78,7 +78,7 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
 
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
                 AuthorizationGrantType.FIRST_PASSWORD,
-                clientPrincipal, scopes);
+                clientPrincipal, scopes, null); //TODO
         preAuthenticationToken.setAccessParameter(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACCESS_PARAMETER));
         preAuthenticationToken.setClaimCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_CLAIM));
         preAuthenticationToken.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));

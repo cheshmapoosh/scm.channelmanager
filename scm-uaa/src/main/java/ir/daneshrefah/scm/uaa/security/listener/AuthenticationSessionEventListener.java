@@ -47,11 +47,11 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
                 .loginData(null)
                 .loginAccessParameter(null)
                 .sessionId(authentication.getSessionId())
-                .clientId(authentication.getPreAuthenticationToken().getClientId())
+                .clientId(authentication.getDetails().getClientId())
                 .build();
 
         UserAuthentication userAuthentication = new UserAuthentication(detail,
-                authentication.getDetails().getUser(),
+                authentication.getPrincipal().getUser(),
                 PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(authentication.getAuthenticationStatus()) ?
                         authentication.getAuthorities() : null);
 

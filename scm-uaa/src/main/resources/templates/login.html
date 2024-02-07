@@ -12,16 +12,21 @@
 <body>
 <div class="container">
     <form class="form-signin" method="post" action="/login">
-        <h2 class="form-signin-heading">Please sign in</h2>
-        <p>
+        <h2 class="form-signin-heading jms-test">Please sign in</h2>
+        <p th:if="${!isStepTwoRequired}">
             <label for="username" class="sr-only">Username</label>
             <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
         </p>
-        <p>
+        <p th:if="${!isStepTwoRequired}">
             <label for="password" class="sr-only">Password</label>
             <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
         </p>
+        <p th:if="${isStepTwoRequired}">
+            <label for="claim" class="sr-only">Step 2</label>
+            <input type="password" id="claim" name="claim_code" class="form-control" placeholder="Claim" required>
+        </p>
         <input th:name="${csrf_name}" type="hidden" th:value="${csrf_value}" />
+        <input name="is_step_two" type="hidden" th:value="${isStepTwoRequired}" />
         <input name="client_id" type="hidden" th:value="${client_id}" />
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
     </form>

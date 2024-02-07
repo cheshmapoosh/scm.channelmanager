@@ -54,8 +54,9 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     private String activationCode;
 
     public PreAuthenticationToken(String username, String password, AuthorizationGrantType grantType,
-                                  Authentication clientPrincipal, Set<String> scopes) {
+                                  Authentication clientPrincipal, Set<String> scopes, Object details) {
         super(Collections.emptyList());
+        setDetails(details);
         this.username = username;
         this.password = password;
         this.grantType = grantType;
@@ -75,7 +76,5 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     public Object getPrincipal() {
         return username;
     }
-
-
 
 }

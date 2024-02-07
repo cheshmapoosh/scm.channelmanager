@@ -1,15 +1,11 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import com.nimbusds.jose.Algorithm;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
+import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
@@ -17,40 +13,35 @@ import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticati
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.*;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -126,16 +117,21 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
+                                                          JwtDecoder jwtDecoder,
                                                           GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        jwtAuthenticationProvider.setJwtAuthenticationConverter(new JwtTokenConverter());
         http
-                .authenticationProvider(generalAuthenticationProvider)
+//                .authenticationProvider(generalAuthenticationProvider)
+                .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/login**").permitAll()
 //                        .requestMatchers("/oauth2/token").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterAfter(bearerAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class)
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
 //                .formLogin(Customizer.withDefaults());
@@ -150,6 +146,10 @@ public class SecurityConfig {
                                 new TerminalLoginUrlAuthenticationEntryPoint("/login"),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
+                        .defaultAuthenticationEntryPointFor(
+                                new BearerTokenAuthenticationEntryPoint(),
+                                new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)
+                        )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/**"))
                 .formLogin(login -> {
@@ -163,6 +163,10 @@ public class SecurityConfig {
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
                     });
         return http.build();
+    }
+
+    private BearerTokenAuthenticationFilter bearerAuthenticationFilter(HttpSecurity http) {
+        return new BearerTokenAuthenticationFilter((AuthenticationManagerResolver<HttpServletRequest>) context -> http.getSharedObject(AuthenticationManager.class));
     }
 
     @Bean

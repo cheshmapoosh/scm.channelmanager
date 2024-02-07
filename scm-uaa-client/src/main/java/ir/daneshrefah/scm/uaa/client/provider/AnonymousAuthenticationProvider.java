@@ -1,22 +1,14 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.uaa.client.converter.token.TokenConverter;
 import ir.daneshrefah.scm.uaa.client.provider.token.AnonymousAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
-import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
-import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.

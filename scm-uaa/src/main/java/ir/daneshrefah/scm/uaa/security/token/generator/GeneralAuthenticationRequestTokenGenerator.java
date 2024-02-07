@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.security.token.generator;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
@@ -13,9 +14,12 @@ import java.util.Optional;
  * @version 1.0
  * @since 2024-02-06
  */
-public interface AuthenticationRequestTokenGenerator {
+@Component
+public class GeneralAuthenticationRequestTokenGenerator implements AuthenticationRequestTokenGenerator {
 
-    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication,
-                                                                                  TerminalUserDetails userDetails);
+    @Override
+    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication, TerminalUserDetails userDetails) {
+        return Optional.empty();
+    }
 
 }

@@ -5,11 +5,11 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
 import ir.daneshrefah.scm.common.data.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,10 +69,10 @@ public class JWTConfig {
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
-                User user = principal.getDetails().getUser();
+                User user = principal.getPrincipal().getUser();
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
-                claims.claim(CLAIM_KEY_GRANT, principal.getPreAuthenticationToken().getGrantType());
+                claims.claim(CLAIM_KEY_GRANT, principal.getDetails().getGrantType());
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
                 claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
                         Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())

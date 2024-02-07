@@ -74,11 +74,6 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
         return null;
     }
 
-    @Override
-    public Object getPrincipal() {
-        return null;
-    }
-
     public enum AuthenticationStatus {
         UN_AUTHENTICATED,
         INCOMPLETE,
@@ -88,14 +83,15 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
 
     @Override
     public String getName() {
-        return String.valueOf(this.getPreAuthenticationToken().getPrincipal());
+        return String.valueOf(this.getDetails().getPrincipal());
     }
 
     public String getTerminalCode() {
-        if (null == getDetails() || null == getDetails().getUser()) {
+        if (null == getPrincipal() || !(getPrincipal() instanceof TerminalUserDetails)
+                || null == ((TerminalUserDetails) getPrincipal()).getUser()) {
             return null;
         }
-        return getDetails().getUser().getTerminalCode();
+        return ((TerminalUserDetails) getPrincipal()).getUser().getTerminalCode();
     }
 
 }

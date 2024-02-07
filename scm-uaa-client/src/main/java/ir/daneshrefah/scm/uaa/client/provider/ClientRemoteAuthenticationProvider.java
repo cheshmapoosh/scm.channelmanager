@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.client.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.uaa.client.converter.token.TokenConverter;
+import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
@@ -11,6 +11,8 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -26,15 +28,17 @@ import java.util.Map;
 @Component
 public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
 
-    private final TokenConverter<String> jwtAuthenticationConverter;
+    private final JwtTokenConverter jwtTokenConverter;
+    private final JwtDecoder jwtDecoder;
     private final ObjectMapper objectMapper;
 
     public ClientRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
-                                              TokenConverter<String> jwtAuthenticationConverter,
+                                              JwtDecoder jwtDecoder,
                                               ObjectMapper objectMapper,
                                               SessionCache sessionCache) {
         super(remoteSecurityServiceProvider, sessionCache);
-        this.jwtAuthenticationConverter = jwtAuthenticationConverter;
+        this.jwtDecoder = jwtDecoder;
+        this.jwtTokenConverter = new JwtTokenConverter();
         this.objectMapper = objectMapper;
     }
 
@@ -46,7 +50,8 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
                     "remoteServiceProvider returned null, which is an interface contract violation");
         }
         String accessToken = extractAccessToken(authenticationResult);
-        UserAuthentication userAuthentication = jwtAuthenticationConverter.convert(accessToken);
+        Jwt jwt = jwtDecoder.decode(accessToken);
+        UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt);
 //        UserDetails loadedUser = getSessionCache().getUserFromCache(authentication.getId());
 //        if (loadedUser == null) {
 //            throw new InternalAuthenticationServiceException(

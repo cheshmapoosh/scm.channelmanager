@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.client.converter.token;
+package ir.daneshrefah.scm.uaa.common.token;
 
 import ir.daneshrefah.scm.common.data.model.person.*;
 import ir.daneshrefah.scm.common.data.type.Nationality;
@@ -9,15 +9,11 @@ import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
-import org.springframework.stereotype.Component;
 
 import java.net.URL;
 import java.time.Instant;
@@ -34,18 +30,10 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2023-12-25
  */
-@Component
-public class JwtTokenConverter implements TokenConverter<String> {
-
-    private final JwtDecoder jwtDecoder;
-
-    public JwtTokenConverter(JwtDecoder jwtDecoder) {
-        this.jwtDecoder = jwtDecoder;
-    }
+public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     @Override
-    public UserAuthentication convert(String token) {
-        Jwt jwt = getJwt(token);
+    public UserAuthentication convert(Jwt jwt) {
         String clientId = jwt.getAudience().get(0);
 
         Collection<GrantedAuthority> authorities = Collections.emptyList();
@@ -147,14 +135,4 @@ public class JwtTokenConverter implements TokenConverter<String> {
         return user;
     }
 
-    private Jwt getJwt(String token) {
-        try {
-            return this.jwtDecoder.decode(token);
-        } catch (BadJwtException failed) {
-//            this.logger.debug("Failed to authenticate since the JWT was invalid");
-            throw new InvalidBearerTokenException(failed.getMessage(), failed);
-        } catch (JwtException failed) {
-            throw new AuthenticationServiceException(failed.getMessage(), failed);
-        }
-    }
 }

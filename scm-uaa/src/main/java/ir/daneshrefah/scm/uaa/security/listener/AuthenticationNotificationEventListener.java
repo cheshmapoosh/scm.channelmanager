@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.uaa.security.listener;
 
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.notification.NotificationData;
 import ir.daneshrefah.scm.uaa.domain.notification.NotificationMedia;
 import ir.daneshrefah.scm.uaa.domain.notification.NotificationRequest;
@@ -32,7 +34,8 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         if (!authentication.isNotificationRequired()) {
             return;
         }
-        Optional<Terminal> terminal = terminalService.findTerminalByCode(authentication.getDetails().getUser().getTerminalCode());
+        User user = authentication.getPrincipal().getUser();
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(user.getTerminalCode());
 //        BeanUtils.describe(authentication);
         NotificationData data = new NotificationData()
                 .put("title", "")
@@ -41,7 +44,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                 .put("terminalTitle", terminal.get().getTitle());
         NotificationRequest request = NotificationRequest.builder()
                 .media(NotificationMedia.SMS)
-                .recipient(authentication.getDetails().getUser().getPerson().getMobile1())
+                .recipient(user.getPerson().getMobile1())
                 .data(data)
                 .messageTemplateCode(NotificationConstants.MESSAGE_TEMPLATE_CODE_AUTHENTICATION)
                 .build();

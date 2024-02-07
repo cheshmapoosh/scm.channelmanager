@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.ClientService;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
@@ -93,11 +94,16 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 String redirectUri = iterator.next();
                 clientBuilder.redirectUri(redirectUri);
             }
+            boolean isScopeOpenIdAdded = false;
             if (null != client.getScopes()) {
                 for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
                     ClientScopeRelation scope = iterator.next();
                     clientBuilder.scope(scope.getScope().getCode());
+                    isScopeOpenIdAdded = isScopeOpenIdAdded || OidcScopes.OPENID.equalsIgnoreCase(scope.getScope().getCode());
                 }
+            }
+            if (!isScopeOpenIdAdded) {
+                clientBuilder.scope(OidcScopes.OPENID);
             }
             return clientBuilder.build();
         }).collect(Collectors.toList());

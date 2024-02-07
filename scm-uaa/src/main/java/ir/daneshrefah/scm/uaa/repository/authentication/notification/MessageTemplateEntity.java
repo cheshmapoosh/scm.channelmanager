@@ -15,7 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "TBL_SNT_NOTIFICATION_LOG")
+@Table(name = "TBL_SNT_MESSAGE_TEMPLATE")
 public class MessageTemplateEntity extends AbstractDefaultEntity<Long> {
 
     @Id

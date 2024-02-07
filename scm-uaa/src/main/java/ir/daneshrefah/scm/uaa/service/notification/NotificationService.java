@@ -60,7 +60,7 @@ public class NotificationService {
 
     private void logNotificationEvent(NotificationRequest request, Instant startTime, Exception exception) {
         NotificationLogEntity logEntity = new NotificationLogEntity();
-        notificationLogRepository.save(logEntity);
+//        notificationLogRepository.save(logEntity);
     }
 
     private void sendNotificationInternal(NotificationRequest request) {

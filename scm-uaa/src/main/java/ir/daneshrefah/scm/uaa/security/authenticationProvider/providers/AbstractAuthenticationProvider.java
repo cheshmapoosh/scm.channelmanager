@@ -52,7 +52,7 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         Assert.isInstanceOf(GeneralAuthenticationToken.class, authentication,
                 () -> "AbstractAuthenticationProvider.onlySupports GeneralAuthenticationToken.");
 
-        TerminalUserDetails user = (TerminalUserDetails) authentication.getDetails();
+        TerminalUserDetails user = (TerminalUserDetails) authentication.getPrincipal();
         try {
             this.preAuthenticationChecks.check(user);
             additionalAuthenticationChecks(user, (GeneralAuthenticationToken) authentication);
@@ -66,16 +66,16 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
     }
 
     private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
-        ClientSettings clientSettings = authentication.getPreAuthenticationToken().getRegisteredClient().getClientSettings();
+        ClientSettings clientSettings = authentication.getDetails().getRegisteredClient().getClientSettings();
         boolean isClientSupportCheckActivation = clientSettings.getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
-        boolean isGrantTypeSupportCheckActivation = authentication.getPreAuthenticationToken().getGrantType().isSupportActivationCheck();
+        boolean isGrantTypeSupportCheckActivation = authentication.getDetails().getGrantType().isSupportActivationCheck();
         if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
             return;
         }
         String terminalCode = clientSettings.getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
-        String username = authentication.getPreAuthenticationToken().getName();
-        String accessParameter = authentication.getPreAuthenticationToken().getAccessParameter();
-        String activationCode = authentication.getPreAuthenticationToken().getActivationCode();
+        String username = authentication.getDetails().getName();
+        String accessParameter = authentication.getDetails().getAccessParameter();
+        String activationCode = authentication.getDetails().getActivationCode();
         boolean isActivated = userService.checkUserActivationCode(terminalCode, username, accessParameter, activationCode);
         if (!isActivated) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
@@ -88,9 +88,8 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
         PostAuthenticationToken result = PostAuthenticationToken.unauthenticated(
-                (TerminalUserDetails) authentication.getDetails(),
-                ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken());
-        result.setDetails(authentication.getDetails());
+                (TerminalUserDetails) authentication.getPrincipal(),
+                ((GeneralAuthenticationToken) authentication).getDetails());
         this.logger.debug("Unauthenticated user");
         return result;
     }
@@ -101,23 +100,21 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
         GeneralAuthenticationToken authenticationToken = (GeneralAuthenticationToken) authentication;
-        authenticationToken.getPreAuthenticationToken().getClientPrincipal();
         PostAuthenticationToken result = null;
-        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authenticationToken.getPreAuthenticationToken().getGrantType())) {
+        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authenticationToken.getDetails().getGrantType())) {
             result = PostAuthenticationToken.secondLvlAuthenticated(
-                    (TerminalUserDetails) authentication.getDetails(),
-                    ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken());
+                    (TerminalUserDetails) authentication.getPrincipal(),
+                    ((GeneralAuthenticationToken) authentication).getDetails());
         } else {
             result = PostAuthenticationToken.authenticated(
-                    (TerminalUserDetails) authentication.getDetails(),
-                    ((GeneralAuthenticationToken) authentication).getPreAuthenticationToken(),
-                    ((TerminalUserDetails) authentication.getDetails()).getAuthorities());
+                    (TerminalUserDetails) authentication.getPrincipal(),
+                    ((GeneralAuthenticationToken) authentication).getDetails(),
+                    ((TerminalUserDetails) authentication.getPrincipal()).getAuthorities());
         }
         result.setSessionRequired(authenticationToken.isSessionRequired());
         result.setNotificationRequired(authenticationToken.isNotificationRequired());
-        result.setDetails(authentication.getDetails());
         Instant issuedAt = Instant.now();
-        Instant expiresAt = issuedAt.plus(authenticationToken.getPreAuthenticationToken()
+        Instant expiresAt = issuedAt.plus(authenticationToken.getDetails()
                 .getRegisteredClient().getTokenSettings().getAccessTokenTimeToLive());
         result.setIssuedAt(issuedAt);
         result.setExpiresAt(expiresAt);

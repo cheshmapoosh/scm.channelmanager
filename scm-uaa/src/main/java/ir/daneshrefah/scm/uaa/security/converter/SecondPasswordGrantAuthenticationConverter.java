@@ -62,7 +62,7 @@ public class SecondPasswordGrantAuthenticationConverter implements Authenticatio
 
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
                 AuthorizationGrantType.SECOND_PASSWORD,
-                clientPrincipal, null);
+                clientPrincipal, null, null); //TODO
 //        preAuthenticationToken.setClaimCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_CLAIM));
 //        preAuthenticationToken.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));
 //        preAuthenticationToken.setClientSignature(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE));

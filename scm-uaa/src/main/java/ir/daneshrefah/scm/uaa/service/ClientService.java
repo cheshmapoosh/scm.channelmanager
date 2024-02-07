@@ -48,7 +48,7 @@ public class ClientService {
     }
 
     public Client findByClientId(String clientId) {
-        return findAll().stream().filter(client -> clientId.equals(client.getClientId())).findFirst().orElseThrow();
+        return findAll().stream().filter(client -> clientId.equalsIgnoreCase(client.getClientId())).findFirst().orElseThrow();
     }
 
     public Client createClient(Client client) {

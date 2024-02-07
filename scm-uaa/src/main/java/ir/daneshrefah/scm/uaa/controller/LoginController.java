@@ -1,14 +1,13 @@
 package ir.daneshrefah.scm.uaa.controller;
 
+import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.util.HtmlUtils;
-
-import java.util.Collections;
 
 /**
  * Description of the class or purpose of the file.
@@ -22,7 +21,8 @@ public class LoginController {
 
     @GetMapping("/login")
     public String login(Model model, HttpServletRequest request,
-                        @RequestParam(name = "client_id", required = false) String clientId) {
+                        @RequestParam(name = "client_id", required = false) String clientId,
+                        @RequestParam(name = "error", required = false) String error) {
 //        authenticationUrl
 //        usernameParameter
 //        passwordParameter
@@ -37,15 +37,24 @@ public class LoginController {
 //        }
 //        return "<div class=\"alert alert-success\" role=\"alert\">You have been signed out</div>";
 
+        boolean isError = null != error;
+        Exception exception = (Exception) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        boolean isStepTwoRequired = checkIsStepTwoRequired(exception);
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
 //        return (token != null) ? Collections.singletonMap(token.getParameterName(), token.getToken())
 //                : Collections.emptyMap();
         model.addAttribute("client_id", clientId);
         model.addAttribute("csrf_name", token.getParameterName());
         model.addAttribute("csrf_value", token.getToken());
+        model.addAttribute("isError", isError);
+        model.addAttribute("isStepTwoRequired", isStepTwoRequired);
 //        Employee employee = new Employee();
 //        model.addAttribute("employee", employee);
         return "login";
+    }
+
+    private boolean checkIsStepTwoRequired(Exception exception) {
+        return null != exception && TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass());
     }
 
 }

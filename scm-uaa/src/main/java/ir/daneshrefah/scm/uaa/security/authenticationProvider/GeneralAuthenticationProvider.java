@@ -1,14 +1,18 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
+import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
+import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
-import ir.daneshrefah.scm.uaa.service.ClientService;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,54 +22,60 @@ import org.springframework.stereotype.Component;
  * @version 1.0
  * @since 2023-12-18
  */
+
 @Component
-public class GeneralAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider {
+public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProvider {
 
-    private final ClientService clientService;
-    private final UserDetailsService userDetailsService;
-
-    public GeneralAuthenticationProvider(ClientService clientService, UserDetailsService userDetailsService) {
-        this.clientService = clientService;
-        this.userDetailsService = userDetailsService;
+    public GeneralAuthenticationProvider(RegisteredClientRepository clientRepository, UserCache userCache,
+                                         UserDetailsService userDetailsService,
+                                         OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
+                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider) {
+        super(clientRepository, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
     }
 
     @Override
-    protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
-
-    }
-
-    @Override
-    protected UserDetails retrieveUser(String username, UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
+    protected PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication) {
         String clientId = null;
-        String terminalCode = null;
+        TerminalWebAuthenticationDetails.Claim claim = null;
         if (null != authentication.getDetails() && authentication.getDetails() instanceof TerminalWebAuthenticationDetails) {
             clientId = ((TerminalWebAuthenticationDetails) authentication.getDetails()).getClientId();
-            terminalCode = clientService.findByClientId(clientId).getTerminalCode();
+            claim = ((TerminalWebAuthenticationDetails) authentication.getDetails()).getClaim();
         }
-        try {
-            UserDetails loadedUser = userDetailsService.loadUserByUsername(username, terminalCode);
-            if (loadedUser == null) {
-                throw new InternalAuthenticationServiceException(
-                        "UserDetailsService returned null, which is an interface contract violation");
-            }
-            return loadedUser;
+        String username = (String) authentication.getPrincipal();
+        if (null != claim) {
+            username = claim.username();
         }
-        catch (UsernameNotFoundException ex) {
-//            mitigateAgainstTimingAttack(authentication);
-            throw ex;
-        }
-        catch (InternalAuthenticationServiceException ex) {
-            throw ex;
-        }
-        catch (Exception ex) {
-            throw new InternalAuthenticationServiceException(ex.getMessage(), ex);
-        }
+        String password = (String) authentication.getCredentials();
+        PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
+                AuthorizationGrantType.FIRST_PASSWORD,
+                null, null, authentication.getDetails()); //TODO scopes mus be set from request
+        preAuthenticationToken.setClientId(clientId);
+//        preAuthenticationToken.setAccessParameter(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACCESS_PARAMETER));
+        preAuthenticationToken.setClaimCode(null != claim ? claim.claimCode() : null);
+//        preAuthenticationToken.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));
+//        preAuthenticationToken.setClientSignature(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE));
+//        preAuthenticationToken.setActivationCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_REGISTER_CODE));
+
+        return preAuthenticationToken;
     }
 
-    /*private void mitigateAgainstTimingAttack(UsernamePasswordAuthenticationToken authentication) {
-        if (authentication.getCredentials() != null) {
-            String presentedPassword = authentication.getCredentials().toString();
-            this.passwordEncoder.matches(presentedPassword, this.userNotFoundEncodedPassword);
+    @Override
+    protected Authentication buildResponse(Authentication requestAuthentication, PreAuthenticationToken preAuthenticationToken, GeneralAuthenticationToken authentication) {
+        PostAuthenticationToken.AuthenticationStatus status = ((PostAuthenticationToken) authentication).getAuthenticationStatus();
+        if (PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
+            throw new TwoStepAuthenticationRequiredException((PostAuthenticationToken) authentication);
         }
-    }*/
+        return authentication;
+    }
+
+    @Override
+    protected void throwError(String errorCode, String parameterName) {
+        throw new UsernameNotFoundException(errorCode + ":" + parameterName);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return (UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication));
+    }
+
 }

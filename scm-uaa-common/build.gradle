@@ -17,12 +17,13 @@ publishing {
 }
 
 dependencies {
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
     compileOnly 'org.projectlombok:lombok'
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
-    implementation 'org.springframework.security:spring-security-core'
-    implementation 'org.springframework.security:spring-security-web'
-    implementation 'org.springframework.security:spring-security-oauth2-core'
+    compileOnly 'org.springframework.security:spring-security-core'
+    compileOnly 'org.springframework.security:spring-security-web'
+    compileOnly 'org.springframework.security:spring-security-oauth2-core'
+    compileOnly 'org.springframework.security:spring-security-oauth2-jose'
     api project(':scm-common')
     api project(':scm-common-data')
     api project(':scm-utils')

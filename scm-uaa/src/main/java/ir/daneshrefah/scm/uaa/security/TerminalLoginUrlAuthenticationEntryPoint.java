@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security;
 
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
@@ -29,8 +30,12 @@ public class TerminalLoginUrlAuthenticationEntryPoint extends LoginUrlAuthentica
     protected String determineUrlToUseForThisRequest(HttpServletRequest request, HttpServletResponse response,
                                                      AuthenticationException exception) {
         String loginForm = super.determineUrlToUseForThisRequest(request, response, exception);
+        String clientId = request.getParameter(OAuth2ParameterNames.CLIENT_ID);
+        if (StringUtils.isEmpty(clientId)) {
+            clientId = "SCM";
+        }
         return UriComponentsBuilder.fromUriString(loginForm)
-                .queryParam(OAuth2ParameterNames.CLIENT_ID, request.getParameter(OAuth2ParameterNames.CLIENT_ID))
+                .queryParam(OAuth2ParameterNames.CLIENT_ID, clientId)
                 .toUriString();
     }
 }
