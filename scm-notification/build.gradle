@@ -1,0 +1,6 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+dependencies {
+}

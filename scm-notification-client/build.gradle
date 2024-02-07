@@ -1,0 +1,9 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+    id 'maven-publish'
+    id 'java'
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok'
+}
