@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.common.core;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.utils.string.DateUtils;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,7 +48,7 @@ public class SessionCache {
     }
 
     public void putSessionInCache(String sessionKey, UserAuthentication user) {
-        long timeToLiveMinutes = DateUtils.calculateMinutesBetween(user.getDetails().getIssuedAt(), user.getDetails().getExpiresAt());
+        long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(user.getDetails().getIssuedAt(), user.getDetails().getExpiresAt());
         cacheTemplate.putInCache(DEFAULT_CACHE_NAME, sessionKey, user, timeToLiveMinutes);
     }
 
