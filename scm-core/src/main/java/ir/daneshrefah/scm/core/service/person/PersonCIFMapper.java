@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.data.model.person.IndividualPerson;
 import ir.daneshrefah.scm.common.data.type.MaritalStatus;
 import ir.daneshrefah.scm.common.data.type.Nationality;
 import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY;
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PERSON_TYPE_IS_INVALID;
@@ -105,8 +106,8 @@ public class PersonCIFMapper {
         result.setMaritalStatus(CIF_MARITAL_STATUS_MARRIED == personNode.get("maritalStatusCode").asInt() ?
                 MaritalStatus.MARRIED : MaritalStatus.SINGLE);
 //        result.setGender(Gender.findByCode(personNode.get("genderCode").asInt()));
-//        result.setBirthDate(Gender.findByCode(personNode.get("birthDate").asInt()));
-//        result.setDeadDate(Gender.findByCode(personNode.get("deadDate").asInt()));
+        result.setBirthDate(DateUtils.ShamsiCalendarConvertor.convertToLocalDate(personNode.get("birthDate").asText(),"yyyyMMdd"));
+        result.setDeadDate(DateUtils.ShamsiCalendarConvertor.convertToLocalDate(personNode.get("deadDate").asText(),"yyyyMMdd"));
         result.setIdentificationNo(personNode.get("registerId").asText());
         result.setRegisterSeries(personNode.get("registerSeries").asText());
         result.setRegisterSerial(personNode.get("registerSerial").asText());
