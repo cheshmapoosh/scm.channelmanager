@@ -31,6 +31,16 @@ public class UserController extends BaseController {
         return userService.createUser(request);
     }
 
+    @PutMapping("/login-password/{userId}")
+    public User updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody String password) {
+        return null;
+    }
+
+    @PutMapping("/transaction-password/{userId}")
+    public User updateUserTransactionStaticPassword(@PathVariable Long userId, @RequestBody String password) {
+        return null;
+    }
+
     @PostMapping("/activate/{userId}")
     public boolean activateUser(@PathVariable Long userId) {
         return userService.activateUser(userId, true);

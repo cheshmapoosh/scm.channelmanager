@@ -69,6 +69,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     Duration.ofMinutes(client.getSessionTimeToLiveMinute()) : Duration.ofMinutes(5);
             TokenSettings tokenSettings = TokenSettings.builder()
                     .accessTokenTimeToLive(accessTokenTimeToLive)
+                    .refreshTokenTimeToLive(accessTokenTimeToLive)
                     .build();
             ClientSettings clientSetting = ClientSettings.builder()
                     .requireAuthorizationConsent(client.isRequireAuthorizationConsent())

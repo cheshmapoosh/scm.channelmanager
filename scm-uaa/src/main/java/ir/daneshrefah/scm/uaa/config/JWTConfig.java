@@ -59,7 +59,8 @@ public class JWTConfig {
         NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
         JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
         jwtGenerator.setJwtCustomizer(jwtCustomizer());
-        return new DelegatingOAuth2TokenGenerator(jwtGenerator);
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator, refreshTokenGenerator);
     }
 
     @Bean
