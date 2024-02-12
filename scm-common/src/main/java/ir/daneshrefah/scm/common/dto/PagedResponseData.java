@@ -25,6 +25,14 @@ public class PagedResponseData<T> implements ResponseData {
         this(null != request ? request.getPageNo() : null, null != request ? request.getPageSize() : null, data);
     }
 
+    public PagedResponseData(Integer pageNo, Integer pageSize, Long totalCount, List<T> data) {
+        this.pageNo = pageNo;
+        this.pageSize = pageSize;
+        this.totalCount = totalCount.intValue();
+        this.totalPage = (totalCount.intValue() + pageSize - 1) / pageSize;
+        this.data = data;
+    }
+
     public PagedResponseData(Integer pageNo, Integer pageSize, List<T> data) {
         pageNo = null != pageNo ? pageNo : PagedRequestData.DEFAULT_PAGE_NO;
         pageSize = null != pageSize ? pageSize :  PagedRequestData.DEFAULT_PAGE_SIZE;

@@ -38,8 +38,7 @@ public class LoginController {
 //        return "<div class=\"alert alert-success\" role=\"alert\">You have been signed out</div>";
 
         boolean isError = null != error;
-        Exception exception = (Exception) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
-        boolean isStepTwoRequired = checkIsStepTwoRequired(exception);
+        boolean isStepTwoRequired = checkIsStepTwoRequired(request);
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
 //        return (token != null) ? Collections.singletonMap(token.getParameterName(), token.getToken())
 //                : Collections.emptyMap();
@@ -53,7 +52,8 @@ public class LoginController {
         return "login";
     }
 
-    private boolean checkIsStepTwoRequired(Exception exception) {
+    private boolean checkIsStepTwoRequired(HttpServletRequest request) {
+        Exception exception = (Exception) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
         return null != exception && TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass());
     }
 

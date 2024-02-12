@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/protected/otp")
+@RequestMapping("/api/otp")
 public class OtpController {
 
     private final OtpService otpService;

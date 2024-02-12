@@ -5,10 +5,11 @@ import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import ir.daneshrefah.scm.uaa.service.IntegrationService;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,20 +18,47 @@ import org.mapstruct.factory.Mappers;
  * @version 1.0
  * @since 2024-01-09
  */
+//@Mapper(uses = IntegrationService.class, injectionStrategy = InjectionStrategy.FIELD, componentModel = "spring")
 @Mapper
 public interface UserMapper {
 
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
+    @Mapping(target = "terminalCode", expression = "java(mapTerminalCode(entity))")
     @Mapping(source = "person", target = "person", qualifiedByName = "toPerson")
     User toModel(UserEntity entity);
 
     @Named("toPerson")
-    default GeneralPerson toService(GeneralPersonEntity entity) {
+    default GeneralPerson toPerson(GeneralPersonEntity entity) {
         return PersonMapper.INSTANCE.toPerson(entity);
     }
-//    List<User> entitiesToModels(Iterable<UserEntity> entities);
 
-//    UserEntity toEntity(User model);
+    @Named("toPersonEntity")
+    default GeneralPersonEntity toPersonEntity(GeneralPerson person) {
+        return PersonMapper.INSTANCE.toPersonEntity(person);
+    }
+
+    List<User> toModels(Iterable<UserEntity> entities);
+
+    default String mapTerminalCode(UserEntity entity) {
+        if (null == entity) {
+            return null;
+        }
+        return IntegrationService.INSTANCE.findTerminalCodeByChannelId(entity.getTerminalId());
+    }
+
+    default Integer mapTerminalId(User user) {
+        if (null == user) {
+            return null;
+        }
+        if (null != user.getTerminalId()) {
+            return user.getTerminalId();
+        }
+        return IntegrationService.INSTANCE.findChannelIdByTerminalCode(user.getTerminalCode());
+    }
+
+    @Mapping(target = "terminalId", expression = "java(mapTerminalId(user))")
+    @Mapping(source = "person", target = "person", qualifiedByName = "toPersonEntity")
+    UserEntity toEntity(User user);
 
 }

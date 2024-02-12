@@ -16,7 +16,7 @@ import java.util.Set;
  * @since 2023-07-19
  */
 @Data
-public class User extends BaseModel {
+public class User extends BaseModel<Integer> {
 
     private String nickname;
     private Integer terminalId;
@@ -29,6 +29,7 @@ public class User extends BaseModel {
     private String transactionStaticPassword;
     private String otpSerialNumber;
     private GeneralPerson person;
+    private String creatorBranch;
 
 
 

@@ -1,11 +1,16 @@
 package ir.daneshrefah.scm.uaa.service;
 
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.uaa.repository.authentication.IntegrationRepository;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -15,18 +20,34 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2024-01-10
  */
-@Service
 @RequiredArgsConstructor
+@Service
 public class IntegrationService {
 
+    public static IntegrationService INSTANCE = null;
+
+    private final TerminalService terminalService;
     private final IntegrationRepository integrationRepository;
     private Map<String, Integer> terminalCodeMap;
     private Map<Integer, String> channelIdMap;
+
+    @PostConstruct
+    public void init() {
+        INSTANCE = this;
+    }
 
     public String findTerminalCodeByChannelId(Integer channelId) {
         if (null == channelIdMap)
             initChannelMaps();
         return channelIdMap.get(channelId);
+    }
+
+    public Optional<Terminal> findTerminalByChannelId(Integer channelId) {
+        String terminalCode = findTerminalCodeByChannelId(channelId);
+        if (StringUtils.isEmpty(terminalCode)) {
+            return Optional.empty();
+        }
+        return terminalService.findTerminalByCode(terminalCode);
     }
 
     public Integer findChannelIdByTerminalCode(String terminalCode) {

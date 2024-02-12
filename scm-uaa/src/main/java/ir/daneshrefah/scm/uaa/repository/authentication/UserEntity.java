@@ -49,6 +49,8 @@ public class UserEntity extends AbstractEntity<Integer> {
     @ManyToOne
     @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
+    @Column(name = "BRANCH_CODE")
+    private String creatorBranch;
     @Column(name = "CREATED_BY")
     private String creator;
     @Column(name = "MODIFIED_BY")
@@ -60,19 +62,17 @@ public class UserEntity extends AbstractEntity<Integer> {
 
 
 
-//    ARCHIVE_NO
-//    USER_AUTHENTICATION_TYPE => 1:UserChannelAuthentication, 2:EmployeeAuthentication
-//    FROM_DATE
-//    TO_DATE
-//    PRINT_COUNT
-//    PASSWORD_SET_PRINTED
-//    EFFECTIVE_DATE
-//    OTP_SERIAL_NO
-//    STATE => unused
-//    BRANCH_CODE
-//    PIN_BASED_PASSWORD
-//    PATTERN_BASED_PASSWORD
-//    LAST_DATE_OF_PASSWORD_CHANGE
-//    LAST_REACTION_DATE_TO_PASSWORD
+//ARCHIVE_NO smallint NOT NULL DEFAULT '8',
+//USER_AUTHENTICATION_TYPE => 1:UserChannelAuthentication, 2:EmployeeAuthentication
+//FROM_DATE datetime(6) DEFAULT NULL,
+//TO_DATE datetime(6) DEFAULT NULL,
+//PRINT_COUNT smallint NOT NULL DEFAULT '0',
+//PASSWORD_SET_PRINTED smallint DEFAULT NULL,
+//EFFECTIVE_DATE datetime(6) DEFAULT NULL,
+//STATE smallint NOT NULL DEFAULT '1',
+//PIN_BASED_PASSWORD varchar(128) DEFAULT NULL,
+//PATTERN_BASED_PASSWORD varchar(128) DEFAULT NULL,
+//LAST_DATE_OF_PASSWORD_CHANGE datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//LAST_REACTION_DATE_TO_PASSWORD datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
 }

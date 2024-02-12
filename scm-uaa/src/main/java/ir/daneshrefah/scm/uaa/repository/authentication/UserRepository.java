@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +17,7 @@ import java.util.List;
  * @since 2024-01-09
  */
 @Repository
-public interface UserRepository extends CrudRepository<UserEntity,Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
 
     @Query(value = "SELECT u FROM UserEntity u " +
             "WHERE u.nickname = :nickname AND u.terminalId = :terminalId ")

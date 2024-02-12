@@ -3,6 +3,9 @@ package ir.daneshrefah.scm.utils.date;
 import ir.daneshrefah.scm.utils.calendar.shamsi.constant.ShamsiMonth;
 import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDate;
 import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDateTime;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.core.util.datetime.FixedDateFormat;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -21,6 +24,70 @@ import java.util.Date;
  */
 public class DateUtils {
 
+    @Getter
+    @RequiredArgsConstructor
+    public static enum FixedFormat {
+        /**
+         * COMPACT time format: {@code "yyyyMMddHHmmssSSS"}.
+         */
+        COMPACT("yyyyMMddHHmmssSSS", "yyyyMMdd"),
+        /**
+         * DATE_AND_TIME time format: {@code "dd MMM yyyy HH:mm:ss,SSS"}.
+         */
+        DATE("dd MMM yyyy HH:mm:ss,SSS", "dd MMM yyyy "),
+        /**
+         * DEFAULT time format: {@code "yyyy-MM-dd HH:mm:ss,SSS"}.
+         */
+        DEFAULT("yyyy-MM-dd HH:mm:ss,SSS", "yyyy-MM-dd "),
+        /**
+         * DEFAULT time format with microsecond precision: {@code "yyyy-MM-dd HH:mm:ss,nnnnnn"}.
+         */
+        DEFAULT_MICROS("yyyy-MM-dd HH:mm:ss,nnnnnn", "yyyy-MM-dd "),
+        /**
+         * ISO8601_BASIC time format: {@code "yyyyMMdd'T'HHmmss,SSS"}.
+         */
+        ISO8601_BASIC("yyyyMMdd'T'HHmmss,SSS", "yyyyMMdd'T'"),
+        /**
+         * ISO8601_BASIC time format: {@code "yyyyMMdd'T'HHmmss.SSS"}.
+         */
+        ISO8601_BASIC_PERIOD("yyyyMMdd'T'HHmmss.SSS", "yyyyMMdd'T'"),
+        /**
+         * ISO8601 time format: {@code "yyyy-MM-dd'T'HH:mm:ss,SSS"}.
+         */
+        ISO8601("yyyy-MM-dd'T'HH:mm:ss,SSS", "yyyy-MM-dd'T'"),
+        /**
+         * ISO8601 time format: {@code "yyyy-MM-dd'T'HH:mm:ss,SSSX"} with a time zone like {@code -07}.
+         */
+        ISO8601_OFFSET_DATE_TIME_HH("yyyy-MM-dd'T'HH:mm:ss,SSSX", "yyyy-MM-dd'T'"),
+        /**
+         * ISO8601 time format: {@code "yyyy-MM-dd'T'HH:mm:ss,SSSXX"} with a time zone like {@code -0700}.
+         */
+        ISO8601_OFFSET_DATE_TIME_HHMM("yyyy-MM-dd'T'HH:mm:ss,SSSXX", "yyyy-MM-dd'T'"),
+        /**
+         * ISO8601 time format: {@code "yyyy-MM-dd'T'HH:mm:ss,SSSXXX"} with a time zone like {@code -07:00}.
+         */
+        ISO8601_OFFSET_DATE_TIME_HHCMM("yyyy-MM-dd'T'HH:mm:ss,SSSXXX", "yyyy-MM-dd'T'"),
+        /**
+         * ISO8601 time format: {@code "yyyy-MM-dd'T'HH:mm:ss.SSS"}.
+         */
+        ISO8601_PERIOD("yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'"),
+        /**
+         * ISO8601 time format with support for microsecond precision: {@code "yyyy-MM-dd'T'HH:mm:ss.nnnnnn"}.
+         */
+        ISO8601_PERIOD_MICROS("yyyy-MM-dd'T'HH:mm:ss.nnnnnn", "yyyy-MM-dd'T'"),
+        /**
+         * American date/time format with 2-digit year: {@code "dd/MM/yy HH:mm:ss.SSS"}.
+         */
+        US_MONTH_DAY_YEAR2_TIME("dd/MM/yy HH:mm:ss.SSS", "dd/MM/yy "),
+        /**
+         * American date/time format with 4-digit year: {@code "dd/MM/yyyy HH:mm:ss.SSS"}.
+         */
+        US_MONTH_DAY_YEAR4_TIME("dd/MM/yyyy HH:mm:ss.SSS", "dd/MM/yyyy ");
+
+        private final String dateTimePattern;
+        private final String datePattern;
+
+    }
     public static class InstantTools {
         public static long calculateMinutesBetween(Instant fromDate, Instant toDate) {
             return fromDate.until(toDate, ChronoUnit.MINUTES);
@@ -106,6 +173,10 @@ public class DateUtils {
 
         public static Timestamp convertToTimestamp(String shamsiDateString, String pattern) {
             return DateConverter.convertToTimestamp(convertToDate(shamsiDateString,pattern));
+        }
+
+        public static LocalDate convertCompactToLocalDate(String shamsiDateString) {
+            return convertToLocalDate(shamsiDateString, FixedFormat.COMPACT.getDatePattern());
         }
 
         public static LocalDate convertToLocalDate(String shamsiDateString, String pattern) {

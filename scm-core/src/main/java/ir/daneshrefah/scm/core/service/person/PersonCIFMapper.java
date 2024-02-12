@@ -106,8 +106,8 @@ public class PersonCIFMapper {
         result.setMaritalStatus(CIF_MARITAL_STATUS_MARRIED == personNode.get("maritalStatusCode").asInt() ?
                 MaritalStatus.MARRIED : MaritalStatus.SINGLE);
 //        result.setGender(Gender.findByCode(personNode.get("genderCode").asInt()));
-        result.setBirthDate(DateUtils.ShamsiCalendarConvertor.convertToLocalDate(personNode.get("birthDate").asText(),"yyyyMMdd"));
-        result.setDeadDate(DateUtils.ShamsiCalendarConvertor.convertToLocalDate(personNode.get("deadDate").asText(),"yyyyMMdd"));
+        result.setBirthDate(DateUtils.ShamsiCalendarConvertor.convertCompactToLocalDate(personNode.get("birthDate").asText()));
+        result.setDeadDate(DateUtils.ShamsiCalendarConvertor.convertCompactToLocalDate(personNode.get("deadDate").asText()));
         result.setIdentificationNo(personNode.get("registerId").asText());
         result.setRegisterSeries(personNode.get("registerSeries").asText());
         result.setRegisterSerial(personNode.get("registerSerial").asText());
