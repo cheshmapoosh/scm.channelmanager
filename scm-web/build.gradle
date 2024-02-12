@@ -11,6 +11,7 @@ plugins {
 
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     implementation project(':scm-gateway')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation project(':scm-cache-client')

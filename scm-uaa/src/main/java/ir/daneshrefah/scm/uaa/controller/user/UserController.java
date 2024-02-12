@@ -5,10 +5,7 @@ import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
 import ir.daneshrefah.scm.uaa.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,6 +29,16 @@ public class UserController extends BaseController {
     @PostMapping
     public User createUser(@RequestBody UserDataRequest request) {
         return userService.createUser(request);
+    }
+
+    @PostMapping("/activate/{userId}")
+    public boolean activateUser(@PathVariable Long userId) {
+        return userService.activateUser(userId, true);
+    }
+
+    @PostMapping("/deactivate/{userId}")
+    public boolean deactivateUser(@PathVariable Long userId) {
+        return userService.activateUser(userId, false);
     }
 
 }

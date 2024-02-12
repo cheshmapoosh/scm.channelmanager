@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
+import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +39,27 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorCodes.*;
 @Service
 public class UserService {
 
+    private final CustomMD5Encoder passwordEncoder;
     private final UserRepository userRepository;
     private final PersonRepository personRepository;
     private final UserActivationRepository userActivationRepository;
     private final RoleRepository roleRepository;
     private final IntegrationService integrationService;
     private final TerminalService terminalService;
+
+    public boolean activateUser(Long userId, boolean active) {
+        if (null == userId) {
+            throw new ValidationException("userId", ERROR_CODE_USER_ID_IS_EMPTY, "user id is empty.");
+        }
+        Optional<UserEntity> entity = userRepository.findById(userId);
+        if (entity.isEmpty()) {
+            throw new ValidationException("userId", ERROR_CODE_USER_ID_IS_INVALID, "user id is invalid.");
+        }
+        UserEntity userEntity = entity.get();
+        userEntity.setActive(active);
+        userRepository.save(entity.get());
+        return true;
+    }
 
     public User createUser(UserDataRequest request) {
         if (StringUtils.isEmpty(request.getNickname())) {
@@ -79,14 +95,17 @@ public class UserService {
             throw new ValidationException("creatorBranch", ERROR_CODE_CREATOR_BRANCH_IS_EMPTY,
                     "creatorBranch is empty.");
         }
-        Optional<GeneralPersonEntity> personEntity = null != request.getPersonId() ?
-                personRepository.findById(request.getPersonId().intValue()) :
-                Optional.empty();
-        if (null != request.getPersonId() && personEntity.isEmpty()) {
+        if (null == request.getPersonId()) {
+            throw new ValidationException("personId", ERROR_CODE_PERSON_ID_IS_EMPTY,
+                    "personId is empty.");
+        }
+        GeneralPersonEntity personEntity = findPersonById(request.getPersonId().intValue());
+        if (null != request.getPersonId() && null == personEntity) {
             throw new ValidationException("personId", ERROR_CODE_PERSON_ID_IS_INVALID,
                     "personId is invalid.");
         }
 
+        GeneralPersonEntity creatorEntity = findPersonByUsername(AuthenticationUtils.getLoggedInGlobalUsername());
         UserEntity entity = new UserEntity();
         entity.setNickname(request.getNickname());
         entity.setTerminalId(terminalId);
@@ -94,13 +113,14 @@ public class UserService {
         entity.setTransactionAuthenticationMethod(request.getTransactionAuthenticationMethod());
         entity.setAccessParameters(request.getAccessParameters());
         entity.setActive(null != request.getActive() ? request.getActive() : false);
-        entity.setLoginStaticPassword(request.getLoginStaticPassword());
-        entity.setTransactionStaticPassword(request.getTransactionStaticPassword());
+        entity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), personEntity.getUsername()));
+        entity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), personEntity.getUsername()));
         entity.setOtpSerialNumber(request.getOtpSerialNumber());
-        entity.setPerson(personEntity.isPresent() ? personEntity.get() : null);
+        entity.setPerson(personEntity);
         entity.setCreatorBranch(request.getCreatorBranch());
-        entity.setCreator(AuthenticationUtils.getLoggedInGlobalUsername());
-        entity.setLastEditor(AuthenticationUtils.getLoggedInGlobalUsername());
+        entity.setCreator(creatorEntity.getId());
+        entity.setLastEditor(creatorEntity.getId());
+        entity = userRepository.save(entity);
         return UserMapper.INSTANCE.toModel(entity);
     }
 
@@ -124,6 +144,16 @@ public class UserService {
         User user = UserMapper.INSTANCE.toModel(userEntities.iterator().next());
 
         return Optional.of(user);
+    }
+
+    private GeneralPersonEntity findPersonByUsername(String username) {
+        List<GeneralPersonEntity> persons = personRepository.findPersonByUsername(username);
+        return null != persons && persons.size() > 0 ? persons.get(0) : null;
+    }
+
+    private GeneralPersonEntity findPersonById(Integer id) {
+        Optional<GeneralPersonEntity> person = personRepository.findById(id);
+        return person.isPresent() ? person.get() : null;
     }
 
     public Optional<List<String>> loadUserAuthorities(Long personId) {

@@ -9,6 +9,8 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -27,5 +29,7 @@ public interface PersonRepository extends CrudRepository<GeneralPersonEntity, In
 
     @Query("SELECT p FROM CorporatePersonEntity p WHERE p.nationalId = :nationalId AND p.subOrganizationId = :subOrganizationId")
     CorporatePersonEntity findCorporatePersonByNationalCode(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
+
+    List<GeneralPersonEntity> findPersonByUsername(String username);
 
 }

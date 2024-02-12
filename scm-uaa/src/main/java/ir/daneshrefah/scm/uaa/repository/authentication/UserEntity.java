@@ -24,6 +24,7 @@ import java.util.Set;
 public class UserEntity extends AbstractEntity<Integer> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "USER_CHANNEL_AUTHENTICATION_ID")
     private Integer id;
     @Column(name = "NICK_NAME")
@@ -52,18 +53,25 @@ public class UserEntity extends AbstractEntity<Integer> {
     @Column(name = "BRANCH_CODE")
     private String creatorBranch;
     @Column(name = "CREATED_BY")
-    private String creator;
+    private Integer creator;
     @Column(name = "MODIFIED_BY")
-    private String lastEditor;
-    @Column(name = "CREATION_DATE")
+    private Integer lastEditor;
+    @Column(name = "CREATION_DATE", insertable = false, updatable = false)
     private LocalDateTime createDate;
-    @Column(name = "MODIFICATION_DATE")
+    @Column(name = "MODIFICATION_DATE", insertable = false)
     private LocalDateTime lastEditDate;
+    @Column(name = "USER_AUTHENTICATION_TYPE")
+    private Integer unusedAuthenticationType;
 
+    @PrePersist
+    @PreUpdate
+    public void setDefaultValues() {
+//        1:UserChannelAuthentication, 2:EmployeeAuthentication
+        this.unusedAuthenticationType = 1;
+    }
 
 
 //ARCHIVE_NO smallint NOT NULL DEFAULT '8',
-//USER_AUTHENTICATION_TYPE => 1:UserChannelAuthentication, 2:EmployeeAuthentication
 //FROM_DATE datetime(6) DEFAULT NULL,
 //TO_DATE datetime(6) DEFAULT NULL,
 //PRINT_COUNT smallint NOT NULL DEFAULT '0',

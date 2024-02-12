@@ -21,4 +21,6 @@ public class ErrorCodes {
     public static final int ERROR_CODE_CREATOR_BRANCH_IS_INVALID = 2010;
     public static final int ERROR_CODE_PERSON_ID_IS_EMPTY = 2011;
     public static final int ERROR_CODE_PERSON_ID_IS_INVALID = 2012;
+    public static final int ERROR_CODE_USER_ID_IS_EMPTY = 2013;
+    public static final int ERROR_CODE_USER_ID_IS_INVALID = 2014;
 }
