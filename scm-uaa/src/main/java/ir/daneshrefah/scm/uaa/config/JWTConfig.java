@@ -5,9 +5,9 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
-import ir.daneshrefah.scm.common.data.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -85,23 +85,23 @@ public class JWTConfig {
                 }
                 if (null != user.getAccessParameters() && !user.getAccessParameters().isEmpty())
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, user.getAccessParameters());
-                PersonType personType = user.getPerson().getType();
+                PersonType personType = user.getPerson().getPersonType();
                 claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
-                claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getType().getCode());
+                claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getPersonType().getCode());
                 claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, user.getPerson().getId());
                 claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, user.getPerson().getUsername());
                 switch (personType) {
-                    case INDIVIDUAL_CUSTOMER, EMPLOYEE:
+                    case REAL, EMPLOYEE:
                         claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((GeneralRealPerson) user.getPerson()).getNationalCode());
                         claims.claim(CLAIM_KEY_PERSON_FIRST_NAME, ((GeneralRealPerson) user.getPerson()).getFirstName());
                         claims.claim(CLAIM_KEY_PERSON_LAST_NAME, ((GeneralRealPerson) user.getPerson()).getLastName());
                         break;
-                    case CORPORATE_CUSTOMER:
-                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((CorporatePerson) user.getPerson()).getNationalId());
-                        if (StringUtils.isNotEmpty(((CorporatePerson) user.getPerson()).getSubOrganizationId())) {
-                            claims.claim(CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID, ((CorporatePerson) user.getPerson()).getSubOrganizationId());
+                    case CORPORATE, GOVERNANCE, BANK, TAMIN:
+                        claims.claim(CLAIM_KEY_PERSON_NATIONAL_ID, ((GeneralLegalPerson) user.getPerson()).getNationalId());
+                        if (StringUtils.isNotEmpty(((GeneralLegalPerson) user.getPerson()).getSubOrganizationId())) {
+                            claims.claim(CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID, ((GeneralLegalPerson) user.getPerson()).getSubOrganizationId());
                         }
-                        claims.claim(CLAIM_KEY_PERSON_TITLE, ((CorporatePerson) user.getPerson()).getTitle());
+                        claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitle());
                         break;
                 }
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {

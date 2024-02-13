@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.common.token;
 
-import ir.daneshrefah.scm.common.data.model.person.*;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -72,10 +72,10 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
     private User extractUserFromJwt(Jwt jwt) {
         String clientId = jwt.getAudience().get(0);
         AuthorizationGrantType grantType = AuthorizationGrantType.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_GRANT));
-        PersonType personType = PersonType.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE));
+        PersonType personType = PersonType.findByCode(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
         GeneralPerson person = null;
         switch (personType) {
-            case INDIVIDUAL_CUSTOMER:
+            case REAL:
                 person = new IndividualPerson();
                 ((IndividualPerson) person).setNationalCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
                 ((IndividualPerson) person).setFirstName(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_FIRST_NAME));
@@ -87,18 +87,20 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 ((EmployeePerson) person).setFirstName(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_FIRST_NAME));
                 ((EmployeePerson) person).setLastName(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_LAST_NAME));
                 break;
-            case CORPORATE_CUSTOMER:
+            case CORPORATE:
                 person = new CorporatePerson();
-                ((CorporatePerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
-                ((CorporatePerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
-                ((CorporatePerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
+                ((GeneralLegalPerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
+                ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
+                ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
                 break;
             case CLIENT:
                 person = new ClientPerson();
                 break;
         }
         person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_PROFILE_IDENTIFIER));
-        person.setId(jwt.getClaim(Constants.CLAIM_KEY_PERSON_IDENTIFIER));
+        if (jwt.hasClaim(Constants.CLAIM_KEY_PERSON_IDENTIFIER)) {
+            person.setId(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER)));
+        }
         person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
 
         String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);

@@ -1,14 +1,14 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
-import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.exception.ValidationException;
-import ir.daneshrefah.scm.common.model.person.Customer;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.Customer;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.person.PersonService;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -95,7 +95,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Long personId) {
+    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Integer personId) {
         Optional<ServiceProviderDataProvider> dataProvider = findCustomerDataProvider(provider);
         if (dataProvider.isEmpty()) {
             throw new ValidationException(provider.getCode(), ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_NOT_SUPPORT_CUSTOMER,

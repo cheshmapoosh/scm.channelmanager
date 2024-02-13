@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.common.data.entity.person;
 
 import ir.daneshrefah.scm.common.data.converter.NationalityConverter;
+import ir.daneshrefah.scm.common.data.converter.PersonTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.type.Nationality;
+import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 /**
  * Description of the class or purpose of the file.
@@ -25,8 +29,22 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     @Id
     @Column(name = "USER_ID")
     private Integer id;
+    @Column(name = "USERNAME", nullable = false)
     private String username;
+    @Column(name = "USER_TYPE", insertable = false, updatable = false)
+    @Convert(converter = PersonTypeConverter.class)
+    private PersonType personType;
+    @Column(name = "NATIONALITY_CODE")
+    @Convert(converter = NationalityConverter.class)
+    private Nationality nationality;
+    @Column(name = "ISSUE_DATE")
+    private LocalDate registerIssueDate;
     private Boolean active;
+    /**
+     * values are in REF.BRANCH table
+     * from CIF comes from 'BRANCHCODE'
+     * */
+    @Column(name = "BRANCH_CODE")
     private String branchCode;
     @Column(name = "phone")
     private String phone1;
@@ -53,8 +71,7 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     private String postalCode1;
     @Transient
     private String postalCode2;
-    @Column(name = "NATIONALITY_CODE")
-    @Convert(converter = NationalityConverter.class)
-    private Nationality nationality;
+    @Transient
+    private String shahabCode;
 
 }

@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
-import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
-import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 
 /**

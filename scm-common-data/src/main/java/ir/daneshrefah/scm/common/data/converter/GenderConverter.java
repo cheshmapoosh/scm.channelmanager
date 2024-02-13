@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.data.converter;
 
-import ir.daneshrefah.scm.common.data.type.Gender;
+import ir.daneshrefah.scm.common.model.person.Gender;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

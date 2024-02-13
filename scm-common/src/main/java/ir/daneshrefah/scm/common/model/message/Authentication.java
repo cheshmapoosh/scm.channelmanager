@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 
 import java.io.Serializable;
 

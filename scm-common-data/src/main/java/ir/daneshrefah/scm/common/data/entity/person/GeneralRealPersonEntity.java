@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.common.data.entity.person;
 
 import ir.daneshrefah.scm.common.data.converter.GenderConverter;
 import ir.daneshrefah.scm.common.data.converter.MaritalStatusConverter;
-import ir.daneshrefah.scm.common.data.type.Gender;
-import ir.daneshrefah.scm.common.data.type.MaritalStatus;
+import ir.daneshrefah.scm.common.model.person.Gender;
+import ir.daneshrefah.scm.common.model.person.MaritalStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -27,58 +27,62 @@ public abstract class GeneralRealPersonEntity extends GeneralPersonEntity {
 
     @Column(name = "FIRST_NAME")
     private String firstName;
+    @Column(name = "FIRST_NAME_ENGLISH")
     private String firstNameEnglish;
+    @Column(name = "LAST_NAME")
     private String lastName;
+    @Column(name = "LAST_NAME_ENGLISH")
     private String lastNameEnglish;
+    @Column(name = "FATHER_NAME")
     private String fatherName;
+    @Column(name = "NATIONAL_CODE")
+    private String nationalCode;
+    @Column(name = "IDENTIFICATION_NO")
+    private String identificationNo;
+    @Column(name = "IDENTIFICATION_SERIAL")
+    private String identificationSeries;
+    @Column(name = "IDENTIFICATION_SERIAL_NO")
+    private String identificationSerial;
+    /**
+     * values are in REF.IDENTITY_DOCUMENT_TYPE table
+     * from CIF comes from 'CUSTOMERDOC' and 'DOCTITLE'
+     * */
+    @Column(name = "IDENTITY_DOCUMENT_TYPE")
+    private String identificationDocumentTypeCode;
+    @Convert(converter = MaritalStatusConverter.class)
+    private MaritalStatus maritalStatus;
+    /**
+     * values are in REF.CUSTOMERJOB table
+     * from CIF comes from 'CUSTOMERJOB' and 'JOBTITLE'
+     * */
+    @Column(name = "JOB_CODE")
+    private String jobCode;
+    /**
+     * values are in REF.EDUCATION table
+     * from CIF comes from 'CUSTOMEREDUCATION' and 'EDUCATIONTITLE'
+    * */
+    @Column(name = "EDUCATION_CODE")
+    private String educationCode;
+    /**
+     * values are in REF.MAJOR table
+     * from CIF comes from 'CUSTOMERCOURSE' and 'COURSETITLE'
+    * */
+    @Column(name = "MAJOR_CODE")
+    private String majorCode;
     @Column(name = "GENDER_ID")
     @Convert(converter = GenderConverter.class)
     private Gender gender;
-    @Convert(converter = MaritalStatusConverter.class)
-    private MaritalStatus maritalStatus;
-    @Column(name = "NATIONAL_CODE")
-    private String nationalCode;
     @Column(name = "BIRTH_DATE")
     private LocalDate birthDate;
     @Transient
     private LocalDate deadDate;
-    @Column(name = "ISSUE_DATE")
-    private LocalDate registerIssueDate;
-    @Column(name = "IDENTIFICATION_NO")
-    private String identificationNo;
-    @Column(name = "IDENTIFICATION_SERIAL")
-    private String registerSeries;
-    @Column(name = "IDENTIFICATION_SERIAL_NO")
-    private String registerSerial;
-    private String jobCode;
     @Transient
-    private String jobTitle;
-    private String educationCode;
-    @Transient
-    private String educationTitle;
-    @Column(name = "REGION_CODE")
-    private String stateCode;
-    @Transient
-    private String stateTitle;
-    private String cityCode;
-    @Transient
-    private String cityTitle;
-    @Transient
-    private String shahabCode;
-//    private String courseCode;
-//    private String courseTitle;
-//    private String documentTypeCode;
-//    private String documentTypeTitle;
-//    private boolean isLived;
-
-
-
-
+    private boolean isLived;
+//    @Column(name = "REGION_CODE")
+//    private String stateCode;
+//    private String cityCode;
 
 //TODO    private String CUSTOMER_TYPE_CODE => REF.CUSTOMER_TYPE_CODE.CODE
-//TODO    private String IDENTITY_DOCUMENT_TYPE
-//TODO    private String EDUCATION_CODE => REF.EDUCATION.CODE = > diplom, lisans, ...
-//TODO    private String MAJOR_CODE => REF.MAJOR
 //TODO    private String ISSUE_PLACE
 //TODO    private String BIRTH_PLACE => String
 

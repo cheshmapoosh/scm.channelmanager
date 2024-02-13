@@ -1,19 +1,21 @@
 package ir.daneshrefah.scm.plugin.scm.service.person;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.exception.ResultNotFoundException;
 import ir.daneshrefah.scm.common.exception.ValidationException;
-import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.person.PersonInfoRequest;
-import ir.daneshrefah.scm.plugin.api.service.person.PersonService;
+import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
@@ -39,8 +41,12 @@ public class PersonManagementService extends AbstractJavaService {
         this.personService = personService;
     }
 
-    public GeneralPerson findPersonInfo(PersonInfoRequest request) {
-        GeneralPerson result = personService.findPersonInfo(request);
+    public GeneralPerson findPersonInfo(PersonFindRequest request) {
+        return null;
+    }
+
+    public List<GeneralPerson> findCIFPersonInfo(PersonFindRequest request) {
+        List<GeneralPerson> result = personService.findCIFPersonInfo(request);
         if (null == result) {
             throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND,
                     String.format("person not found for personType: '%s', nationality: '%s', nationalId: '%s', subOrganizationId: '%s'.",
@@ -49,18 +55,8 @@ public class PersonManagementService extends AbstractJavaService {
         return result;
     }
 
-    public GeneralPerson findCIFPersonInfo(PersonInfoRequest request) {
-        GeneralPerson result = personService.findCIFPersonInfo(request);
-        if (null == result) {
-            throw new ResultNotFoundException("person", ERROR_CODE_VALIDATION_PERSON_NOT_FOUND,
-                    String.format("person not found for personType: '%s', nationality: '%s', nationalId: '%s', subOrganizationId: '%s'.",
-                            request.getPersonType(), request.getNationality(), request.getNationalId(), request.getSubOrganizationId()));
-        }
-        return result;
-    }
-
-    public GeneralPerson saveOrUpdateLocalPersonInfoFromCIF(PersonInfoRequest request) {
-        return personService.saveOrUpdateLocalPersonInfoFromCIF(request);
+    public GeneralPerson saveOrUpdateLocalPersonInfoFromCIF(PersonFindRequest request) {
+        return null;
     }
 
 
@@ -107,7 +103,7 @@ public class PersonManagementService extends AbstractJavaService {
         return customerService.findCustomerByPersonProfileId(provider, personProfileId);
     }
 
-    public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Long personId) {
+    public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Integer personId) {
         if (StringUtils.isEmpty(providerId)) {
             throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY, "provider id is empty.");
         }

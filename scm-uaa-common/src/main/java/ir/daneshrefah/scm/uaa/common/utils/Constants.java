@@ -61,8 +61,11 @@ public class Constants {
 //    public final static String FIRST_LVL_AUTH_GRANT="cm-first-password";
 //    public final static String SECOND_LVL_AUTH_GRANT="cm-second-password";
 
-    public static final int CIF_PERSON_TYPE_INDIVIDUAL = 50;
+    public static final int CIF_PERSON_TYPE_REAL = 50;
     public static final int CIF_PERSON_TYPE_CORPORATE = 4;
+    public static final int CIF_PERSON_TYPE_TAMIN = 3;
+    public static final int CIF_PERSON_TYPE_BANK = 2;
+    public static final int CIF_PERSON_TYPE_GOVERNANCE = 1;
     public static final int CIF_MARITAL_STATUS_MARRIED = 1;
     public static final int CIF_MARITAL_STATUS_SINGLE = 0;
 }

@@ -1,9 +1,10 @@
 package ir.daneshrefah.scm.common.data.repository;
 
-import ir.daneshrefah.scm.common.data.entity.person.CorporatePersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.EmployeePersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,7 @@ import java.util.List;
  * @since 2024-01-24
  */
 @Repository
-public interface PersonRepository extends CrudRepository<GeneralPersonEntity, Integer> {
+public interface PersonRepository extends CrudRepository<GeneralPersonEntity, Integer>, JpaSpecificationExecutor<GeneralPersonEntity> {
 
     @Query("SELECT p FROM IndividualPersonEntity p WHERE p.nationalCode = :nationalCode")
     IndividualPersonEntity findIndividualPersonByNationalCode(@Param("nationalCode") String nationalCode);
@@ -27,8 +28,8 @@ public interface PersonRepository extends CrudRepository<GeneralPersonEntity, In
     @Query("SELECT p FROM EmployeePersonEntity p WHERE p.nationalCode = :nationalCode")
     EmployeePersonEntity findEmployeePersonByNationalCode(@Param("nationalCode") String nationalCode);
 
-    @Query("SELECT p FROM CorporatePersonEntity p WHERE p.nationalId = :nationalId AND p.subOrganizationId = :subOrganizationId")
-    CorporatePersonEntity findCorporatePersonByNationalCode(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
+//    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId AND p.subOrganizationId = :subOrganizationId")
+//    GeneralLegalPersonEntity findCorporatePersonByNationalCode(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
 
     List<GeneralPersonEntity> findPersonByUsername(String username);
 

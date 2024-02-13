@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 
 import java.io.IOException;
 
@@ -27,10 +27,7 @@ public class PersonTypeDeserializer extends JsonDeserializer<PersonType> {
             return null;
         PersonType result = null;
         if (node.isNumber()) {
-            result = PersonType.findByCode(String.valueOf(node.asInt()));
-        }
-        if (null == result) {
-            result = PersonType.findByCode(node.asText());
+            result = PersonType.findByCode(node.asInt());
         }
         if (null == result) {
             result = PersonType.valueOf(node.asText());

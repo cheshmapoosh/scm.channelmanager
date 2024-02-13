@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.authority.decision.helper;
 
 import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
-import ir.daneshrefah.scm.common.model.person.ServiceAccess;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.core.integration.provider.CustomerServiceImpl;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;

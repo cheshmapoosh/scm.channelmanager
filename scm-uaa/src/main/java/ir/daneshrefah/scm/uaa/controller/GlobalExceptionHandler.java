@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.controller;
 
 import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.uaa.exception.BaseCIFException;
+import ir.daneshrefah.scm.uaa.exception.CIFPersonNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex) {
         DefaultErrorResponse errorResponse = new DefaultErrorResponse("constraint", ex.getErrorCode(), ex.getMessage());
         return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(BaseCIFException.class)
+    public ResponseEntity<Object> handleBaseCIFException(BaseCIFException ex) {
+        return ResponseEntity.badRequest().body(new DefaultErrorResponse("CIF", 0, ex.getMessage()));
     }
 
     @Getter

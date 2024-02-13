@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.serializer;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceType;

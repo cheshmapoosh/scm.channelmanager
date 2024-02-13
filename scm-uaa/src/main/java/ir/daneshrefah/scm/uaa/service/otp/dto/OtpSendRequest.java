@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import lombok.Builder;
@@ -17,8 +18,9 @@ import lombok.Setter;
 @Builder
 public class OtpSendRequest extends OtpBaseRequest {
 
-    private String terminalCode;
+    private String issuerAddress;
     private String issuerUsername;
+    private User recipientUser;
     private String recipient;
     private OtpType otpType;
     private OtpReason reason;

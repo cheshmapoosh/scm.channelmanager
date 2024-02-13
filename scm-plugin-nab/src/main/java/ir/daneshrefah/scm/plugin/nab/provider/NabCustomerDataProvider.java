@@ -3,13 +3,13 @@ package ir.daneshrefah.scm.plugin.nab.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.data.model.person.CorporatePerson;
-import ir.daneshrefah.scm.common.data.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.data.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.common.data.type.Nationality;
-import ir.daneshrefah.scm.common.data.type.PersonType;
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.nab.repository.NabCustomerRepository;
@@ -33,10 +33,10 @@ public class NabCustomerDataProvider extends ServiceProviderDataProvider {
     @Override
     public Customer inquireCustomerByPerson(GeneralPerson person) {
         String nationalId = person instanceof GeneralRealPerson ?
-                ((GeneralRealPerson) person).getNationalCode() : ((CorporatePerson) person).getNationalId();
+                ((GeneralRealPerson) person).getNationalCode() : ((GeneralLegalPerson) person).getNationalId();
         String subOrganizationId = person instanceof GeneralRealPerson ?
-                "0" : ((CorporatePerson) person).getSubOrganizationId();
-        return inquireCustomerByPerson(person.getType(), person.getNationality(), nationalId, subOrganizationId);
+                "0" : ((GeneralLegalPerson) person).getSubOrganizationId();
+        return inquireCustomerByPerson(person.getPersonType(), person.getNationality(), nationalId, subOrganizationId);
     }
 
     @Override

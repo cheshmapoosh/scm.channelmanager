@@ -23,4 +23,12 @@ public class ErrorCodes {
     public static final int ERROR_CODE_PERSON_ID_IS_INVALID = 2012;
     public static final int ERROR_CODE_USER_ID_IS_EMPTY = 2013;
     public static final int ERROR_CODE_USER_ID_IS_INVALID = 2014;
+    public static final int ERROR_CODE_AUTHENTICATION_REQUIRED = 2015;
+    public static final int ERROR_CODE_REQUEST_IS_NULL = 2016;
+    public static final int ERROR_CODE_RECIPIENT_IS_NULL = 2017;
+    public static final int ERROR_CODE_RECIPIENT_IS_INVALID = 2018;
+    public static final int ERROR_CODE_REASON_IS_NULL = 2019;
+    public static final int ERROR_CODE_PERSON_TYPE_NOT_SUPPORT = 2020;
+    public static final int ERROR_CODE_NATIONAL_ID_IS_NULL = 2021;
+    public static final int ERROR_CODE_NATIONAL_ID_IS_INVALID = 2022;
 }

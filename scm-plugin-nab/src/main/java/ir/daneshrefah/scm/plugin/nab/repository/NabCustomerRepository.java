@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.plugin.nab.repository;
 
-import ir.daneshrefah.scm.common.model.person.Account;
-import ir.daneshrefah.scm.common.model.person.AccountAsset;
-import ir.daneshrefah.scm.common.model.person.AccountType;
-import ir.daneshrefah.scm.common.model.person.Customer;
+import ir.daneshrefah.scm.common.model.customer.Account;
+import ir.daneshrefah.scm.common.model.customer.AccountAsset;
+import ir.daneshrefah.scm.common.model.customer.AccountType;
+import ir.daneshrefah.scm.common.model.customer.Customer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

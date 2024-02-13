@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.integration.service.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.person.Customer;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.Customer;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;

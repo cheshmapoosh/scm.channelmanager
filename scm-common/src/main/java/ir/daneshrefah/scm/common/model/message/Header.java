@@ -1,12 +1,11 @@
 package ir.daneshrefah.scm.common.model.message;
 
 
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;

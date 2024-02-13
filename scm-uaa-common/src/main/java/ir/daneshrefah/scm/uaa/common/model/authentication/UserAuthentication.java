@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.common.model.authentication;
 
 import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;

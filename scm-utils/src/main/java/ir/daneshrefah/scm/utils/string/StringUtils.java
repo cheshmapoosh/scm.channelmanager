@@ -45,6 +45,14 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.replaceOnce(text, searchString, replacement);
     }
 
+    public static String leftPadZero(final String str, final int size) {
+        return leftPad(str, size, '0');
+    }
+
+    public static String leftPad(final String str, final int size, final char padChar) {
+        return org.apache.commons.lang3.StringUtils.leftPad(str, size, padChar);
+    }
+
     public static String replaceOnceIgnoreCase(final String text, final String searchString, final String replacement) {
         return org.apache.commons.lang3.StringUtils.replaceOnceIgnoreCase(text, searchString, replacement);
     }

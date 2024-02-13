@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
-import ir.daneshrefah.scm.common.model.person.Customer;
-import ir.daneshrefah.scm.common.model.person.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.Customer;
+import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 
 /**
@@ -20,6 +20,6 @@ public interface CustomerService {
     Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId);
     Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
 
-    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Long personId);
+    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Integer personId);
 
 }
