@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.TooManyRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -62,7 +63,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         GeneralPersonEntity personEntity = PersonMapper.INSTANCE.toPersonEntity(person.get(0));
         personEntity.setUsername(extractUsername(personEntity));
         personEntity.setActive(true);
-        personEntity.setArchiveNo(12);
+        personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
 //        personEntity.setCreator
         personEntity = personRepository.save(personEntity);
         return PersonMapper.INSTANCE.toPerson(personEntity);

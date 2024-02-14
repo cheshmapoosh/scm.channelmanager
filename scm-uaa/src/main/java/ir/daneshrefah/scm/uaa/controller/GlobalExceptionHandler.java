@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     private enum ExceptionMap {
 
         HttpMessageNotReadableException(HttpMessageNotReadableException.class, HttpConstants.HTTP_STATUS_BAD_REQUEST,
-                ERROR_CODE_REQUEST_IS_NULL, "invalid request body."),
+                ERROR_CODE_REQUEST_IS_NULL, null),
         SocketTimeoutException(java.net.SocketTimeoutException.class, HttpConstants.HTTP_STATUS_GATEWAY_TIMEOUT,
                 ERROR_CODE_SOCKET_TIMEOUT, null),
         UnknownHostException(java.net.UnknownHostException.class, HttpConstants.HTTP_STATUS_BAD_GATEWAY,

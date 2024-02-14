@@ -75,6 +75,6 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     @Transient
     private String shahabCode;
     @Column(name = "ARCHIVE_NO", updatable = false)
-    private Integer archiveNo;
+    private Long archiveNo;
 
 }
