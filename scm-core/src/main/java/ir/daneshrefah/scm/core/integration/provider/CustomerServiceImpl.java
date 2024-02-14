@@ -1,14 +1,14 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -17,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -98,8 +96,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Integer personId) {
         Optional<ServiceProviderDataProvider> dataProvider = findCustomerDataProvider(provider);
         if (dataProvider.isEmpty()) {
-            throw new ValidationException(provider.getCode(), ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_NOT_SUPPORT_CUSTOMER,
-                    "'customer data provider' not found for provider '" + provider.getCode() + "'.");
+            throw new MethodNotSupportDataException("'customer data provider' not found for provider '" + provider.getCode() + "'.");
         }
         GeneralPerson person = personService.findPersonByPersonId(personId);
         Customer customer = dataProvider.get().inquireCustomerByPerson(person);

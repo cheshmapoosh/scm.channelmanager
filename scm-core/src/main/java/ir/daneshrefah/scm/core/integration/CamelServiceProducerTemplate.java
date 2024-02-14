@@ -2,15 +2,14 @@ package ir.daneshrefah.scm.core.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
-import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.inbound.MessageContext;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
@@ -49,7 +48,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     public Message callService(String serviceCode, JsonNode payload) {
         ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceByCode(serviceCode);
         if (null == service) {
-            throw new ValidationException(serviceCode, ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID, "service not found");
+            throw new InvalidInputException("serviceCode");
         }
         Message message = MessageContext.getCurrentContext().getMessage();
         String terminalCode = MessageUtils.getTerminalCode(message);

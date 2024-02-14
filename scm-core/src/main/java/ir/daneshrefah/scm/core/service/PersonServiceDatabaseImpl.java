@@ -18,13 +18,8 @@ import java.util.List;
 @Service
 public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl {
 
-
     public PersonServiceDatabaseImpl(PersonRepository personRepository) {
         super(personRepository);
     }
 
-    @Override
-    public List<GeneralPerson> findCIFPersonInfo(PersonFindRequest request) {
-        return null;
-    }
 }

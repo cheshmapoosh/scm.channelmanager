@@ -3,7 +3,8 @@ package ir.daneshrefah.scm.uaa.service;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
@@ -26,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.uaa.common.utils.ErrorCodes.*;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -49,11 +48,11 @@ public class UserService {
 
     public boolean activateUser(Long userId, boolean active) {
         if (null == userId) {
-            throw new ValidationException("userId", ERROR_CODE_USER_ID_IS_EMPTY, "user id is empty.");
+            throw new MissingRequiredInputException("userId");
         }
         Optional<UserEntity> entity = userRepository.findById(userId);
         if (entity.isEmpty()) {
-            throw new ValidationException("userId", ERROR_CODE_USER_ID_IS_INVALID, "user id is invalid.");
+            throw new InvalidInputException("userId");
         }
         UserEntity userEntity = entity.get();
         userEntity.setActive(active);
@@ -63,46 +62,39 @@ public class UserService {
 
     public User createUser(UserDataRequest request) {
         if (StringUtils.isEmpty(request.getNickname())) {
-            throw new ValidationException("nickname", ERROR_CODE_NICKNAME_IS_EMPTY, "nick name is empty.");
+            throw new MissingRequiredInputException("nickname");
         }
         if (StringUtils.isEmpty(request.getTerminalCode())) {
-            throw new ValidationException("terminalCode", ERROR_CODE_TERMINAL_CODE_IS_EMPTY, "terminal code is empty.");
+            throw new MissingRequiredInputException("terminalCode");
         }
 //        Optional<Terminal> terminal = terminalService.findTerminalByCode(request.getTerminalCode());
         Integer terminalId = integrationService.findChannelIdByTerminalCode(request.getTerminalCode());
         if (null == terminalId) {
-            throw new ValidationException("terminalCode", ERROR_CODE_TERMINAL_CODE_IS_INVALID, "terminal code is invalid.");
+            throw new InvalidInputException("terminalCode");
         }
         if (null == request.getLoginAuthenticationMethod()) {
-            throw new ValidationException("loginAuthenticationMethod", ERROR_CODE_LOGIN_AUTHENTICATION_METHOD_IS_NULL,
-                    "loginAuthenticationMethod is invalid.");
+            throw new InvalidInputException("loginAuthenticationMethod");
         }
         if (null == request.getTransactionAuthenticationMethod()) {
-            throw new ValidationException("transactionAuthenticationMethod", ERROR_CODE_TRANSACTION_AUTHENTICATION_METHOD_IS_NULL,
-                    "transactionAuthenticationMethod is invalid.");
+            throw new InvalidInputException("transactionAuthenticationMethod");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
                 StringUtils.isEmpty(request.getLoginStaticPassword())) {
-            throw new ValidationException("loginStaticPassword", ERROR_CODE_LOGIN_STATIC_PASSWORD_IS_EMPTY,
-                    "loginStaticPassword is empty.");
+            throw new MissingRequiredInputException("loginStaticPassword");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getTransactionAuthenticationMethod()) &&
                 StringUtils.isEmpty(request.getTransactionStaticPassword())) {
-            throw new ValidationException("transactionStaticPassword", ERROR_CODE_TRANSACTION_STATIC_PASSWORD_IS_EMPTY,
-                    "transactionStaticPassword is empty.");
+            throw new MissingRequiredInputException("transactionStaticPassword");
         }
         if (StringUtils.isEmpty(request.getCreatorBranch())) {
-            throw new ValidationException("creatorBranch", ERROR_CODE_CREATOR_BRANCH_IS_EMPTY,
-                    "creatorBranch is empty.");
+            throw new MissingRequiredInputException("creatorBranch");
         }
         if (null == request.getPersonId()) {
-            throw new ValidationException("personId", ERROR_CODE_PERSON_ID_IS_EMPTY,
-                    "personId is empty.");
+            throw new MissingRequiredInputException("personId");
         }
         GeneralPersonEntity personEntity = findPersonById(request.getPersonId().intValue());
         if (null != request.getPersonId() && null == personEntity) {
-            throw new ValidationException("personId", ERROR_CODE_PERSON_ID_IS_INVALID,
-                    "personId is invalid.");
+            throw new InvalidInputException("personId");
         }
 
         GeneralPersonEntity creatorEntity = findPersonByUsername(AuthenticationUtils.getLoggedInGlobalUsername());

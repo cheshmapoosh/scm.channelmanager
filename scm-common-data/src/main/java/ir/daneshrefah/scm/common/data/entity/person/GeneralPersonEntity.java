@@ -27,6 +27,7 @@ import java.time.LocalDate;
 public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "USER_ID")
     private Integer id;
     @Column(name = "USERNAME", nullable = false)
@@ -73,5 +74,7 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     private String postalCode2;
     @Transient
     private String shahabCode;
+    @Column(name = "ARCHIVE_NO", updatable = false)
+    private Integer archiveNo;
 
 }

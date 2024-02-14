@@ -3,8 +3,6 @@ package ir.daneshrefah.scm.common.data.service.person;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 
-import java.util.List;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -16,7 +14,7 @@ public interface PersonService {
 
     PagedResponseData<GeneralPerson> findPagedPersonList(PersonFindRequest request);
 
-    List<GeneralPerson> findCIFPersonInfo(PersonFindRequest request);
+    boolean checkPersonExist(PersonFindRequest request);
 
     GeneralPerson findPersonByPersonId(Integer id);
 

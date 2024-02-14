@@ -102,17 +102,17 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
         if (exception instanceof ValidationException) {
             ValidationException validationException = (ValidationException) exception;
             String source = validationException.getSource();
-            Integer errorCode = null != validationException.getErrorCode() ? validationException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION;
+            Integer errorCode = null != validationException.getErrorCode() ? validationException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION_GLOBAL;
             String errorMessage = validationException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
             message.addError(error, Status.SC_ERROR_VALIDATION);
             return message;
         }
 
-        if (exception instanceof ResultNotFoundException) {
-            ResultNotFoundException resultNotFoundException = (ResultNotFoundException) exception;
+        if (exception instanceof NoMatchRecordFoundException) {
+            NoMatchRecordFoundException resultNotFoundException = (NoMatchRecordFoundException) exception;
             String source = resultNotFoundException.getSource();
-            Integer errorCode = null != resultNotFoundException.getErrorCode() ? resultNotFoundException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION;
+            Integer errorCode = resultNotFoundException.getErrorCode();
             String errorMessage = resultNotFoundException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
             message.addError(error, Status.SC_NOT_FOUND);
@@ -128,13 +128,13 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
                     error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DUPLICATE_RECORD, "recode is duplicate");
                 }
                 if (null == error) {
-                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DATA_INTEGRITY_VIOLATION, ex.getMessage());
+                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage());
                 }
                 message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
                 return message;
             } else if (e instanceof JpaSystemException) {
                 JpaSystemException ex = (JpaSystemException) e;
-                message.addError(new Error(null, ERROR_CODE_JPA_SYSTEM, ex.getMessage()), Status.SC_ERROR_SYSTEM);
+                message.addError(new Error(null, ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage()), Status.SC_ERROR_SYSTEM);
                 return message;
             }
         }

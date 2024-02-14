@@ -2,9 +2,7 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
-import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
@@ -167,16 +165,13 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
                 .build();
 
         if (!request.isForCheck() && StringUtils.isEmpty(request.getAccessParameter())) {
-            throw new ValidationException(SCM_PARAMETER_ACCESS_PARAMETER, ErrorCodes.ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY,
-                    SCM_PARAMETER_ACCESS_PARAMETER + " is empty.");
+            throw new MissingRequiredInputException(SCM_PARAMETER_ACCESS_PARAMETER);
         }
         if (!request.isForCheck() && StringUtils.isEmpty(request.getTerminalCode())) {
-            throw new ValidationException(SCM_PARAMETER_TERMINAL, ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_EMPTY,
-                    SCM_PARAMETER_TERMINAL + " is empty.");
+            throw new MissingRequiredInputException(SCM_PARAMETER_TERMINAL);
         }
         if (!request.isForCheck() && !StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
-            throw new ValidationException(SCM_PARAMETER_TERMINAL, ErrorCodes.ERROR_CODE_TERMINAL_CODE_IS_INVALID,
-                    SCM_PARAMETER_TERMINAL + " is invalid.");
+            throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
 
         Message message = Message.builder()

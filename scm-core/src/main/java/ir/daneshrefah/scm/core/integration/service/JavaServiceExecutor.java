@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
@@ -14,8 +14,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_BODY_IS_INVALID;
 
 /**
  * Description of the class or purpose of the file.
@@ -100,7 +98,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
                 try {
                     result[i] = objectMapper.treeToValue(message.getPayload(), parameterType);
                 } catch (JsonProcessingException e) {
-                    throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_INVALID, e.getMessage(), e);
+                    throw new InvalidRequestFormatException("payload", e);
                 }
             }
         }

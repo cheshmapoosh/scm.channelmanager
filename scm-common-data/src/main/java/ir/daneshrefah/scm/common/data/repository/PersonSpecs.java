@@ -23,6 +23,10 @@ public class PersonSpecs {
             if (null != request.getPersonType()) {
                 predicates.add(builder.equal(root.get("personType"), request.getPersonType()));
             }
+            if (null != request.getNationalId()) {
+                predicates.add(builder.equal(root.get("nationalCode"), request.getNationalId()));
+                predicates.add(builder.equal(root.get("nationalId"), request.getNationalId()));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }

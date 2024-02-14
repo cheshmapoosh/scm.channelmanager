@@ -5,28 +5,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.exception.CIFBadResponseException;
-import ir.daneshrefah.scm.uaa.exception.CIFPersonNotFoundException;
-import ir.daneshrefah.scm.uaa.exception.CIFProviderTimeoutException;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import static ir.daneshrefah.scm.uaa.common.utils.ErrorCodes.ERROR_CODE_NATIONAL_ID_IS_NULL;
-import static ir.daneshrefah.scm.uaa.common.utils.ErrorCodes.ERROR_CODE_REQUEST_IS_NULL;
 
 
 /**
@@ -55,10 +48,10 @@ public class NabCIFService implements CIFService {
     @Override
     public List<GeneralPerson> findPersonInfo(PersonFindRequest request) {
         if (null == request) {
-            throw new ValidationException("cif", ERROR_CODE_REQUEST_IS_NULL, "request body is null.");
+            throw new MissingRequiredInputException("request body");
         }
         if (StringUtils.isEmpty(request.getNationalId())) {
-            throw new ValidationException("cif", ERROR_CODE_NATIONAL_ID_IS_NULL, "national id is null.");
+            throw new MissingRequiredInputException("nationalId");
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -76,26 +69,19 @@ public class NabCIFService implements CIFService {
         // Send POST request
         String url = cifUrl + "/SCMREAD.GETCUSTOMERNATIONALID";
         ResponseEntity<String> response = null;
-        try {
-            response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        } catch (ResourceAccessException e) {
-            if (null != e.getCause() && e.getCause() instanceof SocketTimeoutException) {
-                throw new CIFProviderTimeoutException(e.getMessage());
-            }
-            throw e;
-        }
+        response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
 
         if (response.getStatusCode().isError()) {
-            throw new CIFBadResponseException("error on CIF response with status code: " + response.getStatusCode().value(), null);
+            throw new InvalidRemoteResponseException("CIF", "status code[" + response.getStatusCode().value() + "]");
         }
         JsonNode json = null;
         try {
             json = objectMapper.readTree(response.getBody());
         } catch (JsonProcessingException e) {
-            throw new CIFBadResponseException("", e);
+            throw new InvalidRemoteResponseException("CIF", e.getMessage(), e);
         }
         if (!json.has("result") || !json.get("result").isArray() || json.get("result").isEmpty()) {
-            throw new CIFPersonNotFoundException("person with nationalId '" + request.getNationalId() + "' not found.");
+            throw new NoMatchRecordFoundException("CIF", "nationalId [" + request.getNationalId() + "]");
         }
         ArrayNode resultNode = (ArrayNode) json.get("result");
         Iterator<JsonNode> iterator = resultNode.iterator();

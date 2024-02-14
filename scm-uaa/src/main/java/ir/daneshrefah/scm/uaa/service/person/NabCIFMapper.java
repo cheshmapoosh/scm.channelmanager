@@ -2,16 +2,13 @@ package ir.daneshrefah.scm.uaa.service.person;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException;
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.time.LocalDate;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY;
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PERSON_TYPE_IS_INVALID;
 
 /**
  * Description of the class or purpose of the file.
@@ -46,7 +43,7 @@ public class NabCIFMapper {
             return null;
         }
         if (!personObjectNode.has(PROP_CUSTOMER_TYPE) || !personObjectNode.get(PROP_CUSTOMER_TYPE).isNumber()) {
-            throw new ValidationException("CIF", ERROR_CODE_VALIDATION_PERSON_TYPE_IS_EMPTY, "remote personType is empty.");
+            throw new InvalidRemoteResponseException("CIF", "personType[null]");
         }
         Integer customerTypeCode = personObjectNode.get(PROP_CUSTOMER_TYPE).asInt();
         GeneralPerson result = null;
@@ -67,8 +64,7 @@ public class NabCIFMapper {
                 result = generateTaminPerson(personObjectNode);
                 break;
             default:
-                throw new ValidationException("CIF", ERROR_CODE_VALIDATION_PERSON_TYPE_IS_INVALID,
-                        "remote personType is invalid '" + customerTypeCode + "'.");
+                throw new InvalidRemoteResponseException("CIF", "personType[" + customerTypeCode + "]");
         }
 //        private String username;
 //        private Boolean active;
@@ -166,7 +162,7 @@ public class NabCIFMapper {
         result.setRegisterIssueDate(extractDateValue(personNode, "REGISSUDATE"));
         result.setJobCode(StringUtils.leftPadZero(extractStringValue(personNode, "CUSTOMERJOB"), 4));
         result.setJobTitle(personNode.get("JOBTITLE").asText());
-        result.setEducationCode(personNode.get("CUSTOMEREDUCATION").asText());
+        result.setEducationCode(StringUtils.leftPadZero(personNode.get("CUSTOMEREDUCATION").asText(), 4));
         result.setEducationTitle(personNode.get("EDUCATIONTITLE").asText());
         result.setMajorCode(personNode.get("CUSTOMERCOURSE").asText());
         result.setMajorTitle(personNode.get("COURSETITLE").asText());

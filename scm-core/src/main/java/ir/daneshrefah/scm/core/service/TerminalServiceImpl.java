@@ -4,7 +4,8 @@ import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -23,8 +24,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 @RequiredArgsConstructor
 @Service
@@ -99,21 +98,17 @@ public class TerminalServiceImpl implements TerminalService {
     @Override
     public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId) {
         if (StringUtils.isEmpty(terminalId)) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_TERMINAL_ID_IS_EMPTY,
-                    "terminal id is empty.");
+            throw new MissingRequiredInputException("terminalId");
         }
         if (StringUtils.isEmpty(serviceId)) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY,
-                    "service id is empty.");
+            throw new MissingRequiredInputException("serviceId");
         }
         if (!checkTerminalExistById(terminalId)) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_TERMINAL_ID_IS_INVALID,
-                    "terminal id is invalid.");
+            throw new InvalidInputException("terminalId");
         }
         ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceById(serviceId);
         if (null == service) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_INVALID,
-                    "service id is invalid.");
+            throw new InvalidInputException("serviceId");
         }
         TerminalEntity terminalEntity = new TerminalEntity();
         terminalEntity.setId(terminalId);

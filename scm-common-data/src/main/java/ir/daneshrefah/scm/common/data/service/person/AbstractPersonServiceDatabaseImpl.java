@@ -24,7 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public abstract class AbstractPersonServiceDatabaseImpl implements PersonService {
 
-    private final PersonRepository personRepository;
+    protected final PersonRepository personRepository;
 
     @Override
     public PagedResponseData<GeneralPerson> findPagedPersonList(PersonFindRequest request) {
@@ -35,6 +35,14 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         Page<GeneralPersonEntity> entities = personRepository.findAll(PersonSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
                 PersonMapper.INSTANCE.toModels(entities.getContent()));
+    }
+
+    @Override
+    public boolean checkPersonExist(PersonFindRequest request) {
+        if (null == request) {
+            request = new PersonFindRequest();
+        }
+        return personRepository.exists(PersonSpecs.toSpecification(request));
     }
 
     @Override

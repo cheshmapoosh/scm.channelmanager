@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoDataChangedException;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
@@ -30,8 +32,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 @RequiredArgsConstructor
 @Service
@@ -124,25 +124,25 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public ir.daneshrefah.scm.common.model.service.Service createService(ir.daneshrefah.scm.common.model.service.Service service) {
         if (StringUtils.isEmpty(service.getCode())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_CODE_IS_EMPTY, "service code is empty.");
+            throw new MissingRequiredInputException("service code");
         }
         if (StringUtils.isEmpty(service.getTitle())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_TITLE_IS_EMPTY, "service title is empty.");
+            throw new MissingRequiredInputException("service title");
         }
         if (null == service.getType()) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_TYPE_IS_EMPTY, "service type is empty.");
+            throw new MissingRequiredInputException("service type");
         }
         if (ServiceImplementationType.JAVA.equals(service.getImplementationType()) &&
                 StringUtils.isEmpty(((JavaService) service).getJavaImplementationClassName())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY, "service java class name is empty.");
+            throw new MissingRequiredInputException("javaImplementationClassName");
         }
         if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
                 (null == ((ExternalService) service).getServiceProvider() || StringUtils.isEmpty(((ExternalService) service).getServiceProvider().getId()))) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY, "service provider is empty.");
+            throw new MissingRequiredInputException("serviceProvider");
         }
         if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
                 !checkServiceProviderExistById(((ExternalService) service).getServiceProvider().getId())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_INVALID, "service provider is invalid.");
+            throw new InvalidInputException("serviceProvider");
         }
         if (null == service.getVersion()) {
             service.setVersion(1);
@@ -170,13 +170,12 @@ public class ServiceServiceImpl implements ServiceService {
     public ir.daneshrefah.scm.common.model.service.Service updateService(String serviceId, ir.daneshrefah.scm.common.model.service.Service service) {
         Optional<ServiceEntity> entity = serviceRepository.findById(serviceId);
         if (entity.isEmpty()) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_OBJECT_NOT_FOUND, "service entity not found.");
+            throw new InvalidInputException("serviceId");
         }
         boolean isModified = false;
         ServiceEntity serviceEntity = entity.get();
         if (!serviceEntity.getImplementationType().equals(service.getImplementationType())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_INVALID,
-                    "service implementation type is invalid.");
+            throw new InvalidInputException("implementationType");
         }
         if (StringUtils.isNotEmpty(service.getTitle()) && !service.getTitle().equals(serviceEntity.getTitle())) {
             serviceEntity.setTitle(service.getTitle());
@@ -234,8 +233,7 @@ public class ServiceServiceImpl implements ServiceService {
             parentService = findParentServiceById(service.getParent().getId());
         }
         if (null == parentService && null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_NOT_FOUND,
-                    "no parent service found with id.");
+            throw new InvalidInputException("parentId");
         }
         if (null != parentService &&
                 null != serviceEntity.getParent() && !StringUtils.equals(parentService.getId(), serviceEntity.getParent().getId())) {
@@ -256,7 +254,7 @@ public class ServiceServiceImpl implements ServiceService {
             isModified = true;
         }
         if (!isModified) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_NO_CHANGE, "object has no change.");
+            throw new NoDataChangedException("service");
         }
 //        private ExternalServiceProvider serviceProvider;
 

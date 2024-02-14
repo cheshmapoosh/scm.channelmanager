@@ -3,7 +3,9 @@ package ir.daneshrefah.scm.plugin.scm.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.ValidationException;
+import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
+import ir.daneshrefah.scm.common.exception.MissingRequestException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
@@ -12,10 +14,6 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -48,36 +46,36 @@ public class ServiceManagementService extends AbstractJavaService {
 
     public ir.daneshrefah.scm.common.model.service.Service updateService(Message message) {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
+            throw new MissingRequiredInputException("service data");
         }
         String serviceId = message.getPayloadValue("id");
         if (StringUtils.isEmpty(serviceId)) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_ID_IS_EMPTY, "service id is not specified.");
+            throw new MissingRequiredInputException("serviceId");
         }
         ir.daneshrefah.scm.common.model.service.Service newService = null;
         try {
             newService = objectMapper.treeToValue(message.getPayload(),
                     ir.daneshrefah.scm.common.model.service.Service.class);
         } catch (JsonProcessingException e) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_INVALID, e.getMessage(), e);
+            throw new InvalidRequestFormatException("payload", e);
         }
         return this.service.updateService(serviceId, newService);
     }
 
     public ir.daneshrefah.scm.common.model.service.Service createService(Message message) {
         if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_EMPTY, "service data is empty.");
+            throw new MissingRequestException();
         }
         ServiceImplementationType implementationType = ServiceImplementationType.findByCode(message.getIntegerPayloadValue("implementationType"));
         if (null == implementationType) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_SERVICE_CODE_IS_EMPTY, "service implementation type is not specified.");
+            throw new MissingRequiredInputException("implementationType");
         }
         ir.daneshrefah.scm.common.model.service.Service newService = null;
         try {
             newService = objectMapper.treeToValue(message.getPayload(),
                     ir.daneshrefah.scm.common.model.service.Service.class);
         } catch (JsonProcessingException e) {
-            throw new ValidationException(null, ERROR_CODE_VALIDATION_BODY_IS_INVALID, e.getMessage(), e);
+            throw new InvalidRequestFormatException("payload", e);
         }
         newService.setCreator(message.getHeader().getAuthentication().getPersonUsername());
         newService.setLastEditor(message.getHeader().getAuthentication().getPersonUsername());
