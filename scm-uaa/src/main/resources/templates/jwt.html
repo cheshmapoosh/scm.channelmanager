@@ -1,31 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta charset="utf-8" />
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
     <title>JWT Decoder</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-    <link href="https://getbootstrap.com/docs/4.0/examples/signin/signin.css" rel="stylesheet" crossorigin="anonymous"/>
+    <link
+            href="../static/css/jwt.css"
+            rel="stylesheet"
+            type="text/css"
+            media="all"
+            th:href="@{/css/jwt.css}"
+    />
 </head>
 <body>
 <div class="container">
-    <form class="form-signin" th:action="@{/public/tools/jwt}" th:method="post" style="max-width: 800px">
-        <h2 class="form-signin-heading">Please Enter Token</h2>
-        <p>
-            <label for="inputToken">JWT Token</label>
-            <textarea class="form-control" id="inputToken"
-                      th:text="*{encodedValue}" name="encodedValue" placeholder="Enter JWT value"
-                      rows="5" required autofocus></textarea>
-        </p>
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Decode</button>
-        <br/>
-        <p>
-            <label for="outputToken">Plain JWT</label>
-            <textarea class="form-control" id="outputToken"
-                      th:text="*{decodedValue}" rows="10"></textarea>
-        </p>
-    </form>
+    <div class="form-box">
+        <div class="form-header">
+            <div class="logo">
+                <img
+                        src="../static/images/logo.webp"
+                        alt="logo"
+                        th:src="@{/images/logo.webp}"
+                />
+            </div>
+            <h2 class="title">توکن را وارد کنید</h2>
+        </div>
+        <form th:action="@{/public/tools/jwt}" th:method="post">
+            <div class="form-container">
+                <div class="form-row">
+              <textarea
+                      class="form-control"
+                      id="inputToken"
+                      th:text="*{encodedValue}"
+                      name="encodedValue"
+                      placeholder="Enter JWT value"
+                      rows="5"
+                      required
+                      autofocus
+              ></textarea>
+                </div>
+                <div class="form-row">
+                    <button class="decode-btn" type="submit">
+                        Decode
+                    </button>
+                </div>
+                <div class="form-row">
+              <textarea
+                      class="form-control"
+                      id="outputToken"
+                      th:text="*{decodedValue}"
+                      rows="10"
+                      placeholder="Plain JWT"
+              ></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
-</body></html>
+</body>
+</html>
