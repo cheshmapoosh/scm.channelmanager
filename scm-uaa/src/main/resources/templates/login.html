@@ -8,7 +8,7 @@
     />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title  th:text="' سامانه' + ${panelName}"></title>
+    <title  th:text="'سامانه ' + ${client_title}"></title>
     <th:block th:if="${client_id != 'SCM'}">
         <link
                 href="../static/css/ibnLogin.css"
@@ -41,14 +41,14 @@
             </div>
             <div class="title">
                 <h3 class="header-text" th:if="${!isStepTwoRequired}">
-                        ورود به سامانه  <span th:text="${panelName}"></span>
+                        ورود به سامانه  <span th:text="${client_title}"></span>
                 </h3>
                 <h3 class="header-text" th:if="${isStepTwoRequired}">
                      کد تایید را وارد کنید
                 </h3>
             </div>
         </div>
-       <div class="form-message"   th:text="${formMessage} ? ${formMessage} :'' "></div>
+       <div class="form-message"   th:text="${errorMessage} ? ${errorMessage} :'' "></div>
         <form class="form-signin" method="post" action="/login">
             <div class="form-content">
                 <div class="form-row" th:if="${!isStepTwoRequired}">
