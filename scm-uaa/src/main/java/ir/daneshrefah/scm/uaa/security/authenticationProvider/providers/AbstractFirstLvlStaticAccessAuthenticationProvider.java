@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
-import ir.daneshrefah.scm.uaa.service.UserService;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 
 /**
  * Description of the class or purpose of the file.

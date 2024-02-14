@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.exception.AbstractValidationException;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -37,6 +38,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        DefaultErrorResponse errorResponse = new DefaultErrorResponse("constraint", ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
 //    @ExceptionHandler(BaseCIFException.class)
 //    public ResponseEntity<Object> handleBaseCIFException(BaseCIFException ex) {
 //        return ResponseEntity.badRequest().body(new DefaultErrorResponse("CIF", 0, ex.getMessage()));
@@ -64,6 +71,8 @@ public class GlobalExceptionHandler {
                 ERROR_CODE_REQUEST_IS_NULL, null),
         SocketTimeoutException(java.net.SocketTimeoutException.class, HttpConstants.HTTP_STATUS_GATEWAY_TIMEOUT,
                 ERROR_CODE_SOCKET_TIMEOUT, null),
+        HttpRequestMethodNotSupportedException(org.springframework.web.HttpRequestMethodNotSupportedException.class,
+                HttpConstants.HTTP_STATUS_METHOD_NOT_ALLOWED, ERROR_CODE_HTTP_METHOD_NOT_ALLOWED, null),
         UnknownHostException(java.net.UnknownHostException.class, HttpConstants.HTTP_STATUS_BAD_GATEWAY,
                 ERROR_CODE_UNKNOWN_HOST, null);
 

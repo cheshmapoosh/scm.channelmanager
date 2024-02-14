@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.uaa.service.UserService;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.utils.AuthenticationUtils;

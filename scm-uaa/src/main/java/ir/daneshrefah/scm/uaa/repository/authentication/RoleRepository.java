@@ -1,9 +1,12 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,11 +18,16 @@ import java.util.List;
  * @since 2024-01-09
  */
 @Repository
-public interface RoleRepository extends CrudRepository<RoleEntity,Long> {
+public interface RoleRepository extends CrudRepository<RoleEntity, Integer>, JpaSpecificationExecutor<RoleEntity> {
 
     @Query(value = "select r.* from REF.USERROLE ur " +
             "inner join REF.ROLE r on r.ROLE_ID = ur.ROLE_ID " +
             "where USER_ID = :personId ", nativeQuery = true)
     List<RoleEntity> findByPersonId(@Param("personId") Long personId);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "INSERT INTO userrole (USER_ID, ROLE_ID) VALUES (:personId, :roleId)")
+    void insertPersonRole(@Param("personId") Long personId, @Param("roleId") Integer roleId);
 
 }

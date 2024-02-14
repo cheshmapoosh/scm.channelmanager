@@ -1,20 +1,21 @@
-package ir.daneshrefah.scm.uaa.service;
+package ir.daneshrefah.scm.uaa.service.user;
 
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequestException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.controller.user.UserDataRequest;
-import ir.daneshrefah.scm.uaa.controller.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
+import ir.daneshrefah.scm.uaa.service.IntegrationService;
 import ir.daneshrefah.scm.uaa.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -161,5 +162,31 @@ public class UserService {
         List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
                 terminalCode, username, accessParameter, activationCode);
         return null != activationEntities && activationEntities.size() > 0;
+    }
+
+    public boolean updateUserLoginPassword(Long userId, UpdatePasswordRequest request) {
+        if (null == request) {
+            throw new MissingRequestException();
+        }
+        if (null == userId) {
+            throw new MissingRequiredInputException("userId");
+        }
+        if (StringUtils.isEmpty(request.getPassword())) {
+            throw new MissingRequiredInputException("password");
+        }
+        if (StringUtils.isEmpty(request.getPasswordConfirm())) {
+            throw new MissingRequiredInputException("passwordConfirm");
+        }
+        if (!StringUtils.equals(request.getPassword(), request.getPasswordConfirm())) {
+            throw new InvalidInputException("passwordConfirm");
+        }
+        Optional<UserEntity> userEntity = userRepository.findById(userId);
+        if (userEntity.isEmpty()) {
+            throw new InvalidInputException("userId");
+        }
+        userEntity.get().setLoginStaticPassword(passwordEncoder.encodePassword(request.getPassword(),
+                userEntity.get().getPerson().getUsername()));
+        userRepository.save(userEntity.get());
+        return true;
     }
 }

@@ -3,12 +3,10 @@ package ir.daneshrefah.scm.uaa.controller.person;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.uaa.domain.person.Role;
 import ir.daneshrefah.scm.uaa.service.person.UPersonService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,6 +27,16 @@ public class PersonController {
     @PostMapping("/paged")
     public PagedResponseData<GeneralPerson> findPagedPersonList(@RequestBody(required = false) PersonFindRequest request) {
         return personService.findPagedPersonList(request);
+    }
+
+    @GetMapping("/{personId}/roles")
+    public List<Role> findUserRoleList(@PathVariable("personId") Long personId) {
+        return personService.findPersonRoleList(personId);
+    }
+
+    @PutMapping("/{personId}/roles/{roleId}")
+    public Role addPersonRole(@PathVariable("personId") Long personId, @PathVariable("roleId") Integer roleId) {
+        return personService.addPersonRole(personId, roleId);
     }
 
     @PostMapping("/cif")

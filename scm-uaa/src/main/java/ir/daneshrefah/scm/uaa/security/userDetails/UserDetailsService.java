@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.userDetails;
 
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.service.UserService;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.core.GrantedAuthority;

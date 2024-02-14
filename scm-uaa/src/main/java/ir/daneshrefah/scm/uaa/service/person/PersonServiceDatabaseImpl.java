@@ -7,16 +7,18 @@ import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDatabaseImpl;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
-import ir.daneshrefah.scm.common.exception.InputAlreadyExistException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.exception.TooManyRecordFoundException;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.uaa.domain.person.Role;
+import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
+import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -30,9 +32,12 @@ import java.util.List;
 public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl implements UPersonService {
 
     private final CIFService cifService;
+    private final RoleRepository roleRepository;
 
-    public PersonServiceDatabaseImpl(PersonRepository personRepository, CIFService cifService) {
+    public PersonServiceDatabaseImpl(PersonRepository personRepository, RoleRepository roleRepository,
+                                     CIFService cifService) {
         super(personRepository);
+        this.roleRepository = roleRepository;
         this.cifService = cifService;
     }
 
@@ -86,6 +91,34 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     @Override
     public GeneralPerson updatePersonInfoFromCIF(PersonFindRequest request) {
         return null;
+    }
+
+    @Override
+    public List<Role> findPersonRoleList(Long personId) {
+        if (null == personId) {
+            throw new MissingRequiredInputException("personId");
+        }
+        return RoleMapper.INSTANCE.toModels(roleRepository.findByPersonId(personId));
+    }
+
+    @Override
+    public Role addPersonRole(Long personId, Integer roleId) {
+        if (null == personId) {
+            throw new MissingRequiredInputException("personId");
+        }
+        if (null == roleId) {
+            throw new MissingRequiredInputException("roleId");
+        }
+        Optional<RoleEntity> roleEntity = roleRepository.findById(roleId);
+        if (roleEntity.isEmpty()) {
+            throw new InvalidInputException("roleId");
+        }
+        Optional<GeneralPersonEntity> personEntity = personRepository.findById(personId.intValue());
+        if (personEntity.isEmpty()) {
+            throw new InvalidInputException("personId");
+        }
+        roleRepository.insertPersonRole(personId, roleId);
+        return RoleMapper.INSTANCE.toModel(roleEntity.get());
     }
 
 //    @Override

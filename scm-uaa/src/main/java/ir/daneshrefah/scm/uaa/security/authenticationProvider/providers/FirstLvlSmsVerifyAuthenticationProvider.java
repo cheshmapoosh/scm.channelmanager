@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlSmsVerifyAuthenticationToken;
-import ir.daneshrefah.scm.uaa.service.UserService;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import org.springframework.stereotype.Component;
 
 @Component

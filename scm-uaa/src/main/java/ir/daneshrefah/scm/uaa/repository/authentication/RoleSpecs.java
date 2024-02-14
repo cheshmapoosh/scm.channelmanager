@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
-import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
+import ir.daneshrefah.scm.uaa.service.person.RoleFindRequest;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -12,15 +12,18 @@ import java.util.List;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-02-12
+ * @since 2024-02-14
  */
-public class UserSpecs {
+public class RoleSpecs {
 
-    public static Specification<UserEntity> toSpecification(UserFindRequest request) {
+    public static Specification<RoleEntity> toSpecification(RoleFindRequest request) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            if (null != request.getActive()) {
-                predicates.add(builder.equal(root.get("active"), request.getActive()));
+            if (null != request.getCode()) {
+                predicates.add(builder.equal(root.get("code"), request.getCode()));
+            }
+            if (null != request.getSystemRole()) {
+                predicates.add(builder.equal(root.get("systemRole"), request.getSystemRole()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

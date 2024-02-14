@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.controller.user;
+package ir.daneshrefah.scm.uaa.service.user;
 
 import ir.daneshrefah.scm.common.dto.PagedRequestData;
 import lombok.Data;

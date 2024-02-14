@@ -3,7 +3,9 @@ package ir.daneshrefah.scm.uaa.controller.user;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
-import ir.daneshrefah.scm.uaa.service.UserService;
+import ir.daneshrefah.scm.uaa.service.user.UpdatePasswordRequest;
+import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,8 +34,8 @@ public class UserController extends BaseController {
     }
 
     @PutMapping("/login-password/{userId}")
-    public User updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody String password) {
-        return null;
+    public boolean updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody UpdatePasswordRequest request) {
+        return userService.updateUserLoginPassword(userId, request);
     }
 
     @PutMapping("/transaction-password/{userId}")
