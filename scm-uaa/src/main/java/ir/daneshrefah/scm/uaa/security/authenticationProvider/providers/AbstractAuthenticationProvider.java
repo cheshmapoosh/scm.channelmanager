@@ -56,7 +56,7 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
             additionalAuthenticationChecks(user, (GeneralAuthenticationToken) authentication);
         } catch (AuthenticationException ex) {
             logger.warn("exception on authenticate", ex);
-            return createFailAuthentication(authentication);
+            return createFailAuthentication(authentication, ex);
         }
         this.postAuthenticationChecks.check(user);
         checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
@@ -80,14 +80,14 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         }
     }
 
-    protected Authentication createFailAuthentication(Authentication authentication) {
+    protected Authentication createFailAuthentication(Authentication authentication, Exception exception) {
         // Ensure we return the original credentials the user supplied,
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
         PostAuthenticationToken result = PostAuthenticationToken.unauthenticated(
                 (TerminalUserDetails) authentication.getPrincipal(),
-                ((GeneralAuthenticationToken) authentication).getDetails());
+                ((GeneralAuthenticationToken) authentication).getDetails(), exception);
         this.logger.debug("Unauthenticated user");
         return result;
     }

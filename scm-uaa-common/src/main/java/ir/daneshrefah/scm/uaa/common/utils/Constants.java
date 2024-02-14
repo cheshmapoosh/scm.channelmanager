@@ -47,6 +47,10 @@ public class Constants {
     public final static String OAUTH2_SCOPE_NAME_SESSION = "session";
 
     public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
+    public final static String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";
+    public final static String OAUTH2_ERROR_CODE_IS_LOCKED = "locked_user";
+    public final static String OAUTH2_ERROR_CODE_IS_DISABLED = "disabled_user";
+    public final static String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";
 
 //    public final static String CHANNEL_HEADER ="Channel";
 //    public final static String AGENT_HEADER ="Agent";

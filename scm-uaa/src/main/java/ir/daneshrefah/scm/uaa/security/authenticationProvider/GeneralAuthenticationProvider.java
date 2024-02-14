@@ -70,7 +70,7 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
 
     @Override
     protected void throwError(String errorCode, String parameterName) {
-        throw new UsernameNotFoundException(errorCode + ":" + parameterName);
+        throw new UsernameNotFoundException(parameterName);
     }
 
     @Override

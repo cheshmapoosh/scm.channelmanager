@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.service.otp;
 
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.provder.OtpProvider;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,10 @@ public class OtpService {
     }
 
     public boolean sendOtp(OtpSendRequest request) {
+        return false;
+    }
+
+    public boolean verifyOtp(OtpVerifyRequest request) {
         return false;
     }
 

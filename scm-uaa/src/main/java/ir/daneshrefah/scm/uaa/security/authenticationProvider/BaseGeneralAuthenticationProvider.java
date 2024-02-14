@@ -5,14 +5,14 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
@@ -22,8 +22,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_SCOPE_NAME_SESSION;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -86,13 +85,32 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
 
         GeneralAuthenticationToken authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         if (authorization == null || !authorization.isAuthenticated()) {
-            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_PASSWORD);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, extractParameterName(authorization));
         }
         if (log.isTraceEnabled()) {
             log.trace("authentication completed successfully.");
         }
 
         return buildResponse(authentication, preAuthenticationToken, authorization);
+    }
+
+    private String extractParameterName(GeneralAuthenticationToken authentication) {
+        if (!authentication.getClass().isAssignableFrom(PostAuthenticationToken.class) ||
+                null == ((PostAuthenticationToken) authentication).getException()) {
+            return Constants.OAUTH2_PARAM_NAME_USER_PASSWORD;
+        }
+        Exception exception = ((PostAuthenticationToken) authentication).getException();
+        if (exception instanceof LockedException)
+            return OAUTH2_ERROR_CODE_IS_LOCKED;
+        if (exception instanceof DisabledException)
+            return OAUTH2_ERROR_CODE_IS_DISABLED;
+        if (exception instanceof AccountExpiredException)
+            return OAUTH2_ERROR_CODE_IS_EXPIRED;
+        if (exception instanceof BadCredentialsException)
+            return OAUTH2_ERROR_CODE_INVALID_PASSWORD;
+        if (exception instanceof UsernameNotFoundException)
+            return OAUTH2_ERROR_CODE_INVALID_USER;
+        return null;
     }
 
     protected abstract Authentication buildResponse(Authentication requestAuthentication,

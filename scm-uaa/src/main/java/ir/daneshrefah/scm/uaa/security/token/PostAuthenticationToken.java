@@ -28,6 +28,9 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     @Getter
     @Setter
     private Instant expiresAt;
+    @Getter
+    @Setter
+    private Exception exception;
 
     protected PostAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                       AuthenticationStatus authenticationStatus) {
@@ -43,8 +46,11 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     }
 
     public static PostAuthenticationToken unauthenticated(TerminalUserDetails user,
-                                                          PreAuthenticationToken preAuthenticationToken) {
-        return new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.UN_AUTHENTICATED);
+                                                          PreAuthenticationToken preAuthenticationToken,
+                                                          Exception exception) {
+        PostAuthenticationToken result = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.UN_AUTHENTICATED);
+        result.setException(exception);
+        return result;
     }
 
     public static PostAuthenticationToken incomplete(TerminalUserDetails user,

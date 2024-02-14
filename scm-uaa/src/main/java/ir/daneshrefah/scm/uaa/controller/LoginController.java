@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.controller;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,7 +78,23 @@ public class LoginController {
         if (null == exception || TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass())) {
             return null;
         }
-        return exception.getMessage();
+        switch (exception.getMessage()) {
+            case Constants.OAUTH2_PARAM_NAME_USER_USERNAME:
+                return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
+            case Constants.OAUTH2_PARAM_NAME_USER_PASSWORD:
+                return Constants.OAUTH2_PARAM_NAME_USER_PASSWORD;
+            case Constants.OAUTH2_ERROR_CODE_IS_LOCKED:
+                return Constants.OAUTH2_ERROR_CODE_IS_LOCKED;
+            case Constants.OAUTH2_ERROR_CODE_IS_DISABLED:
+                return Constants.OAUTH2_ERROR_CODE_IS_DISABLED;
+            case Constants.OAUTH2_ERROR_CODE_IS_EXPIRED:
+                return Constants.OAUTH2_ERROR_CODE_IS_EXPIRED;
+            case Constants.OAUTH2_ERROR_CODE_INVALID_PASSWORD:
+                return Constants.OAUTH2_ERROR_CODE_INVALID_PASSWORD;
+            case Constants.OAUTH2_ERROR_CODE_INVALID_USER:
+                return Constants.OAUTH2_ERROR_CODE_INVALID_USER;
+        }
+        return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
     }
 
     private boolean checkIsStepTwoRequired(HttpServletRequest request) {
