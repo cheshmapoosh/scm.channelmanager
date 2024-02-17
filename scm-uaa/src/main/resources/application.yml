@@ -1,6 +1,8 @@
 
 
 scm:
+  cif:
+    url: http://scm-core.daneshrefah.ir/Service/
   security:
     key-store:
       name: config/keystore.p12
