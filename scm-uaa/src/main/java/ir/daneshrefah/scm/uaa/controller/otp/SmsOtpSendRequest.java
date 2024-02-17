@@ -13,6 +13,9 @@ import lombok.Data;
 @Data
 public class SmsOtpSendRequest {
 
-    OtpReason reason;
+    private String terminalCode;
+    private OtpReason reason;
+    private String recipientUsername;
+    private String recipient;
 
 }

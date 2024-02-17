@@ -8,7 +8,7 @@
     />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title th:text="'سامانه ' + ${client_title}"></title>
+    <title th:text="#{label.caption.system} + ' ' + ${client_title}"></title>
     <link th:href="@{/assets/css/login.css}" rel="stylesheet" type="text/css" />
     <th:block
       th:if="${client_id}"
@@ -26,10 +26,10 @@
           </div>
           <div class="title">
             <div class="header-text panel-title">
-              ورود به سامانه <span th:text="${client_title}"></span>
+              <span th:text="#{label.caption.system-login}"/><span th:text="${client_title}"></span>
             </div>
             <div class="header-text" th:if="${isStepTwoRequired}">
-              کد تایید را وارد کنید
+              <span th:text="#{message.enter.claim_code}"/>
             </div>
           </div>
         </div>
@@ -37,7 +37,7 @@
           class="form-message"
           th:text="${errorMessage} ? ${errorMessage} :'' "
         ></div>
-        <form class="form-signin" method="post" action="/login">
+        <form id="loginForm" class="form-signin" method="post" action="/login">
           <div class="form-content">
             <div class="form-row" th:if="${!isStepTwoRequired}">
               <input
@@ -45,7 +45,7 @@
                 type="text"
                 id="username"
                 name="username"
-                placeholder="نام کاربری"
+                data-th-placeholder="#{label.caption.username}"
                 required
                 autofocus
               />
@@ -56,7 +56,7 @@
                 type="password"
                 id="password"
                 name="password"
-                placeholder="رمز عبور"
+                data-th-placeholder="#{label.caption.password}"
                 required
               />
             </div>
@@ -66,7 +66,7 @@
                 type="password"
                 id="claim"
                 name="claim_code"
-                placeholder="کد تایید"
+                data-th-placeholder="#{label.caption.claim_code}"
                 required
               />
             </div>
@@ -82,19 +82,35 @@
               <button
                 class="submit-btn"
                 type="submit"
-                th:text="${!isStepTwoRequired} ? 'ورود' : 'ارسال کد تایید' "
+                th:text="${!isStepTwoRequired} ? #{label.caption.login} : #{label.caption.send-claim} "
+              ></button>
+              <button
+                class="submit-btn"
+                type="button"
+                id="cancelButton"
+                th:if="${isStepTwoRequired}"
+                th:text="#{label.caption.cancel}"
               ></button>
               <button
                 class="sms-btn"
                 type="submit"
                 th:if="${authenticationMethod == 'SMS'}"
+                data-th-text="#{label.btn.send-sms}"
               >
-                ارسال پیامک
               </button>
             </div>
           </div>
         </form>
       </div>
     </div>
+  <script>
+    const cancelButton = document.getElementById('cancelButton');
+    cancelButton.addEventListener('click', () => {
+      if (confirm('Are you sure you want to cancel and clear all session data?')) {
+        document.getElementById('loginForm').action = '/login-cancel';
+        document.getElementById('loginForm').submit();
+      }
+    });
+  </script>
   </body>
 </html>

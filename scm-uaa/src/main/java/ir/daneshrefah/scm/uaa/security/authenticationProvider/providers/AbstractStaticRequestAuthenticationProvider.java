@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
@@ -10,7 +11,6 @@ import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
@@ -28,27 +28,29 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
-        requestOtp(authentication);
+        OtpSendResponse otpSendResponse = requestOtp(authentication);
         PostAuthenticationToken result = PostAuthenticationToken.incomplete(
                 authentication.getPrincipal(),
-                authentication.getDetails());
+                authentication.getDetails(),
+                otpSendResponse);
         this.logger.debug("Authenticated user");
         return result;
     }
 
-    protected void requestOtp(GeneralAuthenticationToken authentication) {
+    protected OtpSendResponse requestOtp(GeneralAuthenticationToken authentication) {
         OtpType otpType = resolveOtpType();
+        User user = authentication.getPrincipal().getUser();
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .issuerAddress(((WebAuthenticationDetails) authentication.getDetails().getDetails()).getRemoteAddress())
-                .issuerUsername(authentication.getPrincipal().getUser().getNickname())
-                .terminalCode(authentication.getPrincipal().getUser().getTerminalCode())
+                .issuerUsername(user.getNickname())
+                .terminalCode(user.getTerminalCode())
                 .accessParameter(authentication.getDetails().getAccessParameter())
-                .recipientUsername(authentication.getPrincipal().getUser().getNickname())
-                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
+                .recipientUsername(user.getNickname())
+                .recipient(user.getPerson().getMobile1())
                 .otpType(otpType)
                 .reason(OtpReason.AUTHENTICATION)
                 .build();
-        OtpSendResponse otpSendResponse = otpService.sendOtp(otpRequest);
+        return otpService.sendOtp(otpRequest, user);
     }
 
     protected abstract OtpType resolveOtpType();
@@ -57,4 +59,5 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
     public String extractCurrentPassword(TerminalUserDetails userDetails) {
         return userDetails.getPassword();
     }
+
 }

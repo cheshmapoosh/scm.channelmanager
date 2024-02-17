@@ -67,11 +67,24 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
 
     @Override
     protected void throwError(Authentication authentication, Exception exception) {
-        String loginAuthenticationMethod = authentication instanceof PostAuthenticationToken ?
-                ((TerminalUserDetails) authentication.getPrincipal()).getUser().getLoginAuthenticationMethod().getCode() : null;
         String parameterName = extractParameterName(exception);
-        String errorCode = StringUtils.isNotEmpty(loginAuthenticationMethod) ? parameterName + ":" + loginAuthenticationMethod : parameterName;
+        String errorCodeSuffix = extractErrorSuffix(exception);
+        String errorCode = parameterName;
+        if (StringUtils.isNotEmpty(errorCodeSuffix))
+            errorCode = errorCode + ":" + errorCodeSuffix;
         ErrorUtils.throwError(errorCode, parameterName);
+    }
+
+    private String extractErrorSuffix(Exception exception) {
+        if (null == exception || !(exception instanceof TwoStepAuthenticationRequiredException) || null != exception.getCause())
+            return null;
+        TwoStepAuthenticationRequiredException twoStepException = (TwoStepAuthenticationRequiredException) exception;
+        if (!(twoStepException.getAuthentication() instanceof  PostAuthenticationToken)) {
+            return null;
+        }
+        PostAuthenticationToken authenticationToken = (PostAuthenticationToken) twoStepException.getAuthentication();
+        return authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode() + ":" +
+                (null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getExpireTime() : StringUtils.EMPTY);
     }
 
     @Override

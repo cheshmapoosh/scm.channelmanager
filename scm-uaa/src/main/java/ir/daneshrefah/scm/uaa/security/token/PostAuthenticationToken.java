@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,9 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     @Getter
     @Setter
     private Exception exception;
+    @Getter
+    @Setter
+    private OtpSendResponse otpSendResponse;
 
     protected PostAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                       AuthenticationStatus authenticationStatus) {
@@ -54,9 +58,11 @@ public class PostAuthenticationToken extends GeneralAuthenticationToken {
     }
 
     public static PostAuthenticationToken incomplete(TerminalUserDetails user,
-                                                     PreAuthenticationToken preAuthenticationToken) {
+                                                     PreAuthenticationToken preAuthenticationToken,
+                                                     OtpSendResponse otpSendResponse) {
         PostAuthenticationToken postAuthenticationToken = new PostAuthenticationToken(user, preAuthenticationToken, AuthenticationStatus.INCOMPLETE);
         postAuthenticationToken.setAuthenticated(true);
+        postAuthenticationToken.setOtpSendResponse(otpSendResponse);
         return postAuthenticationToken;
 
     }
