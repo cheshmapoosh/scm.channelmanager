@@ -128,11 +128,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/login**").permitAll()
-                        .requestMatchers("/css/**").permitAll()
-                        .requestMatchers("/js/**").permitAll()
-                        .requestMatchers("/font/**").permitAll()
-                        .requestMatchers("/images/**").permitAll()
-                        .requestMatchers("/favicon.io").permitAll()
+                        .requestMatchers("/assets/**").permitAll()
 
 //                        .requestMatchers("/oauth2/token").permitAll()
                         .anyRequest().authenticated()
