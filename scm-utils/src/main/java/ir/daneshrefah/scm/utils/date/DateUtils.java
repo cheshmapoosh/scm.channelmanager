@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDate;
 import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDateTime;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.core.util.datetime.FixedDateFormat;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -103,6 +102,14 @@ public class DateUtils {
 
         public static Instant currentDate() {
             return Instant.now();
+        }
+
+        public static Instant plusSeconds(Instant instant, long secondsToAdd) {
+            return instant.plusSeconds(secondsToAdd);
+        }
+
+        public static Instant plusSecondsToCurrent(long secondsToAdd) {
+            return currentDate().plusSeconds(secondsToAdd);
         }
     }
 

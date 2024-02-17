@@ -3,9 +3,10 @@ package ir.daneshrefah.scm.uaa.controller;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
-import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
+import ir.daneshrefah.scm.uaa.exception.BaseAuthenticationException;
 import ir.daneshrefah.scm.uaa.service.ClientService;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AccountExpiredException;
@@ -75,6 +76,7 @@ public class LoginController {
         model.addAttribute("isStepTwoRequired", isStepTwoRequired);
         model.addAttribute("errorMessage", errorMessage);
         model.addAttribute("authenticationMethod", null != authenticationMethod ? authenticationMethod.getCode() : null);
+        model.addAttribute("otpExpireTime", DateUtils.InstantTools.plusSecondsToCurrent(120));
 //        Employee employee = new Employee();
 //        model.addAttribute("employee", employee);
         return "login";
@@ -88,36 +90,24 @@ public class LoginController {
         }
         boolean isStepTwo = exception instanceof TwoStepAuthenticationRequiredException;
         Exception messageException = exception instanceof TwoStepAuthenticationRequiredException ? (Exception) exception.getCause() : exception;
-        if (messageException instanceof LockedException)
+        if (exception instanceof LockedException)
             return OAUTH2_ERROR_CODE_IS_LOCKED;
-        else if (messageException instanceof DisabledException)
+        else if (exception instanceof DisabledException)
             return OAUTH2_ERROR_CODE_IS_DISABLED;
-        else if (messageException instanceof AccountExpiredException)
+        else if (exception instanceof AccountExpiredException)
             return OAUTH2_ERROR_CODE_IS_EXPIRED;
-        else if (messageException instanceof BadCredentialsException && isStepTwo)
+        else if (exception instanceof BadCredentialsException && isStepTwo)
             return OAUTH2_ERROR_CODE_INVALID_CLAIM;
-        else if (messageException instanceof BadCredentialsException && !isStepTwo)
+        else if (exception instanceof BadCredentialsException && !isStepTwo)
             return OAUTH2_ERROR_CODE_INVALID_PASSWORD;
-        else if (messageException instanceof UsernameNotFoundException)
+        else if (exception instanceof UsernameNotFoundException)
             return OAUTH2_ERROR_CODE_INVALID_USER;
+        else if (exception instanceof TwoStepAuthenticationRequiredException)
+            return OAUTH2_ERROR_CODE_REQUIRED_CLAIM;
+        else if (exception instanceof BaseAuthenticationException)
+            return ((BaseAuthenticationException) exception).getErrorCode();
 
-        /*switch (exception.getMessage()) {
-            case Constants.OAUTH2_PARAM_NAME_USER_USERNAME:
-                return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
-            case Constants.OAUTH2_PARAM_NAME_USER_PASSWORD:
-                return Constants.OAUTH2_PARAM_NAME_USER_PASSWORD;
-            case Constants.OAUTH2_ERROR_CODE_IS_LOCKED:
-                return Constants.OAUTH2_ERROR_CODE_IS_LOCKED;
-            case Constants.OAUTH2_ERROR_CODE_IS_DISABLED:
-                return Constants.OAUTH2_ERROR_CODE_IS_DISABLED;
-            case Constants.OAUTH2_ERROR_CODE_IS_EXPIRED:
-                return Constants.OAUTH2_ERROR_CODE_IS_EXPIRED;
-            case Constants.OAUTH2_ERROR_CODE_INVALID_PASSWORD:
-                return Constants.OAUTH2_ERROR_CODE_INVALID_PASSWORD;
-            case Constants.OAUTH2_ERROR_CODE_INVALID_USER:
-                return Constants.OAUTH2_ERROR_CODE_INVALID_USER;
-        }*/
-        return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
+        return exception.getMessage();
     }
 
     private boolean checkIsStepTwoRequired(HttpServletRequest request) {
