@@ -68,6 +68,13 @@ public class JWTConfig {
         return context -> {
             JwtClaimsSet.Builder claims = context.getClaims();
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+                    PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
+                PostAuthenticationToken principal = context.getPrincipal();
+                User user = principal.getPrincipal().getUser();
+                String terminalCode = user.getTerminalCode();
+                claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
+                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
+            } else if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();

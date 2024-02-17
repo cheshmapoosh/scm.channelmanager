@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.uaa.service.otp;
 
+import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.service.otp.provder.OtpProvider;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,12 +32,33 @@ public class OtpService {
                 .collect(Collectors.toMap(OtpProvider::getType, Function.identity()));
     }
 
-    public boolean sendOtp(OtpSendRequest request) {
-        return false;
+    public OtpSendResponse sendOtp(OtpSendRequest request) {
+        System.out.println("sending otp request");
+        return OtpSendResponse.builder()
+                .terminalCode(request.getTerminalCode())
+                .accessParameter(request.getAccessParameter())
+                .recipientUsername(request.getRecipientUsername())
+                .recipient(request.getRecipient())
+                .otpType(request.getOtpType())
+                .reason(request.getReason())
+                .isSuccessful(true)
+                .otpCode("456")
+                .expireTime(Instant.now())
+                .build();
     }
 
-    public boolean verifyOtp(OtpVerifyRequest request) {
-        return false;
+    public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
+        System.out.println("verify otp request");
+        return OtpVerifyResponse.builder()
+                .terminalCode(request.getTerminalCode())
+                .accessParameter(request.getAccessParameter())
+                .recipientUsername(request.getRecipientUsername())
+                .recipient(request.getRecipient())
+                .otpType(request.getOtpType())
+                .reason(request.getReason())
+                .isSuccessful("456".equals(request.getClaimCode()))
+                .tryCount(1)
+                .build();
     }
 
 }

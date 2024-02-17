@@ -6,18 +6,18 @@ package ir.daneshrefah.scm.utils.calendar.shamsi.constant;
  */
 public enum ShamsiMonth {
 
-    FARVARDIN("فروردین", "FAR"),
-    ORDIBEHESHT("اردیبهشت", "ORD"),
-    KHORDAD("خرداد", "KHORDAD"),
-    TIR("تیر", "TIR"),
-    MORDAD("مرداد", "MOR"),
-    SHAHRIVAR("شهریور", "SHAHRIVAR"),
-    MEHR("مهر", "MEHR"),
-    ABAN("آبان", "ABAN"),
-    AZAR("آذر", "AZAR"),
-    DEY("دی", "DEY"),
-    BAHMAN("بهمن", "BAH"),
-    ESFAND("اسفند", "ESF");
+    FARVARDIN("FAR", "FAR"),
+    ORDIBEHESHT("ORD", "ORD"),
+    KHORDAD("KHORDAD", "KHORDAD"),
+    TIR("TIR", "TIR"),
+    MORDAD("MORDAD", "MOR"),
+    SHAHRIVAR("SHAHRIVAR", "SHAHRIVAR"),
+    MEHR("MEHR", "MEHR"),
+    ABAN("ABAN", "ABAN"),
+    AZAR("AZAR", "AZAR"),
+    DEY("DEY", "DEY"),
+    BAHMAN("BAHMAN", "BAH"),
+    ESFAND("ESFAND", "ESF");
 
     private final String persianName;
     private final String shortName;

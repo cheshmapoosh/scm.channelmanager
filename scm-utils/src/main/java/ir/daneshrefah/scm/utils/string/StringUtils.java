@@ -142,4 +142,8 @@ public class StringUtils {
         return parameters;
     }
 
+    public static String join(List<String> array, final String separator) {
+        return org.apache.commons.lang3.StringUtils.join(array, separator);
+    }
+
 }

@@ -47,6 +47,7 @@ public class NotificationService {
     }
 
     public void sendNotification(NotificationRequest request) {
+        System.out.println("send notification");
         Instant startTime = Instant.now();
         Exception exception = null;
         try {

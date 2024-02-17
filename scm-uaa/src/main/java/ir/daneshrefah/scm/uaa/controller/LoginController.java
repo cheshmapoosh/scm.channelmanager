@@ -8,12 +8,19 @@ import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -75,10 +82,26 @@ public class LoginController {
 
     private String extractErrorMessage(HttpServletRequest request) {
         Exception exception = (Exception) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
-        if (null == exception || TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass())) {
+        if (null == exception ||
+                (TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass()) && null == exception.getCause())) {
             return null;
         }
-        switch (exception.getMessage()) {
+        boolean isStepTwo = exception instanceof TwoStepAuthenticationRequiredException;
+        Exception messageException = exception instanceof TwoStepAuthenticationRequiredException ? (Exception) exception.getCause() : exception;
+        if (messageException instanceof LockedException)
+            return OAUTH2_ERROR_CODE_IS_LOCKED;
+        else if (messageException instanceof DisabledException)
+            return OAUTH2_ERROR_CODE_IS_DISABLED;
+        else if (messageException instanceof AccountExpiredException)
+            return OAUTH2_ERROR_CODE_IS_EXPIRED;
+        else if (messageException instanceof BadCredentialsException && isStepTwo)
+            return OAUTH2_ERROR_CODE_INVALID_CLAIM;
+        else if (messageException instanceof BadCredentialsException && !isStepTwo)
+            return OAUTH2_ERROR_CODE_INVALID_PASSWORD;
+        else if (messageException instanceof UsernameNotFoundException)
+            return OAUTH2_ERROR_CODE_INVALID_USER;
+
+        /*switch (exception.getMessage()) {
             case Constants.OAUTH2_PARAM_NAME_USER_USERNAME:
                 return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
             case Constants.OAUTH2_PARAM_NAME_USER_PASSWORD:
@@ -93,7 +116,7 @@ public class LoginController {
                 return Constants.OAUTH2_ERROR_CODE_INVALID_PASSWORD;
             case Constants.OAUTH2_ERROR_CODE_INVALID_USER:
                 return Constants.OAUTH2_ERROR_CODE_INVALID_USER;
-        }
+        }*/
         return Constants.OAUTH2_PARAM_NAME_USER_USERNAME;
     }
 

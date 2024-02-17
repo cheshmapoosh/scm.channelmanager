@@ -6,7 +6,9 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
@@ -38,7 +40,7 @@ public class OtpController {
     private final OtpService otpService;
 
     @GetMapping("/sms")
-    public void sendOtpSms(@RequestBody SmsOtpSendRequest request, HttpServletRequest httpRequest) {
+    public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request, HttpServletRequest httpRequest) {
         User loggedInUser = AuthenticationUtils.getLoggedInUser();
         if (null == loggedInUser) {
             throw new AuthenticationRequiredException();
@@ -68,13 +70,15 @@ public class OtpController {
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .issuerAddress(httpRequest.getRemoteHost())
                 .issuerUsername(loggedInUser.getPerson().getUsername())
-                .recipientUser(loggedInUser)
+                .terminalCode(loggedInUser.getTerminalCode())
+                .accessParameter(StringUtils.join(loggedInUser.getAccessParameters().stream().toList(), ","))
+                .recipientUsername(loggedInUser.getPerson().getUsername())
                 .recipient(recipient)
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .build();
 
-        otpService.sendOtp(otpRequest);
+        return otpService.sendOtp(otpRequest);
     }
 
 }

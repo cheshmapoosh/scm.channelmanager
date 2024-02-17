@@ -3,13 +3,16 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
+import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -27,10 +30,11 @@ import org.springframework.stereotype.Component;
 public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProvider {
 
     public GeneralAuthenticationProvider(RegisteredClientRepository clientRepository, UserCache userCache,
+                                         ClientService clientService,
                                          UserDetailsService userDetailsService,
                                          OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                          DelegatorAuthenticationProvider delegatorAuthenticationProvider) {
-        super(clientRepository, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
+        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
     }
 
     @Override
@@ -63,14 +67,17 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
     protected Authentication buildResponse(Authentication requestAuthentication, PreAuthenticationToken preAuthenticationToken, GeneralAuthenticationToken authentication) {
         PostAuthenticationToken.AuthenticationStatus status = ((PostAuthenticationToken) authentication).getAuthenticationStatus();
         if (PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
-            throw new TwoStepAuthenticationRequiredException((PostAuthenticationToken) authentication);
+            throw new TwoStepAuthenticationRequiredException(authentication);
         }
         return authentication;
     }
 
     @Override
-    protected void throwError(String errorCode, String parameterName) {
-        throw new UsernameNotFoundException(parameterName);
+    protected void throwError(Authentication errorCode, Exception exception) throws AuthenticationException {
+        if (null == exception || !(exception instanceof AuthenticationException)) {
+            exception = new UsernameNotFoundException(extractParameterName(exception));
+        }
+        throw (AuthenticationException) exception;
     }
 
     @Override

@@ -48,6 +48,10 @@ public class Constants {
 
     public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
     public final static String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";
+    public final static String OAUTH2_ERROR_CODE_REQUIRED_CLAIM = "required_claim";
+    public final static String OAUTH2_ERROR_CODE_INVALID_CLAIM = "invalid_claim";
+    public final static String OAUTH2_ERROR_CODE_INVALID_RATE = "invalid_rate";
+    public final static String OAUTH2_ERROR_CODE_INVALID_TRY_COUNT = "invalid_try_count";
     public final static String OAUTH2_ERROR_CODE_IS_LOCKED = "locked_user";
     public final static String OAUTH2_ERROR_CODE_IS_DISABLED = "disabled_user";
     public final static String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";

@@ -60,7 +60,7 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         }
         this.postAuthenticationChecks.check(user);
         checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
-        return createSuccessAuthentication(authentication);
+        return createSuccessAuthentication((GeneralAuthenticationToken) authentication);
     }
 
     private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
@@ -92,27 +92,26 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         return result;
     }
 
-    protected Authentication createSuccessAuthentication(Authentication authentication) {
+    protected Authentication createSuccessAuthentication(GeneralAuthenticationToken authentication) {
         // Ensure we return the original credentials the user supplied,
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
-        GeneralAuthenticationToken authenticationToken = (GeneralAuthenticationToken) authentication;
         PostAuthenticationToken result = null;
-        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authenticationToken.getDetails().getGrantType())) {
+        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authentication.getDetails().getGrantType())) {
             result = PostAuthenticationToken.secondLvlAuthenticated(
-                    (TerminalUserDetails) authentication.getPrincipal(),
-                    ((GeneralAuthenticationToken) authentication).getDetails());
+                    authentication.getPrincipal(),
+                    authentication.getDetails());
         } else {
             result = PostAuthenticationToken.authenticated(
-                    (TerminalUserDetails) authentication.getPrincipal(),
-                    ((GeneralAuthenticationToken) authentication).getDetails(),
-                    ((TerminalUserDetails) authentication.getPrincipal()).getAuthorities());
+                    authentication.getPrincipal(),
+                    authentication.getDetails(),
+                    authentication.getPrincipal().getAuthorities());
         }
-        result.setSessionRequired(authenticationToken.isSessionRequired());
-        result.setNotificationRequired(authenticationToken.isNotificationRequired());
+        result.setSessionRequired(authentication.isSessionRequired());
+        result.setNotificationRequired(authentication.isNotificationRequired());
         Instant issuedAt = Instant.now();
-        Instant expiresAt = issuedAt.plus(authenticationToken.getDetails()
+        Instant expiresAt = issuedAt.plus(authentication.getDetails()
                 .getRegisteredClient().getTokenSettings().getAccessTokenTimeToLive());
         result.setIssuedAt(issuedAt);
         result.setExpiresAt(expiresAt);

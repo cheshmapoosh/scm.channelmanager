@@ -17,7 +17,11 @@ public class TwoStepAuthenticationRequiredException extends AuthenticationExcept
     private final Authentication authentication;
 
     public TwoStepAuthenticationRequiredException(Authentication authentication) {
-        super("two step required.");
+        this(authentication, null);
+    }
+
+    public TwoStepAuthenticationRequiredException(Authentication authentication, Exception cause) {
+        super("two step required.", cause);
         this.authentication = authentication;
     }
 
