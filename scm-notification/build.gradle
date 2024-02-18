@@ -3,4 +3,15 @@ plugins {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.ibm.db2:jcc'
+    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    api project(':scm-common-data')
+    api project(':scm-utils')
+    api project(':scm-common')
 }

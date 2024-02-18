@@ -1,19 +1,20 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.common.model.notification.DataKey;
+import ir.daneshrefah.scm.common.model.notification.NotificationData;
+import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationConstants;
+import ir.daneshrefah.scm.notification.client.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationData;
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationMedia;
-import ir.daneshrefah.scm.uaa.domain.notification.NotificationRequest;
+
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.service.notification.NotificationConstants;
-import ir.daneshrefah.scm.uaa.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,20 +36,26 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
             return;
         }
         User user = authentication.getPrincipal().getUser();
-        Optional<Terminal> terminal = terminalService.findTerminalByCode(user.getTerminalCode());
 //        BeanUtils.describe(authentication);
-        NotificationData data = new NotificationData()
-                .put("title", "")
-                .put("loginTime", authentication.getIssuedAt())
-                .put("terminalCode", terminal.get().getCode())
-                .put("terminalTitle", terminal.get().getTitle());
-        NotificationRequest request = NotificationRequest.builder()
-                .media(NotificationMedia.SMS)
-                .recipient(user.getPerson().getMobile1())
-                .data(data)
-                .messageTemplateCode(NotificationConstants.MESSAGE_TEMPLATE_CODE_AUTHENTICATION)
-                .build();
-        notificationService.sendNotification(request);
+        terminalService
+                .findTerminalByCode(user.getTerminalCode())
+                .ifPresent(terminal -> {
+                    NotificationData data = new NotificationData()
+                            .put(DataKey.TITLE, "")
+                            .put(DataKey.LOGIN_TIME, authentication.getIssuedAt())
+                            .put(DataKey.TERMINAL_CODE, terminal.getCode())
+                            .put(DataKey.TERMINAL_TITLE, terminal.getTitle());
+                    NotificationRequest request = NotificationRequest.builder()
+                            .media(NotificationMedia.SMS)
+                            .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
+                            .recipient(user.getPerson().getMobile1())
+                            .data(data)
+                            .messageTemplateCode(NotificationConstants.MESSAGE_TEMPLATE_CODE_AUTHENTICATION)
+                            .expiration(LocalDateTime.now().plusHours(1))
+                            .build();
+                    notificationService.sendNotification(request);
+                });
     }
+
 
 }
