@@ -8,6 +8,12 @@ configurations {
     }
 }
 
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -26,4 +32,8 @@ dependencies {
     api project(':scm-uaa-common')
     api project(':scm-utils')
     api project(':scm-cache-client')
+    api project(':scm-common')
+    api project(':scm-notification')
+    api project(':scm-notification-client')
+
 }
