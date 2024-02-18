@@ -73,10 +73,11 @@ public class NotificationServiceImpl implements NotificationService {
                 .findByCode(request.getMessageTemplateCode())
                 .ifPresent(logEntity::setMessageTemplate);
         NotificationData data = request.getData();
+        logEntity.setTerminalCode((String) data.get(DataKey.TERMINAL_CODE));
+        logEntity.setUsername(request.getUsername());
         logEntity.setData(data);
         logEntity.setMedia(request.getMedia());
         logEntity.setRecipient(request.getRecipient());
-        logEntity.setTerminalCode((String) data.get(DataKey.TERMINAL_CODE));
         findMessageTemplateByCode(request.getMessageTemplateCode()).map(MessageTemplateEntity::getBody).ifPresent(logEntity::setBody);
         logEntity.setStatus(Objects.isNull(exception) ? NotificationStatus.DRAFT : NotificationStatus.FAILED);
         logEntity.setError(Objects.nonNull(exception) ? exception.getMessage() : null);

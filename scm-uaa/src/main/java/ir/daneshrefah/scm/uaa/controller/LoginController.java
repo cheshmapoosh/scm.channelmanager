@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.jmx.access.InvalidInvocationException;
 import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -48,7 +49,7 @@ public class LoginController {
                         @RequestParam(name = "client_id", required = false) String clientId,
                         @RequestParam(name = "error", required = false) String error) {
         String errorMessage = null;
-        Client client = clientService.findByClientId(clientId);
+        Client client = clientService.findByClientId(clientId).orElseThrow(() -> new InvalidInvocationException("client_id"));
         boolean isError = null != error;
         if (isError) {
             errorMessage = extractErrorMessage(request);
@@ -86,7 +87,7 @@ public class LoginController {
                         @RequestParam(name = "client_id", required = false) String clientId,
                         @RequestParam(name = "error", required = false) String error) {
 
-        Client client = clientService.findByClientId(clientId);
+        Client client = clientService.findByClientId(clientId).orElseThrow(() -> new InvalidInvocationException("client_id"));
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         request.getSession().invalidate();
         model.addAttribute("client_title", client.getTitle());

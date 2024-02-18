@@ -56,7 +56,7 @@ public class OtpService {
         if (StringUtils.isEmpty(terminalCode) && null != loggedInUser) {
             terminalCode = loggedInUser.getTerminalCode();
         }
-        if (StringUtils.isEmpty(request.getTerminalCode()) && null == loggedInUser) {
+        if (StringUtils.isEmpty(terminalCode)) {
             throw new MissingRequiredInputException("terminalCode");
         }
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);

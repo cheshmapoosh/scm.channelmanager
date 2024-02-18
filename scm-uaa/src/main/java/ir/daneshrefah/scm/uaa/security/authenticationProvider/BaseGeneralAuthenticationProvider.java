@@ -125,7 +125,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             throwError(preAuthenticationToken, new ClientVersionRequiredException());
         }
         String userClientSignature = preAuthenticationToken.getClientSignature();
-        List<ClientVersion> clientVersions = clientService.findByClientId(registeredClient.getClientId()).getVersions();
+        List<ClientVersion> clientVersions = clientService.findByClientId(registeredClient.getClientId()).orElseThrow().getVersions();
         Optional<ClientVersion> clientVersion = clientVersions.stream().filter(version -> userClientVersion.equals(version.getVersion())).findFirst();
         if (clientVersion.isEmpty()) {
             throwError(preAuthenticationToken, new InvalidClientVersionException(userClientVersion));
@@ -159,7 +159,14 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             return OAUTH2_ERROR_CODE_REQUIRED_CLAIM;
         else if (exception instanceof BaseAuthenticationException)
             return ((BaseAuthenticationException) exception).getErrorCode();
-        return exception.getMessage();
+        String message = exception.getMessage();
+        if (StringUtils.isEmpty(message) && null != exception.getCause()) {
+            message = exception.getCause().getMessage();
+        }
+        if (StringUtils.isEmpty(message)) {
+            message = exception.getClass().getSimpleName();
+        }
+        return message;
     }
 
     protected abstract Authentication buildResponse(Authentication requestAuthentication,

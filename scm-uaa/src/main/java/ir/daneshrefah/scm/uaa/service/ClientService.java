@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -48,8 +49,8 @@ public class ClientService {
         return clientList;
     }
 
-    public Client findByClientId(String clientId) {
-        return findAll().stream().filter(client -> clientId.equalsIgnoreCase(client.getClientId())).findFirst().orElseThrow();
+    public Optional<Client> findByClientId(String clientId) {
+        return findAll().stream().filter(client -> clientId.equalsIgnoreCase(client.getClientId())).findFirst();
     }
 
     public Client save(Client client) {

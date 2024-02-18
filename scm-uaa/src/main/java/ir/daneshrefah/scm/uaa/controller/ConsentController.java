@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.controller;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.service.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jmx.access.InvalidInvocationException;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +28,7 @@ public class ConsentController {
                           @RequestParam(name = OAuth2ParameterNames.CLIENT_ID, required = true) String clientId,
                           @RequestParam(name = OAuth2ParameterNames.STATE, required = true) String state,
                           @RequestParam(name = OAuth2ParameterNames.USER_CODE, required = false) String userCode) {
-        Client client = clientService.findByClientId(clientId);
+        Client client = clientService.findByClientId(clientId).orElseThrow(() -> new InvalidInvocationException("clientId"));
         model.addAttribute("scopes", scope.split(" "));
         model.addAttribute(OAuth2ParameterNames.CLIENT_ID, clientId);
         model.addAttribute("client_title", client.getTitle());

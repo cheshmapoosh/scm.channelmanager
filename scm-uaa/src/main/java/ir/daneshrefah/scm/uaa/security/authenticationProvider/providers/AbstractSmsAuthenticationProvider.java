@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
@@ -24,7 +22,6 @@ public abstract class AbstractSmsAuthenticationProvider extends AbstractAuthenti
         super(userService);
         this.otpService = otpService;
     }
-//    private final OtpService otpService;
 
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
