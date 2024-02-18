@@ -1,20 +1,20 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
+import ir.daneshrefah.scm.uaa.exception.UnknownAuthenticationException;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.uaa.service.ClientService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
  * @since 2023-12-18
  */
 
+@Slf4j
 @Component
 public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProvider {
 
@@ -75,7 +76,8 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
     @Override
     protected void throwError(Authentication errorCode, Exception exception) throws AuthenticationException {
         if (null == exception || !(exception instanceof AuthenticationException)) {
-            exception = new UsernameNotFoundException(extractParameterName(exception));
+            log.error("authentication invalid error.", exception);
+            exception = new UnknownAuthenticationException(exception);
         }
         throw (AuthenticationException) exception;
     }

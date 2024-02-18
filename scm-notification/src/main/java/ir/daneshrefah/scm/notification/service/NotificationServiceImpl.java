@@ -69,9 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void logNotificationEvent(NotificationRequest request, Instant startTime, Exception exception) {
         NotificationLogEntity logEntity = new NotificationLogEntity();
-        messageTemplateRepository
-                .findByCode(request.getMessageTemplateCode())
-                .ifPresent(logEntity::setMessageTemplate);
+        findMessageTemplateByCode(request.getMessageTemplateCode()).ifPresent(logEntity::setMessageTemplate);
         NotificationData data = request.getData();
         logEntity.setTerminalCode((String) data.get(DataKey.TERMINAL_CODE));
         logEntity.setUsername(request.getUsername());

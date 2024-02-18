@@ -53,7 +53,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                             .messageTemplateCode(NotificationConstants.MESSAGE_TEMPLATE_CODE_AUTHENTICATION)
                             .expiration(LocalDateTime.now().plusHours(1))
                             .build();
-                    notificationService.sendNotification(request);
+//                    notificationService.sendNotification(request);
                 });
     }
 
