@@ -1,0 +1,128 @@
+@font-face {
+  font-family: iranYekan;
+  font-style: normal;
+  font-weight: normal;
+  src: url("../../assets/font/eot/iranyekanwebregularfanum.eot");
+  src: url("../../assets/font/eot/iranyekanwebregularfanum.eot?#iefix")
+  format("embedded-opentype"),
+    /* IE6-8 */ url("../../assets/font/woff/iranyekanwebregularfanum.woff")
+  format("woff"),
+    /* FF39+,Chrome36+, Opera24+*/
+  url("../../assets/font/ttf/iranyekanwebregularfanum.ttf")
+  format("truetype");
+}
+@font-face {
+  font-family: iranYekan;
+  font-style: normal;
+  font-weight: 500;
+  src: url("../../assets/font/eot/iranyekanwebmediumfanum.eot");
+  src: url("../../assets/font/eot/iranyekanwebmediumfanum.eot?#iefix")
+  format("embedded-opentype"),
+    /* IE6-8 */ url("../../assets/font/woff/iranyekanwebmediumfanum.woff")
+  format("woff"),
+    /* FF39+,Chrome36+, Opera24+*/
+  url("../../assets/font/ttf/iranyekanwebmediumfanum.ttf")
+  format("truetype");
+}
+@font-face {
+  font-family: iranYekan;
+  font-style: normal;
+  font-weight: bold;
+  src: url("../../assets/font/eot/iranyekanwebboldfanum.eot");
+  src: url("../../assets/font/eot/iranyekanwebboldfanum.eot?#iefix")
+  format("embedded-opentype"),
+    /* IE6-8 */ url("../../assets/font/woff/iranyekanwebboldfanum.woff")
+  format("woff"),
+    /* FF39+,Chrome36+, Opera24+*/
+  url("../../assets/font/ttf/iranyekanwebboldfanum.ttf") format("truetype");
+}
+
+* {
+  box-sizing: border-box;
+  font-family: iranYekan;
+}
+html,
+body {
+  direction: rtl;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+body {
+  background: #f7f7f7;
+}
+.header {
+  width: 100%;
+  height: 120px;
+  border: 1px solid blue;
+  display: flex;
+  align-items: center;
+}
+.logo {
+  width: max-content;
+  border: 1px solid red;
+  display: flex;
+}
+.inner-Header {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+.nav-menu {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  border: 1px solid blue;
+}
+.tab-titles {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.tab-links {
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid blue;
+  padding: 0 80px;
+}
+
+.tab-links::after {
+  content: "";
+  width: 100%;
+  height: 1px;
+  background-color: #ff004f;
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  transition: 0.15s;
+  transform: rotateY(90deg);
+}
+
+.tab-links.active-link::after {
+  transform: rotateY(0deg);
+}
+.content {
+  width: 100%;
+  border: 1px solid blue;
+}
+.inner-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.tab-contents {
+  display: none;
+}
+
+.tab-contents.active-tab {
+  display: block;
+}

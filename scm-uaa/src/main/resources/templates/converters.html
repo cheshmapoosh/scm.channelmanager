@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <link
+          th:href="@{/assets/css/converter.css}"
+          rel="stylesheet"
+          type="text/css"
+  />
+</head>
+<body>
+<header class="header">
+  <div class="inner-Header">
+      <div class="logo">
+        <img th:src="@{/assets/images/logo.webp}" alt="logo" />
+    </div>
+  </div>
+</header>
+<nav class="nav-menu">
+  <div class="tab-titles">
+    <p class="tab-links active-link" data-id="tab1">tab1</p>
+    <p class="tab-links" data-id="tab2">tab2</p>
+    <p class="tab-links" data-id="tab3">tab3</p>
+    <p class="tab-links" data-id="tab4">tab4</p>
+    <p class="tab-links" data-id="tab5">tab5</p>
+  </div>
+</nav>
+<main class="content">
+  <div class="inner-content">
+    <div class="tab-contents active-tab" id="tab1">
+      <p>lorem1</p>
+    </div>
+    <div class="tab-contents" id="tab2">
+      <p>lorem2</p>
+    </div>
+    <div class="tab-contents" id="tab3">
+      <p>lorem3</p>
+    </div>
+    <div class="tab-contents" id="tab4">
+      <p>lorem4</p>
+    </div>
+    <div class="tab-contents" id="tab5">
+      <p>lorem5</p>
+    </div>
+  </div>
+</main>
+
+<script type="text/javascript" th:src="@{/assets/js/converter.js}"></script>
+
+</body>
+</html>

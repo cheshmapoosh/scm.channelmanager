@@ -69,7 +69,7 @@ public class LoginController {
         model.addAttribute("csrf_name", token.getParameterName());
         model.addAttribute("csrf_value", token.getToken());
         model.addAttribute("isError", isError);
-        model.addAttribute("isStepTwoRequired", isStepTwoRequired);
+        model.addAttribute("isStepTwoRequired", true);
         model.addAttribute("errorMessageCode", errorMessage);
         if (StringUtils.isNotEmpty(errorMessage)) {
             String messagekey = "message.error." + errorMessage;

@@ -24,20 +24,21 @@
           <div class="logo">
             <img th:src="@{/assets/images/logo.webp}" alt="logo" />
           </div>
-          <div class="title">
-            <div class="header-text panel-title">
-              <span th:text="#{label.caption.system-login}"/><span th:text="${client_title}"></span>
-            </div>
-            <div class="header-text" th:if="${isStepTwoRequired}">
-              <span th:text="#{message.enter.claim_code}"/>
-            </div>
+          <div class="panel-title">
+            <span th:text="#{label.caption.system-login}" /><span
+              th:text="${client_title}"
+            ></span>
           </div>
+          <div class="confirm-title" th:if="${isStepTwoRequired}">
+            <span th:text="#{message.enter.claim_code}" />
+          </div>
+          <div
+            class="form-message"
+            th:text="${errorMessage} ? ${errorMessage} :'' "
+          ></div>
         </div>
-        <div
-          class="form-message"
-          th:text="${errorMessage} ? ${errorMessage} :'' "
-        ></div>
-        <form id="loginForm" class="form-signin" method="post" action="/login">
+
+        <form class="form-signin" method="post" action="/login">
           <div class="form-content">
             <div class="form-row" th:if="${!isStepTwoRequired}">
               <input
@@ -46,8 +47,9 @@
                 id="username"
                 name="username"
                 data-th-placeholder="#{label.caption.username}"
-                required
                 autofocus
+                required
+                autocomplete="false"
               />
             </div>
             <div class="form-row" th:if="${!isStepTwoRequired}">
@@ -59,6 +61,29 @@
                 data-th-placeholder="#{label.caption.password}"
                 required
               />
+            </div>
+            <div class="form-row" th:if="${!isStepTwoRequired}">
+              <div class="captcha-container">
+                <input
+                  class="captcha-input"
+                  type="text"
+                  id="captcha"
+                  name="password"
+                  placeholder="رمز امنیتی"
+                  required
+                />
+                <img
+                  class="captcha-img"
+                  th:src="@{/assets/images/captcha.png}"
+                  alt="captcha"
+                />
+                <div class="refresh-container">
+                  <img
+                    th:src="@{/assets/images/refresh-icon.svg}"
+                    alt="refresh"
+                  />
+                </div>
+              </div>
             </div>
             <div class="form-row" th:if="${isStepTwoRequired}">
               <input
@@ -77,40 +102,93 @@
             />
             <input type="hidden" name="is_step_two" th:value="${false}" />
             <input type="hidden" name="client_id" th:value="${client_id}" />
-
-            <div class="btn-container">
+            <div class="form-row">
               <button
                 class="submit-btn"
                 type="submit"
-                th:text="${!isStepTwoRequired} ? #{label.caption.login} : #{label.caption.send-claim} "
+                th:if="${!isStepTwoRequired}"
+                th:text=" #{label.caption.login}"
               ></button>
               <button
+                id="confirmBtn"
                 class="submit-btn"
-                type="button"
-                id="cancelButton"
+                type="submit"
                 th:if="${isStepTwoRequired}"
-                th:text="#{label.caption.cancel}"
+                th:text="#{label.caption.send-claim}"
               ></button>
-              <button
-                class="sms-btn"
-                type="submit"
-                th:if="${authenticationMethod == 'SMS'}"
-                data-th-text="#{label.btn.send-sms}"
-              >
-              </button>
             </div>
           </div>
         </form>
+        <div class="timer" th:if="${isStepTwoRequired}">
+          <div class="time-code">
+            <div class="time-container">
+              <span class="time-label">زمان باقی مانده:</span>
+              <div id="expireTime" class="expire-time"></div>
+            </div>
+            <div class="send-code">
+              <form
+                th:if="${authenticationMethod == 'SMS'}"
+                class="otp-btn"
+                method="post"
+                action="/public/otp/sms"
+              >
+                <button class="sms-btn" type="submit">ارسال پیامک</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-footer" th:if="${!isStepTwoRequired}">
+          <div class="footer-line"></div>
+          <div class="footer-text">فراموشی رمز عبور / ثبت نام</div>
+          <div class="footer-line"></div>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-header">
+          <div class="infoo-title">هشدارهای امنیتی</div>
+          <div class="help">راهنما</div>
+          <div class="lang">En</div>
+        </div>
+        <div class="info-content">
+          نرم افزارها جهت اطمینان از داشتن بالاترین درجه حفاظت اطلاعات باید
+          بصورت منظم بروزرسانی شوند
+        </div>
+        <div class="info-footer">
+          © ‭1401‬بانک رفاه | تماس با ما | پیاده سازی شرکت دانش رفاه پردیس |
+          1.0.0
+        </div>
       </div>
     </div>
-  <script>
-    const cancelButton = document.getElementById('cancelButton');
-    cancelButton.addEventListener('click', () => {
-      if (confirm('Are you sure you want to cancel and clear all session data?')) {
-        document.getElementById('loginForm').action = '/login-cancel';
-        document.getElementById('loginForm').submit();
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      const otpExpireTime = /*[[${otpExpireTime}]]*/ "default";
+      const confirmBtn = document.getElementById("confirmBtn");
+      const expireTime = document.getElementById("expireTime");
+
+      let count = 120;
+      function updateCounter() {
+        expireTime.textContent = count;
+        count--;
+        if (count < 0) {
+          clearInterval(timer);
+          confirmBtn.disabled = true;
+          confirmBtn.classList.add("disable-btn");
+        }
       }
-    });
-  </script>
+      const timer = setInterval(updateCounter, 1000);
+      /*]]>*/
+
+      const cancelButton = document.getElementById("cancelButton");
+      cancelButton.addEventListener("click", () => {
+        if (
+          confirm("Are you sure you want to cancel and clear all session data?")
+        ) {
+          document.getElementById("loginForm").action = "/login-cancel";
+          document.getElementById("loginForm").submit();
+        }
+      });
+    </script>
   </body>
 </html>
