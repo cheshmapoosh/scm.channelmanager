@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.utils;
 
 import ir.daneshrefah.scm.common.exception.InvalidInputDateFormatException;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -103,12 +103,12 @@ public class CamelUtils {
         return getStringHeaderFromExchange(exchange, Constants.CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS);
     }
 
-    public static Status getStatus(Exchange exchange) {
+    public static MessageStatus getStatus(Exchange exchange) {
         return exchange.getMessage().getBody(ir.daneshrefah.scm.common.model.message.Message.class).getStatus();
     }
 
     public static boolean isInProgress(Exchange exchange) {
-        return Status.SC_PROCESSING.equals(exchange.getMessage().getBody(
+        return MessageStatus.SC_PROCESSING.equals(exchange.getMessage().getBody(
                 ir.daneshrefah.scm.common.model.message.Message.class).getStatus());
     }
 

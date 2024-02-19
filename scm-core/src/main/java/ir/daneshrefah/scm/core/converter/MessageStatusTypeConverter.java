@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -12,15 +12,15 @@ import jakarta.persistence.Converter;
  * @since 2023-07-22
  */
 @Converter
-public class MessageStatusTypeConverter implements AttributeConverter<Status, String> {
+public class MessageStatusTypeConverter implements AttributeConverter<MessageStatus, String> {
 
     @Override
-    public String convertToDatabaseColumn(Status enumValue) {
+    public String convertToDatabaseColumn(MessageStatus enumValue) {
         return enumValue.getCode();
     }
 
     @Override
-    public Status convertToEntityAttribute(String code) {
-        return Status.findByCode(code);
+    public MessageStatus convertToEntityAttribute(String code) {
+        return MessageStatus.findByCode(code);
     }
 }

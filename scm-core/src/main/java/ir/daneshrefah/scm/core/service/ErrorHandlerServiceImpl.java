@@ -57,7 +57,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             ValidationMessage validationMessage = iterator.next();
             Error error = new Error(validationMessage.getPath(),
                     validationMessage.getCode(), validationMessage.getMessage());
-            message.addError(error, Status.SC_ERROR_VALIDATION);
+            message.addError(error, MessageStatus.SC_ERROR_VALIDATION);
         }
         return message;
     }
@@ -95,17 +95,16 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             } else {
                 error = new Error(providerCode, errorCode, providerErrorResponseException.getErrorMessage());
             }
-            message.addError(error, Status.SC_ERROR_VALIDATION);
+            message.addError(error, MessageStatus.SC_ERROR_VALIDATION);
             return message;
         }
 
-        if (exception instanceof ValidationException) {
-            ValidationException validationException = (ValidationException) exception;
+        if (exception instanceof AbstractValidationException) {
+            AbstractValidationException validationException = (AbstractValidationException) exception;
             String source = validationException.getSource();
-            Integer errorCode = null != validationException.getErrorCode() ? validationException.getErrorCode() : ErrorCodes.ERROR_CODE_VALIDATION_GLOBAL;
             String errorMessage = validationException.getMessage();
-            Error error = new Error(source, errorCode, errorMessage);
-            message.addError(error, Status.SC_ERROR_VALIDATION);
+            Error error = new Error(source, validationException.getErrorCode(), errorMessage);
+            message.addError(error, MessageStatus.SC_ERROR_VALIDATION);
             return message;
         }
 
@@ -115,7 +114,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             Integer errorCode = resultNotFoundException.getErrorCode();
             String errorMessage = resultNotFoundException.getMessage();
             Error error = new Error(source, errorCode, errorMessage);
-            message.addError(error, Status.SC_NOT_FOUND);
+            message.addError(error, MessageStatus.SC_NOT_FOUND);
             return message;
         }
 
@@ -130,11 +129,11 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
                 if (null == error) {
                     error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage());
                 }
-                message.addError(error, Status.SC_ERROR_DATA_INTEGRITY_VIOLATION);
+                message.addError(error, MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION);
                 return message;
             } else if (e instanceof JpaSystemException) {
                 JpaSystemException ex = (JpaSystemException) e;
-                message.addError(new Error(null, ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage()), Status.SC_ERROR_SYSTEM);
+                message.addError(new Error(null, ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage()), MessageStatus.SC_ERROR_SYSTEM);
                 return message;
             }
         }
@@ -147,7 +146,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
         } else {
             Error error = new Error(null, ErrorCodes.ERROR_CODE_SYSTEM_ERROR,
                     null != exception.getCause() ? exception.getCause().getMessage() : exception.getMessage());
-            message.addError(error, Status.SC_ERROR_SYSTEM);
+            message.addError(error, MessageStatus.SC_ERROR_SYSTEM);
         }
 
         return message;

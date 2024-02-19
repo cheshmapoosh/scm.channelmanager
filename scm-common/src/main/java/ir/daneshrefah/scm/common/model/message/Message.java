@@ -24,11 +24,11 @@ import java.util.List;
 public class Message implements Serializable {
 
     private Header header;
-    private Status status;
+    private MessageStatus status;
     private JsonNode payload;
     private List<Error> errors;
 
-    public void addError(Error error, Status status) {
+    public void addError(Error error, MessageStatus status) {
         if (null == errors)
             errors = new ArrayList<>();
         errors.add(error);
@@ -39,7 +39,7 @@ public class Message implements Serializable {
     public void addAccessDeniedError(String source, Integer errorCode, String message) {
         addError(new Error(source, null != errorCode ? errorCode : ErrorCodes.ERROR_CODE_ACCESS_DENIED,
                         null != message ? message : "access denied."),
-                Status.SC_ACCESS_DENIED);
+                MessageStatus.SC_ACCESS_DENIED);
     }
 
     public void nullPayload() {
@@ -51,7 +51,7 @@ public class Message implements Serializable {
         return this;
     }
 
-    public void status(Status status) {
+    public void status(MessageStatus status) {
         if (null != status) {
             this.status = status;
         }

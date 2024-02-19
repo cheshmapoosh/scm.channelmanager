@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -148,6 +147,9 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
     }
 
     private Message buildMessageInternal(MessageBuildRequest request) {
+        if (!request.isForCheck() && StringUtils.isEmpty(request.getTerminalCode())) {
+            throw new MissingRequiredInputException(SCM_PARAMETER_TERMINAL);
+        }
         if (StringUtils.isEmpty(request.getServiceCode())) {
             throw new ServiceNotFoundException(request.getServiceCode());
         }
@@ -167,16 +169,13 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         if (!request.isForCheck() && StringUtils.isEmpty(request.getAccessParameter())) {
             throw new MissingRequiredInputException(SCM_PARAMETER_ACCESS_PARAMETER);
         }
-        if (!request.isForCheck() && StringUtils.isEmpty(request.getTerminalCode())) {
-            throw new MissingRequiredInputException(SCM_PARAMETER_TERMINAL);
-        }
         if (!request.isForCheck() && !StringUtils.equals(serviceAccess.getTerminal().getCode(), request.getTerminalCode())) {
             throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
 
         Message message = Message.builder()
                 .header(header)
-                .status(request.isForCheck() ? Status.SC_SUCCESS : Status.SC_PROCESSING)
+                .status(request.isForCheck() ? MessageStatus.SC_SUCCESS : MessageStatus.SC_PROCESSING)
                 .payload(request.getPayload())
                 .build();
         MessageContext.init(message);

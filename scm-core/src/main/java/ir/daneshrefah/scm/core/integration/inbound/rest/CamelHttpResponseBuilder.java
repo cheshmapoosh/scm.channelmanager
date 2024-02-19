@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -25,18 +25,18 @@ public class CamelHttpResponseBuilder implements ResponseBuilder<Exchange> {
 
     private static final String DEFAULT_CONTENT_TYPE = "application/json";
 
-    private static Map<Status, Integer> statusMappingMap = new HashMap<>();
+    private static Map<MessageStatus, Integer> statusMappingMap = new HashMap<>();
     static {
-        statusMappingMap.put(Status.SC_PROCESSING, 500);
-        statusMappingMap.put(Status.SC_SUCCESS, 200);
-        statusMappingMap.put(Status.SC_ACCESS_DENIED, 403);
-        statusMappingMap.put(Status.SC_UNAUTHORIZED, 401);
-        statusMappingMap.put(Status.SC_NOT_FOUND, 404);
-        statusMappingMap.put(Status.SC_ERROR_VALIDATION, 400);
-        statusMappingMap.put(Status.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
-        statusMappingMap.put(Status.SC_ERROR_SYSTEM, 500);
-        statusMappingMap.put(Status.SC_ERROR_BUSINESS, 400);
-        statusMappingMap.put(Status.SC_ERROR_UNREACHABLE_PROVIDER, 502);
+        statusMappingMap.put(MessageStatus.SC_PROCESSING, 500);
+        statusMappingMap.put(MessageStatus.SC_SUCCESS, 200);
+        statusMappingMap.put(MessageStatus.SC_ACCESS_DENIED, 403);
+        statusMappingMap.put(MessageStatus.SC_UNAUTHORIZED, 401);
+        statusMappingMap.put(MessageStatus.SC_NOT_FOUND, 404);
+        statusMappingMap.put(MessageStatus.SC_ERROR_VALIDATION, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_SYSTEM, 500);
+        statusMappingMap.put(MessageStatus.SC_ERROR_BUSINESS, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER, 502);
     }
 
     private final ObjectMapper objectMapper;

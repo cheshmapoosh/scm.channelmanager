@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +18,7 @@ import java.time.Instant;
 public class Event {
 
     private EventType type;
-    private Status status;
+    private MessageStatus status;
     private String correlationId;
     private String source;
     private String terminalCode;

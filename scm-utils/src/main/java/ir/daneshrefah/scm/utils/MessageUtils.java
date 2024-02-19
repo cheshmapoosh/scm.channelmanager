@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 /**
@@ -50,7 +50,7 @@ public class MessageUtils {
                 .build();
         Message result = Message.builder()
                 .header(header)
-                .status(Status.SC_PROCESSING)
+                .status(MessageStatus.SC_PROCESSING)
                 .payload(source.getPayload())
                 .errors(source.getErrors())
                 .build();
@@ -68,14 +68,14 @@ public class MessageUtils {
                 .build();
         Message result = Message.builder()
                 .header(header)
-                .status(Status.SC_PROCESSING)
+                .status(MessageStatus.SC_PROCESSING)
                 .payload(null != payload ? payload : NullNode.getInstance())
                 .build();
         return result;
     }
 
     public static boolean isContinueAllowed(Message message) {
-        return null != message && Status.SC_PROCESSING.equals(message.getStatus());
+        return null != message && MessageStatus.SC_PROCESSING.equals(message.getStatus());
     }
 
 }

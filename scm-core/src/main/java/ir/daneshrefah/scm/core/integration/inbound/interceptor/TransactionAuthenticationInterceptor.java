@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageRequestInfo;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -53,7 +53,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
                 errorMessage = "error on authenticate user.";
             }
             message.addError(new Error(Constants.SCM_PARAMETER_AUTHORIZATION,
-                    ErrorCodes.ERROR_CODE_TRANSACTION_AUTHENTICATION_FAILED, errorMessage), Status.SC_UNAUTHORIZED);
+                    ErrorCodes.ERROR_CODE_TRANSACTION_AUTHENTICATION_FAILED, errorMessage), MessageStatus.SC_UNAUTHORIZED);
         }
 //        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
         return message;

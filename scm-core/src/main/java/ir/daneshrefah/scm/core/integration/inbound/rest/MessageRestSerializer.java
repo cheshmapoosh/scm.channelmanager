@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
         gen.writeStartObject();
         gen.writeStringField("status", value.getStatus().name());
         writeAuthentication(value, gen);
-        if (Status.SC_SUCCESS.equals(value.getStatus())) {
+        if (MessageStatus.SC_SUCCESS.equals(value.getStatus())) {
             JsonNode payload = value.getPayload();
 //            if (null != payload && payload.isArray()) {
                 gen.writeObjectField("result", payload);

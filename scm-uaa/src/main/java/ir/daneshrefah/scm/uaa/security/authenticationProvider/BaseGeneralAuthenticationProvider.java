@@ -73,7 +73,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             }
         }
         if (userDetails == null) {
-            throwError(preAuthenticationToken, null);
+            throwError(preAuthenticationToken, new UsernameNotFoundException("Failed to find user '" + preAuthenticationToken.getName() + "'"));
         }
         if (!cacheWasUsed) {
             this.userCache.putUserInCache(userDetails);

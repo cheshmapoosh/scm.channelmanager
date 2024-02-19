@@ -43,19 +43,19 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected String contextPath;
     protected Integer port;
 
-    private static Map<Status, Integer> statusMappingMap = new HashMap<>();
+    private static Map<MessageStatus, Integer> statusMappingMap = new HashMap<>();
 
     static {
-        statusMappingMap.put(Status.SC_PROCESSING, 500);
-        statusMappingMap.put(Status.SC_SUCCESS, 200);
-        statusMappingMap.put(Status.SC_ACCESS_DENIED, 403);
-        statusMappingMap.put(Status.SC_UNAUTHORIZED, 401);
-        statusMappingMap.put(Status.SC_NOT_FOUND, 404);
-        statusMappingMap.put(Status.SC_ERROR_VALIDATION, 400);
-        statusMappingMap.put(Status.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
-        statusMappingMap.put(Status.SC_ERROR_SYSTEM, 500);
-        statusMappingMap.put(Status.SC_ERROR_BUSINESS, 400);
-        statusMappingMap.put(Status.SC_ERROR_UNREACHABLE_PROVIDER, 502);
+        statusMappingMap.put(MessageStatus.SC_PROCESSING, 500);
+        statusMappingMap.put(MessageStatus.SC_SUCCESS, 200);
+        statusMappingMap.put(MessageStatus.SC_ACCESS_DENIED, 403);
+        statusMappingMap.put(MessageStatus.SC_UNAUTHORIZED, 401);
+        statusMappingMap.put(MessageStatus.SC_NOT_FOUND, 404);
+        statusMappingMap.put(MessageStatus.SC_ERROR_VALIDATION, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_SYSTEM, 500);
+        statusMappingMap.put(MessageStatus.SC_ERROR_BUSINESS, 400);
+        statusMappingMap.put(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER, 502);
     }
 
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,

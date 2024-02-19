@@ -19,15 +19,15 @@ import java.util.Map;
 public class PersonProfile implements Serializable {
 
     @Getter
-    private PersonId personId;
-    private Map<String, Customer> customers = new HashMap<>();
+    private final PersonId personId;
+    private final Map<String, Customer> customers = new HashMap<>();
 
     @Getter
     @Setter
     private List<ServiceAccess> serviceAccesses;
 
-    public PersonProfile(@NonNull String personProfileId, @NonNull Long personId) {
-        this.personId = new PersonId(personProfileId, personId);
+    public PersonProfile(@NonNull String username, @NonNull Long id) {
+        this.personId = new PersonId(username, id);
     }
 
     public Customer getCustomer(String providerId) {
@@ -82,6 +82,7 @@ public class PersonProfile implements Serializable {
      * personProfileId ref to USER.USERNAME
      * personId ref to USER.USER_ID
      */
-    public record PersonId(String personProfileId, Long personId) implements Serializable {}
+    public record PersonId(String username, Long id) implements Serializable {
+    }
 
 }

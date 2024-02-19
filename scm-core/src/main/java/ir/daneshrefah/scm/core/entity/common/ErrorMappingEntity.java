@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.entity.common;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.core.converter.MessageStatusTypeConverter;
 import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +32,7 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
     private String scmErrorCode;
     @Column(name = "STATUS_CODE")
     @Convert(converter = MessageStatusTypeConverter.class)
-    private Status status;
+    private MessageStatus status;
     private String message;
 
 }

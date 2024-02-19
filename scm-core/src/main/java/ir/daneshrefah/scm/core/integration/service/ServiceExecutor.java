@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.Status;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
@@ -41,6 +40,20 @@ public abstract class ServiceExecutor {
     private List<MessageInterceptor> responseInterceptors;
 
     public void executeService(Service service, Message message) {
+        Instant startTime = Instant.now();
+        Exception exception = null;
+        try {
+            executeServiceInternal(service, message);
+        } catch (Exception e) {
+            errorHandlerService.resolveMessageByException(message, e);
+            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
+            return;
+        } finally {
+            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
+        }
+    }
+
+    private void executeServiceInternal(Service service, Message message) {
         for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();
             message = messageInterceptor.intercept(message);
@@ -49,21 +62,21 @@ public abstract class ServiceExecutor {
             }
         }
 
-        Instant startTime = Instant.now();
-        boolean isSuccessful = true;
-        Exception exception = null;
+//        Instant startTime = Idnstant.ndow();
+//        boolean isSuccessful = true;
+//        Exception exception = null;
         JsonNode response = null;
 
-        try {
+//        try {
             response = executeInternal(service, message);
             message.payload(response);
-        } catch (Exception e) {
-            errorHandlerService.resolveMessageByException(message, e);
-            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
-            return;
-        } finally {
-            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
-        }
+//        } catch (Exception e) {
+//            errorHandlerService.resolveMessageByException(message, e);
+//            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
+//            return;
+//        } finally {
+//            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
+//        }
 
         for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();
@@ -92,8 +105,8 @@ public abstract class ServiceExecutor {
 //                throw new RuntimeException(e);
             }*/
         }
-        if (Status.SC_PROCESSING.equals(message.getStatus())) {
-            message.status(Status.SC_SUCCESS);
+        if (MessageStatus.SC_PROCESSING.equals(message.getStatus())) {
+            message.status(MessageStatus.SC_SUCCESS);
         }
     }
 

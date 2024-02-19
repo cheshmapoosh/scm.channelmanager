@@ -61,9 +61,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId) {
-        Customer customer = findCustomerByPersonId(provider, personId.personId());
+        Customer customer = findCustomerByPersonId(provider, personId.id());
         if (null == customer) {
-            customer = findCustomerByPersonProfileId(provider, personId.personProfileId());
+            customer = findCustomerByPersonProfileId(provider, personId.username());
         }
         return customer;
     }
