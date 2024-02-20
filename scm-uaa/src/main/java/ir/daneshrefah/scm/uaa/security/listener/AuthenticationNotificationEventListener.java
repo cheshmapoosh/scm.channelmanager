@@ -1,19 +1,17 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
-import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.common.model.notification.DataKey;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.constants.NotificationConstants;
-import ir.daneshrefah.scm.notification.client.spec.NotificationService;
+import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
+import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -50,10 +48,11 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                             .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
                             .recipient(user.getPerson().getMobile1())
                             .data(data)
-                            .messageTemplateCode(NotificationConstants.MESSAGE_TEMPLATE_CODE_AUTHENTICATION)
-                            .expiration(LocalDateTime.now().plusHours(1))
+                            .templateCode(TemplateCode.AUTHENTICATION)
+                            .terminalCode(user.getTerminalCode())
+                            .createdBy("") //TODO ->
                             .build();
-//                    notificationService.sendNotification(request);
+                    notificationService.sendNotification(request);
                 });
     }
 

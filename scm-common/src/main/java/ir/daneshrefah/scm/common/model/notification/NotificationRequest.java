@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.common.model.notification;
 
+import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,8 +18,9 @@ public class NotificationRequest {
     private NotificationMedia media;
     private String recipient;
     private NotificationData data;
-    private String messageTemplateCode;
+    private String terminalCode;
+    private TemplateCode templateCode;
     private String username;
-    private LocalDateTime expiration;
+    private String createdBy;
 
 }

@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.model.notification;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Builder;
+import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -13,12 +12,11 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @Accessors(chain = true)
-public class NotificationQueueModel implements Serializable {
-    @JsonIgnore
-    private String id;
+public class NotificationQueueModel extends BaseModel<String> implements Serializable {
     private NotificationMedia media;
-    private MessageTemplate messageTemplate;
+    private String messageTemplateCode;
     private String message;
     private NotificationStatus status;
+    private Integer tryCount;
     private LocalDateTime expiration;
 }
