@@ -9,10 +9,11 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum NotificationStatus {
     DRAFT(1),
-    SENDING(2),
-    RECEIVED(3),
-    RE_TRYING(4),
-    FAILED(5);
+    QUEUE(2),
+    SENDING(3),
+    RECEIVED(4),
+    RE_TRYING(5),
+    FAILED(6);
     private final int code;
 
     public static NotificationStatus findByCode(int code) {

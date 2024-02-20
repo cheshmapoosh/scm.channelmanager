@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.notification;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,9 +17,11 @@ import lombok.Setter;
 public class MessageTemplate extends BaseModel<String> {
 
     private String id;
-    private String code;
+    private TemplateCode code;
     private String title;
     private String body;
+    private Integer tryCount;
+    private Integer maxMinutesExpiration;
     private boolean isSystemic;
 
 }

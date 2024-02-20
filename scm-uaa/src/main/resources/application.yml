@@ -35,8 +35,8 @@ scm:
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
-    sms-config:
-      max-seconds-retry-expiration: 3600
+
+
 
 
 #spring:
