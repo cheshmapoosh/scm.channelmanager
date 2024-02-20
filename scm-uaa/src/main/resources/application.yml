@@ -28,6 +28,7 @@ scm:
         distributed: false
   notification:
     enabled: true
+    distributed: false
     data-source:
       url: jdbc:db2://10.10.4.104:50001/DBREFSW
       username: db2inst1

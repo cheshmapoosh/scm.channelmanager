@@ -14,7 +14,9 @@ public enum DataKey {
     TITLE           (  "title"          , TemplateCode.AUTHENTICATION),
     LOGIN_TIME      (  "loginTime"      , TemplateCode.AUTHENTICATION),
     TERMINAL_CODE   (  "terminalCode"   , TemplateCode.AUTHENTICATION),
-    TERMINAL_TITLE  (  "terminalTitle"  , TemplateCode.AUTHENTICATION);
+    TERMINAL_TITLE  (  "terminalTitle"  , TemplateCode.AUTHENTICATION),
+    OTP_CODE        (  "otp-code"       ,TemplateCode.AUTHENTICATION );
+
 
     private final String parameterName;
     private final TemplateCode templateCode;

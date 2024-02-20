@@ -147,11 +147,27 @@ public class StringUtils {
      * return : [{name},{age}] as HashSet
      */
     public static Set<String> findTemplateParameters(String input){
-        Pattern pattern = Pattern.compile("\\$\\{(.*?)}");
-        Matcher matcher = pattern.matcher(input);
         Set<String> parameters = new HashSet<>();
-        while (matcher.find()) {
-            parameters.add(matcher.group(1));
+        char[] charArray = input.toCharArray();
+        StringBuilder parameter = new StringBuilder();
+        boolean savingChar = false;
+        boolean acceptedStartTag = false;
+        for (char c : charArray) {
+            if (savingChar){
+                if (c == '{'){
+                    acceptedStartTag = true;
+                }else if (c == '}'){
+                    parameters.add(parameter.toString());
+                    parameter = new StringBuilder();
+                    acceptedStartTag = false;
+                    savingChar = false;
+                }else if (acceptedStartTag){
+                    parameter.append(c);
+                }
+            }
+            if (c == '$'){
+                savingChar = true;
+            }
         }
         return parameters;
     }

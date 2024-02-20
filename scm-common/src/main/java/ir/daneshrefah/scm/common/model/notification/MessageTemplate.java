@@ -14,9 +14,9 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class MessageTemplate extends BaseModel<String> {
+public class MessageTemplate extends BaseModel<Long> {
 
-    private String id;
+    private Long id;
     private TemplateCode code;
     private String title;
     private String body;
