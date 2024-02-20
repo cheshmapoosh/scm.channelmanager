@@ -119,6 +119,14 @@
             </div>
           </div>
         </form>
+        <div class="form-row" th:if="${isStepTwoRequired}">
+          <button
+                  class="submit-btn"
+                  type="button"
+                  id="cancelButton"
+                  th:text="#{label.caption.cancel}"
+          ></button>
+        </div>
         <div class="timer" th:if="${isStepTwoRequired}">
           <div class="time-code">
             <div class="time-container">
@@ -132,7 +140,11 @@
                 method="post"
                 action="/public/otp/sms"
               >
-                <button class="sms-btn" type="submit">ارسال پیامک</button>
+                <button
+                        class="sms-btn"
+                        type="submit"
+                        data-th-text="#{label.btn.send-sms}"
+                ></button>
               </form>
             </div>
           </div>
@@ -164,6 +176,7 @@
     <script th:inline="javascript">
       /*<![CDATA[*/
       const otpExpireTime = /*[[${otpExpireTime}]]*/ "default";
+      /*]]>*/
       const confirmBtn = document.getElementById("confirmBtn");
       const expireTime = document.getElementById("expireTime");
 
@@ -178,7 +191,7 @@
         }
       }
       const timer = setInterval(updateCounter, 1000);
-      /*]]>*/
+
 
       const cancelButton = document.getElementById("cancelButton");
       cancelButton.addEventListener("click", () => {
