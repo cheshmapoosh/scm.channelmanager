@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 
 /**
@@ -15,6 +16,11 @@ public class TerminalRequestTransformerInterceptor extends MessageInterceptor {
     @Override
     protected Message internalIntercept(Message message) {
         return message;
+    }
+
+    @Override
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return true;
     }
 
 }

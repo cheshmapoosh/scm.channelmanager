@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
@@ -41,6 +42,11 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
             return message;
         }
         return message;
+    }
+
+    @Override
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return true;
     }
 
     private boolean loadAssetsIfRequired(Message message) {

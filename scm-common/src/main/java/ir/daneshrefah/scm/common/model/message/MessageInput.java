@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -12,16 +13,20 @@ import java.util.Map;
  * @version 1.0
  * @since 2024-02-03
  */
+@RequiredArgsConstructor
 @Getter
 public abstract class MessageInput {
 
     private final Map<String, Object> headers;
+    private final String serviceCode;
     private final String body;
-
-    protected MessageInput(Map<String, Object> headers, String body) {
-        this.headers = Collections.unmodifiableMap(headers);
-        this.body = body;
-    }
+    private final String contentType;
+    private final String clientRemoteAddress;
+    private final String clientAgent;
+    private final String authorization;
+    private final Instant receiveTimestamp = Instant.now();
+    private final String serverHost;
+    private final boolean isForCheck;
 
     public String getHeader(String key) {
         return null != headers ? (String) headers.get(key) : null;

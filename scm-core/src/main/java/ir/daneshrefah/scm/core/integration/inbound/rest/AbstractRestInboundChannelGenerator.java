@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
@@ -56,8 +56,8 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     }
 
     @Override
-    public Message executeService(MessageBuildRequest request) {
-        return execute(request);
+    public Message executeService(MessageInput input) {
+        return execute(input);
     }
 
     @Override

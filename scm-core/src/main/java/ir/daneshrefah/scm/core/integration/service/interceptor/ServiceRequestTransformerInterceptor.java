@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.service.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.TransformerService;
@@ -32,4 +33,5 @@ public class ServiceRequestTransformerInterceptor extends AbstractTransformerInt
     protected TransformerRelationType extractTransformerRelationType() {
         return TransformerRelationType.SERVICE_REQUEST;
     }
+
 }

@@ -111,6 +111,11 @@ public class DateUtils {
         public static Instant plusSecondsToCurrent(long secondsToAdd) {
             return currentDate().plusSeconds(secondsToAdd);
         }
+
+        public static Instant convertToInstant(String input) {
+            // sample value: 2024-01-06T05:15:50.854476Z
+            return Instant.parse(input);
+        }
     }
 
     public static class TimestampTools{

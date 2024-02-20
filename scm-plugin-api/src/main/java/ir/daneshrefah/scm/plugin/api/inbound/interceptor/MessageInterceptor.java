@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.EventType;
@@ -23,7 +24,10 @@ public abstract class MessageInterceptor {
         Exception error = null;
         Message orgMessage = MessageUtils.cloneMessage(message);
         try {
-            message = internalIntercept(message);
+            boolean isSupported = support(message.getHeader().getServiceAccess());
+            if (isSupported) {
+                message = internalIntercept(message);
+            }
         } catch (Exception e) {
             error = e;
             throw e;
@@ -35,6 +39,8 @@ public abstract class MessageInterceptor {
     }
 
     protected abstract Message internalIntercept(Message message);
+
+    protected abstract boolean support(TerminalServiceAccess serviceAccess);
 
     private void logMessageInterceptor(Message orgMessage, Message message, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

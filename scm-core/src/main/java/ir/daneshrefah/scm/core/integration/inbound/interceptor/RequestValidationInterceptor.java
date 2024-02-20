@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.exception.DisableServiceExecutionException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 
 /**
@@ -22,6 +23,11 @@ public class RequestValidationInterceptor extends MessageInterceptor {
             throw new DisableServiceExecutionException(service);
         }
         return message;
+    }
+
+    @Override
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return true;
     }
 
 }

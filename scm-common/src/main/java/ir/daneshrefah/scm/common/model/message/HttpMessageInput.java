@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.Map;
@@ -14,12 +15,14 @@ import java.util.Map;
 @Getter
 public class HttpMessageInput extends MessageInput {
 
-    private final String url;
-    private final String method;
+    private final String httpUrl;
+    private final String httpMethod;
 
-    public HttpMessageInput(Map<String, Object> headers, String body, String url, String method) {
-        super(headers, body);
-        this.url = url;
-        this.method = method;
+    @Builder
+    private HttpMessageInput(Map<String, Object> headers, String serviceCode, String body, String contentType, String clientRemoteAddress, String clientAgent, String authorization, String serverHost, boolean isForCheck, String httpUrl, String httpMethod) {
+        super(headers, serviceCode, body, contentType, clientRemoteAddress, clientAgent, authorization, serverHost, isForCheck);
+        this.httpUrl = httpUrl;
+        this.httpMethod = httpMethod;
     }
+
 }

@@ -1,12 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public interface HttpInboundExecutor {
 
-    public Message executeService(MessageBuildRequest request);
+    public Message executeService(MessageInput input);
 
     public Channel getChannel();
 

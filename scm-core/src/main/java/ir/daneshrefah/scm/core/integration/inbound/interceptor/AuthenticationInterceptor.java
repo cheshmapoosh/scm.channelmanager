@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageRequestInfo;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -57,6 +58,12 @@ public class AuthenticationInterceptor extends MessageInterceptor {
         }
 //        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
         return message;
+    }
+
+    @Override
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return serviceAccess.getTerminal().isSupportCheckAuthentication() &&
+                serviceAccess.getService().getCheckAccessFirstAuthentication();
     }
 
 }

@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.core.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.core.mapper.ExceptionMapper;
 import ir.daneshrefah.scm.core.repository.ErrorMappingRepository;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
-import ir.daneshrefah.scm.plugin.api.exception.MessageBuildException;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.model.error.ErrorMapping;
@@ -66,12 +65,6 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
     public Message resolveMessageByException(Message message, Exception exception) {
         if (null == message) {
             message = createEmptyMessage(null, null);
-        }
-        if (exception instanceof MessageBuildException) {
-            MessageBuildRequest request = ((MessageBuildException) exception).getRequest();
-            TerminalServiceAccess serviceAccess = ((MessageBuildException) exception).getServiceAccess();
-            message = createEmptyMessage(request, serviceAccess);
-            return resolveMessageByException(message, (Exception) exception.getCause());
         }
         if (exception instanceof ProviderErrorResponseException) {
             String providerCode = StringUtils.EMPTY;
@@ -163,11 +156,12 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
     }
 
     private Message createEmptyMessage(MessageBuildRequest request, TerminalServiceAccess serviceAccess) {
-        Header header = Header.builder().request(new MessageRequestInfo(request)).serviceAccess(serviceAccess).build();
-        Message result = Message.builder()
-                .header(header)
-                .build();
-        return result;
+//        Header header = Header.builder().request(new MessageRequestInfo(request)).serviceAccess(serviceAccess).build();
+//        Message result = Message.builder()
+//                .header(header)
+//                .build();
+//        return result;
+        return null;
     }
 
 }

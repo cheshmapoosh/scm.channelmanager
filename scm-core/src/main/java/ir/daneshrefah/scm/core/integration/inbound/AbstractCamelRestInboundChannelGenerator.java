@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -43,21 +45,6 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected String contextPath;
     protected Integer port;
 
-    private static Map<MessageStatus, Integer> statusMappingMap = new HashMap<>();
-
-    static {
-        statusMappingMap.put(MessageStatus.SC_PROCESSING, 500);
-        statusMappingMap.put(MessageStatus.SC_SUCCESS, 200);
-        statusMappingMap.put(MessageStatus.SC_ACCESS_DENIED, 403);
-        statusMappingMap.put(MessageStatus.SC_UNAUTHORIZED, 401);
-        statusMappingMap.put(MessageStatus.SC_NOT_FOUND, 404);
-        statusMappingMap.put(MessageStatus.SC_ERROR_VALIDATION, 400);
-        statusMappingMap.put(MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
-        statusMappingMap.put(MessageStatus.SC_ERROR_SYSTEM, 500);
-        statusMappingMap.put(MessageStatus.SC_ERROR_BUSINESS, 400);
-        statusMappingMap.put(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER, 502);
-    }
-
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
                                                        ServiceProducerTemplate producerTemplate,
                                                        ErrorHandlerService errorHandlerService) {
@@ -84,131 +71,31 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         return initialize();
     }
 
-    @Override
-    public MessageBuildRequest extractMessageBuildRequest(Exchange input, MessageBuildRequest request, Service service) {
-        try {
-            MessageInput messageInput = buildMessageInput(input);
-            request.setInput(messageInput);
-            request.setTerminalCode(CamelUtils.getTerminalCodeFromExchange(input));
-            request.setClientId(CamelUtils.getClientIdFromExchange(input));
-            request.setServiceCode(service.getCode());
-            request.setContentType(CamelUtils.getContentTypeHeaderFromExchange(input));
-            request.setClientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input));
-            request.setClientCorrelationId(CamelUtils.getClientCorrelationFromExchange(input));
-            request.setClientTimestamp(CamelUtils.getClientTimestampFromExchange(input));
-            request.setClientAgent(CamelUtils.getClientAgentFromExchange(input));
-            request.setAccessParameter(CamelUtils.getAccessParameterFromExchange(input));
-            request.setForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(CamelUtils.getHttpMethodFromExchange(input)));
-            request.setReceiveTimestamp(Instant.now());
-            request.setServerHost(CamelUtils.getServerHostFromExchange(input));
-
-            request.setUsername(CamelUtils.getUsernameHeaderFromExchange(input));
-
-            request.setAuthenticationType(extractAuthenticationType(messageInput));
-            request.setAuthenticationValue(extractAuthenticationValue(messageInput));
-            String transactionValue = CamelUtils.getClaimCodeFromExchange(input);
-            request.setTransactionAuthenticationType(StringUtils.isEmpty(transactionValue) ?
-                    ClientAuthenticationType.ANONYMOUS : ClientAuthenticationType.BASIC);
-            request.setTransactionAuthenticationValue(transactionValue);
-
-            request.setPayload(extractMessagePayload(input, service, messageInput.getBody()));
-        } catch (Exception e) {
-            request.setError(e);
-        }
-        return request;
-    }
-
-    private MessageInput buildMessageInput(Exchange input) {
+    protected MessageInput extractMessageInput(Exchange input, TerminalServiceAccess serviceAccess) {
         String body = input.getMessage().getBody(String.class);
         Map<String, Object> headers = input.getMessage().getHeaders().entrySet().stream()
                 .filter(entry -> null != entry.getValue() && entry.getValue().getClass().isAssignableFrom(String.class))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        MessageInput result = new HttpMessageInput(headers, body,
-                CamelUtils.getHttpUrlFromExchange(input),
-                CamelUtils.getHttpMethodFromExchange(input));
+        String httpMethod = CamelUtils.getHttpMethodFromExchange(input);
+        MessageInput result = HttpMessageInput.builder()
+                .headers(headers)
+                .body(body)
+                .contentType(CamelUtils.getContentTypeHeaderFromExchange(input))
+                .clientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input))
+                .clientAgent(CamelUtils.getClientAgentFromExchange(input))
+                .authorization(CamelUtils.getAuthorizationHeaderFromExchange(input))
+                .serverHost(CamelUtils.getServerHostFromExchange(input))
+                .isForCheck(HTTP_METHOD_OPTIONS.equals(httpMethod))
+                .serviceCode(serviceAccess.getService().getCode())
+                .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
+                .httpMethod(httpMethod)
+                .build();
         return result;
     }
 
-    private JsonNode extractMessagePayload(Exchange exchange, Service service, String body) throws JsonProcessingException {
-        JsonNode payload = null;
-        if (StringUtils.isNotEmpty(body)) {
-            payload = objectMapper.readTree(body);
-        }
-        if (null == payload) {
-            payload = JsonNodeFactory.instance.nullNode();
-        }
-        List<String> pathVariables = extractPathVariables(service.getAlias());
-        for (Iterator<String> iterator = pathVariables.iterator(); iterator.hasNext(); ) {
-            String pathVariable = iterator.next();
-            String pathVariableValue = exchange.getMessage().getHeader(pathVariable, String.class);
-            if (payload instanceof NullNode) {
-                payload = JsonNodeFactory.instance.objectNode();
-            }
-            ((ObjectNode) payload).put(pathVariable, pathVariableValue);
-        }
-        return payload;
-    }
-
-    private ClientAuthenticationType extractAuthenticationType(MessageInput messageInput) {
-        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
-        if (StringUtils.isEmpty(authorizationHeader)) {
-            return ClientAuthenticationType.ANONYMOUS;
-        }
-
-        String AUTHENTICATION_SCHEME_BASIC = "Basic";
-        String AUTHENTICATION_SCHEME_BEARER = "Bearer";
-        String AUTHENTICATION_SCHEME_SESSION = "Session";
-
-        if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return ClientAuthenticationType.CLIENT;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
-            return ClientAuthenticationType.SESSION;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
-            return ClientAuthenticationType.BEARER;
-        } else {
-            String username = messageInput.getHeader(SCM_PARAMETER_USERNAME);
-            String credential = messageInput.getHeader(SCM_PARAMETER_CREDENTIAL);
-            String clientId = messageInput.getHeader(SCM_PARAMETER_CLIENT_ID);
-            String clientVersion = messageInput.getHeader(SCM_PARAMETER_CLIENT_VERSION);
-            String clientSignature = messageInput.getHeader(SCM_PARAMETER_CLIENT_SIGNATURE);
-            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(credential)) {
-                return ClientAuthenticationType.BASIC;
-            }
-        }
-        return ClientAuthenticationType.ANONYMOUS;
-    }
-
-    private String extractAuthenticationValue(MessageInput messageInput) {
-        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
-        if (StringUtils.isEmpty(authorizationHeader)) {
-            return null;
-        }
-        String[] args = authorizationHeader.split(" ");
-        if (args.length < 2)
-            return null;
-        return args[1];
-    }
-
-    private List<String> extractPathVariables(String urlPattern) {
-        List<String> pathVariables = new ArrayList<>();
-        if (StringUtils.isEmpty(urlPattern))
-            return pathVariables;
-
-        // Define a regular expression pattern to match path variables in curly braces
-        Pattern pattern = Pattern.compile("\\{([^}]+)\\}");
-        Matcher matcher = pattern.matcher(urlPattern);
-
-        // Find and add path variable names to the list
-        while (matcher.find()) {
-            pathVariables.add(matcher.group(1));
-        }
-
-        return pathVariables;
-    }
-
-    @Override
-    public Exchange buildResponse(Exchange input, Message message) {
+    protected Exchange buildResponse(Exchange input) {
+        Message message = input.getMessage().getBody(Message.class);
         org.apache.camel.Message responseMessage = input.getMessage();
 
         prepareResponseHeader(message, responseMessage);
@@ -227,7 +114,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
             contentType = DEFAULT_CONTENT_TYPE;
         }
         Header header = message.getHeader();
-        responseMessage.setHeader(Exchange.HTTP_RESPONSE_CODE, statusMappingMap.get(message.getStatus()));
+        responseMessage.setHeader(Exchange.HTTP_RESPONSE_CODE, HttpStatusMapper.toHttpStatus(message.getStatus()));
         responseMessage.setHeader(Exchange.CONTENT_TYPE, contentType);
         responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID, header.getRequest().getClientCorrelationId());
         responseMessage.setHeader(Constants.SCM_PARAMETER_CORRELATION_ID, header.getCorrelationId());

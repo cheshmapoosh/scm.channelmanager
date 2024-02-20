@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 import java.util.List;
@@ -22,10 +21,10 @@ public interface InboundChannelGenerator<T> {
 
     boolean registerEndpoints();
 
-    MessageBuildRequest extractMessageBuildRequest(T input, MessageBuildRequest request, Service service);
+//    MessageBuildRequest extractMessageBuildRequest(T input, MessageBuildRequest request, Service service);
 
-    public T execute(T input, TerminalServiceAccess serviceAccess);
+//    public T execute(T input, TerminalServiceAccess serviceAccess);
 
-    public Message execute(MessageBuildRequest request);
+    public Message execute(MessageInput input);
 
 }

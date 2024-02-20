@@ -6,6 +6,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -38,6 +39,11 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
             return message;
         }
         return ErrorHandlerService.getInstance().resolveMessageByValidationMessage(message, errors);
+    }
+
+    @Override
+    protected boolean support(TerminalServiceAccess serviceAccess) {
+        return true;
     }
 
     private JsonSchema loadJsonSchemaIfRequired(Service service) {

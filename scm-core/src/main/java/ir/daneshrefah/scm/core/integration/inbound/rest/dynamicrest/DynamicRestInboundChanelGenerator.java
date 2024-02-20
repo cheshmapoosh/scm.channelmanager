@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.OpenAPI;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -119,8 +121,11 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     .doTry()
                     .process(CamelCORSManager::configure)
                     .process(exchange -> {
-                        exchange = execute(exchange, serviceAccess);
+                        MessageInput messageInput = extractMessageInput(exchange, serviceAccess);
+                        Message message = execute(messageInput);
+                        exchange.getMessage().setBody(message);
                     })
+                    .process(exchange -> { buildResponse(exchange);})
                     .end();
         }
 

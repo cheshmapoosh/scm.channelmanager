@@ -31,10 +31,14 @@ public class MessageBuildRequest<T extends MessageInput> implements Serializable
     private String authenticationValue;
     private ClientAuthenticationType transactionAuthenticationType;
     private String transactionAuthenticationValue;
-    private Instant receiveTimestamp;
+    private final Instant receiveTimestamp;
     private String serverHost;
     private JsonNode payload;
     private boolean isForCheck;
     private Exception error;
+
+    public MessageBuildRequest() {
+        this.receiveTimestamp = Instant.now();
+    }
 
 }

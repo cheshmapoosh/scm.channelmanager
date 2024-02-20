@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageBuildRequest;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 
 /**
@@ -19,8 +19,8 @@ public abstract class AbstractRestInboundController {
         return executor.getChannel();
     }
 
-    protected final Message executeService(MessageBuildRequest request) {
-        return executor.executeService(request);
+    protected final Message executeService(MessageInput messageInput) {
+        return executor.executeService(messageInput);
     }
 
     public void setExecutor(HttpInboundExecutor executor) {
