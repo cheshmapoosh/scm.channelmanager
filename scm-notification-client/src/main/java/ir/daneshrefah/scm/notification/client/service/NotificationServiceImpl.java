@@ -4,21 +4,18 @@ import ir.daneshrefah.scm.common.model.notification.*;
 import ir.daneshrefah.scm.notification.client.exception.NotFoundSupportedBodyProcessorException;
 import ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessException;
 import ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessorDoesNotExistsException;
-import ir.daneshrefah.scm.notification.client.exception.NotificationProviderNotFoundException;
 import ir.daneshrefah.scm.notification.client.service.log.NotificationLogService;
-import ir.daneshrefah.scm.notification.client.service.provider.NotificationProvider;
+import ir.daneshrefah.scm.notification.client.service.spec.NotificationQueueService;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.notification.client.service.template.NotificationBodyProcessor;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -29,61 +26,55 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-    private final Map<NotificationMedia, NotificationProvider> providers;
     private final List<NotificationBodyProcessor> bodyProcessors;
     private final NotificationLogService notificationLogService;
     private final MessageTemplateService messageTemplateService;
-
-    public NotificationServiceImpl(List<NotificationProvider> providers, List<NotificationBodyProcessor> bodyProcessors,
-                                   NotificationLogService notificationLogService,
-                                   MessageTemplateService messageTemplateService) {
-        this.providers = providers.stream().collect(Collectors.toMap(NotificationProvider::getType, Function.identity()));
-        this.bodyProcessors = bodyProcessors;
-        this.notificationLogService = notificationLogService;
-        this.messageTemplateService = messageTemplateService;
-    }
+    private final NotificationQueueService notificationQueueService;
 
     public void sendNotification(NotificationRequest request) {
         try {
             Notification notification = createNotification(request);
-            notificationLogService.logNotificationEvent(notification);
+            notificationLogService.logNotificationEvent(notification,request,NotificationStatus.DRAFT);
             sendNotificationInternal(notification);
-            notificationLogService.logNotificationEvent(notification);
+            notificationLogService.logNotificationEvent(notification,request,NotificationStatus.QUEUE);
         } catch (Exception e) {
-            notificationLogService.logNotificationEvent(request,e);
+            notificationLogService.logNotificationEvent(request,NotificationStatus.FAILED,e);
         }
     }
 
 
     private void sendNotificationInternal(Notification notification) {
-        providers
-                .computeIfAbsent(notification.getMedia(), (media)->{
-                    throw new NotificationProviderNotFoundException(media.name());
-                })
-                .send(notification);
+        NotificationQueueModel notificationQueueModel = new NotificationQueueModel()
+                .setMedia(notification.getMedia())
+                .setMessageTemplateId(notification.getMessageTemplate().getId())
+                .setStatus(NotificationStatus.QUEUE)
+                .setMessage(notification.getBody())
+                .setTryCount(notification.getMessageTemplate().getTryCount())
+                .setExpiration(notification.getExpiration());
+        notificationQueueService.add(notificationQueueModel);
     }
 
     private Notification createNotification(NotificationRequest notificationRequest) {
            MessageTemplate messageTemplate = messageTemplateService.findMessageTemplateByCode(notificationRequest.getTemplateCode());
            return Notification.builder()
-                   .request(notificationRequest)
                    .media(notificationRequest.getMedia())
                    .recipient(notificationRequest.getRecipient())
                    .messageTemplate(messageTemplate)
-                   .body(extractNotificationBody(messageTemplate, notificationRequest.getData()))
+                   .body(extractNotificationBody(messageTemplate, notificationRequest.getData(),notificationRequest))
                    .expiration(LocalDateTime.now().plusMinutes(Objects.isNull(messageTemplate.getMaxMinutesExpiration()) ? 0 : messageTemplate.getMaxMinutesExpiration()))
                    .build();
     }
 
-    private String extractNotificationBody(MessageTemplate template, NotificationData data) {
+    private String extractNotificationBody(MessageTemplate template, NotificationData data,NotificationRequest request) {
         if (Objects.isNull(bodyProcessors) || bodyProcessors.isEmpty()) {
             throw new NotificationBodyProcessorDoesNotExistsException();
         }
         for (NotificationBodyProcessor bodyProcessor : bodyProcessors) {
             try {
-                String body = bodyProcessor.process(template, data);
+                String body = bodyProcessor.process(template, data,request);
                 if (StringUtils.isNotEmpty(body)) {
                     return body;
                 }

@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @Builder
 public class Notification {
 
-    private final NotificationRequest request;
     private final NotificationMedia media;
     private final String recipient;
     private final MessageTemplate messageTemplate;

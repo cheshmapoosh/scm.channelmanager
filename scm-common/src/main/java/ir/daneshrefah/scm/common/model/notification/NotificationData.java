@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.model.notification;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,10 +13,10 @@ import java.util.Map;
  * @since 2024-02-05
  */
 
-@Setter
-@Getter
+
 public class NotificationData {
 
+    @JsonProperty
     private final Map<String, Object> valueMap = new HashMap<>();
 
     public NotificationData put(DataKey key, Object value) {

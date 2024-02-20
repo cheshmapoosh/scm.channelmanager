@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -40,9 +41,8 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                 .ifPresent(terminal -> {
                     NotificationData data = new NotificationData()
                             .put(DataKey.TITLE, "")
-                            .put(DataKey.LOGIN_TIME, authentication.getIssuedAt())
-                            .put(DataKey.TERMINAL_CODE, terminal.getCode())
-                            .put(DataKey.TERMINAL_TITLE, terminal.getTitle());
+                            .put(DataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
+                            .put(DataKey.OTP_CODE, "123");
                     NotificationRequest request = NotificationRequest.builder()
                             .media(NotificationMedia.SMS)
                             .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
@@ -50,10 +50,20 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                             .data(data)
                             .templateCode(TemplateCode.AUTHENTICATION)
                             .terminalCode(user.getTerminalCode())
+                            .terminalTittle(terminal.getTitle())
                             .createdBy("") //TODO ->
                             .build();
                     notificationService.sendNotification(request);
                 });
+    }
+
+    private String getShamsiLoginTime(PostAuthenticationToken authentication) {
+        return DateUtils
+                .ShamsiCalendarConvertor
+                .convertToShamsiDateString(DateUtils
+                                .DateConverter
+                                .convertToLocalDateTime(DateUtils.DateConverter
+                                                .convertToTimestamp(authentication.getIssuedAt())), "yyyy/MM/dd HH:mm:ss");
     }
 
 

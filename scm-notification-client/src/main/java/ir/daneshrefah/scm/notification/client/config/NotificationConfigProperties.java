@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class NotificationConfigProperties {
 
     private boolean enabled;
+    private boolean distributed;
     private DatasourceProperties dataSource = new DatasourceProperties();
 
     @Getter

@@ -34,16 +34,20 @@ import java.util.Objects;
  *
  * @author reza jamshidi
  * @version 1.0
- * @apiNote scm:
- * notification:
- * enabled: true
- * datasource:
- * url: jdbc:db2://10.10.4.104:50001/DBREFSW
- * username: db2inst1
- * password: db2inst1
- * driver-class-name: com.ibm.db2.jcc.DB2Driver
- * max-connection: 10
- * default-schema: REF
+ * @apiNote
+ * <pre>{@code
+ *  scm:
+ *    notification:
+ *        enabled: true
+ *        distributed: false
+ *        datasource:
+ *            url: {...}
+ *            username: {...}
+ *            password: {...}
+ *            driver-class-name: {...}
+ *            max-connection: 10
+ *            default-schema: {...}
+ * }</pre>
  * @since 2024-02-07
  */
 @Slf4j

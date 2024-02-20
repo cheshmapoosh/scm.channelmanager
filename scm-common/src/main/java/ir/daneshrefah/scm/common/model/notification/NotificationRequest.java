@@ -19,6 +19,7 @@ public class NotificationRequest {
     private String recipient;
     private NotificationData data;
     private String terminalCode;
+    private String terminalTittle;
     private TemplateCode templateCode;
     private String username;
     private String createdBy;

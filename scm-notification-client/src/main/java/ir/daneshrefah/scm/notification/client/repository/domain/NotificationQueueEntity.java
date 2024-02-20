@@ -21,11 +21,12 @@ public class NotificationQueueEntity extends AbstractDefaultEntity<String> {
     @Column(name = "MEDIA")
     @Enumerated(EnumType.STRING)
     private NotificationMedia media;
-    @Column(name = "MESSAGE_TEMPLATE_CODE")
-    private String messageTemplateCode;
+    @Column(name = "MESSAGE_TEMPLATE_ID")
+    private Long messageTemplateId;
     @Column(name = "MESSAGE")
     private String message;
     @Column(name = "STATUS")
+    @Enumerated(EnumType.STRING)
     private NotificationStatus status;
     @Column(name = "EXPIRATION")
     private LocalDateTime expiration;

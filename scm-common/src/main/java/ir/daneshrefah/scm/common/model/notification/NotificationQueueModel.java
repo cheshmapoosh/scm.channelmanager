@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 public class NotificationQueueModel extends BaseModel<String> implements Serializable {
     private NotificationMedia media;
-    private String messageTemplateCode;
+    private Long messageTemplateId;
     private String message;
     private NotificationStatus status;
     private Integer tryCount;

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.notification.client.repository.domain;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.NotificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -25,6 +26,7 @@ public class NotificationLog  {
     private String recipient;
     private NotificationMedia media;
     private NotificationData data;
+    private NotificationStatus status;
     private MessageTemplate messageTemplate;
     private String body;
     private String error;
