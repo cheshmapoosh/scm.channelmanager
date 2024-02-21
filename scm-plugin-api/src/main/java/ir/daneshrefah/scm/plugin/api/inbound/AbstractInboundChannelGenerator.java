@@ -214,7 +214,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
                 .transactionAuthenticationValue(inputClaimCode)
                 .receiveTimestamp(input.getReceiveTimestamp())
                 .serverHost(input.getServerHost())
-                .payload(extractMessagePayload(serviceAccess.getService(), input))
+                .payload(extractMessagePayload(serviceAccess, input))
                 .isForCheck(input.isForCheck())
                 .build();
         Header header = Header.builder()
@@ -236,7 +236,10 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         return message;
     }
 
-    private JsonNode extractMessagePayload(Service service, MessageInput input) throws JsonProcessingException {
+    private JsonNode extractMessagePayload(TerminalServiceAccess serviceAccess, MessageInput input) throws JsonProcessingException {
+        if (input.isForCheck()) {
+            return null;
+        }
         JsonNode payload = null;
         if (StringUtils.isNotEmpty(input.getBody())) {
             payload = objectMapper.readTree(input.getBody());
@@ -244,7 +247,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         if (null == payload) {
             payload = JsonNodeFactory.instance.nullNode();
         }
-        List<String> pathVariables = extractPathVariables(service.getAlias());
+        List<String> pathVariables = extractPathVariables(serviceAccess.getService().getAlias());
         for (Iterator<String> iterator = pathVariables.iterator(); iterator.hasNext(); ) {
             String pathVariable = iterator.next();
             String pathVariableValue = input.getHeader(pathVariable);
