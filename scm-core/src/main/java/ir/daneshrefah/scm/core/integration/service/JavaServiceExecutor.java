@@ -3,10 +3,14 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.exception.InputMismatchException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +55,8 @@ public class JavaServiceExecutor extends ServiceExecutor {
                 throw (BaseException) e.getTargetException();
             }
             throw new JavaServiceExecutionException(e.getTargetException(), (JavaService) service);
+        } catch (IllegalArgumentException e) {
+            throw new InputMismatchException("serviceMethod", e);
         } catch (Exception e) {
             if (e.getCause() instanceof BaseException) {
                 throw (BaseException) e.getCause();
@@ -67,6 +73,9 @@ public class JavaServiceExecutor extends ServiceExecutor {
 
         Iterator<Map.Entry<String, JsonNode>> fields = message.getPayload().fields();
         Class<?>[] paramTypes = methodInfo.getParamTypes();
+        if (message.getPayload().size() < paramTypes.length) {
+            throw new InputMismatchException(paramTypes.length, message.getPayload().size());
+        }
         Object[] result = new Object[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
             Map.Entry<String, JsonNode> field = null;
@@ -77,12 +86,33 @@ public class JavaServiceExecutor extends ServiceExecutor {
             if (parameterType.equals(String.class)) {
 //                JsonNode node = message.getPayload().get(methodInfo.getMethod().getParameters()[i].getName());
                 JsonNode node = null != field ? field.getValue() : null;
+                if (!node.isNull() && !node.isTextual()) {
+                    throw new InvalidInputException(field.getKey());
+                }
                 result[i] = null != node && !node.isNull() && node.isTextual() ? node.asText() : null;
             } else if (parameterType.equals(Integer.class)) {
                 JsonNode node = null != field ? field.getValue() : null;
+                if (!node.isNull() && !node.isInt()) {
+                    throw new InvalidInputException(field.getKey());
+                }
                 result[i] = null != node && !node.isNull() && node.isInt() ? node.asInt() : null;
+            } else if (parameterType.equals(boolean.class)) {
+                JsonNode node = null != field ? field.getValue() : null;
+                if (!node.isNull() && !node.isBoolean()) {
+                    throw new InvalidInputException(field.getKey());
+                }
+                result[i] = null != node && !node.isNull() && node.isBoolean() ? node.asBoolean() : false;
+            } else if (parameterType.equals(Boolean.class)) {
+                JsonNode node = null != field ? field.getValue() : null;
+                if (!node.isNull() && !node.isBoolean()) {
+                    throw new InvalidInputException(field.getKey());
+                }
+                result[i] = null != node && !node.isNull() && node.isBoolean() ? node.asBoolean() : null;
             } else if (parameterType.equals(Long.class)) {
                 JsonNode node = null != field ? field.getValue() : null;
+                if (!node.isNull() && !node.isNumber()) {
+                    throw new InvalidInputException(field.getKey());
+                }
                 Long value = null != node && !node.isNull() && node.isLong() ? node.asLong() : null;
                 if (null == value && !node.isNull() && node.isTextual() && StringUtils.isNumeric(node.asText())) {
                     value = Long.valueOf(node.asText());
@@ -90,6 +120,8 @@ public class JavaServiceExecutor extends ServiceExecutor {
                 result[i] = value;
             } else if (parameterType.equals(Message.class)) {
                 result[i] = message;
+            } else if (parameterType.equals(UserAuthentication.class)) {
+                result[i] = AuthenticationUtils.getLoggedInUser(message);
             } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {
                 result[i] = service;
             } else if (parameterType.equals(Object.class)) {

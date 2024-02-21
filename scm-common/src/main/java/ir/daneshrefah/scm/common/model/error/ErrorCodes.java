@@ -32,6 +32,8 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VIOLATION_DATA_INTEGRITY = 1028;
     public static final int ERROR_CODE_VALIDATION_GLOBAL = 1029;
     public static final int ERROR_CODE_HTTP_METHOD_NOT_ALLOWED = 1030;
+    public static final int ERROR_CODE_MISMATCH_REQUIRED_INPUT = 1031;
+    public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1104;
 
 
 
@@ -41,7 +43,6 @@ public class ErrorCodes {
     public static final int ERROR_CODE_ASSET_IS_EMPTY = 1101;
     public static final int ERROR_CODE_ASSET_NOT_ASSIGNED = 1102;
     public static final int ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER = 1103;
-    public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1104;
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND = 1105;
 
 

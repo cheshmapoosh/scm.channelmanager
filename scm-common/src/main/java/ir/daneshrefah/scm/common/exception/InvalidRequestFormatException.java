@@ -12,6 +12,10 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_NOT_SU
  */
 public class InvalidRequestFormatException extends AbstractValidationException {
 
+    public InvalidRequestFormatException(String source) {
+        this(source, null, null);
+    }
+
     public InvalidRequestFormatException(String source, Throwable cause) {
         this(source, cause.getMessage(), cause);
     }

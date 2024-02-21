@@ -79,6 +79,9 @@ public class NabCustomerRepository {
                     return asset;
                 });
 
+        if (null == assets || assets.isEmpty()) {
+            return null;
+        }
         Customer customer = new Customer();
         customer.setCustomerNo(customerNo.get());
         customer.setProviderId(providerId.get());

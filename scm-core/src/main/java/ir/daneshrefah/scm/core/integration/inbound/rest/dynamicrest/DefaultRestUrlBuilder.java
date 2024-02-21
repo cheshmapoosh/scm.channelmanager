@@ -46,11 +46,11 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
         if (null == service) {
             return null;
         }
-        String serviceUrl = null != service.getAlias() ? service.getAlias() : service.getCode();
+        String serviceUrl = null != service.getAlias() ? service.getAlias() : service.getCode().toLowerCase();
         if (!StringUtils.startsWith(serviceUrl, "/", true)) {
             serviceUrl = "/" + serviceUrl;
         }
-        return serviceUrl.toLowerCase().replace("_", "-");
+        return serviceUrl.replace("_", "-");
     }
 
     private String findHttpMethodByServiceType(ServiceType type) {

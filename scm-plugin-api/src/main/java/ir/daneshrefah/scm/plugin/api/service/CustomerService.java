@@ -17,6 +17,9 @@ public interface CustomerService {
 
     Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId);
 
+    public Customer findCustomerByProviderCode(String providerCode, Long personId);
+    public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId);
+
     Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId);
     Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
 

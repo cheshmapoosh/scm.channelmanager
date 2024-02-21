@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.provider;
 
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -47,7 +48,7 @@ public class CustomerServiceImpl implements CustomerService {
             String className = provider.getCustomerProviderClassName();
             ServiceProviderDataProvider customerProvider = ClassLoader.findBeanOrCreateInstanceOfClass(
                     className, ServiceProviderDataProvider.class);
-            if (null ==  customerProvider) {
+            if (null == customerProvider) {
                 log.warn("error on init customer data provider for provider '" + provider.getCode() + "'");
             }
             customerProvider.init(provider);
@@ -80,7 +81,24 @@ public class CustomerServiceImpl implements CustomerService {
         return dataProvider.findCustomerByPersonProfileId(personProfileId);
     }
 
+    @Override
+    public Customer findCustomerByProviderCode(String providerCode, Long personId) {
+        return findCustomerByPersonId(serviceService.findServiceProviderByCode(providerCode), personId);
+    }
+
+    @Override
+    public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
+        return findCustomerByPersonId(serviceService.findServiceProviderById(providerId), personId);
+    }
+
+    @Override
     public Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId) {
+        if (null == provider) {
+            throw new MissingRequiredInputException("provider");
+        }
+        if (null == personId) {
+            throw new MissingRequiredInputException("personId");
+        }
         if (!provider.isCustomerProvided() || null == personId) {
             return null;
         }

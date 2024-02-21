@@ -16,7 +16,7 @@ import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.service.IntegrationService;
-import ir.daneshrefah.scm.uaa.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

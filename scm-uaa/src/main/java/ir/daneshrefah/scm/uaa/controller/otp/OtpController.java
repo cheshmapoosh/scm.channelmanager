@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
-import ir.daneshrefah.scm.uaa.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

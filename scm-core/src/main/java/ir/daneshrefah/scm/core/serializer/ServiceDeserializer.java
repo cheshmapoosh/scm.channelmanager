@@ -44,7 +44,7 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
             if (null != s) {
                 implementationType = s.getImplementationType();
             } else {
-                throw new InvalidInputException("id");
+                throw new InvalidInputException("service id [" + node.get("id").asText() + "]");
             }
         }
         if (null == implementationType)

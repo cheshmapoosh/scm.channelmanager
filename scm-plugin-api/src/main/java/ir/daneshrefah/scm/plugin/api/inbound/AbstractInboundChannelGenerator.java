@@ -3,15 +3,9 @@ package ir.daneshrefah.scm.plugin.api.inbound;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
-import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
+import com.fasterxml.jackson.databind.node.*;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.message.*;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
@@ -253,6 +247,31 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             String pathVariableValue = input.getHeader(pathVariable);
             if (payload instanceof NullNode) {
                 payload = JsonNodeFactory.instance.objectNode();
+            } else if (payload instanceof ValueNode && !payload.isObject()) {
+                final String VALUE_KEY = "value";
+                ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+                if (payload instanceof BooleanNode) {
+                    objectNode.put(VALUE_KEY, payload.booleanValue());
+                } else if (payload instanceof LongNode) {
+                    objectNode.put(VALUE_KEY, payload.longValue());
+                } else if (payload instanceof ShortNode) {
+                    objectNode.put(VALUE_KEY, payload.shortValue());
+                } else if (payload instanceof DecimalNode) {
+                    objectNode.put(VALUE_KEY, payload.decimalValue());
+                } else if (payload instanceof BigIntegerNode) {
+                    objectNode.put(VALUE_KEY, payload.bigIntegerValue());
+                } else if (payload instanceof IntNode) {
+                    objectNode.put(VALUE_KEY, payload.intValue());
+                } else if (payload instanceof FloatNode) {
+                    objectNode.put(VALUE_KEY, payload.floatValue());
+                } else if (payload instanceof DoubleNode) {
+                    objectNode.put(VALUE_KEY, payload.doubleValue());
+                } else if (payload instanceof TextNode) {
+                    objectNode.put(VALUE_KEY, payload.textValue());
+                } else {
+                    throw new InvalidRequestFormatException("message body");
+                }
+                payload = objectNode;
             }
             ((ObjectNode) payload).put(pathVariable, pathVariableValue);
         }
