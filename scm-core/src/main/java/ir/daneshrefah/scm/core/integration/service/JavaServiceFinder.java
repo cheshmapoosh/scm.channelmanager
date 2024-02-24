@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException;
+import ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -46,7 +47,7 @@ public class JavaServiceFinder {
             paramTypes = new Class<?>[0];
         } else {
             try {
-                paramTypes = parseParamTypesFromStr(paramTypesString);
+                paramTypes = parseParamTypesFromStr(service, paramTypesString);
             } catch (ClassNotFoundException e) {
                 return new MethodInfo(new JavaServiceClassNotDefinedException(service, e));
             }
@@ -73,7 +74,7 @@ public class JavaServiceFinder {
         return result;
     }
 
-    private static Class<?>[] parseParamTypesFromStr(String methodParameters) throws ClassNotFoundException {
+    private static Class<?>[] parseParamTypesFromStr(JavaService service, String methodParameters) throws ClassNotFoundException {
         if (StringUtils.isEmpty(methodParameters)) {
             return new Class[0];
         }
@@ -108,7 +109,11 @@ public class JavaServiceFinder {
             } else if ("Boolean".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Boolean.class;
             } else {
-                paramTypes[i] = Class.forName(paramTypesStr[i].trim());
+                try {
+                    paramTypes[i] = Class.forName(paramTypesStr[i].trim());
+                } catch (ClassNotFoundException e) {
+                    throw new JavaServiceParameterClassNotFoundException(service, paramTypesStr[i], e);
+                }
             }
         }
         return paramTypes;

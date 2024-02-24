@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_INVALID_REMOTE_RESPONSE;
 
 /**
  * Description of the class or purpose of the file.
@@ -9,10 +12,22 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
  * @version 1.0
  * @since 2023-01-15
  */
-public class InvalidProviderResponseException extends AbstractServiceProviderException {
+public class InvalidProviderResponseException extends AbstractExternalServiceException {
 
-    public InvalidProviderResponseException(Throwable cause, ExternalServiceProvider provider) {
-        super("invalid provider response", cause, provider);
+    public InvalidProviderResponseException(String serviceCode, String providerCode, Throwable cause) {
+        super(String.format("invalid provider [%s] response. " + (null != cause ? cause.getMessage() : StringUtils.EMPTY)),
+                serviceCode, providerCode, cause);
+
+    }
+
+    @Override
+    public int getErrorCode() {
+        return ERROR_CODE_INVALID_REMOTE_RESPONSE;
+    }
+
+    @Override
+    public MessageStatus getStatus() {
+        return MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER;
     }
 
 }

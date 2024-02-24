@@ -53,7 +53,7 @@ public abstract class ServiceExecutor {
         }
     }
 
-    private void executeServiceInternal(Service service, Message message) {
+    private void executeServiceInternal(Service service, Message message) throws Exception {
         for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();
             message = messageInterceptor.intercept(message);
@@ -130,7 +130,7 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    protected abstract JsonNode executeInternal(Service service, Message message);
+    protected abstract JsonNode executeInternal(Service service, Message message) throws Exception;
 
     private void logServiceCallEvent(Message message, Service service, Object output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

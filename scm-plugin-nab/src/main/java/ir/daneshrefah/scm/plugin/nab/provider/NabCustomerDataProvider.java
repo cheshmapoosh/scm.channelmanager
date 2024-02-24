@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.nab.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
@@ -13,6 +14,7 @@ import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.nab.repository.NabCustomerRepository;
+import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +47,7 @@ public class NabCustomerDataProvider extends ServiceProviderDataProvider {
         payload.put("customerType", "-1");
         payload.put("nationalId", nationalId);
         payload.put("subOrganizationId", subOrganizationId);
-        Message message = serviceProducerTemplate.callService("SVC_NAB_FIND_CUSTOMER", payload);
+        Message message = serviceProducerTemplate.callServiceWithException("SVC_NAB_FIND_CUSTOMER", payload);
         JsonNode customerNode = message.getPayload();
         Customer result = new Customer();
         result.setProviderId(provider.getId());

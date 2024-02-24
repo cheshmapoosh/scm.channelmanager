@@ -12,7 +12,7 @@ import lombok.Getter;
  * @version 1.0
  * @since 2023-01-17
  */
-public class AbstractJavaServiceException extends BaseServiceException {
+public abstract class AbstractJavaServiceException extends BaseServiceException {
 
     public AbstractJavaServiceException(String message, Throwable cause, JavaService service) {
         super(message, cause, service);

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.customer.Customer;
@@ -10,6 +11,7 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerSynchronizationRequest;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -88,7 +90,14 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
-        return findCustomerByPersonId(serviceService.findServiceProviderById(providerId), personId);
+        ExternalServiceProvider provider = serviceService.findServiceProviderById(providerId);
+        if (null == provider) {
+            provider = serviceService.findServiceProviderByCode(providerId);
+        }
+        if (null == provider) {
+            throw new InvalidInputException("providerId");
+        }
+        return findCustomerByPersonId(provider, personId);
     }
 
     @Override
@@ -111,12 +120,28 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Integer personId) {
+    public Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request) {
+        if (null == request.getPersonId()) {
+            throw new MissingRequiredInputException("personId");
+        }
+        if (StringUtils.isEmpty(request.getProviderId())) {
+            throw new MissingRequiredInputException("providerId");
+        }
+        ExternalServiceProvider provider = serviceService.findServiceProviderById(request.getProviderId());
+        if (null == provider) {
+            provider = serviceService.findServiceProviderByCode(request.getProviderId());
+        }
+        if (null == provider) {
+            throw new InvalidInputException("providerId");
+        }
         Optional<ServiceProviderDataProvider> dataProvider = findCustomerDataProvider(provider);
         if (dataProvider.isEmpty()) {
             throw new MethodNotSupportDataException("'customer data provider' not found for provider '" + provider.getCode() + "'.");
         }
-        GeneralPerson person = personService.findPersonByPersonId(personId);
+        GeneralPerson person = personService.findPersonByPersonId(request.getPersonId().intValue());
+        if (null == person) {
+            throw new InvalidInputException("personId");
+        }
         Customer customer = dataProvider.get().inquireCustomerByPerson(person);
         return null;
     }

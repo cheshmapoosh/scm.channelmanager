@@ -51,6 +51,14 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     @Override
+    public Optional<Terminal> findTerminalById(String id) {
+        if (StringUtils.isEmpty(id)) {
+            return Optional.empty();
+        }
+        return findAllTerminals().stream().filter(terminal -> id.equals(terminal.getId())).findFirst();
+    }
+
+    @Override
     public Optional<Terminal> findTerminalByCode(String code) {
         if (StringUtils.isEmpty(code)) {
             return Optional.empty();
@@ -103,16 +111,23 @@ public class TerminalServiceImpl implements TerminalService {
         if (StringUtils.isEmpty(serviceId)) {
             throw new MissingRequiredInputException("serviceId");
         }
-        if (!checkTerminalExistById(terminalId)) {
+        Optional<Terminal> terminal =  findTerminalById(terminalId);
+        if (terminal.isEmpty()) {
+            terminal = findTerminalByCode(terminalId);
+        }
+        if (terminal.isEmpty()) {
             throw new InvalidInputException("terminalId");
         }
         ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceById(serviceId);
         if (null == service) {
+            service = serviceService.findServiceByCode(serviceId);
+        }
+        if (null == service) {
             throw new InvalidInputException("serviceId");
         }
         TerminalEntity terminalEntity = new TerminalEntity();
-        terminalEntity.setId(terminalId);
-        ServiceEntity serviceEntity = ServiceEntityFactory.createEmptyServiceEntity(serviceId, service.getImplementationType());
+        terminalEntity.setId(terminal.get().getId());
+        ServiceEntity serviceEntity = ServiceEntityFactory.createEmptyServiceEntity(service.getId(), service.getImplementationType());
         TerminalServiceAccessEntity entity = new TerminalServiceAccessEntity();
         entity.setTerminal(terminalEntity);
         entity.setService(serviceEntity);

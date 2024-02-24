@@ -16,6 +16,7 @@ public interface ServiceProducerTemplate {
     public Message callService(Service service, Message message);
 
     public Message callService(String serviceCode, JsonNode payload);
+    public Message callServiceWithException(String serviceCode, JsonNode payload);
 
     public Message callService(String serviceCode);
 

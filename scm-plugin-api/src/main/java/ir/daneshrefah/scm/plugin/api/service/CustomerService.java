@@ -23,6 +23,6 @@ public interface CustomerService {
     Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId);
     Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
 
-    public Customer synchronizeProviderCustomerInfoByPersonId(ExternalServiceProvider provider, Integer personId);
+    public Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request);
 
 }

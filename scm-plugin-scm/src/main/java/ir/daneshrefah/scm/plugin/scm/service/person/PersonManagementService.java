@@ -94,7 +94,7 @@ public class PersonManagementService extends AbstractJavaService {
         return customerService.findCustomerByPersonProfileId(provider, personProfileId);
     }
 
-    public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Integer personId) {
+    /*public Customer synchronizeProviderCustomerInfoByPersonId(String providerId, Integer personId) {
         if (StringUtils.isEmpty(providerId)) {
             throw new MissingRequiredInputException("providerId");
         }
@@ -110,6 +110,6 @@ public class PersonManagementService extends AbstractJavaService {
         }
 
         return customerService.synchronizeProviderCustomerInfoByPersonId(provider, personId);
-    }
+    }*/
 
 }

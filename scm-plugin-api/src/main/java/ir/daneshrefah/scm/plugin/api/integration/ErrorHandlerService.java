@@ -29,6 +29,6 @@ public abstract class ErrorHandlerService {
 
     public abstract Message resolveMessageByException(Message message, Exception exception);
 
-    public abstract BaseException resolveExceptionByError(Message message);
+//    public abstract BaseException resolveExceptionByError(Message message);
 
 }

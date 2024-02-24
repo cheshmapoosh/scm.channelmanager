@@ -9,21 +9,22 @@ import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-01-17
+ * @since 2024-02-24
  */
-public class JavaServiceMethodNotFoundException extends AbstractJavaServiceException {
+public class JavaServiceParameterClassNotFoundException extends AbstractJavaServiceException {
 
-    public JavaServiceMethodNotFoundException(JavaService service, Throwable cause) {
-        super("method not found for java service.", cause, service);
+    public JavaServiceParameterClassNotFoundException(JavaService service, String parameterName, Throwable cause) {
+        super("service [" + service.getCode() + "] , parameter [" + parameterName + "] class not found.", cause, service);
     }
 
     @Override
     public int getErrorCode() {
-        return ErrorCodes.ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND;
+        return ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_PARAMETER_CLASS_NOT_FOUND;
     }
 
     @Override
     public MessageStatus getStatus() {
         return MessageStatus.SC_ERROR_SYSTEM;
     }
+
 }

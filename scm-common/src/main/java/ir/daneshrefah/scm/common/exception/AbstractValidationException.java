@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,7 +9,7 @@ package ir.daneshrefah.scm.common.exception;
  * @version 1.0
  * @since 2024-02-14
  */
-public abstract class AbstractValidationException extends BaseException {
+public abstract class AbstractValidationException extends BaseException implements ErrorCodeAwareException {
 
     private final String source;
 
@@ -21,10 +23,13 @@ public abstract class AbstractValidationException extends BaseException {
     }
 
     @Override
+    public MessageStatus getStatus() {
+        return MessageStatus.SC_ERROR_VALIDATION;
+    }
+
+    @Override
     public String getSource() {
         return source;
     }
-
-    public abstract int getErrorCode();
 
 }

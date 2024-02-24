@@ -3,7 +3,9 @@ package ir.daneshrefah.scm.core.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
+import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -48,7 +50,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     public Message callService(String serviceCode, JsonNode payload) {
         ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceByCode(serviceCode);
         if (null == service) {
-            throw new InvalidInputException("serviceCode");
+            throw new ServiceNotFoundException(serviceCode);
         }
         Message message = MessageContext.getCurrentContext().getMessage();
         String terminalCode = MessageUtils.getTerminalCode(message);
@@ -64,6 +66,20 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
             message.addErrors(tempMessage.getErrors());
         }*/
         return tempMessage;
+    }
+
+    @Override
+    public Message callServiceWithException(String serviceCode, JsonNode payload) {
+        Message message = callService(serviceCode, payload);
+        if (!MessageUtils.isSuccessful(message)) {
+            Error error = message.getErrors().get(0);
+            if (null != error.getException()) {
+                throw new RuntimeException(error.getException());
+            } else {
+                throw new ServiceNotFoundException(serviceCode);
+            }
+        }
+        return message;
     }
 
     @Override

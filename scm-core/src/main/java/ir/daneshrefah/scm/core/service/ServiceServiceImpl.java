@@ -66,7 +66,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (StringUtils.isEmpty(code)) {
             return null;
         }
-        return findServiceProviderList().stream().filter(serviceProvider -> code.equals(serviceProvider.getCode())).findFirst().orElse(null);
+        return findServiceProviderList().stream().filter(serviceProvider -> code.equalsIgnoreCase(serviceProvider.getCode())).findFirst().orElse(null);
     }
 
     @Override

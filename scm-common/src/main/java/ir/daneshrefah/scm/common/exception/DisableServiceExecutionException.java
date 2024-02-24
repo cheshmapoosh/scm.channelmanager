@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 /**
@@ -19,4 +21,13 @@ public class DisableServiceExecutionException extends BaseServiceException {
         super(message, null, service);
     }
 
+    @Override
+    public int getErrorCode() {
+        return ErrorCodes.ERROR_CODE_JAVA_SERVICE_IS_DISABLED;
+    }
+
+    @Override
+    public MessageStatus getStatus() {
+        return MessageStatus.SC_NOT_FOUND;
+    }
 }

@@ -18,6 +18,8 @@ public interface TerminalService {
 
     public List<Terminal> findAllTerminals();
 
+    public Optional<Terminal> findTerminalById(String id);
+
     public Optional<Terminal> findTerminalByCode(String code);
 
     public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request);

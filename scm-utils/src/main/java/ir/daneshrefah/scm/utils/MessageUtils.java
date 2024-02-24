@@ -78,4 +78,8 @@ public class MessageUtils {
         return null != message && MessageStatus.SC_PROCESSING.equals(message.getStatus());
     }
 
+    public static boolean isSuccessful(Message message) {
+        return null != message && MessageStatus.SC_SUCCESS.equals(message.getStatus());
+    }
+
 }

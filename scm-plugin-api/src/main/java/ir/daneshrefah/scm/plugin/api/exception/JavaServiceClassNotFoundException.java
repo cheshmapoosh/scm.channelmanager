@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 
 /**
@@ -13,6 +15,16 @@ public class JavaServiceClassNotFoundException extends AbstractJavaServiceExcept
 
     public JavaServiceClassNotFoundException(Throwable cause, JavaService service) {
         super("error load java service class.", cause, service);
+    }
+
+    @Override
+    public int getErrorCode() {
+        return ErrorCodes.ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND;
+    }
+
+    @Override
+    public MessageStatus getStatus() {
+        return MessageStatus.SC_ERROR_SYSTEM;
     }
 
 }

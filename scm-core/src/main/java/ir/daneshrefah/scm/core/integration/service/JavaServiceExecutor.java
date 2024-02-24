@@ -2,19 +2,16 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.exception.InputMismatchException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.exception.JavaServiceExecutionException;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,13 +29,13 @@ public class JavaServiceExecutor extends ServiceExecutor {
     private Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
 
     @Override
-    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
+    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) throws Exception {
         JavaServiceFinder.MethodInfo methodInfo = findServiceMethodInfo((JavaService) service);
         if (null != methodInfo.getError()) {
             throw methodInfo.getError();
         }
 
-        try {
+//        try {
             Object[] args = prepareMethodArgs(message, service, methodInfo);
             Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
             if (response instanceof JsonNode) {
@@ -48,21 +45,18 @@ public class JavaServiceExecutor extends ServiceExecutor {
             } else {
                 return objectMapper.valueToTree(response);
             }
-        } catch (BaseException e) {
-            throw e;
-        } catch (InvocationTargetException e) {
-            if (null != e.getTargetException() && e.getTargetException() instanceof BaseException) {
-                throw (BaseException) e.getTargetException();
-            }
-            throw new JavaServiceExecutionException(e.getTargetException(), (JavaService) service);
-        } catch (IllegalArgumentException e) {
-            throw new InputMismatchException("serviceMethod", e);
-        } catch (Exception e) {
-            if (e.getCause() instanceof BaseException) {
-                throw (BaseException) e.getCause();
-            }
-            throw new JavaServiceExecutionException(e, (JavaService) service);
-        }
+//        } catch (BaseException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw e;
+//        } catch (IllegalArgumentException e) {
+//            throw new InputMismatchException("serviceMethod", e);
+//        } catch (Exception e) {
+//            if (e.getCause() instanceof BaseException) {
+//                throw (BaseException) e.getCause();
+//            }
+//            throw new JavaServiceExecutionException(e, (JavaService) service);
+//        }
     }
 
     private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,
@@ -73,9 +67,9 @@ public class JavaServiceExecutor extends ServiceExecutor {
 
         Iterator<Map.Entry<String, JsonNode>> fields = message.getPayload().fields();
         Class<?>[] paramTypes = methodInfo.getParamTypes();
-        if (message.getPayload().size() < paramTypes.length) {
+        /*if (message.getPayload().size() < paramTypes.length) {
             throw new InputMismatchException(paramTypes.length, message.getPayload().size());
-        }
+        }*/
         Object[] result = new Object[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
             Map.Entry<String, JsonNode> field = null;
@@ -110,12 +104,12 @@ public class JavaServiceExecutor extends ServiceExecutor {
                 result[i] = null != node && !node.isNull() && node.isBoolean() ? node.asBoolean() : null;
             } else if (parameterType.equals(Long.class)) {
                 JsonNode node = null != field ? field.getValue() : null;
-                if (!node.isNull() && !node.isNumber()) {
-                    throw new InvalidInputException(field.getKey());
-                }
                 Long value = null != node && !node.isNull() && node.isLong() ? node.asLong() : null;
                 if (null == value && !node.isNull() && node.isTextual() && StringUtils.isNumeric(node.asText())) {
                     value = Long.valueOf(node.asText());
+                }
+                if (!node.isNull() && null == value) {
+                    throw new InvalidInputException(field.getKey());
                 }
                 result[i] = value;
             } else if (parameterType.equals(Message.class)) {

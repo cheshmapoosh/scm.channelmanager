@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.exception.ProviderUnSuccessfulResponseException;
+import ir.daneshrefah.scm.plugin.api.exception.ProviderTimeoutException;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderUnknownException;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderUnreachableException;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -55,6 +56,7 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
 
     @Override
     protected JsonNode executeInternal(Message message, Service service, Object requestBody) {
+        ExternalService externalService = (ExternalService) service;
         String serviceUrl = extractUrlByService(service);
         String serviceHttpMethod = extractMethodByService(service);
         String serviceRequestHeaderContentType = extractServiceRequestHeaderContentType(service);
@@ -94,17 +96,19 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractExtern
                 if (null != result) {
                     return result;
                 }
-                throw new ProviderUnSuccessfulResponseException(getProvider(), response.statusCode(), response.body());
+//                throw new ProviderUnSuccessfulResponseException(getProvider().getCode(), response.statusCode(), response.body());
             }
             return handleSuccessfulResponseStatus(message, service, response);
         } catch (BaseException e) {
             throw e;
+        } catch (HttpTimeoutException e) {
+            throw new ProviderTimeoutException(service.getCode(), externalService.getServiceProvider().getCode(), e);
         } catch (IOException e) {
-            throw new ProviderUnreachableException(getProvider(), e);
+            throw new ProviderUnreachableException(service.getCode(), externalService.getServiceProvider().getCode(), e);
         } catch (InterruptedException e) {
-            throw new ProviderUnreachableException(getProvider(), e);
+            throw new ProviderUnreachableException(service.getCode(), externalService.getServiceProvider().getCode(), e);
         } catch (Exception e) {
-            throw new ProviderUnknownException(getProvider(), e);
+            throw new ProviderUnknownException(service.getCode(), getProvider().getCode(), e);
         }
     }
 

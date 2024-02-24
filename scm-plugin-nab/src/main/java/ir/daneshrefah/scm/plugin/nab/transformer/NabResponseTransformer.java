@@ -44,7 +44,7 @@ public class NabResponseTransformer extends AbstractTransformer {
             if (service instanceof ExternalService) {
                 provider = ((ExternalService) service).getServiceProvider();
             }
-            throw new InvalidProviderResponseException(e, provider);
+            throw new InvalidProviderResponseException(service.getCode(), provider.getCode(), e);
         }
         JsonNode resultNab = payloadTmp.get("result");
         ArrayNode arrayResult = JsonNodeFactory.instance.arrayNode();

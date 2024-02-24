@@ -1,11 +1,9 @@
-package ir.daneshrefah.scm.plugin.scm.service.customer;
+package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.plugin.api.inbound.MessageContext;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import org.springframework.stereotype.Service;
@@ -32,8 +30,8 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService.findCustomerByProviderIdAndPersonId(providerId, personId);
     }
 
-    public Customer synchronizeCustomerInfoByProviderIdAndPersonId(String providerId, Long personId, boolean syncAsset) {
-        return null;
+    public Customer synchronizeCustomerInfoByProviderIdAndPersonId(CustomerSynchronizationRequest request) {
+        return customerService.synchronizeProviderCustomerInfoByPersonId(request);
     }
 
 }

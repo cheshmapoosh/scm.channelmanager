@@ -19,6 +19,7 @@ public class ErrorCodes {
     public static final int ERROR_CODE_SOCKET_TIMEOUT = 1015;
     public static final int ERROR_CODE_UNKNOWN_HOST = 1016;
     public static final int ERROR_CODE_HOST_UNREACHABLE = 1017;
+    public static final int ERROR_CODE_HOST_TIMEOUT = 1037;
     public static final int ERROR_CODE_NO_RECORD_FOUND = 1018;
     public static final int ERROR_CODE_NOT_SUPPORT_DATA = 1019;
     public static final int ERROR_CODE_INVALID_REQUEST_FORMAT = 1020;
@@ -33,6 +34,11 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_GLOBAL = 1029;
     public static final int ERROR_CODE_HTTP_METHOD_NOT_ALLOWED = 1030;
     public static final int ERROR_CODE_MISMATCH_REQUIRED_INPUT = 1031;
+    public static final int ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND = 1032;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY = 1033;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_PARAMETER_CLASS_NOT_FOUND = 1034;
+    public static final int ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID = 1035;
+    public static final int ERROR_CODE_VALIDATION_PERSON_NOT_FOUND = 1036;
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1104;
 
 
@@ -50,16 +56,13 @@ public class ErrorCodes {
 //    public static final int ERROR_CODE_TERMINAL_CODE_IS_EMPTY = 1007;
 //    public static final int ERROR_CODE_TERMINAL_CODE_IS_INVALID = 1008;
 //    public static final int ERROR_CODE_INVALID_PROVIDER_RESPONSE = 1016;
-//    public static final int ERROR_CODE_JAVA_SERVICE_CLASS_NOT_FOUND = 1018;
 //    public static final int ERROR_CODE_JPA_SYSTEM = 1022;
 //    public static final int ERROR_CODE_VALIDATION_BODY_IS_EMPTY = 1050;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_EMPTY = 1052;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_IMPLEMENTATION_TYPE_IS_INVALID = 1053;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_CODE_IS_EMPTY = 1054;
-//    public static final int ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID = 1055;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_TITLE_IS_EMPTY = 1056;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_TYPE_IS_EMPTY = 1057;
-//    public static final int ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY = 1058;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_EMPTY = 1059;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_IS_INVALID = 1066;
 //    public static final int ERROR_CODE_VALIDATION_SERVICE_EXTERNAL_PROVIDER_NOT_SUPPORT_CUSTOMER = 1070;
@@ -77,6 +80,5 @@ public class ErrorCodes {
 //    public static final int ERROR_CODE_VALIDATION_PERSON_SUB_ORGANIZATION_ID_IS_EMPTY = 1076;
 //    public static final int ERROR_CODE_VALIDATION_PERSON_NATIONALITY_IS_EMPTY = 1077;
 //    public static final int ERROR_CODE_VALIDATION_PERSON_NATIONALITY_IS_INVALID = 1078;
-//    public static final int ERROR_CODE_VALIDATION_PERSON_NOT_FOUND = 1079;
 //    public static final int ERROR_CODE_VALIDATION_INVALID_INSTANT_FORMAT = 1071;
 }

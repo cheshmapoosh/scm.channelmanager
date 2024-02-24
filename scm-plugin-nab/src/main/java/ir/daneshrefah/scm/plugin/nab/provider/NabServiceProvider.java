@@ -72,12 +72,12 @@ public class NabServiceProvider extends AbstractRestExternalServiceProvider {
                     // Read the data from the array element (assuming they are integers in this example)
                     String errorCode = element.get("id").asText();
                     String errorMessage = element.get("message").asText();
-                    throw new ProviderErrorResponseException(getProvider(), errorCode, errorMessage);
+                    throw new ProviderErrorResponseException(service.getCode(), getProvider().getCode(), errorCode, errorMessage);
                 }
             }
             return getObjectMapper().readTree(response.body());
         } catch (JsonProcessingException e) {
-            throw new InvalidProviderResponseException(e, getProvider());
+            throw new InvalidProviderResponseException(service.getCode(), getProvider().getCode(), e);
         }
     }
 
