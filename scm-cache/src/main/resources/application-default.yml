@@ -1,0 +1,16 @@
+
+spring:
+  application:
+    name: scm-cache
+  config:
+    import: configserver:http://10.10.4.125:8888/config
+  cloud:
+    config:
+      profile: default
+
+
+springdoc:
+  api-docs:
+    enabled: true
+  packages-to-scan: ir.daneshrefah.scm.cache.rest
+

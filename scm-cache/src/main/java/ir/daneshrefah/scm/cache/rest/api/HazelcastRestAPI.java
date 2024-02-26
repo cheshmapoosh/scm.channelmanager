@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.cache.rest.api;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import ir.daneshrefah.scm.cache.domain.dto.UserAuthenticationTO;
 import ir.daneshrefah.scm.cache.service.HazelCastService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +22,29 @@ public class HazelcastRestAPI {
     public ResponseEntity<Object> get(@PathVariable("mapName") String mapName,
                                       @PathVariable("key") String key) {
         return ResponseEntity.ok(hazelCastService.getFromCache(mapName, key));
+    }
+
+    @PutMapping("/session")
+    public ResponseEntity<Object> putSession(@RequestBody UserAuthenticationTO userAuthentication) {
+        return ResponseEntity.ok(hazelCastService.putSession(userAuthentication));
+    }
+
+    @GetMapping("/session/{user-nickname}/{terminal-code}")
+    public ResponseEntity<Object> getSession(@PathVariable("user-nickname") String nickname,
+                                             @PathVariable("terminal-code") String terminalCode) {
+        return ResponseEntity.ok(hazelCastService.getSession(nickname,terminalCode));
+    }
+
+    @GetMapping("/{mapName}/{key}/entry-view")
+    public ResponseEntity<Object> getEntryView(@PathVariable("mapName") String mapName,
+                                               @PathVariable("key") String key) {
+        return ResponseEntity.ok(hazelCastService.getEntryView(mapName, key));
+    }
+
+    @GetMapping("/{mapName}/{key}/exists")
+    public ResponseEntity<Object> exists(@PathVariable("mapName") String mapName,
+                                         @PathVariable("key") String key) {
+        return ResponseEntity.ok(hazelCastService.exists(mapName, key));
     }
 
     @PutMapping(value = "/{mapName}/{key}")
@@ -50,8 +73,14 @@ public class HazelcastRestAPI {
 
     @DeleteMapping("/{mapName}/{key}")
     public ResponseEntity<Object> remove(@PathVariable("mapName") String mapName,
-                         @PathVariable("key") String key) {
+                                         @PathVariable("key") String key) {
         return ResponseEntity.ok(hazelCastService.removeFromCache(mapName, key));
+    }
+
+    @DeleteMapping("/session/{user-nickname}/{terminal-code}")
+    public ResponseEntity<Object> removeSession(@PathVariable("user-nickname") String userNickname,
+                                                @PathVariable("terminal-code") String terminalCode) {
+        return ResponseEntity.ok(hazelCastService.removeSession(userNickname, terminalCode));
     }
 
     @GetMapping("/create/{mapName}")
