@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.model.customer.Asset;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -63,50 +64,36 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId) {
-        Customer customer = findCustomerByPersonId(provider, personId.id());
+    public Customer findLocalCustomerByProviderIdAndPersonId(String providerId, PersonProfile.PersonId personId) {
+        Customer customer = findLocalCustomerByProviderIdAndPersonId(providerId, personId.id());
         if (null == customer) {
-            customer = findCustomerByPersonProfileId(provider, personId.username());
+            customer = findLocalCustomerByProviderIdAndPersonUsername(providerId, personId.username());
         }
         return customer;
     }
 
-    public Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId) {
-        if (!provider.isCustomerProvided() || StringUtils.isEmpty(personProfileId)) {
-            return null;
+    @Override
+    public <T extends Asset> List<T> findLocalCustomerAssetListByPersonId(PersonProfile.PersonId personId, Class<T> clazz) {
+        List<T> result = new ArrayList<>();
+        for (Map.Entry<String, ServiceProviderDataProvider> entry : providersMap.entrySet()) {
+            String key = entry.getKey();
+            ServiceProviderDataProvider provider = entry.getValue();
+            result.addAll(provider.findLocalCustomerAssetListByPersonId(personId, clazz));
         }
-        ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCode());
-        if (null == dataProvider) {
-            log.warn("no data provider found for provider '{}", provider.getCode());
-            return null;
-        }
-        return dataProvider.findCustomerByPersonProfileId(personProfileId);
+        return result;
     }
 
     @Override
-    public Customer findCustomerByProviderCode(String providerCode, Long personId) {
-        return findCustomerByPersonId(serviceService.findServiceProviderByCode(providerCode), personId);
-    }
-
-    @Override
-    public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
+    public Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId) {
+        if (StringUtils.isEmpty(providerId)) {
+            throw new MissingRequiredInputException("providerId");
+        }
         ExternalServiceProvider provider = serviceService.findServiceProviderById(providerId);
         if (null == provider) {
             provider = serviceService.findServiceProviderByCode(providerId);
         }
         if (null == provider) {
             throw new InvalidInputException("providerId");
-        }
-        return findCustomerByPersonId(provider, personId);
-    }
-
-    @Override
-    public Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId) {
-        if (null == provider) {
-            throw new MissingRequiredInputException("provider");
-        }
-        if (null == personId) {
-            throw new MissingRequiredInputException("personId");
         }
         if (!provider.isCustomerProvided() || null == personId) {
             return null;
@@ -116,21 +103,67 @@ public class CustomerServiceImpl implements CustomerService {
             log.warn("no data provider found for provider '{}", provider.getCode());
             return null;
         }
-        return dataProvider.findCustomerByPersonId(personId);
+        return dataProvider.findLocalCustomerByPersonId(personId);
+    }
+
+    @Override
+    public Customer findLocalCustomerByProviderIdAndPersonUsername(String providerId, String username) {
+        if (StringUtils.isEmpty(providerId)) {
+            throw new MissingRequiredInputException("providerId");
+        }
+        ExternalServiceProvider provider = serviceService.findServiceProviderById(providerId);
+        if (null == provider) {
+            provider = serviceService.findServiceProviderByCode(providerId);
+        }
+        if (null == provider) {
+            throw new InvalidInputException("providerId");
+        }
+        if (!provider.isCustomerProvided() || StringUtils.isEmpty(username)) {
+            return null;
+        }
+        ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCode());
+        if (null == dataProvider) {
+            log.warn("no data provider found for provider '{}", provider.getCode());
+            return null;
+        }
+        return dataProvider.findLocalCustomerByPersonProfileId(username);
+    }
+
+    @Override
+    public Customer findRemoteCustomerByProviderIdAndPersonId(String providerId, Long personId) {
+        if (StringUtils.isEmpty(providerId)) {
+            throw new MissingRequiredInputException("providerId");
+        }
+        if (null == personId) {
+            throw new MissingRequiredInputException("personId");
+        }
+        ExternalServiceProvider provider = serviceService.findServiceProviderById(providerId);
+        if (null == provider) {
+            provider = serviceService.findServiceProviderByCode(providerId);
+        }
+        if (null == provider) {
+            throw new InvalidInputException("providerId");
+        }
+        Optional<ServiceProviderDataProvider> dataProvider = findCustomerDataProvider(provider);
+        if (dataProvider.isEmpty()) {
+            throw new MethodNotSupportDataException("'customer data provider' not found for provider '" + provider.getCode() + "'.");
+        }
+        GeneralPerson person = personService.findPersonByPersonId(personId.intValue());
+        if (null == person) {
+            throw new InvalidInputException("personId");
+        }
+        return dataProvider.get().inquireRemoteCustomerByPerson(person);
     }
 
     @Override
     public Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request) {
-        if (null == request.getPersonId()) {
-            throw new MissingRequiredInputException("personId");
-        }
         if (StringUtils.isEmpty(request.getProviderId())) {
             throw new MissingRequiredInputException("providerId");
         }
-        ExternalServiceProvider provider = serviceService.findServiceProviderById(request.getProviderId());
-        if (null == provider) {
-            provider = serviceService.findServiceProviderByCode(request.getProviderId());
+        if (null == request.getPersonId()) {
+            throw new MissingRequiredInputException("personId");
         }
+        ExternalServiceProvider provider = serviceService.findServiceProviderByIdOrCode(request.getProviderId());
         if (null == provider) {
             throw new InvalidInputException("providerId");
         }
@@ -142,8 +175,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (null == person) {
             throw new InvalidInputException("personId");
         }
-        Customer customer = dataProvider.get().inquireCustomerByPerson(person);
-        return null;
+        return dataProvider.get().synchronizeCustomerInfo(provider, person);
     }
 
     private Optional<ServiceProviderDataProvider> findCustomerDataProvider(ExternalServiceProvider provider) {
@@ -153,4 +185,5 @@ public class CustomerServiceImpl implements CustomerService {
         ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCode());
         return Optional.of(dataProvider);
     }
+
 }

@@ -31,6 +31,14 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     @Override
+    public Optional<Terminal> findTerminalById(String id) {
+        if (StringUtils.isEmpty(id)) {
+            return Optional.empty();
+        }
+        return findAllTerminals().stream().filter(terminal -> id.equals(terminal.getId())).findFirst();
+    }
+
+    @Override
     public Optional<Terminal> findTerminalByCode(String code) {
         if (StringUtils.isEmpty(code)) {
             return Optional.empty();

@@ -70,6 +70,15 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    public ExternalServiceProvider findServiceProviderByIdOrCode(String value) {
+        ExternalServiceProvider provider = findServiceProviderById(value);
+        if (null != provider) {
+            return provider;
+        }
+        return findServiceProviderByCode(value);
+    }
+
+    @Override
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         if (null == services) {
             services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());

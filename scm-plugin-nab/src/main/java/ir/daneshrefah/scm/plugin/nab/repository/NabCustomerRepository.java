@@ -6,8 +6,11 @@ import ir.daneshrefah.scm.common.model.customer.AccountType;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -87,6 +90,25 @@ public class NabCustomerRepository {
         customer.setProviderId(providerId.get());
         customer.setAssets(assets);
 
+        return customer;
+    }
+
+    public Customer saveCustomer(Customer customer) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(
+                connection -> {
+                    PreparedStatement ps = connection.prepareStatement(
+                            "INSERT INTO CUSTOMER(CUSTOMER_NO, PROVIDER_ID) VALUES (?, ?)",
+                            new String[]{"CUSTOMER_ID"}
+                    ); // Specify ID column for generated key retrieval
+                    ps.setString(1, customer.getCustomerNo());
+                    ps.setString(2, customer.getProviderId());
+                    return ps;
+                },
+                keyHolder
+        );
+        Long generatedId = keyHolder.getKey().longValue();
+        customer.setId(String.valueOf(generatedId));
         return customer;
     }
 

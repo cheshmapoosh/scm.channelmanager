@@ -16,7 +16,7 @@ import java.util.List;
 // REF.CUSTOMER
 @Getter
 @Setter
-public class Customer extends BaseModel {
+public class Customer extends BaseModel<String> {
 
     private String providerId;
     private String customerNo;

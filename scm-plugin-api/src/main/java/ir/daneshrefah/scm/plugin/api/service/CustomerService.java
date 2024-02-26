@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
+import ir.daneshrefah.scm.common.model.customer.Asset;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,16 +15,11 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
  */
 public interface CustomerService {
 
-//    PersonProfile fillCustomerForPersonProfile(PersonProfile profile, ExternalServiceProvider provider);
-
-    Customer findCustomerByPersonId(ExternalServiceProvider provider, PersonProfile.PersonId personId);
-
-    public Customer findCustomerByProviderCode(String providerCode, Long personId);
-    public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId);
-
-    Customer findCustomerByPersonProfileId(ExternalServiceProvider provider, String personProfileId);
-    Customer findCustomerByPersonId(ExternalServiceProvider provider, Long personId);
-
-    public Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request);
+    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);
+    Customer findLocalCustomerByProviderIdAndPersonUsername(String providerId, String username);
+    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, PersonProfile.PersonId personId);
+    <T extends Asset> List<T> findLocalCustomerAssetListByPersonId(PersonProfile.PersonId personId, Class<T> clazz);
+    Customer findRemoteCustomerByProviderIdAndPersonId(String providerId, Long personId);
+    Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request);
 
 }

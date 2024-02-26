@@ -21,6 +21,8 @@ public interface ServiceService {
 
     ExternalServiceProvider findServiceProviderByCode(String id);
 
+    ExternalServiceProvider findServiceProviderByIdOrCode(String value);
+
     public List<Service> findServiceList();
 
     public PagedResponseData<Service> findServiceList(ServiceInfoRequest request);

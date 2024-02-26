@@ -126,6 +126,7 @@ public class SecurityConfig {
 //                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/login**").permitAll()
                         .requestMatchers("/assets/**").permitAll()

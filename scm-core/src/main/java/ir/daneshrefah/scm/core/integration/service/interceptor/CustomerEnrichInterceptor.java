@@ -99,7 +99,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         }
         String providerId = service.getServiceProvider().getId();
         if (!profile.isCustomerLoaded(providerId)) {
-            Customer customer = customerService.findCustomerByPersonId(service.getServiceProvider(), profile.getPersonId());
+            Customer customer = customerService.findLocalCustomerByProviderIdAndPersonId(service.getServiceProvider().getCode(), profile.getPersonId());
             profile.addCustomer(providerId, customer);
         }
         boolean isCustomerLoaded = profile.isCustomerLoaded(providerId) && null != profile.getCustomer(providerId) &&
