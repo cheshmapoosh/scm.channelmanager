@@ -28,7 +28,7 @@ import java.util.Objects;
  * @version 1.0
  * @since 2023-11-22
  */
-@EnableConfigurationProperties(CacheClientProperties.class)
+@EnableConfigurationProperties({CacheClientProperties.class})
 @RequiredArgsConstructor
 @Configuration
 @EnableCaching

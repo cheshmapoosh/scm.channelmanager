@@ -42,4 +42,14 @@ public enum AuthenticationMethod {
                 .orElse(null);
     }
 
+    public static AuthenticationMethod findByName(String authenticationMethod) {
+        AuthenticationMethod[] attrs = AuthenticationMethod.values();
+        for (AuthenticationMethod attr : attrs) {
+            if (attr.name().equals(authenticationMethod.toUpperCase())) {
+                return attr;
+            }
+        }
+        return null;
+    }
+
 }

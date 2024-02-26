@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.domain;
+package ir.daneshrefah.scm.cache.domain.config;
 
 import jakarta.persistence.*;
 import lombok.*;

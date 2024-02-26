@@ -1,11 +1,19 @@
 plugins {
     id 'ir.daneshrefah.scm.java-library-conventions'
+    id "org.springframework.boot" version'3.1.2'
+    id 'java'
 }
 
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+}
+
+tasks.named("bootJar") {
+    mainClass = 'ir.daneshrefah.scm.cache.CacheServerApplication'
+    archiveClassifier = 'boot'
+
 }
 
 dependencies {
@@ -18,5 +26,9 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    implementation project(':scm-uaa-common')
+    implementation 'org.springframework.security:spring-security-core'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation files('lib/db2jcc_license_cisuz-9.1.jar','lib/db2jcc_license_cu-9.1.jar')
     implementation project(':scm-uaa-client')
 }

@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.cache;
 
+import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,6 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  */
 @SpringBootApplication
 @EnableCaching
+@ComponentScan(excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
 public class CacheServerApplication {
     public static void main(String[] args) {
         SpringApplication.run(CacheServerApplication.class, args);

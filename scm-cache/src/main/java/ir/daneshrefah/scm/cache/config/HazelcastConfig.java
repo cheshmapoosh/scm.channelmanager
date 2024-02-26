@@ -4,7 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import ir.daneshrefah.scm.cache.domain.*;
+import ir.daneshrefah.scm.cache.domain.config.*;
 import ir.daneshrefah.scm.cache.mapper.InstanceMapper;
 import ir.daneshrefah.scm.cache.repository.InstanceCacheConfigRepository;
 import lombok.RequiredArgsConstructor;
