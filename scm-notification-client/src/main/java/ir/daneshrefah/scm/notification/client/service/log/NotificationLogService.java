@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.notification.Notification;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.NotificationStatus;
-import ir.daneshrefah.scm.notification.client.repository.domain.NotificationLog;
+import ir.daneshrefah.scm.common.model.notification.NotificationLog;
 import ir.daneshrefah.scm.notification.client.service.MessageTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

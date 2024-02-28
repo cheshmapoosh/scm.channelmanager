@@ -1,9 +1,5 @@
-package ir.daneshrefah.scm.notification.client.repository.domain;
+package ir.daneshrefah.scm.common.model.notification;
 
-import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
-import ir.daneshrefah.scm.common.model.notification.NotificationData;
-import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
-import ir.daneshrefah.scm.common.model.notification.NotificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
