@@ -94,7 +94,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         if (null == request) {
             throw new MissingRequiredInputException("request body");
         }
-        if (null == request.getNationalId()) {
+        if (StringUtils.isEmpty(request.getNationalId())) {
             throw new MissingRequiredInputException("nationalId");
         }
 
@@ -122,7 +122,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 
     @Override
     public void deletePersonInfoFromCIF(String nationalId) {
-        if (nationalId == null || nationalId.isEmpty()) {
+        if (StringUtils.isEmpty(nationalId)) {
             throw new MissingRequiredInputException("nationalId");
         }
         GeneralPersonEntity personEntity = personRepository.findIndividualPersonByNationalCode(nationalId);

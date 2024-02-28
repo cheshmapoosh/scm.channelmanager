@@ -40,6 +40,7 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    //    TODO ELI RoleDTO should not be in the 'domain' package and its name is not self-explanatory
     @PutMapping("/{roleCode}")
     public ResponseEntity<Role> editRole(@PathVariable String roleCode , @RequestBody RoleDTO roleDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(roleService.editRole(roleDTO,roleCode));
