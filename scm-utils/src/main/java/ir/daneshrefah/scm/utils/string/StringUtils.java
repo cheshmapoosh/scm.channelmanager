@@ -143,8 +143,12 @@ public class StringUtils {
      *
      * @param input
      * this method find all template parameters.
-     * ex. My name is ${name} and im ${age} years old.
-     * return : [{name},{age}] as HashSet
+     * <pre>
+     * {@code
+     *  ex. input:      My name is ${name} and im ${age} years old.
+     *      return:     name,age (as HashSet)
+     * }
+     * </pre>
      */
     public static Set<String> findTemplateParameters(String input){
         Set<String> parameters = new HashSet<>();

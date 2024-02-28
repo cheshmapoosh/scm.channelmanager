@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.notification.client.repository.domain;
+package ir.daneshrefah.scm.common.data.entity.notification;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
@@ -25,6 +25,8 @@ public class NotificationQueueEntity extends AbstractDefaultEntity<String> {
     private Long messageTemplateId;
     @Column(name = "MESSAGE")
     private String message;
+    @Column(name = "RECIPIENT")
+    private String recipient;
     @Column(name = "STATUS")
     @Enumerated(EnumType.STRING)
     private NotificationStatus status;

@@ -1,7 +1,8 @@
-package ir.daneshrefah.scm.notification.client.service.log;
+package ir.daneshrefah.scm.notification.log;
+
 
 import ir.daneshrefah.scm.common.model.notification.NotificationLog;
 
-public interface LoggerProvider {
+public interface NotificationLogProvider {
     void log(NotificationLog notificationLog);
 }

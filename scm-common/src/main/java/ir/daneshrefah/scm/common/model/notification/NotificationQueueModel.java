@@ -19,4 +19,5 @@ public class NotificationQueueModel extends BaseModel<String> implements Seriali
     private NotificationStatus status;
     private Integer tryCount;
     private LocalDateTime expiration;
+    private String recipient;
 }

@@ -2,9 +2,9 @@ package ir.daneshrefah.scm.notification.client.service;
 
 import ir.daneshrefah.scm.common.model.notification.NotificationQueueModel;
 import ir.daneshrefah.scm.common.model.notification.NotificationStatus;
-import ir.daneshrefah.scm.notification.client.repository.NotificationQueueRepository;
-import ir.daneshrefah.scm.notification.client.repository.domain.NotificationQueueEntity;
-import ir.daneshrefah.scm.notification.client.repository.mapper.NotificationQueueEntityMapper;
+import ir.daneshrefah.scm.common.data.repository.notification.NotificationQueueRepository;
+import ir.daneshrefah.scm.common.data.entity.notification.NotificationQueueEntity;
+import ir.daneshrefah.scm.common.data.mapper.notification.NotificationQueueEntityMapper;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationQueueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

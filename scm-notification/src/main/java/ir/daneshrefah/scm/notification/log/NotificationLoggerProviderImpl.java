@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.notification.client.service.log;
+package ir.daneshrefah.scm.notification.log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 @Slf4j
 @Service
-public class LoggerProviderImpl implements LoggerProvider {
+public class NotificationLoggerProviderImpl implements NotificationLogProvider {
 
     private final static ObjectMapper OBJECT_MAPPER;
 
@@ -22,6 +22,6 @@ public class LoggerProviderImpl implements LoggerProvider {
     @SneakyThrows
     public void log(NotificationLog notificationLog) {
         //TODO >>>  sending log to centralized log service ...
-         log.info(LogUtils.markWith(LogUtils.Color.BLUE,"[SNT-NOTIFICATION-LOG] "+OBJECT_MAPPER.writeValueAsString(notificationLog)));
+         log.info(LogUtils.markWith(LogUtils.Color.BLUE,"[SNT-CORE-NOTIFICATION-LOG] "+OBJECT_MAPPER.writeValueAsString(notificationLog)));
     }
 }

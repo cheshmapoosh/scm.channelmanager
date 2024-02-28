@@ -24,6 +24,7 @@ CREATE TABLE REF.TBL_SNT_NOTIFICATION_QUEUE
     MEDIA                 VARCHAR(255),
     MESSAGE_TEMPLATE_ID   DECIMAL(22),
     MESSAGE               VARCHAR(255),
+    RECIPIENT             VARCHAR(255),
     STATUS                VARCHAR(255),
     EXPIRATION            TIMESTAMP,
     TRY_COUNT             INTEGER,
