@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -30,4 +31,6 @@ public interface RoleRepository extends CrudRepository<RoleEntity, Integer>, Jpa
     @Query(nativeQuery = true, value = "INSERT INTO userrole (USER_ID, ROLE_ID) VALUES (:personId, :roleId)")
     void insertPersonRole(@Param("personId") Long personId, @Param("roleId") Integer roleId);
 
+    Optional<RoleEntity> findByCode(String code);
+    void deleteRoleEntityByCode(String code);
 }

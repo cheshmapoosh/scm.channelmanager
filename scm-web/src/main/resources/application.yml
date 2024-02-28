@@ -1,6 +1,6 @@
 scm:
   profile: IB4DEV
-  channels: SCM4DEV
+  channels: SCM4DEV, IB
   datasource:
     primary:
       url: jdbc:db2://10.10.4.104:50001/DBREFSW

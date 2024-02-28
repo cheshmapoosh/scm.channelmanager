@@ -7,6 +7,8 @@ import ir.daneshrefah.scm.uaa.service.user.UpdatePasswordRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -24,33 +26,39 @@ public class UserController extends BaseController {
     private final UserService userService;
 
     @PostMapping("/paged")
-    public PagedResponseData<User> findPagedUserList(@RequestBody(required = false) UserFindRequest request) {
-        return userService.findPagedUserList(request);
+    public ResponseEntity<PagedResponseData<User>> findPagedUserList(@RequestBody(required = false) UserFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.findPagedUserList(request));
     }
 
-    @PostMapping
-    public User createUser(@RequestBody UserDataRequest request) {
-        return userService.createUser(request);
+    @PostMapping("/add")
+    public ResponseEntity<User> createUser(@RequestBody UserDataRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.createUser(request));
     }
 
     @PutMapping("/login-password/{userId}")
-    public boolean updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody UpdatePasswordRequest request) {
-        return userService.updateUserLoginPassword(userId, request);
+    public ResponseEntity<Boolean> updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody UpdatePasswordRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginPassword(userId, request));
     }
 
     @PutMapping("/transaction-password/{userId}")
-    public User updateUserTransactionStaticPassword(@PathVariable Long userId, @RequestBody String password) {
-        return null;
+    public ResponseEntity<User> updateUserTransactionStaticPassword(@PathVariable Long userId, @RequestBody String password) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserTransactionStaticPass(userId,password));
     }
 
     @PostMapping("/activate/{userId}")
-    public boolean activateUser(@PathVariable Long userId) {
-        return userService.activateUser(userId, true);
+    public ResponseEntity<Boolean> activateUser(@PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.activateUser(userId, true));
     }
 
     @PostMapping("/deactivate/{userId}")
-    public boolean deactivateUser(@PathVariable Long userId) {
-        return userService.activateUser(userId, false);
+    public ResponseEntity<Boolean> deactivateUser(@PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.activateUser(userId, false));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUserById(@PathVariable Long userId) {
+        userService.deleteUserByUserId(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
 }
