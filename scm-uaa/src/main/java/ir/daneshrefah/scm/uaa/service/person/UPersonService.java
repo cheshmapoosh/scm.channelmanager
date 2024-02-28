@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.service.person;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.domain.person.Role;
+import ir.daneshrefah.scm.uaa.domain.role.Role;
 
 import java.util.List;
 
@@ -25,5 +25,7 @@ public interface UPersonService extends PersonService {
     List<Role> findPersonRoleList(Long personId);
 
     Role addPersonRole(Long personId, Integer roleId);
+
+    void deletePersonInfoFromCIF(String nationalId);
 
 }

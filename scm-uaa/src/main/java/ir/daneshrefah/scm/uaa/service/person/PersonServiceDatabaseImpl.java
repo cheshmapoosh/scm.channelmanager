@@ -9,12 +9,13 @@ import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDataba
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.domain.person.Role;
+import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -90,8 +91,49 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 
     @Override
     public GeneralPerson updatePersonInfoFromCIF(PersonFindRequest request) {
-        return null;
+        if (null == request) {
+            throw new MissingRequiredInputException("request body");
+        }
+        if (null == request.getNationalId()) {
+            throw new MissingRequiredInputException("nationalId");
+        }
+
+        boolean isPersonExist = checkPersonExist(request);
+        if (!isPersonExist) {
+            throw new PersonNotFoundException("Person Not Found");
+        }
+
+        List<GeneralPerson> personList = findCIFPersonInfo(request);
+        if (null == personList || personList.isEmpty()) {
+            throw new NoMatchRecordFoundException("cif person");
+        }
+        if (personList.size() > 1) {
+            throw new TooManyRecordFoundException("cif person", personList.size());
+        }
+        GeneralPersonEntity personEntity = PersonMapper.INSTANCE.toPersonEntity(personList.get(0));
+        personEntity.setUsername(extractUsername(personEntity));
+        personEntity.setActive(true);
+        personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
+
+        personEntity = personRepository.save(personEntity);
+
+        return PersonMapper.INSTANCE.toPerson(personEntity);
     }
+
+    @Override
+    public void deletePersonInfoFromCIF(String nationalId) {
+        if (nationalId == null || nationalId.isEmpty()) {
+            throw new MissingRequiredInputException("nationalId");
+        }
+        GeneralPersonEntity personEntity = personRepository.findIndividualPersonByNationalCode(nationalId);
+
+        if (personEntity == null) {
+            throw new PersonNotFoundException("Person Not Found");
+        }
+        personRepository.delete(personEntity);
+    }
+
+
 
     @Override
     public List<Role> findPersonRoleList(Long personId) {

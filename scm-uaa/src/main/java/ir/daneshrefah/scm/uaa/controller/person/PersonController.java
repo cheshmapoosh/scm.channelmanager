@@ -3,9 +3,11 @@ package ir.daneshrefah.scm.uaa.controller.person;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.domain.person.Role;
+import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.service.person.UPersonService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,33 +27,39 @@ public class PersonController {
     private final UPersonService personService;
 
     @PostMapping("/paged")
-    public PagedResponseData<GeneralPerson> findPagedPersonList(@RequestBody(required = false) PersonFindRequest request) {
-        return personService.findPagedPersonList(request);
+    public ResponseEntity<PagedResponseData<GeneralPerson>> findPagedPersonList(@RequestBody(required = false) PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPagedPersonList(request));
     }
 
     @GetMapping("/{personId}/roles")
-    public List<Role> findUserRoleList(@PathVariable("personId") Long personId) {
-        return personService.findPersonRoleList(personId);
+    public ResponseEntity<List<Role>> findUserRoleList(@PathVariable("personId") Long personId) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonRoleList(personId));
     }
 
     @PutMapping("/{personId}/roles/{roleId}")
-    public Role addPersonRole(@PathVariable("personId") Long personId, @PathVariable("roleId") Integer roleId) {
-        return personService.addPersonRole(personId, roleId);
+    public ResponseEntity<Role> addPersonRole(@PathVariable("personId") Long personId, @PathVariable("roleId") Integer roleId) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.addPersonRole(personId, roleId));
     }
 
     @PostMapping("/cif")
-    public List<GeneralPerson> findCIFPersonInfo(@RequestBody PersonFindRequest request) {
-        return personService.findCIFPersonInfo(request);
+    public ResponseEntity<List<GeneralPerson>> findCIFPersonInfo(@RequestBody PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findCIFPersonInfo(request));
     }
 
     @PostMapping("/add")
-    public GeneralPerson addPersonInfoFromCIF(@RequestBody PersonFindRequest request) {
-        return personService.addPersonInfoFromCIF(request);
+    public ResponseEntity<GeneralPerson> addPersonInfoFromCIF(@RequestBody PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.addPersonInfoFromCIF(request));
     }
 
     @PostMapping("/update")
-    public GeneralPerson updatePersonInfoFromCIF(@RequestBody PersonFindRequest request) {
-        return personService.updatePersonInfoFromCIF(request);
+    public ResponseEntity<GeneralPerson> updatePersonInfoFromCIF(@RequestBody PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.updatePersonInfoFromCIF(request));
+    }
+
+    @DeleteMapping("/{nationalId}")
+    public ResponseEntity<Void> deletePersonInfoFromCifByNationalId(@PathVariable String nationalId) {
+        personService.deletePersonInfoFromCIF(nationalId);
+        return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
 }

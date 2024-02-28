@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequestException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.UserNotFoundException;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
@@ -188,5 +189,24 @@ public class UserService {
                 userEntity.get().getPerson().getUsername()));
         userRepository.save(userEntity.get());
         return true;
+    }
+
+    public User updateUserTransactionStaticPass(Long userId, String password) {
+        Optional<UserEntity> userEntity = userRepository.findById(userId);
+        if (userEntity.isPresent()) {
+            userEntity.get().setTransactionStaticPassword(password);
+            return UserMapper.INSTANCE.toModel(userEntity.get());
+        } else {
+            throw new UserNotFoundException("User Not Found With This Id '" + userId + "'");
+        }
+    }
+
+    public void deleteUserByUserId(Long userId) {
+        Optional<UserEntity> userEntity = userRepository.findById(userId);
+        if (userEntity.isPresent()) {
+            userRepository.deleteById(userId);
+        } else {
+            throw new UserNotFoundException("User Not Found With This Id '" + userId + "'");
+        }
     }
 }

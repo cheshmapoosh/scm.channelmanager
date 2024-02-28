@@ -67,3 +67,9 @@ scm:
 
 server:
   port: 8000
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /public/index.html
+  api-docs:
+    path: /public/v3/api-docs

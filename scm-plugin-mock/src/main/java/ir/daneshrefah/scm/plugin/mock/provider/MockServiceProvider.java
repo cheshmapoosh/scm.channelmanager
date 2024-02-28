@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.plugin.mock.provider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
@@ -23,7 +25,17 @@ public class MockServiceProvider extends AbstractExternalServiceProvider {
 
     @Override
     protected JsonNode executeInternal(Message message, Service service, Object requestBody) {
-        return null;
-    }
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode metadata = null;
+        try {
+            metadata = mapper.readTree(service.getMetadata());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
+        return fetchResponse(metadata);
+    }
+    private JsonNode fetchResponse(JsonNode metadata) {
+        return metadata.get("response");
+    }
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.domain.person;
+package ir.daneshrefah.scm.uaa.domain.role;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Data;
