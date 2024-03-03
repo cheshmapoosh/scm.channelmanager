@@ -24,7 +24,7 @@
             <p class="tab-links active-link" data-id="tab1">time</p>
             <p class="tab-links" data-id="tab2">jwt</p>
             <p class="tab-links" data-id="tab3">base64</p>
-            <p class="tab-links" data-id="tab4">Consent</p>
+            <p class="tab-links" data-id="tab4">API Login</p>
             <!-- <p class="tab-links" data-id="tab5">tab5</p> -->
           </div>
         </nav>
@@ -51,7 +51,7 @@
                   />
                 </div>
                 <div class="form-row btn-container">
-                  <button class="decode-btn" type="submit">Decode</button>
+                  <button class="decode-btn" type="button" onclick="return convertTime()">Decode</button>
                 </div>
                 <div class="form-row">
                   <input
@@ -84,7 +84,7 @@
                   ></textarea>
                 </div>
                 <div class="form-row btn-container">
-                  <button class="decode-btn" type="submit">Decode</button>
+                  <button class="decode-btn" type="button" onclick="return convertJwt()">Decode</button>
                 </div>
                 <div class="form-row">
                   <textarea
@@ -109,8 +109,7 @@
               <div class="form-row">
                 <textarea
                   class="form-control"
-                  id="inputToken"
-                  th:text="*{encodedValue}"
+                  id="inputTokenBase64"
                   name="encodedValue"
                   placeholder="Enter Base64 value"
                   rows="5"
@@ -119,14 +118,13 @@
                 ></textarea>
               </div>
               <div class="form-row btn-container">
-                <button class="decode-btn" type="submit">Decode</button>
+                <button class="decode-btn" type="button" onclick="return convertBase64()">Decode</button>
               </div>
 
               <div class="form-row">
                 <textarea
                   class="form-control"
-                  id="outputToken"
-                  th:text="*{decodedValue}"
+                  id="outputTokenBase64"
                   rows="10"
                   placeholder="Decoded Value"
                 ></textarea>
@@ -145,7 +143,6 @@
                   <p>
                     <span
                       class="font-weight-bold text-primary"
-                      th:text="${client_title}"
                     ></span>
                     wants to access your account
                     <span class="font-weight-bold">user</span>
@@ -194,22 +191,13 @@
                     <div class="form-group pt-3">
                       <button
                         class="btn btn-primary btn-lg"
-                        type="submit"
+                        type="button" onclick="return convertLogin()"
                         id="submit-consent"
                       >
                         Submit Consent
                       </button>
                     </div>
-                    <div class="form-group">
-                      <button
-                        class="btn btn-link regular"
-                        type="button"
-                        onclick="cancelConsent();"
-                        id="cancel-consent"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+
                   </form>
                 </div>
               </div>

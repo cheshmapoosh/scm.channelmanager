@@ -24,6 +24,13 @@ public class ToolsController extends BaseController {
     private static final String TEMPLATE_NAME_BASE64 = "base-64";
     private static final String TEMPLATE_NAME_JWT = "jwt";
     private static final String TEMPLATE_NAME_TIME = "time";
+    private static final String TEMPLATE_NAME_CONVERTERS = "converters";
+
+    @GetMapping("/")
+    public String showToolsPage(Model model) {
+        model.addAttribute("encodedValue", "");
+        return TEMPLATE_NAME_CONVERTERS;
+    }
 
     @GetMapping("/time")
     public String showTimeDecodePage(Model model) {
