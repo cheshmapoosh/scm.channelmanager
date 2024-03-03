@@ -121,10 +121,10 @@
         </form>
         <div class="form-row" th:if="${isStepTwoRequired}">
           <button
-                  class="submit-btn"
-                  type="button"
-                  id="cancelButton"
-                  th:text="#{label.caption.cancel}"
+            class="submit-btn"
+            type="button"
+            id="cancelButton"
+            th:text="#{label.caption.cancel}"
           ></button>
         </div>
         <div class="timer" th:if="${isStepTwoRequired}">
@@ -141,9 +141,9 @@
                 action="/public/otp/sms"
               >
                 <button
-                        class="sms-btn"
-                        type="submit"
-                        data-th-text="#{label.btn.send-sms}"
+                  class="sms-btn"
+                  type="submit"
+                  data-th-text="#{label.btn.send-sms}"
                 ></button>
               </form>
             </div>
@@ -156,6 +156,7 @@
           <div class="footer-line"></div>
         </div>
       </div>
+    </div>
 
     <script th:inline="javascript">
       /*<![CDATA[*/
@@ -175,7 +176,6 @@
         }
       }
       const timer = setInterval(updateCounter, 1000);
-
 
       const cancelButton = document.getElementById("cancelButton");
       cancelButton.addEventListener("click", () => {
