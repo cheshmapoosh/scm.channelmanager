@@ -3,10 +3,7 @@ package ir.daneshrefah.scm.uaa.service.user;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.MissingRequestException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.UserNotFoundException;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
@@ -197,7 +194,7 @@ public class UserService {
             userEntity.get().setTransactionStaticPassword(password);
             return UserMapper.INSTANCE.toModel(userEntity.get());
         } else {
-            throw new UserNotFoundException("User Not Found With This Id '" + userId + "'");
+            throw new NoMatchRecordFoundException("User Not Found With This Id '" + userId + "'");
         }
     }
 
@@ -206,7 +203,7 @@ public class UserService {
         if (userEntity.isPresent()) {
             userRepository.deleteById(userId);
         } else {
-            throw new UserNotFoundException("User Not Found With This Id '" + userId + "'");
+            throw new NoMatchRecordFoundException("User Not Found With This Id '" + userId + "'");
         }
     }
 }

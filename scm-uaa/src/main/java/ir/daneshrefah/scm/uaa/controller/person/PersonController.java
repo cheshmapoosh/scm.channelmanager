@@ -56,11 +56,9 @@ public class PersonController {
         return ResponseEntity.status(HttpStatus.OK).body(personService.updatePersonInfoFromCIF(request));
     }
 
-//    TODO ELI nationalId isn't unique and method name isn't correct, this method remove person info from local.
-    @DeleteMapping("/{nationalId}")
-    public ResponseEntity<Void> deletePersonInfoFromCifByNationalId(@PathVariable String nationalId) {
-        personService.deletePersonInfoFromCIF(nationalId);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deletePersonInfoById(@PathVariable Integer userId) {
+        personService.deletePersonInfo(userId);
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
-
 }

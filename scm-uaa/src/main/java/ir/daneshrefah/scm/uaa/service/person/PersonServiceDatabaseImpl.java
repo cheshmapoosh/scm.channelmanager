@@ -15,7 +15,6 @@ import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -121,16 +120,13 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     }
 
     @Override
-    public void deletePersonInfoFromCIF(String nationalId) {
-        if (StringUtils.isEmpty(nationalId)) {
-            throw new MissingRequiredInputException("nationalId");
+    public void deletePersonInfo(Integer userId) {
+        if (null == userId) {
+            throw new MissingRequiredInputException("userId");
         }
-        GeneralPersonEntity personEntity = personRepository.findIndividualPersonByNationalCode(nationalId);
-
-        if (personEntity == null) {
-            throw new PersonNotFoundException("Person Not Found");
-        }
-        personRepository.delete(personEntity);
+        Optional<GeneralPersonEntity> personEntity = personRepository.findById(userId);
+        personEntity.ifPresent(personRepository::delete);
+        throw new PersonNotFoundException("Person Not Found");
     }
 
 

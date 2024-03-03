@@ -26,6 +26,6 @@ public interface UPersonService extends PersonService {
 
     Role addPersonRole(Long personId, Integer roleId);
 
-    void deletePersonInfoFromCIF(String nationalId);
+    void deletePersonInfo(Integer userId);
 
 }

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.controller.role;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
-import ir.daneshrefah.scm.uaa.domain.role.RoleDTO;
+import ir.daneshrefah.scm.uaa.service.role.RoleDTO;
 import ir.daneshrefah.scm.uaa.service.person.RoleFindRequest;
 import ir.daneshrefah.scm.uaa.service.role.RoleService;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +40,9 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
-    //    TODO ELI RoleDTO should not be in the 'domain' package and its name is not self-explanatory
-    @PutMapping("/{roleCode}")
-    public ResponseEntity<Role> editRole(@PathVariable String roleCode , @RequestBody RoleDTO roleDTO) {
-        return ResponseEntity.status(HttpStatus.OK).body(roleService.editRole(roleDTO,roleCode));
+    @PutMapping("/{roleId}")
+    public ResponseEntity<Role> editRoleById(@PathVariable Integer roleId , @RequestBody RoleDTO roleDTO) {
+        return ResponseEntity.status(HttpStatus.OK).body(roleService.editRoleByRoleId(roleDTO,roleId));
     }
 
 }
