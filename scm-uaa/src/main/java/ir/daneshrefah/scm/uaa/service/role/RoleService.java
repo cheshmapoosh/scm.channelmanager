@@ -1,10 +1,11 @@
 package ir.daneshrefah.scm.uaa.service.role;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.exception.InputAlreadyExistException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.RoleAlreadyExistsException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
-import ir.daneshrefah.scm.uaa.domain.role.RoleDTO;
 import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
@@ -48,7 +49,7 @@ public class RoleService {
         } else {
             Optional<RoleEntity> roleEntity = roleRepository.findByCode(roleCode);
             if (roleEntity.isPresent()) {
-                throw new RoleAlreadyExistsException("Role With This Code '" + roleCode + "' Already Exists");
+                throw new InputAlreadyExistException("Role With This Code '" + roleCode + "' Already Exists");
             } else {
                 RoleEntity newRole = RoleMapper.INSTANCE.roleDtoToRoleEntity(roleDTO);
                 roleRepository.save(newRole);
@@ -65,14 +66,19 @@ public class RoleService {
         }
     }
 
-    public Role editRole(RoleDTO roleDTO, String roleCode) {
-        if (null == roleCode) {
-            throw new InvalidInputException("Role Code Is Empty");
+    public Role editRoleByRoleId(RoleDTO roleDTO, Integer roleId) {
+        if (null == roleId) {
+            throw new MissingRequiredInputException("Role Id Is Empty");
         } else {
-            RoleEntity editedRole = RoleMapper.INSTANCE.roleDtoToRoleEntity(roleDTO);
-            roleRepository.save(editedRole);
+            Optional<RoleEntity> existingRole = roleRepository.findById(roleId);
+            if (existingRole.isPresent()) {
+                RoleMapper.INSTANCE.updateRoleEntityFromDto(roleDTO,existingRole.get());
+                roleRepository.save(existingRole.get());
 
-            return RoleMapper.INSTANCE.toModel(editedRole);
+                return RoleMapper.INSTANCE.toModel(existingRole.get());
+            } else {
+                throw new NoMatchRecordFoundException("Role Not Found");
+            }
         }
     }
 

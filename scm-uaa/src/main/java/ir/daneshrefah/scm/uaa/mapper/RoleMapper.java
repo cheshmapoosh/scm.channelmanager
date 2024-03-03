@@ -1,10 +1,11 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
 import ir.daneshrefah.scm.uaa.domain.role.Role;
-import ir.daneshrefah.scm.uaa.domain.role.RoleDTO;
+import ir.daneshrefah.scm.uaa.service.role.RoleDTO;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -29,5 +30,7 @@ public interface RoleMapper {
 
     @Mapping(target = "id", ignore = true)
     RoleEntity roleDtoToRoleEntity(RoleDTO roleDTO);
+    @Mapping(target = "id", ignore = true)
+    void updateRoleEntityFromDto(RoleDTO dto, @MappingTarget RoleEntity roleEntity);
 
 }

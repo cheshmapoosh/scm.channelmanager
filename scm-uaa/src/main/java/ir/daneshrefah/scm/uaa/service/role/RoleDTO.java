@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.domain.role;
+package ir.daneshrefah.scm.uaa.service.role;
 
 import lombok.Data;
 
