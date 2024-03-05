@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.notification;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 
 import java.util.HashMap;
 import java.util.Map;

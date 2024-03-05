@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.notification.client.service;
 
+import ir.daneshrefah.scm.common.data.mapper.notification.MessageTemplateMapper;
+import ir.daneshrefah.scm.common.data.repository.notification.MessageTemplateRepository;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
 import ir.daneshrefah.scm.notification.client.exception.NotificationTemplateNotFoundException;
-import ir.daneshrefah.scm.notification.client.repository.MessageTemplateRepository;
-import ir.daneshrefah.scm.notification.client.repository.mapper.MessageTemplateEntityMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class MessageTemplateService {
             messageTemplateRepository
                     .findAll()
                     .stream()
-                    .map(MessageTemplateEntityMapper.INSTANCE::toDto)
+                    .map(MessageTemplateMapper.INSTANCE::toDto)
                     .forEach(messageTemplates::add);
             log.info(">> {} message templates loaded ...",messageTemplates.size());
         }catch (Exception e){

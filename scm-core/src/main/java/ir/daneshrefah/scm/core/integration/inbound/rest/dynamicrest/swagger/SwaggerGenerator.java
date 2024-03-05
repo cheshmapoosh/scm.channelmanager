@@ -31,6 +31,8 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuild
 import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -48,8 +50,11 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  * @version 1.0
  * @since 2024-01-19
  */
+@Component
 public class SwaggerGenerator {
 
+    @Value("${scm.swagger.server-host:#{null}}")
+    private String serverHost;
     private static final ObjectMapper OBJECT_MAPPER;
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.0";
@@ -199,7 +204,8 @@ public class SwaggerGenerator {
         final String ipAddress = "{ip-address}";
         String baseUrl = "http://" + ipAddress + ":" + port + contextPath;
         try {
-            return baseUrl.replace(ipAddress, InetAddress.getLocalHost().getHostAddress());
+            String host = Objects.nonNull(serverHost) ? serverHost : InetAddress.getLocalHost().getHostAddress();
+            return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
             return baseUrl.replace(ipAddress, "0.0.0.0");
         }

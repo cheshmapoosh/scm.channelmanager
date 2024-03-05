@@ -30,8 +30,14 @@ scm:
         server-host: 10.10.4.125
         server-port: 5701
   notification:
-    enabled: true
-    distributed: true
+    consumer:
+      enabled: false
+      strategy: database_queued
+      database-queue-config:
+        max-sending-status-minute: 5
+    producer:
+      enabled: false
+      mode: distributed
     data-source:
       url: jdbc:db2://10.10.4.104:50001/DBREFSW
       username: db2inst1
@@ -39,8 +45,6 @@ scm:
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
-
-
 
 
 
