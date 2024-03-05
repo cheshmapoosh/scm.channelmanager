@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.notification;
 
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +20,6 @@ public class NotificationRequest {
     private String recipient;
     private NotificationData data;
     private String terminalCode;
-    private String terminalTittle;
     private TemplateCode templateCode;
     private String username;
     private String createdBy;

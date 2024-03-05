@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.notification.client.service.log;
 import ir.daneshrefah.scm.common.model.notification.Notification;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.NotificationStatus;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationStatus;
 import ir.daneshrefah.scm.common.model.notification.NotificationLog;
 import ir.daneshrefah.scm.notification.client.service.MessageTemplateService;
 import lombok.RequiredArgsConstructor;

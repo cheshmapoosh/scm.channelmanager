@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.model.notification;
 
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

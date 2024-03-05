@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
-import ir.daneshrefah.scm.common.model.notification.DataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
-import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
 import ir.daneshrefah.scm.common.service.TerminalService;
@@ -42,6 +42,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                     NotificationData data = new NotificationData()
                             .put(DataKey.TITLE, "")
                             .put(DataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
+                            .put(DataKey.TERMINAL_TITLE, terminal.getTitle())
                             .put(DataKey.OTP_CODE, "123");
                     NotificationRequest request = NotificationRequest.builder()
                             .media(NotificationMedia.SMS)
@@ -50,7 +51,6 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                             .data(data)
                             .templateCode(TemplateCode.AUTHENTICATION)
                             .terminalCode(user.getTerminalCode())
-                            .terminalTittle(terminal.getTitle())
                             .createdBy("") //TODO ->
                             .build();
                     notificationService.sendNotification(request);

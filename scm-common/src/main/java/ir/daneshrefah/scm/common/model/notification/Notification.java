@@ -1,8 +1,13 @@
 package ir.daneshrefah.scm.common.model.notification;
 
-import lombok.Builder;
+import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationStatus;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -13,13 +18,16 @@ import java.time.LocalDateTime;
  * @since 2024-02-05
  */
 @Getter
-@Builder
-public class Notification {
+@Setter
+@Accessors(chain = true)
+public class Notification extends BaseModel<String> implements Serializable {
 
-    private final NotificationMedia media;
-    private final String recipient;
-    private final MessageTemplate messageTemplate;
-    private final String body;
-    private final LocalDateTime expiration;
+    private  NotificationMedia media;
+    private  String recipient;
+    private  MessageTemplate messageTemplate;
+    private  String body;
+    private  LocalDateTime expiration;
+    private  NotificationStatus status;
+    private  Integer tryCount;
 
 }

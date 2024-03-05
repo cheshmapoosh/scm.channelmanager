@@ -18,7 +18,7 @@ public class DistributedLockImpl<T> implements DistributedLock<T> {
     private final HazelcastInstance hazelcastInstance;
 
     @Override
-    public T syncroziedExceution(String lockGroup,Duration ttl,DistributedJob<T> distributedJob) {
+    public T synchronizedException(String lockGroup, Duration ttl, DistributedJob<T> distributedJob) {
         IMap<String,Object> lockMap = getLockMap();
         if (!lockMap.isLocked(lockGroup)) {
             try {
@@ -33,7 +33,7 @@ public class DistributedLockImpl<T> implements DistributedLock<T> {
     }
 
     @Override
-    public T syncroziedExceution(String lockGroup,DistributedJob<T> distributedJob) {
+    public T synchronizedException(String lockGroup, DistributedJob<T> distributedJob) {
         IMap<String,Object> lockMap = getLockMap();
         if (!lockMap.isLocked(lockGroup)) {
             try {

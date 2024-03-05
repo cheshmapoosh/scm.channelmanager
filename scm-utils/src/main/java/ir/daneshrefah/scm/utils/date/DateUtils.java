@@ -145,6 +145,14 @@ public class DateUtils {
         public static LocalDateTime atEndOfDay(LocalDateTime localDateTime) {
             return localDateTime.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay());
         }
+
+        public static LocalDateTime current(){
+            return LocalDateTime.now();
+        }
+
+        public static LocalDateTime plus(LocalDateTime dateTime,Duration duration){
+            return dateTime.plus(duration);
+        }
     }
 
     public static class ShamsiCalendarConvertor {
