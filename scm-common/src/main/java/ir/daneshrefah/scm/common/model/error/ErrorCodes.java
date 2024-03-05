@@ -50,6 +50,12 @@ public class ErrorCodes {
     public static final int ERROR_CODE_ASSET_NOT_ASSIGNED = 1102;
     public static final int ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER = 1103;
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND = 1105;
+    
+    public static final int ERROR_CODE_NOTIFICATION_CONCURRENT_EXCEPTION = 1200;
+    public static final int ERROR_CODE_NOTIFICATION_TEMPLATE_NOT_FOUND = 1201;
+    public static final int ERROR_CODE_NOTIFICATION_BODY_PROCESSOR_NOT_FOUND = 1202;
+    public static final int ERROR_CODE_NOTIFICATION_BODY_PROCESSING_EXCEPTION = 1203;
+    public static final int ERROR_CODE_NOTIFICATION_NOT_SUPPORTED_BODY_PROCESSOR_EXCEPTION = 1204;
 
 
 //    public static final int ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY = 1006;

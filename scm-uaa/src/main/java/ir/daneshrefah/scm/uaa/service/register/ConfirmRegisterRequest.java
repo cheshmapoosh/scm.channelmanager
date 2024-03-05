@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.register;
 
-import ir.daneshrefah.scm.common.model.notification.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import lombok.Data;
 
 import java.io.Serializable;

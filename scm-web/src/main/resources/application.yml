@@ -45,6 +45,8 @@ scm:
           myMap:
             in-memory-format: object
             time-to-live-seconds: 10
+#  swagger:
+#    server-host: 10.10.5.102
 
 
 server:

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.notification.client.service.template;
 
 
-import ir.daneshrefah.scm.common.model.notification.DataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
@@ -59,7 +59,6 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
         return switch (templateParameter) {
             case LINE_SEPARATOR -> System.lineSeparator();
             case TERMINAL_CODE -> request.getTerminalCode();
-            case TERMINAL_TITLE -> request.getTerminalTittle();
             default -> String.valueOf(data.get(Objects.requireNonNull(DataKey.findByParameterName(templateParameter))));
         };
     }

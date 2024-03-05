@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.model.notification;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
+import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +23,7 @@ public class MessageTemplate extends BaseModel<Long> {
     private String body;
     private Integer tryCount;
     private Integer maxMinutesExpiration;
+    private TemplateFormat templateFormat;
     private boolean isSystemic;
 
 }
