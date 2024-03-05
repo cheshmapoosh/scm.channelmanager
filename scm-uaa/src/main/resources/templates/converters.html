@@ -16,14 +16,11 @@
 
     <header class="header">
       <div class="inner-Header">
-        <div class="logo">
-          <img th:src="@{/assets/images/logo.webp}" alt="logo" />
-        </div>
         <nav class="nav-menu">
           <div class="tab-titles">
-            <p class="tab-links active-link" data-id="tab1">time</p>
-            <p class="tab-links" data-id="tab2">jwt</p>
-            <p class="tab-links" data-id="tab3">base64</p>
+            <p class="tab-links active-link" data-id="tab1">Time</p>
+            <p class="tab-links" data-id="tab2">JWT</p>
+            <p class="tab-links" data-id="tab3">Base64</p>
             <p class="tab-links" data-id="tab4">API Login</p>
             <!-- <p class="tab-links" data-id="tab5">tab5</p> -->
           </div>
@@ -37,7 +34,7 @@
       <div class="inner-content">
         <div class="tab-contents" id="tab1">
           <div class="time-tab">
-            <form th:action="@{/public/tools/time}" th:method="post">
+            <form id="time-form">
               <div class="form-container">
                 <div class="form-row">
                   <label for="inputLongTime">Time</label>
@@ -51,7 +48,7 @@
                   />
                 </div>
                 <div class="form-row btn-container">
-                  <button class="decode-btn" type="button" onclick="return convertTime()">Decode</button>
+                  <button class="decode-btn" type="submit">Decode</button>
                 </div>
                 <div class="form-row">
                   <input
@@ -69,7 +66,7 @@
         </div>
         <div class="tab-contents" id="tab2">
           <div class="jwt-tab">
-            <form th:action="@{/public/tools/jwt}" th:method="post">
+            <form id="jwt-form">
               <div class="form-container">
                 <div class="form-row">
                   <textarea
@@ -84,7 +81,7 @@
                   ></textarea>
                 </div>
                 <div class="form-row btn-container">
-                  <button class="decode-btn" type="button" onclick="return convertJwt()">Decode</button>
+                  <button class="decode-btn" type="submit">Decode</button>
                 </div>
                 <div class="form-row">
                   <textarea
@@ -101,11 +98,7 @@
         </div>
         <div class="tab-contents" id="tab3">
           <div class="base64-tab">
-            <form
-              class="form-signin"
-              th:action="@{/public/tools/base64}"
-              th:method="post"
-            >
+            <form id="base64-form">
               <div class="form-row">
                 <textarea
                   class="form-control"
@@ -118,7 +111,7 @@
                 ></textarea>
               </div>
               <div class="form-row btn-container">
-                <button class="decode-btn" type="button" onclick="return convertBase64()">Decode</button>
+                <button class="decode-btn" type="submit">Decode</button>
               </div>
 
               <div class="form-row">
@@ -134,85 +127,110 @@
         </div>
         <div class="tab-contents" id="tab4">
           <div class="Consent-tab">
-            <div class="container">
-              <div class="py-5">
-                <h1 class="text-center">Consent required</h1>
-              </div>
-              <div class="row">
-                <div class="col text-center">
-                  <p>
-                    <span
-                      class="font-weight-bold text-primary"
-                    ></span>
-                    wants to access your account
-                    <span class="font-weight-bold">user</span>
-                  </p>
-                </div>
-              </div>
-              <div class="row pb-3">
-                <div class="col text-center">
-                  <p>
-                    The following permissions are requested by the above app.<br />Please
-                    review these and consent if you approve.
-                  </p>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col text-center">
-                  <form
-                    name="consent_form"
-                    method="post"
-                    action="/oauth2/authorize"
-                  >
-                    <input
-                      type="hidden"
-                      th:value="${client_id}"
-                      name="client_id"
-                    />
-                    <input type="hidden" th:value="${state}" name="state" />
+            <form class="login-form" id="consent_form">
+              <div class="custom-select">
+                <label for="grant_type">نوع ورود را انتخاب کنید:</label>
 
-                    <div
-                      class="form-group form-check py-1"
-                      th:each="scope : ${scopes}"
-                    >
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        name="scope"
-                        th:value="${scope}"
-                        th:attr="id=${scope}"
-                      />
-                      <label
-                        class="form-check-label"
-                        th:attr="for=${scope}"
-                        th:text="${scope}"
-                      ></label>
-                    </div>
-                    <div class="form-group pt-3">
-                      <button
-                        class="btn btn-primary btn-lg"
-                        type="button" onclick="return convertLogin()"
-                        id="submit-consent"
-                      >
-                        Submit Consent
-                      </button>
-                    </div>
+                <div class="select">
+                  <select id="grant_type">
+                    <option value="first_password" selected="selected">
+                      رمز اول
+                    </option>
+                    <option value="second_password">رمز دوم</option>
+                    <option value="authorized_code">کد</option>
+                    <option value="client_credential">client credential</option>
+                  </select>
+                </div>
+              </div>
+              <div style="width: 100%"></div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="username"
+                  placeholder="username"
+                  required
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="password"
+                  th:value="${state}"
+                  name="password"
+                  placeholder="password"
+                  required
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="client_id"
+                  placeholder="client_id"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="access_parameter"
+                  placeholder="access_parameter"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="register_code"
+                  placeholder="register_code"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="claim_code"
+                  placeholder="claim_code"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="url"
+                  placeholder="url"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="client_version"
+                  placeholder="client_version"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="client_signature"
+                  placeholder="client_signature"
+                  class="login-input"
+                />
+              </div>
 
-                  </form>
-                </div>
+              <div class="btn-wrapper">
+                <button type="submit">Submit Consent</button>
               </div>
-              <div class="row pt-4">
-                <div class="col text-center">
-                  <p>
-                    <small
-                      >Your consent to provide access is required.<br />If you
-                      do not approve, click Cancel, in which case no information
-                      will be shared with the app.</small
-                    >
-                  </p>
-                </div>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
         <!-- <div class="tab-contents" id="tab5">
