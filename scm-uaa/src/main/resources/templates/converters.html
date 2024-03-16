@@ -130,40 +130,39 @@
             <form class="login-form" id="consent_form">
               <div class="custom-select">
                 <label for="grant_type">نوع ورود را انتخاب کنید:</label>
-
                 <div class="select">
-                  <select id="grant_type">
+                  <select name="grant_type" id="grant_type">
                     <option value="first_password" selected="selected">
                       رمز اول
                     </option>
                     <option value="second_password">رمز دوم</option>
-                    <option value="authorized_code">کد</option>
-                    <option value="client_credential">client credential</option>
+                    <option value="authorization_code">کد</option>
+                    <option value="client_credentials">
+                      client credentials
+                    </option>
                   </select>
                 </div>
               </div>
               <div style="width: 100%"></div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="username_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
                   name="username"
                   placeholder="username"
-                  required
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="password_wrapper">
                 <input
                   type="password"
                   th:value="${state}"
                   name="password"
                   placeholder="password"
-                  required
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="client_id_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
@@ -172,7 +171,16 @@
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="scope_wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="scope"
+                  placeholder="scope"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper" id="access_parameter_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
@@ -181,7 +189,7 @@
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="register_code_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
@@ -190,7 +198,7 @@
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="claim_code_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
@@ -199,16 +207,25 @@
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="redirect_uri_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
-                  name="url"
-                  placeholder="url"
+                  name="redirect_uri"
+                  placeholder="redirect_uri"
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="code_wrapper">
+                <input
+                  type="text"
+                  th:value="${state}"
+                  name="code"
+                  placeholder="code"
+                  class="login-input"
+                />
+              </div>
+              <div class="input-wrapper" id="client_version_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
@@ -217,7 +234,7 @@
                   class="login-input"
                 />
               </div>
-              <div class="input-wrapper">
+              <div class="input-wrapper" id="client_signature_wrapper">
                 <input
                   type="text"
                   th:value="${state}"
