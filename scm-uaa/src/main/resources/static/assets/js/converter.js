@@ -5,6 +5,21 @@ const timeForm = document.getElementById("time-form");
 const jwtForm = document.getElementById("jwt-form");
 const base64Form = document.getElementById("base64-form");
 const consentForm = document.getElementById("consent_form");
+const usernameWrapper = document.getElementById("username_wrapper");
+const passwordWrapper = document.getElementById("password_wrapper");
+const clientIdWrapper = document.getElementById("client_id_wrapper");
+const scopeWrapper = document.getElementById("scope_wrapper");
+const registerCodeWrapper = document.getElementById("register_code_wrapper");
+const claimCodeWrapper = document.getElementById("claim_code_wrapper");
+const codeWrapper = document.getElementById("code_wrapper");
+const redirectUriWrapper = document.getElementById("redirect_uri_wrapper");
+const clientVersionWrapper = document.getElementById("client_version_wrapper");
+const clientSignatureWrapper = document.getElementById(
+  "client_signature_wrapper"
+);
+const accessParameterWrapper = document.getElementById(
+  "access_parameter_wrapper"
+);
 
 const opentab = (tabname) => {
   [...tablinks].forEach((tablink) => {
@@ -27,32 +42,89 @@ const opentab = (tabname) => {
 const initTabname = localStorage.getItem("active-tab") ?? "tab1";
 opentab(initTabname);
 
-grantType.addEventListener("change", (e) => {
-  if (e.target.value === "first_password") {
-    console.log("1");
-  }
-  if (e.target.value === "second_password") {
-    console.log("2");
-  }
-  if (e.target.value === "authorized_code") {
-    console.log("3");
-  }
-  if (e.target.value === "client_credential") {
-    console.log("4");
-  }
-});
+const itemList = [
+  {
+    el: usernameWrapper,
+    showOn: [
+      "first_password",
+      "second_password",
+      "authorization_code",
+      "client_credentials",
+    ],
+  },
+  {
+    el: passwordWrapper,
+    showOn: [
+      "first_password",
+      "second_password",
+      "authorization_code",
+      "client_credentials",
+    ],
+  },
+  {
+    el: clientIdWrapper,
+    showOn: ["first_password", "second_password", "client_credentials"],
+  },
+  {
+    el: scopeWrapper,
+    showOn: ["first_password", "second_password", "client_credentials"],
+  },
+  {
+    el: registerCodeWrapper,
+    showOn: ["first_password", "second_password"],
+  },
+  {
+    el: claimCodeWrapper,
+    showOn: ["authorization_code"],
+  },
+  {
+    el: codeWrapper,
+    showOn: ["authorization_code"],
+  },
+  {
+    el: redirectUriWrapper,
+    showOn: ["authorization_code"],
+  },
+  {
+    el: clientVersionWrapper,
+    showOn: ["first_password", "second_password", "client_credentials"],
+  },
+  {
+    el: clientSignatureWrapper,
+    showOn: ["first_password", "second_password", "client_credentials"],
+  },
+  {
+    el: accessParameterWrapper,
+    showOn: ["first_password", "second_password", "client_credentials"],
+  },
+];
+function handleGrantType(selected) {
+  itemList.forEach((i) => {
+    if (!i.showOn.includes(selected)) {
+      i.el.style.display = "none";
+    } else {
+      i.el.style.display = "flex";
+    }
+  });
+}
 
+grantType.addEventListener("change", (e) => {
+  handleGrantType(e.target.value);
+});
+handleGrantType("first_password");
 const formList = [
   {
     formName: timeForm,
     action: function (e) {
       e.preventDefault();
+      const data = Object.fromEntries(new FormData(timeForm));
+      console.log(data);
       fetch("/public/tools/time", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(Object.fromEntries(new FormData(timeForm))),
+        body: JSON.stringify(data),
       })
         .then((response) => {
           if (!response.ok) {
@@ -72,12 +144,14 @@ const formList = [
     formName: jwtForm,
     action: function (e) {
       e.preventDefault();
+
+      const data = Object.fromEntries(new FormData(jwtForm));
       fetch("/public/tools/jwt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(Object.fromEntries(new FormData(jwtForm))),
+        body: JSON.stringify(data),
       })
         .then((response) => {
           if (!response.ok) {
@@ -97,12 +171,14 @@ const formList = [
     formName: base64Form,
     action: function (e) {
       e.preventDefault();
+
+      const data = Object.fromEntries(new FormData(base64Form));
       fetch("/public/tools/base64", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(Object.fromEntries(new FormData(base64Form))),
+        body: JSON.stringify(data),
       })
         .then((response) => {
           if (!response.ok) {
@@ -122,7 +198,34 @@ const formList = [
     formName: consentForm,
     action: function (e) {
       e.preventDefault();
-      const data = Object.fromEntries(new FormData(consentForm));
+
+      const formData = Object.fromEntries(new FormData(consentForm));
+      const grantTypeValue = formData.grant_type;
+      let data = {};
+      if (grantTypeValue === "authorization_code") {
+        data = {
+          username: formData.username,
+          password: formData.password,
+          claim_code: formData.claim_code,
+          code: formData.code,
+          grant_type: formData.grant_type,
+          redirect_uri: formData.redirect_uri,
+        };
+      }
+      if (grantTypeValue === "first_password") {
+        data = {
+          access_parameter: formData.access_parameter,
+          client_id: formData.client_id,
+          client_signature: formData.client_signature,
+          client_version: formData.client_version,
+          grant_type: formData.grant_type,
+          password: formData.password,
+          register_code: formData.register_code,
+          scope: formData.scope,
+          username: formData.username,
+        };
+      }
+
       fetch("/oauth2/authorize", {
         method: "POST",
         headers: {
@@ -145,11 +248,20 @@ const formList = [
     },
   },
 ];
-
 formList.forEach(({ formName, action }) =>
   formName.addEventListener("submit", action)
 );
 
+function isEmptyString(str) {
+  if (str === null || str === undefined) {
+    return true;
+  }
+  return str.trim() === "";
+}
+
+function isNotEmptyStr(str) {
+  return !(str === null || str === undefined || str.trim() === "");
+}
 // ======================================================
 // function cancelConsent() {
 //   document.consent_form.reset();
@@ -313,19 +425,4 @@ formList.forEach(({ formName, action }) =>
 //   //     $("#outputToken").text("Error: " + error.responseText);
 //   //   }
 //   // });
-// }
-
-// function isEmptyString(str) {
-//   // Handle null or undefined values
-//   if (str === null || str === undefined) {
-//     return true;
-//   }
-
-//   // Trim whitespace and check for empty string
-//   return str.trim() === "";
-// }
-
-// function isNotEmptyStr(str) {
-//   // Combine conditions using logical NOT operator (!)
-//   return !(str === null || str === undefined || str.trim() === "");
 // }
