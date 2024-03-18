@@ -21,6 +21,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,6 +44,8 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 @RequiredArgsConstructor
 @Slf4j
 public abstract class AbstractInboundChannelGenerator<T> implements InboundChannelGenerator<T> {
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractInboundChannelGenerator.class);
 
     private final ServiceProducerTemplate producerTemplate;
     protected final ErrorHandlerService errorHandlerService;

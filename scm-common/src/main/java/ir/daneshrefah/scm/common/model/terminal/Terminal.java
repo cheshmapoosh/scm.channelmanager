@@ -22,6 +22,5 @@ public class Terminal extends BaseModel<String> {
     private boolean supportCheckSecondAuthentication;
     private boolean supportCheckServiceAccess;
     private boolean supportCheckAssetAccess;
-    private boolean supportCustomerInjection;
 
 }

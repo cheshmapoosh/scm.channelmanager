@@ -18,4 +18,11 @@ public class PagedRequestData implements RequestData {
     private Integer pageNo = DEFAULT_PAGE_NO;
     private Integer pageSize = DEFAULT_PAGE_SIZE;
 
+    public void setPageNo(Integer pageNo) {
+        this.pageNo = null != pageNo && pageNo > 0 ? pageNo : DEFAULT_PAGE_NO;
+    }
+
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = null != pageSize && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+    }
 }

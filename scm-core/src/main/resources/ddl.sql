@@ -1,68 +1,109 @@
-CREATE TABLE REF.TBL_SCM_CHANNEL (
-                                     CHANNEL_ID VARCHAR(36) NOT NULL,
-                                     CODE VARCHAR(255),
-                                     TITLE VARCHAR(255),
-                                     TERMINAL_ID VARCHAR(36) NOT NULL,
-                                     PROTOCOL SMALLINT NOT NULL,
-                                     CHANNEL_CLASS_NAME VARCHAR(255),
-                                     METADATA VARCHAR(1000),
-                                     CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     CREATOR VARCHAR(255),
-                                     LAST_EDITOR VARCHAR(255),
-                                     FOREIGN KEY (TERMINAL_ID) REFERENCES REF.TBL_SCM_TERMINAL (TERMINAL_ID),
-                                     PRIMARY KEY (CHANNEL_ID)
-)
-insert into TBL_SCM_CHANNEL (CHANNEL_ID, CODE, TITLE, PROTOCOL,
-                             METADATA, CREATOR, LAST_EDITOR)
-values ('a4d7637c-0855-4e81-a157-70b02742de24', 'SCM', 'مدیریت کانال', 2,
-                            '{"contextPath": "/scm4dev", "port": 8082}', 'Reza Jamshidi', 'Reza Jamshidi');
-
-
-CREATE TABLE REF.TBL_SCM_TERMINAL (
+CREATE TABLE REF.TBL_SCM_TERMINAL
+(
     --Definition
-                                      TERMINAL_ID VARCHAR(36) NOT NULL,
-                                      CODE VARCHAR(255),
-                                      TITLE VARCHAR(255),
+    TERMINAL_ID                         VARCHAR(36) NOT NULL,
+    CODE                                VARCHAR(255),
+    TITLE                               VARCHAR(255),
     --Attribute
-                                      STATUS SMALLINT NOT NULL DEFAULT 1,
-                                      SUPPORT_CHECK_AUTHENTICATION SMALLINT DEFAULT 1,
-                                      SUPPORT_CHECK_SECOND_AUTHENTICATION SMALLINT DEFAULT 1,
-                                      SUPPORT_CHECK_SERVICE_ACCESS SMALLINT DEFAULT 1,
-                                      SUPPORT_CHECK_ASSET_ACCESS SMALLINT DEFAULT 1,
+    STATUS                              SMALLINT    NOT NULL DEFAULT 1,
+    SUPPORT_CHECK_AUTHENTICATION        SMALLINT             DEFAULT 1,
+    SUPPORT_CHECK_SECOND_AUTHENTICATION SMALLINT             DEFAULT 1,
+    SUPPORT_CHECK_SERVICE_ACCESS        SMALLINT             DEFAULT 1,
+    SUPPORT_CHECK_ASSET_ACCESS          SMALLINT             DEFAULT 1,
+--     SUPPORT_CUSTOMER_INJECTION          SMALLINT             DEFAULT 1,
     --Versioning
-                                      CREATE_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                      LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-                                      CREATOR VARCHAR(255),
-                                      LAST_EDITOR VARCHAR(255),
+    CREATE_DATE                         TIMESTAMP            DEFAULT CURRENT TIMESTAMP,
+    LAST_EDIT_DATE                      TIMESTAMP            DEFAULT CURRENT TIMESTAMP,
+    CREATOR                             VARCHAR(255),
+    LAST_EDITOR                         VARCHAR(255),
     --Relation
-                                      PRIMARY KEY (TERMINAL_ID)
+    PRIMARY KEY (TERMINAL_ID)
+);
+INSERT INTO REF.TBL_SCM_TERMINAL (TERMINAL_ID, CODE, TITLE, CREATOR, LAST_EDITOR)
+VALUES ('3f0b9c5a-8d89-4c8d-9a7d-4287f6e75639', 'MB', 'موبایل بانک', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_TERMINAL (TERMINAL_ID, CODE, TITLE, LAST_EDITOR)
+VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'IB', 'اینترنت بانک', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_TERMINAL (TERMINAL_ID, CODE, TITLE, SUPPORT_CHECK_SERVICE_ACCESS, SUPPORT_CHECK_ASSET_ACCESS, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'SCM', 'مدیریت کانال', 0, 0, 'Reza Jamshidi', 'Reza Jamshidi');
+
+
+
+CREATE TABLE REF.TBL_SCM_CHANNEL
+(
+    CHANNEL_ID         VARCHAR(36) NOT NULL,
+    CODE               VARCHAR(255),
+    TITLE              VARCHAR(255),
+    TERMINAL_ID        VARCHAR(36) NOT NULL,
+    PROTOCOL           SMALLINT    NOT NULL,
+    CHANNEL_CLASS_NAME VARCHAR(255),
+    METADATA           VARCHAR(1000),
+    CREATE_DATE        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    LAST_EDIT_DATE     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CREATOR            VARCHAR(255),
+    LAST_EDITOR        VARCHAR(255),
+    FOREIGN KEY (TERMINAL_ID) REFERENCES REF.TBL_SCM_TERMINAL (TERMINAL_ID),
+    PRIMARY KEY (CHANNEL_ID)
 );
 
-insert into TBL_SCM_TERMINAL (TERMINAL_ID, CODE, TITLE, SUPPORT_CHECK_AUTHENTICATION, SUPPORT_CHECK_SECOND_AUTHENTICATION,
-                              SUPPORT_CHECK_SERVICE_ACCESS, SUPPORT_CHECK_ASSET_ACCESS, CREATOR, LAST_EDITOR, STATUS)
-values ('b9a79451-2141-40b6-98a0-72055a0042c5', 'SCM4DEV', 'محیط توسعه مدیریت کانال', 1, 1, 1, 0, 'Reza Jamshidi', 'Reza Jamshidi', 1);
+INSERT INTO TBL_SCM_CHANNEL (CHANNEL_ID, CODE, TITLE, TERMINAL_ID, PROTOCOL, METADATA, CREATOR, LAST_EDITOR)
+VALUES ('a4d7637c-0855-4e81-a157-70b02742de24', 'SCM4DEV', 'محیط توسعه مدیریت کانال', 'b9a79451-2141-40b6-98a0-72055a0042c5', 2, '{"contextPath": "/scm4dev", "port": 8083}', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO TBL_SCM_CHANNEL (CHANNEL_ID, CODE, TITLE, TERMINAL_ID, PROTOCOL, METADATA, CREATOR, LAST_EDITOR)
+VALUES ('fc32467b-47cb-45c4-9076-2f7cc7d40f75', 'IB4DEV', 'محیط توسعه اینترنت بانک', 'a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 2, '{"contextPath": "/ib4dev", "port": 8082}', 'Reza Jamshidi', 'Reza Jamshidi');
+
+--
+
+CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER
+(
+    SERVICE_PROVIDER_ID          VARCHAR(36) NOT NULL,
+    CODE                         VARCHAR(255),
+    TITLE                        VARCHAR(255),
+    STATUS                       SMALLINT             DEFAULT NULL,
+    PROVIDER_CLASS_NAME          VARCHAR(255),
+    METADATA                     VARCHAR(255),
+    CUSTOMER_PROVIDED            SMALLINT    NOT NULL DEFAULT 0,
+    CUSTOMER_PROVIDER_CLASS_NAME VARCHAR(255),
+    CREATE_DATE                  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
+    LAST_EDIT_DATE               TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
+    CREATOR                      VARCHAR(255),
+    LAST_EDITOR                  VARCHAR(255),
+    PRIMARY KEY (EXTERNAL_SERVICE_PROVIDER_ID)
+);
+
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'NAB', 'کر بانک رفاه', 1, 'ir.daneshrefah.scm.plugin.nab.component.NabComponent', '{"endpointUri" : "http://scm-core.daneshrefah.ir/Service/"}', 1, 'bean:nabCustomerDataProvider', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('ce027926-e5e1-4df5-b397-178dd41c87b8', 'MOCK', 'Mock', 1, 'bean:mockCoreServiceProvider', '', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('710fe18f-41cc-40f1-8435-3d4626289b3c', 'SCM', 'SCM', 1, 'bean:scmCoreServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('3A3C6EBC-328C-484A-A6F4-43E734F2312C', 'IBAN', 'IBAN', 1, 'bean:ibanInquiryServiceProvider', '{"endpointUri" : "http://10.15.29.131:8086/ibanq/services/IBANService"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('E81F2B7D-7B1A-4D16-A8A9-4F1212F23ABC', 'HPS', 'HPS', 1, 'bean:hpsServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('1F22212B-D23E-442B-92F2-0B12312E4F56', 'CHAKAD', 'CHAKAD', 1, 'bean:chakadServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('8FA1148A-A679-4F4D-B92E-7312F23A1BEC', 'PICHACK', 'PICHACK', 1, 'bean:pichackServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('5C92871D-212E-4F2A-8923-123F231A2BEC', 'SAYAD', 'SAYAD', 1, 'bean:sayadServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('B21A423D-F21B-4522-812F-2312BEFA2C1D', 'BILL-INQUIRY', 'BILL-INQUIRY', 1, 'bean:billInquiryServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('0D8F312E-1B2A-431F-A212-23F2312DECBA', 'CURRENCY', 'سامانه ارزی', 1, 'bean:currencyServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('4EF21A2C-B13D-412B-B2FA-23A12F231BEC', 'GSS', 'GSS', 1, 'bean:gssServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('7921CFEB-A32D-4BFA-A12E-321F2312A1BC', 'LOAN', 'LOAN', 1, 'bean:loanServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('F1AB23CD-21FA-421D-B1AF-312F231BEABC', 'TOPUP', 'TOPUP', 1, 'bean:topupServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+VALUES ('6D4A2C1E-B21D-423B-AF21-C234F21A1BEC', 'SHAPARAK', 'هاب فناوران (شاپرک)', 1, 'bean:shaparakServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 
 
 
-CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER (
-                                                       SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL,
-                                                       CODE VARCHAR(255),
-                                                       TITLE VARCHAR(255),
-                                                       PROVIDER_CLASS_NAME VARCHAR(255),
-                                                       METADATA VARCHAR(255),
-                                                       CUSTOMER_PROVIDED SMALLINT NOT NULL DEFAULT 0,
-                                                       CUSTOMER_PROVIDER_CLASS_NAME VARCHAR(255),
-                                                       CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                       LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                       CREATOR VARCHAR(255),
-                                                       LAST_EDITOR VARCHAR(255),
-                                                       PRIMARY KEY (EXTERNAL_SERVICE_PROVIDER_ID)
-)
-INSERT INTO REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER (EXTERNAL_SERVICE_PROVIDER_ID, CREATOR, LAST_EDITOR, CODE, TITLE, PROVIDER_CLASS_NAME, METADATA)
-VALUES ('3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'Reza Jamshidi', 'Reza Jamshidi', 'NAB', 'کر بانک رفاه', 'ir.daneshrefah.scm.plugin.nab.component.NabComponent', '{"baseUrl": "http://10.15.29.80/Service/"}');
-INSERT INTO REF.TBL_SCM_EXTERNAL_SERVICE_PROVIDER (EXTERNAL_SERVICE_PROVIDER_ID, CREATOR, LAST_EDITOR, CODE, TITLE, PROVIDER_CLASS_NAME, METADATA)
-VALUES ('ce027926-e5e1-4df5-b397-178dd41c87b8', 'Reza Jamshidi', 'Reza Jamshidi', 'MOCK', 'Mock', '', '');
+
+-- finalized tables
+
+
 
 EXTERNAL(1), JAVA(2), COMPOSITION(3), BPMN(4), PARENT(5);
 

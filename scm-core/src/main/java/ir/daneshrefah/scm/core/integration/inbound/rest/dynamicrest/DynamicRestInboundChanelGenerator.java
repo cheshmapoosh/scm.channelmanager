@@ -35,7 +35,6 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 @Component
 @Scope("prototype")
-@Slf4j
 public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
 
     private final RestUrlBuilder urlBuilder;
@@ -53,6 +52,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         List<TerminalServiceAccess> serviceAccesses = getServices();
 
         DynamicRouteBuilder routeBuilder = new DynamicRouteBuilder();
+        LOGGER.info("**************** start register services for channel ****************");
         for (Iterator<TerminalServiceAccess> iterator = serviceAccesses.iterator(); iterator.hasNext(); ) {
             TerminalServiceAccess service = iterator.next();
             if (ServiceImplementationType.PARENT.equals(service.getService().getImplementationType())) {
@@ -67,9 +67,11 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         try {
             getContext().addRoutes(routeBuilder);
         } catch (Exception e) {
-            log.error("error define routes.", e);
+            LOGGER.error("error define routes.", e);
+            LOGGER.info("**************** error register services for channel ****************");
             return false;
         }
+        LOGGER.info("**************** end register services for channel *****************");
         return true;
     }
 
@@ -90,6 +92,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     contextPath, port);
 
             String swaggerUrl = "/api-docs/swagger.json";
+            LOGGER.info("swagger url: " + "http://localhost:" + port + contextPath + swaggerUrl);
             from("netty-http:http://0.0.0.0:" + port + contextPath + swaggerUrl)
                     .routeId("swagger_generator_" + getChannel().getCode())
                     .process(CamelCORSManager::configure)
@@ -99,6 +102,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     })
                     .end();
             String swaggerUIBody = SwaggerUIGenerator.getInstance().generateCamelUIBody(port, contextPath, swaggerUrl);
+            LOGGER.info("swagger-ui url: " + "http://localhost:" + port + contextPath + "/api-docs/swagger-ui.html");
             from("netty-http:http://0.0.0.0:" + port + contextPath + "/api-docs/swagger-ui.html")
                     .routeId("swagger_ui_generator_" + getChannel().getCode())
                     .process(exchange -> {
@@ -111,7 +115,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         public void registerService(TerminalServiceAccess serviceAccess) {
             RestUrl restUrl = urlBuilder.build(serviceAccess);
             String inboundUrl = "rest:" + restUrl.getHttpMethod() + ":" + restUrl.getUrl();
-            log.info("register inbound {} for terminal {} with url '{}.'", serviceAccess.getService().getCode(),
+            LOGGER.info("*** register inbound '{}' for terminal '{}' with url '{}'.", serviceAccess.getService().getCode(),
                     serviceAccess.getTerminal().getCode(), restUrl.getHttpMethod() + ":" + restUrl.getUrl());
             from(inboundUrl)
                     .routeId("ROUTE_INBOUND_" + serviceAccess.getTerminal().getCode() + "_" + serviceAccess.getService().getCode())

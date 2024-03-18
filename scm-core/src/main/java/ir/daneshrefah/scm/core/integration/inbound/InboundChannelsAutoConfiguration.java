@@ -55,9 +55,14 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
 
     @Bean
     public boolean registerInboundBeans(ApplicationProperties applicationProperties, List<MessageInterceptor> requestInterceptors) {
+        LOGGER.info("*********************************************************************");
+        LOGGER.info("*                                                                   *");
+        LOGGER.info("*                     Register Inbound Channels                     *");
+        LOGGER.info("*                                                                   *");
+        LOGGER.info("*********************************************************************");
         List<String> activeChannelList = applicationProperties.getChannels();
         if (null == activeChannelList || activeChannelList.isEmpty()) {
-            throw new RuntimeException("no active channel is defined.");
+            throw new RuntimeException("no active channel is defined in application config.");
         }
         List<Channel> channels = channelService.findAllChannelList();
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
@@ -66,17 +71,19 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
             if (!activeChannelList.contains(channel.getCode())) {
                 continue;
             }
-            LOGGER.info("start initialize channel '{}'", channel.getCode());
+            LOGGER.info("init channel '{}' with protocol '{}', metadata {} for terminal '{}'.", channel.getCode(),
+                    channel.getProtocol(), channel.getMetadata(), channel.getTerminal().getCode());
             /*TODO query is very slow and should be improved.*/
             List<TerminalServiceAccess> terminalServiceAccessList = terminalService.
                     findTerminalServiceAccessByTerminalId(channel.getTerminal().getId());
             LOGGER.info("'{}' terminalService found to register.", terminalServiceAccessList.size());
             if (terminalServiceAccessList.size() < 1) {
-                LOGGER.info("no terminalService found for channel '{}'. skip initialization.", channel.getCode());
+                LOGGER.warn("no terminalService found for channel '{}'. skip initialization.", channel.getCode());
                 continue;
             }
 
             String className = extractChannelClassName(channel);
+            LOGGER.debug("className '{}' configured for channel '{}'", className, channel.getCode());
             AbstractInboundChannelGenerator inboundChannelGenerator = ClassLoader.findBeanOrCreateInstanceOfClass(
                     className, AbstractInboundChannelGenerator.class);
             if (null == inboundChannelGenerator) {
@@ -103,7 +110,7 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
             }
             LOGGER.info("channel '{}' initialization completed successfully.", channel.getCode());
 
-            LOGGER.info("start register endpoints for channel '{}'", channel.getCode());
+            LOGGER.info("*** start register endpoints for channel '{}'", channel.getCode());
             isContinue = inboundChannelGenerator.registerEndpoints(terminalServiceAccessList);
             if (!isContinue) {
                 LOGGER.error("error found in channel '{}' endpoint registration. skip registration.", channel.getCode());

@@ -73,8 +73,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
                 (ExternalService) message.getHeader().getServiceAccess().getService() : null;
         String customerProperty = null != service ? service.getCustomerProperty() : null;
-        if (null == service || StringUtils.isEmpty(customerProperty) ||
-                !message.getHeader().getServiceAccess().getTerminal().isSupportCustomerInjection()) {
+        if (null == service || StringUtils.isEmpty(customerProperty)) {
             return true;
         }
         Customer customer = message.getHeader().getPersonProfile().getCustomer(service.getServiceProvider().getId());
@@ -89,7 +88,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         if (null == service || !service.getServiceProvider().isCustomerProvided()) {
             return true;
         }
-        if (!terminal.isSupportCustomerInjection() && StringUtils.isEmpty(service.getCustomerProperty()) &&
+        if (StringUtils.isEmpty(service.getCustomerProperty()) &&
                 !terminal.isSupportCheckAssetAccess() && !service.getCheckAccessAsset()) {
             return true;
         }
