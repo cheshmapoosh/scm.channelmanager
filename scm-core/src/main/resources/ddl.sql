@@ -168,7 +168,7 @@ VALUES ('616d1811-0ad6-4f3c-80c0-47a003522d08', 'SVC_SERVICE_PARENT', 'پرنت 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('790f7095-0102-44a7-9802-8d2530f09033', 'SVC_SERVICE_LIST', 'لیست سرویس', '/list', 1, 1, 1, 2, 1,
-        'bean:serviceManagementService.serviceList(ir.daneshrefah.scm.common.service.ServiceInfoRequest)', '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:serviceManagementService.serviceList(ir.daneshrefah.scm.common.service.ServiceFindRequest)', '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('d2220c12-30be-4305-9706-91d699826731', 'SVC_SERVICE_BY_CODE', 'یافتن سرویس با کد', '/code/{serviceCode}', 1, 1, 3, 2, 1,
@@ -176,7 +176,7 @@ VALUES ('d2220c12-30be-4305-9706-91d699826731', 'SVC_SERVICE_BY_CODE', 'یافت
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('ee6380f7-3f2d-4751-8211-74a67370635e', 'SVC_SERVICE_CREATE', 'ایجاد سرویس', '', 1, 1, 5, 2, 1,
-        'bean:serviceManagementService.createService(Message)', '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:serviceManagementService.createService(ir.daneshrefah.scm.common.service.ServiceInfoRequest)', '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
 
 --------------------------------------------- ACCOUNT_MANAGEMENT_SERVICES ----------------------------------------------
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)

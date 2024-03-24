@@ -25,13 +25,13 @@ public interface ServiceService {
 
     public List<Service> findServiceList();
 
-    public PagedResponseData<Service> findServiceList(ServiceInfoRequest request);
+    public PagedResponseData<Service> findServiceList(ServiceFindRequest request);
 
     public Service findServiceByCode(String code);
 
     public Service findServiceById(String id);
 
-    public Service createService(Service service);
+    public Service createService(ServiceInfoRequest service);
 
     public Service updateService(String serviceId, Service service);
 

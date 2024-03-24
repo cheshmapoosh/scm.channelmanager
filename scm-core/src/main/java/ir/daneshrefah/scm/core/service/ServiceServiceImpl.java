@@ -6,9 +6,10 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoDataChangedException;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.service.ServiceFindRequest;
 import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.core.entity.service.ExternalServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
@@ -20,7 +21,6 @@ import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -87,7 +87,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceInfoRequest request) {
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceFindRequest request) {
         List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
                 .filter(service -> null == request || null == request.getCode() || request.getCode().equals(service.getCode()))
                 .filter(service -> null == request || null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
@@ -131,7 +131,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service createService(ir.daneshrefah.scm.common.model.service.Service service) {
+    public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest service) {
         if (StringUtils.isEmpty(service.getCode())) {
             throw new MissingRequiredInputException("service code");
         }
@@ -142,34 +142,27 @@ public class ServiceServiceImpl implements ServiceService {
             throw new MissingRequiredInputException("service type");
         }
         if (ServiceImplementationType.JAVA.equals(service.getImplementationType()) &&
-                StringUtils.isEmpty(((JavaService) service).getJavaImplementationClassName())) {
+                StringUtils.isEmpty(service.getJavaImplementationClassName())) {
             throw new MissingRequiredInputException("javaImplementationClassName");
         }
         if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
-                (null == ((ExternalService) service).getServiceProvider() || StringUtils.isEmpty(((ExternalService) service).getServiceProvider().getId()))) {
+                (StringUtils.isEmpty(service.getServiceProviderId()))) {
             throw new MissingRequiredInputException("serviceProvider");
         }
         if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
-                !checkServiceProviderExistById(((ExternalService) service).getServiceProvider().getId())) {
+                !checkServiceProviderExistById(service.getServiceProviderId())) {
             throw new InvalidInputException("serviceProvider");
         }
         if (null == service.getVersion()) {
             service.setVersion(1);
         }
-        service.setIsSystemic(false);
-        if (null == service.getStatus()) {
-            service.setStatus(ServiceStatus.ACTIVE);
-        }
-        if (null == service.getCheckAccessFirstAuthentication())
-            service.setCheckAccessFirstAuthentication(false);
-        if (null == service.getCheckAccessSecondAuthentication())
-            service.setCheckAccessSecondAuthentication(false);
-        if (null == service.getCheckAccessService())
-            service.setCheckAccessService(false);
-        if (null == service.getCheckAccessAsset())
-            service.setCheckAccessAsset(false);
+        ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
 
-        ServiceEntity entity = ServiceMapper.INSTANCE.toServiceEntity(service);
+        entity.setParent(serviceRepository.findById(service.getParentId()).get());
+        if (entity instanceof ExternalServiceEntity) {
+            ((ExternalServiceEntity) entity).setServiceProvider(serviceProviderRepository.findById(service.getServiceProviderId()).get());
+        }
+
         ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
         emptyServiceListCache();
         return result;

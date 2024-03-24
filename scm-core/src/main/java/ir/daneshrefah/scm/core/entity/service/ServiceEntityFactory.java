@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 
 /**
@@ -11,6 +13,38 @@ import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEnti
  * @since 2024-01-22
  */
 public class ServiceEntityFactory {
+
+    public static ServiceEntity createServiceEntity(ServiceInfoRequest request) {
+        ServiceEntity entity = createEmptyServiceEntity(request.getImplementationType());
+        entity.setCode(request.getCode());
+        entity.setTitle(request.getTitle());
+        entity.setAlias(request.getAlias());
+        entity.setVersion(request.getVersion());
+        entity.setMetadata(request.getMetadata());
+        entity.setType(request.getType());
+        entity.setStatus(null != request.getStatus() ? request.getStatus() : ServiceStatus.ACTIVE);
+//        entity.setParent(request.getParent());
+        entity.setImplementationType(request.getImplementationType());
+        entity.setIsSystemic(false);
+        entity.setRequestJsonSchema(request.getRequestJsonSchema());
+        entity.setResponseJsonSchema(request.getResponseJsonSchema());
+        entity.setCheckAccessFirstAuthentication(null != request.getCheckAccessFirstAuthentication() ? request.getCheckAccessFirstAuthentication() : false);
+        entity.setCheckAccessSecondAuthentication(null != request.getCheckAccessSecondAuthentication() ? request.getCheckAccessSecondAuthentication() : false);
+        entity.setCheckAccessService(null != request.getCheckAccessService() ? request.getCheckAccessService() : false);
+        entity.setCheckAccessAsset(null != request.getCheckAccessAsset() ? request.getCheckAccessAsset() : false);
+        entity.setCustomerProperty(request.getCustomerProperty());
+        entity.setAmountProperty(request.getAmountProperty());
+        entity.setAssetProperty(request.getAssetProperty());
+        if (entity instanceof JavaServiceEntity) {
+            ((JavaServiceEntity) entity).setJavaImplementationClassName(request.getJavaImplementationClassName());
+        }
+
+        return entity;
+    }
+
+    public static ServiceEntity createEmptyServiceEntity(ServiceImplementationType implementationType) {
+        return createEmptyServiceEntity(null, implementationType);
+    }
 
     public static ServiceEntity createEmptyServiceEntity(String serviceId, ServiceImplementationType implementationType) {
         ServiceEntity result = null;

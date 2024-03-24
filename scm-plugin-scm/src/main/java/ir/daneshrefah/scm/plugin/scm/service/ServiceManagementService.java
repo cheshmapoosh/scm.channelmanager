@@ -4,10 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
-import ir.daneshrefah.scm.common.exception.MissingRequestException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.service.ServiceFindRequest;
 import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -32,7 +31,7 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceInfoRequest request) {
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
@@ -62,24 +61,8 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.updateService(serviceId, newService);
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service createService(Message message) {
-        if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
-            throw new MissingRequestException();
-        }
-        ServiceImplementationType implementationType = ServiceImplementationType.findByCode(message.getIntegerPayloadValue("implementationType"));
-        if (null == implementationType) {
-            throw new MissingRequiredInputException("implementationType");
-        }
-        ir.daneshrefah.scm.common.model.service.Service newService = null;
-        try {
-            newService = objectMapper.treeToValue(message.getPayload(),
-                    ir.daneshrefah.scm.common.model.service.Service.class);
-        } catch (JsonProcessingException e) {
-            throw new InvalidRequestFormatException("payload", e);
-        }
-        newService.setCreator(message.getHeader().getAuthentication().getPersonUsername());
-        newService.setLastEditor(message.getHeader().getAuthentication().getPersonUsername());
-        return this.service.createService(newService);
+    public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest request) {
+        return this.service.createService(request);
     }
 
 }
