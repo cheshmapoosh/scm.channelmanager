@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class TerminalServiceAccess extends BaseModel<String> {
+public class TerminalServiceAccess extends BaseModel<Long> {
 
     private Terminal terminal;
     private Service service;

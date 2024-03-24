@@ -18,12 +18,12 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_TERMINAL_SERVICE_ACCESS")
-public class TerminalServiceAccessEntity extends AbstractDefaultEntity<String> {
+public class TerminalServiceAccessEntity extends AbstractDefaultEntity<Long> {
 
     @Id
     @Column(name = "TERMINAL_SERVICE_ACCESS_ID")
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @ManyToOne
     @JoinColumn(name = "service_id")
     private ServiceEntity service;

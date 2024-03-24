@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.ChannelService;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationProperties;
-import ir.daneshrefah.scm.core.integration.inbound.interceptor.*;
-import ir.daneshrefah.scm.core.service.ChannelService;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.AuthenticationInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.RequestValidationInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.TerminalRequestTransformerInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.TransactionAuthenticationInterceptor;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -64,7 +67,7 @@ public class InboundChannelsAutoConfiguration /*implements ApplicationContextAwa
         if (null == activeChannelList || activeChannelList.isEmpty()) {
             throw new RuntimeException("no active channel is defined in application config.");
         }
-        List<Channel> channels = channelService.findAllChannelList();
+        List<Channel> channels = channelService.findAllChannels();
         for (Iterator<Channel> iterator = channels.iterator(); iterator.hasNext(); ) {
 
             Channel channel = iterator.next();

@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.gateway.controller;
 
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.core.service.ChannelService;
+import ir.daneshrefah.scm.common.service.ChannelInfoRequest;
+import ir.daneshrefah.scm.common.service.ChannelService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,13 +29,12 @@ public class ChannelController extends AbstractController {
     @GetMapping
     public List<Channel> getChannelList() {
 //        return "Hello from Spring MVC Controller!";
-        return channelService.findAllChannelList();
+        return channelService.findAllChannels();
     }
 
     @GetMapping("/paged")
-    public ResponseEntity<PagingResponse<Channel>> getChannelPage(Pageable pageable) {
-        Page<Channel> channels = channelService.findPagedChannelList(pageable);
-        PagingResponse<Channel> response = createPagingResponse(channels.getContent(), pageable, channels.getTotalElements());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<PagedResponseData<Channel>> getChannelPage(ChannelInfoRequest request) {
+        PagedResponseData<Channel> channels = channelService.findPagedChannels(request);
+        return ResponseEntity.ok(channels);
     }
 }

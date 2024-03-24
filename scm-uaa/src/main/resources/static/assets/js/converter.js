@@ -22,6 +22,24 @@ const accessParameterWrapper = document.getElementById(
 );
 
 const opentab = (tabname) => {
+  fetch("/public/api/tools/clients", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((newUserData) => {
+        console.log("New Client Data:", newUserData);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   [...tablinks].forEach((tablink) => {
     tablink.classList.remove("active-link");
     if (tablink.getAttribute("data-id") === tabname) {

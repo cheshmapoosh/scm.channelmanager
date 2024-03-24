@@ -186,7 +186,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         if (!input.isForCheck() && StringUtils.isEmpty(inputAccessParameter)) {
             throw new MissingRequiredInputException(SCM_PARAMETER_ACCESS_PARAMETER);
         }
-        if (!input.isForCheck() && !StringUtils.equals(serviceAccess.getTerminal().getCode(), inputTerminalCode)) {
+        if (!input.isForCheck() && !StringUtils.equalsIgnoreCase(serviceAccess.getTerminal().getCode(), inputTerminalCode)) {
             throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
 
@@ -346,8 +346,8 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             return null;
         return services.stream()
                 .filter(service ->
-                        service.getTerminal().getCode().equals(terminalCode) &&
-                                service.getService().getCode().equals(serviceCode))
+                        service.getTerminal().getCode().equalsIgnoreCase(terminalCode) &&
+                                service.getService().getCode().equalsIgnoreCase(serviceCode))
                 .findFirst()
                 .orElse(null);
     }

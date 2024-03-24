@@ -93,7 +93,7 @@ public class DecisionHelper {
         } else if (conditionClassType.equals(TerminalCondition.class)) {
             conditions.stream().map(TerminalCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getTerminal().getId(), condition));
         } else if (conditionClassType.equals(TerminalServiceCondition.class)) {
-            conditions.stream().map(TerminalServiceCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getTerminalServiceAccess().getId(), condition));
+            conditions.stream().map(TerminalServiceCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getTerminalServiceAccess().getId().toString(), condition));
         }
     }
 
@@ -147,7 +147,7 @@ public class DecisionHelper {
 
     private List<Condition> findCompatibleConditions(TerminalServiceAccess serviceAccess, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
         /* checking Terminal-service-auth-secondAuth conditions */
-        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalServiceCondition.class, serviceAccess.getId());
+        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalServiceCondition.class, serviceAccess.getId().toString());
         if (!conditions.isEmpty()) {
             return conditions;
         }

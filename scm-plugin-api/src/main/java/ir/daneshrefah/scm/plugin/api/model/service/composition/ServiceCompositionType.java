@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.plugin.api.model.service.composition;
  */
 public enum ServiceCompositionType {
 
-    SAGA(1), FAILOVER(3), ROUND_ROBIN(4);
+    SAGA(1), FIRST_RESPONSE(2), FAILOVER(3), ROUND_ROBIN(4), AGGREGATE(5);
 
     ServiceCompositionType(Integer code) {
         this.code = code;
