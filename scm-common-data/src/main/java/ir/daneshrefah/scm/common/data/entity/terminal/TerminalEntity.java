@@ -18,6 +18,8 @@ public class TerminalEntity extends AbstractDefaultEntity<String> {
     private String id;
     private String code;
     private String title;
+    @Column(name = "LEGACY_TERMINAL_ID")
+    private Long legacyTerminalId;
     @Convert(converter = TerminalStatusConverter.class)
     private TerminalStatus status;
     private Boolean supportCheckAuthentication;

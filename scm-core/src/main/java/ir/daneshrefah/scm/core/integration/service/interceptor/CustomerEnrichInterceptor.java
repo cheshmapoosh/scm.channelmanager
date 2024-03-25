@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.core.integration.service.interceptor;
 
+import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
@@ -10,6 +12,8 @@ import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND;
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND;
@@ -28,6 +32,12 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
+        Service service = message.getHeader().getServiceAccess().getService();
+        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
+        boolean isLoadAssetRequired = service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
+        boolean isLoadCustomerRequired = StringUtils.isNotEmpty(service.getCustomerProperty());
+        PersonProfile profile = message.getHeader().getPersonProfile();
+        List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(profile.getPersonId().id(), terminal.getId());
         boolean isCustomerLoadedIfRequired = loadCustomerIfRequired(message);
         if (!isCustomerLoadedIfRequired) {
             message.addAccessDeniedError(null, ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND,
@@ -98,8 +108,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         }
         String providerId = service.getServiceProvider().getId();
         if (!profile.isCustomerLoaded(providerId)) {
-            Customer customer = customerService.findLocalCustomerByProviderIdAndPersonId(service.getServiceProvider().getCode(), profile.getPersonId());
-            profile.addCustomer(providerId, customer);
+//            Customer customer = customerService.findLocalCustomerByProviderIdAndPersonId(service.getServiceProvider().getCode(), profile.getPersonId());
+//            profile.addCustomer(providerId, customer);
         }
         boolean isCustomerLoaded = profile.isCustomerLoaded(providerId) && null != profile.getCustomer(providerId) &&
                 StringUtils.isNotEmpty(profile.getCustomer(providerId).getCustomerNo());

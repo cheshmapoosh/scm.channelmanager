@@ -1,26 +1,15 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.customer.Asset;
-import ir.daneshrefah.scm.common.model.customer.Customer;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
-import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.integration.ServiceProviderDataProvider;
+import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
+import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
+import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessRepository;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.service.CustomerSynchronizationRequest;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
-import ir.daneshrefah.scm.utils.string.StringUtils;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,7 +23,17 @@ import java.util.*;
 @Slf4j
 public class CustomerServiceImpl implements CustomerService {
 
-    private final PersonService personService;
+    private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
+    @Override
+    public List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId) {
+        terminalId = "a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc";
+        Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessEntities =
+                membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(personId, terminalId);
+
+        return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(membershipTerminalAccessEntities);
+    }
+
+    /*private final PersonService personService;
     private final ServiceService serviceService;
     private Map<String, ServiceProviderDataProvider> providersMap;
 
@@ -184,6 +183,6 @@ public class CustomerServiceImpl implements CustomerService {
         }
         ServiceProviderDataProvider dataProvider = providersMap.get(provider.getCode());
         return Optional.of(dataProvider);
-    }
+    }*/
 
 }

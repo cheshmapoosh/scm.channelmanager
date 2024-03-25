@@ -20,7 +20,6 @@ import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
-import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -153,9 +152,7 @@ public class ServiceServiceImpl implements ServiceService {
                 !checkServiceProviderExistById(service.getServiceProviderId())) {
             throw new InvalidInputException("serviceProvider");
         }
-        if (null == service.getVersion()) {
-            service.setVersion(1);
-        }
+
         ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
 
         entity.setParent(serviceRepository.findById(service.getParentId()).get());
@@ -297,8 +294,8 @@ public class ServiceServiceImpl implements ServiceService {
 //        return services;
     }
 
-    public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId, ServiceRelationType relationType) {
-        Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceIdAndRelationType(sourceServiceId, relationType);
+    public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId) {
+        Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
         List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
         return relations;
     }

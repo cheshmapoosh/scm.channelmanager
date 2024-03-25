@@ -17,6 +17,7 @@ public class Terminal extends BaseModel<String> {
 
     private String code;
     private String title;
+    private Long legacyTerminalId;
     private TerminalStatus status;
     private boolean supportCheckAuthentication;
     private boolean supportCheckSecondAuthentication;

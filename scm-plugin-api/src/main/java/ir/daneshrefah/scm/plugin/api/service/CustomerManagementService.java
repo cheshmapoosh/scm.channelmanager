@@ -29,7 +29,7 @@ public class CustomerManagementService extends AbstractJavaService {
         this.customerService = customerService;
     }
 
-    public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
+    /*public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
         User user = AuthenticationUtils.getLoggedInUser(MessageContext.getCurrentContext().getMessage());
         return customerService.findLocalCustomerByProviderIdAndPersonId(providerId, personId);
     }
@@ -41,6 +41,6 @@ public class CustomerManagementService extends AbstractJavaService {
 
     public Customer synchronizeCustomerInfoByProviderIdAndPersonId(CustomerSynchronizationRequest request) {
         return customerService.synchronizeProviderCustomerInfoByPersonId(request);
-    }
+    }*/
 
 }

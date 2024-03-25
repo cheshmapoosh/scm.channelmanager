@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,19 +10,13 @@ package ir.daneshrefah.scm.plugin.api.model.service.composition;
  * @version 1.0
  * @since 2023-08-08
  */
+@Getter
+@RequiredArgsConstructor
 public enum ServiceCompositionType {
 
     SAGA(1), FIRST_RESPONSE(2), FAILOVER(3), ROUND_ROBIN(4), AGGREGATE(5);
 
-    ServiceCompositionType(Integer code) {
-        this.code = code;
-    }
-
-    private Integer code;
-
-    public Integer getCode() {
-        return code;
-    }
+    private final Integer code;
 
     public static ServiceCompositionType findByCode(Integer code) {
         for (ServiceCompositionType enumValue : ServiceCompositionType.values()) {

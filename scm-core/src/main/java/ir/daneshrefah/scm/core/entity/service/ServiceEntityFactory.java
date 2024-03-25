@@ -19,7 +19,7 @@ public class ServiceEntityFactory {
         entity.setCode(request.getCode());
         entity.setTitle(request.getTitle());
         entity.setAlias(request.getAlias());
-        entity.setVersion(request.getVersion());
+        entity.setVersion(null != request.getVersion() ? request.getVersion() : 1);
         entity.setMetadata(request.getMetadata());
         entity.setType(request.getType());
         entity.setStatus(null != request.getStatus() ? request.getStatus() : ServiceStatus.ACTIVE);

@@ -2,19 +2,14 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
-import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelationType;
-import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -38,7 +33,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
         CompositionService compositionService = (CompositionService) service;
         List<ServiceRelation> relations = compositionService.getRelations();
         if (null == relations) {
-            relations = serviceService.findServiceRelationListBySourceServiceId(service.getId(), ServiceRelationType.COMPOSITION);
+            relations = serviceService.findServiceRelationListBySourceServiceId(service.getId());
             compositionService.setRelations(relations);
         }
         Deque<ServiceRelation> reverseServiceStack = new LinkedList<>();

@@ -1,10 +1,7 @@
 package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +18,7 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
 public class ExternalServiceProviderEntity extends AbstractDefaultEntity<String> {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "SERVICE_PROVIDER_ID")
     private String id;
     private String code;
