@@ -90,8 +90,8 @@ public class TerminalServiceImpl implements TerminalService {
     @Override
     public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode) {
         return findAllTerminalServiceAccesses().stream().filter(serviceAccess ->
-                        terminalCode.equals(serviceAccess.getTerminal().getCode()) &&
-                                serviceCode.equals(serviceAccess.getService().getCode())
+                        terminalCode.equalsIgnoreCase(serviceAccess.getTerminal().getCode()) &&
+                                serviceCode.equalsIgnoreCase(serviceAccess.getService().getCode())
                 )
                 .findFirst();
     }

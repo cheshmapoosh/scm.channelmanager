@@ -38,6 +38,7 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @JoinColumn(name = "CUSTOMER_ID")
     private CustomerEntity customer;
     @Convert(converter = AssetTypeConverter.class)
+    @Column(name = "ASSET_TYPE", table = "MEMBERSHIP")
     private AssetType assetType;
     @ManyToOne
     @JoinColumn(name = "ACCOUNT_ID")

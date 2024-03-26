@@ -68,7 +68,7 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
         if (null == provider || !provider.isCustomerProvided() || null == profile) {
             return null;
         }
-        Customer customer = profile.getCustomer(provider.getId());
+        Customer customer = null;//profile.getCustomer(provider.getId());
         if (null == customer) {
             return null;
         }

@@ -39,7 +39,9 @@ public class ErrorCodes {
     public static final int ERROR_CODE_VALIDATION_SERVICE_PARAMETER_CLASS_NOT_FOUND = 1034;
     public static final int ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID = 1035;
     public static final int ERROR_CODE_VALIDATION_PERSON_NOT_FOUND = 1036;
+    public static final int ERROR_CODE_PAYLOAD_MERGE_ERROR = 1037;
     public static final int ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND = 1104;
+    public static final int ERROR_CODE_VALIDATION_PROVIDER_ASSET_NOT_FOUND = 1105;
 
 
 

@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.exception.MessagePayloadMergeException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import lombok.Builder;
@@ -10,6 +12,7 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -36,6 +39,16 @@ public class Message implements Serializable {
         nullPayload();
     }
 
+    public void addErrors(List<Error> errors, MessageStatus status) {
+        if (null == this.errors) {
+            this.errors = errors;
+        } else {
+            this.errors.addAll(errors);
+        }
+        this.status = status;
+        nullPayload();
+    }
+
     public void addAccessDeniedError(String source, Integer errorCode, String message) {
         addError(new Error(source, null != errorCode ? errorCode : ErrorCodes.ERROR_CODE_ACCESS_DENIED,
                         null != message ? message : "access denied."),
@@ -54,6 +67,29 @@ public class Message implements Serializable {
     public void status(MessageStatus status) {
         if (null != status) {
             this.status = status;
+        }
+    }
+
+    public void appendPayload(JsonNode newPayload) {
+        if (null == newPayload || newPayload.isNull() || newPayload.isEmpty()) {
+            return;
+        }
+        if (null == payload || payload.isNull() || payload.isEmpty()) {
+            payload = newPayload;
+            return;
+        }
+        if ((payload.isArray() && !newPayload.isArray()) || (!payload.isArray() && newPayload.isArray())) {
+            throw new MessagePayloadMergeException("incompatible array type of payloads", newPayload, null);
+        }
+        if (payload.isObject()) {
+            for (Iterator<String> it = newPayload.fieldNames(); it.hasNext(); ) {
+                String filed = it.next();
+                ((ObjectNode) payload).set(filed, newPayload.get(filed).deepCopy());
+            }
+        } else if (payload.isArray()) {
+            for (JsonNode element : newPayload) {
+                ((ArrayNode) payload).add(element.deepCopy());
+            }
         }
     }
 

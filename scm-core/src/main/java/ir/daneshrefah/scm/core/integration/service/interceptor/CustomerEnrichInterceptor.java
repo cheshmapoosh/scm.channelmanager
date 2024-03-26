@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.core.integration.service.interceptor;
 
+import ir.daneshrefah.scm.common.exception.NoAssetFoundException;
+import ir.daneshrefah.scm.common.exception.NoCustomerFoundException;
+import ir.daneshrefah.scm.common.model.asset.Customer;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
@@ -14,9 +16,6 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND;
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,88 +31,37 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        Service service = message.getHeader().getServiceAccess().getService();
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        boolean isLoadAssetRequired = service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
-        boolean isLoadCustomerRequired = StringUtils.isNotEmpty(service.getCustomerProperty());
-        PersonProfile profile = message.getHeader().getPersonProfile();
-        List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(profile.getPersonId().id(), terminal.getId());
-        boolean isCustomerLoadedIfRequired = loadCustomerIfRequired(message);
-        if (!isCustomerLoadedIfRequired) {
-            message.addAccessDeniedError(null, ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_NOT_FOUND,
-                    "no customer found for provider.");
-            return message;
+        ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
+                (ExternalService) message.getHeader().getServiceAccess().getService() : null;
+        if (null == service || !service.getServiceProvider().isCustomerProvided()) {
+            throw new NoCustomerFoundException();
         }
-        boolean isCustomerAppended = appendCustomerNoIfRequired(message);
-        boolean isAssetLoadedIfRequired = loadAssetsIfRequired(message);
-        if (!isAssetLoadedIfRequired) {
-            message.addAccessDeniedError(null, ERROR_CODE_VALIDATION_PROVIDER_CUSTOMER_ASSET_NOT_FOUND,
-                    "no customer asset found for provider.");
-            return message;
+        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
+        PersonProfile profile = message.getHeader().getPersonProfile();
+
+        if (!profile.isMembershipLoaded()) {
+            List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(profile.getPersonId().id(), terminal.getId());
+            profile.loadMembership(memberships);
+        }
+
+        if (!profile.hasMembership(service.getServiceProvider().getId())) {
+            throw new NoAssetFoundException();
+        }
+        String customerProperty = service.getCustomerProperty();
+        if (StringUtils.isNotEmpty(customerProperty)) {
+            Customer customer = profile.getCustomer(service.getServiceProvider().getId());
+            message.setPayloadValue(customerProperty, customer.getCustomerNo());
         }
         return message;
     }
 
     @Override
     protected boolean support(TerminalServiceAccess serviceAccess) {
-        return true;
-    }
-
-    private boolean loadAssetsIfRequired(Message message) {
-        ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
-                (ExternalService) message.getHeader().getServiceAccess().getService() : null;
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        if (null == service || !terminal.isSupportCheckAssetAccess() || !service.getCheckAccessAsset()) {
-            return true;
-        }
-        PersonProfile profile = message.getHeader().getPersonProfile();
-        String providerId = service.getServiceProvider().getId();
-        if (null == profile || !profile.isCustomerLoaded(providerId)) {
-            return false;
-        }
-        if (!profile.isCustomerAssetLoaded(providerId)) {
-            throw new RuntimeException("this code should be implemented.");
-//            Customer customer = customerService.findCustomerByPersonId(service.getServiceProvider(), profile.getPersonId());
-//            profile.addCustomer(providerId, customer);
-        }
-        return profile.isCustomerAssetLoaded(providerId);
-    }
-
-    private boolean appendCustomerNoIfRequired(Message message) {
-        ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
-                (ExternalService) message.getHeader().getServiceAccess().getService() : null;
-        String customerProperty = null != service ? service.getCustomerProperty() : null;
-        if (null == service || StringUtils.isEmpty(customerProperty)) {
-            return true;
-        }
-        Customer customer = message.getHeader().getPersonProfile().getCustomer(service.getServiceProvider().getId());
-        message.setPayloadValue(customerProperty, customer.getCustomerNo());
-        return true;
-    }
-
-    private boolean loadCustomerIfRequired(Message message) {
-        ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
-                (ExternalService) message.getHeader().getServiceAccess().getService() : null;
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        if (null == service || !service.getServiceProvider().isCustomerProvided()) {
-            return true;
-        }
-        if (StringUtils.isEmpty(service.getCustomerProperty()) &&
-                !terminal.isSupportCheckAssetAccess() && !service.getCheckAccessAsset()) {
-            return true;
-        }
-        PersonProfile profile = message.getHeader().getPersonProfile();
-        if (null == profile) {
-            return false;
-        }
-        String providerId = service.getServiceProvider().getId();
-        if (!profile.isCustomerLoaded(providerId)) {
-//            Customer customer = customerService.findLocalCustomerByProviderIdAndPersonId(service.getServiceProvider().getCode(), profile.getPersonId());
-//            profile.addCustomer(providerId, customer);
-        }
-        boolean isCustomerLoaded = profile.isCustomerLoaded(providerId) && null != profile.getCustomer(providerId) &&
-                StringUtils.isNotEmpty(profile.getCustomer(providerId).getCustomerNo());
-        return isCustomerLoaded;
+        Service service = serviceAccess.getService();
+        Terminal terminal = serviceAccess.getTerminal();
+        boolean isLoadAssetRequired = service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
+        boolean isLoadCustomerRequired = StringUtils.isNotEmpty(service.getCustomerProperty());
+        return isLoadCustomerRequired || isLoadAssetRequired;
     }
 
 }

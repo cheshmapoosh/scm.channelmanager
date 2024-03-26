@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
 import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
 import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessRepository;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,9 @@ public class CustomerServiceImpl implements CustomerService {
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
     @Override
     public List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId) {
-        terminalId = "a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc";
+        if (null == personId || StringUtils.isEmpty(terminalId)) {
+            return null;
+        }
         Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessEntities =
                 membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(personId, terminalId);
 

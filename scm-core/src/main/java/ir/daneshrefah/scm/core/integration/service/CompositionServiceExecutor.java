@@ -1,15 +1,26 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
+import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceCompositionType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
-import org.springframework.beans.factory.annotation.Autowired;
+import ir.daneshrefah.scm.plugin.api.service.TransformerService;
+import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import ir.daneshrefah.scm.utils.MessageUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,13 +29,14 @@ import java.util.*;
  * @version 1.0
  * @since 2023-08-07
  */
+@RequiredArgsConstructor
 @Service
 public class CompositionServiceExecutor extends ServiceExecutor {
 
-    @Autowired
-    private ServiceProducerTemplate serviceProducerTemplate;
-    @Autowired
-    private ServiceServiceImpl serviceService;
+    private final ServiceProducerTemplate serviceProducerTemplate;
+    private final ServiceServiceImpl serviceService;
+    private final TransformerService transformerService;
+    private final TerminalService terminalService;
     private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override
@@ -41,7 +53,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
-            CompositeServiceExecutionWrapper serviceExecutionWrapper = null;//prepareServiceExecutionWrapper(serviceRelation);
+            CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
 
             Object relationRequestPayload = null;
             try {
@@ -51,14 +63,15 @@ public class CompositionServiceExecutor extends ServiceExecutor {
                 break;
             }
 
-//            Message tempMessage =  MessageUtils.generateInternalMessage(message, serviceRelation.getTargetService(), (JsonNode) relationRequestPayload);
-//            serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
-//            message.addErrors(tempMessage.getErrors());
-//            if (!Status.SC_SUCCESS.equals(tempMessage.getStatus())) {
-//                message.status(tempMessage.getStatus());
-//                break;
-//            }
-
+            String terminalCode = message.getHeader().getTerminalCode();
+            String serviceCode = serviceRelation.getTargetService().getCode();
+            Optional<TerminalServiceAccess> serviceAccess = terminalService
+                    .findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode);
+            if (!serviceAccess.isPresent()) {
+                throw new TerminalServiceNotFoundException(terminalCode, serviceCode);
+            }
+            Message tempMessage = MessageUtils.generateInternalMessage(message, serviceAccess.get(), (JsonNode) relationRequestPayload);
+            serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
 //            Object relationResponsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
 //            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
 //                    serviceRelation.getTargetServiceTransformerResponseClassName());
@@ -67,6 +80,13 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 //                relationResponsePayload = relationResponseTransformer.transform(tempMessage.getPayload(), tempMessage,
 //                        serviceRelation.getTargetServiceTransformerResponseMetadata());
 //            }
+            if (ServiceCompositionType.AGGREGATE.equals(compositionService.getCompositionType())) {
+                message.addErrors(tempMessage.getErrors(), tempMessage.getStatus());
+                if (MessageStatus.SC_SUCCESS.equals(tempMessage.getStatus())) {
+                    message.appendPayload(tempMessage.getPayload());
+                }
+            }
+
 
 //            message.setPayload((JsonNode) relationResponsePayload);
 
@@ -77,7 +97,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         return message.getPayload();
     }
-/*
+
     private CompositeServiceExecutionWrapper prepareServiceExecutionWrapper(ServiceRelation serviceRelation) {
         CompositeServiceExecutionWrapper serviceExecutionWrapper = serviceExecutionMap.get(serviceRelation.getId());
         if (null == serviceExecutionWrapper) {
@@ -119,5 +139,6 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             serviceExecutionMap.put(serviceRelation.getId(), serviceExecutionWrapper);
         }
         return serviceExecutionWrapper;
-    }*/
+    }
+
 }
