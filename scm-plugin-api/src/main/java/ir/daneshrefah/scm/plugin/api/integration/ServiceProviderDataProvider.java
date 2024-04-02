@@ -1,11 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
-import ir.daneshrefah.scm.common.model.customer.Asset;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.Nationality;
 import ir.daneshrefah.scm.common.model.person.PersonType;
-import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 
 import java.util.List;
@@ -25,7 +23,7 @@ public abstract class ServiceProviderDataProvider {
         this.provider = provider;
     }
 
-    public abstract Customer inquireRemoteCustomerByPerson(GeneralPerson person);
+    /*public abstract Customer inquireRemoteCustomerByPerson(GeneralPerson person);
 
     public abstract Customer inquireRemoteCustomerByPerson(PersonType personType, Nationality nationality, String nationalId,
                                                            String subOrganizationId);
@@ -39,6 +37,6 @@ public abstract class ServiceProviderDataProvider {
 
     public abstract <T extends Asset> List<T> findLocalCustomerAssetListByPersonId(PersonProfile.PersonId personId, Class<T> clazz);
 
-    public abstract Customer synchronizeCustomerInfo(ExternalServiceProvider provider, GeneralPerson person);
+    public abstract Customer synchronizeCustomerInfo(ExternalServiceProvider provider, GeneralPerson person);*/
 
 }

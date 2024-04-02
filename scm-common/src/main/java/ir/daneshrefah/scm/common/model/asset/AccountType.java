@@ -8,12 +8,11 @@ import lombok.Data;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-03-25
+ * @since 2024-04-02
  */
 @Data
-public class Account extends BaseModel<Long> {
+public class AccountType extends BaseModel<Long> {
 
-    private String accountNo;
-    private AccountType accountType;
+    private String name;
 
 }

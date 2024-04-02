@@ -1,16 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.customer.AccountAsset;
-import ir.daneshrefah.scm.common.model.customer.Customer;
-import ir.daneshrefah.scm.plugin.api.inbound.MessageContext;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.

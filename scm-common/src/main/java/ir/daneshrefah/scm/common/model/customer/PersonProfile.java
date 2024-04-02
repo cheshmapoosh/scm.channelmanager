@@ -76,25 +76,22 @@ public class PersonProfile implements Serializable {
                 });
     }
 
-    /*public Asset findAsset(String providerId, Object assetValue) {
-        if (null == customers) {
+    public MembershipTerminalAccess findAsset(String providerId, String assetValue, AssetType assetType) {
+        if (StringUtils.isEmpty(providerId) || StringUtils.isEmpty(assetValue) || null == memberships || memberships.size() < 1) {
             return null;
         }
-        Customer customer = customers.get(providerId);
-        if (null == customer) {
-            return null;
-        }
-        for (Asset asset : customer.getAssets()) {
-            if (asset.getValue().equals(assetValue)) {
-                return asset;
-            }
-        }
-        return null;
+        return memberships.stream().filter(m ->
+                        providerId.equals(m.getMembership().getCustomer().getProvider().getId()) &&
+                                (null == assetType || assetType.equals(m.getMembership().getAssetType())) &&
+                                (m.getMembership().getAccount().getAccountNo().equalsIgnoreCase(assetValue))
+
+                )
+                .findFirst().orElse(null);
     }
 
-    public boolean hasAssetAccess(String providerId, Object assetValue) {
-        return null != findAsset(providerId, assetValue);
-    }*/
+    public boolean hasAssetAccess(String providerId, String assetValue, AssetType assetType) {
+        return null != findAsset(providerId, assetValue, assetType);
+    }
 
     /**
      * personProfileId ref to USER.USERNAME

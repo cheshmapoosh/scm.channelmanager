@@ -25,7 +25,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(PersonProfile profile, TerminalServiceAccess service, Object asset) {
+    protected int vote(PersonProfile profile, TerminalServiceAccess service, String asset) {
         ExternalServiceProvider provider = service.getService() instanceof ExternalService ?
                 ((ExternalService) service.getService()).getServiceProvider() : null;
         if (null == provider || !provider.isCustomerProvided()) {
@@ -34,7 +34,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
         if (null == asset) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_IS_EMPTY, "asset must not be empty.");
         }
-        boolean isAssetAssigned = true;//profile.hasAssetAccess(provider.getId(), asset);
+        boolean isAssetAssigned = profile.hasAssetAccess(provider.getId(), asset, null);
         if (!isAssetAssigned) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_NOT_ASSIGNED, "asset not assigned.");
         }

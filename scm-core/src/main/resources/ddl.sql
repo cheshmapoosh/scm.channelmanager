@@ -185,14 +185,23 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
 VALUES ('c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 'SVC_ACCOUNT_PARENT', 'پرنت حساب', '/account', 1, 1, 4, 5, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, STATUS, METADATA, IS_SYSTEMIC, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, IMPLEMENTATION_SERVICE_PROVIDER_ID,
-                                 IS_CUSTOMER_BASED, CREATOR, LAST_EDITOR)
+                                 PROPERTY_NAME_CUSTOMER, CREATOR, LAST_EDITOR)
 VALUES ('41088034-ad79-4f6a-9e04-4f6a31374148', 'SVC_NAB_CUSTOMER_ACCOUNT_LIST', 'لیست حساب همراه', 2,
         '{"serviceName":"SCMREAD.GETCUSTOMERACCOUNTS","rq":{"parameters":[{"name":"P_CUSTOMERID","$value":{"length":10,"type":"string","fromValue":"customerNo","convertor":"fixString"}},{"name":"P_SIGNER","value":"-1"},{"name":"P_ACCOUNTSTATUS","value":"-1"},{"name":"P_INCLUDECLOSED","value":"1"},{"name":"P_STARTROW","value":"1"},{"name":"P_ENDROW","value":"20"}],"callType":"Executer","encoding":"ASCII","requestID":"123456789"},"rs":{"$accountOwnerCustomerNo":{"fromValue":"OWNERID"},"$accountOwnerName":{"fromValue":"OWNERNAME"},"$accountOwnerCustomerTypeCode":{"fromValue":"CUSTOMERTYPE"},"$accountOwnerCustomerTypeTitle":{"fromValue":"CUSTOMERTITILE"},"$generalCode":{"fromValue":"GENERAL"},"$subsidryCode":{"fromValue":"SUBSIDRY"},"$subsidryTitle":{"fromValue":"SUBSIDRYTITLE"},"$accountTypeCode":{"fromValue":"ACCOUNTTYPE"},"$accountTypeTitle":{"fromValue":"ACCOUNTTYPETITLE"},"$accountNumber":{"fromValue":"ACCOUNTNUMBER"},"$accountStatusCode":{"fromValue":"ACCOUNTSTATUS"},"$accountStatusTitle":{"fromValue":"ACCOUNTSTATUSTITLE"},"$branchCode":{"fromValue":"BRANCHCODE"},"$branchTitle":{"fromValue":"BRANCHTITILE"},"$accountOpenDate":{"fromValue":"OPENACCOUNTDATE"},"$accountIsCommercial":{"fromValue":"ISCOMMERCE"},"$currency":{"fromValue":"ACCOUNTCURRENCY"},"$iban":{"fromValue":"IBAN"},"$sayahCode":{"fromValue":"SAYAHCODE"},"$customerRelationTypeCode":{"fromValue":"RELATIONTYPECODE"},"$customerRelationTypeTitle":{"fromValue":"RELATIONTYPETITLE"},"$customerIsSigner":{"fromValue":"ISSIGNER"},"$customerSharePercent":{"fromValue":"SHAREPERCENT"},"$balanceTotal":{"fromValue":"BALANCETOTAL"},"$balanceAvailable":{"fromValue":"BALANCEAVAILABLE"},"$blockTotal":{"fromValue":"BLOCKTOTAL"},"$signDate":{"fromValue":"SIGNDATE"},"$lastTransactionDate":{"fromValue":"LASTTRANSDATE"}},"$mainOwner":{"length":10,"type":"string","fromValue":"MAINOWNER","convertor":"latinToPersianConvertor"}}',
-        1, 'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 3, 1, '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 1, 'Reza Jamshidi', 'Reza Jamshidi');
+        1, 'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 3, 1, '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'customerNo', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID,CODE,TITLE,ALIAS,STATUS,IS_SYSTEMIC,PARENT_SERVICE_ID,SERVICE_TYPE_CODE,SERVICE_IMPLEMENTATION_TYPE_CODE,
                                  IMPLEMENTATION_COMPOSITION_TYPE_CODE,CHECK_ACCESS_FIRST_AUTHENTICATION,IS_CUSTOMER_BASED,CREATOR,LAST_EDITOR)
 VALUES ('AB1F2C3E-B12D-412A-B23B-23FA3C2BEAD','SVC_USER_ACCOUNT_LIST','لیست حسابهای یک کاربر','/list',1,1,'c0a707a8-7330-43b1-bda2-d6e5bf0ee691',3,3,
         5,1,1,'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID,CODE,TITLE,ALIAS,STATUS,IS_SYSTEMIC,PARENT_SERVICE_ID,SERVICE_TYPE_CODE,SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_COMPOSITION_TYPE_CODE,CHECK_ACCESS_FIRST_AUTHENTICATION,CREATOR,LAST_EDITOR)
+VALUES ('45bcf9af-2614-4a2e-933a-3121c3fb2c06','SVC_ACCOUNT_WITHDRAW_TABLE','جدول شرایط برداشت حساب','/{accountNo}/withdraw',1,1,'c0a707a8-7330-43b1-bda2-d6e5bf0ee691',3,3,
+        2,1,'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, STATUS, METADATA, IS_SYSTEMIC, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, IMPLEMENTATION_SERVICE_PROVIDER_ID,CHECK_ACCESS_ASSET, CREATOR, LAST_EDITOR)
+VALUES ('5EF23AB1-2A1C-421F-A12E-23EFABC1DEC', 'SVC_NAB_ACCOUNT_WITHDRAW_TABLE', 'جدول شرایط برداشت همراه', 2,
+        '{"serviceName":"SCMREAD.GETACCOUNTWITHDRAWTABLE","rq":{"parameters":[{"name":"P_ACCOUNTID","$value":{"type":"string","fromValue":"accountNo"}},{"name":"P_EFFECTIVEDATE","value":"0"}],"callType":"Reader","encoding":"ASCII","requestID":"RequestID"},"rs":{"$accountOwnerCustomerNo":{"fromValue":"OWNERID"},"$accountOwnerName":{"fromValue":"OWNERNAME"},"$accountOwnerCustomerTypeCode":{"fromValue":"CUSTOMERTYPE"},"$accountOwnerCustomerTypeTitle":{"fromValue":"CUSTOMERTITILE"},"$generalCode":{"fromValue":"GENERAL"},"$subsidryCode":{"fromValue":"SUBSIDRY"},"$subsidryTitle":{"fromValue":"SUBSIDRYTITLE"},"$accountTypeCode":{"fromValue":"ACCOUNTTYPE"},"$accountTypeTitle":{"fromValue":"ACCOUNTTYPETITLE"},"$accountNumber":{"fromValue":"ACCOUNTNUMBER"},"$accountStatusCode":{"fromValue":"ACCOUNTSTATUS"},"$accountStatusTitle":{"fromValue":"ACCOUNTSTATUSTITLE"},"$branchCode":{"fromValue":"BRANCHCODE"},"$branchTitle":{"fromValue":"BRANCHTITILE"},"$accountOpenDate":{"fromValue":"OPENACCOUNTDATE"},"$accountIsCommercial":{"fromValue":"ISCOMMERCE"},"$currency":{"fromValue":"ACCOUNTCURRENCY"},"$iban":{"fromValue":"IBAN"},"$sayahCode":{"fromValue":"SAYAHCODE"},"$customerRelationTypeCode":{"fromValue":"RELATIONTYPECODE"},"$customerRelationTypeTitle":{"fromValue":"RELATIONTYPETITLE"},"$customerIsSigner":{"fromValue":"ISSIGNER"},"$customerSharePercent":{"fromValue":"SHAREPERCENT"},"$balanceTotal":{"fromValue":"BALANCETOTAL"},"$balanceAvailable":{"fromValue":"BALANCEAVAILABLE"},"$blockTotal":{"fromValue":"BLOCKTOTAL"},"$signDate":{"fromValue":"SIGNDATE"},"$lastTransactionDate":{"fromValue":"LASTTRANSDATE"}},"$mainOwner":{"length":10,"type":"string","fromValue":"MAINOWNER","convertor":"latinToPersianConvertor"}}',
+        1, 'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 3, 1, '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 1, 'Reza Jamshidi', 'Reza Jamshidi');
 -- SVC_ACCOUNT_WITHDRAW_TABLE
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
@@ -242,6 +251,11 @@ VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'AB1F2C3E-B12D-412A-B23B-23FA3C2
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', '41088034-ad79-4f6a-9e04-4f6a31374148', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_NAB_CUSTOMER_ACCOUNT_LIST' to 'IB'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', '5EF23AB1-2A1C-421F-A12E-23EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_NAB_ACCOUNT_WITHDRAW_TABLE' to 'IB'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', '45bcf9af-2614-4a2e-933a-3121c3fb2c06', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_ACCOUNT_WITHDRAW_TABLE' to 'IB'
+
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'bd0fe44f-68f2-4952-8749-fb15b05f0760', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_LIST' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'd42c6df9-e27d-4894-b86c-a48dd2a11412', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_CREATE' to 'SCM'
@@ -282,7 +296,9 @@ CREATE TABLE REF.TBL_SCM_SERVICE_RELATION
 );
 
 INSERT INTO REF.TBL_SCM_SERVICE_RELATION (SOURCE_SERVICE_ID, ORDER, TARGET_SERVICE_ID, CREATOR, LAST_EDITOR)
-VALUES ('AB1F2C3E-B12D-412A-B23B-23FA3C2BEAD', 1, '41088034-ad79-4f6a-9e04-4f6a31374148', 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('AB1F2C3E-B12D-412A-B23B-23FA3C2BEAD', 1, '41088034-ad79-4f6a-9e04-4f6a31374148', 'Reza Jamshidi', 'Reza Jamshidi'); -- add SVC_NAB_CUSTOMER_ACCOUNT_LIST to SVC_USER_ACCOUNT_LIST
+INSERT INTO REF.TBL_SCM_SERVICE_RELATION (SOURCE_SERVICE_ID, ORDER, TARGET_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('45bcf9af-2614-4a2e-933a-3121c3fb2c06', 1, '5EF23AB1-2A1C-421F-A12E-23EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi'); -- add SVC_NAB_ACCOUNT_WITHDRAW_TABLE to SVC_ACCOUNT_WITHDRAW_TABLE
 
 
 ALTER TABLE REF.CUSTOMER ADD COLUMN SERVICE_PROVIDER_ID VARCHAR(36) NOT NULL;

@@ -6,9 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.model.customer.AccountAsset;
-import ir.daneshrefah.scm.common.model.customer.Asset;
-import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.*;
@@ -36,7 +33,7 @@ public class NabCustomerDataProvider extends ServiceProviderDataProvider {
     private final NabCustomerRepository customerRepository;
     private final ServiceProducerTemplate serviceProducerTemplate;
 
-    @Override
+    /*@Override
     public Customer inquireRemoteCustomerByPerson(GeneralPerson person) {
         String nationalId = person instanceof GeneralRealPerson ?
                 ((GeneralRealPerson) person).getNationalCode() : ((GeneralLegalPerson) person).getNationalId();
@@ -125,5 +122,5 @@ public class NabCustomerDataProvider extends ServiceProviderDataProvider {
 //            CUSTOMERACCOUNT
         }
         return null;
-    }
+    }*/
 }

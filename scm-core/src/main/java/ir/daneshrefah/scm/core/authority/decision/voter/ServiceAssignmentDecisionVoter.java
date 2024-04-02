@@ -22,7 +22,7 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(PersonProfile profile, TerminalServiceAccess service, Object asset) {
+    protected int vote(PersonProfile profile, TerminalServiceAccess service, String asset) {
         profile = fillServiceAccessForProfile(profile, service.getTerminal().getCode());
         boolean isServiceAssigned = profile.hasServiceAccess(service.getTerminal().getCode(),
                 service.getService().getCode(), asset);

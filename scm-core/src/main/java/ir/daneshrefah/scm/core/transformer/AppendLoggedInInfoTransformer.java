@@ -1,15 +1,12 @@
 package ir.daneshrefah.scm.core.transformer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.customer.Customer;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
@@ -62,12 +59,12 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
         if (null == provider || !provider.isCustomerProvided() || null == profile) {
             return null;
         }
-        Customer customer = null;//profile.getCustomer(provider.getId());
+        /*Customer customer = null;//profile.getCustomer(provider.getId());
         if (null == customer) {
             return null;
         }
-        return customer.getCustomerNo();
-//        return "11342422";
+        return customer.getCustomerNo();*/
+        return null;
     }
 
     private String extractUsername(Message message) {

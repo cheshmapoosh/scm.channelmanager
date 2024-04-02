@@ -85,6 +85,11 @@ public class CompositionServiceExecutor extends ServiceExecutor {
                 if (MessageStatus.SC_SUCCESS.equals(tempMessage.getStatus())) {
                     message.appendPayload(tempMessage.getPayload());
                 }
+            } else if (ServiceCompositionType.FIRST_RESPONSE.equals(compositionService.getCompositionType())) {
+                message.addErrors(tempMessage.getErrors(), tempMessage.getStatus());
+                if (MessageStatus.SC_SUCCESS.equals(tempMessage.getStatus())) {
+                    message.appendPayload(tempMessage.getPayload());
+                }
             }
 
 

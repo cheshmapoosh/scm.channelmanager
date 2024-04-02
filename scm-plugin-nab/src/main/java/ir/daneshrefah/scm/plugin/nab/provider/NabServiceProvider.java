@@ -44,10 +44,10 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
         return List.of(requestTransformer);
     }
 
-//    @Override
-//    protected List<AbstractTransformer> prepareResponseTransformers() {
-//        return List.of(responseTransformer);
-//    }
+    @Override
+    protected List<AbstractTransformer> prepareResponseTransformers() {
+        return List.of(responseTransformer);
+    }
 
     @Override
     @SneakyThrows
@@ -56,7 +56,8 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
         ExternalServiceProviderMetadata providerMetadata = getProvider().getMetadata();
         JsonNode componentMetadata = service.getMetadata();
         String target = StringUtils.appendIfMissing(providerMetadata.getEndpoint(), "/") + componentMetadata.get("serviceName").asText();
-        return "https://dummy.restapiexample.com/api/v1/employees";
+        return target;
+//        return "https://dummy.restapiexample.com/api/v1/employees";
 //            endpointUri = "http://${host}/Service/";
 //            Map<String, String> values = new HashMap<>();
 //            values.put("host", "scm-core.daneshrefah.ir");

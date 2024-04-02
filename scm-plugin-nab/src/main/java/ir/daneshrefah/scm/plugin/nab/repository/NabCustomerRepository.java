@@ -1,9 +1,5 @@
 package ir.daneshrefah.scm.plugin.nab.repository;
 
-import ir.daneshrefah.scm.common.model.customer.Account;
-import ir.daneshrefah.scm.common.model.customer.AccountAsset;
-import ir.daneshrefah.scm.common.model.customer.AccountType;
-import ir.daneshrefah.scm.common.model.customer.Customer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -36,7 +32,7 @@ public class NabCustomerRepository {
         return ids.get(0);
     }
 
-    public Customer findAccountListByPersonId(Long personId) {
+    /*public Customer findAccountListByPersonId(Long personId) {
 //        Long personId = findPersonIdByPersonProfileId(personProfileId);
         if (null == personId) {
             return null;
@@ -110,6 +106,6 @@ public class NabCustomerRepository {
         Long generatedId = keyHolder.getKey().longValue();
         customer.setId(String.valueOf(generatedId));
         return customer;
-    }
+    }*/
 
 }

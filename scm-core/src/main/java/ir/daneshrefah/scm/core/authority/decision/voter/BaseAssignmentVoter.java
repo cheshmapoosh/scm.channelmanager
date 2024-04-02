@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class BaseAssignmentVoter extends DecisionVoter {
 
-    private static final String DEFAULT_ASSET_PROPERTY = "account";
+    private static final String DEFAULT_ASSET_PROPERTY = "accountNo";
     private final DecisionHelper decisionHelper;
 
     @Override
@@ -28,7 +28,7 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
             return ACCESS_DENIED;
         }
 
-        Object asset = getAssetValue(message);
+        String asset = getAssetValue(message);
 
         return vote(profile, message.getHeader().getServiceAccess(), asset);
     }
@@ -37,14 +37,14 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
         return decisionHelper.fillServiceAccessForProfile(profile, terminalCode);
     }
 
-    protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, Object asset);
+    protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, String asset);
 
     private boolean isAssetSupport(Message message) {
         return message.getHeader().getServiceAccess().getTerminal().isSupportCheckServiceAccess() &&
                 message.getHeader().getServiceAccess().getService().getCheckAccessAsset();
     }
 
-    private Object getAssetValue(Message message) {
+    private String getAssetValue(Message message) {
         if (!isAssetSupport(message)) {
             return null;
         }
@@ -60,9 +60,9 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
         }
         JsonNode assetNode = message.getPayload().get(assetProperty);
         if (assetNode.isNumber()) {
-            return assetNode.asLong();
+            return String.valueOf(assetNode.asLong());
         } else if (assetNode.isBoolean()) {
-            return assetNode.asBoolean();
+            return String.valueOf(assetNode.asBoolean());
         } else {
             return assetNode.asText();
         }
