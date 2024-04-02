@@ -202,7 +202,11 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, STATUS, METADATA, IS_S
 VALUES ('5EF23AB1-2A1C-421F-A12E-23EFABC1DEC', 'SVC_NAB_ACCOUNT_WITHDRAW_TABLE', 'جدول شرایط برداشت همراه', 2,
         '{"serviceName":"SCMREAD.GETACCOUNTWITHDRAWTABLE","rq":{"parameters":[{"name":"P_ACCOUNTID","$value":{"type":"string","fromValue":"accountNo"}},{"name":"P_EFFECTIVEDATE","value":"0"}],"callType":"Reader","encoding":"ASCII","requestID":"RequestID"},"rs":{"$accountOwnerCustomerNo":{"fromValue":"OWNERID"},"$accountOwnerName":{"fromValue":"OWNERNAME"},"$accountOwnerCustomerTypeCode":{"fromValue":"CUSTOMERTYPE"},"$accountOwnerCustomerTypeTitle":{"fromValue":"CUSTOMERTITILE"},"$generalCode":{"fromValue":"GENERAL"},"$subsidryCode":{"fromValue":"SUBSIDRY"},"$subsidryTitle":{"fromValue":"SUBSIDRYTITLE"},"$accountTypeCode":{"fromValue":"ACCOUNTTYPE"},"$accountTypeTitle":{"fromValue":"ACCOUNTTYPETITLE"},"$accountNumber":{"fromValue":"ACCOUNTNUMBER"},"$accountStatusCode":{"fromValue":"ACCOUNTSTATUS"},"$accountStatusTitle":{"fromValue":"ACCOUNTSTATUSTITLE"},"$branchCode":{"fromValue":"BRANCHCODE"},"$branchTitle":{"fromValue":"BRANCHTITILE"},"$accountOpenDate":{"fromValue":"OPENACCOUNTDATE"},"$accountIsCommercial":{"fromValue":"ISCOMMERCE"},"$currency":{"fromValue":"ACCOUNTCURRENCY"},"$iban":{"fromValue":"IBAN"},"$sayahCode":{"fromValue":"SAYAHCODE"},"$customerRelationTypeCode":{"fromValue":"RELATIONTYPECODE"},"$customerRelationTypeTitle":{"fromValue":"RELATIONTYPETITLE"},"$customerIsSigner":{"fromValue":"ISSIGNER"},"$customerSharePercent":{"fromValue":"SHAREPERCENT"},"$balanceTotal":{"fromValue":"BALANCETOTAL"},"$balanceAvailable":{"fromValue":"BALANCEAVAILABLE"},"$blockTotal":{"fromValue":"BLOCKTOTAL"},"$signDate":{"fromValue":"SIGNDATE"},"$lastTransactionDate":{"fromValue":"LASTTRANSDATE"}},"$mainOwner":{"length":10,"type":"string","fromValue":"MAINOWNER","convertor":"latinToPersianConvertor"}}',
         1, 'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 3, 1, '3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 1, 'Reza Jamshidi', 'Reza Jamshidi');
--- SVC_ACCOUNT_WITHDRAW_TABLE
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('F12A3BED-A32B-432E-A21F-31EF1ABC2DEA', 'SVC_USER_LOCAL_ACCOUNT_LIST', 'لیست حسابهای یک کاربر', '/local', 1, 1, 1, 2, 1,
+        'bean:customerManagementService.findLocalMembershipTerminalAccesses(ir.daneshrefah.scm.common.service.MembershipFindRequest)', 'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 'Reza Jamshidi', 'Reza Jamshidi');
+
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
 VALUES ('2a118618-b56d-4187-b765-6c110d2a91d6', 'SVC_CUSTOMER_PARENT', 'مدیریت اطلاعات مشتریان', '/customer', 1, 1, 4, 5, 'Reza Jamshidi', 'Reza Jamshidi');
@@ -254,6 +258,8 @@ INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATO
 VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', '5EF23AB1-2A1C-421F-A12E-23EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_NAB_ACCOUNT_WITHDRAW_TABLE' to 'IB'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', '45bcf9af-2614-4a2e-933a-3121c3fb2c06', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_ACCOUNT_WITHDRAW_TABLE' to 'IB'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'F12A3BED-A32B-432E-A21F-31EF1ABC2DEA', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_USER_LOCAL_ACCOUNT_LIST' to 'IB'
 
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'bd0fe44f-68f2-4952-8749-fb15b05f0760', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_LIST' to 'SCM'

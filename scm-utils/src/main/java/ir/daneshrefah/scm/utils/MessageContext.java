@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.inbound;
+package ir.daneshrefah.scm.utils;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.AccessLevel;

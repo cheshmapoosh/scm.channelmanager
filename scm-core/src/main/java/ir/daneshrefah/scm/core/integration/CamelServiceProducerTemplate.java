@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
 import ir.daneshrefah.scm.common.model.error.Error;
@@ -10,7 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.TerminalService;
-import ir.daneshrefah.scm.plugin.api.inbound.MessageContext;
+import ir.daneshrefah.scm.utils.MessageContext;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.RequiredArgsConstructor;

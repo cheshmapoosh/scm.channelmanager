@@ -82,4 +82,11 @@ public class MessageUtils {
         return null != message && MessageStatus.SC_SUCCESS.equals(message.getStatus());
     }
 
+    public static Message getCurrentMessage() {
+        return MessageContext.getCurrentContext().getMessage();
+    }
+
+    public static String getCurrentTerminalCode() {
+        return getTerminalCode(getCurrentMessage());
+    }
 }

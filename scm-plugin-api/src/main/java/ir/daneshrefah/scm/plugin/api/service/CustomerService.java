@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ import java.util.List;
 public interface CustomerService {
 
     List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId);
+
+    List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipFindRequest request);
 
 //    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);
 //    Customer findLocalCustomerByProviderIdAndPersonUsername(String providerId, String username);

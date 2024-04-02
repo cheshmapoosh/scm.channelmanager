@@ -1,13 +1,20 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
 import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
 import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessRepository;
+import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessSpecs;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.utils.MessageUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,6 +41,18 @@ public class CustomerServiceImpl implements CustomerService {
                 membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(personId, terminalId);
 
         return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(membershipTerminalAccessEntities);
+    }
+
+    @Override
+    public List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipFindRequest request) {
+        if (null == request) {
+            request = new MembershipFindRequest();
+        }
+        MessageUtils.getCurrentTerminalCode();
+//        Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
+        List<MembershipTerminalAccessEntity> entities = membershipTerminalAccessRepository.findAll(
+                MembershipTerminalAccessSpecs.toSpecification(request)/*, pageable*/);
+        return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(entities);
     }
 
     /*private final PersonService personService;

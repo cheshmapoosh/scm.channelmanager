@@ -1,8 +1,12 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,6 +25,9 @@ public class CustomerManagementService extends AbstractJavaService {
         this.customerService = customerService;
     }
 
+    public List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipFindRequest request) {
+        return customerService.findLocalMembershipTerminalAccesses(request);
+    }
     /*public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
         User user = AuthenticationUtils.getLoggedInUser(MessageContext.getCurrentContext().getMessage());
         return customerService.findLocalCustomerByProviderIdAndPersonId(providerId, personId);
