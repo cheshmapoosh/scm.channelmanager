@@ -36,7 +36,7 @@ public class TerminalManagementService extends AbstractJavaService {
         return null;
     }
 
-    public Terminal editTerminal(TerminalInfoRequest request, String terminalId) {
+    public Terminal editTerminal(TerminalInfoRequest request) {
         return null;
     }
 

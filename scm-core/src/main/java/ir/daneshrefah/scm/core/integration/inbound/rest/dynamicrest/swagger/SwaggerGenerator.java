@@ -110,11 +110,12 @@ public class SwaggerGenerator {
 
     private void generatePathItems(OpenAPI openAPI, Operation operation,RestUrl restUrl) {
         PathItem pathItem ;
-        if (null != openAPI.getPaths() && null != openAPI.getPaths().get(restUrl.getUrl())) {
-            pathItem = openAPI.getPaths().get(restUrl.getUrl());
+        String url = "/" + restUrl.getUrl();
+        if (null != openAPI.getPaths() && null != openAPI.getPaths().get(url)) {
+            pathItem = openAPI.getPaths().get(url);
         } else {
             pathItem = new PathItem();
-            openAPI.path("/" + restUrl.getUrl(), pathItem);
+            openAPI.path(url, pathItem);
         }
         pathItem.operation(PathItem.HttpMethod.valueOf(restUrl.getHttpMethod().toUpperCase()), operation);
     }

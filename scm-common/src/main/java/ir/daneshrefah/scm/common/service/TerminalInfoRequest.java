@@ -14,6 +14,7 @@ import lombok.Data;
 @Data
 public class TerminalInfoRequest implements RequestData {
 
+    private String terminalId;
     private String code;
     private String title;
     private Long legacyTerminalId;
