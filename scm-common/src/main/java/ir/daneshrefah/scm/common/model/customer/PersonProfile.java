@@ -37,6 +37,10 @@ public class PersonProfile implements Serializable {
         this.memberships = memberships;
     }
 
+    public List<MembershipTerminalAccess> getMemberships() {
+        return this.memberships;
+    }
+
     public boolean hasMembership(String providerId) {
         if (StringUtils.isEmpty(providerId) || null == memberships || memberships.size() < 1) {
             return false;

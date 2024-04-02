@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.repository;
 
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -22,6 +23,9 @@ public class MembershipTerminalAccessSpecs {
             List<Predicate> predicates = new ArrayList<>();
             if (null != request.getAssetType()) {
                 predicates.add(builder.equal(root.get("membership").get("assetType"), request.getAssetType()));
+            }
+            if (StringUtils.isNotEmpty(request.getTerminalCode())) {
+                predicates.add(builder.equal(root.get("terminal").get("code"), request.getTerminalCode()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

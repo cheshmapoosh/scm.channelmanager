@@ -62,21 +62,10 @@ public abstract class ServiceExecutor {
             }
         }
 
-//        Instant startTime = Idnstant.ndow();
-//        boolean isSuccessful = true;
-//        Exception exception = null;
         JsonNode response = null;
 
-//        try {
-            response = executeInternal(service, message);
-            message.payload(response);
-//        } catch (Exception e) {
-//            errorHandlerService.resolveMessageByException(message, e);
-//            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
-//            return;
-//        } finally {
-//            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
-//        }
+        response = executeInternal(service, message);
+        message.payload(response);
 
         for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.utils.MessageUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +27,10 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     public List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipFindRequest request) {
+        if (null == request) {
+            request = new MembershipFindRequest();
+        }
+        request.setTerminalCode(MessageUtils.getCurrentTerminalCode());
         return customerService.findLocalMembershipTerminalAccesses(request);
     }
     /*public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {

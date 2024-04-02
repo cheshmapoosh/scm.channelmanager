@@ -15,5 +15,6 @@ import lombok.Data;
 public class MembershipFindRequest implements RequestData {
 
     private AssetType assetType;
+    private String terminalCode;
 
 }

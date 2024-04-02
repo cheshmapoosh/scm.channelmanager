@@ -89,4 +89,21 @@ public class MessageUtils {
     public static String getCurrentTerminalCode() {
         return getTerminalCode(getCurrentMessage());
     }
+
+    public static boolean isTransactionAuthenticated() {
+        return isTransactionAuthenticated(getCurrentMessage());
+    }
+
+    public static boolean isTransactionAuthenticated(Message message) {
+        return null != message && message.getHeader().isTransactionAuthenticated();
+    }
+
+    public boolean hasAuthority(String authority) {
+        return hasAuthority(getCurrentMessage(), authority);
+    }
+
+    public boolean hasAuthority(Message message, String authority) {
+        return null != message && message.getHeader().getAuthentication().isAuthenticated() &&
+                message.getHeader().getAuthentication().hasAuthority(authority);
+    }
 }
