@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
+import ir.daneshrefah.scm.common.service.TerminalFindRequest;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     @Override
-    public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request) {
+    public PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request) {
         List<Terminal> terminalList = findAllTerminals().stream()
                 .filter(terminal -> null == request || null == request.getCode() || request.getCode().equals(terminal.getCode()))
                 .filter(terminal -> null == request || null == request.getStatus() || request.getStatus().equals(terminal.getStatus()))

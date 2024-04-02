@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
+import ir.daneshrefah.scm.common.service.TerminalFindRequest;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
@@ -66,7 +66,7 @@ public class TerminalServiceImpl implements TerminalService {
         return findAllTerminals().stream().filter(terminal -> code.equals(terminal.getCode())).findFirst();
     }
 
-    public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request) {
+    public PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request) {
         List<Terminal> terminalList = findAllTerminals().stream()
                 .filter(terminal -> null == request || null == request.getCode() || request.getCode().equals(terminal.getCode()))
                 .filter(terminal -> null == request || null == request.getStatus() || request.getStatus().equals(terminal.getStatus()))

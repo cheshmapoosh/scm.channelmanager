@@ -22,7 +22,7 @@ public interface TerminalService {
 
     public Optional<Terminal> findTerminalByCode(String code);
 
-    public PagedResponseData<Terminal> findAllTerminals(TerminalInfoRequest request);
+    public PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request);
 
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
 

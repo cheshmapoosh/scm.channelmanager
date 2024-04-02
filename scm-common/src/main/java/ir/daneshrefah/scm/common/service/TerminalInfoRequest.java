@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.service;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import lombok.Data;
 
@@ -9,16 +9,18 @@ import lombok.Data;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-01-30
+ * @since 2024-04-02
  */
 @Data
-public class TerminalInfoRequest extends PagedRequestData {
+public class TerminalInfoRequest implements RequestData {
 
     private String code;
+    private String title;
+    private Long legacyTerminalId;
     private TerminalStatus status;
-    private Boolean supportCheckAuthentication;
-    private Boolean supportCheckSecondAuthentication;
-    private Boolean supportCheckServiceAccess;
-    private Boolean supportCheckAssetAccess;
+    private boolean supportCheckAuthentication;
+    private boolean supportCheckSecondAuthentication;
+    private boolean supportCheckServiceAccess;
+    private boolean supportCheckAssetAccess;
 
 }

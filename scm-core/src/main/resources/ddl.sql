@@ -146,7 +146,7 @@ VALUES ('23a5aaff-a92e-4896-a873-39e4ff75a419', 'SVC_TERMINAL_PARENT', 'پرنت
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('bd0fe44f-68f2-4952-8749-fb15b05f0760', 'SVC_TERMINAL_LIST', 'لیست ترمینال', '/list', 1, 1, 1, 2, 1,
-        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.service.TerminalInfoRequest)','23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.service.TerminalFindRequest)','23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('d42c6df9-e27d-4894-b86c-a48dd2a11412', 'SVC_TERMINAL_CREATE', 'ایجاد ترمینال', '', 1, 1, 5, 2, 1,

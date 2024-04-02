@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.service.TerminalFindRequest;
 import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
 import ir.daneshrefah.scm.common.service.TerminalService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -27,18 +28,22 @@ public class TerminalManagementService extends AbstractJavaService {
         this.terminalService = terminalService;
     }
 
-    public PagedResponseData<Terminal> listTerminal(TerminalInfoRequest request) {
+    public PagedResponseData<Terminal> listTerminal(TerminalFindRequest request) {
         return terminalService.findAllTerminals(request);
     }
 
-    public Object addService(Message message) {
-        String terminalId = message.getPayloadValue("terminalId");
-        String serviceId = message.getPayloadValue("serviceId");
-        return terminalService.assignServiceToTerminal(terminalId, serviceId);
+    public Terminal createTerminal(TerminalInfoRequest request) {
+        return null;
     }
 
-    public Object createTerminal(Message message) {
+    public Terminal editTerminal(TerminalInfoRequest request, String terminalId) {
         return null;
+    }
+
+    public Object addService(String terminalId, String serviceId) {
+//        String terminalId = message.getPayloadValue("terminalId");
+//        String serviceId = message.getPayloadValue("serviceId");
+        return terminalService.assignServiceToTerminal(terminalId, serviceId);
     }
 
 }
