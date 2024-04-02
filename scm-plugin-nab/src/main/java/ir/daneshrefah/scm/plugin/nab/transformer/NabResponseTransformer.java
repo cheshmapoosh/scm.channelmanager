@@ -30,7 +30,7 @@ public class NabResponseTransformer extends AbstractTransformer {
     }
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         if (null == payload) {
             return null;
         }

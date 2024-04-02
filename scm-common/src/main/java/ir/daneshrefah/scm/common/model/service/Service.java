@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +21,7 @@ public abstract class Service extends BaseModel<String> {
     private String alias;
     private Integer version;
     private Boolean isSystemic;
-    private String metadata;
+    private JsonNode metadata;
     private ServiceType type;
     private ServiceStatus status;
     private Service parent;

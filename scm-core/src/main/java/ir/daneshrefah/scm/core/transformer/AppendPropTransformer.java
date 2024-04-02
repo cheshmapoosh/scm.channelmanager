@@ -29,21 +29,16 @@ public class AppendPropTransformer extends AbstractTransformer {
     }
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         JsonNode result = message.getPayload().deepCopy();
-        try {
-            JsonNode jsonMetadata = objectMapper.readTree(metadata);
-            if (jsonMetadata.isArray()) {
-                // Iterate over the array elements
-                for (JsonNode arrayElement : jsonMetadata) {
-                    String sourceProperty = arrayElement.get("sourceProp").asText();
-                    String targetProperty = arrayElement.get("targetProp").asText();
+        if (metadata.isArray()) {
+            // Iterate over the array elements
+            for (JsonNode arrayElement : metadata) {
+                String sourceProperty = arrayElement.get("sourceProp").asText();
+                String targetProperty = arrayElement.get("targetProp").asText();
 
-                    ((ObjectNode) result).put(targetProperty, extractPayloadValue(payload, sourceProperty));
-                }
+                ((ObjectNode) result).put(targetProperty, extractPayloadValue(payload, sourceProperty));
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         }
         return result;
     }

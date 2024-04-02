@@ -18,7 +18,7 @@ public class ExternalServiceProvider extends BaseModel<String> {
     private String code;
     private String title;
     private String providerClassName;
-    private String metadata;
+    private ExternalServiceProviderMetadata metadata;
     private boolean customerProvided;
     private String customerProviderClassName;
 

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
@@ -27,12 +27,12 @@ import java.util.Map;
 public class ExternalServiceExecutor extends ServiceExecutor implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
-    private final Map<String, AbstractExternalServiceProvider> serviceProviderMap = new HashMap<>();
+    private final Map<String, ExternalServiceProviderExecutor> serviceProviderMap = new HashMap<>();
 
     @Override
     protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
         ExternalService externalService = (ExternalService) service;
-        AbstractExternalServiceProvider provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
+        ExternalServiceProviderExecutor provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
         return provider.execute(message, service);
     }
 
@@ -42,19 +42,20 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
             return;
 
-        AbstractExternalServiceProvider provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
-                AbstractExternalServiceProvider.class, serviceProviderModel);
+        ExternalServiceProviderExecutor provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
+                ExternalServiceProviderExecutor.class, serviceProviderModel);
         if (null == provider) {
 //            LOGGER.warn("error on create instance of '{}' provider with className '{}'", componentName, componentClassName);
             return;
         }
-        boolean isConfigured = provider.initServerConfigs(serviceProviderModel);
+        serviceProviderMap.put(serviceProviderModel.getCode(), provider);
+        /*boolean isConfigured = provider.initServerConfigs(serviceProviderModel);
         if (isConfigured) {
             serviceProviderMap.put(serviceProviderModel.getCode(), provider);
             log.info("serviceProvider '{}' configured successfully.", serviceProviderModel.getCode());
         } else {
             log.error("error on config serviceProvider '{}'", serviceProviderModel.getCode());
-        }
+        }*/
     }
 
     @Override

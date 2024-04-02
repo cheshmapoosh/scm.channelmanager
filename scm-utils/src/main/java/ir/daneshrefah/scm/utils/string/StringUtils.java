@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.utils.string;
 
+import lombok.SneakyThrows;
 import org.apache.commons.text.CaseUtils;
 
+import java.net.URI;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,6 +108,17 @@ public class StringUtils {
 
     public static String replaceNullWithSpace(String value) {
         return replaceNull(value, SPACE);
+    }
+
+    @SneakyThrows
+    public static String appendQueryParam(String uri, String name, Object value) {
+        if (isEmpty(uri) || isEmpty(name) || null == value) {
+            return uri;
+        }
+        URI oldUri = new URI(uri);
+        String appendQuery = name + "=" + value;
+        return new URI(oldUri.getScheme(), oldUri.getAuthority(), oldUri.getPath(),
+                oldUri.getQuery() == null ? appendQuery : oldUri.getQuery() + "&" + appendQuery, oldUri.getFragment()).toString();
     }
 
     public static String cleanUpJsonCharacters(String json) {

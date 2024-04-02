@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
 import ir.daneshrefah.scm.common.model.service.Service;
+import lombok.Getter;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,6 +12,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public abstract class BaseServiceException extends BaseException implements ErrorCodeAwareException {
 
+    @Getter
     String serviceCode;
 
     public BaseServiceException(String message, Throwable cause, Service service) {

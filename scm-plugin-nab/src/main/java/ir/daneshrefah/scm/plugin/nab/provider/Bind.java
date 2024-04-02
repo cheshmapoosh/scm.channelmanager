@@ -14,32 +14,30 @@ import java.util.*;
 
 
 public class Bind {
-    private final String metaDataJson;
+    private final JsonNode metaDataJson;
     private final static String RQ = "rq";
     private final static String RS = "rs";
     private final ObjectNode body;
 
-    public Bind(ObjectNode requestBody, String metadata) {
+    public Bind(ObjectNode requestBody, JsonNode metadata) {
         this.body = requestBody;
         this.metaDataJson = metadata;
     }
 
 
     public ObjectNode request() {
-        ObjectNode meta = jsonStringToJsonNode(this.metaDataJson);
-        if (!meta.has(RQ)) {
+        if (!metaDataJson.has(RQ)) {
             return this.body;
         }
-        ObjectNode root = (ObjectNode) meta.get(RQ);
+        ObjectNode root = (ObjectNode) metaDataJson.get(RQ);
         return traverse(root, "");
     }
 
     public ObjectNode response() {
-        ObjectNode meta = jsonStringToJsonNode(this.metaDataJson);
-        if (!meta.has(RS)) {
+        if (!metaDataJson.has(RS)) {
             return this.body;
         }
-        ObjectNode root = (ObjectNode) meta.get(RS);
+        ObjectNode root = (ObjectNode) metaDataJson.get(RS);
         return traverse(root, "");
     }
 

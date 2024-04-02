@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
+import ir.daneshrefah.scm.core.converter.ExternalServiceProviderMetadataConverter;
+import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +27,8 @@ public class ExternalServiceProviderEntity extends AbstractDefaultEntity<String>
     private String code;
     private String title;
     private String providerClassName;
-    private String metadata;
+    @Convert(converter = ExternalServiceProviderMetadataConverter.class)
+    private ExternalServiceProviderMetadata metadata;
     private boolean customerProvided;
     private String customerProviderClassName;
 //    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)

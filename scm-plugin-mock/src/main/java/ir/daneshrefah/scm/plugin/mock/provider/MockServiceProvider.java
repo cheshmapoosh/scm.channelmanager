@@ -1,11 +1,14 @@
 package ir.daneshrefah.scm.plugin.mock.provider;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
+import org.apache.camel.CamelContext;
+import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,26 +19,23 @@ import org.springframework.stereotype.Component;
  * @since 2023-08-05
  */
 @Component("mockCoreServiceProvider")
-public class MockServiceProvider extends AbstractExternalServiceProvider {
+public class MockServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
-    @Override
-    public boolean initServerConfigs() {
-        return true;
+    public MockServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(serviceService, producerTemplate, camelContext, objectMapper);
     }
 
     @Override
-    protected JsonNode executeInternal(Message message, Service service, Object requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode metadata = null;
-        try {
-            metadata = mapper.readTree(service.getMetadata());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public JsonNode executeEndpoint(Message originalMessage, Object body) {
+        TerminalServiceAccess serviceAccess = originalMessage.getHeader().getServiceAccess();
+//        serviceAccess.get
+        return null;
+    }
 
-        return fetchResponse(metadata);
+
+    @Override
+    public String extractProviderCode() {
+        return "MOCK";
     }
-    private JsonNode fetchResponse(JsonNode metadata) {
-        return metadata.get("response");
-    }
+
 }

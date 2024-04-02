@@ -1,9 +1,12 @@
 package ir.daneshrefah.scm.core.entity.transformer;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.core.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.TransformerRelationTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;
+import lombok.Data;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,6 +15,7 @@ import jakarta.persistence.*;
  * @version 1.0
  * @since 2023-08-08
  */
+@Data
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER_RELATION")
 public class TransformerRelationEntity extends AbstractDefaultEntity<String> {
@@ -26,56 +30,7 @@ public class TransformerRelationEntity extends AbstractDefaultEntity<String> {
     @JoinColumn(name = "TRANSFORMER_ID")
     private TransformerEntity transformer;
     private String sourceId;
-    private String metadata;
+    @Convert(converter = JsonNodeTypeConverter.class)
+    private JsonNode metadata;
     private Integer order;
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public TransformerRelationType getRelationType() {
-        return relationType;
-    }
-
-    public void setRelationType(TransformerRelationType relationType) {
-        this.relationType = relationType;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    public String getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(String metadata) {
-        this.metadata = metadata;
-    }
-
-    public Integer getOrder() {
-        return order;
-    }
-
-    public void setOrder(Integer order) {
-        this.order = order;
-    }
-
-    public TransformerEntity getTransformer() {
-        return transformer;
-    }
-
-    public void setTransformer(TransformerEntity transformer) {
-        this.transformer = transformer;
-    }
 }

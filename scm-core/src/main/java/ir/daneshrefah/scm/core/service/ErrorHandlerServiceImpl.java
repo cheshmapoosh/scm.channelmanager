@@ -120,26 +120,6 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             return message;
         }
 
-        /*if (exception instanceof JavaServiceExecutionException) {
-            Exception e = (Exception) exception.getCause();
-            if (e instanceof DataIntegrityViolationException) {
-                DataIntegrityViolationException ex = (DataIntegrityViolationException) e;
-                Error error = null;
-                if (ex.getMessage().contains("SQLCODE=-803")) {
-                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_DUPLICATE_RECORD, "recode is duplicate");
-                }
-                if (null == error) {
-                    error = new Error(((JavaServiceExecutionException) exception).getSource(), ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage());
-                }
-                message.addError(error, MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION);
-                return message;
-            } else if (e instanceof JpaSystemException) {
-                JpaSystemException ex = (JpaSystemException) e;
-                message.addError(new Error(null, ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage()), MessageStatus.SC_ERROR_SYSTEM);
-                return message;
-            }
-        }*/
-
         if (exception instanceof ErrorCodeAwareException) {
             ErrorCodeAwareException awareException = (ErrorCodeAwareException) exception;
             String source = awareException.getSource();

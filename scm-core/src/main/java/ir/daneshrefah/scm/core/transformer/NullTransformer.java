@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class NullTransformer extends AbstractTransformer {
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         return NullNode.getInstance();
     }
 

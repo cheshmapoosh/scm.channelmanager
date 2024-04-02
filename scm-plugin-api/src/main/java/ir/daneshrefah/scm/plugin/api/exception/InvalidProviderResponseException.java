@@ -15,7 +15,7 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_INVALI
 public class InvalidProviderResponseException extends AbstractExternalServiceException {
 
     public InvalidProviderResponseException(String serviceCode, String providerCode, Throwable cause) {
-        super(String.format("invalid provider [%s] response. " + (null != cause ? cause.getMessage() : StringUtils.EMPTY)),
+        super(String.format("invalid provider [%s] response. " + (null != cause ? cause.getMessage() : StringUtils.EMPTY), providerCode),
                 serviceCode, providerCode, cause);
 
     }

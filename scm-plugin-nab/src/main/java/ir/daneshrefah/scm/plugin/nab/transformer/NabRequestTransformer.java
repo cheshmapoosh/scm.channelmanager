@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
-import ir.daneshrefah.scm.plugin.nab.provider.Bind;
+import ir.daneshrefah.scm.plugin.api.utils.ConverterDictionary;
+import ir.daneshrefah.scm.plugin.api.utils.JSONConverter;
+import ir.daneshrefah.scm.plugin.api.utils.MessageConverterDictionary;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,21 +19,25 @@ import org.springframework.stereotype.Service;
  * @version 1.0
  * @since 2023-07-24
  */
+@RequiredArgsConstructor
 @Service
 public class NabRequestTransformer extends AbstractTransformer {
 
-    private ObjectMapper objectMapper;
-
-    public NabRequestTransformer(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+    private final ObjectMapper objectMapper;
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
-        Bind bind=new Bind((ObjectNode) payload,metadata);
-        return bind.request();
-    }
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
+        if (metadata.has("rq")) {
+            ObjectNode requestRoot = (ObjectNode) metadata.get("rq");
+            ConverterDictionary dictionary = new MessageConverterDictionary(message);
+            JSONConverter converter = JSONConverter.getInstance(dictionary);
+            return converter.convert(requestRoot);
+        }
+        return null;
 
+//        Bind bind=new Bind((ObjectNode) payload,metadata);
+//        return bind.request();
+    }
 
 
     private static void modifyJsonNode(JsonNode node, JsonNode payload) {
@@ -57,6 +64,7 @@ public class NabRequestTransformer extends AbstractTransformer {
             }
         }
     }
+
     // Helper method to add a parameter object to the array
     private static void addParameter(ArrayNode parameters, String name, String value) {
         ObjectNode parameter = parameters.addObject();

@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
+import ir.daneshrefah.scm.core.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceStatusConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
@@ -29,7 +31,8 @@ public abstract class ServiceEntity extends AbstractDefaultEntity<String> {
     private Integer version;
     @Column(insertable = false, updatable = false)
     private Boolean isSystemic;
-    private String metadata;
+    @Convert(converter = JsonNodeTypeConverter.class)
+    private JsonNode metadata;
     @Column(name = "SERVICE_TYPE_CODE")
     @Convert(converter = ServiceTypeConverter.class)
     private ServiceType type;

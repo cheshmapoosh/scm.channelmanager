@@ -1,9 +1,14 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
+import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,7 +25,13 @@ public class ServiceEntityFactory {
         entity.setTitle(request.getTitle());
         entity.setAlias(request.getAlias());
         entity.setVersion(null != request.getVersion() ? request.getVersion() : 1);
-        entity.setMetadata(request.getMetadata());
+        if (StringUtils.isNotEmpty(request.getMetadata())) {
+            try {
+                entity.setMetadata(getObjectMapper().readTree(request.getMetadata()));
+            } catch (JsonProcessingException e) {
+                throw new InvalidInputException("metadata");
+            }
+        }
         entity.setType(request.getType());
         entity.setStatus(null != request.getStatus() ? request.getStatus() : ServiceStatus.ACTIVE);
 //        entity.setParent(request.getParent());
@@ -67,4 +78,9 @@ public class ServiceEntityFactory {
         result.setId(serviceId);
         return result;
     }
+
+    private static ObjectMapper getObjectMapper() {
+        return ApplicationConfig.getObjectMapperInstance();
+    }
+
 }

@@ -23,7 +23,7 @@ import java.util.Map;
 public class AccountWithdrawTableResponseTransformer extends AbstractTransformer {
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         if (null == payload || !(payload instanceof JsonNode) || ((JsonNode) payload).isNull() || !((JsonNode) payload).isArray()) {
             return NullNode.getInstance();
         }

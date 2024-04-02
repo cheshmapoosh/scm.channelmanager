@@ -31,31 +31,25 @@ public class AppendLoggedInInfoTransformer extends AbstractTransformer {
     }
 
     @Override
-    public JsonNode internalTransform(Object payload, Message message, String metadata) {
+    public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         JsonNode result = null;
         if (null == message.getPayload() || message.getPayload().isNull()) {
             result = objectMapper.createObjectNode();
         } else {
             result = message.getPayload().deepCopy();
         }
-        if (StringUtils.isEmpty(metadata))
+        if (null == metadata)
             return result;
-        try {
-            ArrayNode jsonMetadata = (ArrayNode) objectMapper.readTree(metadata);
-            for (JsonNode element : jsonMetadata) {
-                // Access individual properties within each object
-                String propertyName = element.get("propertyName").asText();
-                String value = element.get("value").asText();
+        for (JsonNode element : metadata) {
+            // Access individual properties within each object
+            String propertyName = element.get("propertyName").asText();
+            String value = element.get("value").asText();
 
-                if (StringUtils.equalsIgnoreCase("${customerNo}", value)) {
-                    ((ObjectNode) result).put(propertyName, extractCustomerNo(message));
-                } else if (StringUtils.equalsIgnoreCase("${username}", value)) {
-                    ((ObjectNode) result).put(propertyName, extractUsername(message));
-                }
+            if (StringUtils.equalsIgnoreCase("${customerNo}", value)) {
+                ((ObjectNode) result).put(propertyName, extractCustomerNo(message));
+            } else if (StringUtils.equalsIgnoreCase("${username}", value)) {
+                ((ObjectNode) result).put(propertyName, extractUsername(message));
             }
-
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         }
 
         return result;

@@ -28,7 +28,7 @@ public abstract class AbstractTransformer {
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public JsonNode transform(Object payload, Message message, String metadata) {
+    public JsonNode transform(Object payload, Message message, JsonNode metadata) {
         Instant startTime = Instant.now();
         JsonNode result = null;
         boolean isSuccessful = true;
@@ -52,7 +52,7 @@ public abstract class AbstractTransformer {
         return result;
     }
 
-    protected abstract JsonNode internalTransform(Object payload, Message message, String metadata);
+    protected abstract JsonNode internalTransform(Object payload, Message message, JsonNode metadata);
 
     private void logTransformEvent(Message message, Object input, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();

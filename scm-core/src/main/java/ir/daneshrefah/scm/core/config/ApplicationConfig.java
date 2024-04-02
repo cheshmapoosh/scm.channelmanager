@@ -49,9 +49,7 @@ public class ApplicationConfig implements ApplicationContextAware {
         return objectMapper;
     }
 
-//    public static ObjectMapper getObjectMapperInstance() {
-//        if (null == objectMapper)
-//            initObjectMapper();
-//        return objectMapper;
-//    }
+    public static ObjectMapper getObjectMapperInstance() {
+        return objectMapper;
+    }
 }
