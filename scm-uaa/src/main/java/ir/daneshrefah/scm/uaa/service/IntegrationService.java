@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service;
 
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.repository.authentication.IntegrationRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;

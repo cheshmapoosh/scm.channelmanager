@@ -69,6 +69,8 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
                 return "post";
             case ENTITY_UPDATE:
                 return "put";
+            case ENTITY_DELETE:
+                return "delete";
             default:
                 return defaultMethod;
         }

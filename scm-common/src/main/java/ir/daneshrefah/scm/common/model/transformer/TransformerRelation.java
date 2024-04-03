@@ -12,7 +12,7 @@ import lombok.Data;
  * @since 2023-08-08
  */
 @Data
-public class TransformerRelation extends BaseModel<String> {
+public class TransformerRelation extends BaseModel<Long> {
 
     private TransformerRelationType relationType;
     private Transformer transformer;

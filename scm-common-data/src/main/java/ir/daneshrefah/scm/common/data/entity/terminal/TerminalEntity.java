@@ -14,6 +14,7 @@ import lombok.Setter;
 public class TerminalEntity extends AbstractDefaultEntity<String> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "TERMINAL_ID")
     private String id;
     private String code;

@@ -1,16 +1,14 @@
 package ir.daneshrefah.scm.core.entity.transformer;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER")
 public class TransformerEntity extends AbstractDefaultEntity<String> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "TRANSFORMER_ID")
     private String id;
     private String title;

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ChannelService;
-import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationProperties;
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.AuthenticationInterceptor;
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.RequestValidationInterceptor;

@@ -146,19 +146,31 @@ VALUES ('23a5aaff-a92e-4896-a873-39e4ff75a419', 'SVC_TERMINAL_PARENT', 'پرنت
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('bd0fe44f-68f2-4952-8749-fb15b05f0760', 'SVC_TERMINAL_LIST', 'لیست ترمینال', '/list', 1, 1, 1, 2, 1,
-        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.service.TerminalFindRequest)','23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalFindRequest)','23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('E1FA2B3D-212A-421B-A23C-12FA3C1BEDA', 'SVC_TERMINAL_FIND_BY_ID', 'بازیابی اطلاعات ترمینال با شناسه', '/{terminalId}', 1, 1, 3, 2, 1,
+        'bean:terminalManagementService.findTerminalById(String)','23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('d42c6df9-e27d-4894-b86c-a48dd2a11412', 'SVC_TERMINAL_CREATE', 'ایجاد ترمینال', '', 1, 1, 5, 2, 1,
-        'bean:terminalManagementService.createTerminal(ir.daneshrefah.scm.common.service.TerminalInfoRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:terminalManagementService.createTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalCreateRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('3AB12C3E-1CFA-412B-A23C-12FA3C2BEDA', 'SVC_TERMINAL_EDIT', 'ویرایش ترمینال', '', 1, 1, 6, 2, 1,
-        'bean:terminalManagementService.editTerminal(ir.daneshrefah.scm.common.service.TerminalInfoRequest, String)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:terminalManagementService.editTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalEditRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
-VALUES ('44fddd2a-5df4-4a8a-a4c2-5381ef673e02', 'SVC_TERMINAL_ADD_SERVICE', 'تخصیص سرویس به ترمینال', '{terminalId}/add-service', 1, 1, 5, 2, 1,
-        'bean:terminalManagementService.addService(Message)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('2BFA1C2E-A31D-412A-B23F-23EFABC1DEC', 'SVC_TERMINAL_DELETE', 'حذف ترمینال', '', 1, 1, 7, 2, 1,
+        'bean:terminalManagementService.deleteTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalDeleteRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('44fddd2a-5df4-4a8a-a4c2-5381ef673e02', 'SVC_TERMINAL_ADD_SERVICE', 'تخصیص سرویس به ترمینال', '/add-service', 1, 1, 5, 2, 1,
+        'bean:terminalManagementService.addServiceAssignment(ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('7D2C1AEF-A23A-4B2E-A1FE-32EF2ABC1DEA', 'SVC_TERMINAL_DELETE_SERVICE', 'عدم تخصیص سرویس به ترمینال', '/delete-service', 1, 1, 7, 2, 1,
+        'bean:terminalManagementService.deleteServiceAssignment(ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest)', '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 
 --------------------------------------------- CHANNEL_MANAGEMENT_SERVICES ---------------------------------------------
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
@@ -268,11 +280,17 @@ VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'F12A3BED-A32B-432E-A21F-31EF1AB
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'bd0fe44f-68f2-4952-8749-fb15b05f0760', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_LIST' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'E1FA2B3D-212A-421B-A23C-12FA3C1BEDA', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_FIND_BY_ID' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'd42c6df9-e27d-4894-b86c-a48dd2a11412', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_CREATE' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '3AB12C3E-1CFA-412B-A23C-12FA3C2BEDA', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_EDIT' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '2BFA1C2E-A31D-412A-B23F-23EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_DELETE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '44fddd2a-5df4-4a8a-a4c2-5381ef673e02', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_ADD_SERVICE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '7D2C1AEF-A23A-4B2E-A1FE-32EF2ABC1DEA', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_TERMINAL_DELETE_SERVICE' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '790f7095-0102-44a7-9802-8d2530f09033', 'Reza Jamshidi', 'Reza Jamshidi'); -- add 'SVC_SERVICE_LIST' to 'SCM'
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)

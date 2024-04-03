@@ -18,11 +18,12 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER_RELATION")
-public class TransformerRelationEntity extends AbstractDefaultEntity<String> {
+public class TransformerRelationEntity extends AbstractDefaultEntity<Long> {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSFORMER_RELATION_ID")
-    private String id;
+    private Long id;
     @Column(name = "RELATION_TYPE_CODE")
     @Convert(converter = TransformerRelationTypeConverter.class)
     private TransformerRelationType relationType;

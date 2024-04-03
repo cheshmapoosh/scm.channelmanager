@@ -2,14 +2,16 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.service.TerminalFindRequest;
-import ir.daneshrefah.scm.common.service.TerminalInfoRequest;
-import ir.daneshrefah.scm.common.service.TerminalService;
+import ir.daneshrefah.scm.common.service.terminal.*;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,18 +34,35 @@ public class TerminalManagementService extends AbstractJavaService {
         return terminalService.findAllTerminals(request);
     }
 
-    public Terminal createTerminal(TerminalInfoRequest request) {
+    public Terminal findTerminalById(String terminalId) {
+        if (StringUtils.isEmpty(terminalId)) {
+            throw new MissingRequiredInputException("terminalId");
+        }
+        Optional<Terminal> terminal = terminalService.findTerminalById(terminalId);
+        if (terminal.isEmpty()) {
+            throw new NoMatchRecordFoundException("terminal");
+        }
+        return terminal.get();
+    }
+
+    public Terminal createTerminal(TerminalCreateRequest request) {
         return null;
     }
 
-    public Terminal editTerminal(TerminalInfoRequest request) {
+    public Terminal editTerminal(TerminalEditRequest request) {
         return null;
     }
 
-    public Object addService(String terminalId, String serviceId) {
-//        String terminalId = message.getPayloadValue("terminalId");
-//        String serviceId = message.getPayloadValue("serviceId");
-        return terminalService.assignServiceToTerminal(terminalId, serviceId);
+    public void deleteTerminal(TerminalDeleteRequest request) {
+
+    }
+
+    public void addServiceAssignment(TerminalServiceAssignmentRequest request) {
+//        return terminalService.assignServiceToTerminal(terminalId, serviceId);
+    }
+
+    public void deleteServiceAssignment(TerminalServiceAssignmentRequest request) {
+//        return terminalService.assignServiceToTerminal(terminalId, serviceId);
     }
 
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.service;
+package ir.daneshrefah.scm.common.service.terminal;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
