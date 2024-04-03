@@ -167,7 +167,7 @@ public class SwaggerGenerator {
         operation.setTags(List.of(channel.getTitle()));
         operation.setSummary(serviceAccess.getService().getCode());
         operation.setDescription(serviceAccess.getService().getTitle());
-        operation.setOperationId(restUrl.getUrl());
+        operation.setOperationId(serviceAccess.getTerminal().getCode() + "_" + serviceAccess.getService().getCode());
     }
 
     private void generateRequestHeaders(Operation operation) {
