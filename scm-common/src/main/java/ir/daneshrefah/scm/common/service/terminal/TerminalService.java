@@ -28,6 +28,6 @@ public interface TerminalService {
 
     public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
 
-    public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId);
+    public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
 
 }

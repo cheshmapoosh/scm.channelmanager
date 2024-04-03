@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.terminal.TerminalFindRequest;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
@@ -104,7 +105,9 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     @Override
-    public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId) {
+    public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
+        String terminalId = request.getTerminalId();
+        String serviceId = request.getServiceId();
         if (StringUtils.isEmpty(terminalId)) {
             throw new MissingRequiredInputException("terminalId");
         }

@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.terminal.TerminalFindRequest;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -70,7 +71,7 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     @Override
-    public TerminalServiceAccess assignServiceToTerminal(String terminalId, String serviceId) {
+    public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
         throw new RuntimeException("this method is not support.");
     }
 }

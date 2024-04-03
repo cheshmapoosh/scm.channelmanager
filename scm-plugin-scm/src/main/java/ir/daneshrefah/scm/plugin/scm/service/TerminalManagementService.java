@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.terminal.*;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -57,8 +58,8 @@ public class TerminalManagementService extends AbstractJavaService {
 
     }
 
-    public void addServiceAssignment(TerminalServiceAssignmentRequest request) {
-//        return terminalService.assignServiceToTerminal(terminalId, serviceId);
+    public TerminalServiceAccess addServiceAssignment(TerminalServiceAssignmentRequest request) {
+        return terminalService.assignServiceToTerminal(request);
     }
 
     public void deleteServiceAssignment(TerminalServiceAssignmentRequest request) {
