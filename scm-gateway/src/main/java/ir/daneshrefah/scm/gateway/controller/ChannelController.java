@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.gateway.controller;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.service.ChannelInfoRequest;
-import ir.daneshrefah.scm.common.service.ChannelService;
+import ir.daneshrefah.scm.common.service.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +33,7 @@ public class ChannelController extends AbstractController {
     }
 
     @GetMapping("/paged")
-    public ResponseEntity<PagedResponseData<Channel>> getChannelPage(ChannelInfoRequest request) {
+    public ResponseEntity<PagedResponseData<Channel>> getChannelPage(ChannelFindRequest request) {
         PagedResponseData<Channel> channels = channelService.findPagedChannels(request);
         return ResponseEntity.ok(channels);
     }

@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.service.ChannelInfoRequest;
-import ir.daneshrefah.scm.common.service.ChannelService;
+import ir.daneshrefah.scm.common.service.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.core.mapper.ChannelMapper;
 import ir.daneshrefah.scm.core.repository.ChannelRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -48,7 +48,7 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
-    public PagedResponseData<Channel> findPagedChannels(ChannelInfoRequest request) {
+    public PagedResponseData<Channel> findPagedChannels(ChannelFindRequest request) {
         List<Channel> channelList = findAllChannels().stream()
                 .filter(channel -> null == request || null == request.getCode() || request.getCode().equals(channel.getCode()))
                 .filter(channel -> null == request || null == request.getTerminalCode() || request.getTerminalCode().equals(channel.getTerminal().getCode()))

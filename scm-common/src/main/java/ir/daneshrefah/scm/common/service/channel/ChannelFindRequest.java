@@ -1,8 +1,7 @@
-package ir.daneshrefah.scm.common.service;
+package ir.daneshrefah.scm.common.service.channel;
 
 import ir.daneshrefah.scm.common.dto.PagedRequestData;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
-import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import lombok.Data;
 
 /**
@@ -13,7 +12,7 @@ import lombok.Data;
  * @since 2024-03-24
  */
 @Data
-public class ChannelInfoRequest extends PagedRequestData {
+public class ChannelFindRequest extends PagedRequestData {
 
     private String code;
     private String terminalCode;

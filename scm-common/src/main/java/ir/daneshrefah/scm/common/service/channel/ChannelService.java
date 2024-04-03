@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.service;
+package ir.daneshrefah.scm.common.service.channel;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
@@ -21,6 +21,6 @@ public interface ChannelService {
 
     Optional<Channel> findChannelByCode(String code);
 
-    PagedResponseData<Channel> findPagedChannels(ChannelInfoRequest request);
+    PagedResponseData<Channel> findPagedChannels(ChannelFindRequest request);
 
 }
