@@ -109,7 +109,7 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     private void initServiceExecutorList() {
         final List<MessageInterceptor> requestInterceptors = Arrays.asList(
                 new CustomerEnrichInterceptor(customerService),
-                new ServiceRequestValidationInterceptor(),
+                new ServiceRequestValidationInterceptor(objectMapper),
                 new DecisionManagerInterceptor(decisionManager),
                 new ServiceRequestTransformerInterceptor(transformerService));
         final List<MessageInterceptor> responseInterceptors = Arrays.asList(

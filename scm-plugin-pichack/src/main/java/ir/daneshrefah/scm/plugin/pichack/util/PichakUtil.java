@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -53,7 +54,7 @@ public class PichakUtil {
 
     public static String provideCustomerAuthStatus(Message message) {
         Authentication authentication = MessageUtils.getAuthentication(message);
-        if (null == authentication) {
+        if (null == authentication || !authentication.isAuthenticated()) {
             return PICHACK_CUSTOMER_AUTH_STATUS_UNAUTHORIZED;
         }
         AuthenticationMethod authenticationMethod = authentication.getAuthenticationMethod();
@@ -73,8 +74,11 @@ public class PichakUtil {
         private final String code;
 
         public static TerminalMap findByCode(String code) {
+            if (StringUtils.isEmpty(code)) {
+                return null;
+            }
             return Arrays.stream(TerminalMap.values())
-                    .filter(m -> m.code.contains(code))
+                    .filter(m -> StringUtils.containsIgnoreCase(m.code, code))
                     .findFirst()
                     .orElse(null);
         }

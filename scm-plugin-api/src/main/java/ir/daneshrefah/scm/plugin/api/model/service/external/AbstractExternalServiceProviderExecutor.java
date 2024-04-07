@@ -6,7 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,7 @@ import org.apache.camel.support.DefaultExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
@@ -32,14 +37,17 @@ import java.util.List;
  * @since 2024-02-30
  */
 @RequiredArgsConstructor
-public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBuilder */implements ExternalServiceProviderExecutor {
+public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBuilder */ implements ExternalServiceProviderExecutor {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
     protected static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
     protected static final String HEADER_START_TIME = "ScmProviderStartTime";
     protected static final String HEADER_END_TIME = "ScmProviderEndTime";
+    protected static final String HEADER_REQUEST_BODY = "ScmRequestBody";
+    protected static final String HEADER_RESPONSE_BODY = "ScmResponseBody";
+    protected static final String HEADER_TARGET_URL = "ScmTargetUrl";
 
-//    private final ServiceService serviceService;
+    //    private final ServiceService serviceService;
     private final ProducerTemplate producerTemplate;
     private final CamelContext camelContext;
     protected final ObjectMapper objectMapper;
@@ -53,13 +61,16 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.getMessage().setHeader(HEADER_ORIGINAL_MESSAGE, message);
-            exchange.getMessage().setBody(transformRequest(message));
+            Object requestBody = transformRequest(message);
+            exchange.getMessage().setBody(requestBody);
+            exchange.getMessage().setHeader(HEADER_REQUEST_BODY, requestBody);
             exchange.getMessage().setHeader(HEADER_START_TIME, Instant.now());
         });
         invokeTargetEndpoint(routeDefinition);
         routeDefinition.process(exchange -> {
             exchange.getMessage().setHeader(HEADER_END_TIME, Instant.now());
             String response = exchange.getMessage().getBody(String.class);
+            exchange.getMessage().setHeader(HEADER_RESPONSE_BODY, response);
             JsonNode jsonResponse = null;
             try {
                 jsonResponse = objectMapper.readTree(response);
@@ -70,7 +81,6 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
                 return;
             }
             Message message = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
-            exchange.getMessage().removeHeader(HEADER_ORIGINAL_MESSAGE);
             message.payload(transformResponse(message, jsonResponse));
             exchange.getMessage().setBody(message);
         });
@@ -83,12 +93,44 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         String targetEndpoint = "direct:ESP_" + provider.getCode();
         exchange.getMessage().setBody(message);
         exchange = producerTemplate.send(targetEndpoint, exchange);
+        logOutboundEvent(exchange);
         Exception exception = exchange.getException();
         if (null != exception) {
             throw new RuntimeException(exception);
         }
         Message responseMessage = exchange.getMessage().getBody(Message.class);
         return responseMessage.getPayload();
+    }
+
+    private void logOutboundEvent(Exchange exchange) {
+        Message message = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
+        Instant startTime = exchange.getMessage().getHeader(HEADER_START_TIME, Instant.class);
+        Instant endTime = exchange.getMessage().getHeader(HEADER_END_TIME, Instant.class);
+        endTime = null != endTime ? endTime : Instant.now();
+        String username = MessageUtils.getUsername(message);
+        String cspUsername = MessageUtils.getCSPUsername(message);
+        String requestBody = exchange.getMessage().getHeader(HEADER_REQUEST_BODY, String.class);
+        String responseBody = exchange.getMessage().getHeader(HEADER_RESPONSE_BODY, String.class);
+        String targetUrl = exchange.getMessage().getHeader(HEADER_TARGET_URL, String.class);
+        Event event = OutboundEvent.builder()
+                .correlationId(message.getHeader().getCorrelationId())
+                .terminalCode(message.getHeader().getTerminalCode())
+                .channelCode(message.getHeader().getChannel().getCode())
+                .username(username)
+                .cspUsername(cspUsername)
+                .error(exchange.getException())
+                .exceptionClassName(null != exchange.getException() ? exchange.getException().getClass().getName() : null)
+                .threadName(Thread.currentThread().getName())
+                .startTime(startTime)
+                .providerCode(provider.getCode())
+                .providerTargetUrl(targetUrl)
+                .providerResponseCode(null)
+                .request(requestBody)
+                .response(responseBody)
+                .endTime(endTime)
+                .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
     }
 
     private Object transformRequest(Message message) {

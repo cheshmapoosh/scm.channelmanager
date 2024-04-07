@@ -44,7 +44,7 @@ public abstract class MessageInterceptor {
 
     private void logMessageInterceptor(Message orgMessage, Message message, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = Event.builder()
+        /*Event event = Event.builder()
                 .type(EventType.INTERCEPTOR)
                 .status(null != message ? message.getStatus() : null)
                 .correlationId(message.getHeader().getCorrelationId())
@@ -59,7 +59,7 @@ public abstract class MessageInterceptor {
                 .output(message)
                 .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+                .build();*/
+//        EventProducer.getInstance().sendEvent(event);
     }
 }

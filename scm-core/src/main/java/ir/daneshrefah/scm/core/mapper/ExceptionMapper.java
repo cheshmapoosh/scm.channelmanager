@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.http.base.HttpOperationFailedException;
 
+import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -26,6 +27,8 @@ public enum ExceptionMapper {
 
     UNKNOWN_HOST_EXCEPTION(UnknownHostException.class, ErrorCodes.ERROR_CODE_UNKNOWN_HOST,
             MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER, "unknown host", false),
+    NO_ROUTE_TO_HOST_EXCEPTION(NoRouteToHostException.class, ErrorCodes.ERROR_CODE_HOST_UNREACHABLE,
+            MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER, "no route to host", false),
     HTTP_OPERATION_FAILED_EXCEPTION(HttpOperationFailedException.class, ErrorCodes.ERROR_CODE_INVALID_REMOTE_RESPONSE,
             MessageStatus.SC_ERROR_SYSTEM, "Http Operation Failed Exception", false),
     TRANSFORMER_EXCEPTION(TransformException.class, ErrorCodes.ERROR_CODE_TRANSFORMER_UNKNOWN_EXCEPTION,

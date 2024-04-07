@@ -53,7 +53,8 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
         ExternalService service = (ExternalService) message.getHeader().getServiceAccess().getService();
         ExternalServiceProviderMetadata providerMetadata = getProvider().getMetadata();
         JsonNode componentMetadata = service.getMetadata();
-        String target = StringUtils.appendIfMissing(providerMetadata.getEndpoint(), "/") + componentMetadata.get("serviceName").asText();
+        String target = StringUtils.appendIfMissing(providerMetadata.getEndpoint(), "/") +
+                StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
         return target;
     }
 

@@ -56,7 +56,7 @@ public abstract class AbstractTransformer {
 
     private void logTransformEvent(Message message, Object input, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
-        Event event = Event.builder()
+        /*Event event = Event.builder()
                 .type(EventType.TRANSFORM)
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
@@ -71,7 +71,7 @@ public abstract class AbstractTransformer {
                 .output(output)
                 .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+                .build();*/
+//        EventProducer.getInstance().sendEvent(event);
     }
 }

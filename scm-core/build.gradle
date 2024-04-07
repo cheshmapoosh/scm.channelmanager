@@ -25,11 +25,12 @@ dependencies {
     api 'org.apache.camel.springboot:camel-netty-starter'
     api 'org.apache.camel.springboot:camel-netty-http-starter'
     api 'org.apache.camel:camel-beanstalk:3.16.0'
-    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
+//    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+//    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
     api 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.projectlombok:lombok:1.18.20"
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
-    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema-jakarta'
+//    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema-jakarta'
 
     // JUnit 5
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'

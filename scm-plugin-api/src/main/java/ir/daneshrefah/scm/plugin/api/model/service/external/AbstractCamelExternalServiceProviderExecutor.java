@@ -29,7 +29,7 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
         routeDefinition.process(exchange -> {
             Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();
-            exchange.getMessage().setHeader("ScmTargetUrl", extractTargetUrl(originalMessage));
+            exchange.getMessage().setHeader(HEADER_TARGET_URL, extractTargetUrl(originalMessage));
             Map<String, Object> headers = obtainRequestHeaders(originalMessage);
             if (null != headers && !headers.isEmpty()) {
                 for (Iterator<String> iterator = headers.keySet().iterator(); iterator.hasNext(); ) {

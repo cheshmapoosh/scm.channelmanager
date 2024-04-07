@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.EventType;
+import ir.daneshrefah.scm.logging.domain.event.ServiceEvent;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
@@ -42,14 +42,16 @@ public abstract class ServiceExecutor {
     public void executeService(Service service, Message message) {
         Instant startTime = Instant.now();
         Exception exception = null;
+        JsonNode request = null;
         try {
+            request = message.getPayload();
             executeServiceInternal(service, message);
         } catch (Exception e) {
             errorHandlerService.resolveMessageByException(message, e);
             exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
             return;
         } finally {
-            logServiceCallEvent(message, service, message.getPayload(), exception, startTime);
+            logServiceCallEvent(message, service, request, exception, startTime);
         }
     }
 
@@ -121,23 +123,28 @@ public abstract class ServiceExecutor {
 
     protected abstract JsonNode executeInternal(Service service, Message message) throws Exception;
 
-    private void logServiceCallEvent(Message message, Service service, Object output, Exception error, Instant startTime) {
+    private void logServiceCallEvent(Message message, Service service, Object input, Exception exception, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = Event.builder()
-                .type(EventType.SERVICE_CALL)
-                .status(message.getStatus())
+        String username = MessageUtils.getUsername(message);
+        String cspUsername = MessageUtils.getCSPUsername(message);
+        String requestBody = null != input ? input.toString() : null;
+        String responseBody = null != message.getPayload() ? message.getPayload().toString() : null;
+        Event event = ServiceEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
-                .source(service.getCode())
-                .terminalCode(message.getHeader().getServiceAccess().getTerminal().getCode())
+                .terminalCode(message.getHeader().getTerminalCode())
                 .channelCode(message.getHeader().getChannel().getCode())
+                .username(username)
+                .cspUsername(cspUsername)
+                .error(exception)
+                .exceptionClassName(null != exception ? exception.getClass().getName() : null)
+                .threadName(Thread.currentThread().getName())
                 .startTime(startTime)
+                .serviceCode(service.getCode())
+                .request(requestBody)
+                .response(responseBody)
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
-                .threadName(Thread.currentThread().getName())
-                .input(service.getCode())
-                .output(output)
-                .error(error)
-                .sourceClassName(this.getClass().getSimpleName())
+                .status(message.getStatus())
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }

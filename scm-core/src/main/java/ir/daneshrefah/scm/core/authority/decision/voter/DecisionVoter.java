@@ -50,7 +50,7 @@ public abstract class DecisionVoter {
 
     private final void logVotingEvent(Message message, int output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = Event.builder()
+        /*Event event = Event.builder()
                 .type(EventType.VOTE)
                 .status(message.getStatus())
                 .correlationId(message.getHeader().getCorrelationId())
@@ -65,8 +65,8 @@ public abstract class DecisionVoter {
                 .output(null != error && error instanceof AccessDeniedException ? ACCESS_DENIED : output)
                 .error(null == error || error instanceof AccessDeniedException ? null : error)
                 .sourceClassName(this.getClass().getSimpleName())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+                .build();*/
+//        EventProducer.getInstance().sendEvent(event);
     }
 
 }

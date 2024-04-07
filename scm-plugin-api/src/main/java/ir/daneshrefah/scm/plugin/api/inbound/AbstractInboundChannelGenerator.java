@@ -197,7 +197,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
                 DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
         MessageRequestInfo requestInfo = MessageRequestInfo.builder()
                 .input(input)
-                .terminalCode(inputTerminalCode)
+                .terminalCode(!input.isForCheck() ? serviceAccess.getTerminal().getCode() : inputTerminalCode)
                 .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
                 .serviceCode(input.getServiceCode())
                 .contentType(input.getContentType())
@@ -355,7 +355,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
 
     private final void logIncomingMessage(MessageBuildRequest request, Message message, Exception error, Instant startTime) {
         Instant endTime = Instant.now();
-        Event event = Event.builder()
+        /*Event event = Event.builder()
                 .type(EventType.INBOUND)
                 .status(null != message ? message.getStatus() : null)
                 .correlationId(message.getHeader().getCorrelationId())
@@ -370,8 +370,8 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
                 .output(null != message ? message.getPayload() : null)
                 .error(error)
                 .sourceClassName(this.getClass().getSimpleName())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+                .build();*/
+//        EventProducer.getInstance().sendEvent(event);
     }
 
 }
