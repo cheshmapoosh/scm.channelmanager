@@ -86,6 +86,18 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.isNumeric(cs);
     }
 
+    public static boolean contains(final CharSequence seq, final CharSequence searchSeq) {
+        return org.apache.commons.lang3.StringUtils.contains(seq, searchSeq);
+    }
+
+    public static boolean containsIgnoreCase(final CharSequence seq, final CharSequence searchSeq) {
+        return org.apache.commons.lang3.StringUtils.containsIgnoreCase(seq, searchSeq);
+    }
+
+    public static boolean containsNone(final CharSequence cs, final String invalidChars) {
+        return org.apache.commons.lang3.StringUtils.containsNone(cs, invalidChars);
+    }
+
     public static boolean isNotNumeric(final CharSequence cs) {
         return !isNumeric(cs);
     }

@@ -31,6 +31,7 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuild
 import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +51,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  * @version 1.0
  * @since 2024-01-19
  */
+@Slf4j
 @Component
 public class SwaggerGenerator {
 
@@ -263,6 +265,8 @@ public class SwaggerGenerator {
             ServiceImplementationType implementationType = service.getImplementationType();
             if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)){
                 requestJsonSchema = generateJavaServiceRequestSchema(service);
+            } else if (StringUtils.isNotEmpty(requestJsonSchema) && StringUtils.containsNone(requestJsonSchema, "{}")) {
+                requestJsonSchema = generateJavaClassSchema(requestJsonSchema);
             }
             if (Objects.nonNull(requestJsonSchema) && !requestJsonSchema.isBlank()) {
                 try {
@@ -286,6 +290,21 @@ public class SwaggerGenerator {
                 generateDefaultRequestSchema(operation);
             }
         }
+    }
+
+    private String generateJavaClassSchema(String javaClassName) {
+        if (StringUtils.isEmpty(javaClassName)) {
+            return null;
+        }
+        try {
+            Class<?> modelClass = Class.forName(javaClassName);
+            JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
+            JsonSchema schema = schemaGen.generateSchema(modelClass);
+            return OBJECT_MAPPER.writeValueAsString(schema);
+        } catch (Exception e) {
+            log.error("error generate schema for class '" + javaClassName + "'", e);
+        }
+        return null;
     }
 
     private String generateJavaServiceRequestSchema(Service service) {
