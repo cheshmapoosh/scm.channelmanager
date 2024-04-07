@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.service.ConstantService;
-import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.ServiceCodeLookupTransformer;
+import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterRequestTransformer;
+import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterResponseTransformer;
 import ir.daneshrefah.scm.plugin.pichack.util.PichakUtil;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -17,8 +20,10 @@ import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static ir.daneshrefah.scm.plugin.pichack.util.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
 
 /**
@@ -31,7 +36,6 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
 @Component
 public final class PichackServiceProvider extends AbstractRestExternalServiceProvider {
 
-    private static final String PROVIDER_CODE = "PICHACK";
     private static final String PICHACK_CALLER_TERMINAL_NAME_HEADER = "callerTerminalName";
     private static final String PICHACK_CALLER_BRANCH_CODE_HEADER = "callerBranchCode";
     private static final String PICHACK_CALLER_BRANCH_USERNAME_HEADER = "callerBranchUserName";
@@ -56,6 +60,34 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
         String target = StringUtils.appendIfMissing(providerMetadata.getEndpoint(), "/") +
                 StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
         return target;
+    }
+
+    @Override
+    protected List<AbstractTransformer> prepareRequestTransformers() {
+        Map<String, AbstractTransformer> transformerMap = new HashMap<>();
+        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterRequestTransformer());
+        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
+        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
+        return List.of(new ServiceCodeLookupTransformer(transformerMap));
+    }
+
+    @Override
+    protected List<AbstractTransformer> prepareResponseTransformers() {
+        Map<String, AbstractTransformer> transformerMap = new HashMap<>();
+        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterResponseTransformer());
+        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
+        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
+        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
+        return List.of(new ServiceCodeLookupTransformer(transformerMap));
     }
 
     @Override
