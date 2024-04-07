@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.cache.mapper;
 import ir.daneshrefah.scm.cache.domain.dto.UserAuthenticationTO;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;

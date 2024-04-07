@@ -1,6 +1,10 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
@@ -8,9 +12,12 @@ import ir.daneshrefah.scm.core.integration.service.interceptor.*;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
+import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
@@ -18,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -40,11 +48,13 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     private final DecisionManager decisionManager;
     private final CustomerService customerService;
     private final TransformerService transformerService;
+    private final ObjectMapper objectMapper;
     private final Map<ServiceImplementationType, ServiceExecutor> executorMap = new HashMap<>();
 
     @Override
     public void configure() {
         initServiceExecutorList();
+        initServiceProviders();
         List<Service> services = serviceService.findCallableServiceList();
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
@@ -70,6 +80,29 @@ public class ServiceAutoConfiguration extends RouteBuilder {
                 serviceExecutor.executeService(service, exchange.getMessage().getBody(Message.class));
             });
             routeDefinition.end();
+        }
+    }
+
+    private void initServiceProviders() {
+        List<ExternalServiceProvider> serviceProviders = serviceService.findServiceProviderList();
+        for (Iterator<ExternalServiceProvider> iterator = serviceProviders.iterator(); iterator.hasNext(); ) {
+            ExternalServiceProvider serviceProvider = iterator.next();
+
+            AbstractExternalServiceProviderExecutor serviceProviderExecutor = null;
+            try {
+                serviceProviderExecutor = ClassLoader.findBeanOrCreateInstanceOfClass(
+                        serviceProvider.getProviderClassName(), AbstractExternalServiceProviderExecutor.class);
+            } catch (Exception e) {
+                LOGGER.error("error on init serviceProvider '" + serviceProvider.getCode() + "' instance.", e);
+                continue;
+            }
+            if (null == serviceProviderExecutor) {
+                LOGGER.error("error on init serviceProvider '" + serviceProvider.getCode() + "' instance.");
+                continue;
+            }
+            String fromUri = "ESP_" + serviceProvider.getCode();
+            RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
+            serviceProviderExecutor.configureRouteDefinition(routeDefinition, serviceProvider);
         }
     }
 

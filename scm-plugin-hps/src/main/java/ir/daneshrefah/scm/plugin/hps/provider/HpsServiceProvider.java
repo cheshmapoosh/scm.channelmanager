@@ -20,13 +20,8 @@ import org.springframework.stereotype.Component;
 public class HpsServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
 
-    public HpsServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
-    }
-
-    @Override
-    public String extractProviderCode() {
-        return "HPS";
+    public HpsServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import lombok.Getter;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,6 +16,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
 public abstract class AbstractJavaService {
 
     protected final ObjectMapper objectMapper;
+    @Getter
     private final ServiceProducerTemplate serviceProducerTemplate;
 
 

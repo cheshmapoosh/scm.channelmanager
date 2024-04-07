@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller.user;
 
 import ir.daneshrefah.scm.common.dto.RequestData;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Data;
 
 import java.util.Set;

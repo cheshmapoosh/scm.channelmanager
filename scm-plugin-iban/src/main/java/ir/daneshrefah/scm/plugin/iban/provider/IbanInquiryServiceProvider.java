@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class IbanInquiryServiceProvider extends AbstractCamelExternalServiceProviderExecutor {
 
-    public IbanInquiryServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public IbanInquiryServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override
@@ -27,8 +27,4 @@ public class IbanInquiryServiceProvider extends AbstractCamelExternalServiceProv
         return null;
     }
 
-    @Override
-    public String extractProviderCode() {
-        return "IBAN";
-    }
 }

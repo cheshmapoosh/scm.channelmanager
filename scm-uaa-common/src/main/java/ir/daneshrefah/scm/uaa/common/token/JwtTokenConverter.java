@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.core.convert.converter.Converter;

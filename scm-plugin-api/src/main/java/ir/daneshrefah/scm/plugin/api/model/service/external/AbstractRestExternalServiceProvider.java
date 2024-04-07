@@ -8,6 +8,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,16 +23,21 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractCamelE
 
     private static final String DEFAULT_HTTP_METHOD = "GET";
 
-    public AbstractRestExternalServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public AbstractRestExternalServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override
     protected final Map<String, Object> obtainRequestHeaders(Message message) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(Exchange.HTTP_METHOD, extractHttpMethod(message));
+        headers.putAll(extractAdditionalHeaders(message));
         headers.put("Content-Type", "application/json");
         return headers;
+    }
+
+    protected Map<String, ?> extractAdditionalHeaders(Message message) {
+        return Collections.emptyMap();
     }
 
     protected String extractHttpMethod(Message message) {

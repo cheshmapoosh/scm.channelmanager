@@ -20,12 +20,12 @@ import java.util.Map;
  */
 public abstract class AbstractCamelExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractCamelExternalServiceProviderExecutor(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public AbstractCamelExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override
-    protected final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
+    public final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
             Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();

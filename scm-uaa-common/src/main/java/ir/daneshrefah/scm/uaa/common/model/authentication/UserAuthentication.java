@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.common.model.authentication;
 
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;
@@ -80,6 +81,11 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
     @Override
     public boolean hasError() {
         return StringUtils.isNotEmpty(error);
+    }
+
+    @Override
+    public AuthenticationMethod getAuthenticationMethod() {
+        return null != principal ? principal.getLoginAuthenticationMethod() : null;
     }
 
     @Override

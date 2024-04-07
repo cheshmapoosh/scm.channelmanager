@@ -21,8 +21,8 @@ import org.springframework.stereotype.Component;
 @Component("mockCoreServiceProvider")
 public class MockServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
-    public MockServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public MockServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override
@@ -30,12 +30,6 @@ public class MockServiceProvider extends AbstractPureExternalServiceProviderExec
         TerminalServiceAccess serviceAccess = originalMessage.getHeader().getServiceAccess();
 //        serviceAccess.get
         return null;
-    }
-
-
-    @Override
-    public String extractProviderCode() {
-        return "MOCK";
     }
 
 }

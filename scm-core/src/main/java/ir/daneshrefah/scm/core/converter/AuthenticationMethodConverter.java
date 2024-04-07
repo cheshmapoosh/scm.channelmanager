@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.converter;
 
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

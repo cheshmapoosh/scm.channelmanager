@@ -17,12 +17,12 @@ import org.apache.camel.model.RouteDefinition;
  */
 public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractPureExternalServiceProviderExecutor(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public AbstractPureExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, objectMapper);
     }
 
     @Override
-    protected final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
+    public final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
             Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();

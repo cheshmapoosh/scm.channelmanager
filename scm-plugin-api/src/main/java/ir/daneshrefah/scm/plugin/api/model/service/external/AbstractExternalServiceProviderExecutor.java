@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
-import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.support.DefaultExchange;
 import org.slf4j.Logger;
@@ -32,26 +32,24 @@ import java.util.List;
  * @since 2024-02-30
  */
 @RequiredArgsConstructor
-public abstract class AbstractExternalServiceProviderExecutor extends RouteBuilder implements ExternalServiceProviderExecutor {
+public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBuilder */implements ExternalServiceProviderExecutor {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
     protected static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
     protected static final String HEADER_START_TIME = "ScmProviderStartTime";
     protected static final String HEADER_END_TIME = "ScmProviderEndTime";
 
-    private final ServiceService serviceService;
+//    private final ServiceService serviceService;
     private final ProducerTemplate producerTemplate;
     private final CamelContext camelContext;
     protected final ObjectMapper objectMapper;
-    @Getter
+    @Getter(AccessLevel.PROTECTED)
+    @Setter
     private ExternalServiceProvider provider;
 
-    @Override
-    public final void configure() throws Exception {
-        String providerCode = extractProviderCode();
-        provider = serviceService.findServiceProviderByCode(providerCode);
-        String fromUri = "ESP_" + provider.getCode();
-        RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ESP_" + fromUri);
+
+    public final void configureRouteDefinition(RouteDefinition routeDefinition, ExternalServiceProvider provider) {
+        this.provider = provider;
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.getMessage().setHeader(HEADER_ORIGINAL_MESSAGE, message);
@@ -90,7 +88,7 @@ public abstract class AbstractExternalServiceProviderExecutor extends RouteBuild
             throw new RuntimeException(exception);
         }
         Message responseMessage = exchange.getMessage().getBody(Message.class);
-        return transformResponse(message, responseMessage.getPayload());
+        return responseMessage.getPayload();
     }
 
     private Object transformRequest(Message message) {
@@ -120,8 +118,6 @@ public abstract class AbstractExternalServiceProviderExecutor extends RouteBuild
         return Collections.emptyList();
     }
 
-    public abstract String extractProviderCode();
-
-    protected abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);
+    public abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);
 
 }

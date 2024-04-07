@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

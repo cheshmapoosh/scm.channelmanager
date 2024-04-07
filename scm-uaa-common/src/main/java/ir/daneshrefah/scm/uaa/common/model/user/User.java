@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.common.model.user;
 
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.common.model.BaseModel;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Data;
 
 import java.util.Objects;

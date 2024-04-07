@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.controller;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.common.type.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.exception.BaseAuthenticationException;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.Instant;
-import java.util.Locale;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 
 import java.io.Serializable;
 
@@ -29,6 +30,7 @@ public interface Authentication extends Serializable {
 
     public boolean hasError();
 
+    public AuthenticationMethod getAuthenticationMethod();
 //    public Exception getException();
 
 }

@@ -19,6 +19,7 @@ public class StringUtils {
 
     public static final String SPACE = org.apache.commons.lang3.StringUtils.SPACE;
     public static final String EMPTY = org.apache.commons.lang3.StringUtils.EMPTY;
+    public static final String COLON = ":";
     public static final String DOUBLE_COLON = "::";
 
     public static boolean isEmpty(final CharSequence cs) {
@@ -39,6 +40,10 @@ public class StringUtils {
 
     public static boolean equals(CharSequence cs1, CharSequence cs2) {
         return org.apache.commons.lang3.StringUtils.equals(cs1, cs2);
+    }
+
+    public static boolean notEquals(CharSequence cs1, CharSequence cs2) {
+        return !equals(cs1, cs2);
     }
 
     public static String replaceOnce(final String text, final String searchString, final String replacement) {
@@ -79,6 +84,10 @@ public class StringUtils {
 
     public static boolean isNumeric(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isNumeric(cs);
+    }
+
+    public static boolean isNotNumeric(final CharSequence cs) {
+        return !isNumeric(cs);
     }
 
     public static String appendIfMissing(final String str, final CharSequence suffix, final CharSequence... suffixes) {

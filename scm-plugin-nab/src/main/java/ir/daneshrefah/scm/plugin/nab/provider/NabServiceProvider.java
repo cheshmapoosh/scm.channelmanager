@@ -33,8 +33,8 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     private final NabRequestTransformer requestTransformer;
     private final NabResponseTransformer responseTransformer;
 
-    public NabServiceProvider(ServiceService serviceService, ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
-        super(serviceService, producerTemplate, camelContext, objectMapper);
+    public NabServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
+        super(producerTemplate, camelContext, objectMapper);
         this.requestTransformer = requestTransformer;
         this.responseTransformer = responseTransformer;
     }
@@ -62,11 +62,6 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
 //            Map<String, String> values = new HashMap<>();
 //            values.put("host", "scm-core.daneshrefah.ir");
 //            StringSubstitutor.replace(endpointUri, values);
-    }
-
-    @Override
-    public String extractProviderCode() {
-        return PROVIDER_CODE;
     }
 
 }
