@@ -3,8 +3,8 @@ package ir.daneshrefah.scm.plugin.pichack.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.service.ConstantService;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
@@ -46,8 +46,8 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
     private final ConstantService constantService;
 
     public PichackServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext,
-                                  ObjectMapper objectMapper, ConstantService constantService) {
-        super(producerTemplate, camelContext, objectMapper);
+                                  ResourceService resourceService, ObjectMapper objectMapper, ConstantService constantService) {
+        super(producerTemplate, camelContext, resourceService, objectMapper);
         this.constantService = constantService;
     }
 
@@ -55,10 +55,9 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
     @SneakyThrows
     protected String prepareTargetUrl(Message message) {
         ExternalService service = (ExternalService) message.getHeader().getServiceAccess().getService();
-        ExternalServiceProviderMetadata providerMetadata = getProvider().getMetadata();
+        String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();
-        String target = StringUtils.appendIfMissing(providerMetadata.getEndpoint(), "/") +
-                StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
+        String target = providerEndpoint + StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
         return target;
     }
 

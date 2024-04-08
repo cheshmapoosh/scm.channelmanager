@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,7 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
     //    private final ServiceService serviceService;
     private final ProducerTemplate producerTemplate;
     private final CamelContext camelContext;
+    private final ResourceService resourceService;
     protected final ObjectMapper objectMapper;
     @Getter(AccessLevel.PROTECTED)
     @Setter
@@ -100,6 +103,14 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         }
         Message responseMessage = exchange.getMessage().getBody(Message.class);
         return responseMessage.getPayload();
+    }
+
+    protected String extractProviderEndpoint() {
+        if (null == provider || null == provider.getMetadata() || StringUtils.isEmpty(provider.getMetadata().getEndpoint())) {
+            return null;
+        }
+        String result = resourceService.prepareProperties(provider.getMetadata().getEndpoint());
+        return StringUtils.appendIfMissing(result, "/");
     }
 
     private void logOutboundEvent(Exchange exchange) {

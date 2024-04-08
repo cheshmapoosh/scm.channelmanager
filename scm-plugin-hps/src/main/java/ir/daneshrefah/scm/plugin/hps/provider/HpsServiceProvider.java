@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.plugin.hps.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
@@ -20,8 +20,8 @@ import org.springframework.stereotype.Component;
 public class HpsServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
 
-    public HpsServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, objectMapper);
+    public HpsServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, resourceService, objectMapper);
     }
 
     @Override

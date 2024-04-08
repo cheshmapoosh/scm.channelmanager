@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.model.RouteDefinition;
@@ -17,8 +17,9 @@ import org.apache.camel.model.RouteDefinition;
  */
 public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractPureExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, objectMapper);
+    public AbstractPureExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext,
+                                                       ResourceService resourceService, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, resourceService, objectMapper);
     }
 
     @Override

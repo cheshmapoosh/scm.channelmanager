@@ -21,6 +21,7 @@ public class StringUtils {
     public static final String EMPTY = org.apache.commons.lang3.StringUtils.EMPTY;
     public static final String COLON = ":";
     public static final String DOUBLE_COLON = "::";
+    private static final Pattern PATTERN_EXTRACT_PROPERTY = Pattern.compile("\\$\\{(.*?)\\}");
 
     public static boolean isEmpty(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isEmpty(cs);
@@ -48,6 +49,17 @@ public class StringUtils {
 
     public static String replaceOnce(final String text, final String searchString, final String replacement) {
         return org.apache.commons.lang3.StringUtils.replaceOnce(text, searchString, replacement);
+    }
+
+    public static String replace(final String text, final String searchString, final String replacement) {
+        return org.apache.commons.lang3.StringUtils.replace(text, searchString, replacement);
+    }
+
+    public static String surroundWithCurlyBraces(String value) {
+        if (isEmpty(value)) {
+            return value;
+        }
+        return String.format("${%s}", value);
     }
 
     public static String leftPadZero(final String str, final int size) {
@@ -212,6 +224,15 @@ public class StringUtils {
 
     public static String join(List<String> array, final String separator) {
         return org.apache.commons.lang3.StringUtils.join(array, separator);
+    }
+
+    public static List<String> extractPropertyNames(String value) {
+        List<String> result = new ArrayList<>();
+        Matcher matcher = PATTERN_EXTRACT_PROPERTY.matcher(value);
+        while (matcher.find()) {
+            result.add(matcher.group(1));
+        }
+        return result;
     }
 
 }

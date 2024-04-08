@@ -72,36 +72,33 @@ CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER
 );
 
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'NAB', 'کر بانک رفاه', 1, 'bean:nabCoreServiceProvider', '{"endpoint" : "http://scm-core.daneshrefah.ir/Service/"}', 1, 'bean:nabCustomerDataProvider', 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'NAB', 'کر بانک رفاه', 1, 'bean:nabCoreServiceProvider', '{"endpoint" : "${scm.provider.nab}"}', 1, 'bean:nabCustomerDataProvider', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
 VALUES ('ce027926-e5e1-4df5-b397-178dd41c87b8', 'MOCK', 'Mock', 1, 'bean:mockCoreServiceProvider', '', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
 VALUES ('710fe18f-41cc-40f1-8435-3d4626289b3c', 'SCM', 'SCM', 1, 'bean:scmCoreServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('3A3C6EBC-328C-484A-A6F4-43E734F2312C', 'IBAN', 'IBAN', 1, 'bean:ibanInquiryServiceProvider', '{"endpoint" : "http://10.15.29.131:8086/ibanq/services/IBANService"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('3A3C6EBC-328C-484A-A6F4-43E734F2312C', 'IBAN', 'IBAN', 1, 'bean:ibanInquiryServiceProvider', '{"endpoint" : "${scm.provider.iban}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
 VALUES ('E81F2B7D-7B1A-4D16-A8A9-4F1212F23ABC', 'HPS', 'HPS', 1, 'bean:hpsServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('1F22212B-D23E-442B-92F2-0B12312E4F56', 'CHAKAD', 'CHAKAD', 1, 'bean:chakadServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('1F22212B-D23E-442B-92F2-0B12312E4F56', 'CHAKAD', 'CHAKAD', 1, 'bean:chakadServiceProvider', '{"endpoint" : "${scm.provider.chakad}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('8FA1148A-A679-4F4D-B92E-7312F23A1BEC', 'PICHACK', 'PICHACK', 1, 'bean:pichackServiceProvider', '{"endpoint" : "http://10.15.27.51:8080/dpi/api/pichak"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
--- PICHACK PRODUCTION SCRIPT
--- INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
--- VALUES ('8FA1148A-A679-4F4D-B92E-7312F23A1BEC', 'PICHACK', 'PICHACK', 1, 'bean:pichackServiceProvider', '{"endpoint" : "http://10.15.46.105:8080/dpi/api/pichak"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('8FA1148A-A679-4F4D-B92E-7312F23A1BEC', 'PICHACK', 'PICHACK', 1, 'bean:pichackServiceProvider', '{"endpoint" : "${scm.provider.pichack}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('5C92871D-212E-4F2A-8923-123F231A2BEC', 'SAYAD', 'SAYAD', 1, 'bean:sayadServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('5C92871D-212E-4F2A-8923-123F231A2BEC', 'SAYAD', 'SAYAD', 1, 'bean:sayadServiceProvider', '{"endpoint" : "${scm.provider.sayad}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('B21A423D-F21B-4522-812F-2312BEFA2C1D', 'BILL-INQUIRY', 'BILL-INQUIRY', 1, 'bean:billInquiryServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('B21A423D-F21B-4522-812F-2312BEFA2C1D', 'BILL-INQUIRY', 'BILL-INQUIRY', 1, 'bean:billInquiryServiceProvider', '{"endpoint" : "${scm.provider.bill-inquiry}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('0D8F312E-1B2A-431F-A212-23F2312DECBA', 'CURRENCY', 'سامانه ارزی', 1, 'bean:currencyServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('0D8F312E-1B2A-431F-A212-23F2312DECBA', 'CURRENCY', 'سامانه ارزی', 1, 'bean:currencyServiceProvider', '{"endpoint" : "${scm.provider.currency}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('4EF21A2C-B13D-412B-B2FA-23A12F231BEC', 'GSS', 'GSS', 1, 'bean:gssServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('4EF21A2C-B13D-412B-B2FA-23A12F231BEC', 'GSS', 'GSS', 1, 'bean:gssServiceProvider', '{"endpoint" : "${scm.provider.gss}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('7921CFEB-A32D-4BFA-A12E-321F2312A1BC', 'LOAN', 'LOAN', 1, 'bean:loanServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('7921CFEB-A32D-4BFA-A12E-321F2312A1BC', 'LOAN', 'LOAN', 1, 'bean:loanServiceProvider', '{"endpoint" : "${scm.provider.loan}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('F1AB23CD-21FA-421D-B1AF-312F231BEABC', 'TOPUP', 'TOPUP', 1, 'bean:topupServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('F1AB23CD-21FA-421D-B1AF-312F231BEABC', 'TOPUP', 'TOPUP', 1, 'bean:topupServiceProvider', '{"endpoint" : "${scm.provider.topup}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA, CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('6D4A2C1E-B21D-423B-AF21-C234F21A1BEC', 'SHAPARAK', 'هاب فناوران (شاپرک)', 1, 'bean:shaparakServiceProvider', null, 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('6D4A2C1E-B21D-423B-AF21-C234F21A1BEC', 'SHAPARAK', 'هاب فناوران (شاپرک)', 1, 'bean:shaparakServiceProvider', '{"endpoint" : "${scm.provider.shaparak}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
 
 CREATE TABLE REF.TBL_SCM_SERVICE
 (

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
@@ -23,8 +23,8 @@ public abstract class AbstractRestExternalServiceProvider extends AbstractCamelE
 
     private static final String DEFAULT_HTTP_METHOD = "GET";
 
-    public AbstractRestExternalServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, objectMapper);
+    public AbstractRestExternalServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
+        super(producerTemplate, camelContext, resourceService, objectMapper);
     }
 
     @Override

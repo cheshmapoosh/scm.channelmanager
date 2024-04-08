@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
@@ -33,8 +33,8 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     private final NabRequestTransformer requestTransformer;
     private final NabResponseTransformer responseTransformer;
 
-    public NabServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
-        super(producerTemplate, camelContext, objectMapper);
+    public NabServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, ResourceService resourceService, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
+        super(producerTemplate, camelContext, resourceService, objectMapper);
         this.requestTransformer = requestTransformer;
         this.responseTransformer = responseTransformer;
     }
