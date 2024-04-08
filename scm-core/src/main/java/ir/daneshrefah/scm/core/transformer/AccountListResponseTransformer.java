@@ -52,14 +52,18 @@ public class AccountListResponseTransformer extends AbstractTransformer {
     }
 
     private ObjectNode convertAccountNode(ObjectNode sourceNode, List<MembershipTerminalAccess> memberships) {
-        String accountNo = sourceNode.get("accountNo").asText();
-        Optional<MembershipTerminalAccess> membership = memberships.stream().filter(m ->
-                accountNo.equals(m.getMembership().getAccount().getAccountNo())
-        ).findFirst();
-        if (membership.isEmpty()) {
-            return null;
+        final String accountNumber = "accountNumber";
+        if (sourceNode.has(accountNumber)) {
+            String accountNo = sourceNode.get(accountNumber).asText();
+            Optional<MembershipTerminalAccess> membership = memberships.stream().filter(m ->
+                    accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
+            ).findFirst();
+            if (membership.isEmpty()) {
+                return null;
+            }
+            return sourceNode;
         }
-        return JsonNodeFactory.instance.objectNode();
+        return null;
     }
 
     private List<MembershipTerminalAccess> loadMemberships(Message message) {

@@ -45,15 +45,15 @@ public class PersonProfile implements Serializable {
         if (StringUtils.isEmpty(providerId) || null == memberships || memberships.size() < 1) {
             return false;
         }
-        return memberships.stream().anyMatch(m -> providerId.equals(m.getMembership().getCustomer().getProvider().getId()));
+        return memberships.stream().anyMatch(m -> providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId()));
     }
 
     public Customer getCustomer(String providerId) {
         if (StringUtils.isEmpty(providerId) || null == memberships || memberships.size() < 1) {
             return null;
         }
-        Optional<MembershipTerminalAccess> mta = memberships.stream().filter(m -> providerId.equals(m.getMembership().getCustomer().getProvider().getId())).findFirst();
-        return mta.isPresent() ? mta.get().getMembership().getCustomer() : null;
+        Optional<MembershipTerminalAccess> mta = memberships.stream().filter(m -> providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId())).findFirst();
+        return mta.isPresent() ? mta.get().getMembership().getCustomerAccount().getCustomer() : null;
     }
 
     public boolean isMembershipLoaded() {
@@ -85,9 +85,9 @@ public class PersonProfile implements Serializable {
             return null;
         }
         return memberships.stream().filter(m ->
-                        providerId.equals(m.getMembership().getCustomer().getProvider().getId()) &&
+                        providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId()) &&
                                 (null == assetType || assetType.equals(m.getMembership().getAssetType())) &&
-                                (m.getMembership().getAccount().getAccountNo().equalsIgnoreCase(assetValue))
+                                (m.getMembership().getCustomerAccount().getAccount().getAccountNo().equalsIgnoreCase(assetValue))
 
                 )
                 .findFirst().orElse(null);

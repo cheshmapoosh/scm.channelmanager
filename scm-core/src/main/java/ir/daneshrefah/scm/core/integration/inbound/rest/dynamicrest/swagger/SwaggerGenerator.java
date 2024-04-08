@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
@@ -89,25 +90,33 @@ public class SwaggerGenerator {
         generateSecurityComponent(components);
         openAPI.setComponents(components);
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
-            RestUrl restUrl = urlBuilder.build(serviceAccess);
-            //Create Operation object
-            Operation operation = new Operation();
-            //path item
-            generatePathItems(openAPI,operation,restUrl);
-            //Extract basic information
-            generateBasicInformation(channel,serviceAccess, operation, restUrl);
-            //path parameter
-            generatePathParameters(restUrl.getUrl(),operation);
-            //request body
-            generateRequestSchema(restUrl,serviceAccess, operation, components);
-            //response body
-            generateResponseSchema(serviceAccess, operation, components);
-            //request headers
-            generateRequestHeaders(operation);
-            //security headers
-            generateSecurityHeaders(operation,serviceAccess);
+            if (exposedAble(serviceAccess)) {
+                RestUrl restUrl = urlBuilder.build(serviceAccess);
+                //Create Operation object
+                Operation operation = new Operation();
+                //path item
+                generatePathItems(openAPI, operation, restUrl);
+                //Extract basic information
+                generateBasicInformation(channel, serviceAccess, operation, restUrl);
+                //path parameter
+                generatePathParameters(restUrl.getUrl(), operation);
+                //request body
+                generateRequestSchema(restUrl, serviceAccess, operation, components);
+                //response body
+                generateResponseSchema(serviceAccess, operation, components);
+                //request headers
+                generateRequestHeaders(operation);
+                //security headers
+                generateSecurityHeaders(operation, serviceAccess);
+            }
         }
         return openAPI;
+    }
+
+    private boolean exposedAble(TerminalServiceAccess serviceAccess) {
+        Service service = serviceAccess.getService();
+        ServiceStatus status = service.getStatus();
+        return Objects.nonNull(status) && !status.equals(ServiceStatus.INTERNAL);
     }
 
     private void generatePathItems(OpenAPI openAPI, Operation operation,RestUrl restUrl) {

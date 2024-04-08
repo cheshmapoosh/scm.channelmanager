@@ -16,32 +16,30 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "CUSTOMERACCOUNT")
-@SecondaryTable(name = "MEMBERSHIP")
+@Table(name = "MEMBERSHIP")
 public class MembershipEntity extends AbstractEntity<Long> {
 
-    @Column(name = "MEMBERSHIP_ID", table = "MEMBERSHIP")
+    @Column(name = "MEMBERSHIP_ID")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
     @Id
-    @Column(name = "CUSTOMER_ACCOUNT_ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long customerAccountId;
-    @Column(name = "NICK_NAME", table = "MEMBERSHIP")
+    private Long id;
+
+    @Column(name = "NICK_NAME")
     private String nickname;
-    @Column(name = "DEFAULT_ACCOUNT", table = "MEMBERSHIP")
+
+    @Column(name = "DEFAULT_ACCOUNT")
     private Boolean defaultAccount;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", table = "MEMBERSHIP")
+    @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
-    @ManyToOne
-    @JoinColumn(name = "CUSTOMER_ID")
-    private CustomerEntity customer;
+
     @Convert(converter = AssetTypeConverter.class)
-    @Column(name = "ASSET_TYPE", table = "MEMBERSHIP")
+    @Column(name = "ASSET_TYPE")
     private AssetType assetType;
-    @ManyToOne
-    @JoinColumn(name = "ACCOUNT_ID")
-    private AccountEntity account;
+
+    @OneToOne
+    @JoinColumn(name = "CUSTOMER_ACCOUNT_ID")
+    private CustomerAccountEntity customerAccount;
 
 }

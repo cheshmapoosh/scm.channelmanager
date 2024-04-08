@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -64,4 +66,8 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
 //            StringSubstitutor.replace(endpointUri, values);
     }
 
+    @Override
+    protected String extractHttpMethod(Message message) {
+        return POST.name();
+    }
 }
