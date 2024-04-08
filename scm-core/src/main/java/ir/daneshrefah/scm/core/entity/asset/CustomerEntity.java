@@ -22,7 +22,7 @@ public class CustomerEntity extends AbstractEntity<Long> {
     private Long id;
     private String customerNo;
     @ManyToOne
-    @JoinColumn(name = "SERVICE_PROVIDER_ID")
+    @JoinColumn(name = "PROVIDER_ID")
     private ExternalServiceProviderEntity provider;
 
 }

@@ -15,12 +15,11 @@ import lombok.Data;
 @Data
 public class Membership extends BaseModel<Long> {
 
-    private Long customerAccountId;
+    private Long id;
     private String nickname;
     private Boolean defaultAccount;
     private GeneralPerson person;
-    private Customer customer;
     private AssetType assetType;
-    private Account account;
+    private CustomerAccount customerAccount;
 
 }
