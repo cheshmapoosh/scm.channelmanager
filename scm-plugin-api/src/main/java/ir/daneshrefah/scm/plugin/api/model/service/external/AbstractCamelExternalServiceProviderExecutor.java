@@ -28,7 +28,7 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
     @Override
     public final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
-            Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
+            Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();
             exchange.getMessage().setHeader(HEADER_TARGET_URL, extractTargetUrl(originalMessage));
             Map<String, Object> headers = obtainRequestHeaders(originalMessage);

@@ -31,7 +31,7 @@ public class ResourceServiceImpl implements ResourceService {
         for (Iterator<String> iterator = parameters.iterator(); iterator.hasNext(); ) {
             String parameter = iterator.next();
             String parameterValue = env.getProperty(parameter);
-            value = StringUtils.replace(value, StringUtils.surroundWithCurlyBraces(parameter), parameterValue);
+            value = StringUtils.replace(value, StringUtils.surroundWithCurlyBracesAndDollar(parameter), parameterValue);
         }
         return value;
     }

@@ -55,11 +55,18 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.replace(text, searchString, replacement);
     }
 
-    public static String surroundWithCurlyBraces(String value) {
+    public static String surroundWithCurlyBracesAndDollar(String value) {
         if (isEmpty(value)) {
             return value;
         }
         return String.format("${%s}", value);
+    }
+
+    public static String surroundWithCurlyBraces(String value) {
+        if (isEmpty(value)) {
+            return value;
+        }
+        return String.format("{%s}", value);
     }
 
     public static String leftPadZero(final String str, final int size) {

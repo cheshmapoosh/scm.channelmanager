@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.nab.provider;
+package ir.daneshrefah.scm.plugin.sayad.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,8 +7,8 @@ import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
-import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
-import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
+import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoRequestTransformer;
+import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoResponseTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
 import org.apache.camel.CamelContext;
@@ -17,35 +17,19 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
-
 /**
  * Description of the class or purpose of the file.
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-08-05
+ * @since 2024-04-08
  */
-@Component("nabCoreServiceProvider")
-public final class NabServiceProvider extends AbstractRestExternalServiceProvider {
+@Component
+public final class SayadServiceProvider extends AbstractRestExternalServiceProvider {
 
-    private final NabRequestTransformer requestTransformer;
-    private final NabResponseTransformer responseTransformer;
-
-    public NabServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, ResourceService resourceService, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
+    public SayadServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext,
+                                  ResourceService resourceService, ObjectMapper objectMapper) {
         super(producerTemplate, camelContext, resourceService, objectMapper);
-        this.requestTransformer = requestTransformer;
-        this.responseTransformer = responseTransformer;
-    }
-
-    @Override
-    protected List<AbstractTransformer> prepareRequestTransformers() {
-        return List.of(requestTransformer);
-    }
-
-    @Override
-    protected List<AbstractTransformer> prepareResponseTransformers() {
-        return List.of(responseTransformer);
     }
 
     @Override
@@ -59,7 +43,13 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     }
 
     @Override
-    protected String extractHttpMethod(Message message) {
-        return POST.name();
+    protected List<AbstractTransformer> prepareRequestTransformers() {
+        return List.of(new SayadChequeInfoRequestTransformer());
     }
+
+    @Override
+    protected List<AbstractTransformer> prepareResponseTransformers() {
+        return List.of(new SayadChequeInfoResponseTransformer());
+    }
+
 }

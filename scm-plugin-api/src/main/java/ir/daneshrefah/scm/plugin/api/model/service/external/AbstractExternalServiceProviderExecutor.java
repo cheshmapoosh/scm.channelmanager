@@ -63,17 +63,17 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         this.provider = provider;
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
-            exchange.getMessage().setHeader(HEADER_ORIGINAL_MESSAGE, message);
+            exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
             Object requestBody = transformRequest(message);
             exchange.getMessage().setBody(requestBody);
-            exchange.getMessage().setHeader(HEADER_REQUEST_BODY, requestBody);
-            exchange.getMessage().setHeader(HEADER_START_TIME, Instant.now());
+            exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
+            exchange.setProperty(HEADER_START_TIME, Instant.now());
         });
         invokeTargetEndpoint(routeDefinition);
         routeDefinition.process(exchange -> {
-            exchange.getMessage().setHeader(HEADER_END_TIME, Instant.now());
+            exchange.setProperty(HEADER_END_TIME, Instant.now());
             String response = exchange.getMessage().getBody(String.class);
-            exchange.getMessage().setHeader(HEADER_RESPONSE_BODY, response);
+            exchange.setProperty(HEADER_RESPONSE_BODY, response);
             JsonNode jsonResponse = null;
             try {
                 jsonResponse = objectMapper.readTree(response);
@@ -83,7 +83,7 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
             if (null != exchange.getException()) {
                 return;
             }
-            Message message = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
+            Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
             message.payload(transformResponse(message, jsonResponse));
             exchange.getMessage().setBody(message);
         });
@@ -114,14 +114,14 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
     }
 
     private void logOutboundEvent(Exchange exchange) {
-        Message message = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
-        Instant startTime = exchange.getMessage().getHeader(HEADER_START_TIME, Instant.class);
-        Instant endTime = exchange.getMessage().getHeader(HEADER_END_TIME, Instant.class);
+        Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+        Instant startTime = exchange.getProperty(HEADER_START_TIME, Instant.class);
+        Instant endTime = exchange.getProperty(HEADER_END_TIME, Instant.class);
         endTime = null != endTime ? endTime : Instant.now();
         String username = MessageUtils.getUsername(message);
         String cspUsername = MessageUtils.getCSPUsername(message);
-        String requestBody = exchange.getMessage().getHeader(HEADER_REQUEST_BODY, String.class);
-        String responseBody = exchange.getMessage().getHeader(HEADER_RESPONSE_BODY, String.class);
+        String requestBody = exchange.getProperty(HEADER_REQUEST_BODY, String.class);
+        String responseBody = exchange.getProperty(HEADER_RESPONSE_BODY, String.class);
         String targetUrl = exchange.getMessage().getHeader(HEADER_TARGET_URL, String.class);
         Event event = OutboundEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
