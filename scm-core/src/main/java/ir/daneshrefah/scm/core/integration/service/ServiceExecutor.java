@@ -11,9 +11,12 @@ import ir.daneshrefah.scm.logging.domain.event.ServiceEvent;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.utils.ClassUtils;
 import ir.daneshrefah.scm.utils.MessageUtils;
-import lombok.Setter;
+import org.apache.camel.Exchange;
+import org.apache.camel.model.ChoiceDefinition;
+import org.apache.camel.model.OutputDefinition;
+import org.apache.camel.model.ProcessorDefinition;
+import org.apache.camel.model.TryDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
@@ -30,75 +33,25 @@ import java.util.List;
  */
 public abstract class ServiceExecutor {
 
+    protected static final String PROPERTY_START_TIME = "ScmServiceStartTime";
+    protected static final String PROPERTY_END_TIME = "ScmServiceEndTime";
+    protected static final String PROPERTY_REQUEST_BODY = "ScmServiceRequestBody";
+
     @Autowired
     protected ErrorHandlerService errorHandlerService;
     @Autowired
     protected ObjectMapper objectMapper;
-    @Setter
     private List<MessageInterceptor> requestInterceptors;
-    @Setter
     private List<MessageInterceptor> responseInterceptors;
 
-    public void executeService(Service service, Message message) {
-        Instant startTime = Instant.now();
-        Exception exception = null;
-        JsonNode request = null;
-        try {
-            request = message.getPayload();
-            executeServiceInternal(service, message);
-        } catch (Exception e) {
-            errorHandlerService.resolveMessageByException(message, e);
-            exception = ClassUtils.cloneExceptionWithoutStackTrace(e);
-            return;
-        } finally {
-            logServiceCallEvent(message, service, request, exception, startTime);
-        }
+    public final void init(RouteBuilderDelegator routeBuilder, List<MessageInterceptor> requestInterceptors, List<MessageInterceptor> responseInterceptors) {
+        this.requestInterceptors = requestInterceptors;
+        this.responseInterceptors = responseInterceptors;
+        initConfigs(routeBuilder);
     }
 
-    private void executeServiceInternal(Service service, Message message) throws Exception {
-        for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
-            MessageInterceptor messageInterceptor = iterator.next();
-            message = messageInterceptor.intercept(message);
-            if (!MessageUtils.isContinueAllowed(message)) {
-                return;
-            }
-        }
-
-        JsonNode response = null;
-
-        response = executeInternal(service, message);
-        message.payload(response);
-
-        for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
-            MessageInterceptor messageInterceptor = iterator.next();
-            message = messageInterceptor.intercept(message);
-            if (!MessageUtils.isContinueAllowed(message)) {
-                return;
-            }
-        }
-
-        if (null == response)
-            message.nullPayload();
-        else if (response.getClass().isAssignableFrom(JsonNode.class)) {
-            message.payload((JsonNode) response);
-        } else {
-            /*try {
-                JsonNode node = null;
-                if (response instanceof String) {
-                    node = objectMapper.readTree((String) response);
-                } else {
-                    node = objectMapper.valueToTree(response);
-                }
-                message.payload(node);
-            } catch (JsonProcessingException e) {
-                JsonNode node = objectMapper.valueToTree(response);
-                message.payload(node);
-//                throw new RuntimeException(e);
-            }*/
-        }
-        if (MessageStatus.SC_PROCESSING.equals(message.getStatus())) {
-            message.status(MessageStatus.SC_SUCCESS);
-        }
+    protected void initConfigs(RouteBuilderDelegator routeBuilder) {
+        // can override in child class for additional configs
     }
 
     public Object transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
@@ -120,8 +73,6 @@ public abstract class ServiceExecutor {
         }
         return payload;
     }
-
-    protected abstract JsonNode executeInternal(Service service, Message message) throws Exception;
 
     private void logServiceCallEvent(Message message, Service service, Object input, Exception exception, Instant startTime) {
         Instant endTime = Instant.now();
@@ -148,4 +99,75 @@ public abstract class ServiceExecutor {
                 .build();
         EventProducer.getInstance().sendEvent(event);
     }
+
+    public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
+        TryDefinition tryDefinition = routeDefinition.doTry();
+        tryDefinition = tryDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            exchange.setProperty(PROPERTY_START_TIME, Instant.now());
+            exchange.setProperty(PROPERTY_REQUEST_BODY, message.getPayload().deepCopy());
+            for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
+                MessageInterceptor messageInterceptor = iterator.next();
+                message = messageInterceptor.intercept(message);
+                if (!MessageUtils.isContinueAllowed(message)) {
+                    break;
+                }
+            }
+        });
+        ChoiceDefinition choiceDefinition = tryDefinition.choice()
+                .when(exchange -> {
+                    boolean isContinueAllowed = MessageUtils.isContinueAllowed(exchange.getMessage().getBody(Message.class));
+                    return isContinueAllowed;
+                });
+        defineServiceRoute(service, choiceDefinition);
+        choiceDefinition.endChoice();
+        tryDefinition = tryDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            if (!MessageUtils.isContinueAllowed(message)) {
+                exchange.setProperty(PROPERTY_END_TIME, Instant.now());
+                return;
+            }
+            for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
+                MessageInterceptor messageInterceptor = iterator.next();
+                message = messageInterceptor.intercept(message);
+                if (!MessageUtils.isContinueAllowed(message)) {
+                    return;
+                }
+            }
+            exchange.setProperty(PROPERTY_END_TIME, Instant.now());
+            if (MessageStatus.SC_PROCESSING.equals(message.getStatus())) {
+                message.status(MessageStatus.SC_SUCCESS);
+            }
+        });
+        tryDefinition = tryDefinition.doCatch(Exception.class);
+        tryDefinition.process(exchange -> {
+            Exception exception = extractException(exchange);
+            Message message = exchange.getMessage().getBody(Message.class);
+            errorHandlerService.resolveMessageByException(message, exception);
+            exchange.getMessage().setBody(message);
+        });
+        tryDefinition = tryDefinition.doFinally();
+        tryDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            Exception exception = extractException(exchange);
+            Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
+            JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
+            logServiceCallEvent(message, service, request, exception, startTime);
+        });
+        tryDefinition.end();
+    }
+
+    private Exception extractException(Exchange exchange) {
+        Exception exception = exchange.getException();
+        if (null == exception) {
+            exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+        }
+        if (null == exception) {
+            exception = exchange.getProperty(Exchange.EXCEPTION_HANDLED, Exception.class);
+        }
+        return exception;
+    }
+
+    protected abstract void defineServiceRoute(Service service, ProcessorDefinition processorDefinition);
+
 }

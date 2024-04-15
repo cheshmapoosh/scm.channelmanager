@@ -27,5 +27,6 @@ public class TerminalEntity extends AbstractDefaultEntity<String> {
     private Boolean supportCheckSecondAuthentication;
     private Boolean supportCheckServiceAccess;
     private Boolean supportCheckAssetAccess;
+    private Boolean supportCustomerInjection;
 
 }

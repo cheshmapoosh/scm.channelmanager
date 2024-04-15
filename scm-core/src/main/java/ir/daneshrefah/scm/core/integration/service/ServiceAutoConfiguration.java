@@ -1,10 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
@@ -12,12 +8,8 @@ import ir.daneshrefah.scm.core.integration.service.interceptor.*;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
-import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
@@ -25,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.*;
 
 /**
@@ -37,7 +28,7 @@ import java.util.*;
  */
 @RequiredArgsConstructor
 @Component
-public class ServiceAutoConfiguration extends RouteBuilder {
+public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuilderDelegator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);
 
@@ -54,7 +45,6 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     @Override
     public void configure() {
         initServiceExecutorList();
-        initServiceProviders();
         List<Service> services = serviceService.findCallableServiceList();
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
@@ -67,42 +57,11 @@ public class ServiceAutoConfiguration extends RouteBuilder {
             }
             String fromUri = "SVI_" + service.getCode();
 
-            if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType())) {
-                externalServiceExecutor.registerExternalServiceProvider(((ExternalService) service).getServiceProvider());
-            }
-
             LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
             RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("SERVICE_" + fromUri);
-//            routeDefinition.log("service call: " + service.getCode());
-//            routeDefinition = service.getImplementation().fullFill(routeDefinition);
-            routeDefinition.process(exchange -> {
-                ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
-                serviceExecutor.executeService(service, exchange.getMessage().getBody(Message.class));
-            });
+            ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
+            serviceExecutor.initServiceExecution(service, routeDefinition);
             routeDefinition.end();
-        }
-    }
-
-    private void initServiceProviders() {
-        List<ExternalServiceProvider> serviceProviders = serviceService.findServiceProviderList();
-        for (Iterator<ExternalServiceProvider> iterator = serviceProviders.iterator(); iterator.hasNext(); ) {
-            ExternalServiceProvider serviceProvider = iterator.next();
-
-            AbstractExternalServiceProviderExecutor serviceProviderExecutor = null;
-            try {
-                serviceProviderExecutor = ClassLoader.findBeanOrCreateInstanceOfClass(
-                        serviceProvider.getProviderClassName(), AbstractExternalServiceProviderExecutor.class);
-            } catch (Exception e) {
-                LOGGER.error("error on init serviceProvider '" + serviceProvider.getCode() + "' instance.", e);
-                continue;
-            }
-            if (null == serviceProviderExecutor) {
-                LOGGER.error("error on init serviceProvider '" + serviceProvider.getCode() + "' instance.");
-                continue;
-            }
-            String fromUri = "ESP_" + serviceProvider.getCode();
-            RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
-            serviceProviderExecutor.configureRouteDefinition(routeDefinition, serviceProvider);
         }
     }
 
@@ -117,12 +76,11 @@ public class ServiceAutoConfiguration extends RouteBuilder {
         executorMap.put(ServiceImplementationType.EXTERNAL, externalServiceExecutor);
         executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
         executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
-        externalServiceExecutor.setRequestInterceptors(requestInterceptors);
-        externalServiceExecutor.setResponseInterceptors(responseInterceptors);
-        javaServiceExecutor.setRequestInterceptors(requestInterceptors);
-        javaServiceExecutor.setResponseInterceptors(responseInterceptors);
-        compositionServiceExecutor.setRequestInterceptors(requestInterceptors);
-        compositionServiceExecutor.setResponseInterceptors(responseInterceptors);
+        for (Map.Entry<ServiceImplementationType, ServiceExecutor> entry : executorMap.entrySet()) {
+            ServiceImplementationType key = entry.getKey();
+            ServiceExecutor executor = entry.getValue();
+            executor.init(this, requestInterceptors, responseInterceptors);
+        }
     }
 
 }

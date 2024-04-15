@@ -31,13 +31,20 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        ExternalService service = message.getHeader().getServiceAccess().getService() instanceof ExternalService ?
-                (ExternalService) message.getHeader().getServiceAccess().getService() : null;
+        TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
+        ExternalService service = serviceAccess.getService() instanceof ExternalService ?
+                (ExternalService) serviceAccess.getService() : null;
         if (null == service || !service.getServiceProvider().isCustomerProvided()) {
             throw new NoCustomerFoundException();
         }
         Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
         PersonProfile profile = message.getHeader().getPersonProfile();
+        String customerProperty = service.getCustomerProperty();
+
+        if (!isLoadAssetRequired(serviceAccess) && isLoadCustomerRequired(serviceAccess) &&
+                message.hasNonBlankProperty(customerProperty)) {
+            return message;
+        }
 
         if (!profile.isMembershipLoaded()) {
             List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(profile.getPersonId().id(), terminal.getId());
@@ -47,7 +54,6 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         if (!profile.hasMembership(service.getServiceProvider().getId())) {
             throw new NoAssetFoundException();
         }
-        String customerProperty = service.getCustomerProperty();
         if (StringUtils.isNotEmpty(customerProperty)) {
             Customer customer = profile.getCustomer(service.getServiceProvider().getId());
             message.setPayloadValue(customerProperty, customer.getCustomerNo());
@@ -57,11 +63,19 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     @Override
     protected boolean support(TerminalServiceAccess serviceAccess) {
+        return isLoadCustomerRequired(serviceAccess) || isLoadAssetRequired(serviceAccess);
+    }
+
+    private boolean isLoadAssetRequired(TerminalServiceAccess serviceAccess) {
         Service service = serviceAccess.getService();
         Terminal terminal = serviceAccess.getTerminal();
-        boolean isLoadAssetRequired = service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
-        boolean isLoadCustomerRequired = StringUtils.isNotEmpty(service.getCustomerProperty());
-        return isLoadCustomerRequired || isLoadAssetRequired;
+        return service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
+    }
+
+    private boolean isLoadCustomerRequired(TerminalServiceAccess serviceAccess) {
+        Service service = serviceAccess.getService();
+        Terminal terminal = serviceAccess.getTerminal();
+        return StringUtils.isNotEmpty(service.getCustomerProperty()) && terminal.isSupportCustomerInjection();
     }
 
 }

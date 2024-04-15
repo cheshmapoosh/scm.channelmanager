@@ -17,6 +17,7 @@ import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.camel.model.ProcessorDefinition;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -40,12 +41,20 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override
-    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
+    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
+        processorDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            JsonNode response = executeCompositeService(message);
+            message.payload(response);
+        });
+    }
 
-        CompositionService compositionService = (CompositionService) service;
+    protected JsonNode executeCompositeService(Message message) {
+
+        CompositionService compositionService = (CompositionService) message.getHeader().getServiceAccess().getService();
         List<ServiceRelation> relations = compositionService.getRelations();
         if (null == relations) {
-            relations = serviceService.findServiceRelationListBySourceServiceId(service.getId());
+            relations = serviceService.findServiceRelationListBySourceServiceId(compositionService.getId());
             compositionService.setRelations(relations);
         }
         Deque<ServiceRelation> reverseServiceStack = new LinkedList<>();

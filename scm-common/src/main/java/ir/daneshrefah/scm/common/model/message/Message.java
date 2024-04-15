@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -91,6 +92,20 @@ public class Message implements Serializable {
                 ((ArrayNode) payload).add(element.deepCopy());
             }
         }
+    }
+
+    public boolean hasNonNullProperty(String propertyName) {
+        if (StringUtils.isEmpty(propertyName)) {
+            return false;
+        }
+        if (null == payload || payload.isNull()) {
+            return false;
+        }
+        return payload.hasNonNull(propertyName);
+    }
+
+    public boolean hasNonBlankProperty(String propertyName) {
+        return hasNonNullProperty(propertyName) && !payload.get(propertyName).isEmpty();
     }
 
     public void setPayloadValue(String property, String value) {

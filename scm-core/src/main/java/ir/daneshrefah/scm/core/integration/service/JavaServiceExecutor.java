@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.exception.InputMismatchException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -10,6 +9,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.apache.camel.model.ProcessorDefinition;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -29,7 +29,16 @@ public class JavaServiceExecutor extends ServiceExecutor {
     private Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
 
     @Override
-    protected JsonNode executeInternal(ir.daneshrefah.scm.common.model.service.Service service, Message message) throws Exception {
+    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
+        processorDefinition.process(exchange -> {
+            Message message = exchange.getMessage().getBody(Message.class);
+            JsonNode response = executeJavaService(message);
+            message.payload(response);
+        });
+    }
+
+    private JsonNode executeJavaService(Message message) throws Exception {
+        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
         JavaServiceFinder.MethodInfo methodInfo = findServiceMethodInfo((JavaService) service);
         if (null != methodInfo.getError()) {
             throw methodInfo.getError();
@@ -45,18 +54,6 @@ public class JavaServiceExecutor extends ServiceExecutor {
             } else {
                 return objectMapper.valueToTree(response);
             }
-//        } catch (BaseException e) {
-//            throw e;
-//        } catch (Exception e) {
-//            throw e;
-//        } catch (IllegalArgumentException e) {
-//            throw new InputMismatchException("serviceMethod", e);
-//        } catch (Exception e) {
-//            if (e.getCause() instanceof BaseException) {
-//                throw (BaseException) e.getCause();
-//            }
-//            throw new JavaServiceExecutionException(e, (JavaService) service);
-//        }
     }
 
     private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,
