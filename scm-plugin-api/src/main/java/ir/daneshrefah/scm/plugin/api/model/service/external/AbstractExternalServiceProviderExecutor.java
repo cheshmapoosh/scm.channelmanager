@@ -39,7 +39,7 @@ import java.util.List;
  * @since 2024-02-30
  */
 @RequiredArgsConstructor
-public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBuilder */ implements ExternalServiceProviderExecutor {
+public abstract class AbstractExternalServiceProviderExecutor implements ExternalServiceProviderExecutor {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
     protected static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
@@ -64,7 +64,7 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
-            Object requestBody = transformRequest(message);
+            JsonNode requestBody = transformRequest(message);
             exchange.getMessage().setBody(requestBody);
             exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
             exchange.setProperty(HEADER_START_TIME, Instant.now());
@@ -144,8 +144,8 @@ public abstract class AbstractExternalServiceProviderExecutor /*extends RouteBui
         EventProducer.getInstance().sendEvent(event);
     }
 
-    private Object transformRequest(Message message) {
-        Object requestBody = message.getPayload();
+    private JsonNode transformRequest(Message message) {
+        JsonNode requestBody = message.getPayload();
         List<AbstractTransformer> requestTransformers = prepareRequestTransformers();
         for (Iterator<AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();

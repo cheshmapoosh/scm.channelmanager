@@ -49,12 +49,10 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
         LOGGER.info("service list load completed. count: {}", services.size());
         for (Iterator<Service> iterator = services.iterator(); iterator.hasNext(); ) {
             Service service = iterator.next();
-            if (ServiceImplementationType.PARENT.equals(service.getImplementationType())) {
+            if (!isPublishableService(service)) {
                 continue;
             }
-            if (ServiceStatus.INACTIVE.equals(service.getStatus())) {
-                continue;
-            }
+
             String fromUri = "SVI_" + service.getCode();
 
             LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
@@ -63,6 +61,11 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
             serviceExecutor.initServiceExecution(service, routeDefinition);
             routeDefinition.end();
         }
+    }
+
+    private boolean isPublishableService(Service service) {
+        return !ServiceImplementationType.PARENT.equals(service.getImplementationType()) &&
+                !ServiceStatus.INACTIVE.equals(service.getStatus());
     }
 
     private void initServiceExecutorList() {

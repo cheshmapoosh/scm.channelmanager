@@ -54,8 +54,8 @@ public abstract class ServiceExecutor {
         // can override in child class for additional configs
     }
 
-    public Object transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
-        Object payload = message.getPayload();
+    public JsonNode transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
+        JsonNode payload = message.getPayload();
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
             payload = transformerExecutionWrapper.getTransformerInstance()
@@ -65,7 +65,7 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    public Object transformResponse(List<TransformerExecutionWrapper> transformerRelations, Message message, Object payload) {
+    public JsonNode transformResponse(List<TransformerExecutionWrapper> transformerRelations, Message message, JsonNode payload) {
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
             payload = transformerExecutionWrapper.getTransformerInstance()

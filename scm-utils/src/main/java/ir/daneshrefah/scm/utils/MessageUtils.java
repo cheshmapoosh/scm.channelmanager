@@ -68,7 +68,16 @@ public class MessageUtils {
         return result;
     }
 
+    public static Message generateNestedInternalMessage(Message source, TerminalServiceAccess serviceAccess, JsonNode payload) {
+        return generateInternalMessage(source, serviceAccess, payload, source.getHeader().getLevel() + 1, source.getHeader().getMessageId());
+    }
+
     public static Message generateInternalMessage(Message source, TerminalServiceAccess serviceAccess, JsonNode payload) {
+        return generateInternalMessage(source, serviceAccess, payload, source.getHeader().getLevel(), null);
+    }
+
+    private static Message generateInternalMessage(Message source, TerminalServiceAccess serviceAccess, JsonNode payload,
+                                                   int level, String parentMessageId) {
         Header header = Header.builder()
                 .request(source.getHeader().getRequest())
                 .authentication(source.getHeader().getAuthentication())
@@ -76,6 +85,8 @@ public class MessageUtils {
                 .correlationId(source.getHeader().getCorrelationId())
                 .channel(source.getHeader().getChannel())
                 .serviceAccess(serviceAccess)
+                .level(level)
+                .parentMessageId(parentMessageId)
                 .build();
         Message result = Message.builder()
                 .header(header)

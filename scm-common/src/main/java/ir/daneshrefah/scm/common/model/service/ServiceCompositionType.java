@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ServiceCompositionType {
 
-    SAGA(1), FIRST_RESPONSE(2), FAILOVER(3), ROUND_ROBIN(4), AGGREGATE(5);
+    SAGA(1), FIRST_RESPONSE(2), FAILOVER(3), ROUND_ROBIN(4), AGGREGATE(5), WRAPPER(6);
 
     private final Integer code;
 

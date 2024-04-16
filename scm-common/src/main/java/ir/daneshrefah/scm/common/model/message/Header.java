@@ -9,6 +9,7 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Description of the class or purpose of the file.
@@ -27,6 +28,10 @@ public class Header implements Serializable {
     private String correlationId;
     private Channel channel;
     private TerminalServiceAccess serviceAccess;
+    @Builder.Default
+    private int level = 1;
+    private String parentMessageId;
+    private final String messageId = UUID.randomUUID().toString();
 
     public void authenticate(Authentication authentication) {
         this.authentication = authentication;

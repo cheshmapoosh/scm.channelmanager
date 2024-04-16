@@ -64,7 +64,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             ServiceRelation serviceRelation = iterator.next();
             CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
 
-            Object relationRequestPayload = null;
+            JsonNode relationRequestPayload = null;
             try {
                 relationRequestPayload = transformRequest(serviceExecutionWrapper.getTargetServiceRequestTransformers(), message);
             } catch (Exception e) {
@@ -79,7 +79,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             if (!serviceAccess.isPresent()) {
                 throw new TerminalServiceNotFoundException(terminalCode, serviceCode);
             }
-            Message tempMessage = MessageUtils.generateInternalMessage(message, serviceAccess.get(), (JsonNode) relationRequestPayload);
+            Message tempMessage = MessageUtils.generateNestedInternalMessage(message, serviceAccess.get(), relationRequestPayload);
             serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
 //            Object relationResponsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
 //            AbstractTransformer relationResponseTransformer = getTransformer(serviceRelation.getTargetServiceTransformerResponseType(),
