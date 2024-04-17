@@ -16,11 +16,11 @@ public class TerminalCreateRequest implements RequestData {
 
     private String code;
     private String title;
-    private Long legacyTerminalId;
     private TerminalStatus status;
     private boolean supportCheckAuthentication;
     private boolean supportCheckSecondAuthentication;
     private boolean supportCheckServiceAccess;
     private boolean supportCheckAssetAccess;
+    private boolean supportCustomerInjection;
 
 }

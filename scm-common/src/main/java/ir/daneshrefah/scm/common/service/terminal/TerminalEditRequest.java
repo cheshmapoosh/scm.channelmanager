@@ -15,16 +15,14 @@ import java.time.LocalDateTime;
  */
 @Data
 public class TerminalEditRequest implements RequestData {
-
     private String id;
     private String code;
     private String title;
-    private Long legacyTerminalId;
     private TerminalStatus status;
-    private boolean supportCheckAuthentication;
-    private boolean supportCheckSecondAuthentication;
-    private boolean supportCheckServiceAccess;
-    private boolean supportCheckAssetAccess;
+    private Boolean supportCheckAuthentication;
+    private Boolean supportCheckSecondAuthentication;
+    private Boolean supportCheckServiceAccess;
+    private Boolean supportCheckAssetAccess;
+    private Boolean supportCustomerInjection;
     private LocalDateTime lastEditDate;
-
 }
