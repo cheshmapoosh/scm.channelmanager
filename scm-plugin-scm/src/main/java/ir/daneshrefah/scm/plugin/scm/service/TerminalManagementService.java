@@ -47,15 +47,15 @@ public class TerminalManagementService extends AbstractJavaService {
     }
 
     public Terminal createTerminal(TerminalCreateRequest request) {
-        return null;
+        return terminalService.craeteTerminal(request);
     }
 
     public Terminal editTerminal(TerminalEditRequest request) {
-        return null;
+        return terminalService.editTerminal(request);
     }
 
     public void deleteTerminal(TerminalDeleteRequest request) {
-
+        terminalService.deleteTerminal(request);
     }
 
     public TerminalServiceAccess addServiceAssignment(TerminalServiceAssignmentRequest request) {

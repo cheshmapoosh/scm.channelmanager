@@ -30,4 +30,9 @@ public interface TerminalService {
 
     public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
 
+    Terminal craeteTerminal(TerminalCreateRequest request);
+
+    void deleteTerminal(TerminalDeleteRequest request);
+
+    Terminal editTerminal(TerminalEditRequest request);
 }

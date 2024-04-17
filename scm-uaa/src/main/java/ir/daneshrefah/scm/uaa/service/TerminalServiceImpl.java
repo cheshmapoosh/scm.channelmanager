@@ -5,9 +5,7 @@ import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.service.terminal.TerminalFindRequest;
-import ir.daneshrefah.scm.common.service.terminal.TerminalService;
-import ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest;
+import ir.daneshrefah.scm.common.service.terminal.*;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -72,6 +70,21 @@ public class TerminalServiceImpl implements TerminalService {
 
     @Override
     public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
+        throw new RuntimeException("this method is not support.");
+    }
+
+    @Override
+    public Terminal craeteTerminal(TerminalCreateRequest request) {
+        throw new RuntimeException("this method is not support.");
+    }
+
+    @Override
+    public void deleteTerminal(TerminalDeleteRequest request) {
+        throw new RuntimeException("this method is not support.");
+    }
+
+    @Override
+    public Terminal editTerminal(TerminalEditRequest request) {
         throw new RuntimeException("this method is not support.");
     }
 }

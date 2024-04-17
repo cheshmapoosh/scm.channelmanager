@@ -60,6 +60,9 @@ public class ErrorCodes {
     public static final int ERROR_CODE_NOTIFICATION_BODY_PROCESSING_EXCEPTION = 1203;
     public static final int ERROR_CODE_NOTIFICATION_NOT_SUPPORTED_BODY_PROCESSOR_EXCEPTION = 1204;
 
+    public static final int ERROR_CODE_RECORD_VERSION_EXCEPTION = 1205;
+    public static final int ERROR_CODE_TERMINAL_NOT_FOUND_EXCEPTION = 1206;
+
 
 //    public static final int ERROR_CODE_ACCESS_PARAMETER_IS_EMPTY = 1006;
 //    public static final int ERROR_CODE_TERMINAL_CODE_IS_EMPTY = 1007;

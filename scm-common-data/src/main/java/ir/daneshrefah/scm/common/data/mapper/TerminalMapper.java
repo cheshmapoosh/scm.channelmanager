@@ -12,6 +12,7 @@ public interface TerminalMapper {
     TerminalMapper INSTANCE = Mappers.getMapper(TerminalMapper.class);
 
     Terminal toModel(TerminalEntity entity);
+    TerminalEntity toEntity(Terminal model);
 
     List<Terminal> entitiesToModels(Iterable<TerminalEntity> entities);
 }
