@@ -1,17 +1,22 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonSerializable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.RawValue;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.nab.provider.Bind;
+import org.apache.camel.util.json.JsonArray;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -49,8 +54,12 @@ public class NabResponseTransformer extends AbstractTransformer {
         JsonNode resultNab = payloadTmp.get("result");
         ArrayNode arrayResult = JsonNodeFactory.instance.arrayNode();
         ObjectNode objectResult = JsonNodeFactory.instance.objectNode();
-        JsonNode result=JsonNodeFactory.instance.objectNode();;
-        if (resultNab.isArray()) {
+        JsonNode result=JsonNodeFactory.instance.objectNode();
+        if(Objects.isNull(resultNab) || "null".equals(resultNab.toString())){
+            arrayResult.addNull();
+           return arrayResult;
+        }
+        else if (resultNab.isArray()) {
             ArrayNode arrayNode= (ArrayNode) resultNab;
             for (JsonNode jsonNode : arrayNode) {
                 Bind bind = new Bind((ObjectNode) jsonNode, metadata);
