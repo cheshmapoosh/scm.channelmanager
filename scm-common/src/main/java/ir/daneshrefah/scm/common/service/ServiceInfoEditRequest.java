@@ -1,19 +1,17 @@
 package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.RequestData;
-import ir.daneshrefah.scm.common.model.service.*;
+import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.model.service.ServiceType;
 import lombok.Data;
 
-/**
- * Description of the class or purpose of the file.
- *
- * @author reza jamshidi
- * @version 1.0
- * @since 2024-03-24
- */
-@Data
-public class ServiceInfoRequest implements RequestData {
+import java.time.LocalDateTime;
 
+@Data
+public class ServiceInfoEditRequest implements RequestData {
+    private String id;
+    private LocalDateTime lastEditDate;
     private String code;
     private String title;
     private String alias;
@@ -22,7 +20,6 @@ public class ServiceInfoRequest implements RequestData {
     private ServiceType type;
     private ServiceStatus status;
     private String parentId;
-    private ServiceImplementationType implementationType;
     private String requestJsonSchema;
     private String responseJsonSchema;
     private Boolean checkAccessFirstAuthentication;
@@ -44,5 +41,4 @@ public class ServiceInfoRequest implements RequestData {
      * this property used when implementationType is composite
      */
     private ServiceCompositionType compositionType;
-
 }

@@ -242,4 +242,11 @@ public class StringUtils {
         return result;
     }
 
+    public static  <T> T compareObject(Object source,Object dest,Class<T> type){
+        if (Objects.nonNull(source)){
+            return type.cast(source);
+        }
+        return type.cast(dest);
+    }
+
 }

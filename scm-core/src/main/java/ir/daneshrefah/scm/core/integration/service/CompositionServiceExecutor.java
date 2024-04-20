@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
-import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceCompositionType;
+import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;

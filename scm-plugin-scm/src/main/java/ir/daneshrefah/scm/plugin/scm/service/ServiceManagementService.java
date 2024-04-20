@@ -6,9 +6,7 @@ import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.service.ServiceFindRequest;
-import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.service.*;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -43,8 +41,9 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
-    public ir.daneshrefah.scm.common.model.service.Service updateService(Message message) {
-        if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
+    public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
+        return this.service.updateService(request);
+       /* if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
             throw new MissingRequiredInputException("service data");
         }
         String serviceId = message.getPayloadValue("id");
@@ -58,11 +57,15 @@ public class ServiceManagementService extends AbstractJavaService {
         } catch (JsonProcessingException e) {
             throw new InvalidRequestFormatException("payload", e);
         }
-        return this.service.updateService(serviceId, newService);
+        */
     }
 
     public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest request) {
         return this.service.createService(request);
+    }
+
+    public void deleteService(ServiceDeleteRequest request){
+       this.service.deleteService(request);
     }
 
 }

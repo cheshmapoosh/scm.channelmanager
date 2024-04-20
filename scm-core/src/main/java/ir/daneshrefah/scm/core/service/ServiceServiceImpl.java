@@ -1,26 +1,27 @@
 package ir.daneshrefah.scm.core.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.NoDataChangedException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.common.service.ServiceFindRequest;
-import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
-import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceEntity;
-import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntityFactory;
+import ir.daneshrefah.scm.common.service.*;
+import ir.daneshrefah.scm.core.config.ApplicationConfig;
+import ir.daneshrefah.scm.core.entity.service.*;
+import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
+import ir.daneshrefah.scm.core.repository.ServiceAccessRepository;
 import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
-import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +29,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
 
 @RequiredArgsConstructor
 @Service
@@ -41,6 +46,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final ServiceRepository serviceRepository;
     private final ServiceRelationRepository serviceRelationRepository;
     private final ServiceProviderRepository serviceProviderRepository;
+    private final ServiceAccessRepository serviceAccessRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ExternalServiceProvider> serviceProviders;
 
@@ -80,7 +86,7 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         if (null == services) {
-            services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+            services = Collections.synchronizedList(ServiceMapper.INSTANCE.toServices(serviceRepository.findAll()));
         }
         return services;
     }
@@ -88,14 +94,25 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceFindRequest request) {
         List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
-                .filter(service -> null == request || null == request.getCode() || request.getCode().equals(service.getCode()))
+                .filter(service -> null == request || null == request.getCode() || service.getCode().trim().toUpperCase().contains(request.getCode().trim().toUpperCase()))
                 .filter(service -> null == request || null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
                 .filter(service -> null == request || null == request.getType() || request.getType().equals(service.getType()))
                 .filter(service -> null == request || null == request.getStatus() || request.getStatus().equals(service.getStatus()))
-//                .filter(service -> null == request || null == request.getParentId() || request.getStatus().equals(service.getStatus()))
+                .filter(service -> null == request || null == request.getTitle() || service.getTitle().trim().toLowerCase().contains(request.getTitle().trim().toLowerCase()))
+                .filter(service -> {
+                    if (Objects.nonNull(request) && Objects.nonNull(request.getParentId())) {
+                        if (Objects.nonNull(service.getParent()) && Objects.nonNull(service.getParent().getId())) {
+                            return request.getParentId().trim().equals(service.getParent().getId().trim());
+                        }
+                        return false;
+                    }
+                    return true;
+                })
                 .filter(service -> null == request || null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, serviceList);
+
+
     }
 
     @Override
@@ -103,11 +120,10 @@ public class ServiceServiceImpl implements ServiceService {
         if (StringUtils.isEmpty(code)) {
             return null;
         }
-        return findServiceList().stream().filter(service -> code.equals(service.getCode())).findFirst().orElse(null);
-//        Optional<ServiceEntity> entity = serviceRepository.findByCode(code);
-//        if (entity.isEmpty())
-//            return null;
-//        return ServiceMapper.INSTANCE.toService(entity.get());
+        return findServiceList()
+                .stream()
+                .filter(service -> code.equals(service.getCode()))
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -123,7 +139,7 @@ public class ServiceServiceImpl implements ServiceService {
             return null;
         }
         ir.daneshrefah.scm.common.model.service.Service result = findServiceList().stream().filter(service -> id.equals(service.getId())).findFirst().orElse(null);
-        if (null != result && result instanceof ParentService) {
+        if (result instanceof ParentService) {
             return (ParentService) result;
         }
         return null;
@@ -152,114 +168,172 @@ public class ServiceServiceImpl implements ServiceService {
                 !checkServiceProviderExistById(service.getServiceProviderId())) {
             throw new InvalidInputException("serviceProvider");
         }
+        if (ServiceImplementationType.COMPOSITION.equals(service.getImplementationType()) &&
+                Objects.isNull(service.getCompositionType())) {
+            throw new MissingRequiredInputException("compositionType");
+        }
 
         ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
-
-        entity.setParent(serviceRepository.findById(service.getParentId()).get());
-        if (entity instanceof ExternalServiceEntity) {
-            ((ExternalServiceEntity) entity).setServiceProvider(serviceProviderRepository.findById(service.getServiceProviderId()).get());
-        }
+        setServiceParent(entity, service);
+        checkServiceProvider(entity, service);
 
         ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
         emptyServiceListCache();
         return result;
     }
 
-    @Override
-    public ir.daneshrefah.scm.common.model.service.Service updateService(String serviceId, ir.daneshrefah.scm.common.model.service.Service service) {
-        Optional<ServiceEntity> entity = serviceRepository.findById(serviceId);
-        if (entity.isEmpty()) {
-            throw new InvalidInputException("serviceId");
+    private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
+        if (entity instanceof ExternalServiceEntity) {
+            ((ExternalServiceEntity) entity)
+                    .setServiceProvider(serviceProviderRepository
+                            .findById(service.getServiceProviderId()).orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")
+                            ));
         }
-        boolean isModified = false;
-        ServiceEntity serviceEntity = entity.get();
-        if (!serviceEntity.getImplementationType().equals(service.getImplementationType())) {
-            throw new InvalidInputException("implementationType");
-        }
-        if (StringUtils.isNotEmpty(service.getTitle()) && !service.getTitle().equals(serviceEntity.getTitle())) {
-            serviceEntity.setTitle(service.getTitle());
-            isModified = true;
-        }
-        if (null != service.getAlias() && !service.getAlias().equals(serviceEntity.getAlias())) {
-            serviceEntity.setAlias(service.getAlias());
-            isModified = true;
-        }
-        if (null != service.getMetadata() && !service.getMetadata().equals(serviceEntity.getMetadata())) {
-            serviceEntity.setMetadata(service.getMetadata());
-            isModified = true;
-        }
-        if (null != service.getType() && !service.getType().equals(serviceEntity.getType())) {
-            serviceEntity.setType(service.getType());
-            isModified = true;
-        }
-        if (null != service.getStatus() && !service.getStatus().equals(serviceEntity.getStatus())) {
-            serviceEntity.setStatus(service.getStatus());
-            isModified = true;
-        }
-        if (StringUtils.isNotEmpty(service.getRequestJsonSchema()) && !service.getRequestJsonSchema().equals(serviceEntity.getRequestJsonSchema())) {
-            serviceEntity.setRequestJsonSchema(service.getResponseJsonSchema());
-            isModified = true;
-        }
-        if (StringUtils.isNotEmpty(service.getResponseJsonSchema()) && !service.getResponseJsonSchema().equals(serviceEntity.getResponseJsonSchema())) {
-            serviceEntity.setResponseJsonSchema(service.getResponseJsonSchema());
-            isModified = true;
-        }
-        if (null != service.getCheckAccessFirstAuthentication()) {
-            serviceEntity.setCheckAccessFirstAuthentication(service.getCheckAccessFirstAuthentication());
-            isModified = true;
-        }
-        if (null != service.getCheckAccessSecondAuthentication()) {
-            serviceEntity.setCheckAccessSecondAuthentication(service.getCheckAccessSecondAuthentication());
-            isModified = true;
-        }
-        if (null != service.getCheckAccessService()) {
-            serviceEntity.setCheckAccessService(service.getCheckAccessService());
-            isModified = true;
-        }
-        if (null != service.getCheckAccessAsset()) {
-            serviceEntity.setCheckAccessAsset(service.getCheckAccessAsset());
-            isModified = true;
-        }
-//        private Integer version;
-//        private ir.daneshrefah.scm.common.model.service.Service parent;
-//        private ServiceImplementationType implementationType;
-        if (StringUtils.isNotEmpty(service.getAmountProperty()) && !service.getAmountProperty().equals(serviceEntity.getAmountProperty())) {
-            serviceEntity.setAmountProperty(service.getAmountProperty());
-            isModified = true;
-        }
-        ParentService parentService = null;
-        if (null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
-            parentService = findParentServiceById(service.getParent().getId());
-        }
-        if (null == parentService && null != service.getParent() && StringUtils.isNotEmpty(service.getParent().getId())) {
-            throw new InvalidInputException("parentId");
-        }
-        if (null != parentService &&
-                null != serviceEntity.getParent() && !StringUtils.equals(parentService.getId(), serviceEntity.getParent().getId())) {
-            serviceEntity.setParent(ServiceEntityFactory.createEmptyServiceEntity(service.getParent().getId(), ServiceImplementationType.PARENT));
-            isModified = true;
-        }
-        if (null != parentService && null == serviceEntity.getParent()) {
-            serviceEntity.setParent(ServiceEntityFactory.createEmptyServiceEntity(service.getParent().getId(), ServiceImplementationType.PARENT));
-            isModified = true;
-        }
-        if (StringUtils.isNotEmpty(service.getAssetProperty()) && !service.getAssetProperty().equals(serviceEntity.getAssetProperty())) {
-            serviceEntity.setAssetProperty(service.getAssetProperty());
-            isModified = true;
-        }
-        if (serviceEntity instanceof JavaServiceEntity && StringUtils.isNotEmpty(((JavaService) service).getJavaImplementationClassName()) &&
-                !((JavaService) service).getJavaImplementationClassName().equals(((JavaServiceEntity) serviceEntity).getJavaImplementationClassName())) {
-            ((JavaServiceEntity) serviceEntity).setJavaImplementationClassName(((JavaService) service).getJavaImplementationClassName());
-            isModified = true;
-        }
-        if (!isModified) {
-            throw new NoDataChangedException("service");
-        }
-//        private ExternalServiceProvider serviceProvider;
+    }
 
-        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(serviceEntity));
-        emptyServiceListCache();
-        return result;
+    private void setServiceParent(ServiceEntity entity, ServiceInfoRequest service) {
+        if (service.getImplementationType().equals(ServiceImplementationType.PARENT)) {
+            entity.setParent(null);
+        } else {
+            String parentId = service.getParentId();
+            if (Objects.nonNull(parentId)) {
+                entity.setParent(serviceRepository.findById(service.getParentId())
+                        .orElseThrow(() -> new NoMatchRecordFoundException("parent")));
+            }
+        }
+    }
+
+    @Override
+    public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
+        validateServiceInfoEditRequest(request);
+        serviceRepository
+                .findByCode(request.getCode())
+                .stream().filter(service -> service.getId().equals(request.getId()))
+                .findFirst()
+                .ifPresentOrElse(service -> {
+                    if (service.getLastEditDate().equals(request.getLastEditDate())) {
+                        applyChangesDynamically(service, request);
+                        serviceRepository.save(service);
+                        emptyServiceListCache();
+                    } else {
+                        throw new RecordVersionException("service");
+                    }
+                }, () -> {
+                    throw new NoMatchRecordFoundException("service");
+                });
+        //reload cache and find service on that.
+        return findServiceList()
+                .stream()
+                .filter(service -> service.getId().equals(request.getId()))
+                .findFirst()
+                .orElseThrow(() -> new NoMatchRecordFoundException("service"));
+    }
+
+    private void applyChangesDynamically(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+        applyEditServiceTypeProperties(serviceEntity, request);
+        applyEditStringBasedProperties(serviceEntity, request);
+        applyEditBooleanBasedProperties(serviceEntity, request);
+        applyEditJsonBasedProperties(serviceEntity,request);
+        if (Objects.nonNull(request.getVersion()) && !request.getVersion().equals(serviceEntity.getVersion())) {
+            serviceEntity.setVersion(request.getVersion());
+        }
+        if (Objects.nonNull(request.getStatus()) && !request.getStatus().equals(serviceEntity.getStatus())) {
+            serviceEntity.setStatus(request.getStatus());
+        }
+        if (Objects.nonNull(request.getType()) && !request.getType().equals(serviceEntity.getType())) {
+            serviceEntity.setType(request.getType());
+        }
+    }
+
+    private void applyEditJsonBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+        if (Objects.nonNull(request.getMetadata())){
+            serviceEntity.setMetadata(getCheckedJsonString(request.getMetadata(),"metadata"));
+        }
+        if (Objects.nonNull(request.getRequestJsonSchema())){
+            serviceEntity.setMetadata(getCheckedJsonString(request.getRequestJsonSchema(),"requestJsonSchema"));
+        }
+        if (Objects.nonNull(request.getResponseJsonSchema())){
+            serviceEntity.setMetadata(getCheckedJsonString(request.getResponseJsonSchema(),"responseJsonSchema"));
+        }
+    }
+
+    private JsonNode getCheckedJsonString(String metadata,String property) {
+        try {
+            return getObjectMapper().readTree(metadata);
+        }catch (Exception e){
+            throw new InvalidInputException(property);
+        }
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        return ApplicationConfig.getObjectMapperInstance();
+    }
+
+    private void applyEditBooleanBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessAsset(),serviceEntity.getCheckAccessAsset(),Boolean.class));
+        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessService(),serviceEntity.getCheckAccessService(),Boolean.class));
+        serviceEntity.setCheckAccessFirstAuthentication(compareObject(request.getCheckAccessFirstAuthentication(),serviceEntity.getCheckAccessFirstAuthentication(),Boolean.class));
+        serviceEntity.setCheckAccessSecondAuthentication(compareObject(request.getCheckAccessSecondAuthentication(),serviceEntity.getCheckAccessSecondAuthentication(),Boolean.class));
+    }
+
+    private void applyEditStringBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+        serviceEntity.setAssetProperty(compareObject(request.getAssetProperty(),serviceEntity.getAssetProperty(),String.class));
+        serviceEntity.setAmountProperty(compareObject(request.getAmountProperty(),serviceEntity.getAmountProperty(),String.class));
+        serviceEntity.setCustomerProperty(compareObject(request.getCustomerProperty(),serviceEntity.getCustomerProperty(),String.class));
+        serviceEntity.setTitle(StringUtils.isNotEmpty(request.getTitle()) ? request.getTitle() : serviceEntity.getTitle());
+        serviceEntity.setAlias(StringUtils.isNotEmpty(request.getAlias()) ? request.getAlias() : serviceEntity.getAlias());
+        //check service code
+        String code = request.getCode();
+        if (StringUtils.isNotEmpty(code) && !serviceEntity.getCode().equals(code)) {
+            serviceRepository.findByCode(code).map(ServiceEntity::getCode).ifPresent(s -> {
+                throw new InvalidInputException("code");
+            });
+            serviceEntity.setCode(code);
+        }
+    }
+
+    private void applyEditServiceTypeProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+        if (serviceEntity instanceof JavaServiceEntity javaServiceEntity) {
+            String value = request.getJavaImplementationClassName();
+            javaServiceEntity.setJavaImplementationClassName(StringUtils.isEmpty(value) ? javaServiceEntity.getJavaImplementationClassName() : value);
+        } else if (serviceEntity instanceof ExternalServiceEntity externalServiceEntity) {
+            String reqProviderId = request.getServiceProviderId();
+            String serviceProviderId = externalServiceEntity.getServiceProvider().getId();
+            if (StringUtils.isNotEmpty(reqProviderId) && !reqProviderId.equals(serviceProviderId)) {
+                ExternalServiceProviderEntity foundProvider = serviceProviderRepository.findById(reqProviderId)
+                        .orElseThrow(() -> new InvalidInputException("serviceProviderId"));
+                externalServiceEntity.setServiceProvider(foundProvider);
+            }
+        } else if (serviceEntity instanceof CompositionServiceEntity compositionService) {
+            ServiceCompositionType reqCompositionType = request.getCompositionType();
+            ServiceCompositionType compositionType = compositionService.getCompositionType();
+            if (Objects.nonNull(reqCompositionType) && !reqCompositionType.equals(compositionType)) {
+                compositionService.setCompositionType(reqCompositionType);
+            }
+        }
+        //check parent changes on all service type
+        else if (serviceEntity instanceof ParentServiceEntity) {
+            request.setParentId("");
+        } else {
+            String reqParentId = request.getParentId();
+            if (StringUtils.isNotEmpty(reqParentId) && !reqParentId.equals(serviceEntity.getParent().getId())) {
+                ServiceEntity foundParent = serviceRepository.findById(reqParentId)
+                        .orElseThrow(() -> new InvalidInputException("parentId"));
+                serviceEntity.setParent(foundParent);
+            }
+        }
+
+    }
+
+    private void validateServiceInfoEditRequest(ServiceInfoEditRequest request) {
+        String id = request.getId();
+        LocalDateTime lastEditDate = request.getLastEditDate();
+        if (StringUtils.isEmpty(id)) {
+            throw new MissingRequiredInputException("id");
+        }
+        if (Objects.isNull(lastEditDate)) {
+            throw new MissingRequiredInputException("lastEditDate");
+        }
     }
 
     @Override
@@ -304,4 +378,39 @@ public class ServiceServiceImpl implements ServiceService {
         this.services = null;
     }
 
+    @Override
+    public void deleteService(ServiceDeleteRequest request) {
+        validateServiceDeleteRequest(request);
+        serviceRepository.findById(request.getId())
+                .stream()
+                .filter(service -> service.getId().equals(request.getId()))
+                .findFirst()
+                .ifPresentOrElse(found -> {
+                    if (found.getLastEditDate().equals(request.getLastEditDate())) {
+                        //if record version passed.
+                        int effectedRows = serviceRepository.deleteByIdAndLastEditDate(found.getId(), found.getLastEditDate());
+                        if (effectedRows == 0) {
+                            throw new RecordVersionException("service");
+                        } else {
+                            emptyServiceListCache();
+                        }
+                    } else {
+                        throw new RecordVersionException("service");
+                    }
+                }, () -> {
+                    throw new NoMatchRecordFoundException("service");
+                });
+    }
+
+
+    private void validateServiceDeleteRequest(ServiceDeleteRequest request) {
+        String id = request.getId();
+        LocalDateTime lastEditDate = request.getLastEditDate();
+        if (Objects.isNull(id) || id.isBlank()) {
+            throw new InvalidInputException("id");
+        }
+        if (Objects.isNull(lastEditDate)) {
+            throw new InvalidInputException("lastEditDate");
+        }
+    }
 }

@@ -14,6 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+
 public abstract class Service extends BaseModel<String> {
 
     private String code;

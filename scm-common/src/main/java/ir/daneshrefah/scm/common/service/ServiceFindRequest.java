@@ -17,6 +17,7 @@ import lombok.Data;
 public class ServiceFindRequest extends PagedRequestData {
 
     private String code;
+    private String title;
     private Boolean isSystemic;
     private ServiceType type;
     private ServiceStatus status;
