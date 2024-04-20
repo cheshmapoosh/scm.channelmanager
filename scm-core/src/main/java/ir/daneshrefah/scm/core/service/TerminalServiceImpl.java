@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
@@ -35,20 +34,20 @@ public class TerminalServiceImpl implements TerminalService {
     private final ServiceService serviceService;
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final EntityManager entityManager;
-    private final LegacyTerminalService legacyTerminalService;
+
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
 
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
         if (null == terminalServiceAccesses) {
-            terminalServiceAccesses = TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll());
+            terminalServiceAccesses = Collections.synchronizedList(TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll()));
         }
         return terminalServiceAccesses;
     }
 
     public List<Terminal> findAllTerminals() {
         if (null == terminals) {
-            terminals = TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll());
+            terminals = Collections.synchronizedList(TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll()));
         }
         return terminals;
     }
@@ -164,39 +163,34 @@ public class TerminalServiceImpl implements TerminalService {
     @Override
     public void deleteTerminal(TerminalDeleteRequest request) {
         validateTerminalDeleteRequest(request);
-        //checking record version
-        terminalRepository
-                .findById(request.getId())
-                .filter(foundTerminal -> foundTerminal.getLastEditDate().equals(request.getLastEditDate()))
-                .ifPresentOrElse(entity -> {
+         terminalRepository
+                 .findById(request.getId())
+                .ifPresentOrElse(found->{
                     //if record version passed.
-                    TerminalEntity terminalEntity = new TerminalEntity();
-                    terminalEntity.setId(request.getId());
-                    terminalEntity.setLastEditDate(request.getLastEditDate());
-                    terminalRepository.delete(terminalEntity);
-                    Terminal model = TerminalMapper.INSTANCE.toModel(terminalEntity);
-                    removeTerminalListCache(model);
-                }, () -> {
-                    //if record version failed
-                    throw new RecordVersionException(request.getLastEditDate().toString());
+                    int effectedRows = terminalRepository.deleteByIdAndLastEditDate(found.getId(), found.getLastEditDate());
+                    if (effectedRows == 0){
+                        throw new RecordVersionException("terminal");
+                    }else {
+                        removeTerminalListCache(TerminalMapper.INSTANCE.toModel(found));
+                    }
+                },()->{
+                    throw new RecordVersionException("terminal");
                 });
     }
 
     @Override
     public Terminal editTerminal(TerminalEditRequest request) {
         validateTerminalEditRequest(request);
-        Terminal found = terminals
-                .stream()
-                .filter(terminal -> terminal.getId().equals(request.getId()))
-                .findFirst()
-                .orElseThrow(() -> new TerminalDoesNotExistException(request.getCode()));
+        Terminal found = terminalRepository.findById(request.getId())
+                .map(TerminalMapper.INSTANCE::toModel)
+                .orElseThrow(() -> new NoMatchRecordFoundException(request.getCode()));
         if (found.getLastEditDate().equals(request.getLastEditDate())) {
             dynamicUpdateTerminalEntity(found, request);
             terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
             removeTerminalListCache(found);
             return addTerminalListCache(found);
         } else {
-            throw new RecordVersionException(request.getLastEditDate().toString());
+            throw new RecordVersionException("terminal");
         }
     }
 
@@ -220,7 +214,7 @@ public class TerminalServiceImpl implements TerminalService {
                     .filter(t -> t.getCode().equals(request.getCode()))
                     .findFirst()
                     .ifPresent(t -> {
-                        throw new TerminalCodeDoesNotUniqueException(t.getCode());
+                        throw new DuplicatedRecordFoundException(t.getCode());
                     });
             terminal.setCode(request.getCode());
             terminal.setLegacyTerminalId(findLegacyTerminal(request.getCode()));
@@ -254,19 +248,20 @@ public class TerminalServiceImpl implements TerminalService {
                 .stream()
                 .filter(terminal -> terminal.getCode().equals(code))
                 .findFirst().ifPresent(terminal -> {
-                    throw new TerminalCodeDoesNotUniqueException(code);
+                    throw new DuplicatedRecordFoundException(code);
                 });
     }
 
     private Long findLegacyTerminal(String code) {
         return LEGACY_TERMINAL_CODE_ID_CACHE
                 .computeIfAbsent(code, toCacheCode -> {
-                    return legacyTerminalService
-                            .findByCodeWithOutParent(toCacheCode)
-                            .map(LegacyTerminal::getId)
-                            .orElseThrow(() -> new InvalidInputException("code"));
+                    Long legacyTerminalId = terminalRepository.findLegacyTerminalId(code);
+                    if (Objects.isNull(legacyTerminalId)){
+                        throw new InvalidInputException("code");
+                    }
                     //if the method could not find id it means the terminal code
                     //was wrong.
+                    return legacyTerminalId;
                 });
 
     }

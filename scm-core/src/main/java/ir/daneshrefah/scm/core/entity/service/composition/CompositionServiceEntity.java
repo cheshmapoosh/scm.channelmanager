@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.entity.service.composition;
 
 import ir.daneshrefah.scm.core.converter.ServiceCompositionTypeConverter;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceCompositionType;
+import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.DiscriminatorValue;

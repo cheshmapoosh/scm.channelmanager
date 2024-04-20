@@ -33,10 +33,11 @@ public interface ServiceService {
 
     public Service createService(ServiceInfoRequest service);
 
-    public Service updateService(String serviceId, Service service);
+    public Service updateService(ServiceInfoEditRequest request);
 
     public boolean checkServiceExistById(String serviceId);
 
     public boolean checkServiceProviderExistById(String serviceProviderId);
 
+    void deleteService(ServiceDeleteRequest request);
 }

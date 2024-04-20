@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.model.service.composition;
+package ir.daneshrefah.scm.common.model.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

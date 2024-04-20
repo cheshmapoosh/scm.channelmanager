@@ -10,6 +10,8 @@ import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
+import java.util.Objects;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -23,7 +25,7 @@ public class ServiceEntityFactory {
         ServiceEntity entity = createEmptyServiceEntity(request.getImplementationType());
         entity.setCode(request.getCode());
         entity.setTitle(request.getTitle());
-        entity.setAlias(request.getAlias());
+        entity.setAlias(Objects.nonNull(request.getAlias()) ? request.getAlias() : "");
         entity.setVersion(null != request.getVersion() ? request.getVersion() : 1);
         if (StringUtils.isNotEmpty(request.getMetadata())) {
             try {
@@ -46,10 +48,13 @@ public class ServiceEntityFactory {
         entity.setCustomerProperty(request.getCustomerProperty());
         entity.setAmountProperty(request.getAmountProperty());
         entity.setAssetProperty(request.getAssetProperty());
-        if (entity instanceof JavaServiceEntity) {
-            ((JavaServiceEntity) entity).setJavaImplementationClassName(request.getJavaImplementationClassName());
+        if (entity instanceof JavaServiceEntity javaServiceEntity) {
+            javaServiceEntity.setJavaImplementationClassName(request.getJavaImplementationClassName());
         }
 
+        if (entity instanceof CompositionServiceEntity compositionService){
+            compositionService.setCompositionType(request.getCompositionType());
+        }
         return entity;
     }
 
