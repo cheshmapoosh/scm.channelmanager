@@ -182,10 +182,12 @@ public class SwaggerGenerator {
     }
 
     private void generateRequestHeaders(Operation operation) {
-        addHeaderParameter(operation,SCM_PARAMETER_TERMINAL,"Terminal",true);
-        addHeaderParameter(operation,SCM_PARAMETER_CLIENT_CORRELATION_ID,"Correlation ID Header",false);
-        addHeaderParameter(operation,SCM_PARAMETER_CLIENT_TIMESTAMP,"Client timestamp",false);
-        addHeaderParameter(operation,SCM_PARAMETER_ACCESS_PARAMETER,"Access parameter",true);
+        addHeaderParameter(operation, SCM_PARAMETER_TERMINAL, "Terminal", true);
+        addHeaderParameter(operation, SCM_PARAMETER_CLIENT_CORRELATION_ID, "Correlation ID Header", false);
+        addHeaderParameter(operation, SCM_PARAMETER_CLIENT_TIMESTAMP, "Client timestamp", false);
+        addHeaderParameter(operation, SCM_PARAMETER_ACCESS_PARAMETER, "Access parameter", true);
+        addHeaderParameter(operation, SCM_PARAMETER_USERNAME, "Username", false);
+        addHeaderParameter(operation, SCM_PARAMETER_CLAIM_CODE, "Claim Code", false);
     }
 
     private void addHeaderParameter(Operation operation,String ref,String description,boolean required){

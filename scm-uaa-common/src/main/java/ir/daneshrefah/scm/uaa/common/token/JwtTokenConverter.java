@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.*;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -32,18 +34,22 @@ import java.util.stream.Collectors;
  */
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
-    @Override
     public UserAuthentication convert(Jwt jwt) {
+        return convert(jwt, null);
+    }
+
+    public UserAuthentication convert(Jwt jwt, String username) {
         String clientId = jwt.getAudience().get(0);
 
         Collection<GrantedAuthority> authorities = Collections.emptyList();
         String commaSeparatedAuthorities = jwt.getClaimAsString(Constants.CLAIM_KEY_AUTHORITIES);
+        commaSeparatedAuthorities = StringUtils.remove(commaSeparatedAuthorities, "[", "]");
         if (StringUtils.isNotEmpty(commaSeparatedAuthorities)) {
             String[] authoritiesArray = commaSeparatedAuthorities.split(",");
 
             authorities = Arrays.stream(authoritiesArray)
                     .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toUnmodifiableList());
         }
         URL issuer = jwt.getIssuer(); //JwtClaimNames.ISS
         String sessionId = jwt.getClaimAsString(Constants.CLAIM_KEY_SESSION);
@@ -63,8 +69,10 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 .clientId(clientId)
                 .build();
 
+        String delegatedUsername = USERNAME_NONE_PROVIDED.equalsIgnoreCase(username) ||
+                USERNAME_ANONYMOUS.equals(username) || StringUtils.isBlank(username) ? null : username;
         UserAuthentication result = new UserAuthentication(detail,
-                user, authorities);
+                user, delegatedUsername, authorities);
 
         return result;
     }

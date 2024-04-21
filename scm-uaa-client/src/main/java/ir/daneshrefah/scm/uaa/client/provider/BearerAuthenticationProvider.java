@@ -42,7 +42,7 @@ public class BearerAuthenticationProvider extends AbstractRemoteClientAuthentica
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         BearerAuthenticationToken bearer = (BearerAuthenticationToken) authentication;
         Jwt jwt = jwtDecoder.decode(bearer.getToken());
-        UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt);
+        UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt, username);
         validateUserAuthentication(authentication, userAuthentication);
         if (StringUtils.isNotEmpty(userAuthentication.getDetails().getSessionId())) {
             String tokenUsername = userAuthentication.getName(); //TODO username

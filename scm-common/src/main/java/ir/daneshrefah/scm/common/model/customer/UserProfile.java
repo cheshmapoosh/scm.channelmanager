@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
+
 /**
  *
  * User Profile hold the data of effective user. it means that in delegation mode it holds the data of delegated user.
@@ -46,7 +48,7 @@ public class UserProfile implements Serializable {
     }
 
     public UserProfile() {
-        this.nickname = "ANONYMOUS";
+        this.nickname = USERNAME_ANONYMOUS;
     }
 
     public void loadMembership(List<MembershipTerminalAccess> memberships) {

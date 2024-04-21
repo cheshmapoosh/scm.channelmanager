@@ -15,8 +15,9 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 
-import static ir.daneshrefah.scm.common.constant.RoleConstants.ROLE_ANONYMOUS;
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ANONYMOUS;
 
 /**
  * Description of the class or purpose of the file.
@@ -99,10 +100,10 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
     @Override
     public boolean hasAuthority(String authorityName) {
         Collection<GrantedAuthority> authorities = getAuthorities();
-        if (null == authorities || authorities.isEmpty()) {
+        if (StringUtils.isEmpty(authorityName) || Objects.isNull(authorities) || authorities.isEmpty()) {
             return false;
         }
-        return getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equals(authorityName));
+        return getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equalsIgnoreCase(authorityName));
     }
 
     @Override

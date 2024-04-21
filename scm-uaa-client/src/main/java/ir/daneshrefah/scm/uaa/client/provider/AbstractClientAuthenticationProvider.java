@@ -18,6 +18,9 @@ import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.Assert;
 
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_CSP;
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE_PROVIDED;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -27,7 +30,6 @@ import org.springframework.util.Assert;
  */
 public abstract class AbstractClientAuthenticationProvider implements AuthenticationProvider {
 
-    public static final String NONE_PROVIDED_USERNAME = "NONE_PROVIDED";
     protected final Log logger = LogFactory.getLog(getClass());
 
     private final SessionCache sessionCache;
@@ -58,7 +60,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
         String sessionKey = ((BaseAuthenticationToken) authentication).getSessionCacheKey();
         UserAuthentication user = null;
         if (StringUtils.isNotEmpty(sessionKey)) {
-            user = this.sessionCache.getSessionFromCache(sessionKey);
+            user = null;//this.sessionCache.getSessionFromCache(sessionKey);
         }
         if (user == null) {
             cacheWasUsed = false;
@@ -75,7 +77,8 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             }
             Assert.notNull(user, "retrieveUser returned null - a violation of the interface contract");
         }
-        if (!NONE_PROVIDED_USERNAME.equals(username) && !username.equals(user.getPrincipal().getNickname())) {
+        if (!USERNAME_NONE_PROVIDED.equals(username) && !username.equals(user.getPrincipal().getNickname()) &&
+                !user.hasAuthority(ROLE_CSP)) {
             throw new UsernameNotFoundException("not match username");
         }
         try {
@@ -105,7 +108,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
     }
 
     private String determineUsername(Authentication authentication) {
-        return (authentication.getPrincipal() == null) ? NONE_PROVIDED_USERNAME : authentication.getName();
+        return (authentication.getPrincipal() == null) ? USERNAME_NONE_PROVIDED : authentication.getName();
     }
 
     protected abstract UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication)

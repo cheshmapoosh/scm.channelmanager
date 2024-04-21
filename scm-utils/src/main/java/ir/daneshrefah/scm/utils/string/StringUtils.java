@@ -31,6 +31,10 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.isNotEmpty(cs);
     }
 
+    public static boolean isBlank(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isBlank(cs);
+    }
+
     public static boolean endsWith(final CharSequence str, final CharSequence suffix) {
         return org.apache.commons.lang3.StringUtils.endsWith(str, suffix);
     }
@@ -53,6 +57,14 @@ public class StringUtils {
 
     public static String replace(final String text, final String searchString, final String replacement) {
         return org.apache.commons.lang3.StringUtils.replace(text, searchString, replacement);
+    }
+
+    public static String remove(final String text, final String... searchString) {
+        String result = text;
+        for (String target : searchString) {
+            result = org.apache.commons.lang3.StringUtils.remove(result, target);
+        }
+        return result;
     }
 
     public static String surroundWithCurlyBracesAndDollar(String value) {

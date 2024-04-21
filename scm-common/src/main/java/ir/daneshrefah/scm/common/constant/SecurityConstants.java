@@ -7,7 +7,7 @@ package ir.daneshrefah.scm.common.constant;
  * @version 1.0
  * @since 2024-04-20
  */
-public class RoleConstants {
+public class SecurityConstants {
 
     public static final String ROLE_ANONYMOUS = "ROLE_ANONYMOUS";
     public static final String ROLE_ADMIN_CACHE = "ROLE_ADMIN_CACHE";
@@ -18,5 +18,8 @@ public class RoleConstants {
     public static final String ROLE_ADMIN_CUSTOMER = "ROLE_ADMIN_CUSTOMER";
     public static final String ROLE_ADMIN_USER = "ROLE_ADMIN_USER";
     public static final String ROLE_CSP = "ROLE_CSP";
+
+    public static final String USERNAME_NONE_PROVIDED = "NONE_PROVIDED";
+    public static final String USERNAME_ANONYMOUS = "ANONYMOUS";
 
 }

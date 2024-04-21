@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Component;
 
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE_PROVIDED;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -30,7 +32,7 @@ public class SessionAuthenticationProvider extends AbstractClientAuthenticationP
         SessionAuthenticationToken sessionAuthenticationToken = (SessionAuthenticationToken) authentication;
         String terminalCode = sessionAuthenticationToken.getTerminalCode();
         String sessionId = sessionAuthenticationToken.getSessionId();
-        if (StringUtils.isEmpty(username) || StringUtils.equalsIgnoreCase(NONE_PROVIDED_USERNAME, username)) {
+        if (StringUtils.isEmpty(username) || StringUtils.equalsIgnoreCase(USERNAME_NONE_PROVIDED, username)) {
             throw new UsernameNotFoundException("empty username for sessionId: " + sessionId);
         }
         UserAuthentication userAuthentication = getSessionCache().getSessionFromCache(username, terminalCode);
