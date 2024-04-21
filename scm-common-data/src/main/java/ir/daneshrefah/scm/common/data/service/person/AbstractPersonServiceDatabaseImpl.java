@@ -7,6 +7,9 @@ import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +27,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public abstract class AbstractPersonServiceDatabaseImpl implements PersonService {
 
+    protected final TerminalService terminalService;
     protected final PersonRepository personRepository;
 
     @Override
@@ -50,6 +54,20 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         Optional<GeneralPersonEntity> personEntity = personRepository.findById(id);
         if (personEntity.isEmpty()) {
             throw new PersonNotFoundException("person with id '" + id + "' not found.");
+        }
+        return PersonMapper.INSTANCE.toPerson(personEntity.get());
+    }
+
+    @Override
+    public GeneralPerson findPersonByNicknameAndTerminalCode(String nickname, String terminalCode) {
+        if (StringUtils.isEmpty(nickname) || StringUtils.isEmpty(terminalCode)) {
+            return null;
+        }
+
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
+        Optional<GeneralPersonEntity> personEntity = personRepository.findByNicknameAndTerminalId(nickname, terminal.get().getLegacyTerminalId().intValue());
+        if (personEntity.isEmpty()) {
+            throw new PersonNotFoundException("person with nickname '" + nickname + "' and terminalCode '" + terminalCode + "' not found.");
         }
         return PersonMapper.INSTANCE.toPerson(personEntity.get());
     }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +23,7 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
     @Override
     protected final int vote(Message message) {
-        PersonProfile profile = message.getHeader().getPersonProfile();
+        UserProfile profile = message.getHeader().getUserProfile();
         if (null == profile) {
             return ACCESS_DENIED;
         }
@@ -33,11 +33,11 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
         return vote(profile, message.getHeader().getServiceAccess(), asset);
     }
 
-    protected final PersonProfile fillServiceAccessForProfile(PersonProfile profile, String terminalCode) {
+    protected final UserProfile fillServiceAccessForProfile(UserProfile profile, String terminalCode) {
         return decisionHelper.fillServiceAccessForProfile(profile, terminalCode);
     }
 
-    protected abstract int vote(PersonProfile profile, TerminalServiceAccess service, String asset);
+    protected abstract int vote(UserProfile profile, TerminalServiceAccess service, String asset);
 
     private boolean isAssetSupport(Message message) {
         return message.getHeader().getServiceAccess().getTerminal().isSupportCheckServiceAccess() &&

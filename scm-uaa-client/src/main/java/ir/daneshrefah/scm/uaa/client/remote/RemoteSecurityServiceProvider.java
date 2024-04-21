@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.remote;
 
-import com.hazelcast.internal.ascii.rest.HttpStatusCode;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClaimAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
@@ -18,12 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.oauth2.jwt.BadJwtException;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
-import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -40,7 +35,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @ConditionalOnProperty(name = "scm.security.distributed", havingValue = "true", matchIfMissing = false)
-public class RemoteSecurityServiceProvider {
+public class RemoteSecurityServiceProvider implements SecurityServiceProvider {
 
     protected final Log logger = LogFactory.getLog(getClass());
 
@@ -54,12 +49,35 @@ public class RemoteSecurityServiceProvider {
         this.jwtDecoder = jwtDecoder;
     }
 
+    @Override
     public String authenticateClaim(ClaimAuthenticationToken authentication) throws AuthenticationException {
         return callServerAuthentication(AuthorizationGrantType.SECOND_PASSWORD, (String) authentication.getPrincipal(),
                 (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
     }
 
-    public String callServerAuthentication(AuthorizationGrantType grantType, String principal, String credential,
+    @Override
+    public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
+        return callServerAuthentication(AuthorizationGrantType.CLIENT_CREDENTIALS, (String) authentication.getPrincipal(),
+                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+    }
+
+    @Override
+    public String authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
+        return callServerAuthentication(AuthorizationGrantType.FIRST_PASSWORD, (String) authentication.getPrincipal(),
+                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+    }
+
+    @Override
+    public GeneralPerson findGeneralPersonByUsernameAndTerminalCode(String username, String terminalCode) {
+        return null;
+    }
+
+    private String callServerService(String serviceUri) {
+        String endpoint = issuerUri + serviceUri;
+        return null;
+    }
+
+    private String callServerAuthentication(AuthorizationGrantType grantType, String principal, String credential,
                                            String clientId) {
         String tokenEndpoint = issuerUri + "/oauth2/token";
         String headerAuthorization = "";
@@ -106,16 +124,6 @@ public class RemoteSecurityServiceProvider {
         }
 //        Jwt jwt = getJwt(response.getBody());
         return responseBody;
-    }
-
-    public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
-        return callServerAuthentication(AuthorizationGrantType.CLIENT_CREDENTIALS, (String) authentication.getPrincipal(),
-                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
-    }
-
-    public String authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
-        return callServerAuthentication(AuthorizationGrantType.FIRST_PASSWORD, (String) authentication.getPrincipal(),
-                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
     }
 
 }

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 
@@ -22,7 +22,7 @@ public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(PersonProfile profile, TerminalServiceAccess service, String asset) {
+    protected int vote(UserProfile profile, TerminalServiceAccess service, String asset) {
         profile = fillServiceAccessForProfile(profile, service.getTerminal().getCode());
         boolean isServiceAssigned = profile.hasServiceAccess(service.getTerminal().getCode(),
                 service.getService().getCode(), asset);

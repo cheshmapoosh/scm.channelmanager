@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.core.integration.service.interceptor.*;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
@@ -37,7 +37,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
     private final JavaServiceExecutor javaServiceExecutor;
     private final CompositionServiceExecutor compositionServiceExecutor;
     private final DecisionManager decisionManager;
-    private final CustomerService customerService;
+    private final PersonProfileLoader personProfileLoader;
     private final TransformerService transformerService;
     private final ObjectMapper objectMapper;
     private final Map<ServiceImplementationType, ServiceExecutor> executorMap = new HashMap<>();
@@ -70,7 +70,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
 
     private void initServiceExecutorList() {
         final List<MessageInterceptor> requestInterceptors = Arrays.asList(
-                new CustomerEnrichInterceptor(customerService),
+                new CustomerEnrichInterceptor(personProfileLoader),
                 new ServiceRequestValidationInterceptor(objectMapper),
                 new DecisionManagerInterceptor(decisionManager),
                 new ServiceRequestTransformerInterceptor(transformerService));

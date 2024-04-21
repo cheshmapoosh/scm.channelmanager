@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
@@ -25,7 +25,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(PersonProfile profile, TerminalServiceAccess service, String asset) {
+    protected int vote(UserProfile profile, TerminalServiceAccess service, String asset) {
         ExternalServiceProvider provider = service.getService() instanceof ExternalService ?
                 ((ExternalService) service.getService()).getServiceProvider() : null;
         if (null == provider || !provider.isCustomerProvided()) {

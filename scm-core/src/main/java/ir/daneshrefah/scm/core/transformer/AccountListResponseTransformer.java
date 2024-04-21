@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ import java.util.Optional;
 @Component
 public class AccountListResponseTransformer extends AbstractTransformer {
 
-    private final CustomerService customerService;
+    private final PersonProfileLoader personProfileLoader;
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
@@ -37,13 +37,13 @@ public class AccountListResponseTransformer extends AbstractTransformer {
         ArrayNode sourceArray = (ArrayNode) payload;
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
 
-        List<MembershipTerminalAccess> memberships = loadMemberships(message);
+        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(message.getHeader().getAuthentication());
 
         for (JsonNode sourceNode : sourceArray) {
             if (!sourceNode.isObject() || sourceNode.isEmpty()) {
                 continue;
             }
-            ObjectNode resultAccount = convertAccountNode((ObjectNode) sourceNode, memberships);
+            ObjectNode resultAccount = convertAccountNode((ObjectNode) sourceNode, profile);
             if (null != resultAccount && !resultAccount.isNull()) {
                 result.add(resultAccount);
             }
@@ -51,7 +51,8 @@ public class AccountListResponseTransformer extends AbstractTransformer {
         return result;
     }
 
-    private ObjectNode convertAccountNode(ObjectNode sourceNode, List<MembershipTerminalAccess> memberships) {
+    private ObjectNode convertAccountNode(ObjectNode sourceNode, UserProfile profile) {
+        List<MembershipTerminalAccess> memberships = profile.getMemberships();
         final String accountNumber = "accountNumber";
         if (sourceNode.has(accountNumber)) {
             String accountNo = sourceNode.get(accountNumber).asText();
@@ -64,21 +65,6 @@ public class AccountListResponseTransformer extends AbstractTransformer {
             return sourceNode;
         }
         return null;
-    }
-
-    private List<MembershipTerminalAccess> loadMemberships(Message message) {
-        if (null == message || null == message.getHeader().getAuthentication() ||
-                !message.getHeader().getAuthentication().isAuthenticated()) {
-            return null;
-        }
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        PersonProfile profile = message.getHeader().getAuthentication().getPersonProfile();
-        if (!profile.isMembershipLoaded()) {
-            List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(
-                    profile.getPersonId().id(), terminal.getId());
-            profile.loadMembership(memberships);
-        }
-        return profile.getMemberships();
     }
 
 }

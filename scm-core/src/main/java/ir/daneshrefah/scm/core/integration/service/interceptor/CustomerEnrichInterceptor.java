@@ -3,19 +3,18 @@ package ir.daneshrefah.scm.core.integration.service.interceptor;
 import ir.daneshrefah.scm.common.exception.NoAssetFoundException;
 import ir.daneshrefah.scm.common.exception.NoCustomerFoundException;
 import ir.daneshrefah.scm.common.model.asset.Customer;
-import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -27,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomerEnrichInterceptor extends MessageInterceptor {
 
-    private final CustomerService customerService;
+    private final PersonProfileLoader personProfileLoader;
 
     @Override
     protected Message internalIntercept(Message message) {
@@ -37,8 +36,6 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         if (null == service || !service.getServiceProvider().isCustomerProvided()) {
             throw new NoCustomerFoundException();
         }
-        Terminal terminal = message.getHeader().getServiceAccess().getTerminal();
-        PersonProfile profile = message.getHeader().getPersonProfile();
         String customerProperty = service.getCustomerProperty();
 
         if (!isLoadAssetRequired(serviceAccess) && isLoadCustomerRequired(serviceAccess) &&
@@ -46,12 +43,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
             return message;
         }
 
-        if (!profile.isMembershipLoaded()) {
-            List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(profile.getPersonId().id(), terminal.getId());
-            profile.loadMembership(memberships);
-        }
-
-        if (!profile.hasMembership(service.getServiceProvider().getId())) {
+        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(message.getHeader().getAuthentication());
+        if (Objects.isNull(profile) || !profile.hasMembership(service.getServiceProvider().getId())) {
             throw new NoAssetFoundException();
         }
         if (StringUtils.isNotEmpty(customerProperty)) {

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.filter.BasicAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.filter.BearerAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.client.remote.SecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -28,7 +28,6 @@ import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -122,8 +121,9 @@ public class AuthenticationClientAutoConfiguration {
     }*/
 
     @Bean
-    public AuthenticationClientTemplate authenticationClientTemplate(AuthenticationManager authenticationManager) {
-        return new AuthenticationClientTemplate(authenticationManager);
+    public AuthenticationClientTemplate authenticationClientTemplate(AuthenticationManager authenticationManager,
+                                                                     SecurityServiceProvider securityServiceProvider) {
+        return new AuthenticationClientTemplate(authenticationManager, securityServiceProvider);
     }
 
     /*@Bean

@@ -18,6 +18,8 @@ public interface PersonService {
 
     GeneralPerson findPersonByPersonId(Integer id);
 
+    GeneralPerson findPersonByNicknameAndTerminalCode(String nickname, String terminalCode);
+
 //    GeneralPerson findPersonInfo(PersonFindRequest request);
 //
 //    GeneralPerson findCIFPersonInfo(PersonFindRequest request);

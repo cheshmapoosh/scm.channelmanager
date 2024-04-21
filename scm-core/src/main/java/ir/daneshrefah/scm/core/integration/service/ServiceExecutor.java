@@ -82,6 +82,9 @@ public abstract class ServiceExecutor {
         String responseBody = null != message.getPayload() ? message.getPayload().toString() : null;
         Event event = ServiceEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
+                .messageId(message.getHeader().getMessageId())
+                .parentMessageId(message.getHeader().getParentMessageId())
+                .level(message.getHeader().getLevel())
                 .terminalCode(message.getHeader().getTerminalCode())
                 .channelCode(message.getHeader().getChannel().getCode())
                 .username(username)

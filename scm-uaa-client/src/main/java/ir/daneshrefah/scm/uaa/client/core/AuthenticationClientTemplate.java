@@ -1,12 +1,11 @@
 package ir.daneshrefah.scm.uaa.client.core;
 
-import ir.daneshrefah.scm.common.model.message.Authentication;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.converter.authentication.*;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
+import ir.daneshrefah.scm.uaa.client.remote.SecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -28,11 +27,13 @@ public class AuthenticationClientTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationClientTemplate.class);
 
     private final AuthenticationManager authenticationManager;
+    private final SecurityServiceProvider securityServiceProvider;
     private final List<AuthenticationConverter> authenticationConverters;
     private final List<AuthenticationConverter> transactionConverters;
 
-    public AuthenticationClientTemplate(AuthenticationManager authenticationManager) {
+    public AuthenticationClientTemplate(AuthenticationManager authenticationManager, SecurityServiceProvider securityServiceProvider) {
         this.authenticationManager = authenticationManager;
+        this.securityServiceProvider = securityServiceProvider;
         this.authenticationConverters = Arrays.asList(new BasicAuthenticationConverter(), new BearerTokenAuthenticationConverter(),
                 new SessionKeyAuthenticationConverter(), new ClientAuthenticationConverter(), new AnonymousAuthenticationConverter());
         this.transactionConverters = Arrays.asList(new ClaimTokenAuthenticationConverter(), new AnonymousAuthenticationConverter());
@@ -65,6 +66,10 @@ public class AuthenticationClientTemplate {
             throw new ClientAuthenticationException(e.getMessage(), null != e.getCause() ? e.getCause() : e,
                     generateFailAuthentication(e));
         }
+    }
+
+    public GeneralPerson findGeneralPersonByUsernameAndTerminalCode(String username, String terminalCode) {
+        return securityServiceProvider.findGeneralPersonByUsernameAndTerminalCode(username, terminalCode);
     }
 
     private BaseTerminalAuthenticationToken extractTokenByAuthenticationRequest(ClientAuthenticationRequest request,

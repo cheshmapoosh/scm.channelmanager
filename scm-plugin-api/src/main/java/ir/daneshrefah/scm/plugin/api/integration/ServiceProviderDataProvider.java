@@ -1,12 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.Nationality;
-import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.

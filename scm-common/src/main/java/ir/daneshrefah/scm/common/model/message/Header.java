@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import lombok.Builder;
@@ -25,12 +25,12 @@ public class Header implements Serializable {
     private final MessageRequestInfo request;
     private Authentication authentication;
     private boolean isTransactionAuthenticated;
-    private String correlationId;
-    private Channel channel;
-    private TerminalServiceAccess serviceAccess;
+    private final String correlationId;
+    private final Channel channel;
+    private final TerminalServiceAccess serviceAccess;
     @Builder.Default
-    private int level = 1;
-    private String parentMessageId;
+    private final int level = 1;
+    private final String parentMessageId;
     private final String messageId = UUID.randomUUID().toString();
 
     public void authenticate(Authentication authentication) {
@@ -41,9 +41,9 @@ public class Header implements Serializable {
         this.isTransactionAuthenticated = isTransactionAuthenticated;
     }
 
-    public PersonProfile getPersonProfile() {
+    public UserProfile getUserProfile() {
         if (null != authentication) {
-            return authentication.getPersonProfile();
+            return authentication.getProfile();
         }
         return null;
     }

@@ -42,7 +42,7 @@ public class TerminalServiceImpl implements TerminalService {
         if (StringUtils.isEmpty(code)) {
             return Optional.empty();
         }
-        return findAllTerminals().stream().filter(terminal -> code.equals(terminal.getCode())).findFirst();
+        return findAllTerminals().stream().filter(terminal -> code.equalsIgnoreCase(terminal.getCode())).findFirst();
     }
 
     @Override

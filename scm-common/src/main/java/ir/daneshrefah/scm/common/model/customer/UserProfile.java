@@ -9,40 +9,52 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Description of the class or purpose of the file.
+ *
+ * User Profile hold the data of effective user. it means that in delegation mode it holds the data of delegated user.
+ * but in normal mode it holds the data of logged-in user.
  *
  * @author reza jamshidi
  * @version 1.0
  * @since 2024-01-13
  */
-public class PersonProfile implements Serializable {
+@Getter
+public class UserProfile implements Serializable {
 
-    @Getter
-    private final PersonId personId;
+    /**
+     * this property in delegation mode refer to delegated user and in normal mode hold the logged-in nickname
+     * */
+    private final String nickname;
+    private String personUsername;
+    private Long personId;
     private List<MembershipTerminalAccess> memberships;
-//    private final Map<String, Customer> customers = new HashMap<>();
 
-    @Getter
     @Setter
     private List<ServiceAccess> serviceAccesses;
 
-    public PersonProfile(@NonNull String username, @NonNull Long id) {
-        this.personId = new PersonId(username, id);
+    public UserProfile(@NonNull String nickname, @NonNull String personUsername, @NonNull Long personId) {
+        this.nickname = nickname;
+        this.personUsername = personUsername;
+        this.personId = personId;
+    }
+
+    public UserProfile(@NonNull String nickname) {
+        this.nickname = nickname;
+    }
+
+    public UserProfile() {
+        this.nickname = "ANONYMOUS";
     }
 
     public void loadMembership(List<MembershipTerminalAccess> memberships) {
         this.memberships = memberships;
     }
 
-    public List<MembershipTerminalAccess> getMemberships() {
-        return this.memberships;
-    }
-
     public boolean hasMembership(String providerId) {
-        if (StringUtils.isEmpty(providerId) || null == memberships || memberships.size() < 1) {
+        if (StringUtils.isEmpty(providerId) || Objects.isNull(memberships) || memberships.size() < 1) {
             return false;
         }
         return memberships.stream().anyMatch(m -> providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId()));
@@ -60,24 +72,23 @@ public class PersonProfile implements Serializable {
         return null != memberships;
     }
 
-    /*public boolean isCustomerAssetLoaded(String providerId) {
-        return null != customers && null != customers.get(providerId) && null != customers.get(providerId).getAssets();
+    public boolean isPersonInfoLoaded() {
+        return StringUtils.isNotEmpty(personUsername);
     }
 
-    public void addCustomer(String providerId, Customer customer) {
-        customers.put(providerId, customer);
-    }*/
+    public void loadPersonInfo(@NonNull String personUsername, @NonNull Long personId) {
+        this.personUsername = personUsername;
+        this.personId = personId;
+    }
 
     public boolean hasServiceAccess(String terminalCode, String serviceCode, Object asset) {
         if (null == serviceAccesses || serviceAccesses.isEmpty()) {
             return false;
         }
         return serviceAccesses.stream()
-                .anyMatch(serviceAccess -> {
-                    return (serviceAccess.getService().getCode().equals(serviceCode) &&
-                            (null == serviceAccess.getAssetId() ||
-                                    serviceAccess.getAssetId().equals(asset)));
-                });
+                .anyMatch(serviceAccess -> (serviceAccess.getService().getCode().equals(serviceCode) &&
+                        (null == serviceAccess.getAssetId() ||
+                                serviceAccess.getAssetId().equals(asset))));
     }
 
     public MembershipTerminalAccess findAsset(String providerId, String assetValue, AssetType assetType) {
@@ -95,13 +106,6 @@ public class PersonProfile implements Serializable {
 
     public boolean hasAssetAccess(String providerId, String assetValue, AssetType assetType) {
         return null != findAsset(providerId, assetValue, assetType);
-    }
-
-    /**
-     * personProfileId ref to USER.USERNAME
-     * personId ref to USER.USER_ID
-     */
-    public record PersonId(String username, Long id) implements Serializable {
     }
 
 }

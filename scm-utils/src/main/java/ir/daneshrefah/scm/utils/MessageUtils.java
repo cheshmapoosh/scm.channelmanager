@@ -7,9 +7,8 @@ import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 
-import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLIENT_ID;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -126,7 +125,7 @@ public class MessageUtils {
 
     public static Authentication getAuthentication(Message message) {
         return null != message && null != message.getHeader() && null != message.getHeader().getAuthentication() &&
-                message.getHeader().getAuthentication().isAuthenticated() ? message.getHeader().getAuthentication() : null;
+                message.getHeader().getAuthentication().isFullyAuthenticated() ? message.getHeader().getAuthentication() : null;
     }
     public boolean hasAuthority(Message message, String authority) {
         return null != message && message.getHeader().getAuthentication().isAuthenticated() &&
@@ -135,34 +134,23 @@ public class MessageUtils {
 
     public static String getUsername(Message message) {
         Authentication authentication = getAuthentication(message);
-        if (null == authentication) {
+        if (Objects.isNull(authentication)) {
             return null;
         }
-        String username = message.getHeader().getRequest().getUsername();
-        if (StringUtils.isEmpty(username)) {
-            username = authentication.getName();
-        }
-        return username;
+        return message.getHeader().getAuthentication().getProfile().getNickname();
     }
 
     public static String getCSPUsername(Message message) {
         Authentication authentication = getAuthentication(message);
-        if (null == authentication) {
+        if (Objects.isNull(authentication) || !authentication.isDelegated()) {
             return null;
         }
-        String authenticationUsername = authentication.getName();
-        String username = message.getHeader().getRequest().getUsername();
-        if (StringUtils.isEmpty(username) || StringUtils.notEquals(username, authenticationUsername)) {
-            return null;
-        }
-        return authenticationUsername;
+        return authentication.getName();
     }
 
     public static boolean isDelegated(Message message) {
-        String username = getUsername(message);
-        String authenticationUsername = getCSPUsername(message);
-        return StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(authenticationUsername) &&
-                StringUtils.notEquals(username, authenticationUsername);
+        Authentication authentication = getAuthentication(message);
+        return Objects.nonNull(authentication) && authentication.isDelegated();
     }
 
 }

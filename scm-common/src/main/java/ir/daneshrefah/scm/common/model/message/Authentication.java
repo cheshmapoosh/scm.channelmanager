@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 
 import java.io.Serializable;
@@ -14,23 +14,25 @@ import java.io.Serializable;
  */
 public interface Authentication extends Serializable {
 
-    public String getName();
+    String getName();
 
-    public String getPersonUsername();
+    UserProfile getProfile();
 
-    public PersonProfile getPersonProfile();
+    String getTerminalCode();
 
-    public String getTerminalCode();
+    boolean isAnonymous();
 
-    public boolean isAnonymous();
+    boolean isDelegated();
 
-    public boolean isAuthenticated();
+    boolean isAuthenticated();
 
-    public boolean hasAuthority(String authorityName);
+    boolean isFullyAuthenticated();
 
-    public boolean hasError();
+    boolean hasAuthority(String authorityName);
 
-    public AuthenticationMethod getAuthenticationMethod();
-//    public Exception getException();
+    boolean hasError();
+
+    AuthenticationMethod getAuthenticationMethod();
+//    Exception getException();
 
 }

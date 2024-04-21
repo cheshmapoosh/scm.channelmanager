@@ -20,6 +20,9 @@ import java.time.Instant;
 public abstract class Event {
 
     private final String correlationId;
+    private final String messageId;
+    private final String parentMessageId;
+    private final int level;
     private final String terminalCode;
     private final String channelCode;
     private final String username;

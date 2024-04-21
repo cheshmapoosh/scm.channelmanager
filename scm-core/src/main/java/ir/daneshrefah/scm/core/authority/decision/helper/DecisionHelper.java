@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.helper;
 
 import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.customer.PersonProfile;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -44,14 +44,14 @@ public class DecisionHelper {
         reloadCache();
     }
 
-    public PersonProfile fillServiceAccessForProfile(PersonProfile profile, String terminalCode) {
+    public UserProfile fillServiceAccessForProfile(UserProfile profile, String terminalCode) {
         /*
         * Controls if the 'service access' data has already been loaded, does not reload.
         * */
         if (null != profile.getServiceAccesses()) {
             return profile;
         }
-        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonProfileId(profile.getPersonId().username());
+        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonProfileId(profile.getPersonUsername());
         profile.setServiceAccesses(serviceAccesses);
         return profile;
     }

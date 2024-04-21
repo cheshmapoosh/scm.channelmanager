@@ -31,6 +31,12 @@ public class PersonController {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPagedPersonList(request));
     }
 
+    @GetMapping("/find-nickname/{nickname}/{terminalCode}")
+    public ResponseEntity<GeneralPerson> findGeneralPersonByNicknameAndTerminalCode(@PathVariable("nickname") String nickname,
+                                                                                    @PathVariable("terminalCode") String terminalCode) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByNicknameAndTerminalCode(nickname, terminalCode));
+    }
+
     @GetMapping("/{personId}/roles")
     public ResponseEntity<List<Role>> findUserRoleList(@PathVariable("personId") Long personId) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonRoleList(personId));

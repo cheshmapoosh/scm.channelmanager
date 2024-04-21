@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDataba
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
@@ -34,9 +35,9 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     private final CIFService cifService;
     private final RoleRepository roleRepository;
 
-    public PersonServiceDatabaseImpl(PersonRepository personRepository, RoleRepository roleRepository,
+    public PersonServiceDatabaseImpl(PersonRepository personRepository, TerminalService terminalService, RoleRepository roleRepository,
                                      CIFService cifService) {
-        super(personRepository);
+        super(terminalService, personRepository);
         this.roleRepository = roleRepository;
         this.cifService = cifService;
     }
