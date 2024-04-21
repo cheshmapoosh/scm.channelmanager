@@ -23,4 +23,9 @@ public interface ChannelService {
 
     PagedResponseData<Channel> findPagedChannels(ChannelFindRequest request);
 
+    Channel createChannel(ChannelCreateRequest request);
+
+    void deleteChannel(ChannelDeleteRequest request);
+
+    Channel editChannel(ChannelEditRequest request);
 }

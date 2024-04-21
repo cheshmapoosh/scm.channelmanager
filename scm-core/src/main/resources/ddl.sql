@@ -197,7 +197,7 @@ VALUES ('0C2E3FEA-A12C-432F-A21F-12EFABC1DEC', 'SVC_CHANNEL_EDIT', 'ویرایش
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('AB3F2C3E-A12D-421A-B23B-23FA3C2BEAD', 'SVC_CHANNEL_DELETE', 'حذف کانال', '', 1, 1, 7, 2, 1,
-        'bean:channelManagementService.deleteChannel(ir.daneshrefah.scm.common.service.channel.ChanelDeleteRequest)','0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
+        'bean:channelManagementService.deleteChannel(ir.daneshrefah.scm.common.service.channel.ChannelDeleteRequest)','0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
 
 --------------------------------------------- SERVICE_MANAGEMENT_SERVICES ----------------------------------------------
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)

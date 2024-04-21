@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * Description of the class or purpose of the file.
  *
