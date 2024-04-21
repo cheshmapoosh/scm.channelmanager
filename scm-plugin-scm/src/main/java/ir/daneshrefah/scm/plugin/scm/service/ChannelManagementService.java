@@ -39,23 +39,21 @@ public class ChannelManagementService extends AbstractJavaService {
         if (StringUtils.isEmpty(channelId)) {
             throw new MissingRequiredInputException("channelId");
         }
-        Optional<Channel> channelById = channelService.findChannelById(channelId);
-        if (channelById.isEmpty()) {
-            throw new NoMatchRecordFoundException("channel");
-        }
-        return channelById.get();
+        return channelService
+                .findChannelById(channelId)
+                .orElseThrow(()->new NoMatchRecordFoundException("channel"));
     }
 
     public Channel createChannel(ChannelCreateRequest request) {
-        return null;
+        return channelService.createChannel(request);
     }
 
     public Channel editChannel(ChannelEditRequest request) {
-        return null;
+        return channelService.editChannel(request);
     }
 
-    public Channel deleteChannel(ChannelDeleteRequest request) {
-        return null;
+    public void deleteChannel(ChannelDeleteRequest request) {
+        channelService.deleteChannel(request);
     }
 
 }

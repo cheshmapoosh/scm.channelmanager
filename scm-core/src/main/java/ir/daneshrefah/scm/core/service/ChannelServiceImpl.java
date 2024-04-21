@@ -1,17 +1,24 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.service.channel.ChannelFindRequest;
-import ir.daneshrefah.scm.common.service.channel.ChannelService;
+import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
+import ir.daneshrefah.scm.common.service.channel.*;
+import ir.daneshrefah.scm.core.entity.terminal.ChannelEntity;
 import ir.daneshrefah.scm.core.mapper.ChannelMapper;
 import ir.daneshrefah.scm.core.repository.ChannelRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -21,6 +28,7 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Autowired
     private final ChannelRepository channelRepository;
+    private final TerminalRepository terminalRepository;
     private List<Channel> channels;
 
     @Override
@@ -29,6 +37,10 @@ public class ChannelServiceImpl implements ChannelService {
             channels = ChannelMapper.INSTANCE.entitiesToModels(channelRepository.findAll());
         }
         return channels;
+    }
+
+    private void cleanChannelCacheList() {
+        this.channels = null;
     }
 
     @Override
@@ -50,11 +62,131 @@ public class ChannelServiceImpl implements ChannelService {
     @Override
     public PagedResponseData<Channel> findPagedChannels(ChannelFindRequest request) {
         List<Channel> channelList = findAllChannels().stream()
-                .filter(channel -> null == request || null == request.getCode() || request.getCode().equals(channel.getCode()))
-                .filter(channel -> null == request || null == request.getTerminalCode() || request.getTerminalCode().equals(channel.getTerminal().getCode()))
-                .filter(channel -> null == request || null == request.getProtocol() || request.getProtocol().equals(channel.getProtocol()))
+                .filter(channel -> Objects.isNull(request) || StringUtils.isEmpty(request.getCode()) || request.getCode().equalsIgnoreCase(channel.getCode()))
+                .filter(channel -> Objects.isNull(request) || StringUtils.isEmpty(request.getTerminalCode()) || request.getTerminalCode().equalsIgnoreCase(channel.getTerminal().getCode()))
+                .filter(channel -> Objects.isNull(request) || Objects.isNull(request.getProtocol()) || request.getProtocol().equals(channel.getProtocol()))
+                .filter(channel -> Objects.isNull(request) || StringUtils.isEmpty(request.getTitle()) || (StringUtils.isEmpty(channel.getTitle()) ? StringUtils.EMPTY : channel.getTitle()).toLowerCase().contains(request.getTitle().toLowerCase()))
+                .filter(channel -> Objects.isNull(request) || StringUtils.isEmpty(request.getCreator()) || (StringUtils.isEmpty(channel.getCreator()) ? StringUtils.EMPTY : channel.getCreator()).toLowerCase().contains(request.getCreator().toLowerCase()))
+                .filter(channel -> Objects.isNull(request) || StringUtils.isEmpty(request.getLastEditor()) || (StringUtils.isEmpty(channel.getLastEditor()) ? StringUtils.EMPTY : channel.getLastEditor()).toLowerCase().contains(request.getLastEditor().toLowerCase()))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, channelList);
     }
 
+    @Override
+    public Channel createChannel(ChannelCreateRequest request) {
+        validateCreateChannelRequest(request);
+        TerminalEntity terminalEntity = terminalRepository
+                .findByCode(request.getTerminalCode())
+                .orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
+        ChannelEntity channelEntity = mapToChannelEntity(request, terminalEntity);
+        ChannelEntity saved = channelRepository.save(channelEntity);
+        cleanChannelCacheList();
+        return findChannelById(saved.getId()).orElse(null);
+    }
+
+    @Override
+    public void deleteChannel(ChannelDeleteRequest request) {
+        validateDeleteChannelRequest(request);
+        channelRepository.findById(request.getId())
+                .ifPresentOrElse(channelEntity -> {
+                    if (!channelEntity.getLastEditDate().equals(request.getLastEditDate())) {
+                        throw new RecordVersionException("channel");
+                    }
+                    int effectedRow = channelRepository.deleteByIdAndLastEditDate(request.getId(), request.getLastEditDate());
+                    if (effectedRow > 0) {
+                        cleanChannelCacheList();
+                    } else {
+                        throw new RecordVersionException("channel");
+                    }
+                }, () -> {
+                    throw new NoMatchRecordFoundException("channel");
+                });
+    }
+
+    @Override
+    public Channel editChannel(ChannelEditRequest request) {
+        validateEditChannelRequest(request);
+        ChannelEntity foundChannel = channelRepository
+                .findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("channel"));
+        if (!foundChannel.getLastEditDate().equals(request.getLastEditDate())) {
+            throw new RecordVersionException("channel");
+        }
+        fillDynamicUpdateProperties(foundChannel, request);
+        channelRepository.save(foundChannel);
+        cleanChannelCacheList();
+        return findChannelById(request.getId()).orElse(null);
+    }
+
+    private void fillDynamicUpdateProperties(ChannelEntity foundChannel, ChannelEditRequest request) {
+        if (Objects.nonNull(request.getProtocol())) {
+            foundChannel.setProtocol(request.getProtocol());
+        }
+        if (StringUtils.isNotEmpty(request.getCode()) && !foundChannel.getCode().equalsIgnoreCase(request.getCode())) {
+            channelRepository.findByCode(request.getCode()).ifPresent(channelEntity -> {
+                throw new DuplicatedRecordFoundException("channel");
+            });
+            foundChannel.setCode(request.getCode());
+        }
+        if (StringUtils.isNotEmpty(request.getTitle()) && !foundChannel.getTitle().equals(request.getTitle())) {
+            foundChannel.setTitle(request.getTitle());
+        }
+        if (StringUtils.isNotEmpty(request.getChannelClassName()) && !foundChannel.getChannelClassName().equals(request.getChannelClassName())) {
+            foundChannel.setChannelClassName(request.getChannelClassName());
+        }
+        if (StringUtils.isNotEmpty(request.getMetadata()) && !foundChannel.getMetadata().equals(request.getMetadata())) {
+            foundChannel.setMetadata(request.getMetadata());
+        }
+        if (StringUtils.isNotEmpty(request.getTerminalCode()) && !foundChannel.getTerminal().getCode().equalsIgnoreCase(request.getTerminalCode())) {
+            TerminalEntity foundTerminal = terminalRepository.findByCode(request.getTerminalCode().toUpperCase()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
+            foundChannel.setTerminal(foundTerminal);
+        }
+
+    }
+
+    private void validateEditChannelRequest(ChannelEditRequest request) {
+        String id = request.getId();
+        LocalDateTime lastEditDate = request.getLastEditDate();
+        ValidationUtils.checkBlankString(id, () -> new MissingRequiredInputException("id"));
+        ValidationUtils.checkNull(lastEditDate, () -> new MissingRequiredInputException("lastEditDate"));
+    }
+
+    private void validateDeleteChannelRequest(ChannelDeleteRequest request) {
+        String id = request.getId();
+        LocalDateTime lastEditDate = request.getLastEditDate();
+        ValidationUtils.checkBlankString(id, () -> new MissingRequiredInputException("id"));
+        ValidationUtils.checkNull(lastEditDate, () -> new MissingRequiredInputException("lastEditDate"));
+    }
+
+    private ChannelEntity mapToChannelEntity(ChannelCreateRequest request, TerminalEntity terminalEntity) {
+        ChannelEntity channelEntity = new ChannelEntity();
+        channelEntity.setTerminal(terminalEntity);
+        channelEntity.setCode(request.getCode());
+        channelEntity.setTitle(request.getTitle());
+        channelEntity.setProtocol(request.getProtocol());
+        channelEntity.setChannelClassName(request.getChannelClassName());
+        channelEntity.setMetadata(Objects.nonNull(request.getMetadata()) ? request.getMetadata() : StringUtils.EMPTY);
+        return channelEntity;
+    }
+
+
+    private void validateCreateChannelRequest(ChannelCreateRequest request) {
+        ChannelProtocol protocol = request.getProtocol();
+        String code = request.getCode();
+        String title = request.getTitle();
+        String channelClassName = request.getChannelClassName();
+        String metadata = request.getMetadata();
+        String terminalCode = request.getTerminalCode();
+        ValidationUtils.checkNull(protocol, () -> new InvalidInputException("protocol"));
+        ValidationUtils.checkBlankString(code, () -> new InvalidInputException("code"));
+        ValidationUtils.checkBlankString(title, () -> new InvalidInputException("title"));
+        ValidationUtils.checkBlankString(channelClassName, () -> new InvalidInputException("channelClassName"));
+        ValidationUtils.checkBlankString(terminalCode, () -> new InvalidInputException("terminalCode"));
+        if (Objects.nonNull(metadata)) {
+            ValidationUtils.checkBlankString(metadata, () -> new InvalidInputException("metadata"));
+        }
+        channelRepository.findByCode(code).ifPresent(channelEntity -> {
+            throw new DuplicatedRecordFoundException("channel");
+        });
+        request.setTerminalCode(request.getTerminalCode().toUpperCase());
+    }
 }

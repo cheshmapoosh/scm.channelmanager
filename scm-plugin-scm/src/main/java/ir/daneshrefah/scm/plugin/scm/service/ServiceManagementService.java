@@ -43,21 +43,6 @@ public class ServiceManagementService extends AbstractJavaService {
 
     public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
-       /* if (null == message.getPayload() || message.getPayload().isNull() || message.getPayload().isEmpty()) {
-            throw new MissingRequiredInputException("service data");
-        }
-        String serviceId = message.getPayloadValue("id");
-        if (StringUtils.isEmpty(serviceId)) {
-            throw new MissingRequiredInputException("serviceId");
-        }
-        ir.daneshrefah.scm.common.model.service.Service newService = null;
-        try {
-            newService = objectMapper.treeToValue(message.getPayload(),
-                    ir.daneshrefah.scm.common.model.service.Service.class);
-        } catch (JsonProcessingException e) {
-            throw new InvalidRequestFormatException("payload", e);
-        }
-        */
     }
 
     public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest request) {

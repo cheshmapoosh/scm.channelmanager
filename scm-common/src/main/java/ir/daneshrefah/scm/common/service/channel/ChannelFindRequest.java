@@ -17,5 +17,8 @@ public class ChannelFindRequest extends PagedRequestData {
     private String code;
     private String terminalCode;
     private ChannelProtocol protocol;
+    private String creator;
+    private String lastEditor;
+    private String title;
 
 }
