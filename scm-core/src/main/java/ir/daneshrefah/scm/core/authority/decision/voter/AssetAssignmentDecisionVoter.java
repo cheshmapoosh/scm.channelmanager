@@ -2,10 +2,13 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+
+import java.util.Objects;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ASSET_IS_EMPTY;
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ASSET_NOT_ASSIGNED;
@@ -20,20 +23,21 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ASSET;
  */
 public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
 
-    public AssetAssignmentDecisionVoter(DecisionHelper decisionHelper) {
-        super(decisionHelper);
+    public AssetAssignmentDecisionVoter(PersonProfileLoader personProfileLoader) {
+        super(personProfileLoader);
     }
 
     @Override
     protected int vote(UserProfile profile, TerminalServiceAccess service, String asset) {
         ExternalServiceProvider provider = service.getService() instanceof ExternalService ?
                 ((ExternalService) service.getService()).getServiceProvider() : null;
-        if (null == provider || !provider.isCustomerProvided()) {
+        if (Objects.isNull(provider) || !provider.isCustomerProvided()) {
             return ACCESS_ABSTAIN;
         }
-        if (null == asset) {
+        if (StringUtils.isEmpty(asset)) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_IS_EMPTY, "asset must not be empty.");
         }
+        profile = personProfileLoader.preparePersonProfileMemberships(profile, service.getTerminal().getCode());
         boolean isAssetAssigned = profile.hasAssetAccess(provider.getId(), asset, null);
         if (!isAssetAssigned) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_NOT_ASSIGNED, "asset not assigned.");

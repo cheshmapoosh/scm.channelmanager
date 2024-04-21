@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_SERVICE_NOT_ASSIGNED_TO_USER;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_SERVICE;
@@ -17,8 +17,8 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_SERVICE;
  */
 public class ServiceAssignmentDecisionVoter extends BaseAssignmentVoter {
 
-    public ServiceAssignmentDecisionVoter(DecisionHelper decisionHelper) {
-        super(decisionHelper);
+    public ServiceAssignmentDecisionVoter(PersonProfileLoader personProfileLoader) {
+        super(personProfileLoader);
     }
 
     @Override

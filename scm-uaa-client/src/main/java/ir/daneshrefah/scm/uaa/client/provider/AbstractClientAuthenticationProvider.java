@@ -60,7 +60,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
         String sessionKey = ((BaseAuthenticationToken) authentication).getSessionCacheKey();
         UserAuthentication user = null;
         if (StringUtils.isNotEmpty(sessionKey)) {
-            user = null;//this.sessionCache.getSessionFromCache(sessionKey);
+            user = this.sessionCache.getSessionFromCache(sessionKey);
         }
         if (user == null) {
             cacheWasUsed = false;

@@ -25,8 +25,8 @@ public class ServiceAccessService {
 
     private final ServiceAccessRepository serviceAccessRepository;
 
-    public List<ServiceAccess> findByPersonProfileId(String personProfileId) {
-        List<ServiceAccessEntity> entities = serviceAccessRepository.findByPersonProfileId(personProfileId);
+    public List<ServiceAccess> findByPersonUsername(String personUsername) {
+        List<ServiceAccessEntity> entities = serviceAccessRepository.findByPersonProfileId(personUsername);
         return ServiceAccessMapper.INSTANCE.entitiesToModels(entities);
     }
 

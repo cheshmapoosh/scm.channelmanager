@@ -11,8 +11,7 @@ public class AuthenticationDecisionVoter extends DecisionVoter {
 
     @Override
     protected int vote(Message message) {
-        if (message.getHeader().getAuthentication().isAuthenticated() &&
-                !message.getHeader().getAuthentication().isAnonymous()) {
+        if (message.getHeader().getAuthentication().isFullyAuthenticated()) {
             return ACCESS_ABSTAIN;
         }
         throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_REQUIRED,

@@ -88,9 +88,11 @@ public class UserProfile implements Serializable {
             return false;
         }
         return serviceAccesses.stream()
-                .anyMatch(serviceAccess -> (serviceAccess.getService().getCode().equals(serviceCode) &&
-                        (null == serviceAccess.getAssetId() ||
-                                serviceAccess.getAssetId().equals(asset))));
+                .anyMatch(serviceAccess -> (
+                        serviceAccess.getService().getCode().equals(serviceCode) &&
+                        (Objects.isNull(serviceAccess.getTerminal()) || StringUtils.isEmpty(terminalCode) || serviceAccess.getTerminal().getCode().equals(terminalCode)) &&
+                        (null == serviceAccess.getAssetId() || serviceAccess.getAssetId().equals(asset))
+                ));
     }
 
     public MembershipTerminalAccess findAsset(String providerId, String assetValue, AssetType assetType) {

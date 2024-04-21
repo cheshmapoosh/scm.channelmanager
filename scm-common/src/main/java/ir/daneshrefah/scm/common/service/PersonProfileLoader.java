@@ -14,6 +14,10 @@ public interface PersonProfileLoader {
 
     UserProfile preparePersonProfile(Authentication authentication);
 
+    UserProfile preparePersonProfileMemberships(UserProfile profile, String terminalCode);
+
     UserProfile preparePersonProfileMemberships(Authentication authentication);
+
+    UserProfile fillServiceAccessForProfile(UserProfile profile, String terminalCode);
 
 }
