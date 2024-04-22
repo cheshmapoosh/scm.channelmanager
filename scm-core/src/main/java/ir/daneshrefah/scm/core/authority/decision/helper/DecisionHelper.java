@@ -51,7 +51,7 @@ public class DecisionHelper {
         if (null != profile.getServiceAccesses()) {
             return profile;
         }
-        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonProfileId(profile.getPersonUsername());
+        List<ServiceAccess> serviceAccesses = serviceAccessService.findByPersonUsername(profile.getPersonUsername());
         profile.setServiceAccesses(serviceAccesses);
         return profile;
     }

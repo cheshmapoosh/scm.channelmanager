@@ -1,5 +1,5 @@
 scm:
-  channels: IB4DEV
+  channels: SCM4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
@@ -52,24 +52,26 @@ scm:
           myMap:
             in-memory-format: object
             time-to-live-seconds: 10
-#  swagger:
-#    server-host: 10.10.5.102
+  swagger:
+    server-host: 10.10.8.46
 
 
 server:
   servlet:
     context-path: /scm
   port: 8086
-#spring:
-#  datasource:
-#    url: jdbc:db2://10.10.4.104:50001/DBREFSW
-#    username: db2inst1
-#    password: db2inst1
-#    driver-class-name: com.ibm.db2.jcc.DB2Driver
-#  jpa:
-#    properties:
-#      hibernate:
-#        default_schema: REF
+spring:
+  datasource:
+    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+    username: db2inst1
+    password: db2inst1
+    driver-class-name: com.ibm.db2.jcc.DB2Driver
+  jpa:
+    properties:
+      hibernate:
+        default_schema: REF
+        format_sql: true
+        show_sql: true
 #  mvc:
 #    servlet:
 #      load-on-startup: 1

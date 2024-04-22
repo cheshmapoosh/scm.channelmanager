@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -40,14 +41,14 @@ public class TerminalServiceImpl implements TerminalService {
 
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
         if (null == terminalServiceAccesses) {
-            terminalServiceAccesses = Collections.synchronizedList(TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll()));
+            terminalServiceAccesses = TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll());
         }
         return terminalServiceAccesses;
     }
 
     public List<Terminal> findAllTerminals() {
         if (null == terminals) {
-            terminals = Collections.synchronizedList(TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll()));
+            terminals = TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll());
         }
         return terminals;
     }
@@ -163,17 +164,17 @@ public class TerminalServiceImpl implements TerminalService {
     @Override
     public void deleteTerminal(TerminalDeleteRequest request) {
         validateTerminalDeleteRequest(request);
-         terminalRepository
-                 .findById(request.getId())
-                .ifPresentOrElse(found->{
+        terminalRepository
+                .findById(request.getId())
+                .ifPresentOrElse(found -> {
                     //if record version passed.
-                    int effectedRows = terminalRepository.deleteByIdAndLastEditDate(found.getId(), found.getLastEditDate());
-                    if (effectedRows == 0){
+                    try {
+                        terminalRepository.delete(found);
+                    } catch (ObjectOptimisticLockingFailureException e) {
                         throw new RecordVersionException("terminal");
-                    }else {
-                        removeTerminalListCache(TerminalMapper.INSTANCE.toModel(found));
                     }
-                },()->{
+                    removeTerminalListCache(TerminalMapper.INSTANCE.toModel(found));
+                }, () -> {
                     throw new RecordVersionException("terminal");
                 });
     }
@@ -186,7 +187,11 @@ public class TerminalServiceImpl implements TerminalService {
                 .orElseThrow(() -> new NoMatchRecordFoundException(request.getCode()));
         if (found.getLastEditDate().equals(request.getLastEditDate())) {
             dynamicUpdateTerminalEntity(found, request);
-            terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
+            try {
+                terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
+            } catch (ObjectOptimisticLockingFailureException e) {
+                throw new RecordVersionException("terminal");
+            }
             removeTerminalListCache(found);
             return addTerminalListCache(found);
         } else {
@@ -195,7 +200,7 @@ public class TerminalServiceImpl implements TerminalService {
     }
 
     private void dynamicUpdateTerminalEntity(Terminal terminal, TerminalEditRequest request) {
-        terminalCodeDynamicUpdate(terminal,request);
+        terminalCodeDynamicUpdate(terminal, request);
         terminal.setTitle(Objects.nonNull(request.getTitle()) ? request.getTitle() : terminal.getTitle());
         terminal.setStatus(Objects.nonNull(request.getStatus()) ? request.getStatus() : terminal.getStatus());
         terminal.setSupportCheckAssetAccess(Objects.nonNull(request.getSupportCheckAssetAccess()) ? request.getSupportCheckAssetAccess() : terminal.isSupportCheckAssetAccess());
@@ -256,7 +261,7 @@ public class TerminalServiceImpl implements TerminalService {
         return LEGACY_TERMINAL_CODE_ID_CACHE
                 .computeIfAbsent(code, toCacheCode -> {
                     Long legacyTerminalId = terminalRepository.findLegacyTerminalId(code);
-                    if (Objects.isNull(legacyTerminalId)){
+                    if (Objects.isNull(legacyTerminalId)) {
                         throw new InvalidInputException("code");
                     }
                     //if the method could not find id it means the terminal code

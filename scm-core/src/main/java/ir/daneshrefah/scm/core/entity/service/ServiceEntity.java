@@ -1,14 +1,14 @@
 package ir.daneshrefah.scm.core.entity.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceStatusConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
-import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Table(name = "TBL_SCM_SERVICE")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "SERVICE_IMPLEMENTATION_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
-public abstract class ServiceEntity extends AbstractDefaultEntity<String> {
+public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
