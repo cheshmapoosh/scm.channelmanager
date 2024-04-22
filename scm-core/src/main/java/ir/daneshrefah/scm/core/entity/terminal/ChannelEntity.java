@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import ir.daneshrefah.scm.core.converter.ChannelProtocolConverter;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_CHANNEL")
-public class ChannelEntity extends AbstractDefaultEntity<String> {
+public class ChannelEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
     @Column(name = "CHANNEL_ID")

@@ -27,10 +27,10 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -49,6 +49,10 @@ public class ServiceServiceImpl implements ServiceService {
     private final ServiceAccessRepository serviceAccessRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ExternalServiceProvider> serviceProviders;
+
+    private static ObjectMapper getObjectMapper() {
+        return ApplicationConfig.getObjectMapperInstance();
+    }
 
     @Override
     public List<ExternalServiceProvider> findServiceProviderList() {
@@ -86,7 +90,7 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
         if (null == services) {
-            services = Collections.synchronizedList(ServiceMapper.INSTANCE.toServices(serviceRepository.findAll()));
+            services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
         }
         return services;
     }
@@ -213,7 +217,11 @@ public class ServiceServiceImpl implements ServiceService {
                 .ifPresentOrElse(service -> {
                     if (service.getLastEditDate().equals(request.getLastEditDate())) {
                         applyChangesDynamically(service, request);
-                        serviceRepository.save(service);
+                        try {
+                            serviceRepository.save(service);
+                        } catch (ObjectOptimisticLockingFailureException e) {
+                            throw new RecordVersionException("service");
+                        }
                         emptyServiceListCache();
                     } else {
                         throw new RecordVersionException("service");
@@ -233,7 +241,7 @@ public class ServiceServiceImpl implements ServiceService {
         applyEditServiceTypeProperties(serviceEntity, request);
         applyEditStringBasedProperties(serviceEntity, request);
         applyEditBooleanBasedProperties(serviceEntity, request);
-        applyEditJsonBasedProperties(serviceEntity,request);
+        applyEditJsonBasedProperties(serviceEntity, request);
         if (Objects.nonNull(request.getVersion()) && !request.getVersion().equals(serviceEntity.getVersion())) {
             serviceEntity.setVersion(request.getVersion());
         }
@@ -246,40 +254,36 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     private void applyEditJsonBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
-        if (Objects.nonNull(request.getMetadata())){
-            serviceEntity.setMetadata(getCheckedJsonString(request.getMetadata(),"metadata"));
+        if (Objects.nonNull(request.getMetadata())) {
+            serviceEntity.setMetadata(getCheckedJsonString(request.getMetadata(), "metadata"));
         }
-        if (Objects.nonNull(request.getRequestJsonSchema())){
-            serviceEntity.setMetadata(getCheckedJsonString(request.getRequestJsonSchema(),"requestJsonSchema"));
+        if (Objects.nonNull(request.getRequestJsonSchema())) {
+            serviceEntity.setMetadata(getCheckedJsonString(request.getRequestJsonSchema(), "requestJsonSchema"));
         }
-        if (Objects.nonNull(request.getResponseJsonSchema())){
-            serviceEntity.setMetadata(getCheckedJsonString(request.getResponseJsonSchema(),"responseJsonSchema"));
+        if (Objects.nonNull(request.getResponseJsonSchema())) {
+            serviceEntity.setMetadata(getCheckedJsonString(request.getResponseJsonSchema(), "responseJsonSchema"));
         }
     }
 
-    private JsonNode getCheckedJsonString(String metadata,String property) {
+    private JsonNode getCheckedJsonString(String metadata, String property) {
         try {
             return getObjectMapper().readTree(metadata);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new InvalidInputException(property);
         }
     }
 
-    private static ObjectMapper getObjectMapper() {
-        return ApplicationConfig.getObjectMapperInstance();
-    }
-
     private void applyEditBooleanBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
-        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessAsset(),serviceEntity.getCheckAccessAsset(),Boolean.class));
-        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessService(),serviceEntity.getCheckAccessService(),Boolean.class));
-        serviceEntity.setCheckAccessFirstAuthentication(compareObject(request.getCheckAccessFirstAuthentication(),serviceEntity.getCheckAccessFirstAuthentication(),Boolean.class));
-        serviceEntity.setCheckAccessSecondAuthentication(compareObject(request.getCheckAccessSecondAuthentication(),serviceEntity.getCheckAccessSecondAuthentication(),Boolean.class));
+        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessAsset(), serviceEntity.getCheckAccessAsset(), Boolean.class));
+        serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessService(), serviceEntity.getCheckAccessService(), Boolean.class));
+        serviceEntity.setCheckAccessFirstAuthentication(compareObject(request.getCheckAccessFirstAuthentication(), serviceEntity.getCheckAccessFirstAuthentication(), Boolean.class));
+        serviceEntity.setCheckAccessSecondAuthentication(compareObject(request.getCheckAccessSecondAuthentication(), serviceEntity.getCheckAccessSecondAuthentication(), Boolean.class));
     }
 
     private void applyEditStringBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
-        serviceEntity.setAssetProperty(compareObject(request.getAssetProperty(),serviceEntity.getAssetProperty(),String.class));
-        serviceEntity.setAmountProperty(compareObject(request.getAmountProperty(),serviceEntity.getAmountProperty(),String.class));
-        serviceEntity.setCustomerProperty(compareObject(request.getCustomerProperty(),serviceEntity.getCustomerProperty(),String.class));
+        serviceEntity.setAssetProperty(compareObject(request.getAssetProperty(), serviceEntity.getAssetProperty(), String.class));
+        serviceEntity.setAmountProperty(compareObject(request.getAmountProperty(), serviceEntity.getAmountProperty(), String.class));
+        serviceEntity.setCustomerProperty(compareObject(request.getCustomerProperty(), serviceEntity.getCustomerProperty(), String.class));
         serviceEntity.setTitle(StringUtils.isNotEmpty(request.getTitle()) ? request.getTitle() : serviceEntity.getTitle());
         serviceEntity.setAlias(StringUtils.isNotEmpty(request.getAlias()) ? request.getAlias() : serviceEntity.getAlias());
         //check service code
@@ -388,12 +392,12 @@ public class ServiceServiceImpl implements ServiceService {
                 .ifPresentOrElse(found -> {
                     if (found.getLastEditDate().equals(request.getLastEditDate())) {
                         //if record version passed.
-                        int effectedRows = serviceRepository.deleteByIdAndLastEditDate(found.getId(), found.getLastEditDate());
-                        if (effectedRows == 0) {
+                        try {
+                            serviceRepository.delete(found);
+                        }catch (ObjectOptimisticLockingFailureException e){
                             throw new RecordVersionException("service");
-                        } else {
-                            emptyServiceListCache();
                         }
+                        emptyServiceListCache();
                     } else {
                         throw new RecordVersionException("service");
                     }

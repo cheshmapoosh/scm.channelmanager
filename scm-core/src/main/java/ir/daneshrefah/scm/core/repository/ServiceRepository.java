@@ -23,7 +23,4 @@ public interface ServiceRepository extends CrudRepository<ServiceEntity, String>
 
     Optional<ServiceEntity> findByCode(String code);
 
-    @Transactional
-    int deleteByIdAndLastEditDate(String id, LocalDateTime lastEditDate);
-
 }

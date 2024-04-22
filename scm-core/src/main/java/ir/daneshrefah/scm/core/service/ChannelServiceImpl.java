@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.core.repository.ChannelRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 @Service
 public class ChannelServiceImpl implements ChannelService {
 
-    @Autowired
     private final ChannelRepository channelRepository;
     private final TerminalRepository terminalRepository;
     private List<Channel> channels;
@@ -92,12 +91,12 @@ public class ChannelServiceImpl implements ChannelService {
                     if (!channelEntity.getLastEditDate().equals(request.getLastEditDate())) {
                         throw new RecordVersionException("channel");
                     }
-                    int effectedRow = channelRepository.deleteByIdAndLastEditDate(request.getId(), request.getLastEditDate());
-                    if (effectedRow > 0) {
-                        cleanChannelCacheList();
-                    } else {
+                    try {
+                        channelRepository.delete(channelEntity);
+                    } catch (ObjectOptimisticLockingFailureException e) {
                         throw new RecordVersionException("channel");
                     }
+                    cleanChannelCacheList();
                 }, () -> {
                     throw new NoMatchRecordFoundException("channel");
                 });
@@ -108,16 +107,18 @@ public class ChannelServiceImpl implements ChannelService {
         validateEditChannelRequest(request);
         ChannelEntity foundChannel = channelRepository
                 .findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("channel"));
-        if (!foundChannel.getLastEditDate().equals(request.getLastEditDate())) {
+        fillDynamicUpdateProperties(foundChannel, request);
+        try {
+            channelRepository.save(foundChannel);
+        } catch (ObjectOptimisticLockingFailureException e) {
             throw new RecordVersionException("channel");
         }
-        fillDynamicUpdateProperties(foundChannel, request);
-        channelRepository.save(foundChannel);
         cleanChannelCacheList();
         return findChannelById(request.getId()).orElse(null);
     }
 
     private void fillDynamicUpdateProperties(ChannelEntity foundChannel, ChannelEditRequest request) {
+        foundChannel.setLastEditDate(request.getLastEditDate());
         if (Objects.nonNull(request.getProtocol())) {
             foundChannel.setProtocol(request.getProtocol());
         }

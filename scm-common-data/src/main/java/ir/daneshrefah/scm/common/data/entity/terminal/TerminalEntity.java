@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.converter.TerminalStatusConverter;
-import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_TERMINAL")
-public class TerminalEntity extends AbstractDefaultEntity<String> {
+public class TerminalEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

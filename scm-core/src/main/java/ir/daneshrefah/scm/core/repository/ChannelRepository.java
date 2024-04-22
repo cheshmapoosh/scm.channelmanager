@@ -11,7 +11,5 @@ import java.util.Optional;
 @Repository
 public interface ChannelRepository extends JpaRepository<ChannelEntity, String> {
 
-    @Transactional
-    int deleteByIdAndLastEditDate(String id, LocalDateTime localDateTime);
     Optional<ChannelEntity> findByCode(String code);
 }
