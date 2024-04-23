@@ -5,11 +5,13 @@ import ir.daneshrefah.scm.core.entity.transformer.TransformerRelationEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface TransformerRelationRepository extends CrudRepository<TransformerRelationEntity, String> {
 
-    Iterable<TransformerRelationEntity> findAllBySourceIdAndRelationType(String sourceId, TransformerRelationType relationType);
+    List<TransformerRelationEntity> findAllBySourceIdAndRelationType(String sourceId, TransformerRelationType relationType);
 
-    Iterable<TransformerRelationEntity> findAllBySourceId(String sourceId);
+    List<TransformerRelationEntity> findAllBySourceId(String sourceId);
 
 }

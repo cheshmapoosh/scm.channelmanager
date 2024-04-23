@@ -32,14 +32,18 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public List<Channel> findAllChannels() {
-        if (null == channels) {
-            channels = ChannelMapper.INSTANCE.entitiesToModels(channelRepository.findAll());
+        if (null == channels || channels.isEmpty()) {
+            synchronized (this) {
+                channels = ChannelMapper.INSTANCE.entitiesToModels(channelRepository.findAll());
+            }
         }
         return channels;
     }
 
     private void cleanChannelCacheList() {
-        this.channels = null;
+        if (Objects.nonNull(this.channels)){
+            this.channels.clear();
+        }
     }
 
     @Override
@@ -47,7 +51,7 @@ public class ChannelServiceImpl implements ChannelService {
         if (StringUtils.isEmpty(id)) {
             return Optional.empty();
         }
-        return findAllChannels().stream().filter(channel -> id.equals(channel.getId())).findFirst();
+        return channelRepository.findById(id).map(ChannelMapper.INSTANCE::toModel);
     }
 
     @Override

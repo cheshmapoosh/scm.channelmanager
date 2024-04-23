@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.common.service.terminal;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.ServiceAccessFindRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,23 +18,29 @@ import java.util.Optional;
  */
 public interface TerminalService {
 
-    public List<Terminal> findAllTerminals();
+    List<Terminal> findAllTerminals();
 
-    public Optional<Terminal> findTerminalById(String id);
+    Optional<Terminal> findTerminalById(String id);
 
-    public Optional<Terminal> findTerminalByCode(String code);
+    Optional<Terminal> findTerminalByCode(String code);
 
-    public PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request);
+    PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request);
 
-    public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
+    List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
 
-    public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
+    Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
 
-    public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
+    TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
 
     Terminal craeteTerminal(TerminalCreateRequest request);
 
     void deleteTerminal(TerminalDeleteRequest request);
 
     Terminal editTerminal(TerminalEditRequest request);
+
+    void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request);
+
+    List<Terminal> findAllTerminalAccessOnService(String serviceId);
+    List<TerminalServiceAccess> findAllTerminalServiceAccesses();
+
 }

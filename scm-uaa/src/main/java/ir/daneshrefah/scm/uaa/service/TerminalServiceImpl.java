@@ -87,4 +87,20 @@ public class TerminalServiceImpl implements TerminalService {
     public Terminal editTerminal(TerminalEditRequest request) {
         throw new RuntimeException("this method is not support.");
     }
+
+    @Override
+    public void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request) {
+        throw new RuntimeException("this method is not support.");
+    }
+
+    @Override
+    public List<Terminal> findAllTerminalAccessOnService(String serviceId) {
+        throw new RuntimeException("this method is not support.");
+    }
+
+    @Override
+    public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
+        throw new RuntimeException("this method is not support.");
+    }
+
 }
