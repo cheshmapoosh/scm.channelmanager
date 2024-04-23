@@ -1,13 +1,13 @@
 scm:
-  channels: SCM4DEV
+  channels: IB4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
-#    iban: http://10.15.8.195:8080/ibanq/services/IBANService
+    #    iban: http://10.15.8.195:8080/ibanq/services/IBANService
     pichack: http://10.15.27.51:8080/dpi/api/pichak
-#    pichack: http://10.15.46.105:8080/dpi/api/pichak
+    #    pichack: http://10.15.46.105:8080/dpi/api/pichak
     sayad: http://10.15.1.98:8080/sayad/services/api
-#    sayad: http://10.15.46.20:8080/sayad/services/api
+  #    sayad: http://10.15.46.20:8080/sayad/services/api
   datasource:
     primary:
       url: jdbc:db2://10.10.4.104:50001/DBREFSW
@@ -52,26 +52,24 @@ scm:
           myMap:
             in-memory-format: object
             time-to-live-seconds: 10
-  swagger:
-    server-host: 10.10.8.46
+#  swagger:
+#    server-host: 10.10.5.102
 
 
 server:
   servlet:
     context-path: /scm
   port: 8086
-spring:
-  datasource:
-    url: jdbc:db2://10.10.4.104:50001/DBREFSW
-    username: db2inst1
-    password: db2inst1
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
-  jpa:
-    properties:
-      hibernate:
-        default_schema: REF
-        format_sql: true
-        show_sql: true
+#spring:
+#  datasource:
+#    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+#    username: db2inst1
+#    password: db2inst1
+#    driver-class-name: com.ibm.db2.jcc.DB2Driver
+#  jpa:
+#    properties:
+#      hibernate:
+#        default_schema: REF
 #  mvc:
 #    servlet:
 #      load-on-startup: 1

@@ -5,10 +5,12 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TerminalServiceAccessRepository extends CrudRepository<TerminalServiceAccessEntity, String> {
 
-    public List<TerminalServiceAccessEntity> findAllByTerminalId(String terminalId);
+    List<TerminalServiceAccessEntity> findAllByTerminalId(String terminalId);
 
+    Optional<TerminalServiceAccessEntity> findByTerminal_IdAndService_Id(String terminalId,String serviceId);
 }

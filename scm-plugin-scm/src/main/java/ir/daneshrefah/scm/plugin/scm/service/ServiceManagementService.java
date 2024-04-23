@@ -1,12 +1,9 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.*;
+import ir.daneshrefah.scm.common.service.TerminalServiceAccessAssignmentResponse;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -51,6 +48,10 @@ public class ServiceManagementService extends AbstractJavaService {
 
     public void deleteService(ServiceDeleteRequest request){
        this.service.deleteService(request);
+    }
+
+    public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request){
+        return this.service.findAllServiceAccessOnTerminal(request);
     }
 
 }

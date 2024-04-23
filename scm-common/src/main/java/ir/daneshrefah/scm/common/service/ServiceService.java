@@ -23,21 +23,24 @@ public interface ServiceService {
 
     ExternalServiceProvider findServiceProviderByIdOrCode(String value);
 
-    public List<Service> findServiceList();
+    List<Service> findServiceList();
 
-    public PagedResponseData<Service> findServiceList(ServiceFindRequest request);
+    PagedResponseData<Service> findServiceList(ServiceFindRequest request);
 
-    public Service findServiceByCode(String code);
+    Service findServiceByCode(String code);
 
-    public Service findServiceById(String id);
+    Service findServiceById(String id);
 
-    public Service createService(ServiceInfoRequest service);
+    Service createService(ServiceInfoRequest service);
 
-    public Service updateService(ServiceInfoEditRequest request);
+    Service updateService(ServiceInfoEditRequest request);
 
-    public boolean checkServiceExistById(String serviceId);
+    boolean checkServiceExistById(String serviceId);
 
-    public boolean checkServiceProviderExistById(String serviceProviderId);
+    boolean checkServiceProviderExistById(String serviceProviderId);
 
     void deleteService(ServiceDeleteRequest request);
+
+    PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request);
+
 }

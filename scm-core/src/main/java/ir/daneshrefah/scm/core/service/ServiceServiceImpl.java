@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
@@ -11,19 +12,21 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.*;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
-import ir.daneshrefah.scm.core.repository.ServiceAccessRepository;
 import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
+import ir.daneshrefah.scm.core.repository.TransformerRelationRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +49,9 @@ public class ServiceServiceImpl implements ServiceService {
     private final ServiceRepository serviceRepository;
     private final ServiceRelationRepository serviceRelationRepository;
     private final ServiceProviderRepository serviceProviderRepository;
-    private final ServiceAccessRepository serviceAccessRepository;
+    private final TerminalRepository terminalRepository;
+    private final TerminalService terminalService;
+    private final TransformerRelationRepository transformerRelationRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ExternalServiceProvider> serviceProviders;
 
@@ -56,8 +61,10 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public List<ExternalServiceProvider> findServiceProviderList() {
-        if (null == serviceProviders) {
-            serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
+        if (null == serviceProviders || serviceProviders.isEmpty()) {
+            synchronized (this) {
+                serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
+            }
         }
         return serviceProviders;
     }
@@ -89,8 +96,10 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
-        if (null == services) {
-            services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+        if (null == services || services.isEmpty()) {
+            synchronized (this) {
+                services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+            }
         }
         return services;
     }
@@ -113,11 +122,26 @@ public class ServiceServiceImpl implements ServiceService {
                     return true;
                 })
                 .filter(service -> null == request || null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
+                .filter(service->serviceAccessFindFilter(request,service))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, serviceList);
 
 
     }
+
+    private boolean serviceAccessFindFilter(ServiceFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
+        if (request instanceof ServiceAccessFindRequest serviceAccessFindRequest){
+            Boolean hasTerminalAccess = serviceAccessFindRequest.getHasTerminalAccess();
+            if (Objects.isNull(hasTerminalAccess)){
+                return true;
+            }else {
+                Boolean access = hasTerminalAccess(serviceAccessFindRequest, service);
+                return hasTerminalAccess == access;
+            }
+        }
+        return true;
+    }
+
 
     @Override
     public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String code) {
@@ -135,7 +159,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (StringUtils.isEmpty(id)) {
             return null;
         }
-        return findServiceList().stream().filter(service -> id.equals(service.getId())).findFirst().orElse(null);
+        return serviceRepository.findById(id).map(ServiceMapper.INSTANCE::toService).orElse(null);
     }
 
     public ParentService findParentServiceById(String id) {
@@ -185,6 +209,7 @@ public class ServiceServiceImpl implements ServiceService {
         emptyServiceListCache();
         return result;
     }
+
 
     private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
         if (entity instanceof ExternalServiceEntity) {
@@ -251,6 +276,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (Objects.nonNull(request.getType()) && !request.getType().equals(serviceEntity.getType())) {
             serviceEntity.setType(request.getType());
         }
+        serviceEntity.setVersion(serviceEntity.getVersion() + 1);
     }
 
     private void applyEditJsonBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
@@ -374,12 +400,13 @@ public class ServiceServiceImpl implements ServiceService {
 
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId) {
         Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
-        List<ServiceRelation> relations = ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
-        return relations;
+        return ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
     }
 
     private void emptyServiceListCache() {
-        this.services = null;
+        if (Objects.nonNull(this.services)) {
+            this.services.clear();
+        }
     }
 
     @Override
@@ -394,7 +421,8 @@ public class ServiceServiceImpl implements ServiceService {
                         //if record version passed.
                         try {
                             serviceRepository.delete(found);
-                        }catch (ObjectOptimisticLockingFailureException e){
+                            transformerRelationRepository.deleteAll(transformerRelationRepository.findAllBySourceId(found.getId()));
+                        } catch (ObjectOptimisticLockingFailureException e) {
                             throw new RecordVersionException("service");
                         }
                         emptyServiceListCache();
@@ -417,4 +445,35 @@ public class ServiceServiceImpl implements ServiceService {
             throw new InvalidInputException("lastEditDate");
         }
     }
+
+    @Override
+    public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request) {
+        ValidationUtils.checkBlankString(request.getTerminalId(), () -> new MissingRequiredInputException("terminalId"));
+        terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
+        PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList(request);
+        List<TerminalServiceAccessAssignmentResponse> result = serviceList.getData()
+                .stream()
+                .map(service -> {
+                    TerminalServiceAccessAssignmentResponse accessAssignmentResponse = new TerminalServiceAccessAssignmentResponse();
+                    accessAssignmentResponse.setService(service);
+                    Boolean access = hasTerminalAccess(request,service);
+                    accessAssignmentResponse.setHasTerminalAccess(access);
+                    return accessAssignmentResponse;
+                })
+                .collect(Collectors.toList());
+        return new PagedResponseData<>(serviceList.getPageNo(),serviceList.getPageSize(),serviceList.getTotalCount().longValue(), result);
+    }
+
+    private Boolean hasTerminalAccess(ServiceAccessFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
+       return terminalService
+                .findAllTerminalServiceAccesses()
+                .stream()
+                .filter(serviceAccess -> request.getTerminalId().equals(serviceAccess.getTerminal().getId()))
+                .filter(serviceAccess -> service.getId().equals(serviceAccess.getService().getId()))
+                .map(serviceAccess -> true)
+                .findFirst()
+                .orElse(false);
+    }
+
+
 }
