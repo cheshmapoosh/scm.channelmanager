@@ -17,6 +17,7 @@ public class SecurityConstants {
     public static final String ROLE_ADMIN_PERSON = "ROLE_ADMIN_PERSON";
     public static final String ROLE_ADMIN_CUSTOMER = "ROLE_ADMIN_CUSTOMER";
     public static final String ROLE_ADMIN_USER = "ROLE_ADMIN_USER";
+    public static final String ROLE_ADMIN_BPM = "ROLE_ADMIN_BPM";
     public static final String ROLE_CSP = "ROLE_CSP";
 
     public static final String USERNAME_NONE_PROVIDED = "NONE_PROVIDED";

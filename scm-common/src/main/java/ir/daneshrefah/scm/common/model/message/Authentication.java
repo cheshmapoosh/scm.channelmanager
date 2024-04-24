@@ -35,4 +35,6 @@ public interface Authentication extends Serializable {
     AuthenticationMethod getAuthenticationMethod();
 //    Exception getException();
 
+    Object getPrincipal();
+
 }

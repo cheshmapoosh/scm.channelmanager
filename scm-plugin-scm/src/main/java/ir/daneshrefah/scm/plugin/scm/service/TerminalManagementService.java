@@ -6,10 +6,10 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.service.ServiceAccessFindRequest;
 import ir.daneshrefah.scm.common.service.terminal.*;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
+import ir.daneshrefah.scm.process.service.ProcessDefinitionService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +27,17 @@ import java.util.Optional;
 public class TerminalManagementService extends AbstractJavaService {
 
     private final TerminalService terminalService;
+//    private final ProcessDefinitionService processDefinitionService;
 
-    public TerminalManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, TerminalService terminalService) {
+    public TerminalManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper,
+                                     TerminalService terminalService/*, ProcessDefinitionService processDefinitionService*/) {
         super(producerTemplate, objectMapper);
         this.terminalService = terminalService;
+//        this.processDefinitionService = processDefinitionService;
     }
 
     public PagedResponseData<Terminal> listTerminal(TerminalFindRequest request) {
+//        processDefinitionService.deployProcessDefinition();
         return terminalService.findAllTerminals(request);
     }
 

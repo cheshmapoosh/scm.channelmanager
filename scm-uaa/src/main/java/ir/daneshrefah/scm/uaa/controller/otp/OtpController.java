@@ -39,7 +39,7 @@ public class OtpController {
         User loggedInUser = extractLoggedInUser(httpRequest);
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .issuerAddress(httpRequest.getRemoteHost())
-                .issuerUsername(null != loggedInUser ? loggedInUser.getPerson().getUsername() : "anonymous")
+                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
                 .terminalCode(request.getTerminalCode())
                 .accessParameter(null != loggedInUser ? StringUtils.join(loggedInUser.getAccessParameters().stream().toList(), ",") : null)
                 .recipientUsername(request.getRecipientUsername())
@@ -47,7 +47,7 @@ public class OtpController {
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .build();
-        return otpService.sendOtp(otpRequest, loggedInUser);
+        return otpService.sendOtp(otpRequest/*, loggedInUser*/);
     }
 
     @PostMapping("/verify")

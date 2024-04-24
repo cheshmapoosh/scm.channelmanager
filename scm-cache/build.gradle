@@ -20,7 +20,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'com.hazelcast:hazelcast:5.3.6'
+    implementation 'com.hazelcast:hazelcast:5.4.0'
     runtimeOnly 'com.ibm.db2:jcc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'

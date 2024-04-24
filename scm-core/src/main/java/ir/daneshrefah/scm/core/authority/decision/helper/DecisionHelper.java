@@ -1,17 +1,17 @@
 package ir.daneshrefah.scm.core.authority.decision.helper;
 
-import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,18 +33,21 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DecisionHelper {
 
+    private static final Map<String, List<BaseCondition>> CONDITIONS_CACHE = new ConcurrentHashMap<>();
     private final ConditionService conditionService;
     private final ServiceAccessService serviceAccessService;
 
-    private static final Map<Class<? extends BaseCondition>, Map<String, List<BaseCondition>>> CONDITIONS_CACHE =
-            new ConcurrentHashMap<>();
+
 
     @PostConstruct
     private void prepare() {
         reloadCache();
     }
 
-    public UserProfile fillServiceAccessForProfile(UserProfile profile, String terminalCode) {
+    public UserProfile fillServiceAccessForProfile(
+
+
+            UserProfile profile, String terminalCode) {
         /*
         * Controls if the 'service access' data has already been loaded, does not reload.
         * */
@@ -70,57 +73,37 @@ public class DecisionHelper {
     }
 
     public void reloadCache() {
-        initializeCacheSpace();
-        cacheConditions(TerminalCondition.class, conditionService.fetchAllTerminalConditions());
+        cacheConditions(conditionService.fetchAllTerminalConditions());
         log.info(">>> terminal conditions successfully cached.");
-        cacheConditions(ServiceCondition.class, conditionService.fetchAllServiceConditions());
+        cacheConditions(conditionService.fetchAllServiceConditions());
         log.info(">>> service conditions successfully cached.");
-        cacheConditions(TerminalServiceCondition.class, conditionService.fetchAllTerminalServiceConditions());
+        cacheConditions(conditionService.fetchAllTerminalServiceConditions());
         log.info(">>> terminal-service conditions successfully cached.");
     }
 
-    private void initializeCacheSpace() {
-        createCacheIfNotExists(TerminalCondition.class);
-        createCacheIfNotExists(ServiceCondition.class);
-        createCacheIfNotExists(TerminalServiceCondition.class);
+
+    private void cacheConditions(List<? extends BaseCondition> conditions) {
+        //cache condition list by component id (service id,terminal id or service-terminal id)
+        conditions
+                .forEach(baseCondition -> {
+                    String cacheId;
+                    if (baseCondition instanceof ServiceCondition) {
+                        //casting for get service id
+                        cacheId = ((ServiceCondition) baseCondition).getService().getId();
+                    } else if (baseCondition instanceof TerminalCondition) {
+                        //casting for get terminal id
+                        cacheId = ((TerminalCondition) baseCondition).getTerminal().getId();
+                    } else {
+                        //casting for get terminal-service id
+                        cacheId = String.valueOf(((TerminalServiceCondition) baseCondition).getTerminalServiceAccess().getId());
+                    }
+                    List<BaseCondition> foundConditionList = CONDITIONS_CACHE.getOrDefault(cacheId, new ArrayList<>());
+                    foundConditionList.add(baseCondition);
+                    CONDITIONS_CACHE.put(cacheId, foundConditionList);
+                });
+
     }
 
-    private void cacheConditions(Class<? extends BaseCondition> conditionClassType, List<?> conditions) {
-        if (conditionClassType.equals(ServiceCondition.class)) {
-            conditions.stream().map(ServiceCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getService().getId(), condition));
-        } else if (conditionClassType.equals(TerminalCondition.class)) {
-            conditions.stream().map(TerminalCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getTerminal().getId(), condition));
-        } else if (conditionClassType.equals(TerminalServiceCondition.class)) {
-            conditions.stream().map(TerminalServiceCondition.class::cast).forEach(condition -> putToCache(conditionClassType, condition.getTerminalServiceAccess().getId().toString(), condition));
-        }
-    }
-
-    private void createCacheIfNotExists(Class<? extends BaseCondition> conditionClassType) {
-        if (!CONDITIONS_CACHE.containsKey(conditionClassType)) {
-            CONDITIONS_CACHE.put(conditionClassType, new ConcurrentHashMap<>());
-        }
-    }
-
-    /**
-     * @param conditionClassType involves {@link ServiceCondition},{@link TerminalCondition} or {@link TerminalServiceCondition}
-     * @param condition          condition list like TerminalService condition list
-     * @param id                 based on condition type,ex for ServiceConditions using Service ID
-     * @implNote This method at first get or create condition ConcurrentHashMap by cacheType, after that
-     * check condition list existence by requested id, if the list was created before, get that and add the
-     * input condition or else create the list,add the condition and put the list to cache map.
-     */
-    private void putToCache(Class<? extends BaseCondition> conditionClassType, String id, BaseCondition condition) {
-        Map<String, List<BaseCondition>> conditionsCache = CONDITIONS_CACHE.get(conditionClassType);
-        List<BaseCondition> valueList;
-        if (conditionsCache.containsKey(id)) {
-            valueList = conditionsCache.get(id);
-            valueList.add(condition);
-        } else {
-            valueList = new ArrayList<>();
-            valueList.add(condition);
-            conditionsCache.put(id, valueList);
-        }
-    }
 
     private AuthenticationMethod realizeAuthenticationMethod(TerminalServiceAccess authObject,
                                                              Authentication authentication, boolean isLogin) {
@@ -145,7 +128,7 @@ public class DecisionHelper {
 
     private List<Condition> findCompatibleConditions(TerminalServiceAccess serviceAccess, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
         /* checking Terminal-service-auth-secondAuth conditions */
-        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalServiceCondition.class, serviceAccess.getId().toString());
+        List<Condition> conditions = getInnerRoutingCondition(loginAuth, transactionAuth, String.valueOf(serviceAccess.getId()));
         if (!conditions.isEmpty()) {
             return conditions;
         }
@@ -153,8 +136,8 @@ public class DecisionHelper {
         //getting auth status from message header.
         Service service = serviceAccess.getService();
         Terminal terminal = serviceAccess.getTerminal();
-        List<Condition> serviceConditions = getInnerRoutingCondition(loginAuth, transactionAuth, ServiceCondition.class, service.getId());
-        List<Condition> terminalConditions = getInnerRoutingCondition(loginAuth, transactionAuth, TerminalCondition.class, terminal.getId());
+        List<Condition> serviceConditions = getInnerRoutingCondition(loginAuth, transactionAuth, service.getId());
+        List<Condition> terminalConditions = getInnerRoutingCondition(loginAuth, transactionAuth, terminal.getId());
         return mergeConditions(serviceConditions, terminalConditions);
     }
 
@@ -165,10 +148,10 @@ public class DecisionHelper {
         return result;
     }
 
-    private List<Condition> getInnerRoutingCondition(AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth, Class<? extends BaseCondition> conditionClassType, String id) {
+    private List<Condition> getInnerRoutingCondition(AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth, String id) {
         //check [component]-auth-secAuth
         if (Objects.nonNull(loginAuth) && Objects.nonNull(transactionAuth)) {
-            List<Condition> authAndSecAuthConditions = findCustomConditions(conditionClassType, id, loginAuth, transactionAuth);
+            List<Condition> authAndSecAuthConditions = findCustomConditions(id, loginAuth, transactionAuth);
             if (!authAndSecAuthConditions.isEmpty()) {
                 return authAndSecAuthConditions;
             }
@@ -176,12 +159,12 @@ public class DecisionHelper {
         //check [component]-auth
         List<Condition> authConditions = new ArrayList<>();
         if (Objects.nonNull(loginAuth)) {
-            authConditions = findCustomConditions(conditionClassType, id, loginAuth, null);
+            authConditions = findCustomConditions(id, loginAuth, null);
         }
         //check [component]-second-auth
         List<Condition> secAuthConditions = new ArrayList<>();
         if (Objects.nonNull(transactionAuth)) {
-            secAuthConditions = findCustomConditions(conditionClassType, id, null, transactionAuth);
+            secAuthConditions = findCustomConditions(id, null, transactionAuth);
         }
         //merge [component]-auth & [component]-sec-auth
         List<Condition> mergeFirstAndSecServiceConditions = mergeConditions(authConditions, secAuthConditions);
@@ -189,7 +172,7 @@ public class DecisionHelper {
             return mergeFirstAndSecServiceConditions;
         }
         //get all service conditions
-        return findCustomConditions(conditionClassType, id, null, null);
+        return findCustomConditions(id, null, null);
     }
 
     private List<Condition> filterByConditionType(List<Condition> conditions, ConditionType conditionType) {
@@ -199,9 +182,8 @@ public class DecisionHelper {
                 .collect(Collectors.toList());
     }
 
-    private List<Condition> findCustomConditions(Class<? extends BaseCondition> conditionClassType, String id, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
+    private List<Condition> findCustomConditions(String id, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
         return CONDITIONS_CACHE
-                .get(conditionClassType)
                 .getOrDefault(id, new ArrayList<>())
                 .stream()
                 .filter(condition -> Objects.equals(condition.getLoginAuthenticationMethod(), loginAuth) && Objects.equals(condition.getTransactionAuthenticationMethod(), transactionAuth))

@@ -45,16 +45,16 @@ public class OtpService {
                 .collect(Collectors.toMap(OtpProvider::getType, Function.identity()));
     }
 
-    public OtpSendResponse sendOtp(OtpSendRequest request, User loggedInUser) {
+    public OtpSendResponse sendOtp(OtpSendRequest request/*, User loggedInUser*/) {
         if (null == request.getReason()) {
             throw new MissingRequiredInputException("reason");
         }
-        if (StringUtils.isEmpty(request.getRecipientUsername()) && null == loggedInUser) {
+        if (StringUtils.isEmpty(request.getRecipientUsername()) && null == request.getIssuerUser()) {
             throw new MissingRequiredInputException("recipientUsername");
         }
         String terminalCode = request.getTerminalCode();
-        if (StringUtils.isEmpty(terminalCode) && null != loggedInUser) {
-            terminalCode = loggedInUser.getTerminalCode();
+        if (StringUtils.isEmpty(terminalCode) && null != request.getIssuerUser()) {
+            terminalCode = request.getIssuerUser().getTerminalCode();
         }
         if (StringUtils.isEmpty(terminalCode)) {
             throw new MissingRequiredInputException("terminalCode");
@@ -72,7 +72,7 @@ public class OtpService {
             recipientUser = userOptional.get();
         }
         if (null == recipientUser) {
-            recipientUser = loggedInUser;
+            recipientUser = (User) request.getIssuerUser().getPrincipal();
         }
 
         PersonType personType = recipientUser.getPerson().getPersonType();

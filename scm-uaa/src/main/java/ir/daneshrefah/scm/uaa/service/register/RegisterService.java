@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.exception.MethodNotSupportDataException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
@@ -88,9 +89,9 @@ public class RegisterService {
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.ACTIVATION)
                 .issuerAddress(address)
-                .issuerUsername(username)
+                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
                 .build();
-        OtpSendResponse otpResponse = otpService.sendOtp(otpRequest, null);
+        OtpSendResponse otpResponse = otpService.sendOtp(otpRequest/*, null*/);
         return SubmitRegisterResponse.builder()
                 .clientId(request.getClientId())
                 .recipient(request.getRecipient())

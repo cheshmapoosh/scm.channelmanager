@@ -12,4 +12,9 @@ dependencies {
     compileOnly 'org.springframework:spring-context'
     compileOnly project(':scm-common')
     compileOnly project(':scm-common-data')
+//    implementation ('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter:7.21.0') {
+    implementation ('org.camunda.bpm:camunda-engine:7.21.0') {
+        exclude group: 'javax.xml.bind', module: 'jaxb-core'
+        exclude group: 'com.sun.xml.bind', module: 'jaxb-impl'
+    }
 }

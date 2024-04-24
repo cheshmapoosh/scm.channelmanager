@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
@@ -42,7 +43,7 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
         User user = authentication.getPrincipal().getUser();
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .issuerAddress(((WebAuthenticationDetails) authentication.getDetails().getDetails()).getRemoteAddress())
-                .issuerUsername(user.getNickname())
+                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
                 .terminalCode(user.getTerminalCode())
                 .accessParameter(authentication.getDetails().getAccessParameter())
                 .recipientUsername(user.getNickname())
@@ -50,7 +51,7 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
                 .otpType(otpType)
                 .reason(OtpReason.AUTHENTICATION)
                 .build();
-        return otpService.sendOtp(otpRequest, user);
+        return otpService.sendOtp(otpRequest/*, user*/);
     }
 
     protected abstract OtpType resolveOtpType();

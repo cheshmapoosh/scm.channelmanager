@@ -33,12 +33,13 @@ dependencies {
         // Define dependency versions as constraints
     }
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
-    implementation platform("org.springframework.boot:spring-boot-dependencies:3.1.1")
-    implementation platform("org.springframework.cloud:spring-cloud-dependencies:2022.0.4")
-    implementation platform("org.apache.camel.springboot:camel-spring-boot-bom:4.0.0-RC1")
-    implementation platform("org.apache.camel:camel-api:4.0.0-RC1")
+    implementation platform("org.springframework.boot:spring-boot-dependencies:3.2.4")
+    implementation platform("org.springframework.cloud:spring-cloud-dependencies:2023.0.1")
+    implementation platform("org.apache.camel.springboot:camel-spring-boot-bom:4.4.1")
+    implementation platform("org.apache.camel:camel-api:4.4.1")
     implementation 'org.apache.commons:commons-text:1.9'
     implementation 'commons-beanutils:commons-beanutils:1.9.4'
+    implementation 'commons-io:commons-io:2.16.1'
     implementation('org.apache.commons:commons-lang3:3.12.0')
 //    implementation("ir.daneshrefah.uaa:uaa-common:1.0.0")
     implementation('org.slf4j:slf4j-api:2.0.5')
