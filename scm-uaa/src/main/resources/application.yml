@@ -9,19 +9,19 @@ scm:
       password: password
       alias: selfsigned
     authenticationDatasource:
-      url: jdbc:mysql://localhost:3306/ref
-      username: root
-      password: 12345
-      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
     activationDatasource:
-      url: jdbc:mysql://localhost:3306/ref
-      username: root
-      password: 12345
-      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
-      default-schema: MBUAA
+      default-schema: REF
   cache:
     client:
       config:
@@ -39,10 +39,10 @@ scm:
       enabled: false
       mode: distributed
     data-source:
-      url: jdbc:mysql://localhost:3306/ref
-      username: root
-      password: 12345
-      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
 
@@ -58,6 +58,13 @@ scm:
 #  cloud:
 #    config:
 #      profile: default
+
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 
 
 

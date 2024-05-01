@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
@@ -47,25 +51,14 @@ public class NabCIFService implements CIFService {
 
     @Override
     public List<GeneralPerson> findPersonInfo(PersonFindRequest request) {
-        if (null == request) {
-            throw new MissingRequiredInputException("request body");
-        }
-        if (StringUtils.isEmpty(request.getNationalId())) {
-            throw new MissingRequiredInputException("nationalId");
-        }
+        validateFindPersonInfo(request);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 //        headers.set(HttpConstants.HTTP_HEADER_AUTHORIZATION, "Bearer your_access_token");
 
         String nationalId = request.getNationalId();
         String subOrgId = StringUtils.isEmpty(request.getSubOrganizationId()) ? "0" : request.getSubOrganizationId();
-        String requestBody = "{\"parameters\":[{\"name\":\"P_NATIONALID\",\"value\":\"" +
-                nationalId +
-                "\"},{\"name\":\"P_CUSTOMERTYPE\",\"value\":\"-1\"},{\"name\":\"P_SUBORGAN\",\"value\":\"" +
-                subOrgId +
-                "\"}],\"callType\":\"Reader\",\"encoding\":\"ASCII\",\"requestID\":\"RequestID\"}";
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
+        HttpEntity<String> entity = getHttpEntityRequestBodyTemplate(nationalId, subOrgId, headers);
         // Send POST request
         String url = cifUrl + "/SCMREAD.GETCUSTOMERNATIONALID";
         ResponseEntity<String> response = null;
@@ -91,6 +84,47 @@ public class NabCIFService implements CIFService {
             persons.add(NabCIFMapper.getInstance().toPerson(jsonNode));
         }
         return persons;
+    }
+
+    private void validateFindPersonInfo(PersonFindRequest request) {
+        ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request body is empty"));
+        PersonType personType = request.getPersonType();
+        String nationalId = request.getNationalId();
+        Nationality nationality = request.getNationality();
+        String subOrganizationId = request.getSubOrganizationId();
+        ValidationUtils.checkNull(personType, () -> new MissingRequiredInputException("personType"));
+        ValidationUtils.checkBlankString(nationalId, () -> new MissingRequiredInputException("nationalId"));
+        ValidationUtils.checkNull(nationality, () -> new MissingRequiredInputException("nationality"));
+        ValidationUtils.checkBlankStringIfNotNull(subOrganizationId, () -> new InvalidInputException("subOrganizationId"));
+    }
+
+    private static HttpEntity<String> getHttpEntityRequestBodyTemplate(String nationalId, String subOrgId, HttpHeaders headers) {
+        //language=json
+        String requestBody = """
+                {
+                  "parameters": [
+                    {
+                      "name": "P_NATIONALID",
+                      "value": "{nationalId}"
+                    },
+                    {
+                      "name": "P_CUSTOMERTYPE",
+                      "value": "-1"
+                    },
+                    {
+                      "name": "P_SUBORGAN",
+                      "value": "{subOrgId}"
+                    }
+                  ],
+                  "callType": "Reader",
+                  "encoding": "ASCII",
+                  "requestID": "RequestID"
+                }
+                """;
+        requestBody=requestBody.replace("{nationalId}", nationalId);
+        requestBody=requestBody.replace("{subOrgId}", subOrgId);
+        requestBody = StringUtils.cleanUpJsonCharacters(requestBody);
+        return new HttpEntity<>(requestBody, headers);
     }
 
 //    @Override

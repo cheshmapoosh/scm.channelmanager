@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface CIFService {
 
-    public List<GeneralPerson> findPersonInfo(PersonFindRequest request);
+    List<GeneralPerson> findPersonInfo(PersonFindRequest request);
 
 }

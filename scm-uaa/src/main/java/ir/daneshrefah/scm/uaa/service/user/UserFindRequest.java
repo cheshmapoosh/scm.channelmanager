@@ -12,7 +12,9 @@ import lombok.Data;
  */
 @Data
 public class UserFindRequest extends PagedRequestData {
-
+    private String nickname;
+    private String terminalCode;
     private Boolean active;
-
+    private String creatorBranch;
+    private Integer terminalId;
 }
