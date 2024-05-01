@@ -1,15 +1,14 @@
 package ir.daneshrefah.scm.common.data.repository;
 
-import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.EmployeePersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;

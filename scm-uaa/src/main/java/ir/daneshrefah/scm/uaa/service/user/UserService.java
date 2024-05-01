@@ -3,10 +3,15 @@ package ir.daneshrefah.scm.uaa.service.user;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.*;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequestException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.user.UserDataRequest;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
@@ -14,8 +19,8 @@ import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.service.IntegrationService;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -78,11 +84,11 @@ public class UserService {
             throw new InvalidInputException("transactionAuthenticationMethod");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
-                StringUtils.isEmpty(request.getLoginStaticPassword())) {
+            StringUtils.isEmpty(request.getLoginStaticPassword())) {
             throw new MissingRequiredInputException("loginStaticPassword");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getTransactionAuthenticationMethod()) &&
-                StringUtils.isEmpty(request.getTransactionStaticPassword())) {
+            StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
         if (StringUtils.isEmpty(request.getCreatorBranch())) {
@@ -116,13 +122,31 @@ public class UserService {
     }
 
     public PagedResponseData<User> findPagedUserList(UserFindRequest request) {
-        if (null == request) {
-            request = new UserFindRequest();
-        }
+        validateFindPagedUserList(request);
         Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
         Page<UserEntity> entities = userRepository.findAll(UserSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
                 UserMapper.INSTANCE.toModels(entities.getContent()));
+    }
+
+    private void validateFindPagedUserList(UserFindRequest request) {
+        if (null == request) {
+            request = new UserFindRequest();
+        }
+        if (Objects.isNull(request.getPageNo())) {
+            request.setPageNo(0);
+        }
+        if (Objects.isNull(request.getPageSize())) {
+            request.setPageSize(10);
+        }
+        ValidationUtils.checkBlankStringIfNotNull(request.getNickname(),()->new InvalidInputException("nickname"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getCreatorBranch(),()->new InvalidInputException("creatorBranch"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getTerminalCode(),()->new InvalidInputException("terminalCode"));
+        ValidationUtils.checkBlankStringIfNotNull(String.valueOf(request.getTerminalId()),()->new InvalidInputException("terminalId"));
+        if (StringUtils.isNotEmpty(request.getTerminalCode())){
+            Terminal terminal = terminalService.findTerminalByCode(request.getTerminalCode()).orElseThrow(() -> new InvalidInputException("terminalCode"));
+            request.setTerminalId(Math.toIntExact(terminal.getLegacyTerminalId()));
+        }
     }
 
     public Optional<User> loadUserByUsername(String username, String terminalCode) {

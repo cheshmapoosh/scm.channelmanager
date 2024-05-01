@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -21,6 +22,15 @@ public class UserSpecs {
             List<Predicate> predicates = new ArrayList<>();
             if (null != request.getActive()) {
                 predicates.add(builder.equal(root.get("active"), request.getActive()));
+            }
+            if (StringUtils.isNotEmpty(request.getCreatorBranch())) {
+                predicates.add(builder.equal(root.get("creatorBranch"), request.getCreatorBranch()));
+            }
+            if (StringUtils.isNotEmpty(request.getTerminalCode())) {
+                predicates.add(builder.equal(root.get("terminalId"), request.getTerminalId()));
+            }
+            if (StringUtils.isNotEmpty(request.getNickname())) {
+                predicates.add(builder.equal(root.get("nickname"), request.getNickname()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

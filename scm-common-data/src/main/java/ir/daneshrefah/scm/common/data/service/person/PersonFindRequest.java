@@ -21,5 +21,14 @@ public class PersonFindRequest extends PagedRequestData {
     private String nationalId;
     private String subOrganizationId;
     private Nationality nationality;
+    private String username;
+    private String firstName;
+    private String lastName;
+    private Boolean active;
+    private String branchCode;
+
+
+
+
 
 }

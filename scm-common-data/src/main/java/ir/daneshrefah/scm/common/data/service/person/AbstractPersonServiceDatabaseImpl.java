@@ -5,16 +5,20 @@ import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -32,13 +36,25 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
 
     @Override
     public PagedResponseData<GeneralPerson> findPagedPersonList(PersonFindRequest request) {
-        if (null == request) {
-            request = new PersonFindRequest();
-        }
+        request = Objects.nonNull(request) ? request : new PersonFindRequest();
+        validateFindPagedPersonList(request);
         Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
         Page<GeneralPersonEntity> entities = personRepository.findAll(PersonSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
                 PersonMapper.INSTANCE.toModels(entities.getContent()));
+    }
+
+    private void validateFindPagedPersonList(PersonFindRequest request) {
+        String nationalId = request.getNationalId();
+        String subOrganizationId = request.getSubOrganizationId();
+        ValidationUtils.checkBlankStringIfNotNull(nationalId, () -> new InvalidInputException("nationalId"));
+        ValidationUtils.checkBlankStringIfNotNull(subOrganizationId, () -> new InvalidInputException("subOrganizationId"));
+        if (Objects.isNull(request.getPageNo())) {
+            request.setPageNo(0);
+        }
+        if (Objects.isNull(request.getPageSize())) {
+            request.setPageSize(10);
+        }
     }
 
     @Override
@@ -51,11 +67,10 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
 
     @Override
     public GeneralPerson findPersonByPersonId(Integer id) {
+        ValidationUtils.checkNumericInput(String.valueOf(id), () -> new InvalidInputException("id"));
         Optional<GeneralPersonEntity> personEntity = personRepository.findById(id);
-        if (personEntity.isEmpty()) {
-            throw new PersonNotFoundException("person with id '" + id + "' not found.");
-        }
-        return PersonMapper.INSTANCE.toPerson(personEntity.get());
+        ValidationUtils.checkEmptyOptional(personEntity,()->new PersonNotFoundException("person with id '" + id + "' not found."));
+        return PersonMapper.INSTANCE.toPerson(personEntity.orElseThrow(()->new InvalidInputException("id")));
     }
 
     @Override

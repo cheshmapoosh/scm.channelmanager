@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.controller.person;
 
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.service.person.UPersonService;
@@ -22,13 +23,19 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/person")
+@CrossOrigin
 public class PersonController {
 
     private final UPersonService personService;
 
-    @PostMapping("/paged")
+    @PostMapping("/list")
     public ResponseEntity<PagedResponseData<GeneralPerson>> findPagedPersonList(@RequestBody(required = false) PersonFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPagedPersonList(request));
+    }
+
+    @GetMapping("/find/{personId}")
+    public ResponseEntity<GeneralPerson> findGeneralPersonById(@PathVariable("personId") String personId){
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Integer.parseInt(personId)));
     }
 
     @GetMapping("/find-nickname/{nickname}/{terminalCode}")
@@ -54,17 +61,17 @@ public class PersonController {
 
     @PostMapping("/add")
     public ResponseEntity<GeneralPerson> addPersonInfoFromCIF(@RequestBody PersonFindRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(personService.addPersonInfoFromCIF(request));
+        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonInfoFromCIF(request));
     }
 
-    @PostMapping("/update")
-    public ResponseEntity<GeneralPerson> updatePersonInfoFromCIF(@RequestBody PersonFindRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(personService.updatePersonInfoFromCIF(request));
+    @GetMapping("/sync/{personId}")
+    public ResponseEntity<GeneralPerson> syncPersonInfoFromCIF(@PathVariable("personId") String personId) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonInfoFromCIF(personId));
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deletePersonInfoById(@PathVariable Integer userId) {
-        personService.deletePersonInfo(userId);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+    @GetMapping("/diff/{personId}")
+    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId") String personId ) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.diffPersonInfoFromCIFAndLocal(personId));
     }
+
 }

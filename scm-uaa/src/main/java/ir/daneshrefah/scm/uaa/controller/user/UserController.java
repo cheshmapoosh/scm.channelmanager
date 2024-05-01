@@ -25,7 +25,8 @@ public class UserController extends BaseController {
 
     private final UserService userService;
 
-    @PostMapping("/paged")
+    @CrossOrigin
+    @PostMapping("/list")
     public ResponseEntity<PagedResponseData<User>> findPagedUserList(@RequestBody(required = false) UserFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findPagedUserList(request));
     }
