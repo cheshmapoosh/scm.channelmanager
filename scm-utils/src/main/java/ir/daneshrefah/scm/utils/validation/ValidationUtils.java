@@ -33,8 +33,8 @@ public class ValidationUtils {
         }
     }
 
-    public static void checkNumericInput(String input,Supplier<RuntimeException> throwsException){
-        if (StringUtils.isNotNumeric(input)){
+    public static void checkNumericInput(Object input,Supplier<RuntimeException> throwsException){
+        if (StringUtils.isNotNumeric(String.valueOf(input))){
             throw throwsException.get();
         }
     }

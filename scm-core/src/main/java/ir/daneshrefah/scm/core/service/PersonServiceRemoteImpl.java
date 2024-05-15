@@ -38,4 +38,9 @@ public class PersonServiceRemoteImpl implements PersonService {
         return null;
     }
 
+    @Override
+    public GeneralPerson findLocalPerson(PersonFindRequest request) {
+        return null;
+    }
+
 }

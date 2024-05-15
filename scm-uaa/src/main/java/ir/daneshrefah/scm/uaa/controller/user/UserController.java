@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.controller.user;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
-import ir.daneshrefah.scm.uaa.service.user.UpdatePasswordRequest;
+import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +21,37 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/user")
+@CrossOrigin
 public class UserController extends BaseController {
 
     private final UserService userService;
 
-    @CrossOrigin
+
+    @PutMapping("/change-nickName")
+    public ResponseEntity<User> changeUserName(@RequestBody UserNickNameModifyRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickName(request));
+    }
+
+    @PutMapping("/change-login-password")
+    public ResponseEntity<User> updateUserLoginStaticPassword(@RequestBody PasswordModificationRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginStaticPassword(request));
+    }
+
+    @PutMapping("/change-transaction-password")
+    public ResponseEntity<?> updateUserTransactionStaticPassword(@RequestBody PasswordModificationRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserTransactionStaticPass(request));
+    }
+
+    @PutMapping("/change-login-password-method")
+    public ResponseEntity<User> updateLoginPasswordMethod(@RequestBody AuthenticationMethodModificationRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateLoginPasswordMethod(request));
+    }
+
+    @PutMapping("/change-transaction-password-method")
+    public ResponseEntity<User> updateTransactionPasswordMethod(@RequestBody AuthenticationMethodModificationRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateTransactionPasswordMethod(request));
+    }
+
     @PostMapping("/list")
     public ResponseEntity<PagedResponseData<User>> findPagedUserList(@RequestBody(required = false) UserFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findPagedUserList(request));
@@ -36,30 +62,31 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.createUser(request));
     }
 
-    @PutMapping("/login-password/{userId}")
-    public ResponseEntity<Boolean> updateUserLoginStaticPassword(@PathVariable Long userId, @RequestBody UpdatePasswordRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginPassword(userId, request));
+    @PutMapping("/change")
+    public ResponseEntity<User> changeUser(@RequestBody UserDataChangeRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changeUser(request));
     }
 
-    @PutMapping("/transaction-password/{userId}")
-    public ResponseEntity<User> updateUserTransactionStaticPassword(@PathVariable Long userId, @RequestBody String password) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserTransactionStaticPass(userId,password));
-    }
 
     @PostMapping("/activate/{userId}")
-    public ResponseEntity<Boolean> activateUser(@PathVariable Long userId) {
+    public ResponseEntity<Boolean> activateUser(@PathVariable("userId") Integer userId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.activateUser(userId, true));
     }
 
     @PostMapping("/deactivate/{userId}")
-    public ResponseEntity<Boolean> deactivateUser(@PathVariable Long userId) {
+    public ResponseEntity<Boolean> deactivateUser(@PathVariable("userId") Integer userId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.activateUser(userId, false));
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long userId) {
-        userService.deleteUserByUserId(userId);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+    public ResponseEntity<Void> deleteUserById(@PathVariable("userId") Integer userId, @RequestBody UserDeleteRequest userDeleteRequest) {
+        userService.deleteUserByUserId(userId,userDeleteRequest);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<User> findUserById(@PathVariable("userId") Integer userId) {;
+        return ResponseEntity.status(HttpStatus.OK).body(userService.findUserById(userId));
     }
 
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -30,10 +31,28 @@ public class UserSpecs {
                 predicates.add(builder.equal(root.get("terminalId"), request.getTerminalId()));
             }
             if (StringUtils.isNotEmpty(request.getNickname())) {
-                predicates.add(builder.equal(root.get("nickname"), request.getNickname()));
+                predicates.add(builder.like(root.get("nickname"), getLikeQuery(request.getNickname())));
+            }
+            if (StringUtils.isNotEmpty(request.getAccessParameters())) {
+                predicates.add(builder.like(root.get("accessParameters"), getLikeQuery(request.getAccessParameters())));
+            }
+            if (StringUtils.isNotEmpty(request.getCreator())) {
+                predicates.add(builder.equal(root.get("creator"), request.getCreator()));
+            }
+            if (StringUtils.isNotEmpty(request.getEditor())) {
+                predicates.add(builder.equal(root.get("lastEditor"), request.getEditor()));
+            }
+            if (Objects.nonNull(request.getLoginAuthenticationMethod())){
+                predicates.add(builder.equal(root.get("loginAuthenticationMethod"), request.getLoginAuthenticationMethod().getDbRef()));
+            }
+            if (Objects.nonNull(request.getTransactionAuthenticationMethod())){
+                predicates.add(builder.equal(root.get("transactionAuthenticationMethod"), request.getTransactionAuthenticationMethod().getDbRef()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
+    }
+    private static String getLikeQuery(String input){
+        return "%"+input+"%";
     }
 
 }

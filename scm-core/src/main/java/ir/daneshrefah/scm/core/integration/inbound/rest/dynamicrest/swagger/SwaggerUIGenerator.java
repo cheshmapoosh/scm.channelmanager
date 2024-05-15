@@ -44,6 +44,7 @@ public class SwaggerUIGenerator {
         String baseUrl = "http://" + ipAddress;
         try {
             String host = Objects.nonNull(serverHost) ? serverHost : InetAddress.getLocalHost().getHostAddress();
+            serverHost = host;
             return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
             return baseUrl.replace(ipAddress, "0.0.0.0");

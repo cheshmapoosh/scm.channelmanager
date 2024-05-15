@@ -17,7 +17,7 @@ import java.util.List;
  * @since 2024-01-09
  */
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
+public interface UserRepository extends JpaRepository<UserEntity, Integer>, JpaSpecificationExecutor<UserEntity> {
 
     @Query(value = "SELECT u FROM UserEntity u " +
             "WHERE u.nickname = :nickname AND u.terminalId = :terminalId ")
