@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -85,6 +86,15 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
             throw new PersonNotFoundException("person with nickname '" + nickname + "' and terminalCode '" + terminalCode + "' not found.");
         }
         return PersonMapper.INSTANCE.toPerson(personEntity.get());
+    }
+
+    @Override
+    public GeneralPerson findLocalPerson(PersonFindRequest request) {
+        List<GeneralPerson> foundList = findPagedPersonList(request).getData();
+        if (foundList.size() != 1){
+            throw new PersonNotFoundException("could not found person.");
+        }
+        return foundList.get(0);
     }
 
     /*private final ServiceProducerTemplate serviceProducerTemplate;

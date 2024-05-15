@@ -33,6 +33,12 @@ public class PersonController {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPagedPersonList(request));
     }
 
+
+    @PostMapping("/local")
+    public ResponseEntity<GeneralPerson> findLocalPerson(@RequestBody PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findLocalPerson(request));
+    }
+
     @GetMapping("/find/{personId}")
     public ResponseEntity<GeneralPerson> findGeneralPersonById(@PathVariable("personId") String personId){
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Integer.parseInt(personId)));

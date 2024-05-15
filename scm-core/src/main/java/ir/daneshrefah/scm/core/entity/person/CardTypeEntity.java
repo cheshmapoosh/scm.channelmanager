@@ -21,7 +21,7 @@ public class CardTypeEntity extends AbstractEntity<Long> {
     @Id
     @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_card_type")
-    @SequenceGenerator(name = "sequence_card_type", sequenceName = "REF.SQCONSTANTS")
+    @SequenceGenerator(name = "sequence_card_type", sequenceName = "REF.SQCONSTANTS",allocationSize = 1)
     private Long id;
     private String code;
     private String name;

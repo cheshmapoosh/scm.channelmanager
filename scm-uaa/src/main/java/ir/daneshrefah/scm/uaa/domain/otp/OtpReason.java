@@ -10,6 +10,8 @@ package ir.daneshrefah.scm.uaa.domain.otp;
 public enum OtpReason {
 
     AUTHENTICATION,
+    CHANGE_LOGIN_AUTHENTICATION_METHOD,
+    CHANGE_TRANSACTION_AUTHENTICATION_METHOD,
     ACTIVATION,
     ACH;
 

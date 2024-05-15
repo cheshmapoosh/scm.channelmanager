@@ -1,11 +1,10 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,6 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public abstract class OtpBaseRequest {
 
     private String terminalCode;
