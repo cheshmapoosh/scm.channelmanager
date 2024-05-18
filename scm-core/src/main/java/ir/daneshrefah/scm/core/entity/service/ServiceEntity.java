@@ -5,15 +5,13 @@ import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
-import ir.daneshrefah.scm.core.converter.JsonNodeTypeConverter;
+import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceStatusConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

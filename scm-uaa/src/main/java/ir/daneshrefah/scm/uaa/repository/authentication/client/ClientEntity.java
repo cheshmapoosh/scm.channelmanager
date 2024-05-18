@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,16 +40,16 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean clientAuthenticationMethodSecretJwt;
     @Column(name = "CLIENT_AUTH_METHOD_KEY_JWT")
     private boolean clientAuthenticationMethodKeyJwt;
-    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
-    private boolean authorizationGrantTypeAuthorizationCode;
-    @Column(name = "AUTH_GRANT_REFRESH_TOKEN")
-    private boolean authorizationGrantTypeRefreshToken;
-    @Column(name = "AUTH_GRANT_CLIENT_CREDENTIAL")
-    private boolean authorizationGrantTypeClientCredential;
-    @Column(name = "AUTH_GRANT_FIRST_PASSWORD")
-    private boolean authorizationGrantTypeFirstPassword;
-    @Column(name = "AUTH_GRANT_SECOND_PASSWORD")
-    private boolean authorizationGrantTypeSecondPassword;
+//    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
+//    private boolean authorizationGrantTypeAuthorizationCode;
+//    @Column(name = "AUTH_GRANT_REFRESH_TOKEN")
+//    private boolean authorizationGrantTypeRefreshToken;
+//    @Column(name = "AUTH_GRANT_CLIENT_CREDENTIAL")
+//    private boolean authorizationGrantTypeClientCredential;
+//    @Column(name = "AUTH_GRANT_FIRST_PASSWORD")
+//    private boolean authorizationGrantTypeFirstPassword;
+//    @Column(name = "AUTH_GRANT_SECOND_PASSWORD")
+//    private boolean authorizationGrantTypeSecondPassword;
     @Column(name = "REDIRECT_URIS")
     @Convert(converter = StringSetConverter.class)
     private Set<String> redirectUris;
@@ -62,4 +63,6 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
 //    private Set<ClientScopeRelation> scopes;
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ClientVersionEntity> versions;
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes;
 }

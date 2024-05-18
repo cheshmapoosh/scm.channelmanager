@@ -14,13 +14,13 @@ import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
  */
 public abstract class NotificationBodyProcessor {
 
-    public String process(MessageTemplate template, NotificationData data, NotificationRequest request) {
+    public String process(MessageTemplate template, NotificationRequest request) {
         if (!support(template))
             return null;
-        return processInternal(template, data,request);
+        return processInternal(template, request);
     }
 
-    protected abstract String processInternal(MessageTemplate template, NotificationData data,NotificationRequest request);
+    protected abstract String processInternal(MessageTemplate template, NotificationRequest request);
 
     protected abstract boolean support(MessageTemplate template);
 

@@ -77,7 +77,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             }
             Assert.notNull(user, "retrieveUser returned null - a violation of the interface contract");
         }
-        if (!USERNAME_NONE_PROVIDED.equals(username) && !username.equals(user.getPrincipal().getNickname()) &&
+        if (!USERNAME_NONE_PROVIDED.equals(username) && StringUtils.notEqualsIgnoreCase(username, user.getPrincipal().getNickname()) &&
                 !user.hasAuthority(ROLE_CSP)) {
             throw new UsernameNotFoundException("not match username");
         }

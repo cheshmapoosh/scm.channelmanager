@@ -26,6 +26,11 @@ public interface RoleRepository extends CrudRepository<RoleEntity, Integer>, Jpa
             "where USER_ID = :personId ", nativeQuery = true)
     List<RoleEntity> findByPersonId(@Param("personId") Long personId);
 
+    @Query(value = "select r.* from REF.TBL_SUA_CLIENT_AUTHORITY ur " +
+            "inner join REF.ROLE r on r.ROLE_ID = ur.ROLE_ID " +
+            "where CLIENT_ID = :clientId ", nativeQuery = true)
+    List<RoleEntity> findByClientId(@Param("clientId") Long clientId);
+
     @Transactional
     @Modifying
     @Query(nativeQuery = true, value = "INSERT INTO userrole (USER_ID, ROLE_ID) VALUES (:personId, :roleId)")

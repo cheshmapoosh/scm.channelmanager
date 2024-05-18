@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.uaa.converter.ClientVersionStatusConverter;
+import ir.daneshrefah.scm.uaa.repository.converter.ClientVersionStatusConverter;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;

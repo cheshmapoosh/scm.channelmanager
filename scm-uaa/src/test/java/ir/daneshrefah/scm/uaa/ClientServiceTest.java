@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.uaa;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.*;
-import ir.daneshrefah.scm.uaa.service.ClientService;
-import ir.daneshrefah.scm.uaa.service.ClientVersionService;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
+//import ir.daneshrefah.scm.uaa.service.client.ClientVersionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,8 +15,8 @@ import java.util.List;
 public class ClientServiceTest {
     @Autowired
     private ClientService clientService;
-    @Autowired
-    private ClientVersionService clientVersionService;
+//    @Autowired
+//    private ClientVersionService clientVersionService;
     @Test
     public void testClientSave(){
         Client client = new Client();

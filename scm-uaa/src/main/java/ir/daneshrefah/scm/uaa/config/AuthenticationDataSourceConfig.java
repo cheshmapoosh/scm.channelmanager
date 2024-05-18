@@ -31,11 +31,10 @@ import java.util.Objects;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = {"ir.daneshrefah.scm.common.data", "ir.daneshrefah.scm.uaa.repository.authentication"},
+        basePackages = {"ir.daneshrefah.scm.common.data", "ir.daneshrefah.scm.notification", "ir.daneshrefah.scm.uaa.repository.authentication"},
         entityManagerFactoryRef = "authenticationEntityManagerFactory",
         transactionManagerRef = "authenticationTransactionManager"
 )
-
 public class AuthenticationDataSourceConfig {
 
     @Bean
@@ -68,6 +67,7 @@ public class AuthenticationDataSourceConfig {
         return builder
                 .dataSource(dataSource)
                 .packages("ir.daneshrefah.scm.uaa.repository.authentication",
+                        "ir.daneshrefah.scm.notification",
                         "ir.daneshrefah.scm.common.data.repository",
                         "ir.daneshrefah.scm.common.data")
                 .properties(properties)

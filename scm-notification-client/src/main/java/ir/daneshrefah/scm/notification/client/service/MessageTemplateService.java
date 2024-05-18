@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.notification.client.service;
 
-import ir.daneshrefah.scm.common.data.mapper.notification.MessageTemplateMapper;
-import ir.daneshrefah.scm.common.data.repository.notification.MessageTemplateRepository;
+import ir.daneshrefah.scm.notification.client.mapper.MessageTemplateMapper;
+import ir.daneshrefah.scm.notification.client.repository.MessageTemplateRepository;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
-import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.notification.client.exception.NotificationTemplateNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +38,12 @@ public class MessageTemplateService {
         return this.messageTemplates;
     }
 
-    public MessageTemplate findMessageTemplateByCode(TemplateCode templateCode) {
+    public MessageTemplate findMessageTemplateByCode(NotificationTemplate templateCode) {
         return findMessageTemplates()
                 .stream()
                 .filter(messageTemplate -> messageTemplate.getCode().equals(templateCode))
                 .findFirst()
-                .orElseThrow(() -> new NotificationTemplateNotFoundException(templateCode.getValue()));
+                .orElseThrow(() -> new NotificationTemplateNotFoundException(null, templateCode.getValue()));
     }
 
 }

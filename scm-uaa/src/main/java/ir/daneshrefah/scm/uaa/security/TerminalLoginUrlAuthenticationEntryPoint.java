@@ -15,6 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @version 1.0
  * @since 2023-12-17
  */
+@Deprecated
 public class TerminalLoginUrlAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoint {
 
     /**

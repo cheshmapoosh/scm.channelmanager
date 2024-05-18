@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.mapper;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientScopeRelation;
 import jakarta.persistence.Column;
@@ -11,6 +12,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -31,20 +33,9 @@ public interface ClientMapper {
 
     default List<AuthorizationGrantType> mapAuthorizationGrantTypes(ClientEntity entity) {
         List<AuthorizationGrantType> list = new ArrayList<>();
-        if (entity.isAuthorizationGrantTypeAuthorizationCode()) {
-            list.add(AuthorizationGrantType.AUTHORIZATION_CODE);
-        }
-        if (entity.isAuthorizationGrantTypeRefreshToken()) {
-            list.add(AuthorizationGrantType.REFRESH_TOKEN);
-        }
-        if (entity.isAuthorizationGrantTypeClientCredential()) {
-            list.add(AuthorizationGrantType.CLIENT_CREDENTIALS);
-        }
-        if (entity.isAuthorizationGrantTypeFirstPassword()) {
-            list.add(AuthorizationGrantType.FIRST_PASSWORD);
-        }
-        if (entity.isAuthorizationGrantTypeSecondPassword()) {
-            list.add(AuthorizationGrantType.SECOND_PASSWORD);
+        for (Iterator<ClientAuthorizationGrantTypeEntity> iterator = entity.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
+            ClientAuthorizationGrantTypeEntity authorizationGrantTypeEntity = iterator.next();
+            list.add(authorizationGrantTypeEntity.getAuthorizationGrantType());
         }
 
         return list;

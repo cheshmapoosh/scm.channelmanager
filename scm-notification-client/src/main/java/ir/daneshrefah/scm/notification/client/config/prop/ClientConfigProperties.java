@@ -1,25 +1,32 @@
 package ir.daneshrefah.scm.notification.client.config.prop;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
-@Setter
+@Data
 @ConfigurationProperties(prefix = "scm.notification")
 @Component
 public class ClientConfigProperties {
 
-    private Producer producer;
-    private DatasourceProperties dataSource = new DatasourceProperties();
+    private Boolean enabled;
+    private SmsProperties sms;
 
-    @Getter
-    @Setter
-    public static class DatasourceProperties extends DataSourceProperties {
-        private int maxConnection;
-        private String defaultSchema;
+    @Data
+    public static class SmsProperties {
+        private boolean enabled;
+        private JmsConfig ibmMq;
+        private JmsConfig activeMq;
+    }
+
+    @Data
+    public static class JmsConfig {
+        private String queueManager;
+        private String channel;
+        private String host;
+        private int port;
+        private String username;
+        private String password;
     }
 
 }

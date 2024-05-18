@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ir.daneshrefah.scm.logging.serializer.ExchangeSerializer;
-import ir.daneshrefah.scm.logging.serializer.HttpServletRequestSerializer;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.serializer.ExchangeSerializer;
+import ir.daneshrefah.scm.logging.serializer.HttpServletRequestSerializer;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
@@ -17,8 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,7 +34,8 @@ public class FileEventProducer extends EventProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventProducer.class);
 
     private final ObjectMapper objectMapper;
-    BlockingQueue<Event> loggingQueue = new LinkedBlockingQueue<>();
+//    BlockingQueue<Event> loggingQueue = new LinkedBlockingQueue<>();
+    ConcurrentLinkedQueue<Event> loggingQueue = new ConcurrentLinkedQueue<>();
 
 
     public FileEventProducer() {
@@ -53,12 +53,7 @@ public class FileEventProducer extends EventProducer {
     private void initLogThread() {
         Thread loggingThread = new Thread(() -> {
             while (true) {
-                Event event = null;
-                try {
-                    event = loggingQueue.take();
-                } catch (InterruptedException e) {
-                    LOGGER.error(e.getMessage(), e);
-                }
+                Event event = loggingQueue.poll();
                 try {
                     String json = objectMapper.writeValueAsString(event);
                     LOGGER.info(json);

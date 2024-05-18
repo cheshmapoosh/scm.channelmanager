@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.entity.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
-import ir.daneshrefah.scm.core.converter.JsonNodeTypeConverter;
+import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.TransformerRelationTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;

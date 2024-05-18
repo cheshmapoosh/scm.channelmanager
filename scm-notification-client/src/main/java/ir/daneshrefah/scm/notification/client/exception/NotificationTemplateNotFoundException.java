@@ -1,18 +1,13 @@
 package ir.daneshrefah.scm.notification.client.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_NOTIFICATION_TEMPLATE_NOT_FOUND;
+import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 
 public class NotificationTemplateNotFoundException extends BaseNotificationException{
 
     private final String requestedTemplateCode;
-    public NotificationTemplateNotFoundException(String requestedTemplateCode) {
-        super("No notification template found for : " + requestedTemplateCode, null);
+    public NotificationTemplateNotFoundException(NotificationRequest request, String requestedTemplateCode) {
+        super(request, "No notification template found for : " + requestedTemplateCode, null);
         this.requestedTemplateCode = requestedTemplateCode;
-    }
-
-    @Override
-    public int getErrorCode() {
-        return ERROR_CODE_NOTIFICATION_TEMPLATE_NOT_FOUND;
     }
 
     @Override

@@ -4,7 +4,6 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
-import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.exception.*;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
@@ -13,7 +12,7 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
-import ir.daneshrefah.scm.uaa.service.ClientService;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
@@ -89,7 +89,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             log.error(e.getMessage());
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
         }
-//        TODO check session required
+
         token.setSessionRequired(preAuthenticationToken.getScopes().contains(OAUTH2_SCOPE_NAME_SESSION));
         token.setNotificationRequired(AuthorizationGrantType.AUTHORIZATION_CODE.equals(preAuthenticationToken.getGrantType()) ||
                 AuthorizationGrantType.FIRST_PASSWORD.equals(preAuthenticationToken.getGrantType()));
@@ -113,6 +113,9 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
 
     private void checkClientVersionIfRequired(PreAuthenticationToken preAuthenticationToken) {
         RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
+        if (Objects.isNull(registeredClient)) {
+            throwError(preAuthenticationToken, new ClientCodeRequiredException());
+        }
         boolean isClientSupportCheckVersion = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_CHECK_VERSION);
         boolean isClientSupportCheckActivation = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
         if (isClientSupportCheckActivation && StringUtils.isEmpty(preAuthenticationToken.getActivationCode())) {

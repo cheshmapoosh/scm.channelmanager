@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +32,8 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
     private static final String TERMINAL_TITLE = "terminalTitle";
 
     @Override
-    protected String processInternal(MessageTemplate template, NotificationData data, NotificationRequest request) {
+    protected String processInternal(MessageTemplate template, NotificationRequest request) {
+        NotificationData data = request.getData();
         String templateBody = normalizeTemplateText(template.getBody());
         if (isFixedMessage(templateBody)) {
             return templateBody;
@@ -70,7 +71,7 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
     @Override
     protected boolean support(MessageTemplate template) {
         //TODO changed after completed
-        return TemplateCode.AUTHENTICATION.equals(template.getCode());
+        return NotificationTemplate.AUTHENTICATION.equals(template.getCode());
     }
 
 }

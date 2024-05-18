@@ -1,25 +1,20 @@
 package ir.daneshrefah.scm.notification.client.service;
 
-import ir.daneshrefah.scm.common.data.entity.notification.NotificationEntity;
-import ir.daneshrefah.scm.common.data.mapper.notification.NotificationMapper;
-import ir.daneshrefah.scm.common.data.repository.notification.NotificationRepository;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
-import ir.daneshrefah.scm.common.model.notification.Notification;
-import ir.daneshrefah.scm.common.model.notification.NotificationData;
+import ir.daneshrefah.scm.common.model.notification.NotificationMessage;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.constants.NotificationStatus;
-import ir.daneshrefah.scm.notification.client.exception.NotFoundSupportedBodyProcessorException;
-import ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessException;
-import ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessorDoesNotExistsException;
-import ir.daneshrefah.scm.notification.client.service.log.NotificationLogService;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.notification.client.exception.*;
+import ir.daneshrefah.scm.notification.client.service.provider.NotificationMessageProvider;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.notification.client.service.template.NotificationBodyProcessor;
-import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,64 +29,67 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-    private final List<NotificationBodyProcessor> bodyProcessors;
-    private final NotificationLogService notificationLogService;
+    private final TerminalService terminalService;
     private final MessageTemplateService messageTemplateService;
-    private final NotificationRepository notificationRepository;
+    private final List<NotificationBodyProcessor> bodyProcessors;
+    private final List<NotificationMessageProvider> messageProviders;
+//    private final NotificationLogService notificationLogService;
+//    private final NotificationRepository notificationRepository;
 
     public void sendNotification(NotificationRequest request) {
         try {
             validateNotificationRequest(request);
-            Notification notification = createNotification(request);
-            notificationLogService.logNotificationEvent(notification, request, NotificationStatus.DRAFT);
-            sendNotificationInternal(notification);
-            notificationLogService.logNotificationEvent(notification, request, NotificationStatus.QUEUE);
+            NotificationMessage notificationMessage = buildNotification(request);
+            sendNotificationInternal(notificationMessage);
         } catch (Exception e) {
-            notificationLogService.logNotificationEvent(request, NotificationStatus.FAILED, e);
+            log.error("error on send notification", e);
         }
     }
 
     private void validateNotificationRequest(NotificationRequest request) {
-        messageTemplateService.findMessageTemplateByCode(request.getTemplateCode());
+        ValidationUtils.checkNull(request, () -> new EmptyNotificationRequestException(request, "request"));
+        ValidationUtils.checkBlankString(request.getRecipient(), () -> new EmptyNotificationRequestException(request, "recipient"));
+        ValidationUtils.checkNull(request.getTemplate(), () -> new EmptyNotificationRequestException(request, "templateCode"));
+        ValidationUtils.checkNull(request.getMedia(), () -> new EmptyNotificationRequestException(request, "media"));
+//        ValidationUtils.checkBlankString(request.getIssuerNickname(), () -> new EmptyNotificationRequestException(request, "issuerNickname"));
+//        ValidationUtils.checkBlankString(request.getIssuerTerminalCode(), () -> new EmptyNotificationRequestException(request, "issuerTerminalCode"));
     }
 
 
-    private void sendNotificationInternal(Notification notification) {
-        notification.setStatus(NotificationStatus.QUEUE);
-        NotificationEntity entity = NotificationMapper.INSTANCE.toEntity(notification);
-        notificationRepository.save(entity);
+    private void sendNotificationInternal(NotificationMessage notificationMessage) {
+        for (Iterator<NotificationMessageProvider> iterator = messageProviders.iterator(); iterator.hasNext(); ) {
+            NotificationMessageProvider messageProvider = iterator.next();
+            if (messageProvider.supports(notificationMessage)) {
+                messageProvider.send(notificationMessage);
+            }
+        }
     }
 
-    private Notification createNotification(NotificationRequest notificationRequest) {
-        MessageTemplate messageTemplate = messageTemplateService.findMessageTemplateByCode(notificationRequest.getTemplateCode());
-        return new Notification()
-                .setMedia(notificationRequest.getMedia())
-                .setRecipient(notificationRequest.getRecipient())
-                .setMessageTemplate(messageTemplate)
-                .setBody(extractNotificationBody(messageTemplate, notificationRequest.getData(), notificationRequest))
-                .setTryCount(messageTemplate.getTryCount())
-                .setExpiration(DateUtils
-                        .LocalDateTimeTools.plus(DateUtils.LocalDateTimeTools.current(),
-                                Duration.ofMinutes(
-                                        Objects.isNull(messageTemplate.getMaxMinutesExpiration()) ? 0 : messageTemplate.getMaxMinutesExpiration())));
+    private NotificationMessage buildNotification(NotificationRequest notificationRequest) {
+        MessageTemplate messageTemplate = messageTemplateService.findMessageTemplateByCode(notificationRequest.getTemplate());
+        Terminal issuerTerminal = terminalService.findTerminalByCode(notificationRequest.getTerminalCode()).orElse(null);
+        ValidationUtils.checkNull(messageTemplate, () -> new InvalidNotificationRequestException(notificationRequest, "messageTemplate"));
+        ValidationUtils.checkNull(issuerTerminal, () -> new InvalidNotificationRequestException(notificationRequest, "issuerTerminal"));
+        return new NotificationMessage()
+                .setRequest(notificationRequest)
+                .setPayload(extractNotificationBody(messageTemplate, notificationRequest));
     }
 
-    private String extractNotificationBody(MessageTemplate template, NotificationData data, NotificationRequest request) {
+    private String extractNotificationBody(MessageTemplate template, NotificationRequest request) {
         if (Objects.isNull(bodyProcessors) || bodyProcessors.isEmpty()) {
-            throw new NotificationBodyProcessorDoesNotExistsException();
+            throw new NotificationBodyProcessorDoesNotExistsException(request);
         }
         for (NotificationBodyProcessor bodyProcessor : bodyProcessors) {
             try {
-                String body = bodyProcessor.process(template, data, request);
+                String body = bodyProcessor.process(template, request);
                 if (StringUtils.isNotEmpty(body)) {
                     return body;
                 }
             } catch (Exception e) {
-                throw new NotificationBodyProcessException(template.getBody());
+                throw new NotificationBodyProcessException(request, template.getBody());
             }
         }
-        throw new NotFoundSupportedBodyProcessorException(template.getCode().getValue());
+        throw new NotFoundSupportedBodyProcessorException(request, template.getCode().getValue());
     }
-
 
 }

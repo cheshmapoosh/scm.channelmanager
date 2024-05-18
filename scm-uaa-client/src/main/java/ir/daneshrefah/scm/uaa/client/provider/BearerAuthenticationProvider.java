@@ -25,15 +25,14 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
  * @since 2023-12-19
  */
 @Component
-public class BearerAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
+public class BearerAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
     private final JwtDecoder jwtDecoder;
     private final JwtTokenConverter jwtTokenConverter;
 
-    public BearerAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
-                                        JwtDecoder jwtDecoder,
+    public BearerAuthenticationProvider(JwtDecoder jwtDecoder,
                                         SessionCache sessionCache) {
-        super(remoteSecurityServiceProvider, sessionCache);
+        super(sessionCache);
         this.jwtDecoder = jwtDecoder;
         this.jwtTokenConverter = new JwtTokenConverter();
     }

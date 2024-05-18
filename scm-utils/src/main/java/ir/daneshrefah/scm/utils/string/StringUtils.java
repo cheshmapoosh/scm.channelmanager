@@ -19,6 +19,7 @@ public class StringUtils {
 
     public static final String SPACE = org.apache.commons.lang3.StringUtils.SPACE;
     public static final String EMPTY = org.apache.commons.lang3.StringUtils.EMPTY;
+    public static final String DASH = "-";
     public static final String COLON = ":";
     public static final String DOUBLE_COLON = "::";
     private static final Pattern PATTERN_EXTRACT_PROPERTY = Pattern.compile("\\$\\{(.*?)\\}");
@@ -49,6 +50,10 @@ public class StringUtils {
 
     public static boolean notEquals(CharSequence cs1, CharSequence cs2) {
         return !equals(cs1, cs2);
+    }
+
+    public static boolean notEqualsIgnoreCase(CharSequence cs1, CharSequence cs2) {
+        return !equalsIgnoreCase(cs1, cs2);
     }
 
     public static String replaceOnce(final String text, final String searchString, final String replacement) {
@@ -239,6 +244,10 @@ public class StringUtils {
             }
         }
         return parameters;
+    }
+
+    public static String joinWith(final String delimiter, final Object... array) {
+        return org.apache.commons.lang3.StringUtils.joinWith(delimiter, array);
     }
 
     public static String join(List<String> array, final String separator) {

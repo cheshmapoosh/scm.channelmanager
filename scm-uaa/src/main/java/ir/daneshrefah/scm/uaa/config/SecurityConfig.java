@@ -4,12 +4,12 @@ import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
-import ir.daneshrefah.scm.uaa.security.TerminalLoginUrlAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,7 +34,10 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
@@ -55,6 +58,7 @@ import java.util.Map;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String LOGIN_PROCESS_URI = "/login";
 
 //    @Autowired
 //    private UserDetailsService userDetailsService;
@@ -99,7 +103,7 @@ public class SecurityConfig {
                 // authorization endpoint
                 .exceptionHandling((exceptions) -> exceptions
                         .defaultAuthenticationEntryPointFor(
-                                new TerminalLoginUrlAuthenticationEntryPoint("/login"),
+                                new LoginUrlAuthenticationEntryPoint(LOGIN_PROCESS_URI),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
                 )
@@ -120,6 +124,7 @@ public class SecurityConfig {
                                                           JwtDecoder jwtDecoder,
                                                           GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
+        AuthenticationFailureHandler failureHandler = failureHandler();
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
         jwtAuthenticationProvider.setJwtAuthenticationConverter(new JwtTokenConverter());
         http
@@ -134,6 +139,7 @@ public class SecurityConfig {
 //                        .requestMatchers("/oauth2/token").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(captchaVerifyFilter(failureHandler), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(bearerAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class)
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
@@ -146,7 +152,7 @@ public class SecurityConfig {
                             }
                         })
                         .defaultAuthenticationEntryPointFor(
-                                new TerminalLoginUrlAuthenticationEntryPoint("/login"),
+                                new LoginUrlAuthenticationEntryPoint(LOGIN_PROCESS_URI),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
                         .defaultAuthenticationEntryPointFor(
@@ -155,17 +161,28 @@ public class SecurityConfig {
                         )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/**"))
+                .logout(logout -> {
+//                    logout.logoutUrl("/logout");
+                    logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
+                })
                 .formLogin(login -> {
 //                    login.setFormLoginEnabled(true);
                     login.usernameParameter("username");
                     login.passwordParameter("password");
-                    login.loginPage("/login");
-                    login.failureHandler(new TerminalUrlAuthenticationFailureHandler("/login?error"));
+                    login.loginPage(LOGIN_PROCESS_URI);
+                    login.failureHandler(failureHandler);
 //                    login.failureUrl("/login?error");
                     login.authenticationDetailsSource(new TerminalAuthenticationDetailsSource());
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
                     });
         return http.build();
+    }
+
+    private AuthenticationFailureHandler failureHandler() {
+        return new TerminalUrlAuthenticationFailureHandler(LOGIN_PROCESS_URI + "?error");
+    }
+    private CaptchaVerifyFilter captchaVerifyFilter(AuthenticationFailureHandler failureHandler) {
+        return new CaptchaVerifyFilter(LOGIN_PROCESS_URI, failureHandler);
     }
 
     private BearerTokenAuthenticationFilter bearerAuthenticationFilter(HttpSecurity http) {
@@ -175,7 +192,7 @@ public class SecurityConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder()
-                .issuer("http://auth-server:8000")
+                .issuer("http://scm-auth-server")
                 .build();
     }
 

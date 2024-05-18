@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.notification.client.exception;
 
 import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ErrorCodeAwareException;
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,15 +13,16 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
  * @version 1.0
  * @since 2024-02-05
  */
-public abstract class BaseNotificationException extends BaseException implements ErrorCodeAwareException {
+public abstract class BaseNotificationException extends BaseException {
 
-    public BaseNotificationException(String message, Throwable cause) {
+    private final NotificationRequest request;
+    public BaseNotificationException(NotificationRequest request, String message, Throwable cause) {
         super(message, cause);
+        this.request = request;
     }
 
     @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
+    public String getSource() {
+        return Objects.isNull(request) ? "null" : StringUtils.joinWith(StringUtils.DASH, request.getRecipient(), request.getTemplate());
     }
-
 }

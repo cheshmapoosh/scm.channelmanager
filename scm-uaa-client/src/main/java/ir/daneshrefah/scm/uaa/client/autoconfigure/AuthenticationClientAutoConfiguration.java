@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
-import ir.daneshrefah.scm.uaa.client.filter.BasicAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.filter.BearerAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.client.remote.SecurityServiceProvider;
@@ -18,13 +17,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ import java.util.stream.Collectors;
  */
 @AutoConfiguration
 @EnableWebSecurity
+@EnableMethodSecurity
 @ConditionalOnWebApplication
 public class AuthenticationClientAutoConfiguration {
 
@@ -60,7 +60,7 @@ public class AuthenticationClientAutoConfiguration {
                         .anyRequest().permitAll()
                 )
 //                .addFilter(anonymousAuthenticationFilter())
-                .addFilterBefore(basicAuthenticationFilter(context), RequestCacheAwareFilter.class)
+//                .addFilterBefore(basicAuthenticationFilter(context), RequestCacheAwareFilter.class)
                 .addFilterAt(bearerAuthenticationFilter(context), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 ->
                         oauth2
@@ -97,12 +97,12 @@ public class AuthenticationClientAutoConfiguration {
         );
     }
 
-    @Bean
+    /*@Bean
     public BasicAuthenticationFilter basicAuthenticationFilter(ApplicationContext context) {
         BasicAuthenticationFilter filter = new BasicAuthenticationFilter(authenticationManager(context));
         filter.setAuthenticationDetailsSource(authenticationDetailsSource());
         return filter;
-    }
+    }*/
 
     @Bean
     public BearerAuthenticationFilter bearerAuthenticationFilter(ApplicationContext context) {

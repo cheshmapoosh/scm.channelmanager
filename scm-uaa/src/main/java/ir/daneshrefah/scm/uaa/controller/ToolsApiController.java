@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller;
 
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.service.ClientService;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.common.model.notification;
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
-import ir.daneshrefah.scm.common.model.notification.constants.TemplateCode;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,12 +18,13 @@ import lombok.Getter;
 @Builder
 public class NotificationRequest {
 
+    private NotificationTemplate template;
     private NotificationMedia media;
     private String recipient;
+    private PersonType recipientType;
+    private String recipientUsername;
     private NotificationData data;
     private String terminalCode;
-    private TemplateCode templateCode;
-    private String username;
-    private String createdBy;
+    private IssuerInfo issuerInfo;
 
 }

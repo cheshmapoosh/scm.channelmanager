@@ -10,22 +10,22 @@ import java.util.stream.Collectors;
 @Getter
 public enum DataKey {
 
-    TITLE           (  "title"          , TemplateCode.AUTHENTICATION),
-    LOGIN_TIME      (  "loginTime"      , TemplateCode.AUTHENTICATION),
-    TERMINAL_CODE   (  "terminalCode"   , TemplateCode.AUTHENTICATION),
-    TERMINAL_TITLE  (  "terminalTitle"  , TemplateCode.AUTHENTICATION),
-    OTP_CODE        (  "otp-code"       ,TemplateCode.AUTHENTICATION );
+    TITLE           (  "title"          , NotificationTemplate.AUTHENTICATION),
+    LOGIN_TIME      (  "loginTime"      , NotificationTemplate.AUTHENTICATION),
+    TERMINAL_CODE   (  "terminalCode"   , NotificationTemplate.AUTHENTICATION),
+    TERMINAL_TITLE  (  "terminalTitle"  , NotificationTemplate.AUTHENTICATION),
+    OTP_CODE        (  "otp-code"       , NotificationTemplate.AUTHENTICATION );
 
 
     private final String parameterName;
-    private final TemplateCode templateCode;
+    private final NotificationTemplate templateCode;
 
-    DataKey(String parameterName, TemplateCode templateCode) {
+    DataKey(String parameterName, NotificationTemplate templateCode) {
         this.parameterName = parameterName;
         this.templateCode = templateCode;
     }
 
-    public static List<DataKey> findByTemplateCode(TemplateCode templateCode) {
+    public static List<DataKey> findByTemplateCode(NotificationTemplate templateCode) {
         return Arrays.stream(values())
                 .filter(dataKey -> dataKey.getTemplateCode().equals(templateCode))
                 .collect(Collectors.toList());

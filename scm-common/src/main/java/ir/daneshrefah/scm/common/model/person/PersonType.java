@@ -22,7 +22,14 @@ public enum PersonType {
     GOVERNANCE(4),
     BANK(5),
     TAMIN(6),
-    CLIENT(7);
+    /**
+     * this person type is used for clients that defined in {@link ClientPerson}
+     * */
+    CLIENT(7),
+    /**
+     * this person type is used for authentication with external providers like shahkar, gss, ...
+     * */
+    EXTERNAL(8);
 
     private final int code;
     public static PersonType findByCode(int code) {

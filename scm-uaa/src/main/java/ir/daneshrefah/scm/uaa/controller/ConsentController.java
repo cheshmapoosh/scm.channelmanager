@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller;
 
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.service.ClientService;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jmx.access.InvalidInvocationException;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;

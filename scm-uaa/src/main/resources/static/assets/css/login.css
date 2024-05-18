@@ -156,8 +156,8 @@ body {
 .captcha-img {
   position: absolute;
   text-outline: 0;
-  left: 1px;
-  top: 1px;
+  left: 0px;
+  top: 0px;
 }
 .btn-container {
   display: flex;

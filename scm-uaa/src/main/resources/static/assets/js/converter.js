@@ -164,7 +164,7 @@ const formList = [
       e.preventDefault();
 
       const data = Object.fromEntries(new FormData(jwtForm));
-      fetch("/public/tools/jwt", {
+      fetch("/public/api/tools/jwt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +175,8 @@ const formList = [
           if (!response.ok) {
             throw new Error("Network response was not ok");
           }
-          return response.json();
+          console.log(response);
+          return response;
         })
         .then((newUserData) => {
           console.log("New User Data:", newUserData);

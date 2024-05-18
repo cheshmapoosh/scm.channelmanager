@@ -10,7 +10,9 @@ import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,8 +34,11 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 
@@ -55,16 +60,16 @@ public class JWTConfig {
 
     @Bean
     @Primary
-    OAuth2TokenGenerator<?> uaaTokenGenerator(JWKSource<SecurityContext> jwkSource) {
+    OAuth2TokenGenerator<?> uaaTokenGenerator(JWKSource<SecurityContext> jwkSource, ClientService clientService) {
         NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
         JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
-        jwtGenerator.setJwtCustomizer(jwtCustomizer());
+        jwtGenerator.setJwtCustomizer(jwtCustomizer(clientService));
         OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
         return new DelegatingOAuth2TokenGenerator(jwtGenerator, refreshTokenGenerator);
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer(ClientService clientService) {
         return context -> {
             JwtClaimsSet.Builder claims = context.getClaims();
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
@@ -113,11 +118,17 @@ public class JWTConfig {
                 }
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
+                long id = Long.valueOf(principal.getRegisteredClient().getId());
+                Optional<Client> client = clientService.findById(id);
                 claims.claim(CLAIM_KEY_TERMINAL, principal.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
                 claims.claim(CLAIM_KEY_GRANT, AuthorizationGrantType.CLIENT_CREDENTIALS);
                 claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.CLIENT.getCode());
-                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, Long.valueOf(principal.getRegisteredClient().getId()));
+                claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, id);
                 claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, principal.getRegisteredClient().getClientId());
+                claims.claim(CLAIM_KEY_PERSON_TITLE, client.get().getTitle());
+                List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
+                authorities.add(ROLE_PERSON_TYPE_CLIENT);
+                claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
             }
         };
     }

@@ -29,6 +29,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+import static ir.daneshrefah.scm.utils.constant.Constants.*;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -87,6 +89,10 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String token;
+        if (!canContinue()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             token = this.bearerTokenResolver.resolve(request);
         }
@@ -101,9 +107,9 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String username = null;//todo
-        String terminalCode = null;//todo
-        String clientId = null;//todo
+        String username = request.getHeader(SCM_PARAMETER_USERNAME);
+        String terminalCode = request.getHeader(SCM_PARAMETER_TERMINAL);
+        String clientId = request.getHeader(SCM_PARAMETER_CLIENT_ID);
         BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(username, terminalCode, clientId, token);
         authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
@@ -192,4 +198,8 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
         this.authenticationDetailsSource = authenticationDetailsSource;
     }
 
+    private boolean canContinue() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return null == authentication;
+    }
 }
