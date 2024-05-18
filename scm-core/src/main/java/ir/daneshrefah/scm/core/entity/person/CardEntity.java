@@ -21,7 +21,7 @@ public class CardEntity extends AbstractEntity<Long> {
     @Id
     @Column(name = "CARD_ID")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_card")
-    @SequenceGenerator(name = "sequence_card", sequenceName = "REF.SQCARD")
+    @SequenceGenerator(name = "sequence_card", sequenceName = "REF.SQCARD",allocationSize = 1)
     private Long id;
 //    MEMBERSHIP_ID               INTEGER      not null,
 //    CUSTOMER_ID                 INTEGER      not null,

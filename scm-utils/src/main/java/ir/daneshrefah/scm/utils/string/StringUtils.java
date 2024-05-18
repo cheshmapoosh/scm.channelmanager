@@ -270,4 +270,8 @@ public class StringUtils {
         return type.cast(dest);
     }
 
+    public static boolean isAlphanumeric(String input){
+        return org.apache.commons.lang3.StringUtils.isAlphanumeric(input);
+    }
+
 }

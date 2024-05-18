@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.user;
 
 import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Data;
 
 /**
@@ -17,4 +18,13 @@ public class UserFindRequest extends PagedRequestData {
     private Boolean active;
     private String creatorBranch;
     private Integer terminalId;
+    private String accessParameters;
+    private String creator;
+    private String editor;
+    private AuthenticationMethod loginAuthenticationMethod;
+    private AuthenticationMethod transactionAuthenticationMethod;
+
+
+
+
 }
