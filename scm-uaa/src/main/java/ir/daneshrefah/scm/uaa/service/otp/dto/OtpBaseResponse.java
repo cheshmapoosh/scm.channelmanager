@@ -1,11 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.time.Instant;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,15 +11,10 @@ import java.time.Instant;
  * @since 2024-02-17
  */
 @Getter
-@AllArgsConstructor
+@SuperBuilder
 public abstract class OtpBaseResponse {
 
-    private String terminalCode;
-    private String accessParameter;
-    private String recipientUsername;
-    private String recipient;
-    private OtpType otpType;
-    private OtpReason reason;
     private boolean isSuccessful;
+    private String errorMessage;
 
 }

@@ -1,11 +1,14 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
-import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
+import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -13,8 +16,6 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,37 +36,48 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         if (!authentication.isNotificationRequired()) {
             return;
         }
-        User user = authentication.getPrincipal().getUser();
 //        BeanUtils.describe(authentication);
+        User user = authentication.getPrincipal().getUser();
         terminalService
                 .findTerminalByCode(user.getTerminalCode())
                 .ifPresent(terminal -> {
-                    NotificationData data = new NotificationData()
-                            .put(DataKey.TITLE, "")
-                            .put(DataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
-                            .put(DataKey.TERMINAL_TITLE, terminal.getTitle())
-                            .put(DataKey.OTP_CODE, "123");
-                    IssuerInfo issuerInfo = IssuerInfo.builder()
-                            .parentCorrelationId(authentication.getSessionId())
-                            .nickname(user.getNickname())
-                            .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
-                            .personType(user.getPerson().getPersonType())
-                            .terminalCode(user.getTerminalCode())
+                    notificationService.sendNotification(extractNotificationRequest(authentication, terminal));
+                });
+    }
+
+    private NotificationRequest extractNotificationRequest(PostAuthenticationToken authentication, Terminal terminal) {
+        User user = authentication.getPrincipal().getUser();
+        NotificationData data = new NotificationData()
+                .put(DataKey.TITLE, "")
+                .put(DataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
+                .put(DataKey.TERMINAL_TITLE, terminal.getTitle())
+                .put(DataKey.OTP_CODE, "123");
+        IssuerInfo issuerInfo = IssuerInfo.builder()
+                .parentCorrelationId(authentication.getSessionId())
+//                            .nickname(user.getNickname())
+//                            .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
+//                            .personType(user.getPerson().getPersonType())
+                .terminalCode(user.getTerminalCode())
 //                            .hostAddress()
 //                            .instanceName()
-                            .build();
-                    NotificationRequest request = NotificationRequest.builder()
-                            .template(NotificationTemplate.AUTHENTICATION)
-                            .media(NotificationMedia.SMS)
-                            .recipient(user.getPerson().getMobile1())
-                            .recipientType(user.getPerson().getPersonType())
-                            .recipientUsername(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
-                            .data(data)
-                            .terminalCode(user.getTerminalCode())
-                            .issuerInfo(issuerInfo)
-                            .build();
-                    notificationService.sendNotification(request);
-                });
+                .build();
+        Recipient recipient = Recipient.builder()
+                .address(user.getPerson().getMobile1())
+//                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
+                .identifier(user.getNickname())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .terminalCode(terminal.getCode())
+// TODO                .accessParameter(authentication.getA)
+                .build();
+        NotificationRequest request = NotificationRequest.builder()
+                .template(NotificationTemplate.AUTHENTICATION)
+                .media(NotificationMedia.SMS)
+                .recipient(recipient)
+                .data(data)
+                .terminalCode(user.getTerminalCode())
+                .issuerInfo(issuerInfo)
+                .build();
+        return request;
     }
 
     private String getShamsiLoginTime(PostAuthenticationToken authentication) {

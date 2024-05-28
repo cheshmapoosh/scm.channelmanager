@@ -16,6 +16,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum PersonType {
 
+    UNKNOWN(0),
     REAL(1),
     EMPLOYEE(2),
     CORPORATE(3),
@@ -25,13 +26,10 @@ public enum PersonType {
     /**
      * this person type is used for clients that defined in {@link ClientPerson}
      * */
-    CLIENT(7),
-    /**
-     * this person type is used for authentication with external providers like shahkar, gss, ...
-     * */
-    EXTERNAL(8);
+    CLIENT(7);
 
     private final int code;
+
     public static PersonType findByCode(int code) {
         return Arrays.stream(PersonType.values())
                 .filter(s -> s.code == code)

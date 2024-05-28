@@ -33,6 +33,17 @@ public class CacheTemplateImpl implements CacheTemplate {
     }
 
     @Override
+    public void putInCacheIfAbsent(String mapName, String key, Object value) {
+        hazelcastInstance.getMap(mapName).putIfAbsent(key, value);
+    }
+
+    @Override
+    public void putInCacheIfAbsent(String mapName, String key, Object value, long timeToLiveMinutes) {
+        hazelcastInstance.getMap(mapName).putIfAbsent(key, value, timeToLiveMinutes, TimeUnit.MINUTES);
+        hazelcastInstance.getMap(mapName).getEntryView(key);
+    }
+
+    @Override
     public Object removeFromCache(String mapName, String key) {
         return hazelcastInstance.getMap(mapName).remove(key);
     }

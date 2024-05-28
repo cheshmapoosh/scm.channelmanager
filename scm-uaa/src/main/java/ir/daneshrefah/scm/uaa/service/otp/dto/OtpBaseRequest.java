@@ -1,10 +1,13 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,14 +18,12 @@ import lombok.NoArgsConstructor;
  */
 @Getter
 @AllArgsConstructor
-@NoArgsConstructor
 public abstract class OtpBaseRequest {
 
-    private String terminalCode;
-    private String accessParameter;
-    private String recipientUsername;
-    private String recipient;
     private OtpType otpType;
     private OtpReason reason;
+    private Recipient recipient;
+    private IssuerInfo issuer;
+    private final Instant receiveTime = Instant.now();
 
 }

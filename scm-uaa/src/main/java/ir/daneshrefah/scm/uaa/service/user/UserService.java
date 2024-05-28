@@ -78,7 +78,7 @@ public class UserService {
         String loggedInGlobalUsername = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String headerTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!headerTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-            || (!username.equals(loggedInGlobalUsername) && !hasAdministratorAccess())) {
+                || (!username.equals(loggedInGlobalUsername) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         Terminal terminal = terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminal code"));
@@ -134,8 +134,8 @@ public class UserService {
             throw new InvalidInputException("newPassword");
         }
         if (newPassword.length() < 8
-            || StringUtils.isNumeric(newPassword)
-            || !StringUtils.isAlphanumeric(newPassword)) {
+                || StringUtils.isNumeric(newPassword)
+                || !StringUtils.isAlphanumeric(newPassword)) {
             throw new InvalidInputException("security constraints");
         }
     }
@@ -188,11 +188,11 @@ public class UserService {
         ValidationUtils.checkNull(terminalId, () -> new InvalidInputException("terminalCode"));
 
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
-            StringUtils.isEmpty(request.getLoginStaticPassword())) {
+                StringUtils.isEmpty(request.getLoginStaticPassword())) {
             throw new MissingRequiredInputException("loginStaticPassword");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getTransactionAuthenticationMethod()) &&
-            StringUtils.isEmpty(request.getTransactionStaticPassword())) {
+                StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
         GeneralPersonEntity personEntity = findPersonById(request.getPersonId().intValue());
@@ -332,10 +332,9 @@ public class UserService {
                     .builder()
                     .otpType(OtpType.SMS)
                     .claimCode(request.getOtpCode())
-                    .recipientUsername(request.getUsername())
-                    .terminalCode(request.getTerminalCode())
+                    .recipient(null) //TODO should load user info
+//                    .terminalCode(request.getTerminalCode())
                     .reason(reason)
-                    .recipient(request.getRecipient())
                     .build();
             if (!request.getOtpCode().equals("456")) {
                 throw new InvalidInputException("otpCode");
@@ -382,7 +381,7 @@ public class UserService {
         String loggedInGlobalUsername = Objects.requireNonNull(AuthenticationUtils.getLoggedInUserAuthentication()).getName();
         String headerTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!headerTerminalCode.equals(request.getTerminalCode()) && !hasAdministratorAccess())
-            || (!request.getUsername().equals(loggedInGlobalUsername) && !hasAdministratorAccess())) {
+                || (!request.getUsername().equals(loggedInGlobalUsername) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         //attaching the record
@@ -396,7 +395,7 @@ public class UserService {
         applyDynamicUpdateChanges(userEntity, request);
         userEntity.setLastEditDate(LocalDateTime.now());
         if (Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication())
-            && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
+                && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
             userEntity.setLastEditor(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal().getId());
         }
         userRepository.save(userEntity);
@@ -408,7 +407,7 @@ public class UserService {
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getLoginStaticPassword(), userEntity::setLoginStaticPassword);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getTransactionStaticPassword(), userEntity::setTransactionStaticPassword);
-        DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(),accessParameters->{
+        DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(), accessParameters -> {
             userEntity.setAccessParameters(validateAccessParameter(accessParameters));
         });
         DynamicUpdateUtils.applyChangesIfNotNull(request.getActive(), userEntity::setActive);
@@ -425,6 +424,16 @@ public class UserService {
     }
 
     public User findUserById(Integer userId) {
-        return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(()->new NoMatchRecordFoundException("userId")));
+        return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
+    }
+
+    public User findByNicknameAndTerminalCode(String nickname, String terminalCode) {
+        Integer terminalId = Integer.valueOf(terminalService.findTerminalByCode(terminalCode)
+                .orElseThrow(() -> new InvalidInputException("terminalCode")).getId());
+        List<UserEntity> userEntities = userRepository.findByNicknameAndTerminalId(nickname, terminalId);
+        if (Objects.nonNull(userEntities) && userEntities.size() > 0) {
+            return UserMapper.INSTANCE.toModel(userEntities.get(0));
+        }
+        return null;
     }
 }

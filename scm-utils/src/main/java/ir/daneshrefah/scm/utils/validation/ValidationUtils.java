@@ -15,6 +15,12 @@ public class ValidationUtils {
         }
     }
 
+    public static void checkNonNull(Object object, Supplier<RuntimeException> throwsException) {
+        if (Objects.nonNull(object)) {
+            throw throwsException.get();
+        }
+    }
+
     public static void checkEmptyString(String string,Supplier<RuntimeException> throwsException){
         if (Objects.isNull(string) || string.isEmpty()){
             throw throwsException.get();
@@ -50,4 +56,17 @@ public class ValidationUtils {
             throw throwsException.get();
         }
     }
+
+    public static void checkNotEqualsString(CharSequence cs1, CharSequence cs2, Supplier<RuntimeException> throwsException) {
+        if (StringUtils.notEquals(cs1, cs2)){
+            throw throwsException.get();
+        }
+    }
+
+    public static void checkNotEqualsIgnoreCaseString(CharSequence cs1, CharSequence cs2, Supplier<RuntimeException> throwsException) {
+        if (StringUtils.notEqualsIgnoreCase(cs1, cs2)){
+            throw throwsException.get();
+        }
+    }
+
 }

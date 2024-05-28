@@ -82,14 +82,14 @@ public class RegisterService {
             throw new InvalidInputException("recipient");
         }
         OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .terminalCode(client.getTerminalCode())
-                .accessParameter(null)
-                .recipientUsername(username)
-                .recipient(request.getRecipient())
+//                .terminalCode(client.getTerminalCode())
+//                .accessParameter(null)
+                .recipient(null) //TODO
+//                .recipient(request.getRecipient())
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.ACTIVATION)
-                .issuerAddress(address)
-                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
+//                .issuerAddress(address)
+//                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
                 .build();
         OtpSendResponse otpResponse = otpService.sendOtp(otpRequest/*, null*/);
         return SubmitRegisterResponse.builder()
@@ -97,7 +97,7 @@ public class RegisterService {
                 .recipient(request.getRecipient())
                 .media(NotificationMedia.SMS)
                 .isSuccessful(otpResponse.isSuccessful())
-                .expireTime(otpResponse.getExpireTime())
+                .expireTime(otpResponse.getOtp().getExpireTime())
                 .build();
     }
 
@@ -143,10 +143,10 @@ public class RegisterService {
 //            throw new InvalidInputException("recipient");
 //        }
         OtpVerifyRequest otpRequest = OtpVerifyRequest.builder()
-                .terminalCode(client.getTerminalCode())
-                .accessParameter(null)
-                .recipientUsername(username)
-                .recipient(request.getRecipient())
+//                .terminalCode(client.getTerminalCode())
+//                .accessParameter(null)
+//                .recipientUser(null) //TODO
+//                .recipient(request.getRecipient())
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.ACTIVATION)
                 .claimCode(request.getClaimCode())

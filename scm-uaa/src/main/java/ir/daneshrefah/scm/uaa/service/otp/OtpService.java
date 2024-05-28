@@ -2,24 +2,18 @@ package ir.daneshrefah.scm.uaa.service.otp;
 
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
-import ir.daneshrefah.scm.uaa.service.otp.provder.OtpProvider;
-import ir.daneshrefah.scm.uaa.service.user.UserService;
-import ir.daneshrefah.scm.uaa.utils.UserValidationWrapper;
-import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.uaa.exception.BaseOtpException;
+import ir.daneshrefah.scm.uaa.service.otp.dto.*;
+import ir.daneshrefah.scm.uaa.service.otp.provder.AbstractOtpProvider;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,85 +29,109 @@ import java.util.stream.Collectors;
 public class OtpService {
 
     private final TerminalService terminalService;
-    private final UserService userService;
-    private final Map<OtpType, OtpProvider> providers;
+    private final Map<OtpType, AbstractOtpProvider> providers;
 
-    public OtpService(List<OtpProvider> providers, TerminalService terminalService, UserService userService) {
+    public OtpService(List<AbstractOtpProvider> providers, TerminalService terminalService) {
         this.terminalService = terminalService;
-        this.userService = userService;
         this.providers = providers.stream()
-                .collect(Collectors.toMap(OtpProvider::getType, Function.identity()));
+                .collect(Collectors.toMap(AbstractOtpProvider::getType, Function.identity()));
     }
 
-    public OtpSendResponse sendOtp(OtpSendRequest request/*, User loggedInUser*/) {
-        if (null == request.getReason()) {
-            throw new MissingRequiredInputException("reason");
-        }
-        if (StringUtils.isEmpty(request.getRecipientUsername()) && null == request.getIssuerUser()) {
-            throw new MissingRequiredInputException("recipientUsername");
-        }
-        String terminalCode = request.getTerminalCode();
-        if (StringUtils.isEmpty(terminalCode) && null != request.getIssuerUser()) {
-            terminalCode = request.getIssuerUser().getTerminalCode();
-        }
-        if (StringUtils.isEmpty(terminalCode)) {
-            throw new MissingRequiredInputException("terminalCode");
-        }
-        Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
-        if (terminal.isEmpty()) {
-            throw new InvalidInputException("terminalCode");
-        }
-        User recipientUser = null;
-        if (StringUtils.isNotEmpty(request.getRecipientUsername())) {
-            Optional<User> userOptional = userService.loadUserByUsername(request.getRecipientUsername(), terminalCode);
-            if (userOptional.isEmpty()) {
-                throw new InvalidInputException("recipientUsername");
-            }
-            recipientUser = userOptional.get();
-        }
-        if (null == recipientUser) {
-            recipientUser = (User) request.getIssuerUser().getPrincipal();
-        }
+    public OtpSendResponse sendOtp(OtpSendRequest request) {
+        ValidationUtils.checkNull(request.getOtpType(), () -> new MissingRequiredInputException("otpType"));
+        ValidationUtils.checkNull(request.getReason(), () -> new MissingRequiredInputException("reason"));
 
-        PersonType personType = recipientUser.getPerson().getPersonType();
-        if (!PersonType.REAL.equals(personType) && !PersonType.EMPLOYEE.equals(personType)) {
-            throw new InvalidInputException("personType");
-        }
-        String recipient = StringUtils.isNotEmpty(request.getRecipient()) ? request.getRecipient() : recipientUser.getPerson().getMobile1();
-        UserValidationWrapper userValidator = new UserValidationWrapper(recipientUser);
-        if (StringUtils.isNotEmpty(recipient) && !userValidator.containsMobile(recipient)) {
-            throw new InvalidInputException("recipient");
-        }
-        if (StringUtils.isEmpty(recipient)) {
-            throw new MissingRequiredInputException("recipient");
-        }
-//        TODO need to authorize with recipient password
+        ValidationUtils.checkNull(request.getRecipient(), () -> new MissingRequiredInputException("recipient"));
+        ValidationUtils.checkBlankString(request.getRecipient().getAddress(), () -> new MissingRequiredInputException("recipient.address"));
+//        ValidationUtils.checkNull(request.getRecipient().getAuthenticationLevel(), () -> new MissingRequiredInputException("recipient.authenticationLevel"));
+        ValidationUtils.checkBlankString(request.getRecipient().getIdentifier(), () -> new MissingRequiredInputException("recipient.identifier"));
+        ValidationUtils.checkNull(request.getRecipient().getIdentifierType(), () -> new MissingRequiredInputException("recipient.identifierType"));
+        ValidationUtils.checkBlankString(request.getRecipient().getTerminalCode(), () -> new MissingRequiredInputException("recipient.terminalCode"));
+        ValidationUtils.checkBlankString(request.getRecipient().getAccessParameter(), () -> new MissingRequiredInputException("recipient.accessParameter"));
 
-        return OtpSendResponse.builder()
-                .terminalCode(terminalCode)
-                .accessParameter(request.getAccessParameter())
-                .recipientUsername(recipientUser.getNickname())
-                .recipient(recipient)
+        ValidationUtils.checkNull(request.getIssuer(), () -> new MissingRequiredInputException("issuer"));
+        ValidationUtils.checkNull(request.getIssuer().getAuthenticationLevel(), () -> new MissingRequiredInputException("issuer.authenticationLevel"));
+        ValidationUtils.checkBlankString(request.getIssuer().getIdentifier(), () -> new MissingRequiredInputException("issuer.identifier"));
+        ValidationUtils.checkNull(request.getIssuer().getIdentifierType(), () -> new MissingRequiredInputException("issuer.identifierType"));
+        ValidationUtils.checkBlankString(request.getIssuer().getTerminalCode(), () -> new MissingRequiredInputException("issuer.terminalCode"));
+        ValidationUtils.checkBlankString(request.getIssuer().getAccessParameter(), () -> new MissingRequiredInputException("issuer.accessParameter"));
+//        private final String xForwardedFor;
+//        private final String hostAddress;
+//        private final String instanceName;
+
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(request.getRecipient().getTerminalCode());
+        ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
+
+        AbstractOtpProvider provider = providers.get(request.getOtpType());
+        if (Objects.isNull(provider)) {
+            return createInvalidResponse(request, "Unsupported otpType.");
+        }
+        return provider.sendOtp(request);
+    }
+
+    /*private void fillRequestOwner(OtpSendRequest request) {
+        if (Objects.nonNull(request.getRecipient().getOwner())) {
+            return;
+        }
+        switch (request.getRecipient().getIdType()) {
+            case PERSON_USERNAME:
+                GeneralPerson person = personService.findPersonByPersonUsername(request.getRecipient().getId())
+                        .orElseThrow(() -> new InvalidInputException("username"));
+                request.getRecipient().owner(person);
+                break;
+            case USER_NICKNAME:
+                User user = userService.findByNicknameAndTerminalCode(request.getRecipient().getId(), request.getTerminalCode());
+                ValidationUtils.checkNull(user, () -> new InvalidInputException("nickname"));
+                request.getRecipient().owner(user.getPerson());
+                break;
+            case MOBILE_NUMBER:
+                break;
+            case EMAIL_ADDRESS:
+                break;
+        }
+    }*/
+
+    private OtpSendResponse createInvalidResponse(OtpSendRequest request, String errorMessage) {
+        Otp otp = Otp.builder()
                 .otpType(request.getOtpType())
                 .reason(request.getReason())
-                .isSuccessful(true)
-                .otpCode("456")
-                .expireTime(Instant.now())
+                .recipient(request.getRecipient())
+                .issuer(request.getIssuer())
+                .build();
+        return OtpSendResponse.builder()
+                .otp(otp)
+                .isSuccessful(false)
+                .errorMessage(errorMessage)
+//                .otpCode("456")
+//                .expireTime(Instant.now())
+                .build();
+    }
+
+    private OtpVerifyResponse createInvalidVerifyResponse(OtpVerifyRequest request, String errorMessage) {
+        Otp otp = Otp.builder()
+                .otpType(request.getOtpType())
+                .reason(request.getReason())
+                .recipient(request.getRecipient())
+                .issuer(request.getIssuer())
+                .build();
+        return OtpVerifyResponse.builder()
+                .isSuccessful(false)
+                .errorMessage(errorMessage)
+//                .otpCode("456")
+//                .expireTime(Instant.now())
                 .build();
     }
 
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
-        System.out.println("verify otp request");
-        return OtpVerifyResponse.builder()
-                .terminalCode(request.getTerminalCode())
-                .accessParameter(request.getAccessParameter())
-                .recipientUsername(request.getRecipientUsername())
-                .recipient(request.getRecipient())
-                .otpType(request.getOtpType())
-                .reason(request.getReason())
-                .isSuccessful("456".equals(request.getClaimCode()))
-                .tryCount(1)
-                .build();
+        AbstractOtpProvider provider = providers.get(request.getOtpType());
+        if (Objects.isNull(provider)) {
+            return createInvalidVerifyResponse(request, "Unsupported otpType.");
+        }
+        try {
+            return provider.verifyOtp(request);
+        } catch (BaseOtpException e) {
+            return createInvalidVerifyResponse(request, e.getMessage());
+        }
     }
 
 }

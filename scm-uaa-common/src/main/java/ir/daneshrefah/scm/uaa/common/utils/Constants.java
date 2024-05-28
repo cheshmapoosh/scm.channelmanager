@@ -65,7 +65,7 @@ public class Constants {
 //    public final static String HASHCODE_HEADER ="HashCode";
 //    public final static String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
 //    public final static String AUTH_HEADER ="X_UserAuthorization";
-//    public final static String IP_HEADER ="X-Forwarded-For";
+    public final static String IP_HEADER ="X-Forwarded-For";
 //    public final static String ACCESS_PARAM_HEADER ="AccessParameter";
 //    public final static String FIRST_LVL_AUTH_GRANT="cm-first-password";
 //    public final static String SECOND_LVL_AUTH_GRANT="cm-second-password";

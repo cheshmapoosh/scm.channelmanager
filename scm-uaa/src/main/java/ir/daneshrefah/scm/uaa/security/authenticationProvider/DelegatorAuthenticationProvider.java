@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.providers.AbstractAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderNotFoundException;
@@ -59,6 +59,6 @@ public class DelegatorAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return AbstractAuthenticationToken.class.isAssignableFrom(authentication);
+        return GeneralAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

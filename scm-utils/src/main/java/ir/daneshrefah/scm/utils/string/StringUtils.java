@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.utils.string;
 
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.text.CaseUtils;
 
 import java.net.URI;
@@ -17,6 +19,7 @@ import java.util.regex.Pattern;
  */
 public class StringUtils {
 
+    private static final String[] EMPTY_STRING_ARRAY = {};
     public static final String SPACE = org.apache.commons.lang3.StringUtils.SPACE;
     public static final String EMPTY = org.apache.commons.lang3.StringUtils.EMPTY;
     public static final String DASH = "-";
@@ -34,6 +37,16 @@ public class StringUtils {
 
     public static boolean isBlank(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isBlank(cs);
+    }
+
+    public static boolean isNotBlank(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNotBlank(cs);
+    }
+
+    public static boolean isValidPhoneNumber(final String cs) {
+        String value = cs;
+        value = replace(value, "+", "");
+        return org.apache.commons.lang3.StringUtils.isNumeric(value);
     }
 
     public static boolean endsWith(final CharSequence str, final CharSequence suffix) {
@@ -272,6 +285,143 @@ public class StringUtils {
 
     public static boolean isAlphanumeric(String input){
         return org.apache.commons.lang3.StringUtils.isAlphanumeric(input);
+    }
+
+    public static String upperCase(final String str) {
+        return org.apache.commons.lang3.StringUtils.upperCase(str);
+    }
+
+    /**
+     * Take a {@code String} that is a delimited list and convert it into a
+     * {@code String} array.
+     * <p>A single {@code delimiter} may consist of more than one character,
+     * but it will still be considered as a single delimiter string, rather
+     * than as a bunch of potential delimiter characters, in contrast to
+     * @param str the input {@code String} (potentially {@code null} or empty)
+     * @param delimiter the delimiter between elements (this is a single delimiter,
+     * rather than a bunch individual delimiter characters)
+     * @return an array of the tokens in the list
+     */
+    public static String[] delimitedListToStringArray(String str, String delimiter) {
+        return delimitedListToStringArray(str, delimiter, null);
+    }
+
+    /**
+     * Take a {@code String} that is a delimited list and convert it into
+     * a {@code String} array.
+     * <p>A single {@code delimiter} may consist of more than one character,
+     * but it will still be considered as a single delimiter string, rather
+     * than as a bunch of potential delimiter characters, in contrast to
+     * @param str the input {@code String} (potentially {@code null} or empty)
+     * @param delimiter the delimiter between elements (this is a single delimiter,
+     * rather than a bunch individual delimiter characters)
+     * @param charsToDelete a set of characters to delete; useful for deleting unwanted
+     * line breaks: e.g. "\r\n\f" will delete all new lines and line feeds in a {@code String}
+     * @return an array of the tokens in the list
+     */
+    public static String[] delimitedListToStringArray(
+            String str, String delimiter, String charsToDelete) {
+
+        if (str == null) {
+            return EMPTY_STRING_ARRAY;
+        }
+        if (delimiter == null) {
+            return new String[] {str};
+        }
+
+        List<String> result = new ArrayList<>();
+        if (delimiter.isEmpty()) {
+            for (int i = 0; i < str.length(); i++) {
+                result.add(deleteAny(str.substring(i, i + 1), charsToDelete));
+            }
+        }
+        else {
+            int pos = 0;
+            int delPos;
+            while ((delPos = str.indexOf(delimiter, pos)) != -1) {
+                result.add(deleteAny(str.substring(pos, delPos), charsToDelete));
+                pos = delPos + delimiter.length();
+            }
+            if (str.length() > 0 && pos <= str.length()) {
+                // Add rest of String, but not in case of empty input.
+                result.add(deleteAny(str.substring(pos), charsToDelete));
+            }
+        }
+        return toStringArray(result);
+    }
+
+    /**
+     * Copy the given {@link Collection} into a {@code String} array.
+     * <p>The {@code Collection} must contain {@code String} elements only.
+     * @param collection the {@code Collection} to copy
+     * (potentially {@code null} or empty)
+     * @return the resulting {@code String} array
+     */
+    public static String[] toStringArray(Collection<String> collection) {
+        return (Objects.nonNull(collection) && !collection.isEmpty() ? collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY);
+    }
+
+    /**
+     * Copy the given {@link Enumeration} into a {@code String} array.
+     * <p>The {@code Enumeration} must contain {@code String} elements only.
+     * @param enumeration the {@code Enumeration} to copy
+     * (potentially {@code null} or empty)
+     * @return the resulting {@code String} array
+     */
+    public static String[] toStringArray(Enumeration<String> enumeration) {
+        return (enumeration != null ? toStringArray(Collections.list(enumeration)) : EMPTY_STRING_ARRAY);
+    }
+
+    /**
+     * Delete any character in a given {@code String}.
+     * @param inString the original {@code String}
+     * @param charsToDelete a set of characters to delete.
+     * E.g. "az\n" will delete 'a's, 'z's and new lines.
+     * @return the resulting {@code String}
+     */
+    public static String deleteAny(String inString, String charsToDelete) {
+        if (isNotEmpty(inString) || isNotEmpty(charsToDelete)) {
+            return inString;
+        }
+
+        int lastCharIndex = 0;
+        char[] result = new char[inString.length()];
+        for (int i = 0; i < inString.length(); i++) {
+            char c = inString.charAt(i);
+            if (charsToDelete.indexOf(c) == -1) {
+                result[lastCharIndex++] = c;
+            }
+        }
+        if (lastCharIndex == inString.length()) {
+            return inString;
+        }
+        return new String(result, 0, lastCharIndex);
+    }
+
+    public static String randomNumeric(final int count) {
+        return RandomStringUtils.randomNumeric(count);
+    }
+
+    public static String randomAlphabetic(final int count) {
+        return RandomStringUtils.randomAlphabetic(count);
+    }
+
+    public static String randomAlphanumeric(final int count) {
+        return RandomStringUtils.randomAlphanumeric(count);
+    }
+
+    public static String normalizePhoneNumber(String number) {
+        if (isBlank(number)) {
+            return number;
+        }
+        String defaultCountryCode = "+98";
+        String normalizedNumber = number.replaceAll("[^\\d+]]", "");
+        if (normalizedNumber.startsWith("0")) {
+            normalizedNumber = defaultCountryCode + normalizedNumber.substring(1);
+        } else if (!normalizedNumber.startsWith("+")) { // Prepend default country code if not already present
+            normalizedNumber = defaultCountryCode + normalizedNumber;
+        }
+        return normalizedNumber;
     }
 
 }

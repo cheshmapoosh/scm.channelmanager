@@ -6,9 +6,13 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuth
 import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2SmsOtpAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,7 +34,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -46,6 +50,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Description of the class or purpose of the file.
@@ -66,7 +71,8 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
-                                                                      OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider)
+                                                                      OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider,
+                                                                      OAuth2SmsOtpAuthenticationProvider oAuth2SmsOtpAuthenticationProvider)
             throws Exception {
 
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
@@ -82,14 +88,16 @@ public class SecurityConfig {
                                 .accessTokenRequestConverters(
                                         converters -> converters.addAll(
                                             Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
-                                                    new SecondPasswordGrantAuthenticationConverter()))
+                                                    new SecondPasswordGrantAuthenticationConverter(),
+                                                    new SmsOtpGrantAuthenticationConverter(),
+                                                    new ShahkarGrantAuthenticationConverter()))
                                 )
-                                .authenticationProvider(oAuth2GeneralAuthenticationProvider
-//                                                    new OAuth2GeneralAuthenticationProvider(
-//                                                            http.getSharedObject(OAuth2AuthorizationService.class),
-//                                                            http.getSharedObject(OAuth2TokenGenerator.class),
-//                                                            userDetailsService)
-                                )
+//                                .authenticationProviders(authenticationProviders -> {
+//                                    authenticationProviders.add(oAuth2GeneralAuthenticationProvider);
+//                                    authenticationProviders.add(oAuth2SmsOtpAuthenticationProvider);
+//                                })
+                                .authenticationProvider(oAuth2GeneralAuthenticationProvider)
+                                .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
                 )
                 .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 
@@ -97,6 +105,7 @@ public class SecurityConfig {
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/oauth2/token").permitAll()
+                        .requestMatchers("/otp/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Redirect to the login page when not authenticated from the
@@ -126,13 +135,13 @@ public class SecurityConfig {
             throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
-        jwtAuthenticationProvider.setJwtAuthenticationConverter(new JwtTokenConverter());
         http
 //                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/otp/public/**").permitAll()
                         .requestMatchers("/login**").permitAll()
                         .requestMatchers("/assets/**").permitAll()
 
@@ -186,7 +195,9 @@ public class SecurityConfig {
     }
 
     private BearerTokenAuthenticationFilter bearerAuthenticationFilter(HttpSecurity http) {
-        return new BearerTokenAuthenticationFilter((AuthenticationManagerResolver<HttpServletRequest>) context -> http.getSharedObject(AuthenticationManager.class));
+        BearerTokenAuthenticationFilter filter = new BearerTokenAuthenticationFilter((AuthenticationManagerResolver<HttpServletRequest>) context -> http.getSharedObject(AuthenticationManager.class));
+        filter.setAuthenticationDetailsSource(new TerminalAuthenticationDetailsSource());
+        return filter;
     }
 
     @Bean

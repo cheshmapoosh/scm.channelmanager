@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,14 +16,13 @@ import lombok.NoArgsConstructor;
  * @since 2023-12-30
  */
 @Getter
-@NoArgsConstructor
 public class OtpVerifyRequest extends OtpBaseRequest {
 
     private String claimCode;
 
     @Builder
-    public OtpVerifyRequest(String terminalCode, String accessParameter, String recipientUsername, String recipient, OtpType otpType, OtpReason reason, String claimCode) {
-        super(terminalCode, accessParameter, recipientUsername, recipient, otpType, reason);
+    public OtpVerifyRequest(OtpType otpType, OtpReason reason, Recipient recipient, IssuerInfo issuer, String claimCode) {
+        super(otpType, reason, recipient, issuer);
         this.claimCode = claimCode;
     }
 

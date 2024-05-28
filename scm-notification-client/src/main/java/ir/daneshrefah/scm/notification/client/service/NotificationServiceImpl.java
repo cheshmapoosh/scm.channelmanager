@@ -48,7 +48,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void validateNotificationRequest(NotificationRequest request) {
         ValidationUtils.checkNull(request, () -> new EmptyNotificationRequestException(request, "request"));
-        ValidationUtils.checkBlankString(request.getRecipient(), () -> new EmptyNotificationRequestException(request, "recipient"));
+        ValidationUtils.checkNull(request.getRecipient(), () -> new EmptyNotificationRequestException(request, "recipient"));
+        ValidationUtils.checkBlankString(request.getRecipient().getAddress(), () -> new EmptyNotificationRequestException(request, "recipient.address"));
         ValidationUtils.checkNull(request.getTemplate(), () -> new EmptyNotificationRequestException(request, "templateCode"));
         ValidationUtils.checkNull(request.getMedia(), () -> new EmptyNotificationRequestException(request, "media"));
 //        ValidationUtils.checkBlankString(request.getIssuerNickname(), () -> new EmptyNotificationRequestException(request, "issuerNickname"));

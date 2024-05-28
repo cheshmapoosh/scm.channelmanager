@@ -1,24 +1,28 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
-import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
+import ir.daneshrefah.scm.common.exception.InvalidDelegationException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
+import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.service.otp.OtpService;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.uaa.controller.BaseController;
+import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
+import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
+import ir.daneshrefah.scm.uaa.service.otp.OtpService;
+import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.web.WebAttributes;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
+
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_CSP;
 
 /**
  * Description of the class or purpose of the file.
@@ -29,43 +33,105 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/public/otp")
-public class OtpController {
+@RequestMapping("/otp")
+public class OtpController extends BaseController {
 
     private final OtpService otpService;
 
+    @PreAuthorize("isFullyAuthenticated()")
     @PostMapping("/sms")
     public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request, HttpServletRequest httpRequest) {
-        User loggedInUser = extractLoggedInUser(httpRequest);
+
+        User user = AuthenticationUtils.getLoggedInUser();
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+
+        Recipient recipient = Recipient.builder()
+                .address(request.getRecipient())
+//                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
+                .identifier(user.getNickname())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        IssuerInfo issuerInfo = extractIssuerInfo();
+
         OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .issuerAddress(httpRequest.getRemoteHost())
-                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
-                .terminalCode(request.getTerminalCode())
-                .accessParameter(null != loggedInUser ? StringUtils.join(loggedInUser.getAccessParameters().stream().toList(), ",") : null)
-                .recipientUsername(request.getRecipientUsername())
-                .recipient(request.getRecipient())
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
+                .recipient(recipient)
+                .issuer(issuerInfo)
                 .build();
-        return otpService.sendOtp(otpRequest/*, loggedInUser*/);
+
+        return otpService.sendOtp(otpRequest);
+    }
+
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
+    @PostMapping("/sms-to")
+    public OtpSendResponse sendDelegatedOtpSms(@RequestBody DelegatedSmsOtpSendRequest request) {
+
+        UserAuthentication user = AuthenticationUtils.getLoggedInUserAuthentication();
+//        if (!user.hasAuthority(ROLE_CSP)) {
+//            throw new InvalidDelegationException(user.getName());
+//        }
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+
+        Recipient recipient = Recipient.builder()
+                .address(request.getRecipient())
+//                .authenticationLevel(AuthenticationLevel.DELEGATED)
+                .identifier(StringUtils.isNotBlank(request.getRecipientId()) ? request.getRecipientId() : request.getRecipient())
+                .identifierType(Objects.nonNull(request.getRecipientIdType()) ? request.getRecipientIdType() : UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(StringUtils.isNotBlank(request.getTerminalCode()) ? request.getTerminalCode() : terminalCode)
+                .accessParameter(StringUtils.isNotBlank(request.getAccessParameter()) ? request.getAccessParameter() : accessParameter)
+                .build();
+        IssuerInfo issuerInfo = extractIssuerInfo();
+
+        OtpSendRequest otpRequest = OtpSendRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(request.getReason())
+                .recipient(recipient)
+                .issuer(issuerInfo)
+                .build();
+
+        return otpService.sendOtp(otpRequest);
+    }
+
+    @PreAuthorize("isAnonymous()")
+    @GetMapping("/public/sms-authentication/{recipient}")
+    public OtpSendResponse sendAuthenticationOtpSms(@PathVariable("recipient") String recipientAddress) {
+
+        UserAuthentication user = AuthenticationUtils.getLoggedInUserAuthentication();
+//        if (!user.hasAuthority(ROLE_CSP)) {
+//            throw new InvalidDelegationException(user.getName());
+//        }
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+
+        Recipient recipient = Recipient.builder()
+                .address(recipientAddress)
+//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
+                .identifier(recipientAddress)
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        IssuerInfo issuerInfo = extractIssuerInfo();
+
+        OtpSendRequest otpRequest = OtpSendRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(OtpReason.AUTHENTICATION)
+                .recipient(recipient)
+                .issuer(issuerInfo)
+                .build();
+
+        return otpService.sendOtp(otpRequest);
     }
 
     @PostMapping("/verify")
     public OtpVerifyResponse verifyOtp(@RequestBody OtpVerifyRequest request, HttpServletRequest httpRequest) {
-        User loggedInUser = extractLoggedInUser(httpRequest);
+        User loggedInUser = AuthenticationUtils.getLoggedInUser();
         return otpService.verifyOtp(request);
-    }
-
-    private User extractLoggedInUser(HttpServletRequest httpRequest) {
-        User result = AuthenticationUtils.getLoggedInUser();
-        if (null == result) {
-            Exception exception = (Exception) httpRequest.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
-            Authentication authentication = null != exception && TwoStepAuthenticationRequiredException.class.isAssignableFrom(exception.getClass()) ?
-                    ((TwoStepAuthenticationRequiredException) exception).getAuthentication() : null;
-            result = null != authentication && authentication instanceof GeneralAuthenticationToken ?
-                    ((GeneralAuthenticationToken) authentication).getPrincipal().getUser() : null;
-        }
-        return result;
     }
 
 }

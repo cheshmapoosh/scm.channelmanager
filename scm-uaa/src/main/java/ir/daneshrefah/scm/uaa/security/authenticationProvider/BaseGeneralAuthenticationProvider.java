@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.exception.*;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -81,7 +79,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         if (log.isTraceEnabled()) {
             log.trace("Retrieved userDetails with username: " + preAuthenticationToken.getName() + ":" + clientTerminalCode);
         }
-        AbstractAuthenticationToken token = null;
+        GeneralAuthenticationToken token = null;
         try {
             token = authenticationTokenGenerator.generateToken(
                     preAuthenticationToken, (TerminalUserDetails) userDetails);
@@ -91,8 +89,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
 
         token.setSessionRequired(preAuthenticationToken.getScopes().contains(OAUTH2_SCOPE_NAME_SESSION));
-        token.setNotificationRequired(AuthorizationGrantType.AUTHORIZATION_CODE.equals(preAuthenticationToken.getGrantType()) ||
-                AuthorizationGrantType.FIRST_PASSWORD.equals(preAuthenticationToken.getGrantType()));
+        token.setNotificationRequired(preAuthenticationToken.getGrantType().isSupportNotification());
 
         GeneralAuthenticationToken authorization = null;
         try {

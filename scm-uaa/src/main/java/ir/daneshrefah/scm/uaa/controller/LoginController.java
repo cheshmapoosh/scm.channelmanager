@@ -184,7 +184,7 @@ public class LoginController {
             return null;
         }
         PostAuthenticationToken authenticationToken = (PostAuthenticationToken) ((TwoStepAuthenticationRequiredException) exception).getAuthentication();
-        return null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getExpireTime() : null;
+        return null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getOtp().getExpireTime() : null;
     }
 
 }

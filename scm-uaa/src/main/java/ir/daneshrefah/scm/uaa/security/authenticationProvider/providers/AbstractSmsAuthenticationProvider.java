@@ -1,6 +1,10 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
+import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
@@ -25,14 +29,25 @@ public abstract class AbstractSmsAuthenticationProvider extends AbstractAuthenti
 
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
-        OtpVerifyRequest request = OtpVerifyRequest.builder()
+        Recipient recipient = Recipient.builder()
+                .address(userDetails.getUser().getPerson().getMobile1())
+//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
+//                .identifier(userDetails.getUser().getNickname())
+//                .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(userDetails.getUser().getTerminalCode())
                 .accessParameter(authentication.getDetails().getAccessParameter())
-                .recipientUsername((String) authentication.getDetails().getPrincipal())
-                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
+                .build();
+        OtpVerifyRequest request = OtpVerifyRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.AUTHENTICATION)
+                .recipient(recipient)
+//        private IssuerInfo issuer;
                 .claimCode(authentication.getDetails().getClaimCode())
+
+        //                .terminalCode(userDetails.getUser().getTerminalCode())
+//                .accessParameter(authentication.getDetails().getAccessParameter())
+//                .recipientUser(userDetails.getUser().getPerson())
+//                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(request);
         if (!otpVerifyResponse.isSuccessful()) {

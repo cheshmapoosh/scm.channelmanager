@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
+import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.token.*;
 
@@ -129,6 +131,21 @@ public class JWTConfig {
                 List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
+            } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+                    context.getPrincipal().isAuthenticated()) {
+                AbstractAuthenticationToken authenticationToken = context.getPrincipal();
+                RegisteredClient client = context.getRegisteredClient();
+                claims.claim(CLAIM_KEY_TERMINAL, client.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
+                claims.claim(CLAIM_KEY_GRANT, authenticationToken.getGrantType());
+                claims.claim(CLAIM_KEY_AUTHORITIES, authenticationToken.getAuthorities().toString());
+//                String sessionKey = authenticationToken.getSessionId();
+//                if (StringUtils.isNotEmpty(sessionKey)) {
+//                    claims.claim(CLAIM_KEY_SESSION, sessionKey);
+//                }
+                if (StringUtils.isNotEmpty(authenticationToken.getAccessParameter())) {
+                    claims.claim(CLAIM_KEY_ACCESS_PARAMETER, authenticationToken.getAccessParameter());
+                }
+                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.UNKNOWN);
             }
         };
     }

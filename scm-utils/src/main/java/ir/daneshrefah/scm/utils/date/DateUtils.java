@@ -112,6 +112,10 @@ public class DateUtils {
             return currentDate().plusSeconds(secondsToAdd);
         }
 
+        public static Instant plusMinutesToCurrent(long minutesToAdd) {
+            return currentDate().plus(minutesToAdd, ChronoUnit.MINUTES);
+        }
+
         public static Instant convertToInstant(String input) {
             // sample value: 2024-01-06T05:15:50.854476Z
             return Instant.parse(input);

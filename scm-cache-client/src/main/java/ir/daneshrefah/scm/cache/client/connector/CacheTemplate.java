@@ -11,6 +11,10 @@ public interface CacheTemplate {
 
     void putInCache(String mapName, String key, Object value, long timeToLiveMinutes);
 
+    void putInCacheIfAbsent(String mapName, String key, Object value);
+
+    void putInCacheIfAbsent(String mapName, String key, Object value, long timeToLiveMinutes);
+
     Object removeFromCache(String mapName, String key);
 
     Map createCacheIfNull(String mapName);

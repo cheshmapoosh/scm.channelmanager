@@ -81,7 +81,7 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
         }
         PostAuthenticationToken authenticationToken = (PostAuthenticationToken) twoStepException.getAuthentication();
         return authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode() + ":" +
-                (null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getExpireTime() : StringUtils.EMPTY);
+                (null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getOtp().getExpireTime() : StringUtils.EMPTY);
     }
 
     @Override

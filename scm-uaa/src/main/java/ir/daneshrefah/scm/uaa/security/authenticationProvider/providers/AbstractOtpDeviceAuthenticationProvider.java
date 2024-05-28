@@ -27,10 +27,10 @@ public abstract class AbstractOtpDeviceAuthenticationProvider extends AbstractAu
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
         OtpVerifyRequest request = OtpVerifyRequest.builder()
-                .terminalCode(userDetails.getUser().getTerminalCode())
-                .accessParameter(authentication.getDetails().getAccessParameter())
-                .recipientUsername((String) authentication.getDetails().getPrincipal())
-                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
+//                .terminalCode(userDetails.getUser().getTerminalCode())
+//                .accessParameter(authentication.getDetails().getAccessParameter())
+//                .recipientUser(userDetails.getUser().getPerson())
+//                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
                 .otpType(OtpType.DEVICE)
                 .reason(OtpReason.AUTHENTICATION)
                 .claimCode(authentication.getDetails().getClaimCode())

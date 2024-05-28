@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
+import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
@@ -11,9 +13,13 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public abstract class AbstractStaticRequestAuthenticationProvider extends AbstractStaticAuthenticationProvider {
 
@@ -41,20 +47,44 @@ public abstract class AbstractStaticRequestAuthenticationProvider extends Abstra
     protected OtpSendResponse requestOtp(GeneralAuthenticationToken authentication) {
         OtpType otpType = resolveOtpType();
         User user = authentication.getPrincipal().getUser();
-        OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .issuerAddress(((WebAuthenticationDetails) authentication.getDetails().getDetails()).getRemoteAddress())
-                .issuerUser(AuthenticationUtils.getLoggedInUserAuthentication())
+        Recipient recipient = Recipient.builder()
+                .address(user.getPerson().getMobile1())
+//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
+                .identifier(user.getNickname())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(user.getTerminalCode())
                 .accessParameter(authentication.getDetails().getAccessParameter())
-                .recipientUsername(user.getNickname())
-                .recipient(user.getPerson().getMobile1())
+                .build();
+        IssuerInfo issuerInfo = IssuerInfo.builder()
+                .parentCorrelationId(null)
+                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
+                .identifier(user.getNickname())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .terminalCode(user.getTerminalCode())
+                .accessParameter(authentication.getDetails().getAccessParameter())
+                .remoteAddress(((WebAuthenticationDetails) authentication.getDetails().getDetails()).getRemoteAddress())
+//        private final String xForwardedFor;
+                .hostAddress(getLocalHostAddress())
+                .build();
+        OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(otpType)
                 .reason(OtpReason.AUTHENTICATION)
+                .recipient(recipient)
+                .issuer(issuerInfo)
                 .build();
         return otpService.sendOtp(otpRequest/*, user*/);
     }
 
     protected abstract OtpType resolveOtpType();
+
+    private String getLocalHostAddress() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            logger.error("error on extract host address", e);
+        }
+        return null;
+    }
 
     @Override
     public String extractCurrentPassword(TerminalUserDetails userDetails) {

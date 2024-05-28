@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -15,6 +18,12 @@ import java.util.Collections;
  */
 public abstract class GeneralAuthenticationToken extends AbstractAuthenticationToken {
 
+    @Getter
+    @Setter
+    private boolean sessionRequired;
+    @Getter
+    @Setter
+    private boolean notificationRequired;
     private final TerminalUserDetails principal;
 //    private TerminalUserDetails userDetails;
 

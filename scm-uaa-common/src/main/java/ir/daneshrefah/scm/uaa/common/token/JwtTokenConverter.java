@@ -1,29 +1,30 @@
 package ir.daneshrefah.scm.uaa.common.token;
 
-import ir.daneshrefah.scm.common.model.person.Nationality;
-import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.person.*;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.net.URL;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.common.constant.SecurityConstants.*;
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE_PROVIDED;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,10 +33,14 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.*;
  * @version 1.0
  * @since 2023-12-25
  */
+@RequiredArgsConstructor
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
+    private final String CLAIM_AUTHENTICATION = "claim_authentication";
+    private final Supplier<Authentication> extractAuthentication;
+
     public UserAuthentication convert(Jwt jwt) {
-        return convert(jwt, null);
+        return convert(jwt, extractUsername(jwt));
     }
 
     public UserAuthentication convert(Jwt jwt, String username) {
@@ -144,5 +149,18 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
 
         return user;
     }
+
+    private String extractUsername(Jwt jwt) {
+        if (Objects.isNull(jwt) || Objects.isNull(jwt.getClaim(CLAIM_AUTHENTICATION))) {
+            return null;
+        }
+        Authentication authentication = jwt.getClaim(CLAIM_AUTHENTICATION);
+        if (Objects.isNull(authentication.getDetails()) || !(authentication.getDetails() instanceof TerminalWebAuthenticationDetails)) {
+            return null;
+        }
+        TerminalWebAuthenticationDetails details = (TerminalWebAuthenticationDetails) authentication.getDetails();
+        return details.getHeader(SCM_PARAMETER_USERNAME);
+    }
+
 
 }

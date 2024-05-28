@@ -75,6 +75,16 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     @Override
+    public Optional<GeneralPerson> findPersonByPersonUsername(String username) {
+        ValidationUtils.checkBlankString(username, () -> new MissingRequiredInputException("username"));
+        List<GeneralPersonEntity> personEntity = personRepository.findPersonByUsername(username);
+        if (Objects.isNull(personEntity) || personEntity.size() < 1) {
+            return Optional.empty();
+        }
+        return Optional.of(PersonMapper.INSTANCE.toPerson(personEntity.get(0)));
+    }
+
+    @Override
     public GeneralPerson findPersonByNicknameAndTerminalCode(String nickname, String terminalCode) {
         if (StringUtils.isEmpty(nickname) || StringUtils.isEmpty(terminalCode)) {
             return null;
