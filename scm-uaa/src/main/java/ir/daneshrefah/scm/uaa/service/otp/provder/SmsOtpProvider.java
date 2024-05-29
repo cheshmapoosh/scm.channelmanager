@@ -2,12 +2,9 @@ package ir.daneshrefah.scm.uaa.service.otp.provder;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
-import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
-import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
@@ -15,10 +12,8 @@ import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException;
 import ir.daneshrefah.scm.uaa.exception.OtpNotFoundException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
-import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Component;
 
 import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
@@ -44,8 +39,10 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     public OtpSendResponse sendOtp(OtpSendRequest request) {
         validateRequest(request);
         Otp otp = buildOtpInstance(request, true);
-        sendNotification(otp);
-        otp = deliverOtp(otp);
+        if (!otp.isDelivered()) {
+            sendNotification(otp);
+            otp = deliverOtp(otp);
+        }
         return OtpSendResponse.builder()
                 .otp(otp)
                 .isSuccessful(true)

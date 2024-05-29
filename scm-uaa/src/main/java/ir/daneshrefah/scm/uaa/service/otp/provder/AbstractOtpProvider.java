@@ -6,7 +6,6 @@ import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpPattern;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.uaa.exception.OtpAlreadyExistException;
 import ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.utils.date.DateUtils;
@@ -57,7 +56,10 @@ public abstract class AbstractOtpProvider {
     protected final Otp buildOtpInstance(OtpSendRequest request, boolean requireDeliver) {
         String otpKey = extractOtpKey(request);
         Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
-        ValidationUtils.checkNonNull(otp, () -> new OtpAlreadyExistException());
+        if (Objects.nonNull(otp)) {
+            return otp;
+        }
+//        ValidationUtils.checkNonNull(otp, () -> new OtpAlreadyExistException());
         String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getCount());
         ValidationUtils.checkBlankString(otpCode, () -> new OtpCodeGenerationException());
         otp = Otp.builder()
@@ -78,7 +80,7 @@ public abstract class AbstractOtpProvider {
             return otp;
         }
         otp.setDelivered(true);
-        cacheTemplate.putInCacheIfAbsent(CACHE_NAME_OTP, otp.getKey(), otp, otp.getReason().getTimeToLiveMinutes());
+        cacheTemplate.putInCache(CACHE_NAME_OTP, otp.getKey(), otp, otp.getReason().getTimeToLiveMinutes());
         return otp;
     }
 

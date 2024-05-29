@@ -1,9 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
@@ -31,9 +29,8 @@ public abstract class AbstractSmsAuthenticationProvider extends AbstractAuthenti
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
         Recipient recipient = Recipient.builder()
                 .address(userDetails.getUser().getPerson().getMobile1())
-//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
-//                .identifier(userDetails.getUser().getNickname())
-//                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .identifier(userDetails.getUser().getNickname())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(userDetails.getUser().getTerminalCode())
                 .accessParameter(authentication.getDetails().getAccessParameter())
                 .build();
