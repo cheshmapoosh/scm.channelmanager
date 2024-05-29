@@ -65,7 +65,6 @@ public abstract class AbstractOtpProvider {
                 .otpType(request.getOtpType())
                 .reason(request.getReason())
                 .recipient(request.getRecipient())
-                .issuer(request.getIssuer())
                 .otpCode(otpCode)
                 .expireTime(DateUtils.InstantTools.plusMinutesToCurrent(request.getReason().getTimeToLiveMinutes()))
                 .isDelivered(!requireDeliver)

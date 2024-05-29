@@ -46,21 +46,16 @@ public class OAuth2SmsOtpAuthenticationProvider extends BaseTokenAuthenticationP
     protected OAuth2SmsOtpAuthenticationToken authenticateToken(OAuth2SmsOtpAuthenticationToken authenticationToken) {
         Recipient recipient = Recipient.builder()
                 .address(authenticationToken.getPrincipal())
-//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
                 .identifier(authenticationToken.getPrincipal())
                 .identifierType(UserIdentifierType.MOBILE_NUMBER)
                 .terminalCode(authenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE))
                 .accessParameter(authenticationToken.getAccessParameter())
                 .build();
-        IssuerInfo issuerInfo = IssuerInfo.builder()
-                .parentCorrelationId(null)
-//W
-                .build();
+
         OtpVerifyRequest request = OtpVerifyRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.AUTHENTICATION)
                 .recipient(recipient)
-                .issuer(issuerInfo)
                 .claimCode(authenticationToken.getCredentials())
                 .build();
         OtpVerifyResponse verifyResponse = otpService.verifyOtp(request);

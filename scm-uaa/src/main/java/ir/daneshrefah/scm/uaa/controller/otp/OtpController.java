@@ -1,9 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
-import ir.daneshrefah.scm.common.exception.InvalidDelegationException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -11,9 +9,11 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
-import ir.daneshrefah.scm.uaa.service.otp.dto.*;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
 
-import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_CSP;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 
 /**
  * Description of the class or purpose of the file.
@@ -48,19 +49,16 @@ public class OtpController extends BaseController {
 
         Recipient recipient = Recipient.builder()
                 .address(request.getRecipient())
-//                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
                 .identifier(user.getNickname())
                 .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();
-        IssuerInfo issuerInfo = extractIssuerInfo();
 
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .recipient(recipient)
-                .issuer(issuerInfo)
                 .build();
 
         return otpService.sendOtp(otpRequest);
@@ -79,19 +77,16 @@ public class OtpController extends BaseController {
 
         Recipient recipient = Recipient.builder()
                 .address(request.getRecipient())
-//                .authenticationLevel(AuthenticationLevel.DELEGATED)
                 .identifier(StringUtils.isNotBlank(request.getRecipientId()) ? request.getRecipientId() : request.getRecipient())
                 .identifierType(Objects.nonNull(request.getRecipientIdType()) ? request.getRecipientIdType() : UserIdentifierType.MOBILE_NUMBER)
                 .terminalCode(StringUtils.isNotBlank(request.getTerminalCode()) ? request.getTerminalCode() : terminalCode)
                 .accessParameter(StringUtils.isNotBlank(request.getAccessParameter()) ? request.getAccessParameter() : accessParameter)
                 .build();
-        IssuerInfo issuerInfo = extractIssuerInfo();
 
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .recipient(recipient)
-                .issuer(issuerInfo)
                 .build();
 
         return otpService.sendOtp(otpRequest);
@@ -102,27 +97,21 @@ public class OtpController extends BaseController {
     public OtpSendResponse sendAuthenticationOtpSms(@PathVariable("recipient") String recipientAddress) {
 
         UserAuthentication user = AuthenticationUtils.getLoggedInUserAuthentication();
-//        if (!user.hasAuthority(ROLE_CSP)) {
-//            throw new InvalidDelegationException(user.getName());
-//        }
         String terminalCode = extractRequestTerminalCode();
         String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
 
         Recipient recipient = Recipient.builder()
                 .address(recipientAddress)
-//                .authenticationLevel(AuthenticationLevel.ANONYMOUS)
                 .identifier(recipientAddress)
                 .identifierType(UserIdentifierType.MOBILE_NUMBER)
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();
-        IssuerInfo issuerInfo = extractIssuerInfo();
 
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(OtpReason.AUTHENTICATION)
                 .recipient(recipient)
-                .issuer(issuerInfo)
                 .build();
 
         return otpService.sendOtp(otpRequest);

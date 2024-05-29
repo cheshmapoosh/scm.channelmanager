@@ -2,12 +2,14 @@ package ir.daneshrefah.scm.uaa.service.otp;
 
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.BaseOtpException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.otp.provder.AbstractOtpProvider;
+import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Service;
 
@@ -49,12 +51,12 @@ public class OtpService {
         ValidationUtils.checkBlankString(request.getRecipient().getTerminalCode(), () -> new MissingRequiredInputException("recipient.terminalCode"));
         ValidationUtils.checkBlankString(request.getRecipient().getAccessParameter(), () -> new MissingRequiredInputException("recipient.accessParameter"));
 
-        ValidationUtils.checkNull(request.getIssuer(), () -> new MissingRequiredInputException("issuer"));
-        ValidationUtils.checkNull(request.getIssuer().getAuthenticationLevel(), () -> new MissingRequiredInputException("issuer.authenticationLevel"));
-        ValidationUtils.checkBlankString(request.getIssuer().getIdentifier(), () -> new MissingRequiredInputException("issuer.identifier"));
-        ValidationUtils.checkNull(request.getIssuer().getIdentifierType(), () -> new MissingRequiredInputException("issuer.identifierType"));
-        ValidationUtils.checkBlankString(request.getIssuer().getTerminalCode(), () -> new MissingRequiredInputException("issuer.terminalCode"));
-        ValidationUtils.checkBlankString(request.getIssuer().getAccessParameter(), () -> new MissingRequiredInputException("issuer.accessParameter"));
+//        ValidationUtils.checkNull(request.getIssuer(), () -> new MissingRequiredInputException("issuer"));
+//        ValidationUtils.checkNull(request.getIssuer().getAuthenticationLevel(), () -> new MissingRequiredInputException("issuer.authenticationLevel"));
+//        ValidationUtils.checkBlankString(request.getIssuer().getIdentifier(), () -> new MissingRequiredInputException("issuer.identifier"));
+//        ValidationUtils.checkNull(request.getIssuer().getIdentifierType(), () -> new MissingRequiredInputException("issuer.identifierType"));
+//        ValidationUtils.checkBlankString(request.getIssuer().getTerminalCode(), () -> new MissingRequiredInputException("issuer.terminalCode"));
+//        ValidationUtils.checkBlankString(request.getIssuer().getAccessParameter(), () -> new MissingRequiredInputException("issuer.accessParameter"));
 //        private final String xForwardedFor;
 //        private final String hostAddress;
 //        private final String instanceName;
@@ -66,37 +68,15 @@ public class OtpService {
         if (Objects.isNull(provider)) {
             return createInvalidResponse(request, "Unsupported otpType.");
         }
+        IssuerInfo issuerInfo = RequestUtils.extractIssuerInfo();
         return provider.sendOtp(request);
     }
-
-    /*private void fillRequestOwner(OtpSendRequest request) {
-        if (Objects.nonNull(request.getRecipient().getOwner())) {
-            return;
-        }
-        switch (request.getRecipient().getIdType()) {
-            case PERSON_USERNAME:
-                GeneralPerson person = personService.findPersonByPersonUsername(request.getRecipient().getId())
-                        .orElseThrow(() -> new InvalidInputException("username"));
-                request.getRecipient().owner(person);
-                break;
-            case USER_NICKNAME:
-                User user = userService.findByNicknameAndTerminalCode(request.getRecipient().getId(), request.getTerminalCode());
-                ValidationUtils.checkNull(user, () -> new InvalidInputException("nickname"));
-                request.getRecipient().owner(user.getPerson());
-                break;
-            case MOBILE_NUMBER:
-                break;
-            case EMAIL_ADDRESS:
-                break;
-        }
-    }*/
 
     private OtpSendResponse createInvalidResponse(OtpSendRequest request, String errorMessage) {
         Otp otp = Otp.builder()
                 .otpType(request.getOtpType())
                 .reason(request.getReason())
                 .recipient(request.getRecipient())
-                .issuer(request.getIssuer())
                 .build();
         return OtpSendResponse.builder()
                 .otp(otp)
@@ -112,7 +92,7 @@ public class OtpService {
                 .otpType(request.getOtpType())
                 .reason(request.getReason())
                 .recipient(request.getRecipient())
-                .issuer(request.getIssuer())
+//                .issuer(request.getIssuer())
                 .build();
         return OtpVerifyResponse.builder()
                 .isSuccessful(false)
