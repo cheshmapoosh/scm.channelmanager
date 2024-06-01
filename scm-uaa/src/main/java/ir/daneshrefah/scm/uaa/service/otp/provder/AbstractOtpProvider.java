@@ -60,7 +60,7 @@ public abstract class AbstractOtpProvider {
             return otp;
         }
 //        ValidationUtils.checkNonNull(otp, () -> new OtpAlreadyExistException());
-        String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getCount());
+        String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getLength());
         ValidationUtils.checkBlankString(otpCode, () -> new OtpCodeGenerationException());
         otp = Otp.builder()
                 .key(otpKey)

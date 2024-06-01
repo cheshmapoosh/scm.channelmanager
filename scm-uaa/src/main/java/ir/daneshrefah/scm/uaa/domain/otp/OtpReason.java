@@ -15,15 +15,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum OtpReason {
 
-    AUTHENTICATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP),
-    CHANGE_LOGIN_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL),
-    CHANGE_TRANSACTION_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL),
-    ACTIVATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL),
-    ACH(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL);
+    AUTHENTICATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1),
+    CHANGE_LOGIN_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
+    CHANGE_TRANSACTION_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
+    ACTIVATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
+    ACH(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1);
 
     private final int timeToLiveMinutes;
-    private final int count;
+    private final int length;
     private final OtpPattern pattern;
     private final NotificationTemplate notificationTemplate;
+    private final int maxReusedCount;
+    private final int maxFailedCount;
 
 }

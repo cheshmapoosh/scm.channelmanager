@@ -8,9 +8,8 @@ package ir.daneshrefah.scm.uaa.domain.otp;
  * @since 2023-12-30
  */
 public enum OtpType {
-
     TIME_BASED,
     DEVICE,
+    EMAIL,
     SMS;
-
 }

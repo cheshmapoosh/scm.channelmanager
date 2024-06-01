@@ -18,6 +18,8 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
 
 /**
@@ -89,9 +91,35 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request"));
         String otpKey = extractOtpKey(request);
         Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
-        ValidationUtils.checkNull(otp, () -> new OtpNotFoundException());
-        ValidationUtils.checkNotEqualsString(otp.getOtpCode(), request.getClaimCode(), () -> new InvalidOtpCodeException());
-        //TODO increase tryCount
+        ValidationUtils.checkNull(otp, OtpNotFoundException::new);
+
+        if (Objects.equals(Otp.OtpStatus.PENDING, otp.status())) {
+            throw new InvalidOtpCodeException("Not send otp");
+        }
+
+        if (Objects.equals(Otp.OtpStatus.EXPIRED, otp.status())) {
+            cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+            throw new InvalidOtpCodeException("Expired otp");
+        }
+
+        ValidationUtils.checkNotEqualsString(otp.getOtpCode(), request.getClaimCode(), () -> {
+            otp.plusFailedCount();
+            if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_FAILED, otp.status())) {
+                cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+            } else {
+                cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
+            }
+            return new InvalidOtpCodeException();
+        });
+
+        otp.plusReusedCount();
+        if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_REUSED, otp.status())) {
+            cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+        } else {
+            cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
+        }
+
+
         return OtpVerifyResponse.builder()
                 .isSuccessful(true)
                 .build();

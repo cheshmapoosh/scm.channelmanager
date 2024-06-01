@@ -12,6 +12,9 @@ public class InvalidOtpCodeException extends BaseOtpException {
     public InvalidOtpCodeException() {
         super("invalid otp code.", null);
     }
+    public InvalidOtpCodeException(String message) {
+        super(message, null);
+    }
 
     @Override
     public String getSource() {

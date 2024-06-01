@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,6 +33,42 @@ public class Otp implements Serializable {
     @Setter
     private boolean isDelivered;
     @Setter
-    private int retryCount;
+    private int reusedCount;
+    @Setter
+    private int failedCount;
+    public void plusReusedCount() {
+        reusedCount++;
+    }
+    public void plusFailedCount() {
+        reusedCount++;
+    }
 
+    public OtpStatus status() {
+        if (!isDelivered) {
+            return OtpStatus.PENDING;
+        }
+        if (Instant.now().isAfter(expireTime)) {
+            return OtpStatus.EXPIRED;
+        }
+
+        int maxReusedCount = getReason().getMaxReusedCount();
+        if (maxReusedCount > 0 && reusedCount > maxReusedCount) {
+            return OtpStatus.MAX_ATTEMPTS_REUSED;
+        }
+
+        int maxFailedCount = getReason().getMaxFailedCount();
+        if (maxFailedCount > 0 && failedCount > maxFailedCount) {
+            return OtpStatus.MAX_ATTEMPTS_FAILED;
+        }
+
+        return OtpStatus.DELIVERED;
+    }
+
+    public enum OtpStatus {
+        PENDING,
+        DELIVERED,
+        EXPIRED,
+        MAX_ATTEMPTS_REUSED,
+        MAX_ATTEMPTS_FAILED,
+    }
 }
