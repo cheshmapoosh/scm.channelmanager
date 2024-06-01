@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.notification;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,13 +20,17 @@ public class NotificationData {
     @JsonProperty
     private final Map<String, Object> valueMap = new HashMap<>();
 
-    public NotificationData put(DataKey key, Object value) {
-        valueMap.put(key.getParameterName(), value);
+    public NotificationData put(String key, Object value) {
+        valueMap.put(key, value);
         return this;
     }
 
-    public Object get(DataKey key) {
-        return valueMap.get(key.getParameterName());
+    public NotificationData put(NotificationDataKey key, Object value) {
+        return put(key.getCode(), value);
+    }
+
+    public Object get(String key) {
+        return valueMap.get(key);
     }
 
 

@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.notification.client.config;
 
 //import com.zaxxer.hikari.HikariDataSource;
 
-import com.ibm.mq.jms.MQQueueConnectionFactory;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.notification.client.config.prop.ClientConfigProperties;
 import ir.daneshrefah.scm.notification.client.jms.JakarataConnectionFactory;
@@ -17,12 +16,9 @@ import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jms.connection.UserCredentialsConnectionFactoryAdapter;
 import org.springframework.jms.core.JmsTemplate;
 
 import java.util.List;

@@ -1,16 +1,14 @@
 package ir.daneshrefah.scm.notification.client.service.template;
 
 
-import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
 import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
+import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,6 +28,10 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
     private static final String LINE_SEPARATOR = "lineSeparator";
     private static final String TERMINAL_CODE = "terminalCode";
     private static final String TERMINAL_TITLE = "terminalTitle";
+
+    public GeneralBodyProcessor(NotificationDictionary dictionary) {
+        super(dictionary);
+    }
 
     @Override
     protected String processInternal(MessageTemplate template, NotificationRequest request) {
@@ -60,7 +62,8 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
         return switch (templateParameter) {
             case LINE_SEPARATOR -> System.lineSeparator();
             case TERMINAL_CODE -> request.getTerminalCode();
-            default -> String.valueOf(data.get(Objects.requireNonNull(DataKey.findByParameterName(templateParameter))));
+            default -> null;
+//            default -> String.valueOf(data.get(Objects.requireNonNull(NotificationDataKey.findByParameterName(templateParameter))));
         };
     }
 
@@ -69,9 +72,8 @@ public class GeneralBodyProcessor extends NotificationBodyProcessor {
     }
 
     @Override
-    protected boolean support(MessageTemplate template) {
-        //TODO changed after completed
-        return NotificationTemplate.AUTHENTICATION.equals(template.getCode());
+    protected boolean support(TemplateFormat template) {
+        return TemplateFormat.PLAIN_TEXT.equals(template);
     }
 
 }

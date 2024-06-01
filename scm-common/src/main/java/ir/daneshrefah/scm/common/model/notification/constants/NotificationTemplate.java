@@ -17,6 +17,7 @@ import java.util.Arrays;
 public enum NotificationTemplate {
 
     AUTHENTICATION("authentication"),
+    AUTHENTICATION_OTP("authentication_otp"),
     ACTIVATION("activation"),
     GENERAL("general");
 

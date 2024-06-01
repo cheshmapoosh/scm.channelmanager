@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.security.listener;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
-import ir.daneshrefah.scm.common.model.notification.constants.DataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
@@ -48,10 +48,9 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
     private NotificationRequest extractNotificationRequest(PostAuthenticationToken authentication, Terminal terminal) {
         User user = authentication.getPrincipal().getUser();
         NotificationData data = new NotificationData()
-                .put(DataKey.TITLE, "")
-                .put(DataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
-                .put(DataKey.TERMINAL_TITLE, terminal.getTitle())
-                .put(DataKey.OTP_CODE, "123");
+                .put(NotificationDataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
+                .put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle())
+                .put(NotificationDataKey.OTP_CODE, "123");
         IssuerInfo issuerInfo = IssuerInfo.builder()
                 .parentCorrelationId(authentication.getSessionId())
 //                            .nickname(user.getNickname())

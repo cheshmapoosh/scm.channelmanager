@@ -4,8 +4,10 @@ import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
@@ -57,7 +59,10 @@ public class SmsOtpProvider extends AbstractOtpProvider {
 
     @Override
     protected Object buildRecipientIdentifier(Recipient recipient) {
-        return StringUtils.normalizePhoneNumber(recipient.getIdentifier());
+        if (UserIdentifierType.MOBILE_NUMBER.equals(recipient.getIdentifierType())) {
+            return StringUtils.normalizePhoneNumber(recipient.getIdentifier());
+        }
+        return recipient.getIdentifier();
     }
 
     private void validateRequest(OtpSendRequest request) {
@@ -66,6 +71,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
 
     private void sendNotification(Otp otp) {
         NotificationData data = new NotificationData();
+        data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
 
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
