@@ -38,7 +38,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     private final JwtDecoder jwtDecoder;
 
 //    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtTokenConverter(() -> null);
+    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtTokenConverter(/*() -> null*/);
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

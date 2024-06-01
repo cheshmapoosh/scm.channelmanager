@@ -37,7 +37,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private final String CLAIM_AUTHENTICATION = "claim_authentication";
-    private final Supplier<Authentication> extractAuthentication;
+//    private final Supplier<Authentication> extractAuthentication;
 
     public UserAuthentication convert(Jwt jwt) {
         return convert(jwt, extractUsername(jwt));
