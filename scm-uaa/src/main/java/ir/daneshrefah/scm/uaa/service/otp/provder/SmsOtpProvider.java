@@ -106,20 +106,20 @@ public class SmsOtpProvider extends AbstractOtpProvider {
             otp.plusFailedCount();
             if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_FAILED, otp.status())) {
                 cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+                return new InvalidOtpCodeException("max attempts failed");
             } else {
                 cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
+                return new InvalidOtpCodeException("Invalid otp code");
             }
-            return new InvalidOtpCodeException();
         });
 
         otp.plusReusedCount();
         if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_REUSED, otp.status())) {
             cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+            throw new InvalidOtpCodeException("max attempts reused");
         } else {
             cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
         }
-
-
         return OtpVerifyResponse.builder()
                 .isSuccessful(true)
                 .build();
