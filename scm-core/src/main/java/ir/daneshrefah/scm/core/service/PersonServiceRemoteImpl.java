@@ -7,6 +7,8 @@ import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -31,6 +33,11 @@ public class PersonServiceRemoteImpl implements PersonService {
     @Override
     public GeneralPerson findPersonByPersonId(Integer id) {
         return null;
+    }
+
+    @Override
+    public Optional<GeneralPerson> findPersonByPersonUsername(String username) {
+        return Optional.empty();
     }
 
     @Override
