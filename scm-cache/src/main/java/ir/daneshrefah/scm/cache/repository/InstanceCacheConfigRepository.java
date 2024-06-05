@@ -25,4 +25,5 @@ public class InstanceCacheConfigRepository {
         resultList.addAll(entityManager.createQuery("select o from TopicCacheConfigEntity o", TopicCacheConfigEntity.class).getResultList());
         return resultList;
     }
+
 }

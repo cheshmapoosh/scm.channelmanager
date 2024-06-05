@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.cache.service;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.map.IMap;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HazelCastServiceImpl implements HazelCastService {
 
-    private static final String SESSION_CACHE_MAP = "sessionManagerCache";
+    private static final String SESSION_CACHE_MAP = "session_cache";
     private final HazelcastInstance hazelcastInstance;
     private final UserAuthenticationMapper userAuthenticationMapper;
 
@@ -38,6 +39,14 @@ public class HazelCastServiceImpl implements HazelCastService {
     public Object putInCache(String mapName, String key, Object value) {
         hazelcastInstance.getMap(mapName).put(key, value);
         return getFromCache(mapName, key);
+    }
+
+    @Override
+    public Object updateCache(String mapName, String key, Object value) {
+        EntryView<Object, Object> entryView = hazelcastInstance.getMap(mapName).getEntryView(key);
+        long ttl = entryView.getTtl();
+        long maxIdle = entryView.getMaxIdle();
+        return hazelcastInstance.getMap(mapName).put(key,value,ttl,TimeUnit.SECONDS,maxIdle,TimeUnit.SECONDS);
     }
 
     @Override
@@ -87,16 +96,22 @@ public class HazelCastServiceImpl implements HazelCastService {
 
     @Override
     public UserAuthenticationTO getSession(String nickname, String terminalCode) {
-        UserAuthentication fromCache = (UserAuthentication) getFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname,terminalCode));
-        if (Objects.nonNull(fromCache)) {
-            return userAuthenticationMapper.mapUserAuthenticationTO(fromCache);
+        Object fromCache = getFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname, terminalCode));
+        try {
+            UserAuthentication userAuthentication = (UserAuthentication) fromCache;
+            return userAuthenticationMapper.mapUserAuthenticationTO(userAuthentication);
+        }catch (Exception exception) {
+            String json = String.valueOf(fromCache);
+            if (Objects.nonNull(json)) {
+                return userAuthenticationMapper.mapUserAuthenticationTO(json);
+            }
         }
         return null;
     }
 
     @Override
     public UserAuthenticationTO removeSession(String nickname, String terminalCode) {
-        return userAuthenticationMapper.mapUserAuthenticationTO((UserAuthentication) removeFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname,terminalCode)));
+        return userAuthenticationMapper.mapUserAuthenticationTO(String.valueOf(removeFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname,terminalCode))));
     }
 
     @Override

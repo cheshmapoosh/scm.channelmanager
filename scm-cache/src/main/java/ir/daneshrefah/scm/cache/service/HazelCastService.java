@@ -18,6 +18,7 @@ public interface HazelCastService {
     Object getEntryView(String mapName, String key);
 
     Object putInCache(String mapName, String key, Object value);
+    Object updateCache(String mapName, String key, Object value);
 
     Object putInCache(String mapName, String key, Object value, int timeToLiveSeconds);
 

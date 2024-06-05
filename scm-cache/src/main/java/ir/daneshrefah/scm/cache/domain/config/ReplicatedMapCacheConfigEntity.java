@@ -1,19 +1,20 @@
 package ir.daneshrefah.scm.cache.domain.config;
 
+import ir.daneshrefah.scm.cache.domain.InstanceType;
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "TBL_CHE_REPLICATED_MAP_CONFIG")
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@DiscriminatorValue(InstanceType.REPLICATED_MAP)
 public class ReplicatedMapCacheConfigEntity extends InstanceConfigEntity {
     @Column(name = "ASYNC_FILL_UP_ENABLED")
     private Boolean asyncFillUpEnabled;
