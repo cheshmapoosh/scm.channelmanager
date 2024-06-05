@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,6 +39,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
@@ -81,6 +83,7 @@ public class JWTConfig {
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
+                addTokenLifeTimeClaims(principal,claims);
             } else if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
@@ -118,6 +121,7 @@ public class JWTConfig {
                         claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitle());
                         break;
                 }
+                addTokenLifeTimeClaims(principal,claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
                 long id = Long.valueOf(principal.getRegisteredClient().getId());
@@ -131,6 +135,7 @@ public class JWTConfig {
                 List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
+                addTokenLifeTimeClaims(principal,claims);
             } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     context.getPrincipal().isAuthenticated()) {
                 AbstractAuthenticationToken authenticationToken = context.getPrincipal();
@@ -146,6 +151,8 @@ public class JWTConfig {
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, authenticationToken.getAccessParameter());
                 }
                 claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.UNKNOWN.getCode());
+                AbstractAuthenticationToken principal = context.getPrincipal();
+                addTokenLifeTimeClaims(principal,claims);
             }
         };
     }
@@ -189,6 +196,31 @@ public class JWTConfig {
         KeyPair keyPair = new KeyPair(certificate.getPublicKey(), privateKey);
 
         return keyPair;
+    }
+
+    private void addTokenLifeTimeClaims(PostAuthenticationToken principal, JwtClaimsSet.Builder claims) {
+        long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(principal.getIssuedAt(), principal.getExpiresAt());
+        claims.claim(CLAIM_KEY_TIME_TO_LIVE,timeToLiveMinutes);
+        claims.claim(CLAIM_KEY_MAX_IDLE_TIME,timeToLiveMinutes);
+    }
+
+    private void addTokenLifeTimeClaims(OAuth2ClientAuthenticationToken principal, JwtClaimsSet.Builder claims) {
+        RegisteredClient registeredClient = principal.getRegisteredClient();
+        addTokenByRegisteredClient(registeredClient,claims);
+    }
+
+    private void addTokenLifeTimeClaims(AbstractAuthenticationToken principal, JwtClaimsSet.Builder claims) {
+        RegisteredClient registeredClient = principal.getRegisteredClient();
+        addTokenByRegisteredClient(registeredClient,claims);
+    }
+
+
+    private void addTokenByRegisteredClient(RegisteredClient registeredClient, JwtClaimsSet.Builder claims) {
+        if (Objects.nonNull(registeredClient) && Objects.nonNull(registeredClient.getClientIdIssuedAt())) {
+            long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(registeredClient.getClientIdIssuedAt(), registeredClient.getClientSecretExpiresAt());
+            claims.claim(CLAIM_KEY_TIME_TO_LIVE,timeToLiveMinutes);
+            claims.claim(CLAIM_KEY_MAX_IDLE_TIME,timeToLiveMinutes);
+        }
     }
 
 //    @Bean

@@ -31,6 +31,9 @@ public class Constants {
     public final static String CLAIM_KEY_PERSON_TITLE = "ptl";
     public final static String CLAIM_KEY_PERSON_PROFILE_IDENTIFIER = "ppi";
     public final static String CLAIM_KEY_PERSON_IDENTIFIER = "pid";
+    public final static String CLAIM_KEY_TIME_TO_LIVE = "ttl";
+    public final static String CLAIM_KEY_MAX_IDLE_TIME = "mit";
+
 
 
     public final static String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
