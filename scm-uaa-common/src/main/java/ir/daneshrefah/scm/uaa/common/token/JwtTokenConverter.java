@@ -110,11 +110,13 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 person = new ClientPerson();
                 break;
         }
-        person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_PROFILE_IDENTIFIER));
-        if (jwt.hasClaim(Constants.CLAIM_KEY_PERSON_IDENTIFIER)) {
-            person.setId(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER)));
+        if (Objects.nonNull(person)) {
+            person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_PROFILE_IDENTIFIER));
+            if (jwt.hasClaim(Constants.CLAIM_KEY_PERSON_IDENTIFIER)) {
+                person.setId(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER)));
+            }
+            person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
         }
-        person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
 
         String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);
         AuthenticationMethod loginAuthenticationMethod = null;

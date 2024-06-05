@@ -1,10 +1,8 @@
 package ir.daneshrefah.scm.common.service.terminal;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.service.ServiceAccessFindRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,31 +14,40 @@ import java.util.Optional;
  * @version 1.0
  * @since 2024-01-17
  */
-public interface TerminalService {
+public abstract class TerminalService {
 
-    List<Terminal> findAllTerminals();
+    public static TerminalService INSTANCE;
 
-    Optional<Terminal> findTerminalById(String id);
+    protected TerminalService() {
+        INSTANCE = this;
+    }
 
-    Optional<Terminal> findTerminalByCode(String code);
+    public abstract List<Terminal> findAllTerminals();
 
-    PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request);
+    public abstract Optional<Terminal> findTerminalById(String id);
 
-    List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
+    public abstract Optional<Terminal> findTerminalByLegacyId(Integer id);
 
-    Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
+    public abstract Optional<Terminal> findTerminalByCode(String code);
 
-    TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
+    public abstract PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request);
 
-    Terminal craeteTerminal(TerminalCreateRequest request);
+    public abstract List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId);
 
-    void deleteTerminal(TerminalDeleteRequest request);
+    public abstract Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode);
 
-    Terminal editTerminal(TerminalEditRequest request);
+    public abstract TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request);
 
-    void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request);
+    public abstract Terminal craeteTerminal(TerminalCreateRequest request);
 
-    List<Terminal> findAllTerminalAccessOnService(String serviceId);
-    List<TerminalServiceAccess> findAllTerminalServiceAccesses();
+    public abstract void deleteTerminal(TerminalDeleteRequest request);
+
+    public abstract Terminal editTerminal(TerminalEditRequest request);
+
+    public abstract void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request);
+
+    public abstract List<Terminal> findAllTerminalAccessOnService(String serviceId);
+
+    public abstract List<TerminalServiceAccess> findAllTerminalServiceAccesses();
 
 }

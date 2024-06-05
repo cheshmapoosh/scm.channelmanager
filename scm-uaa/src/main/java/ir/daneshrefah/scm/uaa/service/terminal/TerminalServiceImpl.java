@@ -11,12 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
-public class TerminalServiceImpl implements TerminalService {
+public class TerminalServiceImpl extends TerminalService {
 
     private final TerminalRepository terminalRepository;
     private List<Terminal> terminals;
@@ -35,6 +36,14 @@ public class TerminalServiceImpl implements TerminalService {
             return Optional.empty();
         }
         return findAllTerminals().stream().filter(terminal -> id.equals(terminal.getId())).findFirst();
+    }
+
+    @Override
+    public Optional<Terminal> findTerminalByLegacyId(Integer id) {
+        if (Objects.isNull(id)) {
+            return Optional.empty();
+        }
+        return findAllTerminals().stream().filter(terminal -> Long.valueOf(id).equals(terminal.getLegacyTerminalId())).findFirst();
     }
 
     @Override

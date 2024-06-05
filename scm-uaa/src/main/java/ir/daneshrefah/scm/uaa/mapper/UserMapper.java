@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.uaa.mapper;
 
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
-import ir.daneshrefah.scm.uaa.service.IntegrationService;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
@@ -44,17 +44,17 @@ public interface UserMapper {
         if (null == entity) {
             return null;
         }
-        return IntegrationService.INSTANCE.findTerminalCodeByChannelId(entity.getTerminalId());
+        return TerminalService.INSTANCE.findTerminalByLegacyId(entity.getTerminalId()).map(terminal -> terminal.getCode()).orElse(null);
     }
 
     default Integer mapTerminalId(User user) {
         if (null == user) {
             return null;
         }
-        if (null != user.getTerminalId()) {
-            return user.getTerminalId();
-        }
-        return IntegrationService.INSTANCE.findChannelIdByTerminalCode(user.getTerminalCode());
+//        if (null != user.getTerminalId()) {
+//            return user.getTerminalId();
+//        }
+        return TerminalService.INSTANCE.findTerminalByCode(user.getTerminalCode()).map(terminal -> terminal.getLegacyTerminalId().intValue()).orElse(null);
     }
 
     @Mapping(target = "terminalId", expression = "java(mapTerminalId(user))")

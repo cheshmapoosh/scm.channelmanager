@@ -40,7 +40,7 @@ public class Otp implements Serializable {
         reusedCount++;
     }
     public void plusFailedCount() {
-        reusedCount++;
+        failedCount++;
     }
 
     public OtpStatus status() {

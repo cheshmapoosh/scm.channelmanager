@@ -69,4 +69,10 @@ public class ValidationUtils {
         }
     }
 
+    public static void checkEqualsIgnoreCaseString(CharSequence cs1, CharSequence cs2, Supplier<RuntimeException> throwsException) {
+        if (StringUtils.equalsIgnoreCase(cs1, cs2)){
+            throw throwsException.get();
+        }
+    }
+
 }

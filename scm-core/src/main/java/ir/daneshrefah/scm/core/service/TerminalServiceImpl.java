@@ -17,7 +17,6 @@ import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.core.repository.TransformerRelationRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
-public class TerminalServiceImpl implements TerminalService {
+public class TerminalServiceImpl extends TerminalService {
 
     private static final Map<String, Long> LEGACY_TERMINAL_CODE_ID_CACHE = new ConcurrentHashMap<>();
     private final TerminalRepository terminalRepository;
@@ -38,6 +37,7 @@ public class TerminalServiceImpl implements TerminalService {
     private final ServiceRepository serviceRepository;
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
+
 
     @Override
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
@@ -64,6 +64,14 @@ public class TerminalServiceImpl implements TerminalService {
             return Optional.empty();
         }
         return terminalRepository.findById(id).map(TerminalMapper.INSTANCE::toModel);
+    }
+
+    @Override
+    public Optional<Terminal> findTerminalByLegacyId(Integer id) {
+        if (Objects.isNull(id)) {
+            return Optional.empty();
+        }
+        return findAllTerminals().stream().filter(terminal -> Long.valueOf(id).equals(terminal.getLegacyTerminalId())).findFirst();
     }
 
     @Override

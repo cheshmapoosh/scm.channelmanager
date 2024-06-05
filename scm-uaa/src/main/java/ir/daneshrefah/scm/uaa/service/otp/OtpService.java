@@ -68,7 +68,7 @@ public class OtpService {
         if (Objects.isNull(provider)) {
             return createInvalidResponse(request, "Unsupported otpType.");
         }
-        IssuerInfo issuerInfo = RequestUtils.extractIssuerInfo();
+//        IssuerInfo issuerInfo = RequestUtils.extractIssuerInfo();
         return provider.sendOtp(request);
     }
 

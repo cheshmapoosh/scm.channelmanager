@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,8 +35,8 @@ public class FileEventProducer extends EventProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventProducer.class);
 
     private final ObjectMapper objectMapper;
-//    BlockingQueue<Event> loggingQueue = new LinkedBlockingQueue<>();
-    ConcurrentLinkedQueue<Event> loggingQueue = new ConcurrentLinkedQueue<>();
+    BlockingQueue<Event> loggingQueue = new LinkedBlockingQueue<>();
+//    ConcurrentLinkedQueue<Event> loggingQueue = new ConcurrentLinkedQueue<>();
 
 
     public FileEventProducer() {
@@ -53,12 +54,17 @@ public class FileEventProducer extends EventProducer {
     private void initLogThread() {
         Thread loggingThread = new Thread(() -> {
             while (true) {
-                Event event = loggingQueue.poll();
+                Event event = null;
                 try {
+                    event = loggingQueue.take();
                     String json = objectMapper.writeValueAsString(event);
                     LOGGER.info(json);
+                } catch (InterruptedException e) {
+                    LOGGER.error("error read event.", e);
                 } catch (JsonProcessingException e) {
                     LOGGER.error("error serialize event:" + event.getCorrelationId(), e);
+                } catch (Exception e) {
+                    LOGGER.error("error unknown." + ((null != event) ? event.getCorrelationId(): "null"), e);
                 }
             }
         });

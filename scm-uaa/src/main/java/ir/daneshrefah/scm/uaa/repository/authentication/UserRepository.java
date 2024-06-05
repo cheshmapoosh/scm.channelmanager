@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.uaa.repository.authentication;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -20,8 +19,8 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<UserEntity, Integer>, JpaSpecificationExecutor<UserEntity> {
 
     @Query(value = "SELECT u FROM UserEntity u " +
-            "WHERE u.nickname = :nickname AND u.terminalId = :terminalId ")
-    List<UserEntity> findByNicknameAndTerminalId(@Param("nickname") String nickname, @Param("terminalId") Integer terminalId);
+            "WHERE u.nickname = :nickname AND u.terminalId = :legacyTerminalId ")
+    List<UserEntity> findByNicknameAndLegacyTerminalId(@Param("nickname") String nickname, @Param("legacyTerminalId") Integer legacyTerminalId);
 
 //    @Query(value = "select UA.*, FAM.CODE AS LOGIN_AUTHENTICATION_METHOD, SAM.CODE AS TRANSACTION_AUTHENTICATION_METHOD " +
 //            "FROM REF.USER_CHANNEL_AUTHENTICATION UA " +

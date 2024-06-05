@@ -145,7 +145,7 @@ public class JWTConfig {
                 if (StringUtils.isNotEmpty(authenticationToken.getAccessParameter())) {
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, authenticationToken.getAccessParameter());
                 }
-                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.UNKNOWN);
+                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.UNKNOWN.getCode());
             }
         };
     }

@@ -7,6 +7,14 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.model.condition.Condition;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.security.access.expression.ExpressionUtils;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.util.SimpleMethodInvocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,15 +30,29 @@ import java.util.regex.Pattern;
  */
 public class AuthorityConditionalDecisionVoter extends BaseConditionalDecisionVoter {
 
-    private final Pattern functionPattern = Pattern.compile("\\s*\\w+\\s*\\((\\s*[^)]*)\\)");
+    private static final MethodInvocation METHOD_INVOCATION;
+
+    static {
+        try {
+            METHOD_INVOCATION = new SimpleMethodInvocation("test", String.class.getMethod("toString"));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public AuthorityConditionalDecisionVoter(DecisionHelper decisionHelper) {
         super(decisionHelper);
     }
 
     @Override
     protected int checkCondition(Message message, Condition condition) {
-        String expression = "hasAuthority(\"escaped_role\") or hasAnyAuthority('ADMIN', 'MANAGER')";
-        List<JsonNode> nodes = parseExpression(expression);
+        Authentication authentication = (Authentication) message.getHeader().getAuthentication();
+        Expression expression = new SpelExpressionParser().parseExpression(condition.getValue());
+        EvaluationContext context = new DefaultMethodSecurityExpressionHandler().createEvaluationContext(authentication, METHOD_INVOCATION);
+        boolean isGranted = ExpressionUtils.evaluateAsBoolean(expression, context);
+        if (!isGranted) {
+            return ACCESS_DENIED;
+        }
         return ACCESS_ABSTAIN;
     }
 

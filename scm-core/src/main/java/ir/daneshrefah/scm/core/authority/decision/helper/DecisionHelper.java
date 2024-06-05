@@ -119,7 +119,9 @@ public class DecisionHelper {
         Service service = authObject.getService();
         Terminal terminal = authObject.getTerminal();
 
-        if (service.getCheckAccessFirstAuthentication() && terminal.isSupportCheckAuthentication()) {
+        if (isLogin && service.getCheckAccessFirstAuthentication() && terminal.isSupportCheckAuthentication()) {
+            return authenticationMethod;
+        } else if (!isLogin && service.getCheckAccessSecondAuthentication() && terminal.isSupportCheckSecondAuthentication()) {
             return authenticationMethod;
         }
 
@@ -184,7 +186,7 @@ public class DecisionHelper {
 
     private List<Condition> findCustomConditions(String id, AuthenticationMethod loginAuth, AuthenticationMethod transactionAuth) {
         return CONDITIONS_CACHE
-                .getOrDefault(id, new ArrayList<>())
+                .getOrDefault(id, Collections.emptyList())
                 .stream()
                 .filter(condition -> Objects.equals(condition.getLoginAuthenticationMethod(), loginAuth) && Objects.equals(condition.getTransactionAuthenticationMethod(), transactionAuth))
                 .map(BaseCondition::getCondition)

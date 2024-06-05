@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -95,6 +96,7 @@ public class AuthenticationClientTemplate {
         org.springframework.security.core.Authentication authResult = null;
         try {
             authResult = this.authenticationManager.authenticate(authToken);
+            SecurityContextHolder.getContext().setAuthentication(authResult);
         } catch (Exception e) {
             LOGGER.error("error on authentication", e);
             throw new ClientAuthenticationException(e.getMessage(), null != e.getCause() ? e.getCause() : e,

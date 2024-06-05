@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
@@ -15,7 +13,6 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.core.OAuth2Token;
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.stereotype.Component;

@@ -19,7 +19,7 @@ import java.util.Set;
 public class User extends BaseModel<Integer> {
 
     private String nickname;
-    private Integer terminalId;
+//    private Integer terminalId;
     private String terminalCode;
     private AuthenticationMethod loginAuthenticationMethod;
     private AuthenticationMethod transactionAuthenticationMethod;

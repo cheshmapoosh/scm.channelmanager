@@ -19,7 +19,6 @@ import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
-import ir.daneshrefah.scm.uaa.service.IntegrationService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -56,43 +55,42 @@ public class UserService {
     private final PersonRepository personRepository;
     private final UserActivationRepository userActivationRepository;
     private final RoleRepository roleRepository;
-    private final IntegrationService integrationService;
     private final TerminalService terminalService;
 
 
     public User changeNickName(UserNickNameModifyRequest request) {
         validateUserNickNameRequest(request);
-        User user = findAuthenticatedUserByUsernameAndId(request.getCurrentNickName(), request.getTerminalCode());
-        List<UserEntity> foundNickNameAndTerminal = userRepository.findByNicknameAndTerminalId(request.getNickName(), user.getTerminalId());
-        if (!foundNickNameAndTerminal.isEmpty()) {
+        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
+
+        Optional<UserEntity> foundNickNameAndTerminal = loadUserEntityByUsername(request.getNickName(), request.getTerminalCode());
+        if (foundNickNameAndTerminal.isPresent()) {
             throw new DuplicatedRecordFoundException("username");
         }
-        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new InvalidInputException("userId"));
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-    private User findAuthenticatedUserByUsernameAndId(String username, String terminalCode) {
-        String loggedInGlobalUsername = AuthenticationUtils.getLoggedInUserAuthentication().getName();
-        String headerTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
-        if ((!headerTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-                || (!username.equals(loggedInGlobalUsername) && !hasAdministratorAccess())) {
+    private UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
+        String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
+        String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
+        if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
+                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
-        Terminal terminal = terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminal code"));
-        return loadUserByUsername(username, terminal.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        Terminal terminal = terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminalCode"));
+        return loadUserEntityByUsername(username, terminal.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
     }
 
     public User updateUserLoginStaticPassword(PasswordModificationRequest request) {
         validatePasswordModificationRequest(request);
-        User user = findAuthenticatedUserByUsernameAndId(request.getUsername(), request.getTerminalCode());
-        if (!user.getLoginStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), user.getPerson().getUsername()))) {
+        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
+        if (!userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), userEntity.getPerson().getUsername()))) {
             throw new InvalidInputException("oldPassword");
         }
-        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
-        userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), user.getPerson().getUsername()));
+//        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         return UserMapper.INSTANCE.toModel(userEntity);
@@ -100,13 +98,14 @@ public class UserService {
 
     public User updateUserTransactionStaticPass(PasswordModificationRequest request) {
         validatePasswordModificationRequest(request);
-        User user = findAuthenticatedUserByUsernameAndId(request.getUsername(), request.getTerminalCode());
-        if (!user.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), user.getPerson().getUsername()))) {
+        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
+        if (!userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(),
+                userEntity.getPerson().getUsername()))) {
             throw new InvalidInputException("oldPassword");
         }
         //attaching the record
-        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
-        userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), user.getPerson().getUsername()));
+//        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         return UserMapper.INSTANCE.toModel(userEntity);
@@ -149,16 +148,14 @@ public class UserService {
 
     private void validateUserNickNameRequest(UserNickNameModifyRequest request) {
         ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request body"));
-        String username = request.getNickName();
-        String currentUsername = request.getCurrentNickName();
-        String terminalCode = request.getTerminalCode();
+        ValidationUtils.checkBlankString(request.getNickName(), () -> new MissingRequiredInputException("nickname"));
+        ValidationUtils.checkBlankString(request.getCurrentNickName(), () -> new MissingRequiredInputException("currentNickname"));
+        ValidationUtils.checkBlankString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
+        ValidationUtils.checkEqualsIgnoreCaseString(request.getNickName(), request.getCurrentNickName(), () -> new InvalidInputException("nickname"));
         UserAuthentication loggedInUserAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         if (Objects.isNull(loggedInUserAuthentication) || StringUtils.isBlank(loggedInUserAuthentication.getName())) {
             throw new AuthenticationRequiredException();
         }
-        ValidationUtils.checkBlankString(terminalCode, () -> new InvalidInputException("terminalCode"));
-        ValidationUtils.checkBlankString(username, () -> new InvalidInputException("username"));
-        ValidationUtils.checkBlankString(currentUsername, () -> new InvalidInputException("currentUsername"));
         User loggedInUser = AuthenticationUtils.getLoggedInUser();
         ValidationUtils.checkNull(loggedInUser, AuthenticationRequiredException::new);
     }
@@ -184,8 +181,8 @@ public class UserService {
         ValidationUtils.checkNull(request.getPersonId(), () -> new MissingRequiredInputException("personId"));
         ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new InvalidInputException("loginAuthenticationMethod"));
         ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new InvalidInputException("transactionAuthenticationMethod"));
-        Integer terminalId = integrationService.findChannelIdByTerminalCode(request.getTerminalCode());
-        ValidationUtils.checkNull(terminalId, () -> new InvalidInputException("terminalCode"));
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(request.getTerminalCode());
+        ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
 
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
                 StringUtils.isEmpty(request.getLoginStaticPassword())) {
@@ -200,7 +197,7 @@ public class UserService {
         GeneralPersonEntity creatorEntity = findPersonByUsername(AuthenticationUtils.getLoggedInGlobalUsername());
         ValidationUtils.checkNull(creatorEntity, () -> new NoMatchRecordFoundException("creator person does not login"));
         assert creatorEntity != null;
-        UserEntity entity = mapToUserEntity(request, terminalId, creatorEntity, personEntity);
+        UserEntity entity = mapToUserEntity(request, terminal.get().getLegacyTerminalId().intValue(), creatorEntity, personEntity);
         entity = userRepository.save(entity);
         return UserMapper.INSTANCE.toModel(entity);
     }
@@ -262,15 +259,23 @@ public class UserService {
         }
     }
 
-    public Optional<User> loadUserByUsername(String username, String terminalCode) {
-        Integer channelId = integrationService.findChannelIdByTerminalCode(terminalCode);
-        Iterable<UserEntity> userEntities = userRepository.findByNicknameAndTerminalId(username, channelId);
+    public Optional<UserEntity> loadUserEntityByUsername(String username, String terminalCode) {
+        Integer channelId = terminalService.findTerminalByCode(terminalCode).get().getLegacyTerminalId().intValue();
+//        Integer channelId = integrationService.findChannelIdByTerminalCode(terminalCode);
+        Iterable<UserEntity> userEntities = userRepository.findByNicknameAndLegacyTerminalId(username, channelId);
         if (!userEntities.iterator().hasNext()) {
             return Optional.empty();
         }
+        return Optional.of(userEntities.iterator().next());
+    }
 
-        User user = UserMapper.INSTANCE.toModel(userEntities.iterator().next());
+    public Optional<User> loadUserByUsername(String username, String terminalCode) {
+        Optional<UserEntity> userEntity = loadUserEntityByUsername(username, terminalCode);
+        if (userEntity.isEmpty()) {
+            return Optional.empty();
+        }
 
+        User user = UserMapper.INSTANCE.toModel(userEntity.get());
         return Optional.of(user);
     }
 
@@ -377,7 +382,7 @@ public class UserService {
     }
 
     private UserEntity findValidatedUserForUpdatePasswordMethod(AuthenticationMethodModificationRequest request) {
-        User user = findAuthenticatedUserByUsernameAndId(request.getUsername(), request.getTerminalCode());
+        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
         String loggedInGlobalUsername = Objects.requireNonNull(AuthenticationUtils.getLoggedInUserAuthentication()).getName();
         String headerTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!headerTerminalCode.equals(request.getTerminalCode()) && !hasAdministratorAccess())
@@ -385,7 +390,7 @@ public class UserService {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         //attaching the record
-        return userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("username"));
+        return userRepository.findById(userEntity.getId()).orElseThrow(() -> new NoMatchRecordFoundException("username"));
     }
 
     public User changeUser(UserDataChangeRequest request) {
@@ -430,7 +435,7 @@ public class UserService {
     public User findByNicknameAndTerminalCode(String nickname, String terminalCode) {
         Integer terminalId = Integer.valueOf(terminalService.findTerminalByCode(terminalCode)
                 .orElseThrow(() -> new InvalidInputException("terminalCode")).getId());
-        List<UserEntity> userEntities = userRepository.findByNicknameAndTerminalId(nickname, terminalId);
+        List<UserEntity> userEntities = userRepository.findByNicknameAndLegacyTerminalId(nickname, terminalId);
         if (Objects.nonNull(userEntities) && userEntities.size() > 0) {
             return UserMapper.INSTANCE.toModel(userEntities.get(0));
         }

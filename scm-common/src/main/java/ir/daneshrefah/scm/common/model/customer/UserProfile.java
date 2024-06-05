@@ -37,7 +37,7 @@ public class UserProfile implements Serializable {
     @Setter
     private List<ServiceAccess> serviceAccesses;
 
-    public UserProfile(@NonNull String nickname, @NonNull String personUsername, @NonNull Long personId) {
+    public UserProfile(@NonNull String nickname, String personUsername, Long personId) {
         this.nickname = nickname;
         this.personUsername = personUsername;
         this.personId = personId;
