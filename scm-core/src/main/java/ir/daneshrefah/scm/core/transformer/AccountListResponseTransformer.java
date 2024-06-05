@@ -10,10 +10,12 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -60,7 +62,12 @@ public class AccountListResponseTransformer extends AbstractTransformer {
                     accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
             ).findFirst();
             if (membership.isEmpty()) {
+                sourceNode.put("nickName", StringUtils.EMPTY);
                 return null;
+            }else {
+                MembershipTerminalAccess membershipTerminalAccess = membership.get();
+                String nickname = membershipTerminalAccess.getMembership().getNickname();
+                sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
             }
             return sourceNode;
         }

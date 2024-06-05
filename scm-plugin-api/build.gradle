@@ -12,7 +12,7 @@ dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     compileOnly "org.springframework:spring-webmvc"
 //    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema:2.14.2'
-//    api 'org.apache.camel.springboot:camel-jackson-starter'
+    api 'org.apache.camel.springboot:camel-jackson-starter'
     api 'org.apache.camel.springboot:camel-json-validator-starter'
     api 'org.apache.camel.springboot:camel-core-starter'
     api 'org.apache.camel.springboot:camel-http-starter'
