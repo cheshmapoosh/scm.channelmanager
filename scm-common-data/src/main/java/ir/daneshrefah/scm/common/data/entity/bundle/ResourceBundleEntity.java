@@ -13,24 +13,16 @@ import java.util.Locale;
 @Entity
 @Getter
 @Setter
-public class ResourceBundleEntity extends AbstractDefaultEntity<String> {
+public class ResourceBundleEntity extends AbstractDefaultEntity<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "RESOURCE_BUNDLE_ID")
+    private Long id;
     @Column(name = "LOCALE_CODE")
     @Convert(converter = LocaleConverter.class)
     private Locale locale;
     private String key;
     private String value;
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
 }
