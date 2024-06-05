@@ -43,7 +43,7 @@ hazelcast:
           enabled: false
         tcp-ip-config:
           enabled: true
-          required-member: 10.10.5
+          required-member: 127.0.0.1
           members: 127.0.0.1
           connection-timeout-seconds: 5
     flake-id-generator-configs:

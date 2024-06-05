@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.cache.config;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.config.*;
 import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.cache.domain.config.*;
@@ -13,6 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.Inet4Address;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +29,15 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class HazelcastConfig {
+    /*
+    java -jar scm-cache-boot.jar
+         --spring.profiles.active=prod
+         --hazelcast.config.network-config.join.tcp-ip-config.members=10.10.10.10
+         --hazelcast.config.network-config.join.tcp-ip-config.required-member=10.10.10.10
+         --spring.datasource.url=jdbc:db2://10.15.27.82:446/DSNALOC
+         --spring.datasource.username=aaa
+         --spring.datasource.password=aaa
+     */
 
     private final InstanceMapper instanceMapper;
 

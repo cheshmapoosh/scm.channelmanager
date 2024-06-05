@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.cache;
 
+//import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
 import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

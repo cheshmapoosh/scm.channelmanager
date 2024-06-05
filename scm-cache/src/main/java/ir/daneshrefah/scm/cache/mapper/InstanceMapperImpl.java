@@ -66,14 +66,14 @@ public class InstanceMapperImpl implements InstanceMapper {
         if (Objects.nonNull(topicCacheConfigEntity.getInstanceName())) {
             topicConfig.setName(topicCacheConfigEntity.getInstanceName());
         }
-        if (Objects.nonNull(topicCacheConfigEntity.getGlobalOrderingEnabled())) {
-            topicConfig.setGlobalOrderingEnabled(topicCacheConfigEntity.getGlobalOrderingEnabled());
+        if (Objects.nonNull(topicCacheConfigEntity.getTopicGlobalOrderingEnabled())) {
+            topicConfig.setGlobalOrderingEnabled(topicCacheConfigEntity.getTopicGlobalOrderingEnabled());
         }
         if (Objects.nonNull(topicCacheConfigEntity.getStatisticsEnabled())) {
             topicConfig.setStatisticsEnabled(topicCacheConfigEntity.getStatisticsEnabled());
         }
-        if (Objects.nonNull(topicCacheConfigEntity.getMultiThreadingEnabled())) {
-            topicConfig.setMultiThreadingEnabled(topicCacheConfigEntity.getMultiThreadingEnabled());
+        if (Objects.nonNull(topicCacheConfigEntity.getTopicMultiThreadingEnabled())) {
+            topicConfig.setMultiThreadingEnabled(topicCacheConfigEntity.getTopicMultiThreadingEnabled());
         }
         return topicConfig;
     }

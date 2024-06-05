@@ -56,6 +56,13 @@ public class HazelcastRestAPI {
         return ResponseEntity.ok(hazelCastService.putInCache(mapName, key, value));
     }
 
+    @PutMapping(value = "/{mapName}/{key}/save-ttl")
+    public ResponseEntity<Object> update(@PathVariable("mapName") String mapName,
+                                      @PathVariable("key") String key,
+                                      @RequestBody String value) {
+        return ResponseEntity.ok(hazelCastService.updateCache(mapName, key, value));
+    }
+
     @PutMapping("/{mapName}/{key}/{ttl}")
     public ResponseEntity<Object> put(@PathVariable("mapName") String mapName,
                                       @PathVariable("key") String key,
