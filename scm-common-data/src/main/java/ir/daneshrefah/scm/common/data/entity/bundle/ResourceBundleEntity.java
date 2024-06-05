@@ -1,0 +1,36 @@
+package ir.daneshrefah.scm.common.data.entity.bundle;
+
+import ir.daneshrefah.scm.common.data.converter.LocaleConverter;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Locale;
+
+
+@Table(name = "TBL_SCM_RESOURCE_BUNDLE")
+@Entity
+@Getter
+@Setter
+public class ResourceBundleEntity extends AbstractDefaultEntity<String> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+    @Column(name = "LOCALE_CODE")
+    @Convert(converter = LocaleConverter.class)
+    private Locale locale;
+    private String key;
+    private String value;
+
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+}
