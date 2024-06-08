@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_INVALID_TARGET_URL;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,13 +21,9 @@ public class ServiceEndpointPrepareException extends AbstractExternalServiceExce
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_INVALID_TARGET_URL;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_SYSTEM);
     }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
-    }
-
 }

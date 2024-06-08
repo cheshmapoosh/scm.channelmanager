@@ -80,7 +80,7 @@ public class Message implements Serializable {
             return;
         }
         if ((payload.isArray() && !newPayload.isArray()) || (!payload.isArray() && newPayload.isArray())) {
-            throw new MessagePayloadMergeException("incompatible array type of payloads", newPayload, null);
+            throw new MessagePayloadMergeException(newPayload, null);
         }
         if (payload.isObject()) {
             for (Iterator<String> it = newPayload.fieldNames(); it.hasNext(); ) {

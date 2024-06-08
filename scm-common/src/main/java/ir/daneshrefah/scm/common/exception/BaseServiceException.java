@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.service.Service;
 import lombok.Getter;
 
@@ -10,7 +12,7 @@ import lombok.Getter;
  * @version 1.0
  * @since 2024-01-27
  */
-public abstract class BaseServiceException extends BaseException implements ErrorCodeAwareException {
+public abstract class BaseServiceException extends AbstractBaseException implements ExceptionSourceAware {
 
     @Getter
     String serviceCode;

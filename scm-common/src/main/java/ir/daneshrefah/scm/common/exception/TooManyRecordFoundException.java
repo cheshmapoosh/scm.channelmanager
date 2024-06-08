@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_TOO_MANY_RECORD_FOUND;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,12 +13,18 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_TOO_MA
  */
 public class TooManyRecordFoundException extends AbstractValidationException {
 
+    final int count;
     public TooManyRecordFoundException(String source, int count) {
         super(source, "too many (" + count + ") " + source + " found.");
+        this.count = count;
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_TOO_MANY_RECORD_FOUND;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("count",String.valueOf(this.count))
+                .defineMessageParameter("source",getSource())
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

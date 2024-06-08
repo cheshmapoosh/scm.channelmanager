@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PROVIDER_ASSET_NOT_FOUND;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,11 +14,13 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDA
 public class NoAssetFoundException extends AbstractValidationException {
 
     public NoAssetFoundException() {
-        super("asset" , "no asset found");
+        super("asset", "no asset found");
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_VALIDATION_PROVIDER_ASSET_NOT_FOUND;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

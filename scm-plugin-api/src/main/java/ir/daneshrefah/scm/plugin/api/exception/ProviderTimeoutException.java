@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_HOST_TIMEOUT;
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_HOST_UNREACHABLE;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,14 +19,13 @@ public class ProviderTimeoutException extends AbstractExternalServiceException {
                         (null != cause ? StringUtils.isNotEmpty(cause.getMessage()) ? cause.getMessage() : cause.getClass().getName() : StringUtils.EMPTY), serviceCode, providerCode, cause);
     }
 
-    @Override
-    public int getErrorCode() {
-        return ERROR_CODE_HOST_TIMEOUT;
-    }
 
     @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("providerCode",getProviderCode())
+                .defineMessageParameter("serviceCode",getServiceCode())
+                .buildWithStatus(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER);
     }
-
 }

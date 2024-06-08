@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
 import com.networknt.schema.ValidationMessage;
-import ir.daneshrefah.scm.common.exception.BaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
 
 import java.util.Set;

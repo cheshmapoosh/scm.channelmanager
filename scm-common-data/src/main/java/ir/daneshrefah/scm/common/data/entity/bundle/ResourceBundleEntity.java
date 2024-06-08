@@ -25,4 +25,13 @@ public class ResourceBundleEntity extends AbstractDefaultEntity<Long> {
     private String key;
     private String value;
 
+    @Override
+    public Long getId() {
+        return this.id;
+    }
+
+    @Override
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

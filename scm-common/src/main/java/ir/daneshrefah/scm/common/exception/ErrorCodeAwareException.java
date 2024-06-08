@@ -8,7 +8,11 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
  * @author reza jamshidi
  * @version 1.0
  * @since 2024-02-24
+ *
+ * @see ir.daneshrefah.scm.common.error.spec.AbstractBaseException
+ * @see ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware
  */
+@Deprecated
 public interface ErrorCodeAwareException {
 
     int getErrorCode();

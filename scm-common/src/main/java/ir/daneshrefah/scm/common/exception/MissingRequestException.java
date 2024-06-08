@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_REQUEST_IS_NULL;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,7 +18,9 @@ public class MissingRequestException extends AbstractValidationException {
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_REQUEST_IS_NULL;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

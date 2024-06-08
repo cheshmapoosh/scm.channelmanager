@@ -80,7 +80,7 @@ public abstract class ServiceExecutor {
         String cspUsername = MessageUtils.getCSPUsername(message);
         String requestBody = null != input ? input.toString() : null;
         String responseBody = null != message.getPayload() ? message.getPayload().toString() : null;
-        Event event = ServiceEvent.builder()
+    /*    Event event = ServiceEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .messageId(message.getHeader().getMessageId())
                 .parentMessageId(message.getHeader().getParentMessageId())
@@ -99,8 +99,8 @@ public abstract class ServiceExecutor {
                 .endTime(endTime)
                 .durationMillis(Duration.between(startTime, endTime).toMillis())
                 .status(message.getStatus())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+                .build();*/
+//        EventProducer.getInstance().sendEvent(event);
     }
 
     public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {

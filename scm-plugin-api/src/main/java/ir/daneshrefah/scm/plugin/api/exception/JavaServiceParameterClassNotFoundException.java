@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
@@ -13,18 +15,21 @@ import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
  */
 public class JavaServiceParameterClassNotFoundException extends AbstractJavaServiceException {
 
+    private final String serviceCode;
+    private final String parameterName;
     public JavaServiceParameterClassNotFoundException(JavaService service, String parameterName, Throwable cause) {
         super("service [" + service.getCode() + "] , parameter [" + parameterName + "] class not found.", cause, service);
+        this.serviceCode = service.getCode();
+        this.parameterName = parameterName;
     }
+
 
     @Override
-    public int getErrorCode() {
-        return ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_PARAMETER_CLASS_NOT_FOUND;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("serviceCode",serviceCode)
+                .defineMessageParameter("parameterName",parameterName)
+                .buildWithStatus(MessageStatus.SC_ERROR_SYSTEM);
     }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
-    }
-
 }

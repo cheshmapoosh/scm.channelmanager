@@ -1,13 +1,10 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_GLOBAL;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 public class DuplicatedRecordFoundException extends AbstractValidationException {
-
-    @Override
-    public int getErrorCode() {
-        return ERROR_CODE_VALIDATION_GLOBAL;
-    }
 
     private final String source;
     public DuplicatedRecordFoundException(String source) {
@@ -18,6 +15,14 @@ public class DuplicatedRecordFoundException extends AbstractValidationException 
     @Override
     public String getSource() {
         return source;
+    }
+
+    @Override
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("source",getSource())
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 
 }

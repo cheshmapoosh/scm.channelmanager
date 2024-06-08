@@ -35,6 +35,7 @@ dependencies {
     api project(':scm-common')
 //    api project(':scm-notification')
     api project(':scm-notification-client')
+    api project(':scm-common-error')
     implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.1.0'
 
 }

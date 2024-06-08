@@ -1,5 +1,9 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_REQUIRED;
 
 /**
@@ -16,7 +20,9 @@ public class AuthenticationRequiredException extends AbstractValidationException
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_AUTHENTICATION_REQUIRED;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

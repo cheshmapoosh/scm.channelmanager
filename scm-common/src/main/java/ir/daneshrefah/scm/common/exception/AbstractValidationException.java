@@ -1,5 +1,9 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
@@ -9,7 +13,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
  * @version 1.0
  * @since 2024-02-14
  */
-public abstract class AbstractValidationException extends BaseException implements ErrorCodeAwareException {
+public abstract class AbstractValidationException extends AbstractBaseException implements ExceptionSourceAware {
 
     private final String source;
 
@@ -20,11 +24,6 @@ public abstract class AbstractValidationException extends BaseException implemen
     public AbstractValidationException(String source, String message, Throwable cause) {
         super(message, cause);
         this.source = source;
-    }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_VALIDATION;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 
@@ -17,13 +18,10 @@ public class JavaServiceMethodNotFoundException extends AbstractJavaServiceExcep
         super("method not found for java service.", cause, service);
     }
 
-    @Override
-    public int getErrorCode() {
-        return ErrorCodes.ERROR_CODE_JAVA_SERVICE_METHOD_NOT_FOUND;
-    }
 
     @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance().buildWithStatus(MessageStatus.SC_ERROR_SYSTEM);
     }
 }

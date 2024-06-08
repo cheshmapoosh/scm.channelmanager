@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.notification.client.exception;
 
-import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
@@ -13,7 +14,7 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-02-05
  */
-public abstract class BaseNotificationException extends BaseException {
+public abstract class BaseNotificationException extends AbstractBaseException implements ExceptionSourceAware {
 
     private final NotificationRequest request;
     public BaseNotificationException(NotificationRequest request, String message, Throwable cause) {

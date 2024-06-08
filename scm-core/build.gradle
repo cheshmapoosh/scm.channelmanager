@@ -54,4 +54,5 @@ dependencies {
     api project(':scm-plugin-sayad')
     api project(':scm-plugin-scm')
     api project(':scm-plugin-mock')
+    api project(':scm-common-error')
 }

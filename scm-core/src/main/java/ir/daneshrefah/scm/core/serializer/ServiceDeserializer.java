@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
@@ -70,8 +71,8 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
                     throw new MethodNotSupportDataException("service implementation type is invalid.");
             }
         } catch (JsonProcessingException e) {
-            if (e.getCause() instanceof BaseException) {
-                throw ((BaseException) e.getCause());
+            if (e.getCause() instanceof AbstractBaseException) {
+                throw ((AbstractBaseException) e.getCause());
             }
             throw new InvalidRequestFormatException("payload", e);
         }

@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,13 +18,10 @@ public class ServiceNotFoundException extends BaseServiceException {
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_VALIDATION_SERVICE_CODE_IS_INVALID;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("serviceCode",serviceCode)
+                .buildWithStatus(MessageStatus.SC_NOT_FOUND);
     }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
-    }
-
 }

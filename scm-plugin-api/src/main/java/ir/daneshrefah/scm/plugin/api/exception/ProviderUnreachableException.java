@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -21,13 +23,11 @@ public class ProviderUnreachableException extends AbstractExternalServiceExcepti
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_HOST_UNREACHABLE;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("providerCode",getProviderCode())
+                .defineMessageParameter("serviceCode",getServiceCode())
+                .buildWithStatus(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER);
     }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER;
-    }
-
 }

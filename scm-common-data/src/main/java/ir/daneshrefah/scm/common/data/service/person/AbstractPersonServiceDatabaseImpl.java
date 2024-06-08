@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
@@ -21,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static ir.daneshrefah.scm.common.budle.ResourceBundleMessageKey.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -70,7 +73,10 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     public GeneralPerson findPersonByPersonId(Integer id) {
         ValidationUtils.checkNumericInput(String.valueOf(id), () -> new InvalidInputException("id"));
         Optional<GeneralPersonEntity> personEntity = personRepository.findById(id);
-        ValidationUtils.checkEmptyOptional(personEntity,()->new PersonNotFoundException("person with id '" + id + "' not found."));
+        ValidationUtils.checkEmptyOptional(personEntity,()->new PersonNotFoundException("person with id '" + id + "' not found."
+        ,new ExceptionDynamicMessage()
+                .setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION_ID)
+                .addParameter("id",String.valueOf(id))));
         return PersonMapper.INSTANCE.toPerson(personEntity.orElseThrow(()->new InvalidInputException("id")));
     }
 
@@ -93,7 +99,11 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
         Optional<GeneralPersonEntity> personEntity = personRepository.findByNicknameAndTerminalId(nickname, terminal.get().getLegacyTerminalId().intValue());
         if (personEntity.isEmpty()) {
-            throw new PersonNotFoundException("person with nickname '" + nickname + "' and terminalCode '" + terminalCode + "' not found.");
+            throw new PersonNotFoundException("person with nickname '" + nickname + "' and terminalCode '" + terminalCode + "' not found."
+            ,new ExceptionDynamicMessage()
+                    .setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION_NICK_NAME_AND_TERMINAL)
+                    .addParameter("nickname",nickname)
+                    .addParameter("terminalCode",terminalCode));
         }
         return PersonMapper.INSTANCE.toPerson(personEntity.get());
     }
@@ -102,7 +112,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     public GeneralPerson findLocalPerson(PersonFindRequest request) {
         List<GeneralPerson> foundList = findPagedPersonList(request).getData();
         if (foundList.size() != 1){
-            throw new PersonNotFoundException("could not found person.");
+            throw new PersonNotFoundException("could not found person.",new ExceptionDynamicMessage().setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION));
         }
         return foundList.get(0);
     }
