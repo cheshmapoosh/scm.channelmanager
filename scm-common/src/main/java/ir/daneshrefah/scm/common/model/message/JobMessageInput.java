@@ -8,14 +8,14 @@ import lombok.experimental.SuperBuilder;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-02-03
+ * @since 2024-06-08
  */
 @SuperBuilder
 @Getter
-public class HttpMessageInput extends AbstractExternalMessageInput<String> {
+public class JobMessageInput extends AbstractInternalMessageInput {
 
-    private final String httpUrl;
-    private final String httpMethod;
-    private final String clientAgent;
+    private final String jobName;
+    private final String triggerName;
+    private final String jobId;
 
 }

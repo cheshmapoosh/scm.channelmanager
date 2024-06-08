@@ -110,7 +110,8 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
         String username = request.getHeader(SCM_PARAMETER_USERNAME);
         String terminalCode = request.getHeader(SCM_PARAMETER_TERMINAL);
         String clientId = request.getHeader(SCM_PARAMETER_CLIENT_ID);
-        BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(username, terminalCode, clientId, token);
+        String accessParameter = request.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
+        BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(username, terminalCode, clientId, accessParameter, token);
         authenticationRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
 
         try {

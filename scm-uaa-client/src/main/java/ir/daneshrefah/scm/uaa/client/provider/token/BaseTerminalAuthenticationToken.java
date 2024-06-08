@@ -19,6 +19,7 @@ public abstract class BaseTerminalAuthenticationToken extends BaseAuthentication
     private String username;
     private String terminalCode;
     private String clientId;
+    private String accessParameter;
 
     /**
      * Creates a token with the supplied array of authorities.
@@ -26,13 +27,14 @@ public abstract class BaseTerminalAuthenticationToken extends BaseAuthentication
      * @param authorities the collection of <tt>GrantedAuthority</tt>s for the principal
      *                    represented by this authentication object.
      */
-    public BaseTerminalAuthenticationToken(String username, String terminalCode, String clientId,
+    public BaseTerminalAuthenticationToken(String username, String terminalCode, String clientId, String accessParameter,
                                            Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
 //        Assert.hasText(terminalCode, "terminalCode cannot be empty");
         this.username = username;
         this.terminalCode = terminalCode;
         this.clientId = clientId;
+        this.accessParameter = accessParameter;
     }
 
     @Override

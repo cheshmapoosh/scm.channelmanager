@@ -11,7 +11,7 @@ public class TransactionAuthenticationDecisionVoter extends DecisionVoter {
 
     @Override
     public int vote(Message message) {
-        if (message.getHeader().isTransactionAuthenticated()) {
+        if (message.getHeader().getIsTransactionAuthenticated()) {
             return ACCESS_ABSTAIN;
         }
         throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_TRANSACTION_REQUIRED,

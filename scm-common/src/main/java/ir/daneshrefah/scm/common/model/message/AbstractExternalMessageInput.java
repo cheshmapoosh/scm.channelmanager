@@ -8,14 +8,12 @@ import lombok.experimental.SuperBuilder;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-02-03
+ * @since 2024-06-06
  */
 @SuperBuilder
 @Getter
-public class HttpMessageInput extends AbstractExternalMessageInput<String> {
+public abstract class AbstractExternalMessageInput<T> extends MessageInput<T> {
 
-    private final String httpUrl;
-    private final String httpMethod;
-    private final String clientAgent;
+    private final String clientRemoteAddress;
 
 }

@@ -17,8 +17,8 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String token;
 
-    public BearerAuthenticationToken(String username, String terminalCode, String clientId, String token) {
-        super(username, terminalCode, clientId, Collections.emptyList());
+    public BearerAuthenticationToken(String username, String terminalCode, String clientId, String accessParameter, String token) {
+        super(username, terminalCode, clientId, accessParameter, Collections.emptyList());
         Assert.hasText(token, "token cannot be empty");
         this.token = token;
     }

@@ -43,7 +43,7 @@ public class ClientAuthenticationConverter extends org.springframework.security.
                 terminalCode = clientId;
             }
             result = ClientAuthenticationToken
-                    .unauthenticated(terminalCode, clientId, token.substring(delim + 1));
+                    .unauthenticated(terminalCode, clientId, request.getAccessParameter(), token.substring(delim + 1));
         } catch (AuthenticationException e) {
             throw e;
         } catch (Exception e) {

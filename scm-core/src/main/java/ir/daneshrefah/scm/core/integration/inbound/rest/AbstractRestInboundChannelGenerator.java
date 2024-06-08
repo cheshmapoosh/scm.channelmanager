@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,10 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     protected Integer port;
 
     public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper,
+                                               MessageGenerator messageGenerator,
                                                ServiceProducerTemplate producerTemplate,
                                                ErrorHandlerService errorHandlerService) {
-        super(producerTemplate, errorHandlerService, objectMapper);
+        super(producerTemplate, messageGenerator, errorHandlerService, objectMapper);
     }
 
     @Override

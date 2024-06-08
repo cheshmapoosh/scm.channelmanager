@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.core.integration.inbound.rest.AbstractRestInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractSpringRestInboundController;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -40,9 +41,10 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     private ArrayNode controllersArrayNode;
 
     public SpringRestInboundChanelGenerator(ObjectMapper objectMapper, RequestMappingHandlerMapping handlerMapping,
+                                            MessageGenerator messageGenerator,
                                             ServiceProducerTemplate producerTemplate,
                                             ErrorHandlerService errorHandlerService) {
-        super(objectMapper,producerTemplate, errorHandlerService);
+        super(objectMapper,messageGenerator, producerTemplate, errorHandlerService);
         this.handlerMapping = handlerMapping;
     }
 

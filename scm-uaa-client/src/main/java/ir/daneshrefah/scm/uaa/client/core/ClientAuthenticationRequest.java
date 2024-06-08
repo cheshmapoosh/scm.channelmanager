@@ -20,5 +20,6 @@ public class ClientAuthenticationRequest {
     private String clientId;
     private ClientAuthenticationType authenticationType;
     private String authenticationValue;
+    private String accessParameter;
 
 }

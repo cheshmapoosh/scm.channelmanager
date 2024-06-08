@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChann
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerUIGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
@@ -40,9 +41,10 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
     private final RestUrlBuilder urlBuilder;
 
     public DynamicRestInboundChanelGenerator(ObjectMapper objectMapper, CamelContext camelContext,
+                                             MessageGenerator messageGenerator,
                                              ServiceProducerTemplate producerTemplate,
                                              ErrorHandlerService errorHandlerService) {
-        super(objectMapper, camelContext, producerTemplate, errorHandlerService);
+        super(objectMapper, camelContext, messageGenerator, producerTemplate, errorHandlerService);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }
 

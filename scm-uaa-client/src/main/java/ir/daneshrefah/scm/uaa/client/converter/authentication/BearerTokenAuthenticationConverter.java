@@ -23,7 +23,8 @@ public class BearerTokenAuthenticationConverter implements AuthenticationConvert
 
         if (StringUtils.isNotEmpty(request.getAuthenticationValue())) {
             BearerAuthenticationToken authenticationRequest = new BearerAuthenticationToken(
-                    request.getUsername(), request.getTerminalCode(), request.getClientId(), request.getAuthenticationValue());
+                    request.getUsername(), request.getTerminalCode(), request.getClientId(), request.getAccessParameter(),
+                    request.getAuthenticationValue());
             return authenticationRequest;
         }
 

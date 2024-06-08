@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -8,14 +9,11 @@ import lombok.experimental.SuperBuilder;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-02-03
+ * @since 2024-06-06
  */
 @SuperBuilder
 @Getter
-public class HttpMessageInput extends AbstractExternalMessageInput<String> {
+public abstract class AbstractInternalMessageInput extends MessageInput<JsonNode> {
 
-    private final String httpUrl;
-    private final String httpMethod;
-    private final String clientAgent;
 
 }

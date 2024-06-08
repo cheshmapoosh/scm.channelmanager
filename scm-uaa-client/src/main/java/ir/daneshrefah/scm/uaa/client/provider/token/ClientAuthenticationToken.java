@@ -18,14 +18,14 @@ public class ClientAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final Object credentials;
 
-    public ClientAuthenticationToken(String terminalCode, Object principal, Object credentials) {
-        super((String) principal, terminalCode, (String) principal, Collections.emptyList());
+    public ClientAuthenticationToken(String terminalCode, Object principal, String accessParameter, Object credentials) {
+        super((String) principal, terminalCode, (String) principal, accessParameter, Collections.emptyList());
         this.principal = principal;
         this.credentials = credentials;
     }
 
-    public static ClientAuthenticationToken unauthenticated(String terminalCode, Object principal, Object credentials) {
-        return new ClientAuthenticationToken(terminalCode, principal, credentials);
+    public static ClientAuthenticationToken unauthenticated(String terminalCode, Object principal, String accessParameter, Object credentials) {
+        return new ClientAuthenticationToken(terminalCode, principal, accessParameter, credentials);
     }
 
     @Override

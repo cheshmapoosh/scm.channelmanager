@@ -24,7 +24,7 @@ public class Header implements Serializable {
 
     private final MessageRequestInfo request;
     private Authentication authentication;
-    private boolean isTransactionAuthenticated;
+    private Boolean isTransactionAuthenticated;
     private final String correlationId;
     private final Channel channel;
     private final TerminalServiceAccess serviceAccess;
@@ -41,12 +41,12 @@ public class Header implements Serializable {
         this.isTransactionAuthenticated = isTransactionAuthenticated;
     }
 
-    public UserProfile getUserProfile() {
-        if (null != authentication) {
-            return authentication.getProfile();
-        }
-        return null;
-    }
+//    public UserProfile getUserProfile() {
+//        if (null != authentication) {
+//            return authentication.getProfile();
+//        }
+//        return null;
+//    }
 
     public String getTerminalCode() {
         return request.getTerminalCode();

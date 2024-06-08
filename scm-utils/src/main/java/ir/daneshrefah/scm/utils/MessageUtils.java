@@ -53,7 +53,7 @@ public class MessageUtils {
         Header header = Header.builder()
                 .request(source.getHeader().getRequest())
                 .authentication(source.getHeader().getAuthentication())
-                .isTransactionAuthenticated(source.getHeader().isTransactionAuthenticated())
+                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
                 .channel(source.getHeader().getChannel())
                 .serviceAccess(source.getHeader().getServiceAccess())
@@ -80,7 +80,7 @@ public class MessageUtils {
         Header header = Header.builder()
                 .request(source.getHeader().getRequest())
                 .authentication(source.getHeader().getAuthentication())
-                .isTransactionAuthenticated(source.getHeader().isTransactionAuthenticated())
+                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
                 .channel(source.getHeader().getChannel())
                 .serviceAccess(serviceAccess)
@@ -116,7 +116,7 @@ public class MessageUtils {
     }
 
     public static boolean isTransactionAuthenticated(Message message) {
-        return null != message && message.getHeader().isTransactionAuthenticated();
+        return null != message && message.getHeader().getIsTransactionAuthenticated();
     }
 
     public boolean hasAuthority(String authority) {

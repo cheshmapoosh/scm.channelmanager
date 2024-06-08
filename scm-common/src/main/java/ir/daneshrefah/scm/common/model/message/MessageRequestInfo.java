@@ -23,10 +23,10 @@ public class MessageRequestInfo implements Serializable {
     private final String clientId;
     private final String serviceCode;
     private final String contentType;
-    private final String clientRemoteAddress;
+//    private final String clientRemoteAddress;
     private final String clientCorrelationId;
     private final Instant clientTimestamp;
-    private final String clientAgent;
+//    private final String clientAgent;
     private final String accessParameter;
     private final String username;
     private final ClientAuthenticationType authenticationType;

@@ -22,8 +22,8 @@ public class SessionAuthenticationToken extends BaseTerminalAuthenticationToken 
      * @param sessionId
      *
      */
-    public SessionAuthenticationToken(String username, String terminalCode, String clientId, String sessionId) {
-        super(username, terminalCode, clientId, Collections.emptyList());
+    public SessionAuthenticationToken(String username, String terminalCode, String clientId, String accessParameter, String sessionId) {
+        super(username, terminalCode, clientId, accessParameter, Collections.emptyList());
         Assert.hasText(sessionId, "sessionKey cannot be empty");
         this.sessionId = sessionId;
     }

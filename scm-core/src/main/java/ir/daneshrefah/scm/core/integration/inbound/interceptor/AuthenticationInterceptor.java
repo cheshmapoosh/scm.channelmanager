@@ -15,6 +15,8 @@ import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Objects;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -29,6 +31,9 @@ public class AuthenticationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
+        if (Objects.nonNull(message.getHeader().getAuthentication())) {
+            return message;
+        }
         MessageRequestInfo request = message.getHeader().getRequest();
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
                 .username(request.getUsername())
@@ -36,6 +41,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                 .clientId(request.getClientId())
                 .authenticationType(request.getAuthenticationType())
                 .authenticationValue(request.getAuthenticationValue())
+                .accessParameter(request.getAccessParameter())
                 .build();
         UserAuthentication authentication = null;
         Exception error = null;

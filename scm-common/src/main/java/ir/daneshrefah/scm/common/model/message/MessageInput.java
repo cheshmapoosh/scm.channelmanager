@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.Map;
@@ -13,16 +13,16 @@ import java.util.Map;
  * @version 1.0
  * @since 2024-02-03
  */
-@RequiredArgsConstructor
+@SuperBuilder
 @Getter
-public abstract class MessageInput {
+public abstract class MessageInput<T> {
 
     private final Map<String, Object> headers;
     private final String serviceCode;
-    private final String body;
+    private final String terminalCode;
+    private final String channelCode;
+    private final T body;
     private final String contentType;
-    private final String clientRemoteAddress;
-    private final String clientAgent;
     private final String authorization;
     private final Instant receiveTimestamp = Instant.now();
     private final String serverHost;

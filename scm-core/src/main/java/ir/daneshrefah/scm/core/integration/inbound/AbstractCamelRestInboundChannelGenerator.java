@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -46,9 +47,10 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected Integer port;
 
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
+                                                       MessageGenerator messageGenerator,
                                                        ServiceProducerTemplate producerTemplate,
                                                        ErrorHandlerService errorHandlerService) {
-        super(objectMapper, context, producerTemplate, errorHandlerService);
+        super(objectMapper, context, messageGenerator, producerTemplate, errorHandlerService);
     }
 
     @Override
@@ -80,6 +82,8 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         String httpMethod = CamelUtils.getHttpMethodFromExchange(input);
         MessageInput result = HttpMessageInput.builder()
                 .headers(headers)
+                .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
+                .channelCode(getChannel().getCode())
                 .body(body)
                 .contentType(CamelUtils.getContentTypeHeaderFromExchange(input))
                 .clientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input))

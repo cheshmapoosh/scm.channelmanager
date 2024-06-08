@@ -2,8 +2,9 @@ package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
+import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.core.converter.ExternalServiceProviderMetadataConverter;
-import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
+import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,11 +27,13 @@ public class ExternalServiceProviderEntity extends AbstractDefaultEntity<String>
     private String id;
     private String code;
     private String title;
+    @Convert(converter = ServiceProviderProtocolConverter.class)
+    private ServiceProviderProtocol protocol;
     private String providerClassName;
     @Convert(converter = ExternalServiceProviderMetadataConverter.class)
     private ExternalServiceProviderMetadata metadata;
     private boolean customerProvided;
-    private String customerProviderClassName;
+//    private String customerProviderClassName;
 //    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)
 //    @Convert(converter = CustomerProvideMethodConverter.class)
 //    private CustomerProvideMethod customerProvideMethod;

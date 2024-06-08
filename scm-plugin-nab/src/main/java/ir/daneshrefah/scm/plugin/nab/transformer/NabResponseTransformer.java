@@ -1,19 +1,17 @@
 package ir.daneshrefah.scm.plugin.nab.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.RawValue;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.nab.provider.Bind;
-import org.apache.camel.util.json.JsonArray;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -25,14 +23,11 @@ import java.util.Objects;
  * @version 1.0
  * @since 2023-07-24
  */
+@RequiredArgsConstructor
 @Service
 public class NabResponseTransformer extends AbstractTransformer {
 
-    private ObjectMapper objectMapper;
-
-    public NabResponseTransformer(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+    private final ObjectMapper objectMapper;
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {

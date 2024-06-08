@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,9 +23,10 @@ public abstract class AbstractCamelInboundChannelGenerator extends AbstractInbou
     private CamelContext context;
 
     protected AbstractCamelInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
+                                                   MessageGenerator messageGenerator,
                                                    ServiceProducerTemplate producerTemplate,
                                                    ErrorHandlerService errorHandlerService) {
-        super(producerTemplate, errorHandlerService, objectMapper);
+        super(producerTemplate, messageGenerator, errorHandlerService, objectMapper);
         this.context = context;
     }
 
