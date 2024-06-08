@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.exception;
 
-import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 
 /**
  * Description of the class or purpose of the file.
@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.exception.BaseException;
  * @version 1.0
  * @since 2024-05-21
  */
-public abstract class BaseOtpException extends BaseException {
+public abstract class BaseOtpException extends AbstractBaseException {
 
 
     public BaseOtpException(String message, Throwable cause) {

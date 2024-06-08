@@ -8,7 +8,10 @@ import lombok.Getter;
  * @author reza jamshidi
  * @version 1.0
  * @since 2023-07-26
+ * @see ir.daneshrefah.scm.common.error.spec.AbstractBaseException
+ * @see ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware
  */
+@Deprecated
 public abstract class BaseException extends RuntimeException {
 
     public static final String DEFAULT_ERROR_URI = null;

@@ -2,6 +2,9 @@ package ir.daneshrefah.scm.plugin.api.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import ir.daneshrefah.scm.common.budle.ResourceBundleMessageKey;
+import ir.daneshrefah.scm.common.constant.BundleParameterPattern;
+import ir.daneshrefah.scm.common.data.service.bundle.CacheableResourceBundleService;
 import ir.daneshrefah.scm.common.exception.ServiceInvalidMetadataException;
 import ir.daneshrefah.scm.common.model.message.Message;
 
@@ -29,8 +32,7 @@ public class MessageConverterDictionary extends ConverterDictionary<Message> {
             } else {
                 if (definition.isMandatory()) {
                     String serviceCode = getSource().getHeader().getServiceAccess().getService().getCode();
-                    throw new ServiceInvalidMetadataException(serviceCode, "could not found property value: " +
-                            definition.getFromValue());
+                    throw new ServiceInvalidMetadataException(serviceCode, definition.getFromValue());
                 }
                 resultNode = JsonNodeFactory.instance.nullNode();
                 break;

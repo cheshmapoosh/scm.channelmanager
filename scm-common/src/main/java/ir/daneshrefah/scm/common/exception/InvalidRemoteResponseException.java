@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_INPUT_IS_INVALID;
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_INVALID_REMOTE_RESPONSE;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
  * Description of the class or purpose of the file.
@@ -24,7 +25,12 @@ public class InvalidRemoteResponseException extends AbstractValidationException 
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_INVALID_REMOTE_RESPONSE;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("source",getSource())
+                .defineMessageParameter("providerCode",providerCode)
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
+
 }

@@ -8,8 +8,8 @@ import java.util.Locale;
 
 @Getter
 @Setter
-public class ResourceBundle extends BaseModel<String> {
-    private String id;
+public class ResourceBundle extends BaseModel<Long> {
+    private Long id;
     private Locale locale;
     private String key;
     private String value;

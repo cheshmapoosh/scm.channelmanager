@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller;
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
+import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
 import ir.daneshrefah.scm.common.exception.AbstractValidationException;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import lombok.Getter;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
@@ -26,30 +29,14 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AbstractValidationException.class)
-    public ResponseEntity<Object> handleAbstractValidationException(AbstractValidationException ex) {
-        DefaultErrorResponse errorResponse = new DefaultErrorResponse(ex.getSource(), ex.getErrorCode(), ex.getMessage());
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
-
-    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
-    public ResponseEntity<Object> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex) {
-        DefaultErrorResponse errorResponse = new DefaultErrorResponse("constraint", ex.getErrorCode(), ex.getMessage());
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        DefaultErrorResponse errorResponse = new DefaultErrorResponse("constraint", ERROR_CODE_VIOLATION_DATA_INTEGRITY, ex.getMessage());
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
-
-//    @ExceptionHandler(BaseCIFException.class)
-//    public ResponseEntity<Object> handleBaseCIFException(BaseCIFException ex) {
-//        return ResponseEntity.badRequest().body(new DefaultErrorResponse("CIF", 0, ex.getMessage()));
-//    }
-
     @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleException(Exception exception){
+        return ExceptionResolverHelper.getInstance().resolveException(exception, AccessibleLocale.EN_US.getLocale());
+    }
+
+
+
+    /*@ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleException(Exception ex) {
         Optional<ExceptionMap> exceptionMap = ExceptionMap.findByException(ex.getClass());
         if (exceptionMap.isEmpty() && null != ex.getCause()) {
@@ -67,14 +54,10 @@ public class GlobalExceptionHandler {
     @RequiredArgsConstructor
     private enum ExceptionMap {
 
-        HttpMessageNotReadableException(HttpMessageNotReadableException.class, HttpConstants.HTTP_STATUS_BAD_REQUEST,
-                ERROR_CODE_REQUEST_IS_NULL, null),
-        SocketTimeoutException(java.net.SocketTimeoutException.class, HttpConstants.HTTP_STATUS_GATEWAY_TIMEOUT,
-                ERROR_CODE_SOCKET_TIMEOUT, null),
-        HttpRequestMethodNotSupportedException(org.springframework.web.HttpRequestMethodNotSupportedException.class,
-                HttpConstants.HTTP_STATUS_METHOD_NOT_ALLOWED, ERROR_CODE_HTTP_METHOD_NOT_ALLOWED, null),
-        UnknownHostException(java.net.UnknownHostException.class, HttpConstants.HTTP_STATUS_BAD_GATEWAY,
-                ERROR_CODE_UNKNOWN_HOST, null);
+        HttpMessageNotReadableException(HttpMessageNotReadableException.class, HttpConstants.HTTP_STATUS_BAD_REQUEST, ERROR_CODE_REQUEST_IS_NULL, null),
+        SocketTimeoutException(java.net.SocketTimeoutException.class, HttpConstants.HTTP_STATUS_GATEWAY_TIMEOUT, ERROR_CODE_SOCKET_TIMEOUT, null),
+        HttpRequestMethodNotSupportedException(org.springframework.web.HttpRequestMethodNotSupportedException.class, HttpConstants.HTTP_STATUS_METHOD_NOT_ALLOWED, ERROR_CODE_HTTP_METHOD_NOT_ALLOWED, null),
+        UnknownHostException(java.net.UnknownHostException.class, HttpConstants.HTTP_STATUS_BAD_GATEWAY, ERROR_CODE_UNKNOWN_HOST, null);
 
         private final Class exception;
         private final int statusCode;
@@ -86,15 +69,7 @@ public class GlobalExceptionHandler {
                     .filter(s -> s.exception.isAssignableFrom(exception))
                     .findFirst();
         }
-    }
+    }*/
 
-    @Getter
-    @RequiredArgsConstructor
-    public class DefaultErrorResponse {
 
-        private final String source;
-        private final int errorCode;
-        private final String message;
-
-    }
 }

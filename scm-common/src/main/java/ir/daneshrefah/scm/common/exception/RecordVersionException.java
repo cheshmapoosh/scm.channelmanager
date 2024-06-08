@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_RECORD_VERSION_EXCEPTION;
-
-public class RecordVersionException extends BaseException implements ErrorCodeAwareException{
+public class RecordVersionException extends AbstractBaseException implements ExceptionSourceAware {
 
 
     private final String source;
@@ -14,17 +16,16 @@ public class RecordVersionException extends BaseException implements ErrorCodeAw
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_RECORD_VERSION_EXCEPTION;
-    }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_BUSINESS;
-    }
-
-    @Override
     public String getSource() {
         return source;
     }
+
+    @Override
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_BUSINESS);
+    }
+
+
 }

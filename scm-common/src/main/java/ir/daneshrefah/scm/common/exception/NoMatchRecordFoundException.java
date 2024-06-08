@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_NO_RECORD_FOUND;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,18 +27,12 @@ public class NoMatchRecordFoundException extends AbstractValidationException {
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_NO_RECORD_FOUND;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("providerCode",null != providerCode ? providerCode : "local")
+                .defineMessageParameter("source",getSource())
+                .buildWithStatus(MessageStatus.SC_NOT_FOUND);
     }
-
-    /*private String source;
-    public NoMatchRecordFoundException(String source) {
-        this(source, null);
-    }
-
-    public NoMatchRecordFoundException(String source, Throwable cause) {
-        super("no " + source + " found.", cause);
-        this.source = source;
-    }*/
 
 }

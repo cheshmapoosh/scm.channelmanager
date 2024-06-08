@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 
@@ -26,13 +27,9 @@ public class JavaServiceClassNotDefinedException extends AbstractJavaServiceExce
     }
 
     @Override
-    public int getErrorCode() {
-        return ErrorCodes.ERROR_CODE_VALIDATION_SERVICE_JAVA_CLASS_IS_EMPTY;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_SYSTEM);
     }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_SYSTEM;
-    }
-
 }

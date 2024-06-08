@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -13,5 +15,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface ServiceProviderRepository extends CrudRepository<ExternalServiceProviderEntity, String> {
-
+    Optional<ExternalServiceProviderEntity> findByCode(String providerCode);
 }

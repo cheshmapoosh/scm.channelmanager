@@ -1,8 +1,7 @@
-package ir.daneshrefah.scm.plugin.api.model.error;
+package ir.daneshrefah.scm.common.error;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,12 +14,13 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ErrorMapping extends BaseModel<String> {
+public class ErrorMapping extends BaseModel<Long> {
 
-    private ExternalServiceProvider provider;
+    private String providerId;
     private String providerErrorCode;
-    private Integer scmErrorCode;
+    private String exceptionClassName;
+    private String scmErrorCode;
+    private String exceptionOverrideName;
     private MessageStatus status;
-    private String message;
 
 }

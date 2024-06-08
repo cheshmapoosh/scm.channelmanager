@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.notification.client.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 
 public class NotificationBodyProcessorDoesNotExistsException extends BaseNotificationException{
@@ -12,5 +15,12 @@ public class NotificationBodyProcessorDoesNotExistsException extends BaseNotific
     @Override
     public String getSource() {
         return MSG;
+    }
+
+    @Override
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

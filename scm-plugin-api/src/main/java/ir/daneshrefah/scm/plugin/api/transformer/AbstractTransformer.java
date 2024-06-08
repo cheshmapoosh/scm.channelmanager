@@ -2,14 +2,10 @@ package ir.daneshrefah.scm.plugin.api.transformer;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.exception.BaseException;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.EventType;
 import ir.daneshrefah.scm.plugin.api.exception.TransformException;
 
-import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -38,7 +34,7 @@ public abstract class AbstractTransformer {
         } catch (Exception e) {
             isSuccessful = false;
             error = e;
-            if (e instanceof BaseException) {
+            if (e instanceof AbstractBaseException) {
                 throw e;
             } else {
                 throw new TransformException(this, e);

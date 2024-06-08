@@ -1,9 +1,9 @@
-package ir.daneshrefah.scm.core.entity.common;
+package ir.daneshrefah.scm.common.data.entity.error;
 
+import ir.daneshrefah.scm.common.data.converter.MessageStatusTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.core.converter.MessageStatusTypeConverter;
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,20 +19,21 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_ERROR_MAPPING")
-public class ErrorMappingEntity extends AbstractDefaultEntity<String> {
+public class ErrorMappingEntity extends AbstractDefaultEntity<Long> {
 
     @Id
     @Column(name = "ERROR_MAPPING_ID")
-    private String id;
-
-    @ManyToOne
-    @JoinColumn(name = "SERVICE_PROVIDER_ID")
-    private ExternalServiceProviderEntity provider;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "EXTERNAL_SERVICE_PROVIDER_ID")
+    private String providerId;
     private String providerErrorCode;
+    private String exceptionClassName;
+    @Column(name = "EXCEPTION_OVERRIDE_NAME")
+    private String exceptionOverrideName;
     private String scmErrorCode;
     @Column(name = "STATUS_CODE")
     @Convert(converter = MessageStatusTypeConverter.class)
     private MessageStatus status;
-    private String message;
 
 }

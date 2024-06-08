@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.exception;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_NO_DATA_CHANGE;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,7 +18,10 @@ public class NoDataChangedException extends AbstractValidationException {
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_VALIDATION_NO_DATA_CHANGE;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .defineMessageParameter("source",getSource())
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

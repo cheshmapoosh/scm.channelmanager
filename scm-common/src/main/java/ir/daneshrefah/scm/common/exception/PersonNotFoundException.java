@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDATION_PERSON_NOT_FOUND;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,26 +12,21 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_VALIDA
  * @version 1.0
  * @since 2024-02-13
  */
-public class PersonNotFoundException extends BasePersonException implements ErrorCodeAwareException {
+public class PersonNotFoundException extends BasePersonException  {
 
-
-    public PersonNotFoundException(String message) {
+    private final ExceptionDynamicMessage dynamicMessage;
+    public PersonNotFoundException(String message, ExceptionDynamicMessage dynamicMessage) {
         super(message);
+        this.dynamicMessage = dynamicMessage;
     }
 
     @Override
-    public int getErrorCode() {
-        return ERROR_CODE_VALIDATION_PERSON_NOT_FOUND;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .dynamicMessage(dynamicMessage)
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 
-    @Override
-    public String getSource() {
-        return null;
-    }
-
-    @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_VALIDATION;
-    }
 
 }

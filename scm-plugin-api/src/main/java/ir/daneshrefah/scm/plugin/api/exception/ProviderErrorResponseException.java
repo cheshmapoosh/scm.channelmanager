@@ -1,9 +1,14 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
+
+import static ir.daneshrefah.scm.common.model.message.MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,12 +39,9 @@ public class ProviderErrorResponseException extends AbstractExternalServiceExcep
     }
 
     @Override
-    public int getErrorCode() {
-        return 0;
-    }
-
-    @Override
-    public MessageStatus getStatus() {
-        return null;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(SC_ERROR_UNREACHABLE_PROVIDER);
     }
 }

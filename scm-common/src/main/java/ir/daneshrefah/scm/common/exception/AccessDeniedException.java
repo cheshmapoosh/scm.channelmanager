@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import lombok.Getter;
 
 /**
@@ -10,7 +12,7 @@ import lombok.Getter;
  * @since 2024-01-16
  */
 @Getter
-public class AccessDeniedException extends BaseException {
+public class AccessDeniedException extends AbstractBaseException {
 
     private final String source;
     private final Integer errorCode;
@@ -21,4 +23,8 @@ public class AccessDeniedException extends BaseException {
         this.errorCode = errorCode;
     }
 
+    @Override
+    public ExceptionInformation getExceptionInformation() {
+        return null;
+    }
 }
