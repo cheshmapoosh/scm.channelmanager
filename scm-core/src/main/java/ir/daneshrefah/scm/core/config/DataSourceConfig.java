@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.config;
 
 import com.zaxxer.hikari.HikariDataSource;
+import ir.daneshrefah.scm.plugin.api.config.DatasourceProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -33,7 +34,7 @@ public class DataSourceConfig implements BeanDefinitionRegistryPostProcessor {
     @Bean
     @Primary
     public DataSource primaryDataSource(ApplicationProperties applicationProperties) {
-        ApplicationProperties.DatasourceProperties datasourceProperties = applicationProperties.getDatasource().getPrimary();
+        DatasourceProperties datasourceProperties = applicationProperties.getDatasource().getPrimary();
         HikariDataSource dataSource = DataSourceBuilder.create(this.getClass().getClassLoader())
                 .type(HikariDataSource.class)
                 .url(datasourceProperties.getUrl())

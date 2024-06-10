@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.exception;
 
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -17,7 +19,7 @@ public class InvalidOtpCodeException extends BaseOtpException {
     }
 
     @Override
-    public String getSource() {
+    public ExceptionInformation getExceptionInformation() {
         return null;
     }
 }

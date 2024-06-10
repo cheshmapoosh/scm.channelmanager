@@ -1,10 +1,16 @@
 package ir.daneshrefah.scm.process.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.ProcessEngineConfiguration;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,27 +19,32 @@ import org.springframework.context.annotation.Configuration;
  * @version 1.0
  * @since 2024-04-23
  */
+@EnableConfigurationProperties(ProcessProperties.class)
 @Configuration
-//@ConditionalOnProperty(name = "scm.process.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "scm.process.enabled", havingValue = "true")
 public class ProcessConfiguration {
 
-    @Value("${scm.process.jdbc-url}")
-    private String jdbcUrl;
-    @Value("${scm.process.jdbc-driver-class-name}")
-    private String jdbcDriverClassName;
-    @Value("${scm.process.jdbc-username}")
-    private String jdbcUsername;
-    @Value("${scm.process.jdbc-password}")
-    private String jdbcPassword;
+    @Bean
+    public DataSource processDataSource(ProcessProperties properties) {
+        HikariDataSource dataSource = DataSourceBuilder.create(this.getClass().getClassLoader())
+                .type(HikariDataSource.class)
+                .driverClassName(properties.getDatasource().getDriverClassName())
+                .url(properties.getDatasource().getUrl())
+                .username(properties.getDatasource().getUsername())
+                .password(properties.getDatasource().getPassword())
+                .build();
+        dataSource.setSchema(properties.getDatasource().getDefaultSchema());
+        Integer maximumPoolSize = properties.getDatasource().getMaxConnection();
+        if (null != maximumPoolSize) {
+            dataSource.setMaximumPoolSize(maximumPoolSize);
+        }
+        return dataSource;
+    }
 
     @Bean
-//    @ConfigurationProperties(prefix = "camunda.bpm.configuration")
-    public ProcessEngineConfiguration processEngineConfiguration() {
+    public ProcessEngineConfiguration processEngineConfiguration(@Qualifier("processDataSource") DataSource dataSource) {
         ProcessEngineConfiguration processEngineConfiguration = ProcessEngineConfiguration.createStandaloneProcessEngineConfiguration();
-        processEngineConfiguration.setJdbcUrl(jdbcUrl);
-        processEngineConfiguration.setJdbcDriver(jdbcDriverClassName);
-        processEngineConfiguration.setJdbcUsername(jdbcUsername);
-        processEngineConfiguration.setJdbcPassword(jdbcPassword);
+        processEngineConfiguration.setDataSource(dataSource);
         processEngineConfiguration.setHistory(ProcessEngineConfiguration.HISTORY_AUDIT);
 //        processEngineConfiguration.hissetEnableCmdExceptionLogging(true);
 
