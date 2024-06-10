@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.core.model.condition.Condition;
+import ir.daneshrefah.scm.common.model.condition.Condition;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.core.model.condition.Condition;
  * @version 1.0
  * @since 2024-01-09
  */
-public class RateLimitConditionalDecisionVoter extends BaseConditionalDecisionVoter {
+public class RateLimitConditionalDecisionVoter extends BaseSingularConditionalDecisionVoter {
 
     public RateLimitConditionalDecisionVoter(DecisionHelper decisionHelper) {
         super(decisionHelper);

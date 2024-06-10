@@ -2,14 +2,11 @@ package ir.daneshrefah.scm.core.service;
 
 
 import ir.daneshrefah.scm.core.entity.condition.*;
-import ir.daneshrefah.scm.core.model.condition.Condition;
 import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
-import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
 import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
 import ir.daneshrefah.scm.core.mapper.ConditionMapper;
-import ir.daneshrefah.scm.core.repository.ConditionRepository;
 import ir.daneshrefah.scm.core.repository.ServiceConditionRepository;
 import ir.daneshrefah.scm.core.repository.TerminalConditionRepository;
 import ir.daneshrefah.scm.core.repository.TerminalServiceConditionRepository;
@@ -18,8 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service

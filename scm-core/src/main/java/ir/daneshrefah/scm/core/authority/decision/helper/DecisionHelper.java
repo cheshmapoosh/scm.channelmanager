@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.authority.decision.helper;
 
+import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Authentication;
@@ -61,7 +62,7 @@ public class DecisionHelper {
 
     public List<Condition> findUserConditions(ConditionType conditionType, String terminalCode,
                                               Authentication authentication) {
-        return Collections.emptyList();
+        return Collections.emptyList(); //TODO
     }
 
     public List<Condition> findTerminalConditions(ConditionType conditionType, TerminalServiceAccess serviceAccess,

@@ -33,5 +33,6 @@ public class ConditionEntity extends AbstractDefaultEntity<Long> {
     private PeriodType periodType;
     @Column(name = "PERIOD_VALUE")
     private Integer periodValue;
+    private boolean ignorable;
 
 }

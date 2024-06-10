@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.model.condition;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,14 +1,17 @@
 package ir.daneshrefah.scm.common.model.message;
 
 
-import ir.daneshrefah.scm.common.model.customer.UserProfile;
+import ir.daneshrefah.scm.common.model.condition.Condition;
+import ir.daneshrefah.scm.common.model.condition.ConditionKey;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -28,6 +31,8 @@ public class Header implements Serializable {
     private final String correlationId;
     private final Channel channel;
     private final TerminalServiceAccess serviceAccess;
+    @Setter
+    private Map<ConditionKey, Condition> withdrawConditions;
     @Builder.Default
     private final int level = 1;
     private final String parentMessageId;

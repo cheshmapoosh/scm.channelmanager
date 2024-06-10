@@ -31,10 +31,7 @@ public class ExceptionResolverHelper {
     protected void cacheResolver(ExceptionResolver<?> exceptionResolver) {
         synchronized (this) {
             ORDERED_RESOLVER_CACHE.add(exceptionResolver);
-            List<ExceptionResolver<?>> temp =  new ArrayList<>();
-            ORDERED_RESOLVER_CACHE.stream().sorted(Comparator.comparingInt(o -> o.getPriority().getOrder())).forEach(temp::add);
-            ORDERED_RESOLVER_CACHE.clear();
-            ORDERED_RESOLVER_CACHE.addAll(temp);
+            Collections.sort(ORDERED_RESOLVER_CACHE, Comparator.comparingInt(o -> o.getPriority().getOrder()));
             log.info(">>> {} exception resolver has been loaded.", exceptionResolver);
         }
     }

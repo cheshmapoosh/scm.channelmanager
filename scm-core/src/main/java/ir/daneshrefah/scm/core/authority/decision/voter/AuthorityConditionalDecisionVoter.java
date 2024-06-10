@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.core.model.condition.Condition;
+import ir.daneshrefah.scm.common.model.condition.Condition;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @since 2024-01-09
  */
-public class AuthorityConditionalDecisionVoter extends BaseConditionalDecisionVoter {
+public class AuthorityConditionalDecisionVoter extends BaseSingularConditionalDecisionVoter {
 
     private static final MethodInvocation METHOD_INVOCATION;
 
