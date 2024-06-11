@@ -45,6 +45,25 @@ scm:
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
+  captcha:
+    border:
+      enabled: true
+      color: '200,200,200'
+      thickness: 1
+    noise:
+      color: '124,133,174'
+    items:
+      login:
+        path: /public/login/captcha
+        session:
+          key: loginCaptchaKey
+          date: loginCaptchaDate
+        background:
+          color-from: '81,89,130'
+          color-to: '81,89,130'
+        text-producer:
+          font:
+            color: '255,255,255'
 
 
 

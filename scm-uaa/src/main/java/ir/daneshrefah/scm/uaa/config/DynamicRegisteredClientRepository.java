@@ -106,6 +106,8 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
             if (!isScopeOpenIdAdded) {
                 clientBuilder.scope(OidcScopes.OPENID);
             }
+            //TODO: Resolve bug for fetch from db
+            clientBuilder.scope("session");
             return clientBuilder.build();
         }).collect(Collectors.toList());
     }

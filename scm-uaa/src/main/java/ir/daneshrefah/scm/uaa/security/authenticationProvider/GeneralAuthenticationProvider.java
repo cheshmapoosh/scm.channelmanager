@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -53,7 +55,7 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
         String password = (String) authentication.getCredentials();
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
                 AuthorizationGrantType.FIRST_PASSWORD,
-                null, null, authentication.getDetails()); //TODO scopes mus be set from request
+                null, Set.of("session"), authentication.getDetails()); //TODO scopes mus be set from request
         preAuthenticationToken.setClientId(clientId);
 //        preAuthenticationToken.setAccessParameter(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACCESS_PARAMETER));
         preAuthenticationToken.setClaimCode(null != claim ? claim.claimCode() : null);
