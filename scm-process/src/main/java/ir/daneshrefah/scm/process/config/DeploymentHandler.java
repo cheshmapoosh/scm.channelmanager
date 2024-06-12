@@ -28,8 +28,6 @@ import java.io.InputStream;
 public class DeploymentHandler {
     private static final String DEPLOYMENT_HANDLER = "DeploymentHandler";
 
-    @Value("${BPMN.resource.path}")
-    private Resource bpmnResourcePath;
     @Autowired
     private ProcessEngine processEngine;
 

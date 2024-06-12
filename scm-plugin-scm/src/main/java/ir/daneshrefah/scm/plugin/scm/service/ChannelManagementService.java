@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.channel.*;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -31,10 +32,12 @@ public class ChannelManagementService extends AbstractJavaService {
         this.channelService = channelService;
     }
 
+    @JavaService
     public PagedResponseData<Channel> listChannel(ChannelFindRequest request) {
         return channelService.findPagedChannels(request);
     }
 
+    @JavaService
     public Channel findChannelById(String channelId) {
         if (StringUtils.isEmpty(channelId)) {
             throw new MissingRequiredInputException("channelId");
@@ -44,14 +47,17 @@ public class ChannelManagementService extends AbstractJavaService {
                 .orElseThrow(()->new NoMatchRecordFoundException("channel"));
     }
 
+    @JavaService
     public Channel createChannel(ChannelCreateRequest request) {
         return channelService.createChannel(request);
     }
 
+    @JavaService
     public Channel editChannel(ChannelEditRequest request) {
         return channelService.editChannel(request);
     }
 
+    @JavaService
     public void deleteChannel(ChannelDeleteRequest request) {
         channelService.deleteChannel(request);
     }

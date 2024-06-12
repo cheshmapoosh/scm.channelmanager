@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceAccessFindRequest;
 import ir.daneshrefah.scm.common.service.terminal.*;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -36,11 +37,13 @@ public class TerminalManagementService extends AbstractJavaService {
 //        this.processDefinitionService = processDefinitionService;
     }
 
+    @JavaService
     public PagedResponseData<Terminal> listTerminal(TerminalFindRequest request) {
 //        processDefinitionService.deployProcessDefinition();
         return terminalService.findAllTerminals(request);
     }
 
+    @JavaService
     public Terminal findTerminalById(String terminalId) {
         if (StringUtils.isEmpty(terminalId)) {
             throw new MissingRequiredInputException("terminalId");
@@ -52,26 +55,32 @@ public class TerminalManagementService extends AbstractJavaService {
         return terminal.get();
     }
 
+    @JavaService
     public Terminal createTerminal(TerminalCreateRequest request) {
         return terminalService.craeteTerminal(request);
     }
 
+    @JavaService
     public Terminal editTerminal(TerminalEditRequest request) {
         return terminalService.editTerminal(request);
     }
 
+    @JavaService
     public void deleteTerminal(TerminalDeleteRequest request) {
         terminalService.deleteTerminal(request);
     }
 
+    @JavaService
     public TerminalServiceAccess addServiceAssignment(TerminalServiceAssignmentRequest request) {
         return terminalService.assignServiceToTerminal(request);
     }
 
+    @JavaService
     public void deleteServiceAssignment(TerminalServiceAssignmentRequest request) {
          terminalService.revokeServiceFromTerminal(request);
     }
 
+    @JavaService
     public List<Terminal> findAllTerminalAccessOnService(String serviceId){
         return terminalService.findAllTerminalAccessOnService(serviceId);
     }

@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 public enum ProcessState {
 
+    //TODO use resource bundle
     ACTIVE("active", "فعال"),//running process instance
     SUSPENDED("suspended", "معلق"),//suspended process instances
     COMPLETED("completed", "کامل شده"),//completed through normal end event

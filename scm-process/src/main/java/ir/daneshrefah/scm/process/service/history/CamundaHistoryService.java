@@ -3,23 +3,24 @@ package ir.daneshrefah.scm.process.service.history;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.process.model.CancelProcess;
-import ir.daneshrefah.scm.process.model.filter.ProcessFilter;
 import ir.daneshrefah.scm.process.model.constant.ProcessState;
 import ir.daneshrefah.scm.process.model.constant.TaskState;
+import ir.daneshrefah.scm.process.model.filter.ProcessFilter;
 import ir.daneshrefah.scm.process.model.request.HistoryRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessHistoryResponse;
 import ir.daneshrefah.scm.process.model.response.TaskHistoryResponse;
-import ir.daneshrefah.scm.process.service.ProcessBundleService;
 import ir.daneshrefah.scm.process.service.process.CamundaProcessService;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.UserAuthUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.camunda.bpm.engine.HistoryService;
 import org.camunda.bpm.engine.ProcessEngine;
-import org.camunda.bpm.engine.history.*;
+import org.camunda.bpm.engine.history.HistoricProcessInstance;
+import org.camunda.bpm.engine.history.HistoricProcessInstanceQuery;
+import org.camunda.bpm.engine.history.HistoricTaskInstance;
+import org.camunda.bpm.engine.history.HistoricVariableInstance;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.model.bpmn.instance.Collaboration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,6 @@ public class CamundaHistoryService implements HistoryManagement {
 
     @Autowired
     private ProcessEngine processEngine;
-
-    @Autowired
-    private ProcessBundleService processBundleService;
 
     @Autowired
     private CamundaProcessUtil camundaProcessUtil;
@@ -118,7 +116,7 @@ public class CamundaHistoryService implements HistoryManagement {
             processHistoryResponse.setState(historicProcessInstance.getState());
             processHistoryResponse.setStateName(ProcessState.getStatusDescription(historicProcessInstance.getState()));
             processHistoryResponse.setProcessName(historicProcessInstance.getProcessDefinitionName());
-            processHistoryResponse.setProcessPersianName(processBundleService.getBundle(historicProcessInstance.getProcessDefinitionKey()));
+            processHistoryResponse.setProcessPersianName(historicProcessInstance.getProcessDefinitionKey()); //TODO use resource bundle
             Map<String, Object> dataVariables = getProcessVariables(historicProcessInstance.getId());
             ProcessDefinition processDefinition = camundaProcessUtil.getProcessDefinition(historicProcessInstance.getProcessDefinitionId());
             Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, Collaboration.class);
@@ -168,7 +166,7 @@ public class CamundaHistoryService implements HistoryManagement {
             findPerson(historicTaskInstance.getAssignee());
             taskHistoryResponse.setParentTaskId(historicTaskInstance.getParentTaskId());
             taskHistoryResponse.setTaskName(historicTaskInstance.getName());
-            taskHistoryResponse.setTaskPersianName(processBundleService.getBundle(historicTaskInstance.getTaskDefinitionKey()));
+            taskHistoryResponse.setTaskPersianName(historicTaskInstance.getTaskDefinitionKey()); //TODO use resource bundle
             taskHistoryResponse.setDescription(historicTaskInstance.getDescription());
             taskHistoryResponse.setStartTime(historicTaskInstance.getStartTime());
             taskHistoryResponse.setStartTimeMillis(historicTaskInstance.getStartTime() != null ? historicTaskInstance.getStartTime().getTime() : null);

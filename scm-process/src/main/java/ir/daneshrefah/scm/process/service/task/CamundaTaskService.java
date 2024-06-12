@@ -3,14 +3,12 @@ package ir.daneshrefah.scm.process.service.task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.process.exception.TaskAssignmentException;
 import ir.daneshrefah.scm.process.exception.TaskNotFoundException;
 import ir.daneshrefah.scm.process.model.constant.UserTaskStatus;
 import ir.daneshrefah.scm.process.model.request.TaskRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
-import ir.daneshrefah.scm.process.service.ProcessBundleService;
 import ir.daneshrefah.scm.process.service.process.CamundaProcessService;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.ValidationSchema;
@@ -42,9 +40,6 @@ public class CamundaTaskService implements TaskManagement {
     private RepositoryService repositoryService;
 
     @Autowired
-    private ProcessBundleService processBundleService;
-
-    @Autowired
     private CamundaProcessUtil camundaProcessUtil;
 
 //    @Autowired
@@ -61,7 +56,7 @@ public class CamundaTaskService implements TaskManagement {
             ProcessResponse processResponse = new ProcessResponse();    //TODO use mapstruct
             taskResponse.setTaskId(task.getId());
             taskResponse.setTaskName(task.getName());
-            taskResponse.setTaskPersianName(processBundleService.getBundle(task.getTaskDefinitionKey()));
+            taskResponse.setTaskPersianName(task.getTaskDefinitionKey()); //TODO use resource bundle
             taskResponse.setTaskDescription(task.getDescription());
             taskResponse.setTaskDefinitionKey(taskResponse.getTaskDefinitionKey());
 //            IndividualPersonEntity personAssignee = personServiceDatabaseImpl.findPersonByNationalCode(task.getAssignee());
@@ -73,7 +68,7 @@ public class CamundaTaskService implements TaskManagement {
             processResponse.setProcessDefinitionId(task.getProcessDefinitionId());
             processResponse.setExecutionId(task.getExecutionId());
             String processDefinitionId = StringUtils.substringBefore(task.getProcessDefinitionId(), ":");
-            processResponse.setProcessName(processBundleService.getBundle(processDefinitionId));
+            processResponse.setProcessName(processDefinitionId); //TODO use resource bundle
             taskResponse.setProcess(processResponse);
             taskResponse.setUserTaskStatus(UserTaskStatus.WAITING);
             Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);

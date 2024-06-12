@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.service.*;
 import ir.daneshrefah.scm.common.service.TerminalServiceAccessAssignmentResponse;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -26,10 +27,12 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
+    @JavaService
     public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
+    @JavaService
     public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String serviceCode) {
 //        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
@@ -38,18 +41,22 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
+    @JavaService
     public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
     }
 
+    @JavaService
     public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest request) {
         return this.service.createService(request);
     }
 
+    @JavaService
     public void deleteService(ServiceDeleteRequest request){
        this.service.deleteService(request);
     }
 
+    @JavaService
     public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request){
         return this.service.findAllServiceAccessOnTerminal(request);
     }

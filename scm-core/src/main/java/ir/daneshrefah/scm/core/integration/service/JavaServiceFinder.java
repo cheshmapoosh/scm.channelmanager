@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -67,6 +68,10 @@ public class JavaServiceFinder {
         Method method;
         try {
             method = javaServiceInstance.getClass().getMethod(methodNameString, paramTypes);
+            ir.daneshrefah.scm.plugin.api.annotation.JavaService javaServiceAnnotation = method.getAnnotation(ir.daneshrefah.scm.plugin.api.annotation.JavaService.class);
+            if (Objects.isNull(javaServiceAnnotation)) {
+                return new MethodInfo(new JavaServiceMethodNotFoundException(service, null));
+            }
         } catch (NoSuchMethodException e) {
             return new MethodInfo(new JavaServiceMethodNotFoundException(service, e));
         }
