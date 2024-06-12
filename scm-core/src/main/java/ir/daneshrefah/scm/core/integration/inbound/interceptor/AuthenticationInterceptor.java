@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
 
@@ -63,6 +64,8 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                     ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED, errorMessage), MessageStatus.SC_UNAUTHORIZED);
         }
 //        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        //TODO {RAYANI} remove above line
         return message;
     }
 

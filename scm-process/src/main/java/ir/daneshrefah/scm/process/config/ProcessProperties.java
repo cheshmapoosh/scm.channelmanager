@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @version 1.0
  * @since 2024-06-10
  */
-@ConfigurationProperties("scm.process")
+//@ConfigurationProperties("scm.process") //TOOD uncomment
 @Setter
 @Getter
 public class ProcessProperties {

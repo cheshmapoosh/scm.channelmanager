@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
@@ -115,6 +116,13 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
             throw new PersonNotFoundException("could not found person.",new ExceptionDynamicMessage().setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION));
         }
         return foundList.get(0);
+    }
+
+    public IndividualPersonEntity findPersonByNationalCode(String nationalCode) {
+        if (StringUtils.isEmpty(nationalCode) || StringUtils.isEmpty(nationalCode)) {
+            return null;
+        }
+        return personRepository.findIndividualPersonByNationalCode(nationalCode);
     }
 
     /*private final ServiceProducerTemplate serviceProducerTemplate;
