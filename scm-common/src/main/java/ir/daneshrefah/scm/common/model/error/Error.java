@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 
 /**
@@ -21,19 +22,34 @@ public class Error {
     private final String message;
     @JsonIgnore
     private final Exception exception;
+    @JsonIgnore
+    private MessageStatus status;
 
     public Error(String source, Integer errorCode, String message) {
-        this(source, "SCM-" + errorCode, message, null);
+        this(source, "SCM-" + errorCode, message,null, null);
     }
 
     public Error(String source, Integer errorCode, String message, Exception exception) {
-        this(source, "SCM-" + errorCode, message, exception);
+        this(source, "SCM-" + errorCode,message,null, exception);
     }
 
-    public Error(String source, String errorCode, String message, Exception exception) {
+    public Error(String source, Integer errorCode, String message,MessageStatus status, Exception exception) {
+        this(source, "SCM-" + errorCode, message,status, exception);
+    }
+
+    public Error(String source, String errorCode, String message,Exception exception) {
         this.source = source;
         this.errorCode = errorCode;
         this.message = message;
         this.exception = exception;
     }
+
+    public Error(String source, String errorCode, String message, MessageStatus status,Exception exception) {
+        this.source = source;
+        this.errorCode = errorCode;
+        this.message = message;
+        this.exception = exception;
+        this.status = status;
+    }
+
 }

@@ -11,11 +11,13 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 @Component
@@ -27,26 +29,21 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
     private final int ERROR_CODE_SYSTEM_ERROR = 1001;
 
     @Override
-    public void resolve(Message message, Exception exception, Locale locale) {
-        ErrorMapping defaultErrorMapping = getDefaultErrorMapping();
-        message.addError(createErrorResponse(exception,defaultErrorMapping,locale), defaultErrorMapping.getStatus());
-    }
-
-    @Override
-    public ResponseEntity<?> resolve(Exception exception, Locale locale) {
-        ErrorMapping defaultErrorMapping = getDefaultErrorMapping();
-        return ResponseEntity
-                .internalServerError()
-                .body(createErrorResponse(exception,defaultErrorMapping,locale));
-    }
-
-    private Error createErrorResponse(Exception exception,ErrorMapping errorMapping, Locale locale) {
+    public Error resolve(Exception exception, Locale locale) {
+        ErrorMapping errorMapping =
+                errorMappingService.findByExceptionClassName(exception.getClass().getName())
+                        .orElseGet(this::getDefaultErrorMapping);
+        String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, exception);
+        if (StringUtils.isEmpty(exceptionMessage)) {
+            exceptionMessage = messageBundleProvider.getDefaultExceptionMessage(locale);
+        }
         return new Error(
                 getSource(exception),
-                errorMapping.getScmErrorCode(),
-                messageBundleProvider.getDefaultExceptionMessage(locale),
+                errorMapping.getScmErrorCode(), exceptionMessage,
+                errorMapping.getStatus(),
                 exception);
     }
+
 
     private String getSource(Exception exception) {
         if (exception instanceof ExceptionSourceAware exceptionSourceAware){
@@ -60,13 +57,14 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
                 .orElseGet(()-> {
                     ErrorMapping em = new ErrorMapping();
                     em.setStatus(MessageStatus.SC_ERROR_SYSTEM);
-                    em.setScmErrorCode("SCM-"+ERROR_CODE_SYSTEM_ERROR);
+                    em.setScmErrorCode(ERROR_CODE_SYSTEM_ERROR);
                     return em;
                 });
     }
 
+
     @Override
-    public ExceptionResolverLevel getPriority() {
+    public ExceptionResolverLevel getResolverLevel() {
         return ExceptionResolverLevel.ALL_EXCEPTION;
     }
 }

@@ -2,10 +2,9 @@ package ir.daneshrefah.scm.common.error.management;
 
 
 import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
-import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.error.Error;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -21,9 +20,9 @@ public abstract class ExceptionResolver<E extends Throwable> {
         log.info(">>> Exception Resolver : [{}] loaded",this.getClass().getName());
     }
 
-    public abstract void resolve(Message message, E exception, Locale locale);
-    public abstract ResponseEntity<?> resolve(E exception, Locale locale);
-    public ExceptionResolverLevel getPriority(){
+    public abstract Error resolve(E exception, Locale locale);
+
+    public ExceptionResolverLevel getResolverLevel(){
         return ExceptionResolverLevel.DEFAULT;
     }
 

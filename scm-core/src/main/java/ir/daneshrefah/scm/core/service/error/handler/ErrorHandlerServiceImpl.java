@@ -44,7 +44,8 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             return resolveMessageByException(message, (Exception) exception.getCause());
         }
 
-        ExceptionResolverHelper.getInstance().resolveException(message,exception, AccessibleLocale.EN_US.getLocale());
+        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, AccessibleLocale.EN_US.getLocale());
+        message.addError(resolve);
         return message;
     }
 

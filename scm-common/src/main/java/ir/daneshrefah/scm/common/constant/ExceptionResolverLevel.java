@@ -12,4 +12,13 @@ public enum ExceptionResolverLevel {
     ALL_EXCEPTION(4),
     ALL_THROWABLE(5);
     private final int order;
+
+    public static ExceptionResolverLevel findByOrder(int order){
+        for (ExceptionResolverLevel value : values()) {
+            if (value.getOrder()==order){
+                return value;
+            }
+        }
+        return null;
+    }
 }

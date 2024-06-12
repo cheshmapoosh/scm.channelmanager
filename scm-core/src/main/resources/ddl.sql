@@ -829,13 +829,52 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.sql.SQLIntegrityConstraintViolationException',
         'constraint error');
 
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException',
+        'invalid otp code.');
+
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.OtpAlreadyExistException',
+        'otp already exist.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException',
+        'error on create otp code.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.OtpNotFoundException',
+        'otp not found.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.net.UnknownHostException',
+        'unknown host.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::org.apache.camel.http.base.HttpOperationFailedException',
+        'Http Operation Failed Exception.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.net.NoRouteToHostException',
+        'no route to host.');
+
+
+
+
 CREATE TABLE REF.TBL_SCM_ERROR_MAPPING (
                                            ERROR_MAPPING_ID DECIMAL(22) GENERATED ALWAYS AS IDENTITY NOT NULL,
                                            EXTERNAL_SERVICE_PROVIDER_ID VARCHAR(36),
                                            PROVIDER_ERROR_CODE VARCHAR(36),
                                            EXCEPTION_CLASS_NAME VARCHAR(300),
                                            EXCEPTION_OVERRIDE_NAME VARCHAR(300),
-                                           SCM_ERROR_CODE VARCHAR(50) NOT NULL,
+                                           SCM_ERROR_CODE DECIMAL(10) NOT NULL,
                                            STATUS_CODE VARCHAR(50) NOT NULL,
                                            CREATE_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                            LAST_EDIT_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -846,299 +885,342 @@ CREATE TABLE REF.TBL_SCM_ERROR_MAPPING (
 );
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
-VALUES( '', 'SCM-2001', 'sc_ebz', 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES( '', 2001, 'sc_ebz', 'Reza Jamshidi', 'Reza Jamshidi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException',
-       'SCM-1023', 'sc_nfd',
+       1023, 'sc_nfd',
        'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.TooManyRecordFoundException',
-        'SCM-1010', 'sc_evl',
+        1010, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException',
-        'SCM-1018', 'sc_evl',
+        1018, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.NoDataChangedException',
-        'SCM-1021', 'sc_evl',
+        1021, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.NoCustomerFoundException',
-        'SCM-1104', 'sc_evl',
+        1104, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.NoAssetFoundException',
-        'SCM-1105', 'sc_evl',
+        1105, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MissingRequiredInputException',
-        'SCM-1009', 'sc_evl',
+        1009, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MissingRequestException',
-        'SCM-1014', 'sc_evl',
+        1014, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MethodNotSupportedException',
-        'SCM-1019', 'sc_evl',
+        1019, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MethodNotSupportDataException',
-        'SCM-1019', 'sc_evl',
+        1019, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InvalidRequestFormatException',
-        'SCM-1020', 'sc_evl',
+        1020, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException',
-        'SCM-1012', 'sc_evl',
+        1012, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InvalidInputException',
-        'SCM-1007', 'sc_evl',
+        1007, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InvalidInputDateFormatException',
-        'SCM-1008', 'sc_evl',
+        1008, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InputMismatchException',
-        'SCM-1031', 'sc_evl',
+        1031, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.InputAlreadyExistException',
-        'SCM-1006', 'sc_evl',
+        1006, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException',
-        'SCM-1029', 'sc_evl',
+        1029, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.AuthenticationRequiredException',
-        'SCM-1002', 'sc_evl',
+        1002, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException',
-        'SCM-1023', 'sc_esy',
+        1023, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.ServiceInvalidMetadataException',
-        'SCM-1039', 'sc_esy',
+        1039, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.RecordVersionException',
-        'SCM-1205', 'sc_ebz',
+        1205, 'sc_ebz',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MessagePayloadMergeException',
-        'SCM-1037', 'sc_esy',
+        1037, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.MessagePayloadMergeException',
-        'SCM-1237', 'sc_acd',
+        1237, 'sc_acd',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.DisableServiceExecutionException',
-        'SCM-1022', 'sc_nfd',
+        1022, 'sc_nfd',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.PersonNotFoundException',
-        'SCM-1036', 'sc_evl',
+        1036, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.TransformException',
-        'SCM-1026', 'sc_esy',
+        1026, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.EmptyNotificationRequestException',
-        'SCM-1150', 'sc_evl',
+        1150, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.InvalidNotificationRequestException',
-        'SCM-1151', 'sc_evl',
+        1151, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.NotFoundSupportedBodyProcessorException',
-        'SCM-1152', 'sc_evl',
+        1152, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessException',
-        'SCM-1153', 'sc_evl',
+        1153, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessorDoesNotExistsException',
-        'SCM-1154', 'sc_evl',
+        1154, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.notification.client.exception.NotificationTemplateNotFoundException',
-        'SCM-1155', 'sc_evl',
+        1155, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.uaa.client.ClientAuthenticationException',
-        'SCM-1160', 'sc_acd',
+        1160, 'sc_acd',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.ServiceEndpointPrepareException',
-        'SCM-1138', 'sc_esy',
+        1138, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException',
-        'SCM-1033', 'sc_esy',
+        1033, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotFoundException',
-        'SCM-1032', 'sc_esy',
+        1032, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException',
-        'SCM-1027', 'sc_esy',
+        1027, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException',
-        'SCM-1034', 'sc_esy',
+        1034, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.ProviderUnknownException',
-        'SCM-1025', 'sc_eup',
+        1025, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.ProviderTimeoutException',
-        'SCM-1037', 'sc_eup',
+        1037, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.ProviderUnreachableException',
-        'SCM-1017', 'sc_eup',
+        1017, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException',
-        'SCM-1012', 'sc_eup',
+        1012, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.common.exception.ServiceNotFoundException',
-        'SCM-1024', 'sc_nfd',
+        1024, 'sc_nfd',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'java.lang.Exception',
-        'SCM-1001', 'sc_esy',
+        1001, 'sc_esy',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME,EXCEPTION_OVERRIDE_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'org.springframework.dao.DataIntegrityViolationException',
         'SQLCODE=-803',
-        'SCM-1006', 'sc_div',
+        1006, 'sc_div',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME,EXCEPTION_OVERRIDE_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'org.springframework.dao.DataIntegrityViolationException',
         'integrity',
-        'SCM-1028', 'sc_div',
+        1028, 'sc_div',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'org.springframework.dao.DataIntegrityViolationException',
-        'SCM-1028', 'sc_div',
+        1028, 'sc_div',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'java.sql.SQLIntegrityConstraintViolationException',
-        'SCM-1028', 'sc_ev',
+        1028, 'sc_ev',
         'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException',
+        1250, 'sc_ev',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpAlreadyExistException',
+        1250, 'sc_ev',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException',
+        1250, 'sc_ev',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpNotFoundException',
+        1250, 'sc_ev',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'java.net.UnknownHostException',
+        1016, 'sc_eup',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'org.apache.camel.http.base.HttpOperationFailedException',
+        1012, 'sc_esy',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'java.net.NoRouteToHostException',
+        1017, 'sc_eup',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
 -- finalized tables
 -------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_AUTHORITY (

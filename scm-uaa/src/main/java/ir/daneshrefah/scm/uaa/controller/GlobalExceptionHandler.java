@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.uaa.controller;
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
 import ir.daneshrefah.scm.common.exception.AbstractValidationException;
+import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception exception){
-        return ExceptionResolverHelper.getInstance().resolveException(exception, AccessibleLocale.EN_US.getLocale());
+        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, AccessibleLocale.EN_US.getLocale());
+        if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)){
+            return ResponseEntity.internalServerError().body(resolve);
+        }
+        return ResponseEntity.badRequest().body(resolve);
     }
 
 

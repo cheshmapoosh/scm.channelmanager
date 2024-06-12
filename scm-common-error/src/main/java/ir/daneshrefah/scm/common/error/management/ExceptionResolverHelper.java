@@ -1,24 +1,24 @@
 package ir.daneshrefah.scm.common.error.management;
 
 
-import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
+import ir.daneshrefah.scm.common.model.error.Error;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 
 import java.lang.reflect.*;
 import java.util.*;
 
 @Slf4j
 public class ExceptionResolverHelper {
-    private ExceptionResolverHelper(){}
     private static final ExceptionResolverHelper EXCEPTION_RESOLVER_HELPER = new ExceptionResolverHelper();
+    private static final List<ExceptionResolver<?>> ORDERED_RESOLVER_CACHE = new ArrayList<>();
+
+    private ExceptionResolverHelper() {
+    }
 
     public static ExceptionResolverHelper getInstance() {
         return EXCEPTION_RESOLVER_HELPER;
     }
-
-    private static final List<ExceptionResolver<?>> ORDERED_RESOLVER_CACHE =  new ArrayList<>();
-
 
     private boolean isInstance(Object obj, Class<?> clazz) {
         if (obj == null) {
@@ -31,7 +31,7 @@ public class ExceptionResolverHelper {
     protected void cacheResolver(ExceptionResolver<?> exceptionResolver) {
         synchronized (this) {
             ORDERED_RESOLVER_CACHE.add(exceptionResolver);
-            Collections.sort(ORDERED_RESOLVER_CACHE, Comparator.comparingInt(o -> o.getPriority().getOrder()));
+            ORDERED_RESOLVER_CACHE.sort(Comparator.comparingInt(o -> o.getResolverLevel().getOrder()));
             log.info(">>> {} exception resolver has been loaded.", exceptionResolver);
         }
     }
@@ -59,27 +59,46 @@ public class ExceptionResolverHelper {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    public void resolveException(Message message, Throwable throwable, Locale locale) {
-        for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
-            if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
-                ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
-                resolver.resolve(Objects.nonNull(message) ? message : Message.builder().build(), throwable,locale);
-                return;
-            }
-        }
 
+    private Optional<ExceptionResolver<?>> findResolver(ExceptionResolverLevel resolverLevel) {
+        return ORDERED_RESOLVER_CACHE
+                .stream()
+                .filter(resolver -> resolver.getResolverLevel().equals(resolverLevel))
+                .findFirst();
     }
 
     @SuppressWarnings("unchecked")
-    public ResponseEntity<?> resolveException(Throwable throwable, Locale locale) {
+    public Error resolve(Throwable throwable, Locale locale) {
+        Error error = null;
         for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
             if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
-                ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
-                return resolver.resolve(throwable,locale);
+                try {
+                    ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
+                    error = resolver.resolve(throwable, locale);
+                } catch (Throwable t) {
+                    /*If developer resolver throws any un handled exception during resolving the default
+                    resolver handled it */
+                    ExceptionResolver<Throwable> defaultResolver = (ExceptionResolver<Throwable>) getDefaultResolver();
+                    error = defaultResolver.resolve(throwable, locale);
+                }
             }
         }
-        return ResponseEntity.internalServerError().build();
+        return error;
+    }
+
+    /**
+     * Find default resolver by priority level
+     */
+    private ExceptionResolver<?> getDefaultResolver() {
+        int resolverLevel = ExceptionResolverLevel.values().length;
+        for (int i = 1; i < resolverLevel; i++) {
+            ExceptionResolverLevel level = ExceptionResolverLevel.values()[i];
+            Optional<ExceptionResolver<?>> foundDefaultResolver = findResolver(level);
+            if (foundDefaultResolver.isPresent()) {
+                return foundDefaultResolver.get();
+            }
+        }
+        throw new RuntimeException(">>> There is no any default resolver");
     }
 
 
