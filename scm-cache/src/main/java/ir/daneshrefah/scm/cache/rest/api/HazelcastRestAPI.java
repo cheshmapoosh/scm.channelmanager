@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.cache.domain.dto.UserAuthenticationTO;
 import ir.daneshrefah.scm.cache.service.HazelCastService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/scm-cache")
 @RequiredArgsConstructor
-@PreAuthorize("isFullyAuthenticated()")
+//@PreAuthorize("isFullyAuthenticated()")
 public class HazelcastRestAPI {
 
     //http://localhost:8080/swagger-ui/index.html#/

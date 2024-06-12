@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.cache;
 
-//import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
 import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,7 +16,7 @@ import org.springframework.context.annotation.FilterType;
  */
 @SpringBootApplication
 @EnableCaching
-@ComponentScan(basePackages = "ir.daneshrefah.scm", excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
+@ComponentScan(basePackages = "ir.daneshrefah.scm.cache", excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
 public class CacheServerApplication {
     public static void main(String[] args) {
         SpringApplication.run(CacheServerApplication.class, args);
