@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_05ht3zq" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.22.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.21.0">
+  <bpmn:message id="Message_2m624ev" name="rejected" />
+  <bpmn:message id="Message_12f7f6r" name="rejected" />
+  <bpmn:collaboration id="Collaboration_Paymanet">
+    <bpmn:extensionElements>
+      <camunda:properties>
+        <camunda:property name="cancelProcess" value="businessData_stampUser,businessData_signers" />
+        <camunda:property name="cancelProcess1" value="{&#34;permission&#34;:[&#34;businessData_stampUser&#34;],&#34;actions&#34;:[{&#34;name&#34;:&#34;لغو&#34;,&#34;action&#34;:&#34;cancel&#34;}]}" />
+      </camunda:properties>
+    </bpmn:extensionElements>
+    <bpmn:participant id="payment_transfer_pool" name="payment Transfer" processRef="subscription_payment_transfer" />
+  </bpmn:collaboration>
+  <bpmn:process id="subscription_payment_transfer" name="Subscription Payment Transfer" isExecutable="true" camunda:versionTag="V3.2" camunda:historyTimeToLive="200">
+    <bpmn:extensionElements />
+    <bpmn:laneSet id="LaneSet_02twc8e">
+      <bpmn:lane id="automatic_payment_lane" name="Automatic Payment">
+        <bpmn:flowNodeRef>successfully_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Automatic-transfer_payment</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="rejected_log_lane" name="Failed End">
+        <bpmn:flowNodeRef>end_failed</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="user_sign_line" name="User Sign">
+        <bpmn:flowNodeRef>check_sign_type</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0ylwxoj</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Confirm_signature</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>is_approved</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="user_action_line" name="User Action">
+        <bpmn:extensionElements />
+        <bpmn:flowNodeRef>start_payment_process</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>waiting_for_action</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:exclusiveGateway id="check_sign_type" name="Check Sign Type " default="natural_person">
+      <bpmn:incoming>approved</bpmn:incoming>
+      <bpmn:outgoing>juridical_person</bpmn:outgoing>
+      <bpmn:outgoing>natural_person</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="successfully_end" name="Successfully &#10;End">
+      <bpmn:incoming>Flow_054h8m0</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_0ylwxoj" name="Is sign?">
+      <bpmn:incoming>Flow_1y4mlkh</bpmn:incoming>
+      <bpmn:outgoing>no_sign</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1ffcqmr</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Automatic-transfer_payment" name="Automatic Transfer Payment" camunda:class="ir.daneshrefah.scm.payment.service.AutomaticTransferPaymentService">
+      <bpmn:incoming>natural_person</bpmn:incoming>
+      <bpmn:incoming>Flow_1ffcqmr</bpmn:incoming>
+      <bpmn:outgoing>Flow_054h8m0</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="end_failed" name="Failed &#10;End">
+      <bpmn:incoming>no_sign</bpmn:incoming>
+      <bpmn:incoming>not_approved</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Confirm_signature" name="Confirm Signature" camunda:assignee="${stampUser}">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="actions" value="[{&#34;name&#34;: &#34;امضا&#34;, &#34;action&#34;: &#34;sign&#34;}, {&#34;name&#34;: &#34;رد امضا&#34;, &#34;action&#34;: &#34;unSign&#34;}]" />
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>juridical_person</bpmn:incoming>
+      <bpmn:outgoing>Flow_1y4mlkh</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:startEvent id="start_payment_process" name="Start Payment Process">
+      <bpmn:documentation>فرایند انتقال وجه اشتراکی</bpmn:documentation>
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="jsonSchema" value="{&#34;$schema&#34;:&#34;https://json-schema.org/draft/2019-09/schema#&#34;,&#34;title&#34;:&#34;subscription_payment_transfer&#34;,&#34;description&#34;:&#34;subscription payment transfer&#34;,&#34;type&#34;:&#34;object&#34;,&#34;additionalProperties&#34;:true,&#34;required&#34;:[&#34;processKey&#34;,&#34;data&#34;],&#34;properties&#34;:{&#34;processKey&#34;:{&#34;type&#34;:&#34;string&#34;,&#34;description&#34;:&#34;Process Key&#34;,&#34;minLength&#34;:1},&#34;data&#34;:{&#34;type&#34;:&#34;object&#34;,&#34;properties&#34;:{&#34;transactionType&#34;:{&#34;type&#34;:&#34;string&#34;,&#34;enum&#34;:[&#34;Internal&#34;,&#34;BillBatch&#34;,&#34;Rtgs&#34;,&#34;Ach&#34;,&#34;InsuranceBatch&#34;]},&#34;signers&#34;:{&#34;type&#34;:&#34;array&#34;,&#34;minItems&#34;:1,&#34;items&#34;:[{&#34;type&#34;:&#34;string&#34;,&#34;minLength&#34;:10,&#34;maxLength&#34;:10}]},&#34;stampUser&#34;:{&#34;oneOf&#34;:[{&#34;type&#34;:&#34;string&#34;,&#34;minLength&#34;:10,&#34;maxLength&#34;:10},{&#34;type&#34;:&#34;string&#34;,&#34;maxLength&#34;:0}]},&#34;isLegal&#34;:{&#34;type&#34;:&#34;boolean&#34;}},&#34;required&#34;:[&#34;transactionType&#34;,&#34;signers&#34;]}}}             }                 }" />
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_1oy2u1t</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="approved" name="Approved" sourceRef="is_approved" targetRef="check_sign_type">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('accept') != null}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="juridical_person" name="Juridical Person" sourceRef="check_sign_type" targetRef="Confirm_signature">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('stampUser') != null}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="natural_person" sourceRef="check_sign_type" targetRef="Automatic-transfer_payment" />
+    <bpmn:sequenceFlow id="Flow_054h8m0" sourceRef="Automatic-transfer_payment" targetRef="successfully_end" />
+    <bpmn:sequenceFlow id="Flow_1y4mlkh" sourceRef="Confirm_signature" targetRef="Gateway_0ylwxoj" />
+    <bpmn:sequenceFlow id="no_sign" name="No" sourceRef="Gateway_0ylwxoj" targetRef="end_failed">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('unSign') != null}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1ffcqmr" sourceRef="Gateway_0ylwxoj" targetRef="Automatic-transfer_payment">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('sign') != null}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="not_approved" name="Not&#10; Approved" sourceRef="is_approved" targetRef="end_failed">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('reject') != null}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1oy2u1t" sourceRef="start_payment_process" targetRef="waiting_for_action" />
+    <bpmn:sequenceFlow id="Flow_1ebqrlm" sourceRef="waiting_for_action" targetRef="is_approved" />
+    <bpmn:userTask id="waiting_for_action" name="Waiting for accepting or rejecting all users" camunda:assignee="${users}">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="actions" value="[{&#34;name&#34;: &#34;امضا&#34;, &#34;action&#34;: &#34;accept&#34;}, {&#34;name&#34;: &#34;رد امضا&#34;, &#34;action&#34;: &#34;reject&#34;}]" />
+          <camunda:property name="extract" value="businessData_transactionData,businessData_transactionType,actions" />
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1oy2u1t</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ebqrlm</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${businessData_signers}" camunda:elementVariable="users">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${execution.getVariable('reject') != null}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="is_approved" name="Is Approved?">
+      <bpmn:incoming>Flow_1ebqrlm</bpmn:incoming>
+      <bpmn:outgoing>approved</bpmn:outgoing>
+      <bpmn:outgoing>not_approved</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Paymanet">
+      <bpmndi:BPMNShape id="Participant_0tya19c_di" bpmnElement="payment_transfer_pool" isHorizontal="true">
+        <dc:Bounds x="180" y="40" width="1375" height="600" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0li5rfe_di" bpmnElement="automatic_payment_lane" isHorizontal="true">
+        <dc:Bounds x="210" y="510" width="1345" height="130" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1t4uxym_di" bpmnElement="rejected_log_lane" isHorizontal="true">
+        <dc:Bounds x="210" y="354" width="1345" height="156" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_08snza0_di" bpmnElement="user_sign_line" isHorizontal="true">
+        <dc:Bounds x="210" y="170" width="1345" height="184" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_00on0mz_di" bpmnElement="user_action_line" isHorizontal="true">
+        <dc:Bounds x="210" y="40" width="1345" height="130" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0lb5v2u_di" bpmnElement="check_sign_type" isMarkerVisible="true">
+        <dc:Bounds x="710" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="695" y="203" width="83" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1qnt2gd_di" bpmnElement="successfully_end" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="1487" y="552" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1474" y="598" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0ylwxoj_di" bpmnElement="Gateway_0ylwxoj" isMarkerVisible="true">
+        <dc:Bounds x="1170" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1176" y="203" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0spndfi_di" bpmnElement="Automatic-transfer_payment" bioc:stroke="#0d4372" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#0d4372">
+        <dc:Bounds x="1255" y="530" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_045hecg_di" bpmnElement="end_failed" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1177" y="422" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1180" y="466" width="30" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_03fqegc_di" bpmnElement="Confirm_signature" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="905" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="start_payment_process">
+        <dc:Bounds x="277" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="260" y="125" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_172uyx2_di" bpmnElement="waiting_for_action" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="450" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_076ipq6_di" bpmnElement="is_approved" isMarkerVisible="true">
+        <dc:Bounds x="475" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="406" y="237" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0ft5upn_di" bpmnElement="approved">
+        <di:waypoint x="525" y="250" />
+        <di:waypoint x="710" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="580" y="228" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ekt40y_di" bpmnElement="juridical_person">
+        <di:waypoint x="760" y="250" />
+        <di:waypoint x="905" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="801" y="232" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0cvxw4b_di" bpmnElement="natural_person">
+        <di:waypoint x="735" y="275" />
+        <di:waypoint x="735" y="570" />
+        <di:waypoint x="1255" y="570" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="957" y="786" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_054h8m0_di" bpmnElement="Flow_054h8m0">
+        <di:waypoint x="1355" y="570" />
+        <di:waypoint x="1487" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1y4mlkh_di" bpmnElement="Flow_1y4mlkh">
+        <di:waypoint x="1005" y="250" />
+        <di:waypoint x="1170" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vfklh7_di" bpmnElement="no_sign">
+        <di:waypoint x="1195" y="275" />
+        <di:waypoint x="1195" y="422" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1200" y="308" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ffcqmr_di" bpmnElement="Flow_1ffcqmr">
+        <di:waypoint x="1220" y="250" />
+        <di:waypoint x="1305" y="250" />
+        <di:waypoint x="1305" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1s0d98b_di" bpmnElement="not_approved">
+        <di:waypoint x="500" y="275" />
+        <di:waypoint x="500" y="440" />
+        <di:waypoint x="1177" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="570" y="446" width="48" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1oy2u1t_di" bpmnElement="Flow_1oy2u1t">
+        <di:waypoint x="313" y="100" />
+        <di:waypoint x="450" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ebqrlm_di" bpmnElement="Flow_1ebqrlm">
+        <di:waypoint x="500" y="140" />
+        <di:waypoint x="500" y="225" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

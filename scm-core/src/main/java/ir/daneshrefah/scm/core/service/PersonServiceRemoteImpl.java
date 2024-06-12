@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
@@ -47,6 +48,11 @@ public class PersonServiceRemoteImpl implements PersonService {
 
     @Override
     public GeneralPerson findLocalPerson(PersonFindRequest request) {
+        return null;
+    }
+
+    @Override
+    public IndividualPersonEntity findPersonByNationalCode(String nationalCode) {
         return null;
     }
 
