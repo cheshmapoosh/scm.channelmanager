@@ -40,6 +40,14 @@ public class Message implements Serializable {
         nullPayload();
     }
 
+    public void addError(Error error) {
+        if (null == errors)
+            errors = new ArrayList<>();
+        errors.add(error);
+        this.status = error.getStatus();
+        nullPayload();
+    }
+
     public void addErrors(List<Error> errors, MessageStatus status) {
         if (null == this.errors) {
             this.errors = errors;

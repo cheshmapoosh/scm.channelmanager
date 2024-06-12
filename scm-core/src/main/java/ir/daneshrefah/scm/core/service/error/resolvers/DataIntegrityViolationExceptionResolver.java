@@ -6,11 +6,8 @@ import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolver;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -26,14 +23,10 @@ public class DataIntegrityViolationExceptionResolver extends ExceptionResolver<D
 
 
     @Override
-    public ResponseEntity<?> resolve(DataIntegrityViolationException exception, Locale locale) {
-        return ResponseEntity.badRequest().body(createErrorResponse(locale,exception));
+    public Error resolve(DataIntegrityViolationException exception, Locale locale) {
+        return createErrorResponse(locale,exception);
     }
 
-    @Override
-    public void resolve(Message message, DataIntegrityViolationException exception, Locale locale) {
-        message.addError(createErrorResponse(locale,exception), MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION);
-    }
 
     private Error createErrorResponse(Locale locale,DataIntegrityViolationException exception){
 
@@ -42,7 +35,7 @@ public class DataIntegrityViolationExceptionResolver extends ExceptionResolver<D
             if (foundErrorMapping.isPresent()) {
                 ErrorMapping errorMapping = foundErrorMapping.get();
                 String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, exception, "SQLCODE=-803", new HashMap<>());
-                return new Error("Duplicate", errorMapping.getScmErrorCode(), exceptionMessage, exception);
+                return new Error("Duplicate", errorMapping.getScmErrorCode(), exceptionMessage,errorMapping.getStatus(), exception);
             }
         }
          if (exception.getMessage().toLowerCase().contains("integrity")) {
@@ -50,7 +43,7 @@ public class DataIntegrityViolationExceptionResolver extends ExceptionResolver<D
             if (foundErrorMapping.isPresent()) {
                 ErrorMapping errorMapping = foundErrorMapping.get();
                 String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, exception, "integrity", new HashMap<>());
-                return new Error("Integrity", errorMapping.getScmErrorCode(), exceptionMessage, exception);
+                return new Error("Integrity", errorMapping.getScmErrorCode(), exceptionMessage,errorMapping.getStatus(), exception);
             }
         }
             return createDefaultErrorResponse(locale,exception);
@@ -63,8 +56,9 @@ public class DataIntegrityViolationExceptionResolver extends ExceptionResolver<D
             ErrorMapping errorMapping = foundErrorMapping.get();
             String key = BundleDefaults.EXCEPTION_BUNDLE_DEFAULT_PREFIX+exception.getClass().getName();
             String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, key);
-            return new Error("Integrity", errorMapping.getScmErrorCode(), exceptionMessage, exception);
+            return new Error("Integrity", errorMapping.getScmErrorCode(), exceptionMessage,errorMapping.getStatus(), exception);
         }
-        return new Error("","","",exception);
+        return new Error("",0,"",exception);
     }
+
 }

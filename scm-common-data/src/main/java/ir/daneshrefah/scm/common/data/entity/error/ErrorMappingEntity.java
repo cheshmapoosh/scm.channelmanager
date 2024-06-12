@@ -31,7 +31,7 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<Long> {
     private String exceptionClassName;
     @Column(name = "EXCEPTION_OVERRIDE_NAME")
     private String exceptionOverrideName;
-    private String scmErrorCode;
+    private Integer scmErrorCode;
     @Column(name = "STATUS_CODE")
     @Convert(converter = MessageStatusTypeConverter.class)
     private MessageStatus status;

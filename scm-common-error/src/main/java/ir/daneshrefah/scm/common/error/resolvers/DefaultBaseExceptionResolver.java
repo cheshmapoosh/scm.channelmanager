@@ -11,14 +11,11 @@ import ir.daneshrefah.scm.common.error.management.ExceptionResolver;
 import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -28,29 +25,18 @@ public class DefaultBaseExceptionResolver extends ExceptionResolver<AbstractBase
     private final ErrorMappingService errorMappingService;
 
     @Override
-    public void resolve(Message message, AbstractBaseException exception, Locale locale) {
-        Optional<ErrorMapping> errorMappingOptional = errorMappingService.findByExceptionClassName(exception.getClass().getName());
-        Error error = createErrorResponse(exception, locale, errorMappingOptional);
-        message.addError(error, exception.getExceptionInformation().getMessageStatus());
-    }
-
-    private Error createErrorResponse(AbstractBaseException exception, Locale locale, Optional<ErrorMapping> errorMappingOptional) {
+    public Error resolve(AbstractBaseException exception, Locale locale) {
+        ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
         return new Error(
                 getSource(exception),
-                errorMappingOptional.map(ErrorMapping::getScmErrorCode).orElse(""),
+                errorMapping.getScmErrorCode(),
                 getMessage(locale, exception),
+                errorMapping.getStatus(),
                 exception);
     }
 
     @Override
-    public ResponseEntity<?> resolve(AbstractBaseException exception, Locale locale) {
-        Optional<ErrorMapping> errorMappingOptional = errorMappingService.findByExceptionClassName(exception.getClass().getName());
-        Error errorResponse = createErrorResponse(exception, locale, errorMappingOptional);
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
-
-    @Override
-    public ExceptionResolverLevel getPriority() {
+    public ExceptionResolverLevel getResolverLevel() {
         return ExceptionResolverLevel.ALL_BASE_EXCEPTION;
     }
 

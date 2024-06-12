@@ -19,7 +19,7 @@ public class ErrorMapping extends BaseModel<Long> {
     private String providerId;
     private String providerErrorCode;
     private String exceptionClassName;
-    private String scmErrorCode;
+    private Integer scmErrorCode;
     private String exceptionOverrideName;
     private MessageStatus status;
 
