@@ -12,11 +12,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @version 1.0
  * @since 2024-06-10
  */
-//@ConfigurationProperties("scm.process") //TOOD uncomment
+@ConfigurationProperties("scm.process")
 @Setter
 @Getter
 public class ProcessProperties {
 
     private boolean enabled;
+    private String clientId;
+    private String clientSecret;
     private DatasourceProperties datasource;
 }

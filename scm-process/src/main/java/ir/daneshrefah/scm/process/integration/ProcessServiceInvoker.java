@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.process.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.ProcessMessageInput;
@@ -8,6 +9,8 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.process.config.ProcessProperties;
+import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +19,7 @@ import java.util.Map;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
+import static ir.daneshrefah.scm.utils.string.StringUtils.COLON;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,20 +32,22 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
 @Component
 public class ProcessServiceInvoker {
 
+    private final ProcessProperties properties;
     private final ChannelService channelService;
     private final MessageGenerator messageGenerator;
     private final ServiceProducerTemplate producerTemplate;
 
     public JsonNode callService(String serviceCode, JsonNode payload, String delegateUsername, String correlationId) throws Exception {
+            String authorizationHeader = "Basic " + Base64Utils.encodeWithBase64(properties.getClientId() + COLON + properties.getClientSecret());
         Map<String, Object> headers = new HashMap<>();
         headers.put(SCM_PARAMETER_TERMINAL, null);
         headers.put(SCM_PARAMETER_ACCESS_PARAMETER, null);
-        headers.put(SCM_PARAMETER_AUTHORIZATION, null);
-        headers.put(SCM_PARAMETER_CLAIM_CODE, null);
+//        headers.put(SCM_PARAMETER_AUTHORIZATION, null);
+//        headers.put(SCM_PARAMETER_CLAIM_CODE, null);
         headers.put(SCM_PARAMETER_USERNAME, delegateUsername);
-        headers.put(SCM_PARAMETER_CLIENT_ID, null);
-        headers.put(SCM_PARAMETER_CLIENT_CORRELATION_ID, correlationId);
-        headers.put(SCM_PARAMETER_CLIENT_TIMESTAMP, null);
+//        headers.put(SCM_PARAMETER_CLIENT_ID, null);
+//        headers.put(SCM_PARAMETER_CLIENT_CORRELATION_ID, correlationId);
+//        headers.put(SCM_PARAMETER_CLIENT_TIMESTAMP, null);
         ProcessMessageInput input = ProcessMessageInput.builder()
                 .processDefinitionKey(null)
                 .processInstanceId(null)
@@ -53,7 +59,7 @@ public class ProcessServiceInvoker {
                 .channelCode(null)
                 .body(payload)
                 .contentType(HTTP_HEADER_CONTENT_TYPE_JSON)
-                .authorization(null)
+                .authorization(authorizationHeader)
                 .serverHost(null)
                 .isForCheck(false)
                 .build();

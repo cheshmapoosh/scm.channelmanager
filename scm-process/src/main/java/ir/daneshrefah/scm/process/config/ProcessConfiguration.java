@@ -20,9 +20,9 @@ import javax.sql.DataSource;
  * @version 1.0
  * @since 2024-04-23
  */
-//@EnableConfigurationProperties(ProcessProperties.class) //TODO uncomment
+@EnableConfigurationProperties(ProcessProperties.class)
 @Configuration
-//@ConditionalOnProperty(name = "scm.process.enabled", havingValue = "true")//TODO uncomment
+@ConditionalOnProperty(name = "scm.process.enabled", havingValue = "true")
 public class ProcessConfiguration {
 
     @Value("${scm.process.jdbc-url}")
