@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.process.config.ProcessProperties;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +33,17 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.COLON;
 @Component
 public class ProcessServiceInvoker {
 
+    private static ProcessServiceInvoker INSTANCE;
+
     private final ProcessProperties properties;
     private final ChannelService channelService;
     private final MessageGenerator messageGenerator;
     private final ServiceProducerTemplate producerTemplate;
+
+    @PostConstruct
+    public void init() {
+        INSTANCE = this;
+    }
 
     public JsonNode callService(String serviceCode, JsonNode payload, String delegateUsername, String correlationId) throws Exception {
             String authorizationHeader = "Basic " + Base64Utils.encodeWithBase64(properties.getClientId() + COLON + properties.getClientSecret());
@@ -72,6 +80,10 @@ public class ProcessServiceInvoker {
 
     public void callServiceAsync(String serviceCode, JsonNode payload) {
 
+    }
+
+    public static ProcessServiceInvoker getInstance() {
+        return INSTANCE;
     }
 
 }
