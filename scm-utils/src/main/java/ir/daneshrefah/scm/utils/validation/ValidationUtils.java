@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.utils.validation;
 
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -71,6 +72,15 @@ public class ValidationUtils {
 
     public static void checkEqualsIgnoreCaseString(CharSequence cs1, CharSequence cs2, Supplier<RuntimeException> throwsException) {
         if (StringUtils.equalsIgnoreCase(cs1, cs2)){
+            throw throwsException.get();
+        }
+    }
+
+    public static void checkListIsNotEmptyAndNotContains(List list, Object obj, Supplier<RuntimeException> throwsException) {
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        if (!list.contains(obj)){
             throw throwsException.get();
         }
     }

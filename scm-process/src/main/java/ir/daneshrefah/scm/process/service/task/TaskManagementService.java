@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.process.model.request.TaskRequest;
+import ir.daneshrefah.scm.process.service.dto.TaskCompleteRequest;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
 import ir.daneshrefah.scm.process.service.dto.TaskFindRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
@@ -44,7 +44,7 @@ public class TaskManagementService extends AbstractJavaService {
     }
 
     @JavaService
-    public boolean completeTask(TaskRequest taskRequest) throws JsonProcessingException {
+    public boolean completeTask(TaskCompleteRequest taskRequest) throws JsonProcessingException {
         return taskService.completeTask(taskRequest);
     }
 }

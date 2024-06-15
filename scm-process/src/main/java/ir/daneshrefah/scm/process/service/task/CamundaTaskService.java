@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.process.exception.TaskAssignmentException;
 import ir.daneshrefah.scm.process.exception.TaskNotFoundException;
 import ir.daneshrefah.scm.process.model.constant.UserTaskStatus;
 import ir.daneshrefah.scm.process.model.process.ProcessInstanceInfo;
-import ir.daneshrefah.scm.process.model.request.TaskRequest;
+import ir.daneshrefah.scm.process.service.dto.TaskCompleteRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
 import ir.daneshrefah.scm.process.model.task.Assignment;
@@ -19,8 +18,11 @@ import ir.daneshrefah.scm.process.service.dto.TaskFindRequest;
 import ir.daneshrefah.scm.process.service.process.CamundaProcessService;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.ValidationSchema;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.task.Task;
@@ -29,6 +31,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_BPM;
 
 @RequiredArgsConstructor
 @Service
@@ -153,8 +157,20 @@ public class CamundaTaskService implements TaskService {
         return data;
     }
 
-    public boolean completeTask(TaskRequest taskRequest) throws JsonProcessingException {
-        Task task = findByTaskID(taskRequest);
+    public boolean completeTask(TaskCompleteRequest taskRequest) throws JsonProcessingException {
+        Task task = findTaskById(taskRequest.getTaskId());
+        if (!checkTaskAssignment(task)) {
+//TODO            throw new
+        }
+        TaskMetadata metadata = extractTaskMetadata(task);
+        if (StringUtils.isNotBlank(metadata.getValidationSchema())) {
+            ValidationSchema.validate(taskRequest.getData(), metadata.getValidationSchema());
+        }
+        if (CollectionUtils.isNotEmpty(metadata.getActions())) {
+//TODO            ValidationUtils.checkBlankString(taskRequest.getAction(), () -> new );
+//TODO            ValidationUtils.checkListIsNotEmptyAndNotContains(metadata.getActions(), taskRequest.getAction(), () -> );
+        }
+
         Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
         if (extensionProperties != null && !extensionProperties.isEmpty() && extensionProperties.containsKey("jsonSchema")) {
             ValidationSchema.validate(taskRequest, extensionProperties.get("jsonSchema"));
@@ -166,16 +182,22 @@ public class CamundaTaskService implements TaskService {
         return true;
     }
 
-    //TODO move this method to camunda util and change the name of method
-    private Task findByTaskID(TaskRequest taskRequest) {
-        String loggedInUserId = taskRequest.getNationalCode();
-        Task task = taskService.createTaskQuery().taskId(taskRequest.getTaskId()).taskAssignee(loggedInUserId).singleResult();
-        if (task == null) {
-            throw new TaskNotFoundException("CamundaTaskService", "Task with ID " + taskRequest.getTaskId() + " not found for assignee " + loggedInUserId);
+    private boolean checkTaskAssignment(Task task) {
+        UserAuthentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        if (Objects.isNull(authentication)) {
+            return false;
         }
-        if (!task.getAssignee().equals(loggedInUserId)) {
-            throw new TaskAssignmentException("CamundaTaskService", "Task with ID " + taskRequest.getTaskId() + " is not assigned to user " + loggedInUserId);
+        String assignee = task.getAssignee();
+        return authentication.hasAuthority(ROLE_ADMIN_BPM) ||
+                authentication.getPrincipal().getPerson().getUsername().equals(assignee);
+    }
+
+    private Task findTaskById(String taskId) {
+        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (task == null) {
+            throw new TaskNotFoundException("CamundaTaskService", "Task with ID " + taskId + " not found.");
         }
         return task;
     }
+
 }
