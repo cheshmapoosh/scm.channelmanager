@@ -1,8 +1,12 @@
 package ir.daneshrefah.scm.uaa.common.utils;
 
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
+import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.utils.MessageContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -54,6 +58,21 @@ public class AuthenticationUtils {
     public static String getLoggedInGlobalUsername() {
         User user = getLoggedInUser();
         return null == user ? null : user.getPerson().getUsername();
+    }
+
+    public static IssuerInfo getIssuerInfo() {
+        UserAuthentication authentication = getLoggedInUserAuthentication();
+        return IssuerInfo.builder()
+                .parentCorrelationId(MessageContext.getCurrentContext().getCorrelationId())
+                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
+                .identifier(authentication.getName())
+                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .terminalCode(authentication.getTerminalCode())
+//                .remoteAddress()
+//                .xForwardedFor()
+//                .hostAddress()
+//                .instanceName()
+                .build();
     }
 
 }

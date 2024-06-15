@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.process.model.BaseProcessModel;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,7 +16,20 @@ import java.util.List;
 @Data
 public class ProcessMetadata implements BaseProcessModel {
 
-    private List<String> authorizedCancelUsers;
-    private String validationSchema;
+    private String startValidationSchema;
+    private String startValidationScript;
+    /**
+     * this property indicates which user authorities can start process
+     * */
+    private List<String> startAuthorizedAuthorities;
+    /**
+     * this property indicates which usernames can cancel process
+     * */
+    private List<String> cancelAuthorizedUsers;
+    /**
+     * this property indicates which user authorities can cancel process
+     * */
+    private List<String> cancelAuthorizedAuthorities;
+    private Map<String, String> inputConverters;
 
 }

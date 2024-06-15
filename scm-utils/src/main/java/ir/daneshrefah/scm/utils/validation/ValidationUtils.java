@@ -3,9 +3,7 @@ package ir.daneshrefah.scm.utils.validation;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class ValidationUtils {
@@ -82,6 +80,16 @@ public class ValidationUtils {
         }
         if (!list.contains(obj)){
             throw throwsException.get();
+        }
+    }
+
+    public static void checkListIsNotEmptyAndNotContainsList(List list, Collection obj, Supplier<RuntimeException> throwsException) {
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        for (Iterator iterator = obj.iterator(); iterator.hasNext(); ) {
+            Object next = iterator.next();
+            checkListIsNotEmptyAndNotContains(list, next, throwsException);
         }
     }
 

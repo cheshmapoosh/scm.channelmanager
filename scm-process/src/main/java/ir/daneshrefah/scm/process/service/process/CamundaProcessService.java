@@ -1,31 +1,31 @@
 package ir.daneshrefah.scm.process.service.process;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.process.exception.NotFountProcessException;
 import ir.daneshrefah.scm.process.model.IssuerUser;
 import ir.daneshrefah.scm.process.model.constant.ProcessState;
 import ir.daneshrefah.scm.process.model.mapper.ProcessResponseMapper;
 import ir.daneshrefah.scm.process.model.mapper.UserMapper;
+import ir.daneshrefah.scm.process.model.process.ProcessMetadata;
 import ir.daneshrefah.scm.process.model.request.CancelProcessRequest;
 import ir.daneshrefah.scm.process.model.request.ProcessStartRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.UserAuthUtils;
-import org.camunda.bpm.engine.IdentityService;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.RuntimeService;
-import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.model.bpmn.instance.Collaboration;
-import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class CamundaProcessService implements ProcessManagement {
@@ -42,15 +42,20 @@ public class CamundaProcessService implements ProcessManagement {
     @Autowired
     private CamundaProcessUtil camundaProcessUtil;
 
-    @Autowired
-    private TaskService taskService;
-
-    @Autowired
-    private IdentityService identityService;
 
     public ProcessResponse startProcess(ProcessStartRequest processRequest) throws JsonProcessingException {
         ProcessDefinition processDefinition = findProcessDefinitionByProcessKey(processRequest.getProcessKey());
-        Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, StartEvent.class);
+        ProcessMetadata metadata = extractProcessMetadata(processDefinition);
+        Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
+//TODO        ValidationUtils.checkListIsNotEmptyAndNotContainsList(metadata.getStartAuthorizedAuthorities(),
+//                authentication.getAuthorities(), () ->);
+        if (StringUtils.isNotEmpty(metadata.getStartValidationSchema())) {
+//            TODO
+        }
+        if (StringUtils.isNotEmpty(metadata.getStartValidationScript())) {
+//            TODO
+        }
+//        Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, StartEvent.class);
 
 //        String userId = ProcessUtils.getLoggedInUserNationalCode();
 //        Set<ValidationMessage> validationMessages = ValidationSchema.validate(processRequest, jsonSchema, "");
@@ -64,10 +69,31 @@ public class CamundaProcessService implements ProcessManagement {
         for (Map.Entry<String, Object> entry : processRequest.getData().entrySet()) {
             businessData.put(BUSINESS_DATA + "_" + entry.getKey(), entry.getValue());
         }
+        IssuerInfo issuerInfo = AuthenticationUtils.getIssuerInfo();
         IssuerUser issuerUser = UserMapper.INSTANCE.toUserMapper(UserAuthUtils.getLoggedInPerson());
-        businessData.computeIfAbsent(ISSUER_USER, s -> issuerUser);
+        businessData.computeIfAbsent(ISSUER_USER, s -> issuerUser); //TODO issuerInfo must be used
+
+        businessData = transformBusinessData(businessData, metadata.getInputConverters());
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId(), businessData);
         return createResponse(processInstance);
+    }
+
+    private Map<String, Object> transformBusinessData(Map<String, Object> businessData, Map<String, String> inputConverters) {
+        if (Objects.isNull(businessData) || businessData.isEmpty() || Objects.isNull(inputConverters) || inputConverters.isEmpty()) {
+            return businessData;
+        }
+        for (Iterator<String> iterator = inputConverters.keySet().iterator(); iterator.hasNext(); ) {
+            String propertyKey = iterator.next();
+//            TODO
+//            for example customerNo_to_person must be run for taskData.signers that replace customerNo with
+//            person object {username:, type:, firstName:, lastName:, ....}
+        }
+        return null;
+    }
+
+    private ProcessMetadata extractProcessMetadata(ProcessDefinition processDefinition) {
+        //TODO should be extract from extension properties
+        return new ProcessMetadata();
     }
 
     public boolean cancelProcess(CancelProcessRequest cancelProcessRequest) throws Exception {
