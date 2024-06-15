@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.process.model.task;
 
 import ir.daneshrefah.scm.process.model.BaseProcessModel;
+import ir.daneshrefah.scm.process.model.process.ProcessInstanceInfo;
 import lombok.Data;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class TaskInfo implements BaseProcessModel {
     private String name;
     private List<Assignment> assignments;
     private TaskMetadata metadata;
+    private ProcessInstanceInfo processInstance;
 
 //    private String taskPersianName;
 //    private String taskDescription;

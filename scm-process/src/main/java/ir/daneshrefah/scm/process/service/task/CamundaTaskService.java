@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.process.exception.TaskAssignmentException;
 import ir.daneshrefah.scm.process.exception.TaskNotFoundException;
 import ir.daneshrefah.scm.process.model.constant.UserTaskStatus;
+import ir.daneshrefah.scm.process.model.process.ProcessInstanceInfo;
 import ir.daneshrefah.scm.process.model.request.TaskRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
@@ -65,6 +66,12 @@ public class CamundaTaskService implements TaskService {
                 TaskMetadata metadata = extractTaskMetadata(task);
                 taskInfo.setMetadata(metadata);
             }
+
+            ProcessInstanceInfo processInstance = new ProcessInstanceInfo();
+            processInstance.setProcessInstanceId(task.getProcessInstanceId());
+            processInstance.setProcessDefinitionId(task.getProcessDefinitionId());
+            taskInfo.setProcessInstance(processInstance);
+
             return taskInfo;
         }).collect(Collectors.toList());
 
