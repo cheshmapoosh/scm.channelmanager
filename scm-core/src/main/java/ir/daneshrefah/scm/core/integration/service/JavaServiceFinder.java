@@ -72,6 +72,9 @@ public class JavaServiceFinder {
             if (Objects.isNull(javaServiceAnnotation)) {
                 return new MethodInfo(new JavaServiceMethodNotFoundException(service, null));
             }
+            if (StringUtils.isNotEmptyAndNotEquals(javaServiceAnnotation.serviceCode(), service.getCode())) {
+                return new MethodInfo(new JavaServiceMethodNotFoundException(service, null));
+            }
         } catch (NoSuchMethodException e) {
             return new MethodInfo(new JavaServiceMethodNotFoundException(service, e));
         }

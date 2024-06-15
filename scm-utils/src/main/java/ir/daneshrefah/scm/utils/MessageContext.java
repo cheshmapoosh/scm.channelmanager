@@ -1,9 +1,13 @@
 package ir.daneshrefah.scm.utils;
 
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -30,6 +34,17 @@ public class MessageContext {
 
     public static void clear() {
         CONTEXT.remove();
+    }
+
+    public Optional<Message> getMessageOptional() {
+        if (Objects.isNull(message)) {
+            return Optional.empty();
+        }
+        return Optional.of(message);
+    }
+
+    public Authentication getAuthentication() {
+        return getMessageOptional().map(msg -> msg.getHeader().getAuthentication()).orElse(null);
     }
 
 }

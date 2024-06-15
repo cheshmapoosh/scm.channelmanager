@@ -3,53 +3,71 @@ package ir.daneshrefah.scm.process.service.task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.process.exception.TaskAssignmentException;
 import ir.daneshrefah.scm.process.exception.TaskNotFoundException;
 import ir.daneshrefah.scm.process.model.constant.UserTaskStatus;
 import ir.daneshrefah.scm.process.model.request.TaskRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
+import ir.daneshrefah.scm.process.model.task.Assignment;
+import ir.daneshrefah.scm.process.model.task.TaskInfo;
+import ir.daneshrefah.scm.process.model.task.TaskMetadata;
+import ir.daneshrefah.scm.process.service.dto.TaskFindRequest;
 import ir.daneshrefah.scm.process.service.process.CamundaProcessService;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.ValidationSchema;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
-import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.task.Task;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.camunda.bpm.engine.task.TaskQuery;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
-public class CamundaTaskService implements TaskManagement {
+public class CamundaTaskService implements TaskService {
 
     public static final String ACTIONS = "actions";
     public static final String EXTRACT = "extract";
-    @Autowired
-    private TaskService taskService;
-
-    @Autowired
-    private RuntimeService runtimeService;
-
-    @Autowired
-    private RepositoryService repositoryService;
-
-    @Autowired
-    private CamundaProcessUtil camundaProcessUtil;
+    private final PersonService personService;
+    private final org.camunda.bpm.engine.TaskService taskService;
+    private final RuntimeService runtimeService;
+    private final RepositoryService repositoryService;
+    private final CamundaProcessUtil camundaProcessUtil;
 
 //    @Autowired
 //    private PersonService personService;
 
 
-    public List<TaskResponse> getTaskList(TaskRequest taskRequest) throws JsonProcessingException {
-//        String loggedInUserId = getLoggedInUserNationalCode();
-        String loggedInUserId = taskRequest.getNationalCode();
-        List<Task> tasks = taskService.createTaskQuery().taskAssignee(loggedInUserId).list();
+    public List<TaskResponse> findTaskList(TaskFindRequest taskFindRequest) throws JsonProcessingException {
+        TaskQuery taskQuery = taskService.createTaskQuery().taskAssignee(taskFindRequest.getAssignee());
+        if (StringUtils.isNotBlank(taskFindRequest.getTaskId())) {
+            taskQuery.taskId(taskFindRequest.getTaskId());
+        }
+        List<Task> tasks = taskQuery.list();
+        List<TaskInfo> taskInfoList = tasks.stream().map(task -> {
+            TaskInfo taskInfo = new TaskInfo();
+            taskInfo.setTaskId(task.getId());
+            taskInfo.setName(task.getName());
+            Assignment assignment = new Assignment();
+            assignment.setUsername(task.getAssignee());
+            if (taskFindRequest.isIncludePersonInfo()) {
+                Optional<GeneralPerson> person = personService.findPersonByPersonUsername(assignment.getUsername());
+            }
+            taskInfo.setAssignments(List.of(assignment));
+            if (taskFindRequest.isIncludeMetadata()) {
+                TaskMetadata metadata = extractTaskMetadata(task);
+                taskInfo.setMetadata(metadata);
+            }
+            return taskInfo;
+        }).collect(Collectors.toList());
+
         List<TaskResponse> taskResponses = new ArrayList<>();
         for (Task task : tasks) {
             TaskResponse taskResponse = new TaskResponse();
@@ -80,6 +98,13 @@ public class CamundaTaskService implements TaskManagement {
         return taskResponses;
     }
 
+    private TaskMetadata extractTaskMetadata(Task task) {
+        TaskMetadata metadata = new TaskMetadata();
+        Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
+        //TODO
+        return metadata;
+    }
+
     public IndividualPersonEntity findPerson(String nationalCode) throws JsonProcessingException {
 //        if (nationalCode == null) {
 //            return null;
@@ -91,6 +116,7 @@ public class CamundaTaskService implements TaskManagement {
 //        //TODO How Call cif
         return null;
     }
+
     private static void setActions(Map<String, Object> processData, Map<String, String> extensionProperties) throws JsonProcessingException {
         String actions = extensionProperties.get(ACTIONS);
         if (actions != null && !actions.trim().isEmpty()) {

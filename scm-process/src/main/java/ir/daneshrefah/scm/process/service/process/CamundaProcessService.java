@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.process.model.constant.ProcessState;
 import ir.daneshrefah.scm.process.model.mapper.ProcessResponseMapper;
 import ir.daneshrefah.scm.process.model.mapper.UserMapper;
 import ir.daneshrefah.scm.process.model.request.CancelProcessRequest;
-import ir.daneshrefah.scm.process.model.request.ProcessRequest;
+import ir.daneshrefah.scm.process.model.request.ProcessStartRequest;
 import ir.daneshrefah.scm.process.model.response.ProcessResponse;
 import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
 import ir.daneshrefah.scm.process.service.util.UserAuthUtils;
@@ -18,7 +18,6 @@ import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.model.bpmn.instance.Collaboration;
-import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,7 +48,7 @@ public class CamundaProcessService implements ProcessManagement {
     @Autowired
     private IdentityService identityService;
 
-    public ProcessResponse startProcess(ProcessRequest processRequest) throws JsonProcessingException {
+    public ProcessResponse startProcess(ProcessStartRequest processRequest) throws JsonProcessingException {
         ProcessDefinition processDefinition = findProcessDefinitionByProcessKey(processRequest.getProcessKey());
         Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, StartEvent.class);
 

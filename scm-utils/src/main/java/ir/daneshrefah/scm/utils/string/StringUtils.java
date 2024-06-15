@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.utils.string;
 
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.text.CaseUtils;
 
 import java.net.URI;
@@ -59,6 +58,14 @@ public class StringUtils {
 
     public static boolean equals(CharSequence cs1, CharSequence cs2) {
         return org.apache.commons.lang3.StringUtils.equals(cs1, cs2);
+    }
+
+    public static boolean isEmptyOrEquals(CharSequence cs1, CharSequence cs2) {
+        return isEmpty(cs1) || equals(cs1, cs2);
+    }
+
+    public static boolean isNotEmptyAndNotEquals(CharSequence cs1, CharSequence cs2) {
+        return isNotEmpty(cs1) && notEquals(cs1, cs2);
     }
 
     public static boolean notEquals(CharSequence cs1, CharSequence cs2) {

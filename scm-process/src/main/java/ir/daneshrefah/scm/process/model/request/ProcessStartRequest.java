@@ -9,7 +9,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProcessRequest {
+public class ProcessStartRequest {
     private String processKey;
     private Map<String, Object> data;
 }

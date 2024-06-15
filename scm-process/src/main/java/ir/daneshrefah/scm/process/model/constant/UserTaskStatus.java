@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 @Getter
 @RequiredArgsConstructor
 public enum UserTaskStatus implements Serializable {
+
     WAITING("WAITING"),//TOOD add persian status name
     EXPIRED("EXPIRED"),
     APPROVED("APPROVED"),
