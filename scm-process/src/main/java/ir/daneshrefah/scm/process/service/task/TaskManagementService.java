@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.dto.TaskCompleteRequest;
 import ir.daneshrefah.scm.process.model.response.TaskResponse;
+import ir.daneshrefah.scm.process.model.task.TaskInfo;
 import ir.daneshrefah.scm.process.service.dto.TaskFindRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -31,7 +32,7 @@ public class TaskManagementService extends AbstractJavaService {
 
     @PreAuthorize("isFullyAuthenticated()")
     @JavaService
-    public List<? extends TaskResponse> getTaskList(TaskFindRequest taskFindRequest) throws JsonProcessingException {
+    public List<? extends TaskInfo> findTaskList(TaskFindRequest taskFindRequest) throws JsonProcessingException {
         if (Objects.isNull(taskFindRequest)) {
             taskFindRequest = new TaskFindRequest();
         }

@@ -23,6 +23,7 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
+import lombok.SneakyThrows;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.task.Task;
@@ -38,25 +39,23 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_BP
 @Service
 public class CamundaTaskService implements TaskService {
 
-    public static final String ACTIONS = "actions";
-    public static final String EXTRACT = "extract";
+    public static final String EXTENSION = "extension";
+    public static final String OUTPUT_VARIABLES = "outputVariables";
+
     private final PersonService personService;
     private final org.camunda.bpm.engine.TaskService taskService;
     private final RuntimeService runtimeService;
     private final RepositoryService repositoryService;
     private final CamundaProcessUtil camundaProcessUtil;
 
-//    @Autowired
-//    private PersonService personService;
 
-
-    public List<TaskResponse> findTaskList(TaskFindRequest taskFindRequest) throws JsonProcessingException {
+    public List<TaskInfo> findTaskList(TaskFindRequest taskFindRequest) throws JsonProcessingException {
         TaskQuery taskQuery = taskService.createTaskQuery().taskAssignee(taskFindRequest.getAssignee());
         if (StringUtils.isNotBlank(taskFindRequest.getTaskId())) {
             taskQuery.taskId(taskFindRequest.getTaskId());
         }
-        List<Task> tasks = taskQuery.list();
-        List<TaskInfo> taskInfoList = tasks.stream().map(task -> {
+        List<Task> tasks = taskQuery.listPage(taskFindRequest.getPageNo(), taskFindRequest.getPageSize());
+        return tasks.stream().map(task -> {
             TaskInfo taskInfo = new TaskInfo();
             taskInfo.setTaskId(task.getId());
             taskInfo.setName(task.getName());
@@ -67,94 +66,76 @@ public class CamundaTaskService implements TaskService {
             }
             taskInfo.setAssignments(List.of(assignment));
             if (taskFindRequest.isIncludeMetadata()) {
-                TaskMetadata metadata = extractTaskMetadata(task);
+                TaskMetadata metadata = getTaskMetadata(task);
                 taskInfo.setMetadata(metadata);
             }
-
             ProcessInstanceInfo processInstance = new ProcessInstanceInfo();
             processInstance.setProcessInstanceId(task.getProcessInstanceId());
             processInstance.setProcessDefinitionId(task.getProcessDefinitionId());
             taskInfo.setProcessInstance(processInstance);
-
             return taskInfo;
         }).collect(Collectors.toList());
 
-        List<TaskResponse> taskResponses = new ArrayList<>();
-        for (Task task : tasks) {
-            TaskResponse taskResponse = new TaskResponse();
-            ProcessResponse processResponse = new ProcessResponse();    //TODO use mapstruct
-            taskResponse.setTaskId(task.getId());
-            taskResponse.setTaskName(task.getName());
-            taskResponse.setTaskPersianName(task.getTaskDefinitionKey()); //TODO use resource bundle
-            taskResponse.setTaskDescription(task.getDescription());
-            taskResponse.setTaskDefinitionKey(taskResponse.getTaskDefinitionKey());
-//            IndividualPersonEntity personAssignee = personServiceDatabaseImpl.findPersonByNationalCode(task.getAssignee());
-//            taskResponse.setAssignment(List.of(findPerson(task.getAssignee())));
-            taskResponse.setCreateTime(task.getCreateTime());
-            taskResponse.setCreateTimeMillis(task.getCreateTime().getTime());
-            taskResponse.setDescription(task.getDescription());
-            processResponse.setProcessInstanceId(task.getProcessInstanceId());
-            processResponse.setProcessDefinitionId(task.getProcessDefinitionId());
-            processResponse.setExecutionId(task.getExecutionId());
-            String processDefinitionId = StringUtils.substringBefore(task.getProcessDefinitionId(), ":");
-            processResponse.setProcessName(processDefinitionId); //TODO use resource bundle
-            taskResponse.setProcess(processResponse);
-            taskResponse.setUserTaskStatus(UserTaskStatus.WAITING);
-            Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
-            Map<String, Object> processData = getProcessData(extensionProperties, task);
-            taskResponse.setData(processData);
-            setActions(processData, extensionProperties);
-            taskResponses.add(taskResponse);
-        }
-        return taskResponses;
+//        List<TaskResponse> taskResponses = new ArrayList<>();
+//        for (Task task : tasks) {
+//            TaskResponse taskResponse = new TaskResponse();
+//            ProcessResponse processResponse = new ProcessResponse();    //TODO use mapstruct
+//            taskResponse.setTaskId(task.getId());
+//            taskResponse.setTaskName(task.getName());
+//            taskResponse.setTaskPersianName(task.getTaskDefinitionKey()); //TODO use resource bundle
+//            taskResponse.setTaskDescription(task.getDescription());
+//            taskResponse.setTaskDefinitionKey(taskResponse.getTaskDefinitionKey());
+//            taskResponse.setAssignment(findPerson(task.getAssignee()));
+//            taskResponse.setCreateTime(task.getCreateTime());
+//            taskResponse.setCreateTimeMillis(task.getCreateTime().getTime());
+//            taskResponse.setDescription(task.getDescription());
+//            processResponse.setProcessInstanceId(task.getProcessInstanceId());
+//            processResponse.setProcessDefinitionId(task.getProcessDefinitionId());
+//            processResponse.setExecutionId(task.getExecutionId());
+//            String processDefinitionId = StringUtils.substringBefore(task.getProcessDefinitionId(), ":");
+//            processResponse.setProcessName(processDefinitionId); //TODO use resource bundle
+//            taskResponse.setProcess(processResponse);
+//            taskResponse.setUserTaskStatus(UserTaskStatus.WAITING);
+//            Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
+//            Map<String, Object> processData = getProcessData(extensionProperties, task);
+//            taskResponse.setData(processData);
+//            setActions(processData, extensionProperties);
+//            taskResponses.add(taskResponse);
+//        }
+//        return taskResponses;
     }
 
-    private TaskMetadata extractTaskMetadata(Task task) {
+    @SneakyThrows
+    private TaskMetadata getTaskMetadata(Task task) {
         TaskMetadata metadata = new TaskMetadata();
         Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
-        //TODO
+        setExtensions(metadata.getExtension(), extensionProperties);
+        setOutputVariables(metadata.getOutputVariables(), extensionProperties, task);
         return metadata;
     }
 
-    public IndividualPersonEntity findPerson(String nationalCode) throws JsonProcessingException {
-//        if (nationalCode == null) {
-//            return null;
-//        }
-//        IndividualPersonEntity person = personService.findPersonByNationalCode(nationalCode);
-//        if (person != null) {
-//            return person;
-//        }
-//        //TODO How Call cif
-        return null;
-    }
 
-    private static void setActions(Map<String, Object> processData, Map<String, String> extensionProperties) throws JsonProcessingException {
-        String actions = extensionProperties.get(ACTIONS);
-        if (actions != null && !actions.trim().isEmpty()) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            processData.put(ACTIONS, objectMapper.readTree(actions));
-        }
-    }
-
-    private Map<String, Object> getProcessData(Map<String, String> extensionProperties, Task task) {
-        String extract = extensionProperties.get(EXTRACT);
-        Map<String, Object> data = new HashMap<>();
-        Map<String, Object> businessDataMap = new HashMap<>();
-        if (extract != null) {
-            for (String extractValue : extract.split(",")) {
-                if (extractValue.startsWith("%s_".formatted(CamundaProcessService.BUSINESS_DATA))) {
-                    Map<String, Object> variableMap = taskService.getVariables(task.getId());
-                    if (variableMap.containsKey(extractValue)) {
-                        String value = extractValue.replace("%s_".formatted(CamundaProcessService.BUSINESS_DATA), "");
-                        businessDataMap.put(value, variableMap.get(extractValue));
-                    }
-                } else {
-                    data.put(extractValue, taskService.getVariable(task.getId(), extractValue));
-                }
+    private void setExtensions(Map<String, Object> extension, Map<String, String> extensionProperties) throws JsonProcessingException {
+        String properties = extensionProperties.get(EXTENSION);
+        for (String property : properties.split(",")) {
+            if (StringUtils.isNotEmpty(extensionProperties.get(property))) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                extension.put(property, objectMapper.readTree(extensionProperties.get(property)));
             }
-            data.put(CamundaProcessService.BUSINESS_DATA, businessDataMap);
         }
-        return data;
+    }
+
+    private void setOutputVariables(Map<String, Object> outputVariables, Map<String, String> extensionProperties, Task task) {
+        String properties = extensionProperties.get(OUTPUT_VARIABLES);
+        for (String extractValue : properties.split(",")) {
+            Map<String, Object> variableMap = taskService.getVariables(task.getId());
+            if (variableMap.containsKey(extractValue)) {
+                String value = extractValue.replace("%s_".formatted(CamundaProcessService.BUSINESS_DATA), "");
+                outputVariables.put(value, variableMap.get(extractValue));
+            } else {
+                outputVariables.put(extractValue, variableMap.get(extractValue));
+            }
+        }
     }
 
     public boolean completeTask(TaskCompleteRequest taskRequest) throws JsonProcessingException {
@@ -162,14 +143,14 @@ public class CamundaTaskService implements TaskService {
         if (!checkTaskAssignment(task)) {
 //TODO            throw new
         }
-        TaskMetadata metadata = extractTaskMetadata(task);
+        TaskMetadata metadata = getTaskMetadata(task);
         if (StringUtils.isNotBlank(metadata.getValidationSchema())) {
             ValidationSchema.validate(taskRequest.getData(), metadata.getValidationSchema());
         }
-        if (CollectionUtils.isNotEmpty(metadata.getActions())) {
+//        if (CollectionUtils.isNotEmpty(metadata.getActions())) {
 //TODO            ValidationUtils.checkBlankString(taskRequest.getAction(), () -> new );
 //TODO            ValidationUtils.checkListIsNotEmptyAndNotContains(metadata.getActions(), taskRequest.getAction(), () -> );
-        }
+//        }
 
         Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(task);
         if (extensionProperties != null && !extensionProperties.isEmpty() && extensionProperties.containsKey("jsonSchema")) {

@@ -22,22 +22,18 @@
         <bpmn:flowNodeRef>end_failed</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="user_sign_line" name="User Sign">
-        <bpmn:flowNodeRef>check_sign_type</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_0ylwxoj</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Confirm_signature</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>check_sign_type</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>is_approved</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="user_action_line" name="User Action">
         <bpmn:extensionElements />
         <bpmn:flowNodeRef>start_payment_process</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>waiting_for_action</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>process_service_invoker</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:exclusiveGateway id="check_sign_type" name="Check Sign Type " default="natural_person">
-      <bpmn:incoming>approved</bpmn:incoming>
-      <bpmn:outgoing>juridical_person</bpmn:outgoing>
-      <bpmn:outgoing>natural_person</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
     <bpmn:endEvent id="successfully_end" name="Successfully &#10;End">
       <bpmn:incoming>Flow_054h8m0</bpmn:incoming>
     </bpmn:endEvent>
@@ -91,26 +87,38 @@
     <bpmn:sequenceFlow id="not_approved" name="Not&#10; Approved" sourceRef="is_approved" targetRef="end_failed">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${execution.getVariable('reject') != null}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1oy2u1t" sourceRef="start_payment_process" targetRef="waiting_for_action" />
+    <bpmn:sequenceFlow id="Flow_1oy2u1t" sourceRef="start_payment_process" targetRef="process_service_invoker" />
     <bpmn:sequenceFlow id="Flow_1ebqrlm" sourceRef="waiting_for_action" targetRef="is_approved" />
-    <bpmn:userTask id="waiting_for_action" name="Waiting for accepting or rejecting all users" camunda:assignee="${users}">
-      <bpmn:extensionElements>
-        <camunda:properties>
-          <camunda:property name="actions" value="[{&#34;name&#34;: &#34;امضا&#34;, &#34;action&#34;: &#34;accept&#34;}, {&#34;name&#34;: &#34;رد امضا&#34;, &#34;action&#34;: &#34;reject&#34;}]" />
-          <camunda:property name="extract" value="businessData_transactionData,businessData_transactionType,actions" />
-        </camunda:properties>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1oy2u1t</bpmn:incoming>
-      <bpmn:outgoing>Flow_1ebqrlm</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${businessData_signers}" camunda:elementVariable="users">
-        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${execution.getVariable('reject') != null}</bpmn:completionCondition>
-      </bpmn:multiInstanceLoopCharacteristics>
-    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="check_sign_type" name="Check Sign Type " default="natural_person">
+      <bpmn:incoming>approved</bpmn:incoming>
+      <bpmn:outgoing>juridical_person</bpmn:outgoing>
+      <bpmn:outgoing>natural_person</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:exclusiveGateway id="is_approved" name="Is Approved?">
       <bpmn:incoming>Flow_1ebqrlm</bpmn:incoming>
       <bpmn:outgoing>approved</bpmn:outgoing>
       <bpmn:outgoing>not_approved</bpmn:outgoing>
     </bpmn:exclusiveGateway>
+    <bpmn:userTask id="waiting_for_action" name="Waiting for accepting or rejecting all users" camunda:assignee="${users}">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="actions" value="[{&#34;name&#34;: &#34;امضا&#34;, &#34;action&#34;: &#34;accept&#34;}, {&#34;name&#34;: &#34;رد امضا&#34;, &#34;action&#34;: &#34;reject&#34;}]" />
+          <camunda:property name="extension" value="actions" />
+          <camunda:property name="outputVariables" value="businessData_transactionData,businessData_transactionType" />
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0i702li</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ebqrlm</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${businessData_signers}" camunda:elementVariable="users">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${execution.getVariable('reject') != null}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_0i702li" sourceRef="process_service_invoker" targetRef="waiting_for_action" />
+    <bpmn:serviceTask id="process_service_invoker" name="Process ServiceI nvoker" camunda:class="ir.daneshrefah.scm.process.integration.JavaDelegationService">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_1oy2u1t</bpmn:incoming>
+      <bpmn:outgoing>Flow_0i702li</bpmn:outgoing>
+    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Paymanet">
@@ -118,27 +126,21 @@
         <dc:Bounds x="180" y="40" width="1375" height="600" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_0li5rfe_di" bpmnElement="automatic_payment_lane" isHorizontal="true">
-        <dc:Bounds x="210" y="510" width="1345" height="130" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_1t4uxym_di" bpmnElement="rejected_log_lane" isHorizontal="true">
-        <dc:Bounds x="210" y="354" width="1345" height="156" />
+      <bpmndi:BPMNShape id="Lane_00on0mz_di" bpmnElement="user_action_line" isHorizontal="true">
+        <dc:Bounds x="210" y="40" width="1345" height="130" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_08snza0_di" bpmnElement="user_sign_line" isHorizontal="true">
         <dc:Bounds x="210" y="170" width="1345" height="184" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_00on0mz_di" bpmnElement="user_action_line" isHorizontal="true">
-        <dc:Bounds x="210" y="40" width="1345" height="130" />
+      <bpmndi:BPMNShape id="Lane_1t4uxym_di" bpmnElement="rejected_log_lane" isHorizontal="true">
+        <dc:Bounds x="210" y="354" width="1345" height="156" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0lb5v2u_di" bpmnElement="check_sign_type" isMarkerVisible="true">
-        <dc:Bounds x="710" y="225" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="695" y="203" width="83" height="14" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Lane_0li5rfe_di" bpmnElement="automatic_payment_lane" isHorizontal="true">
+        <dc:Bounds x="210" y="510" width="1345" height="130" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1qnt2gd_di" bpmnElement="successfully_end" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
         <dc:Bounds x="1487" y="552" width="36" height="36" />
@@ -172,32 +174,42 @@
           <dc:Bounds x="260" y="125" width="70" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_172uyx2_di" bpmnElement="waiting_for_action" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="450" y="60" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_076ipq6_di" bpmnElement="is_approved" isMarkerVisible="true">
-        <dc:Bounds x="475" y="225" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_0lb5v2u_di" bpmnElement="check_sign_type" isMarkerVisible="true">
+        <dc:Bounds x="775" y="225" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="406" y="237" width="65" height="14" />
+          <dc:Bounds x="760" y="203" width="83" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_0ft5upn_di" bpmnElement="approved">
-        <di:waypoint x="525" y="250" />
-        <di:waypoint x="710" y="250" />
+      <bpmndi:BPMNShape id="Gateway_076ipq6_di" bpmnElement="is_approved" isMarkerVisible="true">
+        <dc:Bounds x="615" y="225" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="580" y="228" width="48" height="14" />
+          <dc:Bounds x="546" y="237" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_172uyx2_di" bpmnElement="waiting_for_action" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="590" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0c2s54k_di" bpmnElement="process_service_invoker">
+        <dc:Bounds x="390" y="60" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0ft5upn_di" bpmnElement="approved">
+        <di:waypoint x="665" y="250" />
+        <di:waypoint x="775" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="687" y="228" width="48" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0ekt40y_di" bpmnElement="juridical_person">
-        <di:waypoint x="760" y="250" />
+        <di:waypoint x="825" y="250" />
         <di:waypoint x="905" y="250" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="801" y="232" width="79" height="14" />
+          <dc:Bounds x="830" y="232" width="79" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0cvxw4b_di" bpmnElement="natural_person">
-        <di:waypoint x="735" y="275" />
-        <di:waypoint x="735" y="570" />
+        <di:waypoint x="800" y="275" />
+        <di:waypoint x="800" y="570" />
         <di:waypoint x="1255" y="570" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="957" y="786" width="74" height="14" />
@@ -224,20 +236,24 @@
         <di:waypoint x="1305" y="530" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1s0d98b_di" bpmnElement="not_approved">
-        <di:waypoint x="500" y="275" />
-        <di:waypoint x="500" y="440" />
+        <di:waypoint x="640" y="275" />
+        <di:waypoint x="640" y="440" />
         <di:waypoint x="1177" y="440" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="570" y="446" width="48" height="27" />
+          <dc:Bounds x="690" y="446" width="48" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1oy2u1t_di" bpmnElement="Flow_1oy2u1t">
         <di:waypoint x="313" y="100" />
-        <di:waypoint x="450" y="100" />
+        <di:waypoint x="390" y="100" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1ebqrlm_di" bpmnElement="Flow_1ebqrlm">
-        <di:waypoint x="500" y="140" />
-        <di:waypoint x="500" y="225" />
+        <di:waypoint x="640" y="140" />
+        <di:waypoint x="640" y="225" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0i702li_di" bpmnElement="Flow_0i702li">
+        <di:waypoint x="490" y="100" />
+        <di:waypoint x="590" y="100" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
