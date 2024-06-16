@@ -18,15 +18,7 @@ public enum AuthenticationMethod {
     PUBLIC_KEY("PKI", 3),
     PIN("PIN", 4),
     PATTERN("PTN", 5),
-    SMS("SMS", 6),
-    /*
-     * this authentication method is for users that not member of CM, and only verified by shahkar
-     * */
-    SHAHKAR("SHAHKAR", 7),
-    /*
-    * this authentication method is for users that not member of CM, and only verified by sms
-    * */
-    SINGLE_SMS("SINGLE_SMS", 8);
+    SMS("SMS", 6);
 
     AuthenticationMethod(String code, Integer dbRef) {
         this.code = code;

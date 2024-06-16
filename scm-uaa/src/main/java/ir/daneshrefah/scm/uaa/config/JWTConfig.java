@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -139,20 +140,34 @@ public class JWTConfig {
             } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     context.getPrincipal().isAuthenticated()) {
                 AbstractAuthenticationToken authenticationToken = context.getPrincipal();
-                RegisteredClient client = context.getRegisteredClient();
-                claims.claim(CLAIM_KEY_TERMINAL, client.getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
+                User user = ((TerminalUserDetails) authenticationToken.getPrincipal()).getUser();
+
+                claims.claim(CLAIM_KEY_TERMINAL, user.getTerminalCode());
                 claims.claim(CLAIM_KEY_GRANT, authenticationToken.getGrantType());
+//                claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
+//                claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
+//                        Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
+//                                .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
                 claims.claim(CLAIM_KEY_AUTHORITIES, authenticationToken.getAuthorities().toString());
 //                String sessionKey = authenticationToken.getSessionId();
 //                if (StringUtils.isNotEmpty(sessionKey)) {
 //                    claims.claim(CLAIM_KEY_SESSION, sessionKey);
 //                }
-                if (StringUtils.isNotEmpty(authenticationToken.getAccessParameter())) {
+                if (StringUtils.isNotBlank(authenticationToken.getAccessParameter())) {
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, authenticationToken.getAccessParameter());
                 }
-                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.UNKNOWN.getCode());
-                AbstractAuthenticationToken principal = context.getPrincipal();
-                addTokenLifeTimeClaims(principal,claims);
+                PersonType personType = user.getPerson().getPersonType();
+//                claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
+                claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getPersonType().getCode());
+                if (Objects.nonNull(user.getPerson().getId())) {
+                    claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, user.getPerson().getId());
+                }
+                claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, user.getPerson().getUsername());
+                claims.claim(CLAIM_KEY_PERSON_TITLE, user.getPerson().getTitle());
+                if (authenticationToken.includeChallengeCode()) {
+                    claims.claim(CLAIM_KEY_USER_CHALLENGE_CODE, user.getLoginStaticPassword());
+                }
+                addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
     }

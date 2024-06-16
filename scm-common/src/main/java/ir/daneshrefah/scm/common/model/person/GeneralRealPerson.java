@@ -41,4 +41,9 @@ public abstract class GeneralRealPerson extends GeneralPerson {
     private LocalDate deadDate;
     private boolean isLived;
 
+    @Override
+    public String getTitle() {
+        return (null != firstName ? firstName : "") + " - " + (null != lastName ? lastName : "");
+    }
+
 }

@@ -5,6 +5,10 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.*;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.PersonStatus;
+import ir.daneshrefah.scm.common.model.person.SmsVerifiedPerson;
+import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
@@ -30,10 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
@@ -169,9 +170,51 @@ public class UserService {
             throw new InvalidInputException("userId");
         }
         UserEntity userEntity = entity.get();
-        userEntity.setActive(active);
+        userEntity.setStatus(UserStatus.ACTIVE);
         userRepository.save(entity.get());
         return true;
+    }
+
+    public User createSmsVerifiedUserAndDeleteOld(String mobileNo, String terminalCode) {
+        ValidationUtils.checkBlankString(terminalCode, () -> new MissingRequiredInputException("terminalCode"));
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
+        ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
+//TODO user must be create and store on database with person info,
+// also old user with same username must be update or set status to deleted
+        Optional<UserEntity> currentUserEntity = loadUserEntityByUsername(mobileNo, terminalCode);
+        if (currentUserEntity.isPresent()) {
+            currentUserEntity.get().setStatus(UserStatus.DELETED);
+            currentUserEntity.get().getPerson().setStatus(PersonStatus.DELETED);
+        }
+
+        UserEntity entity = new UserEntity();
+        entity.setNickname(mobileNo);
+        entity.setTerminalId(terminal.get().getLegacyTerminalId().intValue());
+        /*
+            this code include in token and in refresh time, will be checked.
+        */
+        entity.setLoginStaticPassword(StringUtils.randomAlphanumeric(10));
+//        entity.setLoginAuthenticationMethod(request.getLoginAuthenticationMethod());
+//        entity.setTransactionAuthenticationMethod(request.getTransactionAuthenticationMethod());
+//        entity.setAccessParameters(validateAccessParameter(request.getAccessParameters()));
+        entity.setStatus(UserStatus.ACTIVE);
+//        entity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), personEntity.getUsername()));
+//        entity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), personEntity.getUsername()));
+//        entity.setOtpSerialNumber(request.getOtpSerialNumber());
+//        entity.setPerson(personEntity);
+//        entity.setCreatorBranch(request.getCreatorBranch());
+//        entity.setCreator(creatorEntity.getId());
+//        entity.setLastEditor(creatorEntity.getId());
+        User user = UserMapper.INSTANCE.toModel(entity);
+
+        GeneralPerson person = new SmsVerifiedPerson();
+        person.setId(new Random().nextInt());
+        person.setUsername(StringUtils.generateGuid());
+        person.setStatus(PersonStatus.ACTIVE);
+        person.setMobile1(mobileNo);
+        user.setPerson(person);
+
+        return user;
     }
 
     public User createUser(UserDataRequest request) {
@@ -209,7 +252,7 @@ public class UserService {
         entity.setLoginAuthenticationMethod(request.getLoginAuthenticationMethod());
         entity.setTransactionAuthenticationMethod(request.getTransactionAuthenticationMethod());
         entity.setAccessParameters(validateAccessParameter(request.getAccessParameters()));
-        entity.setActive(null != request.getActive() ? request.getActive() : false);
+        entity.setStatus(UserStatus.ACTIVE);
         entity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), personEntity.getUsername()));
         entity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), personEntity.getUsername()));
         entity.setOtpSerialNumber(request.getOtpSerialNumber());
@@ -415,7 +458,9 @@ public class UserService {
         DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(), accessParameters -> {
             userEntity.setAccessParameters(validateAccessParameter(accessParameters));
         });
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getActive(), userEntity::setActive);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getActive(), active -> {
+            userEntity.setStatus(active ? UserStatus.ACTIVE : UserStatus.INACTIVE);
+        });
         DynamicUpdateUtils.applyChangesIfNotNull(request.getTransactionAuthenticationMethod(), userEntity::setTransactionAuthenticationMethod);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getLoginAuthenticationMethod(), userEntity::setLoginAuthenticationMethod);
     }

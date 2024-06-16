@@ -11,10 +11,7 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.TooManyRecordFoundException;
-import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
@@ -169,7 +166,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         }
         GeneralPersonEntity personEntity = PersonMapper.INSTANCE.toPersonEntity(cifPersonInfo.get(0));
         personEntity.setUsername(extractUsername(personEntity));
-        personEntity.setActive(true);
+        personEntity.setStatus(PersonStatus.ACTIVE);
         personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
         List<GeneralPersonEntity> foundLocal = personRepository.findPersonByUsername(personEntity.getUsername());
         if (foundLocal.size() > 1) {

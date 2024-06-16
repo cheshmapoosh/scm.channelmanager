@@ -19,7 +19,7 @@ import java.util.Set;
 @Getter
 public class OAuth2SmsOtpAuthenticationToken extends AbstractAuthenticationToken {
 
-    private final String principal;
+    private final Object principal;
     private final String credentials;
 
     /**
@@ -31,7 +31,7 @@ public class OAuth2SmsOtpAuthenticationToken extends AbstractAuthenticationToken
      * @param clientPrincipal
      *
      */
-    public OAuth2SmsOtpAuthenticationToken(String principal, String credentials,
+    public OAuth2SmsOtpAuthenticationToken(Object principal, String credentials,
                                            Set<String> scopes, Authentication clientPrincipal) {
         this(principal, credentials, scopes, clientPrincipal, null);
     }
@@ -45,7 +45,7 @@ public class OAuth2SmsOtpAuthenticationToken extends AbstractAuthenticationToken
      * @param clientPrincipal
      *
      */
-    public OAuth2SmsOtpAuthenticationToken(String principal, String credentials, Set<String> scopes,
+    public OAuth2SmsOtpAuthenticationToken(Object principal, String credentials, Set<String> scopes,
                                            Authentication clientPrincipal, Collection<? extends GrantedAuthority> authorities) {
         super(scopes, clientPrincipal, authorities);
         this.principal = principal;
@@ -53,6 +53,11 @@ public class OAuth2SmsOtpAuthenticationToken extends AbstractAuthenticationToken
         if (Objects.nonNull(authorities) && !authorities.isEmpty()) {
             setAuthenticated(true);
         }
+    }
+
+    @Override
+    public boolean includeChallengeCode() {
+        return true;
     }
 
     @Override

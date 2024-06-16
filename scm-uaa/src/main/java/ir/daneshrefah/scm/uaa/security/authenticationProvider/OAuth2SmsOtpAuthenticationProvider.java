@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
@@ -10,6 +12,7 @@ import ir.daneshrefah.scm.uaa.security.token.OAuth2SmsOtpAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.core.OAuth2Token;
@@ -32,20 +35,30 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_T
 public class OAuth2SmsOtpAuthenticationProvider extends BaseTokenAuthenticationProvider<OAuth2SmsOtpAuthenticationToken> {
 
     private final OtpService otpService;
+    private final UserService userService;
 
-    public OAuth2SmsOtpAuthenticationProvider(RegisteredClientRepository registeredClientRepository, OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator, OtpService otpService) {
+    public OAuth2SmsOtpAuthenticationProvider(RegisteredClientRepository registeredClientRepository, OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
+                                              OtpService otpService, UserService userService) {
         super(registeredClientRepository, tokenGenerator);
         this.otpService = otpService;
+        this.userService = userService;
     }
 
 
     @Override
     protected OAuth2SmsOtpAuthenticationToken authenticateToken(OAuth2SmsOtpAuthenticationToken authenticationToken) {
+        String mobileNumber = null;
+        if (authenticationToken.getPrincipal() instanceof String) {
+            mobileNumber = (String) authenticationToken.getPrincipal();
+        } else {
+            ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
+        }
+        String terminalCode = authenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
         Recipient recipient = Recipient.builder()
-                .address(authenticationToken.getPrincipal())
-                .identifier(authenticationToken.getPrincipal())
+                .address(mobileNumber)
+                .identifier(mobileNumber)
                 .identifierType(UserIdentifierType.MOBILE_NUMBER)
-                .terminalCode(authenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE))
+                .terminalCode(terminalCode)
                 .accessParameter(authenticationToken.getAccessParameter())
                 .build();
 
@@ -60,7 +73,9 @@ public class OAuth2SmsOtpAuthenticationProvider extends BaseTokenAuthenticationP
             ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_CLAIM, verifyResponse.getErrorMessage());
         }
 
-        return new OAuth2SmsOtpAuthenticationToken(authenticationToken.getPrincipal(), authenticationToken.getCredentials(),
+        User user = userService.createSmsVerifiedUserAndDeleteOld(mobileNumber, terminalCode);
+
+        return new OAuth2SmsOtpAuthenticationToken(new TerminalUserDetails(user), authenticationToken.getCredentials(),
                 authenticationToken.getScopes(), authenticationToken.getClientPrincipal(),
                 AuthorityUtils.commaSeparatedStringToAuthorityList(ROLE_SMS_OTP_AUTHENTICATED));
     }

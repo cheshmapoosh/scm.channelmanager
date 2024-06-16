@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.common.security.authenticationDetails;
 
+import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
@@ -77,7 +78,7 @@ public class TerminalUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return null != user.getActive() ? user.getActive() : false;
+        return UserStatus.ACTIVE.equals(user.getStatus());
     }
 
     public User getUser() {

@@ -16,7 +16,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum PersonType {
 
-    UNKNOWN(0),
+//    UNKNOWN(0),
     REAL(1),
     EMPLOYEE(2),
     CORPORATE(3),
@@ -26,7 +26,15 @@ public enum PersonType {
     /**
      * this person type is used for clients that defined in {@link ClientPerson}
      * */
-    CLIENT(7);
+    CLIENT(7),
+    /**
+     * this person type is used for users that only verified by sms {@link SmsVerifiedPerson}
+     * */
+    SMS_VERIFIED(8),
+    /**
+     * this person type is used for users that verified by sms & shahkar {@link ShahkarVerifiedPerson}
+     * */
+    SHAHKAR_VERIFIED(9);
 
     private final int code;
 

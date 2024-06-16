@@ -31,6 +31,7 @@ public class Constants {
     public final static String CLAIM_KEY_PERSON_TITLE = "ptl";
     public final static String CLAIM_KEY_PERSON_PROFILE_IDENTIFIER = "ppi";
     public final static String CLAIM_KEY_PERSON_IDENTIFIER = "pid";
+    public final static String CLAIM_KEY_USER_CHALLENGE_CODE = "ucc";
     public final static String CLAIM_KEY_TIME_TO_LIVE = "ttl";
     public final static String CLAIM_KEY_MAX_IDLE_TIME = "mit";
 

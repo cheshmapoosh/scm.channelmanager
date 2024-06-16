@@ -6,18 +6,18 @@ package ir.daneshrefah.scm.common.model.person;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-01-14
+ * @since 2024-06-16
  */
-public class ClientPerson extends GeneralPerson {
+public class SmsVerifiedPerson extends GeneralPerson {
 
     @Override
     public String getTitle() {
-        return getUsername();
+        return getMobile1();
     }
 
     @Override
     public PersonType getPersonType() {
-        return PersonType.CLIENT;
+        return PersonType.SMS_VERIFIED;
     }
 
 }

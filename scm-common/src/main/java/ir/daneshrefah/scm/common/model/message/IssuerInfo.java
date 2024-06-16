@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
-import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,9 +18,8 @@ import java.io.Serializable;
 public class IssuerInfo implements Serializable {
 
     private final String parentCorrelationId;
-    private final AuthenticationLevel authenticationLevel;
-    private final String identifier;
-    private final UserIdentifierType identifierType;
+    private final PersonType personType;
+    private final String personUsername;
     private final String terminalCode;
     private final String accessParameter;
     private final String remoteAddress;

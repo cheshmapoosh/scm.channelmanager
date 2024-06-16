@@ -1,8 +1,5 @@
 package ir.daneshrefah.scm.uaa.utils;
 
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
-import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -16,10 +13,9 @@ import java.net.UnknownHostException;
 import java.util.Objects;
 import java.util.Optional;
 
-import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.IP_HEADER;
 import static ir.daneshrefah.scm.uaa.utils.Constants.REQUEST_ATTRIBUTE_CORRELATION_ID;
-import static ir.daneshrefah.scm.utils.constant.Constants.*;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL;
 
 /**
  * Description of the class or purpose of the file.

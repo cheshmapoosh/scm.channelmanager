@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.uaa.common.utils;
 
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.user.AuthenticationLevel;
-import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.MessageContext;
@@ -64,9 +62,9 @@ public class AuthenticationUtils {
         UserAuthentication authentication = getLoggedInUserAuthentication();
         return IssuerInfo.builder()
                 .parentCorrelationId(MessageContext.getCurrentContext().getCorrelationId())
-                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
-                .identifier(authentication.getName())
-                .identifierType(UserIdentifierType.USER_NICKNAME)
+                .personType(authentication.getPrincipal().getPerson().getPersonType())
+                .personUsername(authentication.getPrincipal().getPerson().getUsername())
+//                .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(authentication.getTerminalCode())
 //                .remoteAddress()
 //                .xForwardedFor()

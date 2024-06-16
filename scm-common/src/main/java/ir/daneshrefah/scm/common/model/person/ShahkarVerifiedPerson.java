@@ -1,23 +1,28 @@
 package ir.daneshrefah.scm.common.model.person;
 
 
+import lombok.Data;
+
 /**
  * Description of the class or purpose of the file.
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2024-01-14
+ * @since 2024-06-16
  */
-public class ClientPerson extends GeneralPerson {
+@Data
+public class ShahkarVerifiedPerson extends GeneralPerson {
+
+    private String nationalCode;
 
     @Override
     public String getTitle() {
-        return getUsername();
+        return nationalCode;
     }
 
     @Override
     public PersonType getPersonType() {
-        return PersonType.CLIENT;
+        return PersonType.SHAHKAR_VERIFIED;
     }
 
 }

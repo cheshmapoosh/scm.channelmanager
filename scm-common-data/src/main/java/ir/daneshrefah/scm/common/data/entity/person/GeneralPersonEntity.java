@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.common.data.entity.person;
 
 import ir.daneshrefah.scm.common.data.converter.NationalityConverter;
+import ir.daneshrefah.scm.common.data.converter.PersonStatusConverter;
 import ir.daneshrefah.scm.common.data.converter.PersonTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonStatus;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -40,7 +42,9 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     private Nationality nationality;
     @Column(name = "ISSUE_DATE")
     private LocalDate registerIssueDate;
-    private Boolean active;
+    @Column(name = "ACTIVE")
+    @Convert(converter = PersonStatusConverter.class)
+    private PersonStatus status;
     /**
      * values are in REF.BRANCH table
      * from CIF comes from 'BRANCHCODE'

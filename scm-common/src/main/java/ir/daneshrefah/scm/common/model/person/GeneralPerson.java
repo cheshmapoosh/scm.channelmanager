@@ -18,7 +18,7 @@ public abstract class GeneralPerson extends BaseModel<Integer> {
     private String username;
     private Nationality nationality;
     private LocalDate registerIssueDate;
-    private Boolean active;
+    private PersonStatus status;
     private String branchCode;
     private String phone1;
     private String phone2;
@@ -34,6 +34,8 @@ public abstract class GeneralPerson extends BaseModel<Integer> {
     private String postalCode1;
     private String postalCode2;
     private String shahabCode;
+
+    public abstract String getTitle();
 
     public abstract PersonType getPersonType();
 

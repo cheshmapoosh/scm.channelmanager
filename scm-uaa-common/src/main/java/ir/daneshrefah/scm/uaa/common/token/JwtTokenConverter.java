@@ -136,7 +136,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
         user.setNickname(username);
         user.setLoginAuthenticationMethod(loginAuthenticationMethod);
         user.setTransactionAuthenticationMethod(transactionAuthenticationMethod);
-        user.setActive(true);
+        user.setStatus(UserStatus.ACTIVE);
         user.setPerson(person);
 
         Set<String> authorities = Collections.emptySet();

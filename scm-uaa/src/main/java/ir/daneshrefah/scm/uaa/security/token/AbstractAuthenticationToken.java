@@ -46,9 +46,13 @@ public abstract class AbstractAuthenticationToken extends org.springframework.se
     public abstract AuthorizationGrantType getGrantType();
 
     @Override
-    public abstract String getPrincipal();
+    public abstract Object getPrincipal();
 
     @Override
     public abstract String getCredentials();
+
+    public boolean includeChallengeCode() {
+        return false;
+    }
 
 }
