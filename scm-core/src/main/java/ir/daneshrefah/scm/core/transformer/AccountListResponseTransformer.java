@@ -33,10 +33,9 @@ public class AccountListResponseTransformer extends AbstractTransformer {
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
-        if (null == payload || !(payload instanceof ArrayNode)) {
+        if (!(payload instanceof ArrayNode sourceArray)) {
             return null;
         }
-        ArrayNode sourceArray = (ArrayNode) payload;
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
 
         UserProfile profile = personProfileLoader.preparePersonProfileMemberships(message.getHeader().getAuthentication());
@@ -58,20 +57,29 @@ public class AccountListResponseTransformer extends AbstractTransformer {
         final String accountNumber = "accountNumber";
         if (sourceNode.has(accountNumber)) {
             String accountNo = sourceNode.get(accountNumber).asText();
-            Optional<MembershipTerminalAccess> membership = memberships.stream().filter(m ->
+            Optional<MembershipTerminalAccess> membership = memberships.stream()
+                    .filter(m ->
                     accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
             ).findFirst();
             if (membership.isEmpty()) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
+                sourceNode.put("favorite", StringUtils.EMPTY);
                 return null;
             }else {
                 MembershipTerminalAccess membershipTerminalAccess = membership.get();
                 String nickname = membershipTerminalAccess.getMembership().getNickname();
                 sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
+                checkingAccountFavoriteStatus(sourceNode,membershipTerminalAccess);
             }
             return sourceNode;
         }
         return null;
+    }
+
+    private void checkingAccountFavoriteStatus(ObjectNode sourceNode,MembershipTerminalAccess membershipTerminalAccess) {
+        Boolean favorite = membershipTerminalAccess.getFavorite();
+        favorite = !Objects.isNull(favorite) && favorite;
+        sourceNode.put("favorite",favorite);
     }
 
 }

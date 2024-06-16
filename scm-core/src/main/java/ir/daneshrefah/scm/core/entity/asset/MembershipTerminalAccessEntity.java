@@ -27,5 +27,5 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;
-
+    private Boolean favorite;
 }
