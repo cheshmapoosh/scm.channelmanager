@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.notification.NotificationMessage;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationType;
 import jakarta.jms.TextMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -23,23 +25,30 @@ import java.util.Objects;
 @Component
 public class SMSNotificationMessageProvider implements NotificationMessageProvider {
 
-    @Qualifier("smsJmsTemplate")
+    @Qualifier("ibmJmsTemplate")
     private final JmsTemplate smsJmsTemplate;
 
     @Override
     public void send(NotificationMessage notificationMessage) {
+        /*
+            MQ support just this 4 properties
+        {
+            "messageType": "authentication",
+             "mobileNumber": "0912***2672",
+             "message": "متن پیام ارسالی",
+             "date": "2024-06-10T13:40:52.528065500"
+        }
+
+        *** >> messageId,name,time,channelCode prevent sending to mq
+        */
         ObjectNode jsonMessage = JsonNodeFactory.instance.objectNode();
-        jsonMessage.put("messageType", notificationMessage.getRequest().getTemplate().name());
-//        jsonMessage.put("messageId", notificationMessage.getMessageId());
-//        jsonMessage.put("name", null);
-//        jsonMessage.put("date", null);
-//        jsonMessage.put("time", null);
-//        jsonMessage.put("mobileNumber", null);
-//        jsonMessage.put("message", null);
-//        jsonMessage.put("channelCode", null);
+        jsonMessage.put("messageType", NotificationType.SMS_MQ_DEFAULT.getType());
+        jsonMessage.put("mobileNumber", notificationMessage.getRequest().getRecipient().getAddress());
+        jsonMessage.put("date", LocalDateTime.now().toString());
+        jsonMessage.put("message", notificationMessage.getPayload());
         smsJmsTemplate.send(session -> {
             TextMessage textMessage = session.createTextMessage();
-            textMessage.setText(jsonMessage.asText());
+            textMessage.setText(jsonMessage.toString());
             textMessage.setJMSCorrelationID(java.util.UUID.randomUUID().toString());
             return textMessage;
         });
@@ -48,7 +57,7 @@ public class SMSNotificationMessageProvider implements NotificationMessageProvid
     @Override
     public boolean supports(NotificationMessage notificationMessage) {
         return Objects.nonNull(notificationMessage) && Objects.nonNull(notificationMessage.getRequest()) &&
-                NotificationMedia.SMS.equals(notificationMessage.getRequest().getMedia());
+               NotificationMedia.SMS.equals(notificationMessage.getRequest().getMedia());
     }
 
 }

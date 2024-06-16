@@ -8,6 +8,8 @@ import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Locale;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -25,5 +27,6 @@ public class NotificationRequest {
     private NotificationData data;
     private String terminalCode;
     private IssuerInfo issuerInfo;
+    private Locale userLocale;
 
 }

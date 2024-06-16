@@ -1,0 +1,29 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+    id "org.springframework.boot" version'3.1.2'
+    id 'java'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+tasks.named("bootJar") {
+    mainClass = 'ir.daneshrefah.scm.cache.CacheServerApplication'
+    archiveClassifier = 'boot'
+
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'com.ibm.mq:com.ibm.mq.allclient:9.3.5.1'
+    api 'jakarta.jms:jakarta.jms-api:3.1.0'
+    api 'org.springframework:spring-jms'
+    api project(':scm-utils')
+}

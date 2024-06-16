@@ -33,8 +33,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final MessageTemplateService messageTemplateService;
     private final List<NotificationBodyProcessor> bodyProcessors;
     private final List<NotificationMessageProvider> messageProviders;
-//    private final NotificationLogService notificationLogService;
-//    private final NotificationRepository notificationRepository;
 
     public void sendNotification(NotificationRequest request) {
         try {
@@ -52,8 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
         ValidationUtils.checkBlankString(request.getRecipient().getAddress(), () -> new EmptyNotificationRequestException(request, "recipient.address"));
         ValidationUtils.checkNull(request.getTemplate(), () -> new EmptyNotificationRequestException(request, "templateCode"));
         ValidationUtils.checkNull(request.getMedia(), () -> new EmptyNotificationRequestException(request, "media"));
-//        ValidationUtils.checkBlankString(request.getIssuerNickname(), () -> new EmptyNotificationRequestException(request, "issuerNickname"));
-//        ValidationUtils.checkBlankString(request.getIssuerTerminalCode(), () -> new EmptyNotificationRequestException(request, "issuerTerminalCode"));
+        ValidationUtils.checkNull(request.getUserLocale(), () -> new EmptyNotificationRequestException(request, "locale"));
     }
 
 
@@ -67,7 +64,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private NotificationMessage buildNotification(NotificationRequest notificationRequest) {
-        MessageTemplate messageTemplate = messageTemplateService.findMessageTemplateByCode(notificationRequest.getTemplate());
+        MessageTemplate messageTemplate = messageTemplateService.findMessageTemplateByCodeAndLocale(notificationRequest.getTemplate(),notificationRequest.getUserLocale());
         Terminal issuerTerminal = terminalService.findTerminalByCode(notificationRequest.getTerminalCode()).orElse(null);
         ValidationUtils.checkNull(messageTemplate, () -> new InvalidNotificationRequestException(notificationRequest, "messageTemplate"));
         ValidationUtils.checkNull(issuerTerminal, () -> new InvalidNotificationRequestException(notificationRequest, "issuerTerminal"));

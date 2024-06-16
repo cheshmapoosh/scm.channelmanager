@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.notification.client.service.template;
 
+import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -43,7 +44,7 @@ public class NotificationDictionary {
             case TERMINAL_TITLE -> extractTerminalTitle(request.getTerminalCode());
             case PERSON_TITLE -> extractPersonTitle(request.getTerminalCode());
             case USER_NICKNAME -> extractUserNickname(request.getTerminalCode());
-            default -> null;
+            default -> autoMapping(request,dataKey);
         };
     }
 
@@ -62,4 +63,12 @@ public class NotificationDictionary {
         return terminalService.findTerminalByCode(terminalCode).map(Terminal::getTitle).orElse("??" + terminalCode + "??");
     }
 
+    private String autoMapping(NotificationRequest request, NotificationDataKey dataKey) {
+        try {
+            NotificationData data = request.getData();
+            return String.valueOf(data.get(dataKey.getCode()));
+        }catch (Exception e){
+            return DEFAULT_NOT_FOUND_VALUE;
+        }
+    }
 }

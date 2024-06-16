@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
@@ -16,8 +17,10 @@ import ir.daneshrefah.scm.uaa.exception.OtpNotFoundException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import ir.daneshrefah.scm.utils.validation.regex.CommonRegex;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Objects;
 
 import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
@@ -69,14 +72,16 @@ public class SmsOtpProvider extends AbstractOtpProvider {
 
     private void validateRequest(OtpSendRequest request) {
 //        TODO check cell phone number pattern
+        String mobileNumber = request.getRecipient().getAddress();
+        ValidationUtils.checkRegex(CommonRegex.MOBILE_NUMBER_REGEX,mobileNumber,()-> new InvalidInputException("mobile"));
     }
 
     private void sendNotification(Otp otp) {
         NotificationData data = new NotificationData();
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
-
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
+                .userLocale(new Locale("fa","IR")) //TODO GET FROM REQUEST HEADER
                 .media(NotificationMedia.SMS)
                 .recipient(otp.getRecipient())
                 .data(data)
