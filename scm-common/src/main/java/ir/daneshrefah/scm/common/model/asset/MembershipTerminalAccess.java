@@ -17,5 +17,5 @@ public class MembershipTerminalAccess extends BaseModel<Long> {
     private Boolean active;
     private Terminal terminal;
     private Membership membership;
-
+    private Boolean favorite;
 }
