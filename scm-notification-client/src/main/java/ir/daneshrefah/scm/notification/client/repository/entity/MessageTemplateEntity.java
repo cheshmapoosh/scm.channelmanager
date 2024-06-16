@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.notification.client.repository.entity;
 
+import ir.daneshrefah.scm.common.data.converter.LocaleConverter;
 import ir.daneshrefah.scm.notification.client.repository.converter.TemplateCodeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
@@ -7,6 +8,8 @@ import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Locale;
 
 /**
  * Description of the class or purpose of the file.
@@ -41,5 +44,8 @@ public class MessageTemplateEntity extends AbstractDefaultEntity<Long> {
     private Integer maxMinutesExpiration;
     @Column(name = "IS_SYSTEMIC")
     private boolean isSystemic;
+    @Column(name = "LOCALE")
+    @Convert(converter = LocaleConverter.class)
+    private Locale locale;
 
 }

@@ -25,26 +25,16 @@ scm:
   cache:
     client:
       config:
-        distributed: false
+        distributed: true
         cluster-name: dev3
         server-host: 10.10.4.125
         server-port: 5701
+  otp:
+    time-to-live-minutes: 1
   notification:
-    consumer:
-      enabled: false
-      strategy: database_queued
-      database-queue-config:
-        max-sending-status-minute: 5
-    producer:
-      enabled: false
-      mode: distributed
-    data-source:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
-      driver-class-name: com.ibm.db2.jcc.DB2Driver
-      max-connection: 10
-      default-schema: REF
+    enabled: true
+    sms:
+      enabled: true
   captcha:
     border:
       enabled: true
@@ -64,6 +54,15 @@ scm:
         text-producer:
           font:
             color: '255,255,255'
+  mq:
+    enabled: false
+#    ibm-mq:
+#      queue-manager:
+#      channel:
+#      username:
+#      password:
+#      port: 11414
+#      host: 10.10.4.238
 
 
 
@@ -98,7 +97,7 @@ spring:
 #      maximum-pool-size: 10
 
 server:
-  port: 8000
+  port: 8001
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true

@@ -7,9 +7,9 @@ plugins {
 dependencies {
 //    compileOnly 'javax.jms:javax.jms-api:2.0.1'
 //    compileOnly 'jakarta.jms:jakarta.jms-api:3.1.0'
-    implementation 'com.ibm.mq:com.ibm.mq.allclient:9.3.5.1'
-    implementation 'jakarta.jms:jakarta.jms-api:3.1.0'
-    implementation 'org.springframework:spring-jms'
+//    implementation 'com.ibm.mq:com.ibm.mq.allclient:9.3.5.1'
+//    implementation 'jakarta.jms:jakarta.jms-api:3.1.0'
+//    implementation 'org.springframework:spring-jms'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.apache.velocity:velocity:1.7'
     implementation 'org.apache.velocity:velocity-tools:2.0'
@@ -25,4 +25,5 @@ dependencies {
     api project(':scm-common-data')
     api project(':scm-common')
     api project(':scm-utils')
+    api project(':scm-message-queue')
 }

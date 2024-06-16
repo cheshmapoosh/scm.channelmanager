@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Locale;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -24,5 +26,6 @@ public class MessageTemplate extends BaseModel<Long> {
     private Integer maxMinutesExpiration;
     private TemplateFormat templateFormat;
     private boolean isSystemic;
+    private Locale locale;
 
 }

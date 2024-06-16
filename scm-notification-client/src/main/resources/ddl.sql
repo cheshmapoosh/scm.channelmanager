@@ -14,11 +14,22 @@ CREATE TABLE REF.TBL_SNT_MESSAGE_TEMPLATE
     LAST_EDITOR            VARCHAR(255)                             NOT NULL,
     CREATE_DATE            TIMESTAMP                                NOT NULL DEFAULT CURRENT_TIMESTAMP,
     LAST_EDIT_DATE         TIMESTAMP                                NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    LOCALE                 VARCHAR(16)                              NOT NULL ,
     PRIMARY KEY (MESSAGE_TEMPLATE_ID)
 );
 INSERT INTO ref.tbl_snt_message_template
-(CODE,TITLE,TEMPLATE_FORMAT,BODY,MAX_TRY_COUNT,MAX_MINUTES_EXPIRATION,IS_SYSTEMIC,CREATOR,LAST_EDITOR)
-VALUES ('authentication','ورود به سامانه','PLAIN_TEXT','سلام، خوش آمدید',1,0,1,'Reza Jamshidi','Reza Jamshidi')
+(CODE,TITLE,TEMPLATE_FORMAT,BODY,MAX_TRY_COUNT,MAX_MINUTES_EXPIRATION,IS_SYSTEMIC,CREATOR,LOCALE,LAST_EDITOR)
+VALUES ('authentication','ورود به سامانه','PLAIN_TEXT','سلام، خوش آمدید',1,0,1,'Reza Jamshidi','fa-IR', 'Reza Jamshidi');
+
+INSERT INTO REF.TBL_SNT_MESSAGE_TEMPLATE (CODE, TITLE, TEMPLATE_FORMAT, BODY, MAX_TRY_COUNT, MAX_MINUTES_EXPIRATION, IS_SYSTEMIC, CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE) VALUES ('authentication', 'OTP', 'VELOCITY', 'بانک رفاه
+کد تایید {terminal}$
+رمز:{otp}$
+${date}', 1, 0, 1, 'Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-09 11:48:39.000000', '2024-06-09 11:48:36.000000', 'fa-IR');
+INSERT INTO REF.TBL_SNT_MESSAGE_TEMPLATE (CODE, TITLE, TEMPLATE_FORMAT, BODY, MAX_TRY_COUNT, MAX_MINUTES_EXPIRATION, IS_SYSTEMIC, CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE) VALUES ('authentication', 'OTP', 'VELOCITY', 'REFAH BANK
+Login request into ${terminal}
+code:${otp}
+${date}', 1, 0, 1, 'Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-09 11:48:39.000000', '2024-06-09 11:48:36.000000', 'en-US');
+
 
 ---------------------------------------------------------------------------------------------------
 

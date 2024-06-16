@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.utils.validation;
 
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.regex.CommonRegex;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public class ValidationUtils {
     private ValidationUtils(){}
@@ -93,4 +95,10 @@ public class ValidationUtils {
         }
     }
 
+    public static void checkRegex(CommonRegex commonRegex, String mobileNumber, Supplier<RuntimeException> throwsException) {
+        Pattern pattern = commonRegex.getPattern();
+        if (!pattern.matcher(mobileNumber).matches()){
+           throw throwsException.get();
+        }
+    }
 }
