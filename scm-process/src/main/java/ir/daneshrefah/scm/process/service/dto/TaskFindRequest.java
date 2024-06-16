@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.process.service.dto;
 
+import ir.daneshrefah.scm.common.dto.PagedRequestData;
 import lombok.Data;
 
 /**
@@ -10,11 +11,9 @@ import lombok.Data;
  * @since 2024-06-15
  */
 @Data
-public class TaskFindRequest {
-
+public class TaskFindRequest extends PagedRequestData {
     private String taskId;
     private String assignee;
     private boolean includeMetadata;
     private boolean includePersonInfo;
-
 }
