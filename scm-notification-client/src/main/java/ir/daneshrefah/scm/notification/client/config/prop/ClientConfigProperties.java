@@ -15,6 +15,18 @@ public class ClientConfigProperties {
     @Data
     public static class SmsProperties {
         private boolean enabled;
+        private JmsConfig ibmMq;
+        private JmsConfig activeMq;
+    }
+
+    @Data
+    public static class JmsConfig {
+        private String queueManager;
+        private String channel;
+        private String host;
+        private int port;
+        private String username;
+        private String password;
     }
 
 }

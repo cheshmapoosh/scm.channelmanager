@@ -25,7 +25,7 @@ import java.util.Objects;
 @Component
 public class SMSNotificationMessageProvider implements NotificationMessageProvider {
 
-    @Qualifier("ibmJmsTemplate")
+    @Qualifier("smsJmsTemplate")
     private final JmsTemplate smsJmsTemplate;
 
     @Override
