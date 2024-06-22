@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticati
 import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +30,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -173,6 +175,7 @@ public class SecurityConfig {
                 .logout(logout -> {
 //                    logout.logoutUrl("/logout");
                     logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
+                    logout.logoutSuccessHandler(this::logoutSuccessHandlerConfiguration);
                 })
                 .formLogin(login -> {
 //                    login.setFormLoginEnabled(true);
@@ -221,6 +224,25 @@ public class SecurityConfig {
     @Bean
     public SessionCache sessionCache(CacheTemplate cacheTemplate) {
         return new SessionCache(cacheTemplate);
+    }
+
+    private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+        String redirectUri = request.getParameter("redirect_uri");
+        String clientId = request.getParameter("client_id");
+        String responseType = request.getParameter("response_type");
+        String scope = request.getParameter("scope");
+        response.setStatus(HttpServletResponse.SC_OK);
+        if (StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope)){
+            response.sendRedirect("/");
+        }else {
+            String serverHost = request.getRequestURL().toString().split("/logout")[0];
+            String redirection = serverHost+"/oauth2/authorize?response_type="
+                                 + responseType + "&client_id="
+                                 + clientId + "&redirect_uri="
+                                 + redirectUri + "&scope=" + scope;
+            response.sendRedirect(redirection);
+
+        }
     }
 
 }
