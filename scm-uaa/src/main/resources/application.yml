@@ -35,6 +35,13 @@ scm:
     enabled: true
     sms:
       enabled: true
+      ibm-mq:
+        queue-manager: CSQ1
+        channel: DEV.ADMIN.SVRCONN
+        username: admin
+        password: passw0rd
+        port: 11414
+        host: 10.10.4.238
   captcha:
     border:
       enabled: true
@@ -54,15 +61,7 @@ scm:
         text-producer:
           font:
             color: '255,255,255'
-  mq:
-    enabled: false
-#    ibm-mq:
-#      queue-manager:
-#      channel:
-#      username:
-#      password:
-#      port: 11414
-#      host: 10.10.4.238
+
 
 
 
@@ -97,7 +96,7 @@ spring:
 #      maximum-pool-size: 10
 
 server:
-  port: 8001
+  port: 8000
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true

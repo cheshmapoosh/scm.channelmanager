@@ -17,6 +17,8 @@ import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -72,6 +74,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                 .template(NotificationTemplate.AUTHENTICATION)
                 .media(NotificationMedia.SMS)
                 .recipient(recipient)
+                .userLocale(new Locale("fa","IR")) //TODO GET FROM HEADER
                 .data(data)
                 .terminalCode(user.getTerminalCode())
                 .issuerInfo(issuerInfo)
@@ -83,9 +86,9 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         return DateUtils
                 .ShamsiCalendarConvertor
                 .convertToShamsiDateString(DateUtils
-                                .DateConverter
-                                .convertToLocalDateTime(DateUtils.DateConverter
-                                                .convertToTimestamp(authentication.getIssuedAt())), "yyyy/MM/dd HH:mm:ss");
+                        .DateConverter
+                        .convertToLocalDateTime(DateUtils.DateConverter
+                                .convertToTimestamp(authentication.getIssuedAt())), "yyyy/MM/dd HH:mm:ss");
     }
 
 

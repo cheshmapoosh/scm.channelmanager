@@ -81,8 +81,8 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
-                .userLocale(new Locale("fa","IR")) //TODO GET FROM REQUEST HEADER
                 .media(NotificationMedia.SMS)
+                .userLocale(new Locale("fa","IR")) //TODO GET FROM HEADER
                 .recipient(otp.getRecipient())
                 .data(data)
                 .terminalCode(otp.getRecipient().getTerminalCode())
