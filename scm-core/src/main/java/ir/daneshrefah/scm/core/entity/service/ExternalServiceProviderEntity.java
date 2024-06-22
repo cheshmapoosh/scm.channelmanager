@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.core.converter.ExternalServiceProviderMetadataConverter;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
+import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +33,9 @@ public class ExternalServiceProviderEntity extends AbstractDefaultEntity<String>
     private String providerClassName;
     @Convert(converter = ExternalServiceProviderMetadataConverter.class)
     private ExternalServiceProviderMetadata metadata;
-    private boolean customerProvided;
+    @ManyToOne
+    @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
+    private AssetProviderEntity assetProvider;
 //    private String customerProviderClassName;
 //    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)
 //    @Convert(converter = CustomerProvideMethodConverter.class)

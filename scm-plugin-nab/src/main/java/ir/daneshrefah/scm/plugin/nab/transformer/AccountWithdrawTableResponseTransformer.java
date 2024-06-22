@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -20,7 +20,7 @@ import java.util.Map;
  * @since 2024-01-22
  */
 @Service
-public class AccountWithdrawTableResponseTransformer extends AbstractTransformer {
+public class AccountWithdrawTableResponseTransformer extends AbstractJsonTransformer {
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {

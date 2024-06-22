@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.service.ConstantService;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.transformer.ServiceCodeLookupTransformer;
 import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterRequestTransformer;
 import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterResponseTransformer;
@@ -62,8 +62,8 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
     }
 
     @Override
-    protected List<AbstractTransformer> prepareRequestTransformers() {
-        Map<String, AbstractTransformer> transformerMap = new HashMap<>();
+    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
+        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
         transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterRequestTransformer());
         transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
         transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
@@ -76,8 +76,8 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
     }
 
     @Override
-    protected List<AbstractTransformer> prepareResponseTransformers() {
-        Map<String, AbstractTransformer> transformerMap = new HashMap<>();
+    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
+        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
         transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterResponseTransformer());
         transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
         transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);

@@ -40,7 +40,7 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
             }
 
         });
-        routeDefinition.toD("${header.ScmTargetUrl}");
+        routeDefinition.toD("${header." + HEADER_TARGET_URL + "}");
     }
 
     protected Map<String, Object> obtainRequestHeaders(Message message) {

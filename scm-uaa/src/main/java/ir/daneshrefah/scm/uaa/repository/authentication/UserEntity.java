@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.uaa.repository.authentication;
 
 import ir.daneshrefah.scm.common.data.converter.UserStatusConverter;
+import ir.daneshrefah.scm.common.data.converter.UserTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.UserType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -54,6 +56,9 @@ public class UserEntity extends AbstractEntity<Integer> {
     @ManyToOne
     @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
+    @Column(name = "USER_AUTHENTICATION_TYPE")
+    @Convert(converter = UserTypeConverter.class)
+    private UserType type;
     @Column(name = "BRANCH_CODE")
     private String creatorBranch;
     @Column(name = "CREATED_BY")
@@ -64,15 +69,6 @@ public class UserEntity extends AbstractEntity<Integer> {
     private LocalDateTime createDate;
     @Column(name = "MODIFICATION_DATE", insertable = false)
     private LocalDateTime lastEditDate;
-    @Column(name = "USER_AUTHENTICATION_TYPE")
-    private Integer unusedAuthenticationType;
-
-    @PrePersist
-    @PreUpdate
-    public void setDefaultValues() {
-//        1:UserChannelAuthentication, 2:EmployeeAuthentication
-        this.unusedAuthenticationType = 1;
-    }
 
 
 //ARCHIVE_NO smallint NOT NULL DEFAULT '8',

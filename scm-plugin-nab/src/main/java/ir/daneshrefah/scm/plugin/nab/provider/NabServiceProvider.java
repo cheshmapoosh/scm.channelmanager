@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -39,12 +39,12 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     }
 
     @Override
-    protected List<AbstractTransformer> prepareRequestTransformers() {
+    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
         return List.of(requestTransformer);
     }
 
     @Override
-    protected List<AbstractTransformer> prepareResponseTransformers() {
+    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
         return List.of(responseTransformer);
     }
 

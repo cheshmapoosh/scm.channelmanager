@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.nab.provider.Bind;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ import java.util.Objects;
  */
 @RequiredArgsConstructor
 @Service
-public class NabResponseTransformer extends AbstractTransformer {
+public class NabResponseTransformer extends AbstractJsonTransformer {
 
     private final ObjectMapper objectMapper;
 

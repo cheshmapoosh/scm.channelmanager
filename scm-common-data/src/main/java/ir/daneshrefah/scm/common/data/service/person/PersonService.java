@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
-import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 
@@ -27,7 +27,7 @@ public interface PersonService {
 
     GeneralPerson findLocalPerson(PersonFindRequest request);
 
-    IndividualPersonEntity findPersonByNationalCode(String nationalCode);
+    GeneralRealPersonEntity findPersonByNationalCode(String nationalCode);
 
 //    GeneralPerson findPersonInfo(PersonFindRequest request);
 //

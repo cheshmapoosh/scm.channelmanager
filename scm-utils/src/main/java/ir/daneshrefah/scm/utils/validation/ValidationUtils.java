@@ -64,6 +64,12 @@ public class ValidationUtils {
         }
     }
 
+    public static void checkNotEqualsObject(Object obj1, Object obj2, Supplier<RuntimeException> throwsException) {
+        if (Objects.isNull(obj1) || !obj1.equals(obj2)){
+            throw throwsException.get();
+        }
+    }
+
     public static void checkNotEqualsIgnoreCaseString(CharSequence cs1, CharSequence cs2, Supplier<RuntimeException> throwsException) {
         if (StringUtils.notEqualsIgnoreCase(cs1, cs2)){
             throw throwsException.get();
@@ -101,4 +107,41 @@ public class ValidationUtils {
            throw throwsException.get();
         }
     }
+
+    public static void checkInvalidMobileNumber(String mobileNo, Supplier<RuntimeException> throwsException){
+        if (!checkIsValidMobileNumber(mobileNo)) {
+            throw throwsException.get();
+        }
+    }
+
+
+    public static boolean checkIsValidMobileNumber(String code){
+        return StringUtils.isNotEmpty(code);
+    }
+
+    public static boolean checkIsValidNationalCode(String code){
+        //check length
+        if (Objects.isNull(code) || code.length() != 10)
+            return false;
+
+        long nationalCode = Long.parseLong(code);
+        byte[] arrayNationalCode = new byte[10];
+
+        //extract digits from number
+        for (int i = 0; i < 10 ; i++) {
+            arrayNationalCode[i] = (byte) (nationalCode % 10);
+            nationalCode = nationalCode / 10;
+        }
+
+        //Checking the control digit
+        int sum = 0;
+        for (int i = 9; i > 0 ; i--)
+            sum += arrayNationalCode[i] * (i+1);
+        int temp = sum % 11;
+        if (temp < 2)
+            return arrayNationalCode[0] == temp;
+        else
+            return arrayNationalCode[0] == 11 - temp;
+    }
+
 }

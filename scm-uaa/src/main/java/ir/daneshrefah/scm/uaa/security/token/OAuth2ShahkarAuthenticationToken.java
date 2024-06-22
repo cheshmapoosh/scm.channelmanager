@@ -19,7 +19,7 @@ import java.util.Set;
 @Getter
 public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToken {
 
-    private final String principal;
+    private final Object principal;
     private final String phoneNumber;
     private final String credentials;
 
@@ -31,7 +31,7 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
      * @param credentials contains claim code.
      *
      */
-    public OAuth2ShahkarAuthenticationToken(String principal, String phoneNumber, String credentials,
+    public OAuth2ShahkarAuthenticationToken(Object principal, String phoneNumber, String credentials,
                                             Set<String> scopes, Authentication clientPrincipal) {
         this(principal, phoneNumber, credentials, scopes, clientPrincipal, null);
     }
@@ -44,7 +44,7 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
      * @param credentials contains claim code.
      *
      */
-    public OAuth2ShahkarAuthenticationToken(String principal, String phoneNumber, String credentials,
+    public OAuth2ShahkarAuthenticationToken(Object principal, String phoneNumber, String credentials,
                                             Set<String> scopes, Authentication clientPrincipal, Collection<? extends GrantedAuthority> authorities) {
         super(scopes, clientPrincipal, authorities);
         this.principal = principal;

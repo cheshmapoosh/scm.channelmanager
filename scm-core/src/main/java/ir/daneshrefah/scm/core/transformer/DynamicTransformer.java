@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.transformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  * @since 2023-08-09
  */
 @Service
-public class DynamicTransformer extends AbstractTransformer {
+public class DynamicTransformer extends AbstractJsonTransformer {
 
     private JsonNode emptyJsonNode;
 

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.repository;
 
 import ir.daneshrefah.scm.common.data.entity.person.EmployeePersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -22,6 +23,9 @@ import java.util.Optional;
  */
 @Repository
 public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Integer>, JpaSpecificationExecutor<GeneralPersonEntity> {
+
+    @Query("SELECT p FROM GeneralRealPersonEntity p WHERE p.nationalCode = :nationalCode")
+    GeneralRealPersonEntity findRealPersonByNationalCode(@Param("nationalCode") String nationalCode);
 
     @Query("SELECT p FROM IndividualPersonEntity p WHERE p.nationalCode = :nationalCode")
     IndividualPersonEntity findIndividualPersonByNationalCode(@Param("nationalCode") String nationalCode);

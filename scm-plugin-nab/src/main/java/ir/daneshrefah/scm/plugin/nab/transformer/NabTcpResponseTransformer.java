@@ -1,24 +1,26 @@
-package ir.daneshrefah.scm.core.transformer;
+package ir.daneshrefah.scm.plugin.nab.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Description of the class or purpose of the file.
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-08-09
+ * @since 2024-06-22
  */
-@Service
-public class NullTransformer extends AbstractJsonTransformer {
+@RequiredArgsConstructor
+//@Service
+public class NabTcpResponseTransformer extends AbstractJsonTransformer {
+
+//    private final ObjectMapper objectMapper;
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
-        return NullNode.getInstance();
+        return null;
     }
 
 }

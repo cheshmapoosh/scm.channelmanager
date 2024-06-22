@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class ServiceCodeLookupTransformer extends DynamicLookupTransformer {
 
-    public ServiceCodeLookupTransformer(Map<String, AbstractTransformer> transformerMap) {
+    public ServiceCodeLookupTransformer(Map<String, AbstractJsonTransformer> transformerMap) {
         super(transformerMap);
     }
 

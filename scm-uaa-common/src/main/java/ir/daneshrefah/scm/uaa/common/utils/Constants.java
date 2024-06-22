@@ -42,6 +42,7 @@ public class Constants {
     public final static String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
     public final static String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
     public final static String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
+    public final static String OAUTH2_PARAM_NAME_MOBILE_NUMBER = "mobileNumber";
     public final static String OAUTH2_PARAM_NAME_USER_CLAIM = "claim_code";
     public final static String OAUTH2_PARAM_NAME_ACCESS_PARAMETER = "access_parameter";
     public final static String OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE = "activation_code";

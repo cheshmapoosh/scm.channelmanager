@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.utils.ConverterDictionary;
 import ir.daneshrefah.scm.plugin.api.utils.JSONConverter;
 import ir.daneshrefah.scm.plugin.api.utils.MessageConverterDictionary;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
  */
 @RequiredArgsConstructor
 @Service
-public class NabRequestTransformer extends AbstractTransformer {
+public class NabRequestTransformer extends AbstractJsonTransformer {
 
     private final ObjectMapper objectMapper;
 

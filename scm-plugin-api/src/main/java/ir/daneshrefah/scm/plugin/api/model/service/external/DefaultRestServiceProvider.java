@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
@@ -23,20 +24,20 @@ import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
  */
 public class DefaultRestServiceProvider extends AbstractRestExternalServiceProvider {
 
-    private List<AbstractTransformer> requestTransformers;
-    private List<AbstractTransformer> responseTransformers;
+    private List<AbstractJsonTransformer> requestTransformers;
+    private List<AbstractJsonTransformer> responseTransformers;
 
     public DefaultRestServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
         super(producerTemplate, camelContext, resourceService, objectMapper);
     }
 
     @Override
-    protected List<AbstractTransformer> prepareRequestTransformers() {
+    protected List<? extends AbstractTransformer> prepareRequestTransformers() {
         return requestTransformers;
     }
 
     @Override
-    protected List<AbstractTransformer> prepareResponseTransformers() {
+    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
         return responseTransformers;
     }
 

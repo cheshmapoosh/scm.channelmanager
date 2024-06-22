@@ -14,14 +14,14 @@ import java.util.Map;
  * @since 2024-04-07
  */
 @RequiredArgsConstructor
-public abstract class DynamicLookupTransformer extends AbstractTransformer {
+public abstract class DynamicLookupTransformer extends AbstractJsonTransformer {
 
-    private final Map<String, AbstractTransformer> transformerMap;
+    private final Map<String, AbstractJsonTransformer> transformerMap;
 
     @Override
     protected final JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         String transformerKey = extractTransformerKey(message);
-        AbstractTransformer transformer = transformerMap.get(transformerKey);
+        AbstractJsonTransformer transformer = transformerMap.get(transformerKey);
         return transformer.transform(payload, message, metadata);
     }
 

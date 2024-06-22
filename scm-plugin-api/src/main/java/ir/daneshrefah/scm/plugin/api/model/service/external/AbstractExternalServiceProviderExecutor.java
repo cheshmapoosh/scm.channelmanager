@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.utils.MessageUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -64,7 +65,7 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
-            JsonNode requestBody = transformRequest(message);
+            Object requestBody = transformRequest(message);
             exchange.getMessage().setBody(requestBody);
             exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
             exchange.setProperty(HEADER_START_TIME, Instant.now());
@@ -144,10 +145,10 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         EventProducer.getInstance().sendEvent(event);
     }
 
-    private JsonNode transformRequest(Message message) {
-        JsonNode requestBody = message.getPayload();
-        List<AbstractTransformer> requestTransformers = prepareRequestTransformers();
-        for (Iterator<AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
+    private Object transformRequest(Message message) {
+        Object requestBody = message.getPayload();
+        List<? extends AbstractTransformer> requestTransformers = prepareRequestTransformers();
+        for (Iterator<? extends AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
             requestBody = transformer.transform(requestBody, message, message.getHeader().getServiceAccess().getService().getMetadata());
         }
@@ -155,19 +156,19 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
     }
 
     private JsonNode transformResponse(Message message, JsonNode response) {
-        List<AbstractTransformer> responseTransformers = prepareResponseTransformers();
-        for (Iterator<AbstractTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
-            AbstractTransformer transformer = iterator.next();
+        List<AbstractJsonTransformer> responseTransformers = prepareResponseTransformers();
+        for (Iterator<AbstractJsonTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
+            AbstractJsonTransformer transformer = iterator.next();
             response = transformer.transform(response, message, message.getHeader().getServiceAccess().getService().getMetadata());
         }
         return response;
     }
 
-    protected List<AbstractTransformer> prepareRequestTransformers() {
+    protected List<? extends AbstractTransformer> prepareRequestTransformers() {
         return Collections.emptyList();
     }
 
-    protected List<AbstractTransformer> prepareResponseTransformers() {
+    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
         return Collections.emptyList();
     }
 

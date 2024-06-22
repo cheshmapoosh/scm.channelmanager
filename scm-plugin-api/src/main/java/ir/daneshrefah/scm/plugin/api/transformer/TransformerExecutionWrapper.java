@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.transformer;
 
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 
 /**
@@ -15,19 +13,19 @@ import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 public class TransformerExecutionWrapper {
 
     private TransformerRelation transformerRelation;
-    private AbstractTransformer transformerInstance;
+    private AbstractJsonTransformer transformerInstance;
 
     public TransformerExecutionWrapper(TransformerRelation transformerRelation) {
         this.transformerRelation = transformerRelation;
         this.transformerInstance = ClassLoader.findBeanOrCreateInstanceOfClass(
-                transformerRelation.getTransformer().getJavaClassName(), AbstractTransformer.class);
+                transformerRelation.getTransformer().getJavaClassName(), AbstractJsonTransformer.class);
     }
 
     public TransformerRelation getTransformerRelation() {
         return transformerRelation;
     }
 
-    public AbstractTransformer getTransformerInstance() {
+    public AbstractJsonTransformer getTransformerInstance() {
         return transformerInstance;
     }
 }

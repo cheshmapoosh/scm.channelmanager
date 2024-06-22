@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,7 +15,7 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
  * @version 1.0
  * @since 2023-07-24
  */
-public class IbanInqRequestTransformer extends AbstractTransformer {
+public class IbanInqRequestTransformer extends AbstractJsonTransformer {
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {

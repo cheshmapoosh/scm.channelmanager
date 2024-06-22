@@ -1,11 +1,10 @@
 package ir.daneshrefah.scm.core.transformer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Service;
  * @since 2023-08-09
  */
 @Service
-public class AppendPropTransformer extends AbstractTransformer {
+public class AppendPropTransformer extends AbstractJsonTransformer {
 
     private JsonNode emptyJsonNode;
     private ObjectMapper objectMapper;

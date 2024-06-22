@@ -22,6 +22,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer>, JpaS
             "WHERE u.nickname = :nickname AND u.terminalId = :legacyTerminalId ")
     List<UserEntity> findByNicknameAndLegacyTerminalId(@Param("nickname") String nickname, @Param("legacyTerminalId") Integer legacyTerminalId);
 
+    @Query(value = "SELECT u FROM UserEntity u " +
+            "WHERE u.person.id = :personId AND u.terminalId = :legacyTerminalId")
+    List<UserEntity> findByPersonIdAndLegacyTerminalId(@Param("personId") Integer personId, @Param("legacyTerminalId") Integer legacyTerminalId);
+
 //    @Query(value = "select UA.*, FAM.CODE AS LOGIN_AUTHENTICATION_METHOD, SAM.CODE AS TRANSACTION_AUTHENTICATION_METHOD " +
 //            "FROM REF.USER_CHANNEL_AUTHENTICATION UA " +
 //            "JOIN REF.AUTHENTICATION_METHOD FAM ON UA.AUTHENTICATION_METHOD_ID = FAM.AUTHENTICATION_METHOD_ID " +

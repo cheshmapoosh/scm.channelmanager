@@ -2,15 +2,15 @@ package ir.daneshrefah.scm.uaa.service.user;
 
 import ir.daneshrefah.scm.common.constant.SecurityConstants;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.PersonStatus;
-import ir.daneshrefah.scm.common.model.person.SmsVerifiedPerson;
-import ir.daneshrefah.scm.common.model.person.UserStatus;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.UserType;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -175,6 +175,67 @@ public class UserService {
         return true;
     }
 
+    public User createShahkarVerifiedUserAndDeleteOld(String nationalCode, String mobileNo, String terminalCode) {
+        ValidationUtils.checkBlankString(nationalCode, () -> new MissingRequiredInputException("nationalCode"));
+        ValidationUtils.checkInvalidMobileNumber(mobileNo, () -> new InvalidInputException("mobileNo"));
+        ValidationUtils.checkBlankString(terminalCode, () -> new MissingRequiredInputException("terminalCode"));
+        Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
+        ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
+
+        //TODO verify shahkar
+
+        GeneralRealPersonEntity personEntity = personRepository.findRealPersonByNationalCode(nationalCode);
+        if (Objects.isNull(personEntity)) {
+            personEntity = new IndividualPersonEntity();
+            personEntity.setUsername(nationalCode);
+//            personEntity.setPersonType(PersonType.REAL);
+//            personEntity.setNationality();
+//            personEntity.setRegisterIssueDate();
+            personEntity.setStatus(PersonStatus.ACTIVE);
+//            personEntity.setBranchCode();
+//            personEntity.setPhone1();
+//            personEntity.setPhone2();
+//            personEntity.setMobile1();
+//            personEntity.setMobile2();
+//            personEntity.setMobile3();
+//            personEntity.setEmail();
+//            personEntity.setFax();
+//            personEntity.setAddress1();
+//            personEntity.setAddress2();
+//            personEntity.setAddress3();
+//            personEntity.setAddress4();
+//            personEntity.setPostalCode1();
+//            personEntity.setPostalCode2();
+//            personEntity.setShahabCode();
+//            personEntity.setArchiveNo();
+//            personEntity.setFirstName();
+//            personEntity.setFirstNameEnglish();
+//            personEntity.setLastName();
+//            personEntity.setLastNameEnglish();
+//            personEntity.setFatherName();
+            personEntity.setNationalCode(nationalCode);
+//            personEntity.setIdentificationNo();
+//            personEntity.setIdentificationSeries();
+//            personEntity.setIdentificationSerial();
+//            personEntity.setIdentificationDocumentTypeCode();
+//            personEntity.setMaritalStatus();
+//            personEntity.setJobCode();
+//            personEntity.setEducationCode();
+//            personEntity.setMajorCode();
+//            personEntity.setGender();
+//            personEntity.setBirthDate();
+//            personEntity.setDeadDate();
+            personEntity.setLived(true);
+        }
+        Optional<List<UserEntity>> userEntities = Optional.empty();
+        if (Objects.nonNull(personEntity.getId())) {
+            userEntities = Optional.of(userRepository.findByPersonIdAndLegacyTerminalId(personEntity.getId(),
+                    terminal.get().getLegacyTerminalId().intValue()));
+        }
+
+        return null;
+    }
+
     public User createSmsVerifiedUserAndDeleteOld(String mobileNo, String terminalCode) {
         ValidationUtils.checkBlankString(terminalCode, () -> new MissingRequiredInputException("terminalCode"));
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
@@ -183,11 +244,15 @@ public class UserService {
 // also old user with same username must be update or set status to deleted
         Optional<UserEntity> currentUserEntity = loadUserEntityByUsername(mobileNo, terminalCode);
         if (currentUserEntity.isPresent()) {
+//TODO            ValidationUtils.checkNotEqualsObject(UserType.SMS_VERIFIED, currentUserEntity.get().getType(), () -> null);
+//            if user with same mobileNo exist and type of it isn't SMS_VERIFIED, we can throw exception or
+//             generate random nickname for new user
             currentUserEntity.get().setStatus(UserStatus.DELETED);
             currentUserEntity.get().getPerson().setStatus(PersonStatus.DELETED);
         }
 
         UserEntity entity = new UserEntity();
+        entity.setType(UserType.SMS_VERIFIED);
         entity.setNickname(mobileNo);
         entity.setTerminalId(terminal.get().getLegacyTerminalId().intValue());
         /*
@@ -207,7 +272,7 @@ public class UserService {
 //        entity.setLastEditor(creatorEntity.getId());
         User user = UserMapper.INSTANCE.toModel(entity);
 
-        GeneralPerson person = new SmsVerifiedPerson();
+        GeneralPerson person = new UnknownPerson();
         person.setId(new Random().nextInt());
         person.setUsername(StringUtils.generateGuid());
         person.setStatus(PersonStatus.ACTIVE);

@@ -23,5 +23,8 @@ public class AccountEntity extends AbstractEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "ACCOUNT_TYPE_ID")
     private AccountTypeEntity accountType;
+    @ManyToOne
+    @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
+    private AssetProviderEntity assetProvider;
 
 }

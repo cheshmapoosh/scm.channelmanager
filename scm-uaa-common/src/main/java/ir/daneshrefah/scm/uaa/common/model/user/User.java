@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.common.model.user;
 
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.UserStatus;
+import ir.daneshrefah.scm.common.model.user.UserType;
 import ir.daneshrefah.scm.uaa.common.model.BaseModel;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Data;
@@ -30,6 +31,7 @@ public class User extends BaseModel<Integer> {
     private String transactionStaticPassword;
     private String otpSerialNumber;
     private GeneralPerson person;
+    private UserType type;
     private String creatorBranch;
 
 

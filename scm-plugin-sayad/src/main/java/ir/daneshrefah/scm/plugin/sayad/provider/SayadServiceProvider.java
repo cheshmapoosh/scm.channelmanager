@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
+import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoRequestTransformer;
 import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoResponseTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -43,12 +43,12 @@ public final class SayadServiceProvider extends AbstractRestExternalServiceProvi
     }
 
     @Override
-    protected List<AbstractTransformer> prepareRequestTransformers() {
+    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
         return List.of(new SayadChequeInfoRequestTransformer());
     }
 
     @Override
-    protected List<AbstractTransformer> prepareResponseTransformers() {
+    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
         return List.of(new SayadChequeInfoResponseTransformer());
     }
 

@@ -87,6 +87,9 @@ public class ShahkarGrantAuthenticationConverter implements AuthenticationConver
             throwError(Constants.OAUTH2_ERROR_CODE_REQUIRED_CLAIM, Constants.OAUTH2_PARAM_NAME_USER_CLAIM);
         }
 
+//        username: nationalCode
+//        password: mobileNo
+//        claimCode: otp claimCode
         OAuth2ShahkarAuthenticationToken authenticationToken = new OAuth2ShahkarAuthenticationToken(username, password,
                 claimCode, scopes, clientPrincipal);
 

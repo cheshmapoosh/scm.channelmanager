@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.plugin.api.transformer;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -13,9 +12,9 @@ import java.time.Instant;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-07-23
+ * @since 2024-06-22
  */
-public abstract class AbstractTransformer {
+public abstract class AbstractTransformer<T> {
 
     /**
      * Creates a new value from message
@@ -24,9 +23,9 @@ public abstract class AbstractTransformer {
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public JsonNode transform(Object payload, Message message, JsonNode metadata) {
+    public T transform(Object payload, Message message, JsonNode metadata) {
         Instant startTime = Instant.now();
-        JsonNode result = null;
+        T result = null;
         boolean isSuccessful = true;
         Exception error = null;
         try {
@@ -48,7 +47,7 @@ public abstract class AbstractTransformer {
         return result;
     }
 
-    protected abstract JsonNode internalTransform(Object payload, Message message, JsonNode metadata);
+    protected abstract T internalTransform(Object payload, Message message, JsonNode metadata);
 
     private void logTransformEvent(Message message, Object input, Object output, Instant startTime, Exception error) {
         Instant endTime = Instant.now();
@@ -70,4 +69,5 @@ public abstract class AbstractTransformer {
                 .build();*/
 //        EventProducer.getInstance().sendEvent(event);
     }
+
 }

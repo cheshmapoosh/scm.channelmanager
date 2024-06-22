@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.service;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +21,6 @@ public class ExternalServiceProvider extends BaseModel<String> {
     private String providerClassName;
     private ServiceProviderProtocol protocol;
     private ExternalServiceProviderMetadata metadata;
-    private boolean customerProvided;
-//    private String customerProviderClassName;
+    private AssetProvider assetProvider;
 
 }

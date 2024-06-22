@@ -31,7 +31,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     protected int vote(UserProfile profile, TerminalServiceAccess service, String asset) {
         ExternalServiceProvider provider = service.getService() instanceof ExternalService ?
                 ((ExternalService) service.getService()).getServiceProvider() : null;
-        if (Objects.isNull(provider) || !provider.isCustomerProvided()) {
+        if (Objects.isNull(provider) || Objects.isNull(provider.getAssetProvider())) {
             return ACCESS_ABSTAIN;
         }
         if (StringUtils.isEmpty(asset)) {
