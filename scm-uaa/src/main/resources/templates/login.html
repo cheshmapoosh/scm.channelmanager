@@ -53,14 +53,23 @@
               />
             </div>
             <div class="form-row" th:if="${!isStepTwoRequired}">
-              <input
-                class="input"
-                type="password"
-                id="password"
-                name="password"
-                data-th-placeholder="#{label.caption.password}"
-                required
-              />
+             <div class="password-wrapper">
+               <input
+                       class="input password"
+                       type="password"
+                       id="password"
+                       name="password"
+                       data-th-placeholder="#{label.caption.password}"
+                       required
+               />
+               <span class="eye-icon">
+                    <img
+                        th:src="@{/assets/images/Eye.png}"
+                        alt="refresh"
+                        id="eyeIcon"
+                    />
+               </span>
+             </div>
             </div>
             <div class="form-row" th:if="${!isStepTwoRequired}">
               <div class="captcha-container">
@@ -174,7 +183,18 @@
       /*]]>*/
       const confirmBtn = document.getElementById("confirmBtn");
       const expireTime = document.getElementById("expireTime");
+      const eyeIcon = document.getElementById("eyeIcon")
+      const password = document.getElementById("password")
 
+      eyeIcon.addEventListener("click",()=>{
+        if(eyeIcon.src.includes("Eye.png")){
+          password.type= "text"
+          eyeIcon.src = "/assets/images/EyeSlash.png"
+        }else{
+          password.type= "password"
+          eyeIcon.src = "/assets/images/Eye.png"
+        }
+      })
       var count = 120;
       function updateCounter() {
         expireTime.textContent = count;
@@ -202,6 +222,8 @@
         var originalCaptchaUri = document.getElementById("imgCaptcha").getAttribute("org-url");
         document.getElementById("imgCaptcha").src = originalCaptchaUri + "?" + Math.random();
       }
+
+
     </script>
   </body>
 </html>
