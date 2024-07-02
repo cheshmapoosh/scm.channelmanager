@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.error.management;
 
 import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.*;
@@ -75,12 +76,33 @@ public class ExceptionResolverHelper {
                 try {
                     ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
                     error = resolver.resolve(throwable, locale);
+                    break;
                 } catch (Throwable t) {
                     /*If developer resolver throws any un handled exception during resolving the default
                     resolver handled it */
                     ExceptionResolver<Throwable> defaultResolver = (ExceptionResolver<Throwable>) getDefaultResolver();
                     error = defaultResolver.resolve(throwable, locale);
+                    break;
                 }
+            }
+        }
+        return getValidatedError(error);
+    }
+
+    private Error getValidatedError(Error error) {
+        if (Objects.nonNull(error)) {
+            MessageStatus status = error.getStatus();
+            if (Objects.isNull(status)
+                || error.getStatus().equals(MessageStatus.SC_PROCESSING)
+                || error.getStatus().equals(MessageStatus.SC_SUCCESS)) {
+                return new Error
+                        (
+                                error.getSource(),
+                                error.getErrorCode(),
+                                error.getMessage(),
+                                MessageStatus.SC_ERROR_SYSTEM,
+                                error.getException()
+                        );
             }
         }
         return error;
@@ -91,7 +113,7 @@ public class ExceptionResolverHelper {
      */
     private ExceptionResolver<?> getDefaultResolver() {
         int resolverLevel = ExceptionResolverLevel.values().length;
-        for (int i = 1; i < resolverLevel; i++) {
+        for (int i = resolverLevel-1; i >=0 ; i--) {
             ExceptionResolverLevel level = ExceptionResolverLevel.values()[i];
             Optional<ExceptionResolver<?>> foundDefaultResolver = findResolver(level);
             if (foundDefaultResolver.isPresent()) {

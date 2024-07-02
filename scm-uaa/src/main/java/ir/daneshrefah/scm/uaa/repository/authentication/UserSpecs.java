@@ -42,17 +42,27 @@ public class UserSpecs {
             if (StringUtils.isNotEmpty(request.getEditor())) {
                 predicates.add(builder.equal(root.get("lastEditor"), request.getEditor()));
             }
-            if (Objects.nonNull(request.getLoginAuthenticationMethod())){
+            if (Objects.nonNull(request.getLoginAuthenticationMethod())) {
                 predicates.add(builder.equal(root.get("loginAuthenticationMethod"), request.getLoginAuthenticationMethod().getDbRef()));
             }
-            if (Objects.nonNull(request.getTransactionAuthenticationMethod())){
+            if (Objects.nonNull(request.getTransactionAuthenticationMethod())) {
                 predicates.add(builder.equal(root.get("transactionAuthenticationMethod"), request.getTransactionAuthenticationMethod().getDbRef()));
+            }
+            if (Objects.nonNull(request.getUsername())) {
+                predicates.add(builder.equal(root.get("person").get("username"), request.getUsername()));
+            }
+            if (Objects.nonNull(request.getNationalId())) {
+                predicates.add(builder.equal(root.get("person").get("nationalId"), request.getNationalId()));
+            }
+            if (Objects.nonNull(request.getNationalCode())) {
+                predicates.add(builder.equal(root.get("person").get("nationalCode"), request.getNationalCode()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }
-    private static String getLikeQuery(String input){
-        return "%"+input+"%";
+
+    private static String getLikeQuery(String input) {
+        return "%" + input + "%";
     }
 
 }

@@ -31,11 +31,13 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
 import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
+import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
@@ -56,8 +58,6 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
 @Component
 public class SwaggerGenerator {
 
-    @Value("${scm.swagger.server-host:#{null}}")
-    private String serverHost;
     private static final ObjectMapper OBJECT_MAPPER;
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.0";
@@ -218,10 +218,11 @@ public class SwaggerGenerator {
         final String ipAddress = "{ip-address}";
         String baseUrl = "http://" + ipAddress + ":" + port + contextPath;
         try {
-            String host = Objects.nonNull(serverHost) ? serverHost : InetAddress.getLocalHost().getHostAddress();
+            InetAddress inetAddress = NetworkUtils.findCurrentInet4Address().orElse(Inet4Address.getLocalHost());
+            String host = inetAddress.getHostAddress();
             return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
-            return baseUrl.replace(ipAddress, "0.0.0.0");
+            return baseUrl.replace(ipAddress, "127.0.0.1");
         }
     }
 

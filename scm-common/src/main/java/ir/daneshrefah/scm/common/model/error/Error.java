@@ -12,7 +12,7 @@ import lombok.Getter;
  * @since 2023-07-23
  */
 @Getter
-public class Error {
+public class Error  {
 
     /**
      * It contains 'propertyName' that has error in 'VALIDATION' type
@@ -22,8 +22,7 @@ public class Error {
     private final String message;
     @JsonIgnore
     private final Exception exception;
-    @JsonIgnore
-    private MessageStatus status;
+    private final MessageStatus status;
 
     public Error(String source, Integer errorCode, String message) {
         this(source, "SCM-" + errorCode, message,null, null);
@@ -42,6 +41,7 @@ public class Error {
         this.errorCode = errorCode;
         this.message = message;
         this.exception = exception;
+        this.status = null;
     }
 
     public Error(String source, String errorCode, String message, MessageStatus status,Exception exception) {
@@ -51,5 +51,6 @@ public class Error {
         this.exception = exception;
         this.status = status;
     }
+
 
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ErrorMappingRepository extends JpaRepository<ErrorMappingEntity, String> {
+public interface ErrorMappingRepository extends JpaRepository<ErrorMappingEntity, Long> {
 
     Optional<ErrorMappingEntity> findByExceptionClassName(String exceptionClassName);
     Optional<ErrorMappingEntity> findByProviderId(String providerId);

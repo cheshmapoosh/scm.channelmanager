@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -43,12 +45,31 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
         if (exception.getClass().isAssignableFrom(RuntimeException.class) && null != exception.getCause()) {
             return resolveMessageByException(message, (Exception) exception.getCause());
         }
-
-        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, AccessibleLocale.EN_US.getLocale());
+        Locale locale = findRequestLocale(message);
+        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, locale);
         message.addError(resolve);
         return message;
     }
 
+    private Locale findRequestLocale(Message message) {
+        Locale locale = AccessibleLocale.EN_US.getLocale();
+        try {
+            String acceptLanguageHeader = message.getHeader().getRequest().getInput().getHeader("Accept-Language");
+            if (Objects.nonNull(acceptLanguageHeader)) {
+                String[] acceptLanguages = acceptLanguageHeader.split(",");
+                for (String acceptLanguage : acceptLanguages) {
+                    AccessibleLocale foundLocale = AccessibleLocale.findByLocale(acceptLanguage).orElse(null);
+                    if (Objects.nonNull(foundLocale)) {
+                        locale = foundLocale.getLocale();
+                        break;
+                    }
+                }
+            }
+            return locale;
+        } catch (Exception e) {
+            return locale;
+        }
+    }
 
 
 }

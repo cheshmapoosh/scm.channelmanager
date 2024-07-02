@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger;
 
+import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,8 +25,6 @@ public class SwaggerUIGenerator {
     private Integer serverPort;
     @Value("${server.servlet.context-path}")
     private String servletContextPrefix;
-    @Value("${scm.swagger.server-host:#{null}}")
-    private String serverHost;
     private static SwaggerUIGenerator SWAGGER_UI_HANDLER;
 
     @PostConstruct
@@ -43,11 +43,11 @@ public class SwaggerUIGenerator {
         final String ipAddress = "{ip-address}";
         String baseUrl = "http://" + ipAddress;
         try {
-            String host = Objects.nonNull(serverHost) ? serverHost : InetAddress.getLocalHost().getHostAddress();
-            serverHost = host;
+            InetAddress inetAddress = NetworkUtils.findCurrentInet4Address().orElse(Inet4Address.getLocalHost());
+            String host = inetAddress.getHostAddress();
             return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
-            return baseUrl.replace(ipAddress, "0.0.0.0");
+            return baseUrl.replace(ipAddress, "127.0.0.1");
         }
     }
 

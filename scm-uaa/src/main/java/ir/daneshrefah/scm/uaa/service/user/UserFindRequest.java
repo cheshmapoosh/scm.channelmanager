@@ -21,6 +21,9 @@ public class UserFindRequest extends PagedRequestData {
     private String accessParameters;
     private String creator;
     private String editor;
+    private String username;
+    private String nationalId;
+    private String nationalCode;
     private AuthenticationMethod loginAuthenticationMethod;
     private AuthenticationMethod transactionAuthenticationMethod;
 

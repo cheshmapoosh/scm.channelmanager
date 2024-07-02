@@ -32,4 +32,21 @@ public enum AccessibleLocale {
         return Optional.empty();
     }
 
+    public static Optional<AccessibleLocale> findByLocale(String locale) {
+        if (Objects.nonNull(locale)) {
+            String splitter = "_";
+            if (locale.contains("-")){
+                splitter = "-";
+            }
+            String[] localeSplit = locale.split(splitter);
+            String language = localeSplit[0];
+            String country = localeSplit[1];
+            return Arrays.stream(values())
+                    .filter(accessibleLocales -> accessibleLocales.getCountryCode().equals(country))
+                    .filter(accessibleLocales -> accessibleLocales.getLanguageCode().equals(language))
+                    .findFirst();
+        }
+        return Optional.empty();
+    }
+
 }
