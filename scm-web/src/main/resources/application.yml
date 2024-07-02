@@ -68,8 +68,7 @@ scm:
 #      driver-class-name: com.ibm.db2.jcc.DB2Driver
 #      max-connection: 10
 #      default-schema: REF
-  swagger:
-    server-host: localhost
+
 
 server:
   servlet:

@@ -8,12 +8,9 @@ import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider
 import ir.daneshrefah.scm.common.error.management.ExceptionResolver;
 import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.error.ErrorCodes;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
@@ -30,10 +27,8 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
 
     @Override
     public Error resolve(Exception exception, Locale locale) {
-        ErrorMapping errorMapping =
-                errorMappingService.findByExceptionClassName(exception.getClass().getName())
-                        .orElseGet(this::getDefaultErrorMapping);
-        String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, exception);
+        ErrorMapping errorMapping = deepFindErrorMapping(exception);
+        String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, errorMapping.getExceptionClassName());
         if (StringUtils.isEmpty(exceptionMessage)) {
             exceptionMessage = messageBundleProvider.getDefaultExceptionMessage(locale);
         }
@@ -44,17 +39,31 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
                 exception);
     }
 
+    private ErrorMapping deepFindErrorMapping(Throwable throwable) {
+        Optional<ErrorMapping> errorMappingOptional = errorMappingService.findByExceptionClassName(throwable.getClass().getName());
+        if (errorMappingOptional.isEmpty()) {
+            Throwable cause = throwable.getCause();
+            if (Objects.nonNull(cause)) {
+                return deepFindErrorMapping(cause);
+            } else {
+                return getDefaultErrorMapping();
+            }
+        } else {
+            return errorMappingOptional.get();
+        }
+    }
+
 
     private String getSource(Exception exception) {
-        if (exception instanceof ExceptionSourceAware exceptionSourceAware){
+        if (exception instanceof ExceptionSourceAware exceptionSourceAware) {
             return exceptionSourceAware.getSource();
         }
         return null;
     }
 
-    private ErrorMapping getDefaultErrorMapping(){
+    private ErrorMapping getDefaultErrorMapping() {
         return errorMappingService.findByExceptionClassName("java.lang.Exception")
-                .orElseGet(()-> {
+                .orElseGet(() -> {
                     ErrorMapping em = new ErrorMapping();
                     em.setStatus(MessageStatus.SC_ERROR_SYSTEM);
                     em.setScmErrorCode(ERROR_CODE_SYSTEM_ERROR);

@@ -2,24 +2,15 @@ package ir.daneshrefah.scm.uaa.controller;
 
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
-import ir.daneshrefah.scm.common.exception.AbstractValidationException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.utils.string.HttpConstants;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
+import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.Arrays;
 import java.util.Locale;
-import java.util.Optional;
-
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,12 +23,21 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.*;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(Exception exception){
-        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, AccessibleLocale.EN_US.getLocale());
-        if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)){
+    public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
+        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
+        if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
             return ResponseEntity.internalServerError().body(resolve);
         }
         return ResponseEntity.badRequest().body(resolve);
+    }
+
+    private Locale detectRequesteLocale(HttpServletRequest request) {
+        String acceptLanguageHeader = request.getHeader("accept-language");
+        if (StringUtils.isEmpty(acceptLanguageHeader)) {
+            return AccessibleLocale.EN_US.getLocale();
+        } else {
+            return request.getLocale();
+        }
     }
 
 

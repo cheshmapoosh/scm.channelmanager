@@ -73,7 +73,7 @@ CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER
     METADATA               VARCHAR(255),
 --     CUSTOMER_PROVIDED   SMALLINT    NOT NULL DEFAULT 0,
 --     CUSTOMER_PROVIDER_CLASS_NAME VARCHAR(255),
-    CORE_BANKING_SYSTEM_ID INTEGER,
+    CORE_BANKING_SYSTEM_ID SMALLINT  ,
     CREATE_DATE            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     LAST_EDIT_DATE         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CREATOR                VARCHAR(255),
@@ -83,65 +83,80 @@ CREATE TABLE REF.TBL_SCM_SERVICE_PROVIDER
 );
 
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CORE_BANKING_SYSTEM_ID, CREATOR, LAST_EDITOR)
+                                          CORE_BANKING_SYSTEM_ID, CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('3ce3e10e-c3cd-49c7-ae5c-330a81e882d7', 'NAB', 'کر بانک رفاه', 1, 'bean:nabCoreServiceProvider',
-        '{"endpoint" : "${scm.provider.nab}"}', 1, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.nab}"}', 1, 'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROTOCOL, PROVIDER_CLASS_NAME,
                                           METADATA, CORE_BANKING_SYSTEM_ID, CREATOR, LAST_EDITOR)
-VALUES ('D487B21A-CA18-438E-A9E9-17482B127C81', 'NAB-TCP', 'کر بانک رفاه', 1, 20, 'bean:nabTcpServiceProvider',
-        '{"endpoint" : "${scm.provider.nab-tcp}"}', 1, 1, 'Reza Jamshidi', 'Reza Jamshidi');
+VALUES ('D487B21A-CA18-438E-A9E9-17482B127C81', 'NAB-TCP', 'کر بانک رفاه', 1, 5, 'bean:nabTcpServiceProvider',
+        '{"endpoint" : "${scm.provider.nab-tcp}"}', 1, 'Reza Jamshidi', 'Reza Jamshidi');
+
+INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA
+                                    , CREATOR, LAST_EDITOR,PROTOCOL)
+VALUES ('ce027926-e5e1-4df5-b397-178dd41c87b8', 'MOCK', 'Mock', 1, 'bean:mockCoreServiceProvider', '',
+        'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('ce027926-e5e1-4df5-b397-178dd41c87b8', 'MOCK', 'Mock', 1, 'bean:mockCoreServiceProvider', '', 0, null,
-        'Reza Jamshidi', 'Reza Jamshidi');
+                                         CREATOR, LAST_EDITOR,PROTOCOL)
+VALUES ('710fe18f-41cc-40f1-8435-3d4626289b3c', 'SCM', 'SCM', 1, 'bean:scmCoreServiceProvider', null,
+        'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('710fe18f-41cc-40f1-8435-3d4626289b3c', 'SCM', 'SCM', 1, 'bean:scmCoreServiceProvider', null, 0, null,
-        'Reza Jamshidi', 'Reza Jamshidi');
-INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                            CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('3A3C6EBC-328C-484A-A6F4-43E734F2312C', 'IBAN', 'IBAN', 1, 'bean:ibanInquiryServiceProvider',
-        '{"endpoint" : "${scm.provider.iban}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.iban}"}',   'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
-VALUES ('E81F2B7D-7B1A-4D16-A8A9-4F1212F23ABC', 'HPS', 'HPS', 1, 'bean:hpsServiceProvider', null, 0, null,
-        'Reza Jamshidi', 'Reza Jamshidi');
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
+VALUES ('E81F2B7D-7B1A-4D16-A8A9-4F1212F23ABC', 'HPS', 'HPS', 1, 'bean:hpsServiceProvider', null,
+        'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                            CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('1F22212B-D23E-442B-92F2-0B12312E4F56', 'CHAKAD', 'CHAKAD', 1, 'bean:chakadServiceProvider',
-        '{"endpoint" : "${scm.provider.chakad}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.chakad}"}',   'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('8FA1148A-A679-4F4D-B92E-7312F23A1BEC', 'PICHACK', 'PICHACK', 1, 'bean:pichackServiceProvider',
-        '{"endpoint" : "${scm.provider.pichack}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.pichack}"}',   'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('5C92871D-212E-4F2A-8923-123F231A2BEC', 'SAYAD', 'SAYAD', 1, 'bean:sayadServiceProvider',
-        '{"endpoint" : "${scm.provider.sayad}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.sayad}"}',   'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('B21A423D-F21B-4522-812F-2312BEFA2C1D', 'BILL-INQUIRY', 'BILL-INQUIRY', 1, 'bean:billInquiryServiceProvider',
-        '{"endpoint" : "${scm.provider.bill-inquiry}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.bill-inquiry}"}', 'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('0D8F312E-1B2A-431F-A212-23F2312DECBA', 'CURRENCY', 'سامانه ارزی', 1, 'bean:currencyServiceProvider',
-        '{"endpoint" : "${scm.provider.currency}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.currency}"}', 'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('4EF21A2C-B13D-412B-B2FA-23A12F231BEC', 'GSS', 'GSS', 1, 'bean:gssServiceProvider',
-        '{"endpoint" : "${scm.provider.gss}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.gss}"}', 'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('7921CFEB-A32D-4BFA-A12E-321F2312A1BC', 'LOAN', 'LOAN', 1, 'bean:loanServiceProvider',
-        '{"endpoint" : "${scm.provider.loan}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.loan}"}', 'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('F1AB23CD-21FA-421D-B1AF-312F231BEABC', 'TOPUP', 'TOPUP', 1, 'bean:topupServiceProvider',
-        '{"endpoint" : "${scm.provider.topup}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.topup}"}',  'Reza Jamshidi', 'Reza Jamshidi',5);
+
 INSERT INTO REF.TBL_SCM_SERVICE_PROVIDER (SERVICE_PROVIDER_ID, CODE, TITLE, STATUS, PROVIDER_CLASS_NAME, METADATA,
-                                          CUSTOMER_PROVIDED, CUSTOMER_PROVIDER_CLASS_NAME, CREATOR, LAST_EDITOR)
+                                           CREATOR, LAST_EDITOR,PROTOCOL)
 VALUES ('6D4A2C1E-B21D-423B-AF21-C234F21A1BEC', 'SHAPARAK', 'هاب فناوران (شاپرک)', 1, 'bean:shaparakServiceProvider',
-        '{"endpoint" : "${scm.provider.shaparak}"}', 0, null, 'Reza Jamshidi', 'Reza Jamshidi');
+        '{"endpoint" : "${scm.provider.shaparak}"}',
+        'Reza Jamshidi', 'Reza Jamshidi',5);
 
 CREATE TABLE REF.TBL_SCM_SERVICE
 (
@@ -247,7 +262,6 @@ VALUES ('69d6a8e0-f090-4e41-971f-a03b4a6b388f', 'SVC_TERMINAL_ACCESS_TERMINAL_LI
         'bean:terminalManagementService.findAllTerminalAccessOnService(String)', null, null, null, 1, 0, 0, 0, null,
         null, null, null, '2024-04-22 10:04:42.650215', '2024-04-22 13:35:13.388796', 'Dariush Abdolahi',
         'Dariush Abdolahi');
-
 
 --------------------------------------------- CHANNEL_MANAGEMENT_SERVICES ---------------------------------------------
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -517,6 +531,78 @@ VALUES ('C3EFAB2D-B12A-412F-A23E-32FA1CBECAD', 'SVC_PAYMENT_ORDER_PARENT', 'پر
         1, 1, 4, 5, 'Reza Jamshidi', 'Reza Jamshidi');
 
 
+---------------------------------------------- BUNDLE MANAGEMENT SERVICE -----------------------------------------------
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('24a5aaaf-a92e-4896-a873-39e4ff75a420', 'SVC_BUNDLE_PARENT', 'پرنت باندل', '/bundle', 1, 1, 4, 5,
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('bd0fe44f-68f2-4952-8850-fb15b05f0761', 'SVC_BUNDLE_LIST', 'لیست باندل', '/list', 1, 1, 1, 2, 1,
+        'bean:bundleManagementService.bundleList(ir.daneshrefah.scm.common.service.bundle.BundleFindRequest)',
+        '24a5aaaf-a92e-4896-a873-39e4ff75a420', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('d2ae1a02-4b8a-49cf-a067-49127cd8204c', 'SVC_BUNDLE_LIST_FIND_BY_ID', 'بازیابی اطلاعات باندل با شناسه',
+        '/{id}', 1, 1, 3, 2, 1,
+        'bean:bundleManagementService.findById(String)', '24a5aaaf-a92e-4896-a873-39e4ff75a420',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
+                                 RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+                                 IMPLEMENTATION_BPMN_CONTENT, IMPLEMENTATION_COMPOSITION_TYPE_CODE,
+                                 CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION,
+                                 CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET,
+                                 PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES ('e4f895a9-41c9-47db-9ea0-c46362f8dfa2', 'SVC_BUNDLE_EDIT', 'ویرایش باندل', '/edit', 1, 1, 1, null, null,
+        '24a5aaaf-a92e-4896-a873-39e4ff75a420', 6, 2,
+        'bean:bundleManagementService.edit(ir.daneshrefah.scm.common.service.bundle.BundleEditRequest)', null,
+        null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+----------------------------------------------- ERROR MANAGEMENT -------------------------------------------------------
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('f0d90091-3673-4f18-a77f-c81463782b3b', 'SVC_ERROR_PARENT', 'پرنت خطا', '/error', 1, 1, 4, 5,
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a6e60c29-8a32-4a1d-b355-f8091090a9e8', 'SVC_ERROR_LIST', 'لیست خطاها', '/list', 1, 1, 1, 2, 1,
+        'bean:exceptionManagementService.list(ir.daneshrefah.scm.common.service.error.ErrorMappingFindRequest)',
+        'f0d90091-3673-4f18-a77f-c81463782b3b', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('1a84e734-b7ef-4173-bda2-7f49b4cf130f', 'SVC_ERROR_FIND_BY_ID', 'بازیابی اطلاعات خطا با شناسه',
+        '/{id}', 1, 1, 3, 2, 1,
+        'bean:exceptionManagementService.findById(String)', 'f0d90091-3673-4f18-a77f-c81463782b3b',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
+                                 RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+                                 IMPLEMENTATION_BPMN_CONTENT, IMPLEMENTATION_COMPOSITION_TYPE_CODE,
+                                 CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION,
+                                 CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET,
+                                 PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES ('a637116f-6bc1-47a4-80a1-8cf6f65edf57', 'SVC_ERROR_EDIT', 'ویرایش خطا', '/edit', 1, 1, 1, null, null,
+        'f0d90091-3673-4f18-a77f-c81463782b3b', 6, 2,
+        'bean:exceptionManagementService.edit(ir.daneshrefah.scm.common.service.error.ErrorMappingEditRequest)', null,
+        null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+
 CREATE TABLE REF.TBL_SCM_TERMINAL_SERVICE_ACCESS
 (
     TERMINAL_SERVICE_ACCESS_ID DECIMAL(22) NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -619,6 +705,24 @@ INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATE
                                                  LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '69d6a8e0-f090-4e41-971f-a03b4a6b388f', '2024-04-22 13:39:10.000000',
         '2024-04-22 13:39:13.000000', 'Dariush Abdolahi', 'Dariush Abdolahi');-- add 'SVC_TERMINAL_ACCESS_TERMINAL_LIST' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'bd0fe44f-68f2-4952-8850-fb15b05f0761', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_BUNDLE_LIST' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'd2ae1a02-4b8a-49cf-a067-49127cd8204c', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_BUNDLE_FIND_BY_ID' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'e4f895a9-41c9-47db-9ea0-c46362f8dfa2', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_BUNDLE_EDIT' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'a6e60c29-8a32-4a1d-b355-f8091090a9e8', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ERROR_LIST' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '1a84e734-b7ef-4173-bda2-7f49b4cf130f', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ERROR_FIND_BY_ID' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'a637116f-6bc1-47a4-80a1-8cf6f65edf57', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ERROR_EDIT' to 'SCM'
 
 
 CREATE TABLE REF.TBL_SCM_SERVICE_RELATION
@@ -814,8 +918,19 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException',
+        'سرویس با کد '':serviceCode'' در ترمینال با کد '':terminalCode'' یافت نگردید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.TooManyRecordFoundException',
         'too many (:count) :source found.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.TooManyRecordFoundException',
+        'بیش از یک رکورد (:count) برای :source یافت شد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -824,8 +939,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException',
+        'رکوردی برای [:source] در سرویس مقصد :providerCode یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.NoDataChangedException',
         ':source data has no change');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.NoDataChangedException',
+        'خطا در ویرایش  :source');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -834,8 +959,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.NoCustomerFoundException',
+        'مشتری مورد نظر یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.NoAssetFoundException',
         'no asset found');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.NoAssetFoundException',
+        'دارایی  های فرد یافت نشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -844,8 +979,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.MissingRequiredInputException',
+        'فیلد :source خالی میباشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.MissingRequestException',
         'request body is null');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.MissingRequestException',
+        'محتوای بدنه درخواست ارسالی خالی می باشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -854,8 +999,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.MethodNotSupportedException',
+        ' :source پشتیبانی نمی شود');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.MethodNotSupportDataException',
         ':source');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.MethodNotSupportDataException',
+        'خطا در :source ');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -864,13 +1019,28 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InvalidRequestFormatException',
+        'فرمت ارسالی :message صحیح نمی باشد.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException',
         ':providerCode (:source) is invalid.');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InvalidRemoteResponseException',
+        '(:source) برای سرویس مقصد :providerCode اشتباه است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.InvalidInputException',
         ':source is invalid.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InvalidInputException',
+        'داده ورودی :source اشتباه است');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -880,8 +1050,19 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.InvalidInputDateFormatException',
+        'فرمت ارسالی :source اشتباه است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.InputMismatchException',
         'mismatch input count,:parameterCount input required, but :inputCount received.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InputMismatchException',
+        'تعداد ورودی های ارسالی :inputCount عدد می باشد،تعداد مورد نیاز :parameterCount عدد می باشد.');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -890,8 +1071,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InputAlreadyExistException',
+        ' :source از قبل وجود دارد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException',
         ':source is duplicated.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException',
+        ' :source تکراری می باشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -901,9 +1092,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.AuthenticationRequiredException',
+        'پردازش مورد نظر نیازمند به احراز هویت می باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException',
         'service :serviceCode not assigned to terminal :terminalCode');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException',
+        'سرویس :serviceCode به ترمینال :terminalCode دارای ارتباط نمی باشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -913,8 +1116,19 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.ServiceInvalidMetadataException',
+        'سرویس [:serviceCode] دارای فراداده اشتباه می باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.RecordVersionException',
         'record version does not match');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.RecordVersionException',
+        'خطا در نسخه رکورد (رکورد پیش از ثبت تغیرات شما دچار تغییرات گردیده است)');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -923,8 +1137,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.MessagePayloadMergeException',
+        'نوع آرایه بدنه پیام نا متناسب می باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.InvalidDelegationException',
         'user: :username , does not have delegation authority');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.InvalidDelegationException',
+        'کاربر :username اجازه تفویض اختیار ندارد ');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -934,8 +1158,19 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.common.exception.DisableServiceExecutionException',
+        'سرویس :serviceCode غیرفعال گردیده است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'exp.dyn.person.not.found.id',
         'person with id :id not found');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'exp.dyn.person.not.found.id',
+        'کاربر با شناسه :id یافت نشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -944,13 +1179,28 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'exp.dyn.person.not.found',
+        'کاربر یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'exp.dyn.person.not.found.nick.name.terminal',
         'person with nickname :nickname and terminalCode :terminalCode not found');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'exp.dyn.person.not.found.nick.name.terminal',
+        'کاربری با نام :nickname در ترمینال :terminalCode یافت نگردید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.plugin.api.exception.TransformException',
         'error on transform data');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.plugin.api.exception.TransformException',
+        'خطا در تبدیل داده');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -960,9 +1210,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.EmptyNotificationRequestException',
+        ' :property خالی می باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.notification.client.exception.InvalidNotificationRequestException',
-        ':property is empty');
+        ':property is invalid');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.InvalidNotificationRequestException',
+        ' :property اشتباه می باشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -972,9 +1234,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.NotFoundSupportedBodyProcessorException',
+        'پردازشگر نوتیفیکشین برای الگوی :templateCode یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessException',
         'notification body could not process for template code : :templateCode');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessException',
+        'محتوای نوتیفیکشین با کد :templateCode الگوی قابل پردازش نمی باشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -984,14 +1258,31 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.NotificationBodyProcessorDoesNotExistsException',
+        'پردازشگر محتوایی برای نوتیفکشین مورد نظر یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.notification.client.exception.NotificationTemplateNotFoundException',
         'no notification template found for : :requestedTemplateCode');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.notification.client.exception.NotificationTemplateNotFoundException',
+        'الگو :requestedTemplateCode نوتیفیکشین یافت نگردید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.client.ClientAuthenticationException',
         'error on authentication');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.uaa.client.ClientAuthenticationException',
+        'خطا در احراز هویت');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1001,9 +1292,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.ServiceEndpointPrepareException',
+        'خطا در بازگشایی فراداده آدرس مقصد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException',
         'java service class not found');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException',
+        'کلاس جاوایی سرویس مورد نظر پیدا نشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1013,9 +1316,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotFoundException',
+        'بارگزاری سرویس جاوا با مشکل مواجه گردید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException',
         'method not found for java service');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException',
+        'متد جاوا در سرویس مورد نظر یافت نگردید ');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1025,13 +1340,29 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException',
+        'پارامتر [:parameterName] در سرویس جاوا [:serviceCode] یافت نگردید.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.plugin.api.exception.ProviderUnknownException',
         'provider :providerCode is unreachable');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.plugin.api.exception.ProviderUnknownException',
+        'سرور مقصد :providerCode در دسترس نمی باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.plugin.api.exception.ProviderTimeoutException',
         'provider :providerCode for service :serviceCode is timed out');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.plugin.api.exception.ProviderTimeoutException',
+        'خطا در زمان پاسخ دهی خدمت :serviceCode از سرور مقصد :providerCode  به پایان رسیده است.');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1041,14 +1372,31 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.ProviderUnreachableException',
+        'سرویس با کد :serviceCode  قابل فراخوانی در سرور مقصد با کد :providerCode نمی باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException',
         'invalid provider :providerCode response');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException',
+        'خطا در پاسخ دریافتی از سمت سامانه :providerCode ');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.common.exception.ServiceNotFoundException',
         'no serviceCode[:serviceCode] found');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.common.exception.ServiceNotFoundException',
+        'سرویسی با کد [:serviceCode] یافت نشد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1058,9 +1406,21 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'exo::org.springframework.dao.DataIntegrityViolationException::SQLCODE=-803',
+        'رکورد مورد نظر تکراری می باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'exo::org.springframework.dao.DataIntegrityViolationException::integrity',
         'integrity error');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'exo::org.springframework.dao.DataIntegrityViolationException::integrity',
+        'خطا در صحت داده');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1069,13 +1429,28 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::org.springframework.dao.DataIntegrityViolationException',
+        'خطا در نقض یکپارچگی داده ها');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.sql.SQLIntegrityConstraintViolationException',
         'constraint error');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::java.sql.SQLIntegrityConstraintViolationException',
+        'خطا در قواعد جامعیتی پایگاه داده');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException',
         'invalid otp code.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException',
+        'رمز یکبار مصرف اشتباه می باشد');
 
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
@@ -1085,8 +1460,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.uaa.exception.OtpAlreadyExistException',
+        'رمز یکبار مصرف قبلا استفاده گردیده است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException',
         'error on create otp code.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException',
+        'ایجاد رمز یکبار مصرف با مشکل مواجه گشت');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1095,8 +1480,18 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.uaa.exception.OtpNotFoundException',
+        'رمز یکبار مصرف یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.net.UnknownHostException',
         'unknown host.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::java.net.UnknownHostException',
+        'خطا در شناسایی آدرس مقصد');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1105,8 +1500,28 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::org.apache.camel.http.base.HttpOperationFailedException',
+        'خطا در عملیات فراخوانی سرویس');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.net.NoRouteToHostException',
         'no route to host.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::java.net.NoRouteToHostException',
+        'مسیریابی درخواست به سرور مقصد با مشکل مواجه گشت');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::java.net.SocketTimeoutException',
+        'no response was received from the provider');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::java.net.SocketTimeoutException',
+        'پاسخی از سمت سرور مقصد دریافت نگردید.');
 
 
 
@@ -1419,31 +1834,31 @@ VALUES ('org.springframework.dao.DataIntegrityViolationException',
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('java.sql.SQLIntegrityConstraintViolationException',
-        1028, 'sc_ev',
+        1028, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException',
-        1250, 'sc_ev',
+        1250, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('ir.daneshrefah.scm.uaa.exception.OtpAlreadyExistException',
-        1250, 'sc_ev',
+        1250, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException',
-        1250, 'sc_ev',
+        1250, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('ir.daneshrefah.scm.uaa.exception.OtpNotFoundException',
-        1250, 'sc_ev',
+        1250, 'sc_evl',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
@@ -1461,6 +1876,12 @@ VALUES ('org.apache.camel.http.base.HttpOperationFailedException',
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES ('java.net.NoRouteToHostException',
+        1017, 'sc_eup',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES ('java.net.SocketTimeoutException',
         1017, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 

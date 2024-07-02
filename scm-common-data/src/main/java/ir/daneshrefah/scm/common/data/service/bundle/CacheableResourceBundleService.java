@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import static ir.daneshrefah.scm.common.constant.BundleDefaults.INNER_REFERENCE_
 @Service
 @AllArgsConstructor
 @Slf4j
+@Primary
 public class CacheableResourceBundleService implements ResourceBundleService {
     private static final List<ir.daneshrefah.scm.common.model.bundle.ResourceBundle> RESOURCE_BUNDLE_CACHE = new ArrayList<>(100);
     private static final Locale DEFAULT_LOCALE = new Locale("en", "US");
@@ -90,24 +92,23 @@ public class CacheableResourceBundleService implements ResourceBundleService {
     }
 
     @Override
-    public void put(ResourceBundle resourceBundle) {
+    public void update(ResourceBundle resourceBundle) {
         resourceBundleRepository
                 .findByLocaleAndKey(resourceBundle.getLocale(), resourceBundle.getKey())
-                .ifPresentOrElse(found -> {
+                .ifPresent(found -> {
                     found.setValue(resourceBundle.getValue());
-                    findCache(resourceBundle.getLocale(), resourceBundle.getKey()).ifPresent(bundle -> {
-                        bundle.setValue(resourceBundle.getValue());
-                    });
                     found.setLastEditDate(LocalDateTime.now());
+                    findCache(resourceBundle.getLocale(), resourceBundle.getKey()).ifPresent(bundle -> {
+                        bundle.setValue(found.getValue());
+                        bundle.setLastEditDate(found.getLastEditDate());
+                    });
                     resourceBundleRepository.save(found);
-                }, () -> {
-                    resourceBundle.setCreateDate(LocalDateTime.now());
-                    resourceBundle.setLastEditDate(LocalDateTime.now());
-                    ResourceBundleEntity saved = resourceBundleRepository.save(ResourceBundleMapper.INSTANCE.toEntity(resourceBundle));
-                    synchronized (this) {
-                        RESOURCE_BUNDLE_CACHE.add(ResourceBundleMapper.INSTANCE.toModel(saved));
-                    }
                 });
+    }
+
+    @Override
+    public List<ResourceBundle> getAll() {
+        return RESOURCE_BUNDLE_CACHE;
     }
 
     public static ResourceBundleService getInstance() {
