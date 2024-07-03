@@ -138,4 +138,12 @@ public class Message implements Serializable {
         return (payload.has(property) && payload.get(property).isInt()) ? payload.get(property).asInt() : null;
     }
 
+    public boolean isContinueAllowed() {
+        return MessageStatus.SC_PROCESSING.equals(status);
+    }
+
+    public boolean isSuccessful() {
+        return MessageStatus.SC_SUCCESS.equals(status);
+    }
+
 }

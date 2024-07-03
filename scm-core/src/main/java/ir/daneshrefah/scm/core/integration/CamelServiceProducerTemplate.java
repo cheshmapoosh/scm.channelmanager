@@ -52,7 +52,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
             throw new ServiceNotFoundException(serviceCode);
         }
         Message message = MessageContext.getCurrentContext().getMessage();
-        String terminalCode = MessageUtils.getTerminalCode(message);
+        String terminalCode = MessageContext.getCurrentContext().getTerminalCode();
         Optional<TerminalServiceAccess> serviceAccess = terminalService
                 .findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode);
         if (serviceAccess.isEmpty()) {
@@ -70,7 +70,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     @Override
     public Message callServiceWithException(String serviceCode, JsonNode payload) {
         Message message = callService(serviceCode, payload);
-        if (!MessageUtils.isSuccessful(message)) {
+        if (!message.isSuccessful()) {
             Error error = message.getErrors().get(0);
             if (null != error.getException()) {
                 throw new RuntimeException(error.getException());

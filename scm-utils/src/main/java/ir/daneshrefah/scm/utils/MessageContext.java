@@ -51,4 +51,11 @@ public class MessageContext {
         return getMessageOptional().map(msg -> msg.getHeader().getCorrelationId()).orElse(null);
     }
 
+    public String getTerminalCode() {
+        return getMessageOptional().map(msg -> msg.getHeader().getTerminalCode()).orElse(null);
+    }
+
+    public String getClientId() {
+        return getMessageOptional().map(msg -> msg.getHeader().getInput().getClientId()).orElse(null);
+    }
 }

@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.utils.MessageUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +80,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         } finally {
 //            logIncomingMessage(request, message, exception, startTime);
         }
-        if (MessageUtils.isContinueAllowed(message)) {
+        if (message.isContinueAllowed()) {
             message = executeService(message);
         }
         return message;
@@ -101,7 +100,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();
             message = messageInterceptor.intercept(message);
-            if (!MessageUtils.isContinueAllowed(message)) {
+            if (!message.isContinueAllowed()) {
                 return message;
             }
         }
@@ -111,7 +110,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
         for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();
             message = messageInterceptor.intercept(message);
-            if (!MessageUtils.isContinueAllowed(message)) {
+            if (!message.isContinueAllowed()) {
                 break;
             }
         }

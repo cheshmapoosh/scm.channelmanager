@@ -2,8 +2,7 @@ package ir.daneshrefah.scm.plugin.pichack.util;
 
 import ir.daneshrefah.scm.common.constant.TerminalCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
-import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.MessageContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,7 @@ public class PichakUtil {
     public static final String PICHACK_CUSTOMER_AUTH_STATUS_AUTHORIZED_4_LEVEL = "4";
 
     public static String provideBranchCode(Message message) {
-        String terminalCode = MessageUtils.getTerminalCode(message);
+        String terminalCode = MessageContext.getCurrentContext().getTerminalCode();
         if (TerminalCodes.CMC.equals(terminalCode))
             return null; //TODO
         else
@@ -36,8 +35,8 @@ public class PichakUtil {
     }
 
     public static String provideTerminalName(Message message) {
-        String terminalCode = MessageUtils.getTerminalCode(message);
-        String clientId = MessageUtils.getClientId(message);
+        String terminalCode = MessageContext.getCurrentContext().getTerminalCode();
+        String clientId = MessageContext.getCurrentContext().getClientId();
         TerminalMap map = TerminalMap.findByCode(clientId);
         if (null == map) {
             map = TerminalMap.findByCode(terminalCode);
@@ -46,7 +45,7 @@ public class PichakUtil {
     }
 
     public static String provideBranchUsername(Message message) {
-        String channelCode = MessageUtils.getTerminalCode(message);
+        String channelCode = MessageContext.getCurrentContext().getTerminalCode();
         if (TerminalCodes.CMC.equals(channelCode))
             return null;
         else

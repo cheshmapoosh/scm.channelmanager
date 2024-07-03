@@ -5,13 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.ServiceEvent;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.utils.MessageUtils;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.ChoiceDefinition;
 import org.apache.camel.model.OutputDefinition;
@@ -19,7 +15,6 @@ import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.TryDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
@@ -112,28 +107,28 @@ public abstract class ServiceExecutor {
             for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
                 MessageInterceptor messageInterceptor = iterator.next();
                 message = messageInterceptor.intercept(message);
-                if (!MessageUtils.isContinueAllowed(message)) {
+                if (!message.isContinueAllowed()) {
                     break;
                 }
             }
         });
         ChoiceDefinition choiceDefinition = tryDefinition.choice()
                 .when(exchange -> {
-                    boolean isContinueAllowed = MessageUtils.isContinueAllowed(exchange.getMessage().getBody(Message.class));
+                    boolean isContinueAllowed = exchange.getMessage().getBody(Message.class).isContinueAllowed();
                     return isContinueAllowed;
                 });
         defineServiceRoute(service, choiceDefinition);
         choiceDefinition.endChoice();
         tryDefinition = tryDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
-            if (!MessageUtils.isContinueAllowed(message)) {
+            if (!message.isContinueAllowed()) {
                 exchange.setProperty(PROPERTY_END_TIME, Instant.now());
                 return;
             }
             for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
                 MessageInterceptor messageInterceptor = iterator.next();
                 message = messageInterceptor.intercept(message);
-                if (!MessageUtils.isContinueAllowed(message)) {
+                if (!message.isContinueAllowed()) {
                     return;
                 }
             }
