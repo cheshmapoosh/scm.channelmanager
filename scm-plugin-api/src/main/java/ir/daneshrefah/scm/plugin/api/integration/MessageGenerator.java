@@ -41,30 +41,30 @@ public class MessageGenerator {
     public Message buildEmptyMessage(MessageInput input, Channel channel, Exception exception) {
         String inputTerminalCode = input.getHeader(SCM_PARAMETER_TERMINAL);
         TerminalServiceAccess serviceAccess = findServiceAccess(inputTerminalCode, input.getServiceCode());
-        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
-                .input(input)
-                .terminalCode(inputTerminalCode)
-                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
-                .serviceCode(input.getServiceCode())
-                .contentType(input.getContentType())
-//                .clientRemoteAddress(input.getClientRemoteAddress())
-                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
-                .clientTimestamp(null)
-//                .clientAgent(input.getClientAgent())
-                .accessParameter(input.getHeader(SCM_PARAMETER_ACCESS_PARAMETER))
-                .username(input.getHeader(SCM_PARAMETER_USERNAME))
-                .authenticationType(null)
-                .authenticationValue(null)
-                .transactionAuthenticationType(null)
-                .transactionAuthenticationValue(input.getHeader(SCM_PARAMETER_CLAIM_CODE))
-                .receiveTimestamp(input.getReceiveTimestamp())
-                .serverHost(input.getServerHost())
-                .payload(null)
-                .isForCheck(input.isForCheck())
-                .error(exception)
-                .build();
+//        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
+//                .input(input)
+//                .terminalCode(inputTerminalCode)
+//                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
+//                .serviceCode(input.getServiceCode())
+//                .contentType(input.getContentType())
+////                .clientRemoteAddress(input.getClientRemoteAddress())
+//                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
+//                .clientTimestamp(null)
+////                .clientAgent(input.getClientAgent())
+//                .accessParameter(input.getHeader(SCM_PARAMETER_ACCESS_PARAMETER))
+//                .username(input.getHeader(SCM_PARAMETER_USERNAME))
+//                .authenticationType(null)
+//                .authenticationValue(null)
+//                .transactionAuthenticationType(null)
+//                .transactionAuthenticationValue(input.getHeader(SCM_PARAMETER_CLAIM_CODE))
+//                .receiveTimestamp(input.getReceiveTimestamp())
+//                .serverHost(input.getServerHost())
+//                .payload(null)
+//                .isForCheck(input.isForCheck())
+//                .error(exception)
+//                .build();
         Header header = Header.builder()
-                .request(requestInfo)
+                .input(input)
                 .channel(channel)
                 .serviceAccess(serviceAccess)
                 .build();
@@ -72,7 +72,7 @@ public class MessageGenerator {
         Message message = Message.builder()
                 .header(header)
                 .status(input.isForCheck() ? MessageStatus.SC_SUCCESS : MessageStatus.SC_PROCESSING)
-                .payload(requestInfo.getPayload())
+                .payload(null)
                 .build();
         MessageContext.init(message);
 
@@ -99,33 +99,33 @@ public class MessageGenerator {
             throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
 
-        String inputClientTimestamp = input.getHeader(SCM_PARAMETER_CLIENT_TIMESTAMP);
-        String inputClaimCode = input.getHeader(SCM_PARAMETER_CLAIM_CODE);
-        Instant clientTimestamp = StringUtils.isEmpty(inputClientTimestamp) ? null :
-                DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
-        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
-                .input(input)
-                .terminalCode(!input.isForCheck() ? serviceAccess.getTerminal().getCode() : inputTerminalCode)
-                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
-                .serviceCode(input.getServiceCode())
-                .contentType(input.getContentType())
-//                .clientRemoteAddress(input.getClientRemoteAddress())
-                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
-                .clientTimestamp(clientTimestamp)
-//                .clientAgent(input.getClientAgent())
-                .accessParameter(inputAccessParameter)
-                .username(input.getHeader(SCM_PARAMETER_USERNAME))
-                .authenticationType(extractAuthenticationType(input))
-                .authenticationValue(extractAuthenticationValue(input))
-                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
-                .transactionAuthenticationValue(inputClaimCode)
-                .receiveTimestamp(input.getReceiveTimestamp())
-                .serverHost(input.getServerHost())
-                .payload(extractMessagePayload(serviceAccess, input))
-                .isForCheck(input.isForCheck())
-                .build();
+//        String inputClientTimestamp = input.getHeader(SCM_PARAMETER_CLIENT_TIMESTAMP);
+//        String inputClaimCode = input.getHeader(SCM_PARAMETER_CLAIM_CODE);
+//        Instant clientTimestamp = StringUtils.isEmpty(inputClientTimestamp) ? null :
+//                DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
+//        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
+//                .input(input)
+//                .terminalCode(!input.isForCheck() ? serviceAccess.getTerminal().getCode() : inputTerminalCode)
+//                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
+//                .serviceCode(input.getServiceCode())
+//                .contentType(input.getContentType())
+////                .clientRemoteAddress(input.getClientRemoteAddress())
+//                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
+//                .clientTimestamp(clientTimestamp)
+////                .clientAgent(input.getClientAgent())
+//                .accessParameter(inputAccessParameter)
+//                .username(input.getHeader(SCM_PARAMETER_USERNAME))
+//                .authenticationType(extractAuthenticationType(input))
+//                .authenticationValue(extractAuthenticationValue(input))
+//                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
+//                .transactionAuthenticationValue(inputClaimCode)
+//                .receiveTimestamp(input.getReceiveTimestamp())
+//                .serverHost(input.getServerHost())
+//                .payload(extractMessagePayload(serviceAccess, input))
+//                .isForCheck(input.isForCheck())
+//                .build();
         Header header = Header.builder()
-                .request(requestInfo)
+                .input(input)
                 .authentication(null)
                 .isTransactionAuthenticated(false)
                 .correlationId(StringUtils.generateGuid())
@@ -136,7 +136,7 @@ public class MessageGenerator {
         Message message = Message.builder()
                 .header(header)
                 .status(input.isForCheck() ? MessageStatus.SC_SUCCESS : MessageStatus.SC_PROCESSING)
-                .payload(requestInfo.getPayload())
+                .payload(extractMessagePayload(serviceAccess, input))
                 .build();
         MessageContext.init(message);
 

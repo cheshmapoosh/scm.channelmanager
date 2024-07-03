@@ -73,7 +73,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     private void validateRequest(OtpSendRequest request) {
 //        TODO check cell phone number pattern
         String mobileNumber = request.getRecipient().getAddress();
-        ValidationUtils.checkRegex(CommonRegex.MOBILE_NUMBER_REGEX,mobileNumber,()-> new InvalidInputException("mobile"));
+        ValidationUtils.checkInvalidMobileNumber(mobileNumber, () -> new InvalidInputException("mobile"));
     }
 
     private void sendNotification(Otp otp) {

@@ -56,7 +56,7 @@ public abstract class AbstractOtpProvider {
     protected final Otp buildOtpInstance(OtpSendRequest request, boolean requireDeliver) {
         String otpKey = extractOtpKey(request);
         Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
-        if (Objects.nonNull(otp)) {
+        if (Objects.nonNull(otp) && DateUtils.InstantTools.currentDate().isBefore(otp.getExpireTime())) {
             return otp;
         }
 //        ValidationUtils.checkNonNull(otp, () -> new OtpAlreadyExistException());
@@ -71,7 +71,7 @@ public abstract class AbstractOtpProvider {
                 .expireTime(DateUtils.InstantTools.plusMinutesToCurrent(request.getReason().getTimeToLiveMinutes()))
                 .isDelivered(!requireDeliver)
                 .build();
-        cacheTemplate.putInCacheIfAbsent(CACHE_NAME_OTP, otpKey, otp, otp.getReason().getTimeToLiveMinutes());
+        cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp, otp.getReason().getTimeToLiveMinutes());
         return otp;
     }
 

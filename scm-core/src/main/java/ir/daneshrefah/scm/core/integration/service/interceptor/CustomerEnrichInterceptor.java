@@ -33,7 +33,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
         ExternalService service = serviceAccess.getService() instanceof ExternalService ?
                 (ExternalService) serviceAccess.getService() : null;
-        if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider())) {
+        if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider()) || !message.getHeader().getAuthentication().isFullyAuthenticated()) {
             throw new NoCustomerFoundException();
         }
         String customerProperty = service.getCustomerProperty();

@@ -14,7 +14,9 @@ import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
@@ -80,21 +82,37 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         String httpMethod = CamelUtils.getHttpMethodFromExchange(input);
+        String inputClientTimestamp = (String) headers.get(SCM_PARAMETER_CLIENT_TIMESTAMP);
+        String inputClaimCode = (String) headers.get(SCM_PARAMETER_CLAIM_CODE);
+        Instant clientTimestamp = StringUtils.isEmpty(inputClientTimestamp) ? null :
+                DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
         MessageInput result = HttpMessageInput.builder()
                 .headers(headers)
                 .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
                 .channelCode(getChannel().getCode())
-                .body(body)
+                .serviceCode(serviceAccess.getService().getCode())
                 .contentType(CamelUtils.getContentTypeHeaderFromExchange(input))
                 .clientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input))
-                .clientAgent(CamelUtils.getClientAgentFromExchange(input))
-                .authorization(CamelUtils.getAuthorizationHeaderFromExchange(input))
+                .clientId((String) headers.get(SCM_PARAMETER_CLIENT_ID))
+                .clientCorrelationId((String) headers.get(SCM_PARAMETER_CLIENT_CORRELATION_ID))
+                .clientFlowId((String) headers.get(SCM_PARAMETER_CLIENT_FLOW_ID))
+                .clientTimestamp(clientTimestamp)
+                .accessParameter((String) headers.get(SCM_PARAMETER_ACCESS_PARAMETER))
+                .username((String) headers.get(SCM_PARAMETER_USERNAME))
+                .authenticationType(AuthenticationUtils.extractAuthenticationType(
+                        (String) headers.get(SCM_PARAMETER_AUTHORIZATION),
+                        (String) headers.get(SCM_PARAMETER_USERNAME), (String) headers.get(SCM_PARAMETER_CREDENTIAL)))
+                .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headers.get(SCM_PARAMETER_AUTHORIZATION)))
+                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
+                .transactionAuthenticationValue(inputClaimCode)
                 .serverHost(CamelUtils.getServerHostFromExchange(input))
+                .body(body)
                 .isForCheck(HTTP_METHOD_OPTIONS.equals(httpMethod))
-                .serviceCode(serviceAccess.getService().getCode())
+                .clientAgent(CamelUtils.getClientAgentFromExchange(input))
                 .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
                 .httpMethod(httpMethod)
                 .build();
+
         return result;
     }
 
@@ -113,22 +131,22 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     }
 
     private void prepareResponseHeader(Message message, org.apache.camel.Message responseMessage) {
-        String contentType = message.getHeader().getRequest().getContentType();
+        String contentType = message.getHeader().getInput().getContentType();
         if (StringUtils.isEmpty(contentType)) {
             contentType = DEFAULT_CONTENT_TYPE;
         }
         Header header = message.getHeader();
         responseMessage.setHeader(Exchange.HTTP_RESPONSE_CODE, HttpStatusMapper.toHttpStatus(message.getStatus()));
         responseMessage.setHeader(Exchange.CONTENT_TYPE, contentType);
-        responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID, header.getRequest().getClientCorrelationId());
+        responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID, header.getInput().getClientCorrelationId());
         responseMessage.setHeader(Constants.SCM_PARAMETER_CORRELATION_ID, header.getCorrelationId());
-        responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_TIMESTAMP, header.getRequest().getClientTimestamp());
-        responseMessage.setHeader(Constants.SCM_PARAMETER_RECEIVE_TIMESTAMP, header.getRequest().getReceiveTimestamp());
+        responseMessage.setHeader(Constants.SCM_PARAMETER_CLIENT_TIMESTAMP, header.getInput().getClientTimestamp());
+        responseMessage.setHeader(Constants.SCM_PARAMETER_RECEIVE_TIMESTAMP, header.getInput().getReceiveTimestamp());
         Instant responseTime = Instant.now();
         responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_TIMESTAMP, responseTime);
         String duration = null;
-        if (null != header.getRequest().getReceiveTimestamp()) {
-            duration = Duration.between(header.getRequest().getReceiveTimestamp(), responseTime).toMillis() + "(ms)";
+        if (null != header.getInput().getReceiveTimestamp()) {
+            duration = Duration.between(header.getInput().getReceiveTimestamp(), responseTime).toMillis() + "(ms)";
         }
         responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_DURATION, duration);
 //        exchange.getMessage().setHeader("Access-Control-Allow-Credentials", "true");

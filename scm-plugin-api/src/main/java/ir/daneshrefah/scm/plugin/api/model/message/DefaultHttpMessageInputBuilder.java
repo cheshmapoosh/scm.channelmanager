@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.common.model.message.HttpMessageInput;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,14 +27,26 @@ public class DefaultHttpMessageInputBuilder {
     public HttpMessageInput build() {
         HttpMessageInput result = HttpMessageInput.builder()
 //                .headers(headers)
-//                .body(body)
+//                .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
+//                .channelCode(getChannel().getCode())
+//                .clientId(headers.get(SCM_PARAMETER_CLIENT_ID))
+                .serviceCode(serviceCode)
                 .contentType(request.getContentType())
                 .clientRemoteAddress(request.getRemoteAddr())
-                .clientAgent(request.getHeader(HttpConstants.HTTP_HEADER_USER_AGENT))
-                .authorization(request.getHeader(HttpConstants.HTTP_HEADER_AUTHORIZATION))
+//                .clientCorrelationId(headers.get(SCM_PARAMETER_CLIENT_CORRELATION_ID))
+//                .clientTimestamp(clientTimestamp)
+//                .accessParameter(headers.get(SCM_PARAMETER_ACCESS_PARAMETER))
+//                .username(headers.get(SCM_PARAMETER_USERNAME))
+//                .authenticationType(AuthenticationUtils.extractAuthenticationType(
+//                        (String) headers.get(SCM_PARAMETER_AUTHORIZATION),
+//                        (String) headers.get(SCM_PARAMETER_USERNAME), (String) headers.get(SCM_PARAMETER_CREDENTIAL)))
+//                .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headers.get(SCM_PARAMETER_AUTHORIZATION)))
+//                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
+//                .transactionAuthenticationValue(inputClaimCode)
                 .serverHost(request.getHeader(HttpConstants.HTTP_HEADER_HOST))
+//                .payload(null)
                 .isForCheck(HTTP_METHOD_OPTIONS.equalsIgnoreCase(request.getMethod()))
-                .serviceCode(serviceCode)
+                .clientAgent(request.getHeader(HttpConstants.HTTP_HEADER_USER_AGENT))
 //                .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
                 .httpMethod(request.getMethod())
                 .build();

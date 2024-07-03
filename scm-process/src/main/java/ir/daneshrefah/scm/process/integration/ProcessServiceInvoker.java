@@ -67,7 +67,7 @@ public class ProcessServiceInvoker {
                 .channelCode(null)
                 .body(payload)
                 .contentType(HTTP_HEADER_CONTENT_TYPE_JSON)
-                .authorization(authorizationHeader)
+//                .authorization(authorizationHeader)
                 .serverHost(null)
                 .isForCheck(false)
                 .build();

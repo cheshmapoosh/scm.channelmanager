@@ -23,14 +23,14 @@ public class MessageUtils {
         if (null == message || null == message.getHeader()) {
             return null;
         }
-        return message.getHeader().getRequest().getTerminalCode();
+        return message.getHeader().getInput().getTerminalCode();
     }
 
     public static String getClientId(Message message) {
         if (null == message || null == message.getHeader()) {
             return null;
         }
-        return message.getHeader().getRequest().getClientId();
+        return message.getHeader().getInput().getClientId();
     }
 
 //    public static List<Difference> calcDifference(Message from, Message to) {
@@ -51,7 +51,7 @@ public class MessageUtils {
 
     public static Message cloneMessage(Message source) {
         Header header = Header.builder()
-                .request(source.getHeader().getRequest())
+                .input(source.getHeader().getInput())
                 .authentication(source.getHeader().getAuthentication())
                 .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
@@ -78,7 +78,7 @@ public class MessageUtils {
     private static Message generateInternalMessage(Message source, TerminalServiceAccess serviceAccess, JsonNode payload,
                                                    int level, String parentMessageId) {
         Header header = Header.builder()
-                .request(source.getHeader().getRequest())
+                .input(source.getHeader().getInput())
                 .authentication(source.getHeader().getAuthentication())
                 .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())

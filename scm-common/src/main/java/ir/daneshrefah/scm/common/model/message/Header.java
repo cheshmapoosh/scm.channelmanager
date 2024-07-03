@@ -25,7 +25,7 @@ import java.util.UUID;
 @Builder
 public class Header implements Serializable {
 
-    private final MessageRequestInfo request;
+    private final MessageInput input;
     private Authentication authentication;
     private Boolean isTransactionAuthenticated;
     private final String correlationId;
@@ -54,23 +54,23 @@ public class Header implements Serializable {
 //    }
 
     public String getTerminalCode() {
-        return request.getTerminalCode();
+        return input.getTerminalCode();
     }
 
     public String getContentType() {
-        return request.getContentType();
+        return input.getContentType();
     }
 
     public Instant getReceiveTimestamp() {
-        return request.getReceiveTimestamp();
+        return input.getReceiveTimestamp();
     }
 
     public String getClientCorrelationId() {
-        return request.getClientCorrelationId();
+        return input.getClientCorrelationId();
     }
 
     public Instant getClientTimestamp() {
-        return request.getClientTimestamp();
+        return input.getClientTimestamp();
     }
 
 }

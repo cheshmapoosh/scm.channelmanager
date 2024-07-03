@@ -54,7 +54,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
     private Locale findRequestLocale(Message message) {
         Locale locale = AccessibleLocale.EN_US.getLocale();
         try {
-            String acceptLanguageHeader = message.getHeader().getRequest().getInput().getHeader("Accept-Language");
+            String acceptLanguageHeader = message.getHeader().getInput().getHeader("Accept-Language");
             if (Objects.nonNull(acceptLanguageHeader)) {
                 String[] acceptLanguages = acceptLanguageHeader.split(",");
                 for (String acceptLanguage : acceptLanguages) {

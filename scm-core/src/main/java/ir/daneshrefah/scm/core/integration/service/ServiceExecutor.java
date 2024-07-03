@@ -106,7 +106,7 @@ public abstract class ServiceExecutor {
     public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
         TryDefinition tryDefinition = routeDefinition.doTry();
         tryDefinition = tryDefinition.process(exchange -> {
-            Message message = exchange.getMessage().getBody(Message.class);
+             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(PROPERTY_START_TIME, Instant.now());
             exchange.setProperty(PROPERTY_REQUEST_BODY, message.getPayload().deepCopy());
             for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {

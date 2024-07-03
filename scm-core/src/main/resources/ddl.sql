@@ -408,6 +408,36 @@ VALUES ('F12A3BED-A32B-432E-A21F-31EF1ABC2DEA', 'SVC_USER_LOCAL_ACCOUNT_LIST', '
         'bean:customerManagementService.findLocalMembershipTerminalAccesses(ir.daneshrefah.scm.common.service.MembershipFindRequest)',
         'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 'Reza Jamshidi', 'Reza Jamshidi');
 
+--------------------------------------------- FUND_TRANSFER_SERVICES ----------------------------------------------
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('A321C87B-F28D-402D-87A2-1C34A78219BD', 'SVC_INTERNAL_XFER_PARENT', 'پرنت انتقال وجه داخلی', '/xfer', 1, 1, 4, 5,
+        'Reza Jamshidi', 'Reza Jamshidi');
+
+INSERT INTO REF.TBL_SCM_SERVICE
+(SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA, RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID,
+ SERVICE_TYPE_CODE, SERVICE_IMPLEMENTATION_TYPE_CODE, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+ CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION, CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET,
+ METADATA, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET, PROPERTY_NAME_CUSTOMER, CREATOR, LAST_EDITOR)
+VALUES ('DE3A812C-B741-401B-A012-8C4271A2BDEF', 'SVC_INTERNAL_XFER_ADD', 'افزودن انتقال وجه داخلی', '', 1, 1, '{"$schema":"http://json-schema.org/draft-07/schema#","title":"GeneratedschemaforRoot","type":"object","properties":{"sourceAccount":{"type":"string"},"destinationAccount":{"type":"string"},"amount":{"type":"number"},"paymentId":{"type":"string"}},"required":["sourceAccount","destinationAccount","amount"]}',
+        null, 'A321C87B-F28D-402D-87A2-1C34A78219BD', 2, 1, 'D487B21A-CA18-438E-A9E9-17482B127C81', 1, 1, 0, 1,
+        null, null, null, null, 'Reza Jamshidi', 'Reza Jamshidi');
+
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('21EBAC34-182A-471D-80A1-C2B7412A834E', 'SVC_ACH_XFER_PARENT', 'پرنت انتقال وجه پایا', '/ach', 1, 1, 4, 5,
+        'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('F7129CBE-AB42-43A1-B827-81AB2C741D3F', 'SVC_RTGS_XFER_PARENT', 'پرنت انتقال وجه ساتنا', '/rtgs', 1, 1, 4, 5,
+        'Reza Jamshidi', 'Reza Jamshidi');
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('5C421B78-3AEB-4F1A-A219-21C3BD87AE2F', 'SVC_IP_XFER_PARENT', 'پرنت انتقال وجه پل', '/ip', 1, 1, 4, 5,
+        'Reza Jamshidi', 'Reza Jamshidi');
+
+
 --------------------------------------------- PICHACK_MANAGEMENT_SERVICES ----------------------------------------------
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
@@ -636,6 +666,9 @@ VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'F12A3BED-A32B-432E-A21F-31EF1AB
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'F21A3BED-A23B-432E-A21F-32EF1ABC2DEA', 'Reza Jamshidi',
         'Reza Jamshidi'); -- add 'SVC_PICHACK_CHEQUE_REGISTER' to 'IB'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a45687d9-71b7-4e7c-a97f-2e9c8a1d6efc', 'DE3A812C-B741-401B-A012-8C4271A2BDEF', 'Reza Jamshidi',
+        'Reza Jamshidi'); -- add 'SVC_INTERNAL_XFER_ADD' to 'IB'
 
 
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)

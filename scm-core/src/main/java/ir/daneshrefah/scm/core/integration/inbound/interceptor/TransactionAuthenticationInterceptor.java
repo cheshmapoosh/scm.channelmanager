@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageRequestInfo;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
@@ -34,12 +34,12 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
         if (Objects.nonNull(message.getHeader().getIsTransactionAuthenticated())) {
             return message;
         }
-        MessageRequestInfo request = message.getHeader().getRequest();
+        MessageInput messageInput = message.getHeader().getInput();
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
-                .username(request.getUsername())
-                .terminalCode(request.getTerminalCode())
-                .authenticationType(request.getTransactionAuthenticationType())
-                .authenticationValue(request.getTransactionAuthenticationValue())
+                .username(messageInput.getUsername())
+                .terminalCode(messageInput.getTerminalCode())
+                .authenticationType(messageInput.getTransactionAuthenticationType())
+                .authenticationValue(messageInput.getTransactionAuthenticationValue())
                 .build();
         UserAuthentication authentication = null;
         Exception error = null;

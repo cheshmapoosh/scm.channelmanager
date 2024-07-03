@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageRequestInfo;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
@@ -35,14 +35,14 @@ public class AuthenticationInterceptor extends MessageInterceptor {
         if (Objects.nonNull(message.getHeader().getAuthentication())) {
             return message;
         }
-        MessageRequestInfo request = message.getHeader().getRequest();
+        MessageInput messageInput = message.getHeader().getInput();
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
-                .username(request.getUsername())
-                .terminalCode(request.getTerminalCode())
-                .clientId(request.getClientId())
-                .authenticationType(request.getAuthenticationType())
-                .authenticationValue(request.getAuthenticationValue())
-                .accessParameter(request.getAccessParameter())
+                .username(messageInput.getUsername())
+                .terminalCode(messageInput.getTerminalCode())
+                .clientId(messageInput.getClientId())
+                .authenticationType(messageInput.getAuthenticationType())
+                .authenticationValue(messageInput.getAuthenticationValue())
+                .accessParameter(messageInput.getAccessParameter())
                 .build();
         UserAuthentication authentication = null;
         Exception error = null;

@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.uaa.common.utils;
 
+import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.MessageContext;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -71,6 +73,39 @@ public class AuthenticationUtils {
 //                .hostAddress()
 //                .instanceName()
                 .build();
+    }
+
+    public static ClientAuthenticationType extractAuthenticationType(String authorizationHeader, String username, String credential) {
+        if (StringUtils.isEmpty(authorizationHeader)) {
+            return ClientAuthenticationType.ANONYMOUS;
+        }
+
+        String AUTHENTICATION_SCHEME_BASIC = "Basic";
+        String AUTHENTICATION_SCHEME_BEARER = "Bearer";
+        String AUTHENTICATION_SCHEME_SESSION = "Session";
+
+        if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
+            return ClientAuthenticationType.CLIENT;
+        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
+            return ClientAuthenticationType.SESSION;
+        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
+            return ClientAuthenticationType.BEARER;
+        } else {
+            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(credential)) {
+                return ClientAuthenticationType.BASIC;
+            }
+        }
+        return ClientAuthenticationType.ANONYMOUS;
+    }
+
+    public static String extractAuthenticationValue(String authorizationHeader) {
+        if (StringUtils.isEmpty(authorizationHeader)) {
+            return null;
+        }
+        String[] args = authorizationHeader.split(" ");
+        if (args.length < 2)
+            return null;
+        return args[1];
     }
 
 }
