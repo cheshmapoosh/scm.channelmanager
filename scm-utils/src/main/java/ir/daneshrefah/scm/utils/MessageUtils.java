@@ -52,10 +52,10 @@ public class MessageUtils {
     public static Message cloneMessage(Message source) {
         Header header = Header.builder()
                 .input(source.getHeader().getInput())
-                .authentication(source.getHeader().getAuthentication())
-                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
+//                .authentication(source.getHeader().getAuthentication())
+//                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
-                .channel(source.getHeader().getChannel())
+//                .channel(source.getHeader().getChannel())
                 .serviceAccess(source.getHeader().getServiceAccess())
                 .build();
         Message result = Message.builder()
@@ -79,10 +79,10 @@ public class MessageUtils {
                                                    int level, String parentMessageId) {
         Header header = Header.builder()
                 .input(source.getHeader().getInput())
-                .authentication(source.getHeader().getAuthentication())
-                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
+//                .authentication(source.getHeader().getAuthentication())
+//                .isTransactionAuthenticated(source.getHeader().getIsTransactionAuthenticated())
                 .correlationId(source.getHeader().getCorrelationId())
-                .channel(source.getHeader().getChannel())
+//                .channel(source.getHeader().getChannel())
                 .serviceAccess(serviceAccess)
                 .level(level)
                 .parentMessageId(parentMessageId)
@@ -111,46 +111,46 @@ public class MessageUtils {
         return getTerminalCode(getCurrentMessage());
     }
 
-    public static boolean isTransactionAuthenticated() {
-        return isTransactionAuthenticated(getCurrentMessage());
-    }
+//    public static boolean isTransactionAuthenticated() {
+//        return isTransactionAuthenticated(getCurrentMessage());
+//    }
+//
+//    public static boolean isTransactionAuthenticated(Message message) {
+//        return null != message && message.getHeader().getIsTransactionAuthenticated();
+//    }
 
-    public static boolean isTransactionAuthenticated(Message message) {
-        return null != message && message.getHeader().getIsTransactionAuthenticated();
-    }
+//    public boolean hasAuthority(String authority) {
+//        return hasAuthority(getCurrentMessage(), authority);
+//    }
 
-    public boolean hasAuthority(String authority) {
-        return hasAuthority(getCurrentMessage(), authority);
-    }
+//    public static Authentication getAuthentication(Message message) {
+//        return null != message && null != message.getHeader() && null != message.getHeader().getAuthentication() &&
+//                message.getHeader().getAuthentication().isFullyAuthenticated() ? message.getHeader().getAuthentication() : null;
+//    }
+//    public boolean hasAuthority(Message message, String authority) {
+//        return null != message && message.getHeader().getAuthentication().isAuthenticated() &&
+//                message.getHeader().getAuthentication().hasAuthority(authority);
+//    }
 
-    public static Authentication getAuthentication(Message message) {
-        return null != message && null != message.getHeader() && null != message.getHeader().getAuthentication() &&
-                message.getHeader().getAuthentication().isFullyAuthenticated() ? message.getHeader().getAuthentication() : null;
-    }
-    public boolean hasAuthority(Message message, String authority) {
-        return null != message && message.getHeader().getAuthentication().isAuthenticated() &&
-                message.getHeader().getAuthentication().hasAuthority(authority);
-    }
+//    public static String getUsername(Message message) {
+//        Authentication authentication = getAuthentication(message);
+//        if (Objects.isNull(authentication)) {
+//            return null;
+//        }
+//        return message.getHeader().getAuthentication().getProfile().getNickname();
+//    }
 
-    public static String getUsername(Message message) {
-        Authentication authentication = getAuthentication(message);
-        if (Objects.isNull(authentication)) {
-            return null;
-        }
-        return message.getHeader().getAuthentication().getProfile().getNickname();
-    }
-
-    public static String getCSPUsername(Message message) {
-        Authentication authentication = getAuthentication(message);
-        if (Objects.isNull(authentication) || !authentication.isDelegated()) {
-            return null;
-        }
-        return authentication.getName();
-    }
-
-    public static boolean isDelegated(Message message) {
-        Authentication authentication = getAuthentication(message);
-        return Objects.nonNull(authentication) && authentication.isDelegated();
-    }
+//    public static String getCSPUsername(Message message) {
+//        Authentication authentication = getAuthentication(message);
+//        if (Objects.isNull(authentication) || !authentication.isDelegated()) {
+//            return null;
+//        }
+//        return authentication.getName();
+//    }
+//
+//    public static boolean isDelegated(Message message) {
+//        Authentication authentication = getAuthentication(message);
+//        return Objects.nonNull(authentication) && authentication.isDelegated();
+//    }
 
 }

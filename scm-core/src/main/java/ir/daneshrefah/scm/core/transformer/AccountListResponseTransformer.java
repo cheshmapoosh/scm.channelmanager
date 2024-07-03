@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         }
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
 
-        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(message.getHeader().getAuthentication());
+        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(AuthenticationUtils.getScmAuthentication());
 
         for (JsonNode sourceNode : sourceArray) {
             if (!sourceNode.isObject() || sourceNode.isEmpty()) {

@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.condition.ConditionKey;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,10 +25,8 @@ import java.util.UUID;
 public class Header implements Serializable {
 
     private final MessageInput input;
-    private Authentication authentication;
-    private Boolean isTransactionAuthenticated;
+//    private Authentication authentication;
     private final String correlationId;
-    private final Channel channel;
     private final TerminalServiceAccess serviceAccess;
     @Setter
     private Map<ConditionKey, Condition> withdrawConditions;
@@ -38,13 +35,13 @@ public class Header implements Serializable {
     private final String parentMessageId;
     private final String messageId = UUID.randomUUID().toString();
 
-    public void authenticate(Authentication authentication) {
-        this.authentication = authentication;
-    }
+//    public void authenticate(Authentication authentication) {
+//        this.authentication = authentication;
+//    }
 
-    public void authenticateTransaction(boolean isTransactionAuthenticated) {
-        this.isTransactionAuthenticated = isTransactionAuthenticated;
-    }
+//    public void authenticateTransaction(boolean isTransactionAuthenticated) {
+//        this.isTransactionAuthenticated = isTransactionAuthenticated;
+//    }
 
 //    public UserProfile getUserProfile() {
 //        if (null != authentication) {

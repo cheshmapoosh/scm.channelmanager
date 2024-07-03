@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -33,7 +34,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
         ExternalService service = serviceAccess.getService() instanceof ExternalService ?
                 (ExternalService) serviceAccess.getService() : null;
-        if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider()) || !message.getHeader().getAuthentication().isFullyAuthenticated()) {
+        if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider()) || !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();
         }
         String customerProperty = service.getCustomerProperty();
@@ -43,7 +44,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
             return message;
         }
 
-        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(message.getHeader().getAuthentication());
+        UserProfile profile = personProfileLoader.preparePersonProfileMemberships(AuthenticationUtils.getScmAuthentication());
         if (Objects.isNull(profile) || !profile.hasMembership(service.getServiceProvider().getId())) {
             throw new NoAssetFoundException();
         }

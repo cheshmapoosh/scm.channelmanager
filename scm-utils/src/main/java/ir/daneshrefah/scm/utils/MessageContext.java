@@ -43,9 +43,9 @@ public class MessageContext {
         return Optional.of(message);
     }
 
-    public Authentication getAuthentication() {
-        return getMessageOptional().map(msg -> msg.getHeader().getAuthentication()).orElse(null);
-    }
+//    public Authentication getAuthentication() {
+//        return getMessageOptional().map(msg -> msg.getHeader().getAuthentication()).orElse(null);
+//    }
 
     public String getCorrelationId() {
         return getMessageOptional().map(msg -> msg.getHeader().getCorrelationId()).orElse(null);

@@ -119,15 +119,15 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         Instant startTime = exchange.getProperty(HEADER_START_TIME, Instant.class);
         Instant endTime = exchange.getProperty(HEADER_END_TIME, Instant.class);
         endTime = null != endTime ? endTime : Instant.now();
-        String username = MessageUtils.getUsername(message);
-        String cspUsername = MessageUtils.getCSPUsername(message);
+        String username = null;//MessageUtils.getUsername(message);
+        String cspUsername = null;//MessageUtils.getCSPUsername(message);
         String requestBody = exchange.getProperty(HEADER_REQUEST_BODY, String.class);
         String responseBody = exchange.getProperty(HEADER_RESPONSE_BODY, String.class);
         String targetUrl = exchange.getMessage().getHeader(HEADER_TARGET_URL, String.class);
         Event event = OutboundEvent.builder()
                 .correlationId(message.getHeader().getCorrelationId())
                 .terminalCode(message.getHeader().getTerminalCode())
-                .channelCode(message.getHeader().getChannel().getCode())
+                .channelCode(message.getHeader().getInput().getChannel().getCode())
                 .username(username)
                 .cspUsername(cspUsername)
                 .error(exchange.getException())

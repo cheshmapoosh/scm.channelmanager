@@ -89,7 +89,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         MessageInput result = HttpMessageInput.builder()
                 .headers(headers)
                 .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
-                .channelCode(getChannel().getCode())
+                .channel(getChannel())
                 .serviceCode(serviceAccess.getService().getCode())
                 .contentType(CamelUtils.getContentTypeHeaderFromExchange(input))
                 .clientRemoteAddress(CamelUtils.getRemoteAddressFromExchange(input))

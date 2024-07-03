@@ -65,7 +65,7 @@ public class MessageGenerator {
 //                .build();
         Header header = Header.builder()
                 .input(input)
-                .channel(channel)
+//                .channel(channel)
                 .serviceAccess(serviceAccess)
                 .build();
 
@@ -99,37 +99,12 @@ public class MessageGenerator {
             throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
 
-//        String inputClientTimestamp = input.getHeader(SCM_PARAMETER_CLIENT_TIMESTAMP);
-//        String inputClaimCode = input.getHeader(SCM_PARAMETER_CLAIM_CODE);
-//        Instant clientTimestamp = StringUtils.isEmpty(inputClientTimestamp) ? null :
-//                DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
-//        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
-//                .input(input)
-//                .terminalCode(!input.isForCheck() ? serviceAccess.getTerminal().getCode() : inputTerminalCode)
-//                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
-//                .serviceCode(input.getServiceCode())
-//                .contentType(input.getContentType())
-////                .clientRemoteAddress(input.getClientRemoteAddress())
-//                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
-//                .clientTimestamp(clientTimestamp)
-////                .clientAgent(input.getClientAgent())
-//                .accessParameter(inputAccessParameter)
-//                .username(input.getHeader(SCM_PARAMETER_USERNAME))
-//                .authenticationType(extractAuthenticationType(input))
-//                .authenticationValue(extractAuthenticationValue(input))
-//                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
-//                .transactionAuthenticationValue(inputClaimCode)
-//                .receiveTimestamp(input.getReceiveTimestamp())
-//                .serverHost(input.getServerHost())
-//                .payload(extractMessagePayload(serviceAccess, input))
-//                .isForCheck(input.isForCheck())
-//                .build();
         Header header = Header.builder()
                 .input(input)
-                .authentication(null)
-                .isTransactionAuthenticated(false)
+//                .authentication(null)
+//                .isTransactionAuthenticated(false)
                 .correlationId(StringUtils.generateGuid())
-                .channel(channel)
+//                .channel(channel)
                 .serviceAccess(serviceAccess)
                 .build();
 

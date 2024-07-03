@@ -33,6 +33,8 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.COLON;
 @Component
 public class ProcessServiceInvoker {
 
+    private static final String BPMS_CHANNEL_CODE = "BPMS";
+
     private static ProcessServiceInvoker INSTANCE;
 
     private final ProcessProperties properties;
@@ -64,14 +66,14 @@ public class ProcessServiceInvoker {
                 .headers(headers)
                 .serviceCode(serviceCode)
                 .terminalCode(null)
-                .channelCode(null)
+                .channel(null)
                 .body(payload)
                 .contentType(HTTP_HEADER_CONTENT_TYPE_JSON)
 //                .authorization(authorizationHeader)
                 .serverHost(null)
                 .isForCheck(false)
                 .build();
-        Channel channel = channelService.findChannelByCode(input.getChannelCode())
+        Channel channel = channelService.findChannelByCode(BPMS_CHANNEL_CODE)
                 .orElseThrow(() -> new InvalidInputException("channelCode"));
         Message message = messageGenerator.buildMessageInternal(input, channel);
         producerTemplate.callService(null, message);

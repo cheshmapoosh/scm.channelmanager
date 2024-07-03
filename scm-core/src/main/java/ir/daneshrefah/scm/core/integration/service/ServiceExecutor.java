@@ -76,8 +76,8 @@ public abstract class ServiceExecutor {
 
     private void logServiceCallEvent(Message message, Service service, Object input, Exception exception, Instant startTime) {
         Instant endTime = Instant.now();
-        String username = MessageUtils.getUsername(message);
-        String cspUsername = MessageUtils.getCSPUsername(message);
+//        String username = MessageUtils.getUsername(message);
+//        String cspUsername = MessageUtils.getCSPUsername(message);
         String requestBody = null != input ? input.toString() : null;
         String responseBody = null != message.getPayload() ? message.getPayload().toString() : null;
     /*    Event event = ServiceEvent.builder()

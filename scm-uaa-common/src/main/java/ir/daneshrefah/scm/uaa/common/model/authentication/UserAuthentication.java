@@ -32,6 +32,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
 
     private User principal;
     private final UserProfile profile;
+    private Boolean isTransactionAuthenticated;
     @Setter
     private String error;
 
@@ -117,6 +118,11 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
     @Override
     public AuthenticationMethod getAuthenticationMethod() {
         return null != principal ? principal.getLoginAuthenticationMethod() : null;
+    }
+
+    @Override
+    public void authenticateTransaction(boolean isTransactionAuthenticated) {
+        this.isTransactionAuthenticated = isTransactionAuthenticated;
     }
 
     @Override

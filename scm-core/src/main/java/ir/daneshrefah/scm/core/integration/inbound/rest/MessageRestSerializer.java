@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -54,7 +55,7 @@ public class MessageRestSerializer extends JsonSerializer<Message> {
     }
 
     private void writeAuthentication(Message value, JsonGenerator gen) throws IOException {
-        UserAuthentication authentication = (UserAuthentication) value.getHeader().getAuthentication();
+        UserAuthentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
         gen.writeFieldName("authentication");
         gen.writeStartObject();
         gen.writeStringField("isAuthenticated", String.valueOf(authentication.isAuthenticated()));

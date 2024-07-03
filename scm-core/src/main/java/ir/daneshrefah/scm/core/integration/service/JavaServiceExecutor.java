@@ -112,7 +112,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
             } else if (parameterType.equals(Message.class)) {
                 result[i] = message;
             } else if (parameterType.equals(UserAuthentication.class)) {
-                result[i] = AuthenticationUtils.getLoggedInUser(message);
+                result[i] = AuthenticationUtils.getLoggedInUser();
             } else if (parameterType.equals(ir.daneshrefah.scm.common.model.service.Service.class)) {
                 result[i] = service;
             } else if (parameterType.equals(Object.class)) {

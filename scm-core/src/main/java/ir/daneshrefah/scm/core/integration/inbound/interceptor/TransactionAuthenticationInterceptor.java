@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        if (Objects.nonNull(message.getHeader().getIsTransactionAuthenticated())) {
+        if (AuthenticationUtils.isTransactionAuthenticationInitialized()) {
             return message;
         }
         MessageInput messageInput = message.getHeader().getInput();
@@ -51,7 +52,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
         } catch (Exception e) {
             throw e;
         }
-        message.getHeader().authenticateTransaction(null != authentication &&
+        AuthenticationUtils.authenticateTransaction(null != authentication &&
                 authentication.isAuthenticated() && !authentication.isAnonymous());
         if (authentication.hasError() || null != error) {
             String errorMessage = null != error ? error.getMessage() : authentication.getError();

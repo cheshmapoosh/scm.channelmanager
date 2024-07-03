@@ -1,13 +1,14 @@
 package ir.daneshrefah.scm.plugin.pichack.util;
 
 import ir.daneshrefah.scm.common.constant.TerminalCodes;
-import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.utils.MessageUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 
@@ -47,20 +48,20 @@ public class PichakUtil {
     public static String provideBranchUsername(Message message) {
         String channelCode = MessageUtils.getTerminalCode(message);
         if (TerminalCodes.CMC.equals(channelCode))
-            return MessageUtils.getUsername(message);
+            return null;
         else
             return "";
     }
 
     public static String provideCustomerAuthStatus(Message message) {
-        Authentication authentication = MessageUtils.getAuthentication(message);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (null == authentication || !authentication.isAuthenticated()) {
             return PICHACK_CUSTOMER_AUTH_STATUS_UNAUTHORIZED;
         }
-        AuthenticationMethod authenticationMethod = authentication.getAuthenticationMethod();
-        if (AuthenticationMethod.STATIC_PASSWORD.equals(authenticationMethod))
-            return PICHACK_CUSTOMER_AUTH_STATUS_AUTHORIZED_1_LEVEL;
-        else
+//        AuthenticationMethod authenticationMethod = authentication.getAuthenticationMethod();
+//        if (AuthenticationMethod.STATIC_PASSWORD.equals(authenticationMethod))
+//            return PICHACK_CUSTOMER_AUTH_STATUS_AUTHORIZED_1_LEVEL;
+//        else
             return PICHACK_CUSTOMER_AUTH_STATUS_AUTHORIZED_2_LEVEL;
     }
 

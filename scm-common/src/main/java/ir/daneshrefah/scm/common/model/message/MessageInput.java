@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import ir.daneshrefah.scm.common.model.terminal.Channel;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -23,7 +24,7 @@ public abstract class MessageInput<T> {
     private final Map<String, Object> headers;
     private final String serviceCode;
     private final String terminalCode;
-    private final String channelCode;
+    private final Channel channel;
     private final T body;
     private final String contentType;
 //    private final String authorization;

@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.common.model.condition.Condition;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -24,11 +26,12 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
 
     @Override
     protected final int vote(Message message) {
+        Authentication authentication = AuthenticationUtils.getScmAuthentication();
         ConditionType conditionType = getConditionType();
         List<Condition> conditions = decisionHelper.findUserConditions(conditionType,
-                message.getHeader().getTerminalCode(), message.getHeader().getAuthentication());
+                message.getHeader().getTerminalCode(), authentication);
         List<Condition> terminalConditions = decisionHelper.findTerminalConditions(conditionType,
-                message.getHeader().getServiceAccess(), message.getHeader().getAuthentication());
+                message.getHeader().getServiceAccess(), authentication);
         CollectionUtils.addAll(conditions, terminalConditions.iterator());
 
         return checkConditions(message, terminalConditions);

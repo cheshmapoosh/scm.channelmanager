@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.common.model.condition.Condition;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -46,7 +47,7 @@ public class AuthorityConditionalDecisionVoter extends BaseSingularConditionalDe
 
     @Override
     protected int checkCondition(Message message, Condition condition) {
-        Authentication authentication = (Authentication) message.getHeader().getAuthentication();
+        Authentication authentication = AuthenticationUtils.getAuthentication();
         Expression expression = new SpelExpressionParser().parseExpression(condition.getValue());
         EvaluationContext context = new DefaultMethodSecurityExpressionHandler().createEvaluationContext(authentication, METHOD_INVOCATION);
         boolean isGranted = ExpressionUtils.evaluateAsBoolean(expression, context);

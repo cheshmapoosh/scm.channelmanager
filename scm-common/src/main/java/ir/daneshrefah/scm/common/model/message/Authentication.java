@@ -37,4 +37,8 @@ public interface Authentication extends Serializable {
 
     Object getPrincipal();
 
+    Boolean getIsTransactionAuthenticated();
+
+    void authenticateTransaction(boolean isTransactionAuthenticated);
+
 }

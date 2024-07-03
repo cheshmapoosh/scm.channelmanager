@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
 
@@ -27,7 +29,11 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
 
     @Override
     protected final int vote(Message message) {
-        UserProfile profile = personProfileLoader.preparePersonProfile(message.getHeader().getAuthentication());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication) || !authentication.isAuthenticated() || !(authentication instanceof ir.daneshrefah.scm.common.model.message.Authentication)) {
+            return ACCESS_DENIED;
+        }
+        UserProfile profile = personProfileLoader.preparePersonProfile((ir.daneshrefah.scm.common.model.message.Authentication) authentication);
         if (Objects.isNull(profile) || !profile.isPersonInfoLoaded()) {
             return ACCESS_DENIED;
         }

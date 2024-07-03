@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
@@ -11,6 +12,7 @@ import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,8 @@ public class AuthenticationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        if (Objects.nonNull(message.getHeader().getAuthentication())) {
+        Authentication authentication = AuthenticationUtils.getScmAuthentication();
+        if (Objects.nonNull(authentication)) {
             return message;
         }
         MessageInput messageInput = message.getHeader().getInput();
@@ -44,19 +47,18 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                 .authenticationValue(messageInput.getAuthenticationValue())
                 .accessParameter(messageInput.getAccessParameter())
                 .build();
-        UserAuthentication authentication = null;
+        UserAuthentication userAuthentication = null;
         Exception error = null;
         try {
-            authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+            userAuthentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
         } catch (ClientAuthenticationException e) {
-            authentication = e.getAuthentication();
+            userAuthentication = e.getAuthentication();
             error = null != e.getCause() ? (Exception) e.getCause() : e;
         } catch (Exception e) {
             throw e;
         }
-        message.getHeader().authenticate(authentication);
-        if (authentication.hasError() || null != error) {
-            String errorMessage = null != error ? error.getMessage() : authentication.getError();
+        if (userAuthentication.hasError() || null != error) {
+            String errorMessage = null != error ? error.getMessage() : userAuthentication.getError();
             if (StringUtils.isEmpty(errorMessage)) {
                 errorMessage = "error on authenticate user.";
             }
@@ -64,8 +66,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                     ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED, errorMessage), MessageStatus.SC_UNAUTHORIZED);
         }
 //        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        //TODO {RAYANI} remove above line
+        SecurityContextHolder.getContext().setAuthentication(userAuthentication);
         return message;
     }
 
