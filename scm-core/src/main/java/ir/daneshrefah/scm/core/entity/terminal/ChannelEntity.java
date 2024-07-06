@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.terminal;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
@@ -27,7 +28,7 @@ public class ChannelEntity extends AbstractVersionAbleDefaultEntity<String> {
     @Convert(converter = ChannelProtocolConverter.class)
     private ChannelProtocol protocol;
     private String channelClassName;
-    @Embedded
+    @Convert(converter = JsonNodeTypeConverter.class)
     private JsonNode metadata;
 
 }

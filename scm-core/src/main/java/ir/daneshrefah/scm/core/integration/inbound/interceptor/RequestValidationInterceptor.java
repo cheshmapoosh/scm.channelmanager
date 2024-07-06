@@ -19,7 +19,7 @@ public class RequestValidationInterceptor extends MessageInterceptor {
     @Override
     protected Message internalIntercept(Message message) {
         Service service = message.getHeader().getService();
-        if (!ServiceStatus.ACTIVE.equals(service.getStatus())) {
+        if (ServiceStatus.INACTIVE.equals(service.getStatus())) {
             throw new DisableServiceExecutionException(service);
         }
         return message;

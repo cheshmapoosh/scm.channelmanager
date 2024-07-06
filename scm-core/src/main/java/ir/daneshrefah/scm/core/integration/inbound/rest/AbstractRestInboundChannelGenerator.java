@@ -2,10 +2,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.inbound.InboundExecutor;
+import ir.daneshrefah.scm.core.integration.inbound.AbstractPureInboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +18,7 @@ import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANN
  * @since 2024-01-02
  */
 @Slf4j
-public abstract class AbstractRestInboundChannelGenerator extends AbstractInboundChannelGenerator
-        implements InboundExecutor {
+public abstract class AbstractRestInboundChannelGenerator extends AbstractPureInboundChannelGenerator {
 
     protected String contextPath;
     protected Integer port;
@@ -30,7 +26,7 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper,
                                                ServiceProducerTemplate producerTemplate,
                                                ErrorHandlerService errorHandlerService) {
-        super(producerTemplate, errorHandlerService, objectMapper);
+        super(objectMapper, producerTemplate, errorHandlerService);
     }
 
     @Override
@@ -51,16 +47,6 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
             return false;
         }
         return initialize();
-    }
-
-    @Override
-    public Message executeService() {
-        return execute();
-    }
-
-    @Override
-    public Channel getChannel() {
-        return super.getChannel();
     }
 
     public abstract boolean initialize();
