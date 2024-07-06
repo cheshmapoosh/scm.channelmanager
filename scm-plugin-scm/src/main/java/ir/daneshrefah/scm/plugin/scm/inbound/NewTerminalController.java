@@ -25,7 +25,7 @@ public class NewTerminalController extends AbstractSpringRestInboundController {
     @GetMapping()
     public ResponseEntity<List<String>> getAllProfiles(HttpServletRequest request) {
         HttpMessageInput messageInput = DefaultHttpMessageInputBuilder.builder(request, "ACCOUNT-LIST").build();
-        Message message = executeService(messageInput);
+        Message message = executeService();
         return ResponseEntity.status(HttpStatus.OK).body(Arrays.asList(new String[] {"hi", "hello"}));
     }
 

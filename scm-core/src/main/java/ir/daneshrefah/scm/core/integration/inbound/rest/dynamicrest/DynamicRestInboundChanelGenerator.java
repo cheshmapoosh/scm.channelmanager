@@ -128,7 +128,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     .process(CamelCORSManager::configure)
                     .process(exchange -> {
                         MessageInput messageInput = extractMessageInput(exchange, serviceAccess);
-                        Message message = execute(messageInput);
+                        Message message = execute();
                         exchange.getMessage().setBody(message);
                     })
                     .process(exchange -> { buildResponse(exchange);})

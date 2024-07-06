@@ -5,18 +5,18 @@ import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
-
-import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,7 +35,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
         if (AuthenticationUtils.isTransactionAuthenticationInitialized()) {
             return message;
         }
-        MessageInput messageInput = message.getHeader().getInput();
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
                 .username(messageInput.getUsername())
                 .terminalCode(messageInput.getTerminalCode())
@@ -67,9 +67,10 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
-        return serviceAccess.getTerminal().isSupportCheckSecondAuthentication() &&
-                serviceAccess.getService().getCheckAccessSecondAuthentication();
+    protected boolean support(Service service) {
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
+        return terminal.isSupportCheckSecondAuthentication() &&
+                service.getCheckAccessSecondAuthentication();
     }
 
 }

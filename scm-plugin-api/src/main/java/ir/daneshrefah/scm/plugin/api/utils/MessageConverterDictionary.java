@@ -31,7 +31,7 @@ public class MessageConverterDictionary extends ConverterDictionary<Message> {
                 resultNode = resultNode.get(propertyName);
             } else {
                 if (definition.isMandatory()) {
-                    String serviceCode = getSource().getHeader().getServiceAccess().getService().getCode();
+                    String serviceCode = getSource().getHeader().getService().getCode();
                     throw new ServiceInvalidMetadataException(serviceCode, definition.getFromValue());
                 }
                 resultNode = JsonNodeFactory.instance.nullNode();

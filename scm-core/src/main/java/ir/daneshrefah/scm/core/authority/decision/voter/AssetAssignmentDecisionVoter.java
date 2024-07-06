@@ -3,9 +3,11 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.util.Objects;
@@ -28,16 +30,17 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected int vote(UserProfile profile, TerminalServiceAccess service, String asset) {
-        ExternalServiceProvider provider = service.getService() instanceof ExternalService ?
-                ((ExternalService) service.getService()).getServiceProvider() : null;
+    protected int vote(UserProfile profile, Service service, String asset) {
+        ExternalServiceProvider provider = service instanceof ExternalService ?
+                ((ExternalService) service).getServiceProvider() : null;
         if (Objects.isNull(provider) || Objects.isNull(provider.getAssetProvider())) {
             return ACCESS_ABSTAIN;
         }
         if (StringUtils.isEmpty(asset)) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_IS_EMPTY, "asset must not be empty.");
         }
-        profile = personProfileLoader.preparePersonProfileMemberships(profile, service.getTerminal().getCode());
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
+        profile = personProfileLoader.preparePersonProfileMemberships(profile, terminal.getCode());
         boolean isAssetAssigned = profile.hasAssetAccess(provider.getId(), asset, null);
         if (!isAssetAssigned) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_NOT_ASSIGNED, "asset not assigned.");
@@ -46,9 +49,10 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
-        return serviceAccess.getTerminal().isSupportCheckAssetAccess() &&
-                serviceAccess.getService().getCheckAccessAsset();
+    protected boolean support(Service service) {
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
+        return terminal.isSupportCheckServiceAccess() &&
+                service.getCheckAccessService();
     }
 
 }

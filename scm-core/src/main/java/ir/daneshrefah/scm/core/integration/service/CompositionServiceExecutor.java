@@ -4,18 +4,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
-import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.model.ProcessorDefinition;
 import org.springframework.stereotype.Service;
@@ -51,7 +52,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
     protected JsonNode executeCompositeService(Message message) {
 
-        CompositionService compositionService = (CompositionService) message.getHeader().getServiceAccess().getService();
+        CompositionService compositionService = (CompositionService) message.getHeader().getService();
         List<ServiceRelation> relations = compositionService.getRelations();
         if (null == relations) {
             relations = serviceService.findServiceRelationListBySourceServiceId(compositionService.getId());
@@ -72,14 +73,14 @@ public class CompositionServiceExecutor extends ServiceExecutor {
                 break;
             }
 
-            String terminalCode = message.getHeader().getTerminalCode();
+            String terminalCode = MessageInputContext.getCurrentContext().getTerminalCode();
             String serviceCode = serviceRelation.getTargetService().getCode();
             Optional<TerminalServiceAccess> serviceAccess = terminalService
                     .findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode);
             if (!serviceAccess.isPresent()) {
                 throw new TerminalServiceNotFoundException(terminalCode, serviceCode);
             }
-            Message tempMessage = MessageUtils.generateNestedInternalMessage(message, serviceAccess.get(), relationRequestPayload);
+            Message tempMessage = MessageGenerator.getInstance().generateInternalMessage(serviceAccess.get().getService(), relationRequestPayload);
             serviceProducerTemplate.callService(serviceRelation.getTargetService(), tempMessage);
 
 

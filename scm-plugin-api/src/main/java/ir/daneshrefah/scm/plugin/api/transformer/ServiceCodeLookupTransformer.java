@@ -18,7 +18,7 @@ public class ServiceCodeLookupTransformer extends DynamicLookupTransformer {
     }
 
     protected String extractTransformerKey(Message message) {
-        return message.getHeader().getServiceAccess().getService().getCode();
+        return message.getHeader().getService().getCode();
     }
     
 }

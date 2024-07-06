@@ -67,15 +67,15 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
     }
 
     @Override
-    public Message execute(MessageInput input) {
+    public Message execute() {
         Instant startTime = Instant.now();
         Message message = null;
         Exception exception = null;
         try {
-            message = messageGenerator.buildMessageInternal(input, channel);
+            message = messageGenerator.buildMessageFromInput();
         } catch (Exception e) {
 //            TerminalServiceAccess serviceAccess = findServiceAccess(input.getHeader(SCM_PARAMETER_TERMINAL), input.getServiceCode());
-            message = errorHandlerService.resolveMessageByException(messageGenerator.buildEmptyMessage(input, channel, e), e);
+            message = errorHandlerService.resolveMessageByException(messageGenerator.buildEmptyMessageFromInput(), e);
             exception = e;
         } finally {
 //            logIncomingMessage(request, message, exception, startTime);
@@ -105,7 +105,7 @@ public abstract class AbstractInboundChannelGenerator<T> implements InboundChann
             }
         }
 
-        producerTemplate.callService(message.getHeader().getServiceAccess().getService(), message);
+        producerTemplate.callService(message.getHeader().getService(), message);
 
         for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
             MessageInterceptor messageInterceptor = iterator.next();

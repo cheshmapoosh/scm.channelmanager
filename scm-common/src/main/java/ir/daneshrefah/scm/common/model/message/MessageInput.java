@@ -1,14 +1,12 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,13 +19,14 @@ import java.util.Objects;
 @Getter
 public abstract class MessageInput<T> {
 
+    private final String correlationId = UUID.randomUUID().toString();
     private final Map<String, Object> headers;
     private final String serviceCode;
     private final String terminalCode;
+    private final Terminal terminal;
     private final Channel channel;
     private final T body;
     private final String contentType;
-//    private final String authorization;
     private final Instant receiveTimestamp = Instant.now();
     private final String serverHost;
     private final boolean isForCheck;
@@ -41,20 +40,9 @@ public abstract class MessageInput<T> {
     private final String authenticationValue;
     private final ClientAuthenticationType transactionAuthenticationType;
     private final String transactionAuthenticationValue;
-    private List<Exception> exceptionList;
 
     public String getHeader(String key) {
         return null != headers ? (String) headers.get(key) : null;
-    }
-
-    public void addException(Exception exception) {
-        if (Objects.isNull(exception)) {
-            return;
-        }
-        if (Objects.isNull(exceptionList)) {
-            exceptionList = new ArrayList<>();
-        }
-        exceptionList.add(exception);
     }
 
 }

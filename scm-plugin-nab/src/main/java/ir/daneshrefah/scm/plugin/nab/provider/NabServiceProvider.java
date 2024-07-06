@@ -51,7 +51,7 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     @Override
     @SneakyThrows
     protected String prepareTargetUrl(Message message) {
-        ExternalService service = (ExternalService) message.getHeader().getServiceAccess().getService();
+        ExternalService service = (ExternalService) message.getHeader().getService();
         String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();
         String target = providerEndpoint + StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");

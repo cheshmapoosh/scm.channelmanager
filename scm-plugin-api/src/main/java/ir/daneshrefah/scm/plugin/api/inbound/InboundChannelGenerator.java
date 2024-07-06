@@ -25,6 +25,6 @@ public interface InboundChannelGenerator<T> {
 
 //    public T execute(T input, TerminalServiceAccess serviceAccess);
 
-    public Message execute(MessageInput input);
+    public Message execute();
 
 }

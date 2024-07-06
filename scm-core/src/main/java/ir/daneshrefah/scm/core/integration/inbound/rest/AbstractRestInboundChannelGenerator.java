@@ -58,8 +58,8 @@ public abstract class AbstractRestInboundChannelGenerator extends AbstractInboun
     }
 
     @Override
-    public Message executeService(MessageInput input) {
-        return execute(input);
+    public Message executeService() {
+        return execute();
     }
 
     @Override

@@ -2,8 +2,10 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_REQUIRED;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_AUTHENTICATION;
@@ -20,9 +22,10 @@ public class AuthenticationDecisionVoter extends DecisionVoter {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
-        return serviceAccess.getTerminal().isSupportCheckAuthentication() &&
-                serviceAccess.getService().getCheckAccessFirstAuthentication();
+    protected boolean support(Service service) {
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
+        return terminal.isSupportCheckAuthentication() &&
+                service.getCheckAccessFirstAuthentication();
     }
 
 }

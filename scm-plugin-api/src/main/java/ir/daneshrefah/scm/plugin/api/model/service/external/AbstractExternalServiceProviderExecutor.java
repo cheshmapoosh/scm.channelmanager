@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ResourceService;
@@ -12,7 +13,7 @@ import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
-import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -124,10 +125,11 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         String requestBody = exchange.getProperty(HEADER_REQUEST_BODY, String.class);
         String responseBody = exchange.getProperty(HEADER_RESPONSE_BODY, String.class);
         String targetUrl = exchange.getMessage().getHeader(HEADER_TARGET_URL, String.class);
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
         Event event = OutboundEvent.builder()
-                .correlationId(message.getHeader().getCorrelationId())
-                .terminalCode(message.getHeader().getTerminalCode())
-                .channelCode(message.getHeader().getInput().getChannel().getCode())
+                .correlationId(messageInput.getCorrelationId())
+                .terminalCode(messageInput.getTerminalCode())
+                .channelCode(messageInput.getChannel().getCode())
                 .username(username)
                 .cspUsername(cspUsername)
                 .error(exchange.getException())
@@ -150,7 +152,7 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         List<? extends AbstractTransformer> requestTransformers = prepareRequestTransformers();
         for (Iterator<? extends AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
             AbstractTransformer transformer = iterator.next();
-            requestBody = transformer.transform(requestBody, message, message.getHeader().getServiceAccess().getService().getMetadata());
+            requestBody = transformer.transform(requestBody, message, message.getHeader().getService().getMetadata());
         }
         return requestBody;
     }
@@ -159,7 +161,7 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         List<AbstractJsonTransformer> responseTransformers = prepareResponseTransformers();
         for (Iterator<AbstractJsonTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
             AbstractJsonTransformer transformer = iterator.next();
-            response = transformer.transform(response, message, message.getHeader().getServiceAccess().getService().getMetadata());
+            response = transformer.transform(response, message, message.getHeader().getService().getMetadata());
         }
         return response;
     }

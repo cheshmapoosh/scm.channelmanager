@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
  */
 public interface HttpInboundExecutor {
 
-    public Message executeService(MessageInput input);
+    public Message executeService();
 
     public Channel getChannel();
 

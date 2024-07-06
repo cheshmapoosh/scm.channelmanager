@@ -1,13 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.EventType;
-import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 
-import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -22,9 +18,9 @@ public abstract class MessageInterceptor {
     public final Message intercept(Message message) {
         Instant startTime = Instant.now();
         Exception error = null;
-        Message orgMessage = MessageUtils.cloneMessage(message);
+        Message orgMessage = MessageGenerator.getInstance().cloneMessage(message);
         try {
-            boolean isSupported = support(message.getHeader().getServiceAccess());
+            boolean isSupported = support(message.getHeader().getService());
             if (isSupported) {
                 message = internalIntercept(message);
             }
@@ -40,7 +36,7 @@ public abstract class MessageInterceptor {
 
     protected abstract Message internalIntercept(Message message);
 
-    protected abstract boolean support(TerminalServiceAccess serviceAccess);
+    protected abstract boolean support(Service service);
 
     private void logMessageInterceptor(Message orgMessage, Message message, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

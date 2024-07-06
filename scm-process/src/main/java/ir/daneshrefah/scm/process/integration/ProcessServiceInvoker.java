@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.process.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.ProcessMessageInput;
@@ -10,6 +9,7 @@ import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.process.config.ProcessProperties;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +49,8 @@ public class ProcessServiceInvoker {
 
     public JsonNode callService(String serviceCode, JsonNode payload, String delegateUsername, String correlationId) throws Exception {
             String authorizationHeader = "Basic " + Base64Utils.encodeWithBase64(properties.getClientId() + COLON + properties.getClientSecret());
+        Channel channel = channelService.findChannelByCode(BPMS_CHANNEL_CODE)
+                .orElseThrow(() -> new InvalidInputException("channelCode"));
         Map<String, Object> headers = new HashMap<>();
         headers.put(SCM_PARAMETER_TERMINAL, null);
         headers.put(SCM_PARAMETER_ACCESS_PARAMETER, null);
@@ -66,16 +68,16 @@ public class ProcessServiceInvoker {
                 .headers(headers)
                 .serviceCode(serviceCode)
                 .terminalCode(null)
-                .channel(null)
+                .terminal(null)
+                .channel(channel)
                 .body(payload)
                 .contentType(HTTP_HEADER_CONTENT_TYPE_JSON)
 //                .authorization(authorizationHeader)
                 .serverHost(null)
                 .isForCheck(false)
                 .build();
-        Channel channel = channelService.findChannelByCode(BPMS_CHANNEL_CODE)
-                .orElseThrow(() -> new InvalidInputException("channelCode"));
-        Message message = messageGenerator.buildMessageInternal(input, channel);
+        MessageInputContext.init(input);
+        Message message = messageGenerator.buildMessageFromInput();
         producerTemplate.callService(null, message);
         return null;
     }

@@ -33,7 +33,7 @@ public abstract class AbstractTransformerInterceptor extends MessageInterceptor 
 
     @Override
     protected Message internalIntercept(Message message) {
-        List<TransformerExecutionWrapper> transformers = loadTransformerListIfRequired(message.getHeader().getServiceAccess().getService());
+        List<TransformerExecutionWrapper> transformers = loadTransformerListIfRequired(message.getHeader().getService());
         if (null == transformers || transformers.isEmpty()) {
             return message;
         }
@@ -41,7 +41,7 @@ public abstract class AbstractTransformerInterceptor extends MessageInterceptor 
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
+    protected boolean support(Service service) {
         return true;
     }
 

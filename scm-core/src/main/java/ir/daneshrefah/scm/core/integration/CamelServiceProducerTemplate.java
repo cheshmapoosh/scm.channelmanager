@@ -9,9 +9,9 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
-import ir.daneshrefah.scm.utils.MessageContext;
+import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.utils.MessageUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
@@ -51,14 +51,13 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
         if (null == service) {
             throw new ServiceNotFoundException(serviceCode);
         }
-        Message message = MessageContext.getCurrentContext().getMessage();
-        String terminalCode = MessageContext.getCurrentContext().getTerminalCode();
+        String terminalCode = MessageInputContext.getCurrentContext().getTerminalCode();
         Optional<TerminalServiceAccess> serviceAccess = terminalService
                 .findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode);
         if (serviceAccess.isEmpty()) {
             throw new TerminalNotAssignedServiceException(service, terminalCode);
         }
-        Message tempMessage = MessageUtils.generateInternalMessage(message, serviceAccess.get(), payload);
+        Message tempMessage = MessageGenerator.getInstance().generateInternalMessage(serviceAccess.get().getService(), payload);
         callService(serviceAccess.get().getService(), tempMessage);
         /*if (null != tempMessage.getErrors() && !tempMessage.getErrors().isEmpty()) {
             throw

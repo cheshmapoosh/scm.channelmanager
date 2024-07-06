@@ -8,11 +8,13 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.model.condition.*;
 import ir.daneshrefah.scm.core.service.ConditionService;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class DecisionHelper {
     private static final Map<String, List<BaseCondition>> CONDITIONS_CACHE = new ConcurrentHashMap<>();
     private final ConditionService conditionService;
     private final ServiceAccessService serviceAccessService;
+    private final TerminalService terminalService;
 
 
 
@@ -65,8 +68,10 @@ public class DecisionHelper {
         return Collections.emptyList(); //TODO
     }
 
-    public List<Condition> findTerminalConditions(ConditionType conditionType, TerminalServiceAccess serviceAccess,
+    public List<Condition> findTerminalConditions(ConditionType conditionType, Service service,
                                                   Authentication authentication) {
+        TerminalServiceAccess serviceAccess = terminalService.findTerminalServiceAccessByTerminalCodeAndServiceCode(
+                MessageInputContext.getCurrentContext().getTerminalCode(), service.getCode()).orElse(null);
         //checking terminal and service auth and second auth.
         AuthenticationMethod loginAuth = realizeAuthenticationMethod(serviceAccess, authentication, true);
         AuthenticationMethod transactionAuth = realizeAuthenticationMethod(serviceAccess, authentication, false);

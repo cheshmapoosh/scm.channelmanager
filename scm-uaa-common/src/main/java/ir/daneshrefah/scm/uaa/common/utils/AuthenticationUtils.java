@@ -2,10 +2,9 @@ package ir.daneshrefah.scm.uaa.common.utils;
 
 import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.utils.MessageContext;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +46,7 @@ public class AuthenticationUtils {
     public static IssuerInfo getIssuerInfo() {
         UserAuthentication authentication = getLoggedInUserAuthentication();
         return IssuerInfo.builder()
-                .parentCorrelationId(MessageContext.getCurrentContext().getCorrelationId())
+                .parentCorrelationId(MessageInputContext.getCurrentContext().getCorrelationId())
                 .personType(authentication.getPrincipal().getPerson().getPersonType())
                 .personUsername(authentication.getPrincipal().getPerson().getUsername())
 //                .identifierType(UserIdentifierType.USER_NICKNAME)

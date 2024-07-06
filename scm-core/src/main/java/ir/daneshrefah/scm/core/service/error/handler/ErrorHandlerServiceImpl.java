@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -45,16 +46,16 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
         if (exception.getClass().isAssignableFrom(RuntimeException.class) && null != exception.getCause()) {
             return resolveMessageByException(message, (Exception) exception.getCause());
         }
-        Locale locale = findRequestLocale(message);
+        Locale locale = findRequestLocale();
         Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, locale);
         message.addError(resolve);
         return message;
     }
 
-    private Locale findRequestLocale(Message message) {
+    private Locale findRequestLocale() {
         Locale locale = AccessibleLocale.EN_US.getLocale();
         try {
-            String acceptLanguageHeader = message.getHeader().getInput().getHeader("Accept-Language");
+            String acceptLanguageHeader = MessageInputContext.getCurrentContext().getHeader("Accept-Language");
             if (Objects.nonNull(acceptLanguageHeader)) {
                 String[] acceptLanguages = acceptLanguageHeader.split(",");
                 for (String acceptLanguage : acceptLanguages) {

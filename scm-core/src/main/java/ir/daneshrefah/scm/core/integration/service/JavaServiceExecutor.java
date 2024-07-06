@@ -38,7 +38,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
     }
 
     private JsonNode executeJavaService(Message message) throws Exception {
-        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
+        ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService();
         JavaServiceFinder.MethodInfo methodInfo = findServiceMethodInfo((JavaService) service);
         if (null != methodInfo.getError()) {
             throw methodInfo.getError();

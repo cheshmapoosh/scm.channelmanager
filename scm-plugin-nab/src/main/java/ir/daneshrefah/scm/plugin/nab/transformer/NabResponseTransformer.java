@@ -40,7 +40,7 @@ public class NabResponseTransformer extends AbstractJsonTransformer {
             payloadTmp = payload instanceof ObjectNode ? (ObjectNode) payload : (ObjectNode) objectMapper.readTree((String) payload);
         } catch (Exception e) {
             ExternalServiceProvider provider = null;
-            ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getServiceAccess().getService();
+            ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService();
             if (service instanceof ExternalService) {
                 provider = ((ExternalService) service).getServiceProvider();
             }

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.Event;
@@ -25,9 +26,9 @@ public abstract class DecisionVoter {
      */
     public static final int ACCESS_DENIED = -1;
 
-    public final int vote(Message message, TerminalServiceAccess authObject) {
+    public final int vote(Message message, Service service) {
         Instant startTime = Instant.now();
-        boolean isSupport = support(authObject);
+        boolean isSupport = support(service);
         if (!isSupport) {
             return ACCESS_ABSTAIN;
         }
@@ -46,7 +47,7 @@ public abstract class DecisionVoter {
 
     protected abstract int vote(Message message);
 
-    protected abstract boolean support(TerminalServiceAccess serviceAccess);
+    protected abstract boolean support(Service service);
 
     private final void logVotingEvent(Message message, int output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

@@ -18,7 +18,7 @@ public class RequestValidationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        Service service = message.getHeader().getServiceAccess().getService();
+        Service service = message.getHeader().getService();
         if (!ServiceStatus.ACTIVE.equals(service.getStatus())) {
             throw new DisableServiceExecutionException(service);
         }
@@ -26,7 +26,7 @@ public class RequestValidationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
+    protected boolean support(Service service) {
         return true;
     }
 

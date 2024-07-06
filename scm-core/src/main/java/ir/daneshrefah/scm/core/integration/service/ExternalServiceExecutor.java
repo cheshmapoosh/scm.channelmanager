@@ -51,7 +51,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
         processorDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
-            ExternalService externalService = (ExternalService) message.getHeader().getServiceAccess().getService();
+            ExternalService externalService = (ExternalService) message.getHeader().getService();
             ExternalServiceProviderExecutor provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
             JsonNode response = provider.execute(message, externalService);
             message.payload(response);

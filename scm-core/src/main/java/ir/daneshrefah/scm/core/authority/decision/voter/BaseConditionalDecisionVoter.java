@@ -1,12 +1,13 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
+import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
-import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -29,9 +30,9 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
         Authentication authentication = AuthenticationUtils.getScmAuthentication();
         ConditionType conditionType = getConditionType();
         List<Condition> conditions = decisionHelper.findUserConditions(conditionType,
-                message.getHeader().getTerminalCode(), authentication);
+                MessageInputContext.getCurrentContext().getTerminalCode(), authentication);
         List<Condition> terminalConditions = decisionHelper.findTerminalConditions(conditionType,
-                message.getHeader().getServiceAccess(), authentication);
+                message.getHeader().getService(), authentication);
         CollectionUtils.addAll(conditions, terminalConditions.iterator());
 
         return checkConditions(message, terminalConditions);
@@ -42,7 +43,7 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
     protected abstract ConditionType getConditionType();
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
+    protected boolean support(Service service) {
         return true;
     }
 

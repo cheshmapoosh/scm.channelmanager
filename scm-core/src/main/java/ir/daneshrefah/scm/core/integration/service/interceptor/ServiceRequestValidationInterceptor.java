@@ -35,7 +35,7 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        JsonSchema schema = loadJsonSchemaIfRequired(message.getHeader().getServiceAccess().getService());
+        JsonSchema schema = loadJsonSchemaIfRequired(message.getHeader().getService());
         if (null == schema) {
             return message;
         }
@@ -47,7 +47,7 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
+    protected boolean support(Service service) {
         return true;
     }
 

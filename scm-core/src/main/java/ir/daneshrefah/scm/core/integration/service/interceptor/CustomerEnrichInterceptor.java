@@ -7,11 +7,11 @@ import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -31,9 +31,9 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        TerminalServiceAccess serviceAccess = message.getHeader().getServiceAccess();
-        ExternalService service = serviceAccess.getService() instanceof ExternalService ?
-                (ExternalService) serviceAccess.getService() : null;
+        Service serviceAccess = message.getHeader().getService();
+        ExternalService service = serviceAccess instanceof ExternalService ?
+                (ExternalService) serviceAccess : null;
         if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider()) || !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();
         }
@@ -56,19 +56,17 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(TerminalServiceAccess serviceAccess) {
-        return isLoadCustomerRequired(serviceAccess) || isLoadAssetRequired(serviceAccess);
+    protected boolean support(Service service) {
+        return isLoadCustomerRequired(service) || isLoadAssetRequired(service);
     }
 
-    private boolean isLoadAssetRequired(TerminalServiceAccess serviceAccess) {
-        Service service = serviceAccess.getService();
-        Terminal terminal = serviceAccess.getTerminal();
+    private boolean isLoadAssetRequired(Service service) {
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         return service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
     }
 
-    private boolean isLoadCustomerRequired(TerminalServiceAccess serviceAccess) {
-        Service service = serviceAccess.getService();
-        Terminal terminal = serviceAccess.getTerminal();
+    private boolean isLoadCustomerRequired(Service service) {
+        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         return StringUtils.isNotEmpty(service.getCustomerProperty()) && terminal.isSupportCustomerInjection();
     }
 

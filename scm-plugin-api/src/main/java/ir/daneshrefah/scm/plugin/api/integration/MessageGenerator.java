@@ -5,24 +5,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.message.*;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.message.Header;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
-import ir.daneshrefah.scm.utils.MessageContext;
-import ir.daneshrefah.scm.utils.date.DateUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static ir.daneshrefah.scm.utils.constant.Constants.*;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,38 +39,26 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 @Component
 public class MessageGenerator {
 
+    private static MessageGenerator INSTANCE = null;
     private final TerminalService terminalService;
     private final ObjectMapper objectMapper;
 
-    public Message buildEmptyMessage(MessageInput input, Channel channel, Exception exception) {
+    @PostConstruct
+    public void init() {
+        INSTANCE = this;
+    }
+
+    public static MessageGenerator getInstance() {
+        return INSTANCE;
+    }
+
+    public Message buildEmptyMessageFromInput() {
+        MessageInput input = MessageInputContext.getCurrentContext();
         String inputTerminalCode = input.getHeader(SCM_PARAMETER_TERMINAL);
         TerminalServiceAccess serviceAccess = findServiceAccess(inputTerminalCode, input.getServiceCode());
-//        MessageRequestInfo requestInfo = MessageRequestInfo.builder()
-//                .input(input)
-//                .terminalCode(inputTerminalCode)
-//                .clientId(input.getHeader(SCM_PARAMETER_CLIENT_ID))
-//                .serviceCode(input.getServiceCode())
-//                .contentType(input.getContentType())
-////                .clientRemoteAddress(input.getClientRemoteAddress())
-//                .clientCorrelationId(input.getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID))
-//                .clientTimestamp(null)
-////                .clientAgent(input.getClientAgent())
-//                .accessParameter(input.getHeader(SCM_PARAMETER_ACCESS_PARAMETER))
-//                .username(input.getHeader(SCM_PARAMETER_USERNAME))
-//                .authenticationType(null)
-//                .authenticationValue(null)
-//                .transactionAuthenticationType(null)
-//                .transactionAuthenticationValue(input.getHeader(SCM_PARAMETER_CLAIM_CODE))
-//                .receiveTimestamp(input.getReceiveTimestamp())
-//                .serverHost(input.getServerHost())
-//                .payload(null)
-//                .isForCheck(input.isForCheck())
-//                .error(exception)
-//                .build();
+
         Header header = Header.builder()
-                .input(input)
-//                .channel(channel)
-                .serviceAccess(serviceAccess)
+                .service(null != serviceAccess ? serviceAccess.getService() : null)
                 .build();
 
         Message message = Message.builder()
@@ -74,16 +66,22 @@ public class MessageGenerator {
                 .status(input.isForCheck() ? MessageStatus.SC_SUCCESS : MessageStatus.SC_PROCESSING)
                 .payload(null)
                 .build();
-        MessageContext.init(message);
 
         return message;
     }
 
-    public Message buildMessageInternal(MessageInput input, Channel channel) throws Exception {
+    public Message buildMessageFromInput() throws Exception {
+        MessageInput input = MessageInputContext.getCurrentContext();
         String inputTerminalCode = input.getTerminalCode();
         String inputAccessParameter = input.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
         if (!input.isForCheck() && StringUtils.isEmpty(inputTerminalCode)) {
             throw new MissingRequiredInputException(SCM_PARAMETER_TERMINAL);
+        }
+        if (!input.isForCheck() && Objects.isNull(input.getTerminal())) {
+            throw new MissingRequiredInputException("Terminal");
+        }
+        if (!input.isForCheck() && !StringUtils.equalsIgnoreCase(input.getTerminal().getCode(), inputTerminalCode)) {
+            throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
         }
         if (StringUtils.isEmpty(input.getServiceCode())) {
             throw new ServiceNotFoundException(input.getServiceCode());
@@ -95,17 +93,9 @@ public class MessageGenerator {
         if (!input.isForCheck() && StringUtils.isEmpty(inputAccessParameter)) {
             throw new MissingRequiredInputException(SCM_PARAMETER_ACCESS_PARAMETER);
         }
-        if (!input.isForCheck() && !StringUtils.equalsIgnoreCase(serviceAccess.getTerminal().getCode(), inputTerminalCode)) {
-            throw new InvalidInputException(SCM_PARAMETER_TERMINAL);
-        }
 
         Header header = Header.builder()
-                .input(input)
-//                .authentication(null)
-//                .isTransactionAuthenticated(false)
-                .correlationId(StringUtils.generateGuid())
-//                .channel(channel)
-                .serviceAccess(serviceAccess)
+                .service(!input.isForCheck() ? serviceAccess.getService() : null)
                 .build();
 
         Message message = Message.builder()
@@ -113,55 +103,41 @@ public class MessageGenerator {
                 .status(input.isForCheck() ? MessageStatus.SC_SUCCESS : MessageStatus.SC_PROCESSING)
                 .payload(extractMessagePayload(serviceAccess, input))
                 .build();
-        MessageContext.init(message);
 
         return message;
+    }
+
+    public Message cloneMessage(Message source) {
+        Header header = Header.builder()
+                .service(source.getHeader().getService())
+                .build();
+        Message result = Message.builder()
+                .header(header)
+                .status(MessageStatus.SC_PROCESSING)
+                .payload(source.getPayload())
+                .errors(source.getErrors())
+                .build();
+        return result;
+    }
+
+    public Message generateInternalMessage(Service service, JsonNode payload) {
+        Header header = Header.builder()
+                .service(service)
+//                .level(level)
+//                .parentMessageId(parentMessageId)
+                .build();
+        Message result = Message.builder()
+                .header(header)
+                .status(MessageStatus.SC_PROCESSING)
+                .payload(null != payload ? payload : NullNode.getInstance())
+                .build();
+        return result;
     }
 
     private TerminalServiceAccess findServiceAccess(String terminalCode, String serviceCode) {
         if (StringUtils.isEmpty(terminalCode) || StringUtils.isEmpty(serviceCode))
             return null;
         return terminalService.findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode).orElse(null);
-    }
-
-    private ClientAuthenticationType extractAuthenticationType(MessageInput messageInput) {
-        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
-        if (StringUtils.isEmpty(authorizationHeader)) {
-            return ClientAuthenticationType.ANONYMOUS;
-        }
-
-        String AUTHENTICATION_SCHEME_BASIC = "Basic";
-        String AUTHENTICATION_SCHEME_BEARER = "Bearer";
-        String AUTHENTICATION_SCHEME_SESSION = "Session";
-
-        if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return ClientAuthenticationType.CLIENT;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
-            return ClientAuthenticationType.SESSION;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
-            return ClientAuthenticationType.BEARER;
-        } else {
-            String username = messageInput.getHeader(SCM_PARAMETER_USERNAME);
-            String credential = messageInput.getHeader(SCM_PARAMETER_CREDENTIAL);
-            String clientId = messageInput.getHeader(SCM_PARAMETER_CLIENT_ID);
-            String clientVersion = messageInput.getHeader(SCM_PARAMETER_CLIENT_VERSION);
-            String clientSignature = messageInput.getHeader(SCM_PARAMETER_CLIENT_SIGNATURE);
-            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(credential)) {
-                return ClientAuthenticationType.BASIC;
-            }
-        }
-        return ClientAuthenticationType.ANONYMOUS;
-    }
-
-    private String extractAuthenticationValue(MessageInput messageInput) {
-        String authorizationHeader = null != messageInput ? messageInput.getHeader(SCM_PARAMETER_AUTHORIZATION) : null;
-        if (StringUtils.isEmpty(authorizationHeader)) {
-            return null;
-        }
-        String[] args = authorizationHeader.split(" ");
-        if (args.length < 2)
-            return null;
-        return args[1];
     }
 
     private JsonNode extractMessagePayload(TerminalServiceAccess serviceAccess, MessageInput input) throws JsonProcessingException {

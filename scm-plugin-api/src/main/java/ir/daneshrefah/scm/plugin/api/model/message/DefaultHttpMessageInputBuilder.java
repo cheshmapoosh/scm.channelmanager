@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.message;
 
 import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.common.model.message.HttpMessageInput;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +50,7 @@ public class DefaultHttpMessageInputBuilder {
 //                .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
                 .httpMethod(request.getMethod())
                 .build();
-
+        MessageInputContext.init(result);
         return result;
     }
 

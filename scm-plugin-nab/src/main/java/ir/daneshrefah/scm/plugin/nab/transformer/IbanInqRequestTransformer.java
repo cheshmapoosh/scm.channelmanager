@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,7 +29,7 @@ public class IbanInqRequestTransformer extends AbstractJsonTransformer {
         addParameter(parameters, "P_TYPEX", "1");
         addParameter(parameters, "P_BIC", "1");
         addParameter(parameters, "P_IBAN", payloadJson.get("iban").asText());
-        addParameter(parameters, "P_RQID", message.getHeader().getCorrelationId());
+        addParameter(parameters, "P_RQID", MessageInputContext.getCurrentContext().getCorrelationId());
         if (null != payloadJson.get("paymentCode")) {
             addParameter(parameters, "P_PAYMENTCODE", payloadJson.get("paymentCode").asText());
         } else {

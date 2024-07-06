@@ -19,8 +19,8 @@ public abstract class AbstractRestInboundController {
         return executor.getChannel();
     }
 
-    protected final Message executeService(MessageInput messageInput) {
-        return executor.executeService(messageInput);
+    protected final Message executeService() {
+        return executor.executeService();
     }
 
     public void setExecutor(HttpInboundExecutor executor) {
