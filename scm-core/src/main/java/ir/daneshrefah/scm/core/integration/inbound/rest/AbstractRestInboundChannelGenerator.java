@@ -3,14 +3,11 @@ package ir.daneshrefah.scm.core.integration.inbound.rest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.plugin.api.inbound.AbstractInboundChannelGenerator;
-import ir.daneshrefah.scm.plugin.api.inbound.HttpInboundExecutor;
+import ir.daneshrefah.scm.plugin.api.inbound.InboundExecutor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
-import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
@@ -24,22 +21,21 @@ import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANN
  * @since 2024-01-02
  */
 @Slf4j
-public abstract class AbstractRestInboundChannelGenerator extends AbstractInboundChannelGenerator<HttpServletRequest>
-        implements HttpInboundExecutor {
+public abstract class AbstractRestInboundChannelGenerator extends AbstractInboundChannelGenerator
+        implements InboundExecutor {
 
     protected String contextPath;
     protected Integer port;
 
     public AbstractRestInboundChannelGenerator(ObjectMapper objectMapper,
-                                               MessageGenerator messageGenerator,
                                                ServiceProducerTemplate producerTemplate,
                                                ErrorHandlerService errorHandlerService) {
-        super(producerTemplate, messageGenerator, errorHandlerService, objectMapper);
+        super(producerTemplate, errorHandlerService, objectMapper);
     }
 
     @Override
     public boolean initConfig() {
-        JsonNode metadata = getMetadata();
+        JsonNode metadata = getChannel().getMetadata();
         if (null == metadata) {
             log.error("metadata could not be empty.");
             return false;

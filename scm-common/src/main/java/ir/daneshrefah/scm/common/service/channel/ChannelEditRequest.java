@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.service.channel;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import lombok.Data;
@@ -22,7 +23,7 @@ public class ChannelEditRequest implements RequestData {
     private String terminalCode;
     private ChannelProtocol protocol;
     private String channelClassName;
-    private String metadata;
+    private JsonNode metadata;
     private LocalDateTime lastEditDate;
 
 }

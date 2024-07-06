@@ -41,16 +41,15 @@ public class SpringRestInboundChanelGenerator extends AbstractRestInboundChannel
     private ArrayNode controllersArrayNode;
 
     public SpringRestInboundChanelGenerator(ObjectMapper objectMapper, RequestMappingHandlerMapping handlerMapping,
-                                            MessageGenerator messageGenerator,
                                             ServiceProducerTemplate producerTemplate,
                                             ErrorHandlerService errorHandlerService) {
-        super(objectMapper,messageGenerator, producerTemplate, errorHandlerService);
+        super(objectMapper, producerTemplate, errorHandlerService);
         this.handlerMapping = handlerMapping;
     }
 
     @Override
     public boolean initialize() {
-        JsonNode metadata = getMetadata();
+        JsonNode metadata = getChannel().getMetadata();
         this.controllersArrayNode = (null != metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER) && metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER).isArray()) ?
                 (ArrayNode) metadata.get(CHANNEL_METADATA_REST_SPRING_CONTROLLER) : null;
         if (null == controllersArrayNode || controllersArrayNode.size() < 1) {

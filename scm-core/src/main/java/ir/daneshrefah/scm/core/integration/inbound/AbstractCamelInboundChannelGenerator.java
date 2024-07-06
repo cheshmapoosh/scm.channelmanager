@@ -17,16 +17,15 @@ import org.apache.camel.Exchange;
  * @version 1.0
  * @since 2024-01-05
  */
-public abstract class AbstractCamelInboundChannelGenerator extends AbstractInboundChannelGenerator<Exchange> {
+public abstract class AbstractCamelInboundChannelGenerator extends AbstractInboundChannelGenerator {
 
     @Getter(AccessLevel.PROTECTED)
     private CamelContext context;
 
     protected AbstractCamelInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
-                                                   MessageGenerator messageGenerator,
                                                    ServiceProducerTemplate producerTemplate,
                                                    ErrorHandlerService errorHandlerService) {
-        super(producerTemplate, messageGenerator, errorHandlerService, objectMapper);
+        super(producerTemplate, errorHandlerService, objectMapper);
         this.context = context;
     }
 

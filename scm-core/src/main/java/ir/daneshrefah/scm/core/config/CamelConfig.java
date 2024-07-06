@@ -20,6 +20,10 @@ public class CamelConfig implements CamelContextConfiguration {
 //        String threadNamePattern = "Camel (" + camelContext.getName() + ") thread ##counter# - #name#";
         String threadNamePattern = "scm_" + camelContext.getName() + "_thread##counter#_#name#";
         camelContext.getExecutorServiceManager().setThreadNamePattern(threadNamePattern);
+        camelContext.getManagementStrategy().addEventNotifier(new CamelEventNotifierSupport());
+        camelContext.addLifecycleStrategy(new CamelLifecycleStrategy());
+//        camelContext.setMessageHistory(true);
+//        camelContext.setSourceLocationEnabled(true);
     }
 
     @Override

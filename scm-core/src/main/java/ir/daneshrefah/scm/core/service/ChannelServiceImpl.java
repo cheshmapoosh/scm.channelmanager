@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
@@ -138,7 +139,7 @@ public class ChannelServiceImpl implements ChannelService {
         if (StringUtils.isNotEmpty(request.getChannelClassName()) && !foundChannel.getChannelClassName().equals(request.getChannelClassName())) {
             foundChannel.setChannelClassName(request.getChannelClassName());
         }
-        if (StringUtils.isNotEmpty(request.getMetadata()) && !foundChannel.getMetadata().equals(request.getMetadata())) {
+        if (Objects.nonNull(request.getMetadata()) && !foundChannel.getMetadata().equals(request.getMetadata())) {
             foundChannel.setMetadata(request.getMetadata());
         }
         if (StringUtils.isNotEmpty(request.getTerminalCode()) && !foundChannel.getTerminal().getCode().equalsIgnoreCase(request.getTerminalCode())) {
@@ -169,7 +170,7 @@ public class ChannelServiceImpl implements ChannelService {
         channelEntity.setTitle(request.getTitle());
         channelEntity.setProtocol(request.getProtocol());
         channelEntity.setChannelClassName(request.getChannelClassName());
-        channelEntity.setMetadata(Objects.nonNull(request.getMetadata()) ? request.getMetadata() : StringUtils.EMPTY);
+        channelEntity.setMetadata(Objects.nonNull(request.getMetadata()) ? request.getMetadata() : NullNode.getInstance());
         return channelEntity;
     }
 
@@ -179,16 +180,15 @@ public class ChannelServiceImpl implements ChannelService {
         String code = request.getCode();
         String title = request.getTitle();
         String channelClassName = request.getChannelClassName();
-        String metadata = request.getMetadata();
         String terminalCode = request.getTerminalCode();
         ValidationUtils.checkNull(protocol, () -> new InvalidInputException("protocol"));
         ValidationUtils.checkBlankString(code, () -> new InvalidInputException("code"));
         ValidationUtils.checkBlankString(title, () -> new InvalidInputException("title"));
         ValidationUtils.checkBlankString(channelClassName, () -> new InvalidInputException("channelClassName"));
         ValidationUtils.checkBlankString(terminalCode, () -> new InvalidInputException("terminalCode"));
-        if (Objects.nonNull(metadata)) {
-            ValidationUtils.checkBlankString(metadata, () -> new InvalidInputException("metadata"));
-        }
+//        if (Objects.nonNull(request.getMetadata())) {
+//            ValidationUtils.checkBlankString(metadata, () -> new InvalidInputException("metadata"));
+//        }
         channelRepository.findByCode(code).ifPresent(channelEntity -> {
             throw new DuplicatedRecordFoundException("channel");
         });

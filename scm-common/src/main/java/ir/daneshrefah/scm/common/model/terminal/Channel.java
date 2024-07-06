@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,6 @@ public class Channel extends BaseModel<String> {
     private Terminal terminal;
     private ChannelProtocol protocol;
     private String channelClassName;
-    private String metadata;
+    private JsonNode metadata;
 
 }

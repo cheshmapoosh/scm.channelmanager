@@ -44,15 +44,14 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected Integer port;
 
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
-                                                       MessageGenerator messageGenerator,
                                                        ServiceProducerTemplate producerTemplate,
                                                        ErrorHandlerService errorHandlerService) {
-        super(objectMapper, context, messageGenerator, producerTemplate, errorHandlerService);
+        super(objectMapper, context, producerTemplate, errorHandlerService);
     }
 
     @Override
     public boolean initConfig() {
-        JsonNode metadata = getMetadata();
+        JsonNode metadata = getChannel().getMetadata();
         if (null == metadata) {
             log.error("metadata could not be empty.");
             return false;

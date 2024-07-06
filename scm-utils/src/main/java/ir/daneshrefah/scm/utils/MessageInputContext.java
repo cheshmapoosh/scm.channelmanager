@@ -23,6 +23,10 @@ public class MessageInputContext {
         CONTEXT.set(messageInput);
     }
 
+    public static boolean isInitialized() {
+        return Objects.nonNull(CONTEXT.get());
+    }
+
     public static MessageInput getCurrentContext() {
         return CONTEXT.get();
     }

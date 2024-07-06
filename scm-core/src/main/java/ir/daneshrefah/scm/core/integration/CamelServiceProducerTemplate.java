@@ -36,6 +36,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     @Autowired
     private ProducerTemplate producerTemplate;
+
     @Override
     public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
         String serviceUrl = "direct:SVI_" + service.getCode();
@@ -64,6 +65,11 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
             message.addErrors(tempMessage.getErrors());
         }*/
         return tempMessage;
+    }
+
+    @Override
+    public <T> T callService(String serviceCode, Object request, Class<T> responseType) {
+        return null;
     }
 
     @Override

@@ -5,11 +5,16 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.AuthenticationInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.RequestValidationInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.TerminalRequestTransformerInterceptor;
+import ir.daneshrefah.scm.core.integration.inbound.interceptor.TransactionAuthenticationInterceptor;
 import ir.daneshrefah.scm.core.integration.service.interceptor.*;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
@@ -40,6 +45,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
     private final PersonProfileLoader personProfileLoader;
     private final TransformerService transformerService;
     private final ObjectMapper objectMapper;
+    private final AuthenticationClientTemplate authenticationClientTemplate;
     private final Map<ServiceImplementationType, ServiceExecutor> executorMap = new HashMap<>();
 
     @Override
@@ -70,6 +76,10 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
 
     private void initServiceExecutorList() {
         final List<MessageInterceptor> requestInterceptors = Arrays.asList(
+                new RequestValidationInterceptor(),
+                new AuthenticationInterceptor(authenticationClientTemplate),
+                new TransactionAuthenticationInterceptor(authenticationClientTemplate),
+                new TerminalRequestTransformerInterceptor(),
                 new CustomerEnrichInterceptor(personProfileLoader),
                 new ServiceRequestValidationInterceptor(objectMapper),
                 new DecisionManagerInterceptor(decisionManager),

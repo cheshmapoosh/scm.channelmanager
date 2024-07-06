@@ -41,10 +41,9 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
     private final RestUrlBuilder urlBuilder;
 
     public DynamicRestInboundChanelGenerator(ObjectMapper objectMapper, CamelContext camelContext,
-                                             MessageGenerator messageGenerator,
                                              ServiceProducerTemplate producerTemplate,
                                              ErrorHandlerService errorHandlerService) {
-        super(objectMapper, camelContext, messageGenerator, producerTemplate, errorHandlerService);
+        super(objectMapper, camelContext, producerTemplate, errorHandlerService);
         this.urlBuilder = new DefaultRestUrlBuilder();
     }
 

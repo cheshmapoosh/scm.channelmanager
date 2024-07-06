@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.common.service.channel;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import lombok.Data;
-
-import javax.validation.constraints.NotNull;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,6 +20,6 @@ public class ChannelCreateRequest implements RequestData {
     private String terminalCode;
     private ChannelProtocol protocol;
     private String channelClassName;
-    private String metadata;
+    private JsonNode metadata;
 
 }

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
 import java.util.List;
@@ -13,18 +13,10 @@ import java.util.List;
  * @version 1.0
  * @since 2024-01-29
  */
-public interface InboundChannelGenerator<T> {
+public interface InboundChannelGenerator {
 
-    boolean registerEndpoints(List<TerminalServiceAccess> services);
+    boolean initConfig(Channel channel, List<TerminalServiceAccess> service);
 
-    boolean initConfig();
-
-    boolean registerEndpoints();
-
-//    MessageBuildRequest extractMessageBuildRequest(T input, MessageBuildRequest request, Service service);
-
-//    public T execute(T input, TerminalServiceAccess serviceAccess);
-
-    public Message execute();
+    Message execute();
 
 }
