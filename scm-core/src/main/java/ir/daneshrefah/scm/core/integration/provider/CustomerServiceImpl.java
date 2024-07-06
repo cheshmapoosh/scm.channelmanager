@@ -1,11 +1,16 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
+import ir.daneshrefah.scm.common.data.service.person.CustomerFindRequest;
+import ir.daneshrefah.scm.common.model.asset.AssetProvider;
+import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
 import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
 import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessRepository;
 import ir.daneshrefah.scm.core.repository.MembershipTerminalAccessSpecs;
+import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +31,9 @@ import java.util.List;
 @Slf4j
 public class CustomerServiceImpl implements CustomerService {
 
+    private final ServiceService serviceService;
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
+    private final ServiceProducerTemplate serviceProducerTemplate;
     @Override
     public List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId) {
         if (null == personId || StringUtils.isEmpty(terminalId)) {
@@ -47,6 +54,14 @@ public class CustomerServiceImpl implements CustomerService {
         List<MembershipTerminalAccessEntity> entities = membershipTerminalAccessRepository.findAll(
                 MembershipTerminalAccessSpecs.toSpecification(request)/*, pageable*/);
         return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(entities);
+    }
+
+    @Override
+    public List<Membership> findProviderMembershipList(Integer assetProviderId, CustomerFindRequest request) {
+        ir.daneshrefah.scm.common.model.service.Service assetProviderService =
+                serviceService.findAssetProviderProviderServiceByAssetProviderId(assetProviderId);
+//        TODO dariush
+        return null;
     }
 
     /*private final PersonService personService;

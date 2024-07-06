@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 
@@ -14,6 +15,12 @@ import java.util.List;
  * @since 2024-01-17
  */
 public interface ServiceService {
+
+    List<AssetProvider> findAssetProviderList();
+
+    AssetProvider findAssetProviderById(Integer id);
+
+    Service findAssetProviderProviderServiceByAssetProviderId(Integer id);
 
     List<ExternalServiceProvider> findServiceProviderList();
 

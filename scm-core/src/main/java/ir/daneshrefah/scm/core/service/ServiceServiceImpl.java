@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RecordVersionException;
+import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
@@ -17,12 +18,10 @@ import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
+import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
-import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
-import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
-import ir.daneshrefah.scm.core.repository.ServiceRepository;
-import ir.daneshrefah.scm.core.repository.TransformerRelationRepository;
+import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -49,14 +48,43 @@ public class ServiceServiceImpl implements ServiceService {
     private final ServiceRepository serviceRepository;
     private final ServiceRelationRepository serviceRelationRepository;
     private final ServiceProviderRepository serviceProviderRepository;
+    private final AssetProviderRepository assetProviderRepository;
     private final TerminalRepository terminalRepository;
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ExternalServiceProvider> serviceProviders;
+    private List<AssetProvider> assetProviders;
 
     private static ObjectMapper getObjectMapper() {
         return ApplicationConfig.getObjectMapperInstance();
+    }
+
+    @Override
+    public List<AssetProvider> findAssetProviderList() {
+        if (null == assetProviders || assetProviders.isEmpty()) {
+            synchronized (this) {
+                assetProviders = AssetProviderMapper.INSTANCE.toModels(assetProviderRepository.findAll());
+            }
+        }
+        return assetProviders;
+    }
+
+    @Override
+    public AssetProvider findAssetProviderById(Integer id) {
+        if (Objects.isNull(id)) {
+            return null;
+        }
+        return findAssetProviderList().stream().filter(assetProvider -> id.equals(assetProvider.getId())).findFirst().orElse(null);
+    }
+
+    @Override
+    public ir.daneshrefah.scm.common.model.service.Service findAssetProviderProviderServiceByAssetProviderId(Integer id) {
+        AssetProvider assetProvider = findAssetProviderById(id);
+        if (Objects.isNull(assetProvider) || StringUtils.isEmpty(assetProvider.getProviderServiceId())) {
+            return null;
+        }
+        return findServiceById(assetProvider.getProviderServiceId());
     }
 
     @Override
