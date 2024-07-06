@@ -1,10 +1,8 @@
 package ir.daneshrefah.scm.core.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 
 /**
@@ -26,5 +24,6 @@ public class AssetProviderEntity extends AbstractEntity<Integer> {
     private String code;
     private boolean active;
     private String abbreviation;
+    private String providerServiceId;
 
 }

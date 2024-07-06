@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.asset;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.service.Service;
 import lombok.Data;
 
 /**
@@ -17,5 +18,6 @@ public class AssetProvider extends BaseModel<Integer> {
     private String code;
     private boolean active;
     private String abbreviation;
+    private String providerServiceId;
 
 }

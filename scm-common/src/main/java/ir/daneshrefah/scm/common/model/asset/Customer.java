@@ -16,6 +16,6 @@ public class Customer extends BaseModel<Long> {
 
     private Long id;
     private String customerNo;
-    private ExternalServiceProvider provider;
+//    private ExternalServiceProvider provider;
 
 }

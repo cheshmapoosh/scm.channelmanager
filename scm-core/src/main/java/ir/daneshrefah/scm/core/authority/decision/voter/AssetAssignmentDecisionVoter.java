@@ -41,7 +41,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
         }
         Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         profile = personProfileLoader.preparePersonProfileMemberships(profile, terminal.getCode());
-        boolean isAssetAssigned = profile.hasAssetAccess(provider.getId(), asset, null);
+        boolean isAssetAssigned = profile.hasAssetAccess(provider.getAssetProvider().getId(), asset, null);
         if (!isAssetAssigned) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_NOT_ASSIGNED, "asset not assigned.");
         }

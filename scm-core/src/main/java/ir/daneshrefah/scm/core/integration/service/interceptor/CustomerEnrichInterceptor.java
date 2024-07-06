@@ -34,7 +34,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         Service serviceAccess = message.getHeader().getService();
         ExternalService service = serviceAccess instanceof ExternalService ?
                 (ExternalService) serviceAccess : null;
-        if (null == service || Objects.isNull(service.getServiceProvider().getAssetProvider()) || !AuthenticationUtils.isFullyAuthenticated()) {
+        if (Objects.isNull(service) || Objects.isNull(service.getServiceProvider().getAssetProvider()) ||
+                !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();
         }
         String customerProperty = service.getCustomerProperty();
@@ -45,11 +46,11 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         }
 
         UserProfile profile = personProfileLoader.preparePersonProfileMemberships(AuthenticationUtils.getScmAuthentication());
-        if (Objects.isNull(profile) || !profile.hasMembership(service.getServiceProvider().getId())) {
+        if (Objects.isNull(profile) || !profile.hasMembership(service.getServiceProvider().getAssetProvider().getId())) {
             throw new NoAssetFoundException();
         }
         if (StringUtils.isNotEmpty(customerProperty)) {
-            Customer customer = profile.getCustomer(service.getServiceProvider().getId());
+            Customer customer = profile.getCustomer(service.getServiceProvider().getAssetProvider().getId());
             message.setPayloadValue(customerProperty, customer.getCustomerNo());
         }
         return message;

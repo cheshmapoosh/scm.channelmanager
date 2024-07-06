@@ -21,8 +21,8 @@ public class CustomerEntity extends AbstractEntity<Long> {
     @Column(name = "CUSTOMER_ID")
     private Long id;
     private String customerNo;
-    @ManyToOne
-    @JoinColumn(name = "PROVIDER_ID")
-    private ExternalServiceProviderEntity provider;
+//    @ManyToOne
+//    @JoinColumn(name = "PROVIDER_ID")
+//    private ExternalServiceProviderEntity provider;
 
 }

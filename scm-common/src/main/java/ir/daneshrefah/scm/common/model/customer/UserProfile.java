@@ -55,18 +55,19 @@ public class UserProfile implements Serializable {
         this.memberships = memberships;
     }
 
-    public boolean hasMembership(String providerId) {
-        if (StringUtils.isEmpty(providerId) || Objects.isNull(memberships) || memberships.size() < 1) {
+    public boolean hasMembership(Integer assetProviderId) {
+        if (Objects.isNull(assetProviderId) || Objects.isNull(memberships) || memberships.size() < 1) {
             return false;
         }
-        return memberships.stream().anyMatch(m -> providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId()));
+        return memberships.stream().anyMatch(m -> assetProviderId.equals(m.getMembership().getCustomerAccount().getAccount().getAssetProvider().getId()));
     }
 
-    public Customer getCustomer(String providerId) {
-        if (StringUtils.isEmpty(providerId) || null == memberships || memberships.size() < 1) {
+    public Customer getCustomer(Integer assetProviderId) {
+        if (Objects.isNull(assetProviderId) || null == memberships || memberships.size() < 1) {
             return null;
         }
-        Optional<MembershipTerminalAccess> mta = memberships.stream().filter(m -> providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId())).findFirst();
+        Optional<MembershipTerminalAccess> mta = memberships.stream().filter(m ->
+                assetProviderId.equals(m.getMembership().getCustomerAccount().getAccount().getAssetProvider().getId())).findFirst();
         return mta.isPresent() ? mta.get().getMembership().getCustomerAccount().getCustomer() : null;
     }
 
@@ -95,12 +96,12 @@ public class UserProfile implements Serializable {
                 ));
     }
 
-    public MembershipTerminalAccess findAsset(String providerId, String assetValue, AssetType assetType) {
-        if (StringUtils.isEmpty(providerId) || StringUtils.isEmpty(assetValue) || null == memberships || memberships.size() < 1) {
+    public MembershipTerminalAccess findAsset(Integer assetProviderId, String assetValue, AssetType assetType) {
+        if (Objects.isNull(assetProviderId) || StringUtils.isEmpty(assetValue) || null == memberships || memberships.size() < 1) {
             return null;
         }
         return memberships.stream().filter(m ->
-                        providerId.equals(m.getMembership().getCustomerAccount().getCustomer().getProvider().getId()) &&
+                        assetProviderId.equals(m.getMembership().getCustomerAccount().getAccount().getAssetProvider().getId()) &&
                                 (null == assetType || assetType.equals(m.getMembership().getAssetType())) &&
                                 (m.getMembership().getCustomerAccount().getAccount().getAccountNo().equalsIgnoreCase(assetValue))
 
@@ -108,8 +109,8 @@ public class UserProfile implements Serializable {
                 .findFirst().orElse(null);
     }
 
-    public boolean hasAssetAccess(String providerId, String assetValue, AssetType assetType) {
-        return null != findAsset(providerId, assetValue, assetType);
+    public boolean hasAssetAccess(Integer assetProviderId, String assetValue, AssetType assetType) {
+        return null != findAsset(assetProviderId, assetValue, assetType);
     }
 
 }
