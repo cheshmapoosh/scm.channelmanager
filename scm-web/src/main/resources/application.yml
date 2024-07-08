@@ -54,21 +54,15 @@ scm:
             time-to-live-seconds: 10
   process:
     enabled: true
-#    //TODO {RAYANI} remove these lines
-    jdbc-url: jdbc:db2://10.10.4.104:50001/DBREFSW
-    jdbc-username: db2inst1
-    jdbc-password: db2inst1
-    jdbc-driver-class-name: com.ibm.db2.jcc.DB2Driver
-    max-connection: 10
-    jdbc-schema: db-camunda
-#    datasource: //TODO {RAYANI} uncomment these lines
-#      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-#      username: db2inst1
-#      password: db2inst1
-#      driver-class-name: com.ibm.db2.jcc.DB2Driver
-#      max-connection: 10
-#      default-schema: REF
-
+    datasource:
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: db-camunda
+  swagger:
+    server-host: localhost
 
 server:
   servlet:

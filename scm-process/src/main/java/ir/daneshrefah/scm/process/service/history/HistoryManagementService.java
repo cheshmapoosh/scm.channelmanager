@@ -2,16 +2,15 @@ package ir.daneshrefah.scm.process.service.history;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.process.model.filter.ProcessFilter;
-import ir.daneshrefah.scm.process.model.request.HistoryRequest;
-import ir.daneshrefah.scm.process.model.response.ProcessHistoryResponse;
-import ir.daneshrefah.scm.process.model.response.TaskHistoryResponse;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryProcessRequest;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryProcessResponse;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryTaskRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class HistoryManagementService extends AbstractJavaService {
@@ -23,11 +22,13 @@ public class HistoryManagementService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    public List<TaskHistoryResponse> findTaskHistories(HistoryRequest historyRequest) throws JsonProcessingException {
-        return historyManagement.findTaskHistories(historyRequest);
+    @JavaService
+    public PagedResponseData<HistoryProcessResponse> findProcessHistories(HistoryProcessRequest historyProcessRequest) throws Exception {
+        return historyManagement.findProcessHistories(historyProcessRequest);
     }
 
-    public List<ProcessHistoryResponse> findProcessHistories(ProcessFilter processFilter) throws JsonProcessingException {
-        return historyManagement.findProcessHistories(processFilter);
+    @JavaService
+    public PagedResponseData findTaskHistories(HistoryTaskRequest historyTaskRequest) throws JsonProcessingException {
+        return historyManagement.findTaskHistories(historyTaskRequest);
     }
 }

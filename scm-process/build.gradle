@@ -15,9 +15,12 @@ dependencies {
     compileOnly project(':scm-uaa-common')
     compileOnly project(':scm-common')
     compileOnly project(':scm-common-data')
+    compileOnly project(':scm-common-error')
     compileOnly project(':scm-plugin-api')
 //    implementation ('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter:7.21.0') {
 //    implementation 'org.camunda.bpm:camunda-engine-spring:7.19.0'
+    implementation 'org.openjdk.nashorn:nashorn-core:15.4'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation ('org.camunda.bpm:camunda-engine:7.21.0') {
         exclude group: 'javax.xml.bind', module: 'jaxb-core'
         exclude group: 'com.sun.xml.bind', module: 'jaxb-impl'

@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.payment.service;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.JavaDelegate;
 import org.springframework.stereotype.Service;
-
 @Service
 public class AutomaticTransferPaymentService implements JavaDelegate {
     @Override

@@ -1556,6 +1556,242 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::java.net.SocketTimeoutException',
         'پاسخی از سمت سرور مقصد دریافت نگردید.');
 
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundException',
+        'no process instance found with ID = :processInstanceId');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundWithKeyException',
+        'No process instance found with key = :processKey');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'en-US', 'ex::ir.daneshrefah.scm.process.exception.common.UnauthorizedException',
+        'Unauthorized to cancel the process');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.common.PersonNotFoundException',
+        'Person not found with id: :id');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.task.TaskNotFoundException',
+        'Task not found');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.attachment.AttachmentPermissionException',
+        'You do not have permission to :operation this attachment = :attachment');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.task.UnauthorizedCompleteTaskException',
+        'Unauthorized to complete the task');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE ( CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR', 'ex::ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundException',
+        'فرایندی با شناسه :processInstanceId یافت نشد.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundWithKeyException',
+        'فرایندی با شناسه :processKey یافت نشد.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.common.UnauthorizedException',
+        'شما مجاز به لغو این فرآیند نمی باشید.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.common.PersonNotFoundException',
+        'کاربری با این شناسه :id یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.common.PersonNotFoundException',
+        'کاربری با این کدملی :nationalCode یافت نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.attachment.AttachmentPermissionException',
+        'شما اجازه‌ :operation پیوست :attachment را ندارید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.task.UnauthorizedCompleteTaskException',
+        'شما مجاز به تکمیل این تسک نمی باشید.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.active',
+        'ACTIVE');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.active',
+        'فعال');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.suspended',
+        'SUSPENDED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.suspended',
+        'معلق');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.completed',
+        'COMPLETED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.completed',
+        'کامل شده');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.externally_terminated',
+        'EXTERNALLY_TERMINATED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.externally_terminated',
+        'خاتمه یافته خارجی');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.internally_terminated',
+        'INTERNALLY_TERMINATED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.internally_terminated',
+        'خاتمه یافته داخلی');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'process.state.canceled',
+        'CANCELED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.canceled',
+        'انصراف');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.completed',
+        'COMPLETED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'task.state.completed',
+        'تایید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.deleted',
+        'DELETED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'task.state.deleted',
+        'حذف');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.canceled',
+        'CANCELED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'task.state.canceled',
+        'انصراف');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.expired',
+        'EXPIRED');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'task.state.expired',
+        'منقضی');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.error',
+        'ERROR');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza task', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'process.state.error',
+        'خطا');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'task.state.migration',
+        'MIGRATION');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'task.state.migration',
+        'مهاجرت');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.definition.ProcessDefinitionExistsException',
+        'Cannot delete process definitions because process exist for deployment id = :deploymentId');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', '2024-06-02 12:45:49.000000',
+        '2024-06-02 12:45:43.000000', 'fa-IR',
+        'ex::ir.daneshrefah.scm.process.exception.definition.ProcessDefinitionExistsException',
+        'شما مجاز به حذف نمی باشید زیرا فرایندهایی برای این شناسه استقرار :deploymentId وجود دارد.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'Stamp Cancel Task',
+        'Payment Transfer');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'Stamp Cancel Task',
+        'انتفال وجه');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'Waiting for accepting or rejecting all users',
+        'Payment Transfer');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'Waiting for accepting or rejecting all users',
+        'انتفال وجه');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'Subscription Payment Transfer',
+        'Payment Transfer');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'Subscription Payment Transfer',
+        'انتفال وجه');
 
 
 CREATE TABLE REF.TBL_SCM_ERROR_MAPPING
@@ -1918,6 +2154,59 @@ VALUES ('java.net.SocketTimeoutException',
         1017, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundException',
+        1200, 'sc_nfd',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundWithKeyException',
+        1201, 'sc_nfd',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.common.UnauthorizedException',
+        1202, 'sc_uat',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.common.PersonNotFoundException',
+        1202, 'sc_nfd',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.attachment.AttachmentPermissionException',
+        1204, 'sc_acd',
+        'Alireza Rayani', 'Alireza Rayani');
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.task.TaskNotFoundException',
+        1205, 'sc_nfd',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.task.UnauthorizedCompleteTaskException',
+        1206, 'sc_uat',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.schema.JsonSchemaException',
+        1207, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.process.exception.definition.ProcessDefinitionExistsException',
+        1208, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
 -- finalized tables
 -------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_AUTHORITY

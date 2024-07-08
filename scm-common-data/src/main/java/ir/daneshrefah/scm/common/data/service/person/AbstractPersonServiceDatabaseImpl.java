@@ -120,14 +120,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     public GeneralRealPersonEntity findPersonByNationalCode(String nationalCode) {
-        return null;
-    }
-
-    public IndividualPersonEntity findIndividualPersonByNationalCode(String nationalCode) {
-        if (StringUtils.isEmpty(nationalCode) || StringUtils.isEmpty(nationalCode)) {
-            return null;
-        }
-        return personRepository.findIndividualPersonByNationalCode(nationalCode);
+        return personRepository.findRealPersonByNationalCode(nationalCode);
     }
 
     /*private final ServiceProducerTemplate serviceProducerTemplate;

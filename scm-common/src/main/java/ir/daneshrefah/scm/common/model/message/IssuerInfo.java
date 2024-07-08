@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.terminal.Channel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,7 +17,6 @@ import java.io.Serializable;
 @Getter
 @Builder
 public class IssuerInfo implements Serializable {
-
     private final String parentCorrelationId;
     private final PersonType personType;
     private final String personUsername;
@@ -26,5 +26,4 @@ public class IssuerInfo implements Serializable {
     private final String xForwardedFor;
     private final String hostAddress;
     private final String instanceName;
-
 }

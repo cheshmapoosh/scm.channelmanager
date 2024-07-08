@@ -6,8 +6,5 @@ public class JsonNodeNullException extends AbstractProcessException{
         super(source, message);
     }
 
-    @Override
-    public int getErrorCode() {
-        return 1;
-    }//TODO change this error code
+
 }

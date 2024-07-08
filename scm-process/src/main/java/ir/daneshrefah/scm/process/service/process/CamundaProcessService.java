@@ -1,168 +1,119 @@
 package ir.daneshrefah.scm.process.service.process;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.process.exception.NotFountProcessException;
-import ir.daneshrefah.scm.process.model.IssuerUser;
-import ir.daneshrefah.scm.process.model.constant.ProcessState;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.process.exception.common.UnauthorizedException;
+import ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundException;
+import ir.daneshrefah.scm.process.exception.schema.JsonSchemaException;
 import ir.daneshrefah.scm.process.model.mapper.ProcessResponseMapper;
-import ir.daneshrefah.scm.process.model.mapper.UserMapper;
 import ir.daneshrefah.scm.process.model.process.ProcessMetadata;
-import ir.daneshrefah.scm.process.model.request.CancelProcessRequest;
-import ir.daneshrefah.scm.process.model.request.ProcessStartRequest;
-import ir.daneshrefah.scm.process.model.response.ProcessResponse;
-import ir.daneshrefah.scm.process.service.util.CamundaProcessUtil;
-import ir.daneshrefah.scm.process.service.util.UserAuthUtils;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessCancelRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartResponse;
+import ir.daneshrefah.scm.process.service.util.JsonTransformationUtil;
+import ir.daneshrefah.scm.process.service.util.ProcessMetadataExtractor;
+import ir.daneshrefah.scm.process.service.util.ValidateUserService;
+import ir.daneshrefah.scm.process.service.util.ValidationSchema;
+import ir.daneshrefah.scm.process.service.util.historicProcess.HistoricProcessService;
+import ir.daneshrefah.scm.process.service.util.processDefinition.ProcessDefinitionService;
+import ir.daneshrefah.scm.process.service.util.processInstance.ProcessInstanceService;
+import ir.daneshrefah.scm.process.service.util.processVariable.ProcessVariableService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.camunda.bpm.engine.ProcessEngine;
-import org.camunda.bpm.engine.RuntimeService;
+import lombok.RequiredArgsConstructor;
+import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
-import org.camunda.bpm.model.bpmn.instance.Collaboration;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static ir.daneshrefah.scm.process.service.constant.ProcessConstants.BUSINESS_DATA;
+import static ir.daneshrefah.scm.process.service.constant.ProcessConstants.ISSUER_INFO;
 
 @Component
+@RequiredArgsConstructor
 public class CamundaProcessService implements ProcessManagement {
-    public static final String ISSUER_USER = "issuerUser";
+    private final ProcessDefinitionService processDefinitionService;
+    private final ProcessInstanceService processInstanceService;
+    private final ProcessVariableService processVariableService;
+    private final ProcessMetadataExtractor metadataExtractor;
+    private final HistoricProcessService historicProcessService;
+    private final JsonTransformationUtil jsonTransformationUtil;
+    private final ValidateUserService validateUserService;
 
-    public static final String BUSINESS_DATA = "businessData";
+    public ProcessStartResponse startProcess(ProcessStartRequest processStartRequest) throws Exception {
+        ProcessDefinition processDefinition = processDefinitionService.findByKey(processStartRequest.getProcessKey());
+        //TODO use cache
+        ProcessMetadata metadata = metadataExtractor.extractProcessMetadata(processDefinition, StartEvent.class);
 
-    public static final String CANCEL_ACCESS = "cancelProcess";//TODO change name of variable
+        validateProcessBeforeStart(metadata, processStartRequest);
 
-    @Autowired
-    private ProcessEngine processEngine;
-    @Autowired
-    private RuntimeService runtimeService;
-    @Autowired
-    private CamundaProcessUtil camundaProcessUtil;
+        jsonTransformationUtil.transformBusinessData(processStartRequest.getData(), metadata.getInputConverters());
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> data = objectMapper.convertValue(processStartRequest.getData(), new TypeReference<>() {
+        });
 
-    public ProcessResponse startProcess(ProcessStartRequest processRequest) throws JsonProcessingException {
-        ProcessDefinition processDefinition = findProcessDefinitionByProcessKey(processRequest.getProcessKey());
-        ProcessMetadata metadata = extractProcessMetadata(processDefinition);
-        Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
-//TODO        ValidationUtils.checkListIsNotEmptyAndNotContainsList(metadata.getStartAuthorizedAuthorities(),
-//                authentication.getAuthorities(), () ->);
-        if (StringUtils.isNotEmpty(metadata.getStartValidationSchema())) {
-//            TODO
-        }
-        if (StringUtils.isNotEmpty(metadata.getStartValidationScript())) {
-//            TODO
-        }
-//        Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, StartEvent.class);
-
-//        String userId = ProcessUtils.getLoggedInUserNationalCode();
-//        Set<ValidationMessage> validationMessages = ValidationSchema.validate(processRequest, jsonSchema, "");
-//        if (validationMessages != null && !validationMessages.isEmpty()) {
-//            String message = validationMessages.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\\n"));
-//            throw new GeneralException("CamundaProcessService", message); //TODO change this exception after dariush task completed
-//        }
-//        String userId = "123";
-//        identityService.setAuthenticatedUserId(userId);
         Map<String, Object> businessData = new HashMap<>();
-        for (Map.Entry<String, Object> entry : processRequest.getData().entrySet()) {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
             businessData.put(BUSINESS_DATA + "_" + entry.getKey(), entry.getValue());
         }
-        IssuerInfo issuerInfo = AuthenticationUtils.getIssuerInfo();
-        IssuerUser issuerUser = UserMapper.INSTANCE.toUserMapper(UserAuthUtils.getLoggedInPerson());
-        businessData.computeIfAbsent(ISSUER_USER, s -> issuerUser); //TODO issuerInfo must be used
 
-        businessData = transformBusinessData(businessData, metadata.getInputConverters());
-        ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId(), businessData);
+        IssuerInfo issuerInfo = AuthenticationUtils.getIssuerInfo();
+        businessData.computeIfAbsent(ISSUER_INFO, s -> issuerInfo);
+        ProcessInstance processInstance = processInstanceService.startProcessInstanceById(processDefinition.getId(), businessData);
         return createResponse(processInstance);
     }
 
-    private Map<String, Object> transformBusinessData(Map<String, Object> businessData, Map<String, String> inputConverters) {
-        if (Objects.isNull(businessData) || businessData.isEmpty() || Objects.isNull(inputConverters) || inputConverters.isEmpty()) {
-            return businessData;
-        }
-        for (Iterator<String> iterator = inputConverters.keySet().iterator(); iterator.hasNext(); ) {
-            String propertyKey = iterator.next();
-//            TODO
-//            for example customerNo_to_person must be run for taskData.signers that replace customerNo with
-//            person object {username:, type:, firstName:, lastName:, ....}
-        }
-        return null;
-    }
-
-    private ProcessMetadata extractProcessMetadata(ProcessDefinition processDefinition) {
-        //TODO should be extract from extension properties
-        return new ProcessMetadata();
-    }
-
-    public boolean cancelProcess(CancelProcessRequest cancelProcessRequest) throws Exception {
-        //TODO Validate ProcessInstanceId not null with jsonSchema
-        String processInstanceId = cancelProcessRequest.getProcessId();
-//        String loggedInUserNationalCode = UserAuthUtils.getLoggedInUserNationalCode();
-        String loggedInUserNationalCode = cancelProcessRequest.getNationalCode();
-
-        ProcessInstance processInstance = camundaProcessUtil.getProcessInstance(processInstanceId);
-        if (processInstance == null) {
-            throw new Exception("No process instance found with ID: " + processInstanceId);// TODO change this exception
-        }
-
-        Map<String, Object> variables = runtimeService.getVariables(processInstanceId);
-
-        ProcessDefinition processDefinition = camundaProcessUtil.getProcessDefinition(processInstance.getProcessDefinitionId());
-
-        //TODO clean code
-        Map<String, String> extensionProperties = camundaProcessUtil.getExtensionProperties(processDefinition, Collaboration.class);
-        boolean canCancel = false;
-        if (extensionProperties.containsKey(CANCEL_ACCESS)) {
-            String extension = extensionProperties.get(CANCEL_ACCESS);
-            for (String extensionVariable : extension.split(",")) {
-                if (variables.containsKey(extensionVariable)) {
-                    Object user = variables.get(extensionVariable);
-                    if (user instanceof String) {
-                        if (((String) user).trim().equals(loggedInUserNationalCode)) {
-                            canCancel = true;
-                            break;
-                        }
-                    } else if (user instanceof List) {
-                        List<String> users = (List<String>) user;
-                        for (String u : users) {
-                            if (u.trim().equals(loggedInUserNationalCode)) {
-                                canCancel = true;
-                                break;
-                            }
-                        }
-                    } else if (user instanceof IssuerUser issuerUser) {
-                        if (issuerUser.getNationalCode().trim().equals(loggedInUserNationalCode)) {
-                            canCancel = true;
-                            break;
-                        }
-                    }
-                }
+    private void validateProcessBeforeStart(ProcessMetadata metadata, ProcessStartRequest processStartRequest) throws JsonProcessingException {
+        String loggedInUser = AuthenticationUtils.getLoggedInUser().getPerson().getNationality().getCode();
+        if (StringUtils.isNotEmpty(metadata.getStartValidationSchema())) {
+            Set<ValidationMessage> validationMessages = ValidationSchema.validate(processStartRequest, metadata.getStartValidationSchema(), "");
+            if (validationMessages != null && !validationMessages.isEmpty()) {
+                String messageException = validationMessages.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\\n"));
+                throw new JsonSchemaException("Input", String.join("\n", messageException));
             }
         }
-        if (!canCancel) {
-            throw new RuntimeException("Can not cancel"); //TODO change this exception
+    }
+
+    public ProcessStartResponse createResponse(ProcessInstance processInstance) {
+        ProcessStartResponse processStartResponse = ProcessResponseMapper.INSTANCE.toProcessResponse(processInstance);
+        processStartResponse.setCreatedTime(LocalDateTime.now());
+        return processStartResponse;
+    }
+
+    public boolean cancelProcess(ProcessCancelRequest processCancelRequest) throws Exception {
+        String processInstanceId = processCancelRequest.getProcessId();
+        HistoricProcessInstance historicProcessInstance = historicProcessService.getActiveProcessInstance(processInstanceId);
+        if (historicProcessInstance == null) {
+            throw new ProcessInstanceNotFoundException("processInstanceId", "No process instance found with ID = " + processInstanceId, processInstanceId);
         }
-        runtimeService.deleteProcessInstance(processInstanceId, ProcessState.CANCELED.name());
+        Map<String, Object> variables = processVariableService.getProcessVariables(processInstanceId);
+        ProcessDefinition processDefinition = processDefinitionService.findById(historicProcessInstance.getProcessDefinitionId());
+        if (!isUserAuthorizedToCancelProcess(variables, processDefinition)) {
+            throw new UnauthorizedException("Authorization", "Unauthorized to cancel the process");
+        }
+        processInstanceService.deleteProcessInstanceById(processInstanceId);
         return true;
     }
 
-    public ProcessResponse createResponse(ProcessInstance processInstance) {
-        ProcessResponse processResponse = ProcessResponseMapper.INSTANCE.toProcessResponse(processInstance);
-        processResponse.setCreatedTime(LocalDateTime.now());
-        return processResponse;
-    }
-
-    private ProcessDefinition findProcessDefinitionByProcessKey(String processDefinitionKey) {
-        return processEngine
-                .getRepositoryService()
-                .createProcessDefinitionQuery()
-                .processDefinitionKey(processDefinitionKey)
-                .latestVersion()
-                .list()
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new NotFountProcessException("CamundaProcessService", "process definition not found with key %s ".formatted(processDefinitionKey)));
+    private boolean isUserAuthorizedToCancelProcess(Map<String, Object> variables, ProcessDefinition processDefinition) throws Exception {
+        GeneralPerson generalPerson = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getPerson();
+        String userName = generalPerson.getUsername();
+        //TODO use cache
+        ProcessMetadata metadata = metadataExtractor.extractProcessMetadata(processDefinition, StartEvent.class);
+        return validateUserService.isUserInAuthorizedRoles(metadata.getStartAuthorizedAuthorities()) ||
+                validateUserService.isUserAuthorized(variables, userName, metadata.getCancelAuthorizedUsers());
     }
 }
