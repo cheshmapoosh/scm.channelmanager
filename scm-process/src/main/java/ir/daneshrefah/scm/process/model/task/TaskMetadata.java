@@ -3,9 +3,8 @@ package ir.daneshrefah.scm.process.model.task;
 import ir.daneshrefah.scm.process.model.BaseProcessModel;
 import lombok.Data;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,7 +15,7 @@ import java.util.Map;
  */
 @Data
 public class TaskMetadata implements BaseProcessModel {
-    private Map<String, Object> outputVariables = new HashMap<>();
-    private Map<String, Object> extension = new HashMap<>();
+    private List<String> outputVariables = new ArrayList<>();
+    private List<String> actions = new ArrayList<>();
     private String validationSchema;
 }

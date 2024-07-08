@@ -430,5 +430,7 @@ public class StringUtils {
         }
         return normalizedNumber;
     }
-
+    public static String normalizeSpace(final String str) {
+        return org.apache.commons.lang3.StringUtils.normalizeSpace(str);
+    }
 }

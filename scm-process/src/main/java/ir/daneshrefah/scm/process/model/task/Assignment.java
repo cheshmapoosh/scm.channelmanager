@@ -12,7 +12,10 @@ import lombok.Data;
  */
 @Data
 public class Assignment implements BaseProcessModel {
-
     private String username;
-
+    private String firstName;
+    private String LastName;
+    private String firstNameEnglish;
+    private String lastNameEnglish;
+    private String nationalCode;
 }

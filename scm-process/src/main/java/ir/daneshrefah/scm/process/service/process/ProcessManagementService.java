@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.process.service.process;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.process.model.request.CancelProcessRequest;
-import ir.daneshrefah.scm.process.model.request.ProcessStartRequest;
-import ir.daneshrefah.scm.process.model.response.ProcessResponse;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessCancelRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +20,13 @@ public class ProcessManagementService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    public ProcessResponse startProcess(ProcessStartRequest processRequest) throws JsonProcessingException {
-        return processManagement.startProcess(processRequest);
+    @JavaService
+    public ProcessStartResponse startProcess(ProcessStartRequest processStartRequest) throws Exception {
+        return processManagement.startProcess(processStartRequest);
     }
 
-    public boolean cancelProcess(CancelProcessRequest cancelProcessRequest) throws Exception {
-        return processManagement.cancelProcess(cancelProcessRequest);
+    @JavaService
+    public boolean cancelProcess(ProcessCancelRequest processCancelRequest) throws Exception {
+        return processManagement.cancelProcess(processCancelRequest);
     }
 }

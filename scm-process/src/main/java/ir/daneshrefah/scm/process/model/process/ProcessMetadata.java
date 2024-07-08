@@ -30,6 +30,6 @@ public class ProcessMetadata implements BaseProcessModel {
      * this property indicates which user authorities can cancel process
      * */
     private List<String> cancelAuthorizedAuthorities;
-    private Map<String, String> inputConverters;
 
+    private Map<String, String> inputConverters;
 }

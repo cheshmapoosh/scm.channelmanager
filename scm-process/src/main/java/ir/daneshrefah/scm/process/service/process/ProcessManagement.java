@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.process.service.process;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import ir.daneshrefah.scm.process.model.request.CancelProcessRequest;
-import ir.daneshrefah.scm.process.model.request.ProcessStartRequest;
-import ir.daneshrefah.scm.process.model.response.ProcessResponse;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessCancelRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartRequest;
+import ir.daneshrefah.scm.process.service.dto.process.ProcessStartResponse;
 
 public interface ProcessManagement {
-
-   ProcessResponse startProcess(ProcessStartRequest processRequest) throws JsonProcessingException;
-   boolean cancelProcess(CancelProcessRequest cancelProcessRequest) throws Exception;
+   ProcessStartResponse startProcess(ProcessStartRequest processStartRequest) throws Exception;
+   boolean cancelProcess(ProcessCancelRequest processCancelRequest) throws Exception;
 }

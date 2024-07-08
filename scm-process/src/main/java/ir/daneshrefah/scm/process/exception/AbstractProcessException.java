@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.process.exception;
 
-import ir.daneshrefah.scm.common.exception.BaseException;
-import ir.daneshrefah.scm.common.exception.ErrorCodeAwareException;
+import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
-public abstract class AbstractProcessException extends BaseException implements ErrorCodeAwareException {
+public class AbstractProcessException extends AbstractBaseException implements ExceptionSourceAware {
 
     private final String source;
 
@@ -18,12 +20,14 @@ public abstract class AbstractProcessException extends BaseException implements 
     }
 
     @Override
-    public MessageStatus getStatus() {
-        return MessageStatus.SC_ERROR_VALIDATION;
+    public String getSource() {
+        return source;
     }
 
     @Override
-    public String getSource() {
-        return source;
+    public ExceptionInformation getExceptionInformation() {
+        return ExceptionInformationBuilder
+                .createInstance()
+                .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

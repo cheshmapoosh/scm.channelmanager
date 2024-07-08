@@ -44,7 +44,7 @@ public class ProcessConfiguration {
     public ProcessEngineConfiguration processEngineConfiguration(@Qualifier("processDataSource") DataSource dataSource) {
         ProcessEngineConfiguration processEngineConfiguration = ProcessEngineConfiguration.createStandaloneProcessEngineConfiguration();
         processEngineConfiguration.setDataSource(dataSource);
-        processEngineConfiguration.setHistory(ProcessEngineConfiguration.HISTORY_AUDIT);
+        processEngineConfiguration.setHistory(ProcessEngineConfiguration.HISTORY_FULL);
         processEngineConfiguration.setJobExecutorActivate(true);
 
 //        processEngineConfiguration.hissetEnableCmdExceptionLogging(true);

@@ -1,16 +1,12 @@
 package ir.daneshrefah.scm.process.service.history;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import ir.daneshrefah.scm.process.model.filter.ProcessFilter;
-import ir.daneshrefah.scm.process.model.request.HistoryRequest;
-import ir.daneshrefah.scm.process.model.response.ProcessHistoryResponse;
-import ir.daneshrefah.scm.process.model.response.TaskHistoryResponse;
-
-import java.util.List;
+import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryProcessRequest;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryTaskRequest;
+import ir.daneshrefah.scm.process.service.dto.history.HistoryProcessResponse;
 
 public interface HistoryManagement {
-
-    List<TaskHistoryResponse> findTaskHistories(HistoryRequest historyRequest) throws JsonProcessingException;
-
-    List<ProcessHistoryResponse> findProcessHistories(ProcessFilter processFilter) throws JsonProcessingException;
+    PagedResponseData<HistoryProcessResponse> findProcessHistories(HistoryProcessRequest historyProcessRequest) throws Exception;
+    PagedResponseData findTaskHistories(HistoryTaskRequest historyTaskRequest) throws JsonProcessingException;
 }
