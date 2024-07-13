@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProviderMetadata;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.AttributeConverter;
@@ -21,11 +21,11 @@ import java.util.Map;
  * @since 2024-03-30
  */
 @Converter
-public class ExternalServiceProviderMetadataConverter implements AttributeConverter<ExternalServiceProviderMetadata, String> {
+public abstract class ExternalServiceProviderMetadataConverter<T extends AbstractExternalServiceProviderMetadata> implements AttributeConverter<T, String> {
 
     @Override
     @SneakyThrows
-    public String convertToDatabaseColumn(ExternalServiceProviderMetadata metaData) {
+    public String convertToDatabaseColumn(T metaData) {
         if (null == metaData) {
             return null;
         }
@@ -54,17 +54,20 @@ public class ExternalServiceProviderMetadataConverter implements AttributeConver
                 result.put(entry.getKey(), (String) entry.getValue());
             }
         }
+        result = createMetadataObjectNode(metaData, result);
         return result.toString();
     }
 
+    protected abstract ObjectNode createMetadataObjectNode(T metaData, ObjectNode result);
+
     @Override
     @SneakyThrows
-    public ExternalServiceProviderMetadata convertToEntityAttribute(String strMetadata) {
+    public T convertToEntityAttribute(String strMetadata) {
         if (StringUtils.isEmpty(strMetadata)) {
             return null;
         }
         JsonNode jsonMetadata = getObjectMapper().readTree(strMetadata);
-        ExternalServiceProviderMetadata metadata = new ExternalServiceProviderMetadata();
+        T metadata = createMetadataObject(jsonMetadata);
         jsonMetadata.fields().forEachRemaining(entry -> {
             String fieldName = entry.getKey();
             JsonNode fieldValue = entry.getValue();
@@ -80,8 +83,10 @@ public class ExternalServiceProviderMetadataConverter implements AttributeConver
                 metadata.addParam(fieldName, fieldValue);
             }
         });
-        return metadata;
+        return (T) metadata;
     }
+
+    protected abstract T createMetadataObject(JsonNode jsonMetadata);
 
     private ObjectMapper getObjectMapper() {
         return ApplicationConfig.getObjectMapperInstance();

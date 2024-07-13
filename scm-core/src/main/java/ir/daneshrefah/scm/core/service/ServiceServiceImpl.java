@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.*;
@@ -53,7 +53,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
-    private List<ExternalServiceProvider> serviceProviders;
+    private List<AbstractExternalServiceProvider> serviceProviders;
     private List<AssetProvider> assetProviders;
 
     private static ObjectMapper getObjectMapper() {
@@ -88,7 +88,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public List<ExternalServiceProvider> findServiceProviderList() {
+    public List<AbstractExternalServiceProvider> findServiceProviderList() {
         if (null == serviceProviders || serviceProviders.isEmpty()) {
             synchronized (this) {
                 serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
@@ -98,7 +98,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ExternalServiceProvider findServiceProviderById(String id) {
+    public AbstractExternalServiceProvider findServiceProviderById(String id) {
         if (StringUtils.isEmpty(id)) {
             return null;
         }
@@ -106,7 +106,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ExternalServiceProvider findServiceProviderByCode(String code) {
+    public AbstractExternalServiceProvider findServiceProviderByCode(String code) {
         if (StringUtils.isEmpty(code)) {
             return null;
         }
@@ -114,8 +114,8 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ExternalServiceProvider findServiceProviderByIdOrCode(String value) {
-        ExternalServiceProvider provider = findServiceProviderById(value);
+    public AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value) {
+        AbstractExternalServiceProvider provider = findServiceProviderById(value);
         if (null != provider) {
             return provider;
         }
@@ -358,7 +358,7 @@ public class ServiceServiceImpl implements ServiceService {
             String reqProviderId = request.getServiceProviderId();
             String serviceProviderId = externalServiceEntity.getServiceProvider().getId();
             if (StringUtils.isNotEmpty(reqProviderId) && !reqProviderId.equals(serviceProviderId)) {
-                ExternalServiceProviderEntity foundProvider = serviceProviderRepository.findById(reqProviderId)
+                AbstractExternalServiceProviderEntity foundProvider = serviceProviderRepository.findById(reqProviderId)
                         .orElseThrow(() -> new InvalidInputException("serviceProviderId"));
                 externalServiceEntity.setServiceProvider(foundProvider);
             }

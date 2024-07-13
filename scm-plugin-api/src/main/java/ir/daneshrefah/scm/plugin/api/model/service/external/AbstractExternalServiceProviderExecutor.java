@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
@@ -58,10 +58,10 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
     protected final ObjectMapper objectMapper;
     @Getter(AccessLevel.PROTECTED)
     @Setter
-    private ExternalServiceProvider provider;
+    private AbstractExternalServiceProvider provider;
 
 
-    public final void configureRouteDefinition(RouteDefinition routeDefinition, ExternalServiceProvider provider) {
+    public final void configureRouteDefinition(RouteDefinition routeDefinition, AbstractExternalServiceProvider provider) {
         this.provider = provider;
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);

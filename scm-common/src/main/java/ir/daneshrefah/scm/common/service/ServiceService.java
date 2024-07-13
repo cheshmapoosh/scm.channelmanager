@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 import java.util.List;
@@ -22,13 +22,13 @@ public interface ServiceService {
 
     Service findAssetProviderProviderServiceByAssetProviderId(Integer id);
 
-    List<ExternalServiceProvider> findServiceProviderList();
+    List<AbstractExternalServiceProvider> findServiceProviderList();
 
-    ExternalServiceProvider findServiceProviderById(String id);
+    AbstractExternalServiceProvider findServiceProviderById(String id);
 
-    ExternalServiceProvider findServiceProviderByCode(String id);
+    AbstractExternalServiceProvider findServiceProviderByCode(String id);
 
-    ExternalServiceProvider findServiceProviderByIdOrCode(String value);
+    AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value);
 
     List<Service> findServiceList();
 

@@ -15,7 +15,7 @@ import java.util.Map;
  * @since 2024-03-30
  */
 @Data
-public class ExternalServiceProviderMetadata {
+public class AbstractExternalServiceProviderMetadata {
 
     protected String endpoint;
     protected Integer connectTimeout;

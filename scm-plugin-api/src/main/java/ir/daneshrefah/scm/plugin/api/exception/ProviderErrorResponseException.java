@@ -1,10 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.exception;
 
-import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
 import ir.daneshrefah.scm.common.error.ExceptionInformation;
 import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 

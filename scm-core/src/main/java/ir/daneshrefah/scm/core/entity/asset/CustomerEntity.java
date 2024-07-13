@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.core.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 

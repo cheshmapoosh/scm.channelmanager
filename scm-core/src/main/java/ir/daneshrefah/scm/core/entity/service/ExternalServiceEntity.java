@@ -22,6 +22,6 @@ public class ExternalServiceEntity extends ServiceEntity {
 
     @ManyToOne
     @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
-    private ExternalServiceProviderEntity serviceProvider;
+    private AbstractExternalServiceProviderEntity serviceProvider;
 
 }

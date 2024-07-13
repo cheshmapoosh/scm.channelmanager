@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.integration;
 
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,9 +11,9 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
  */
 public abstract class ServiceProviderDataProvider {
 
-    protected ExternalServiceProvider provider;
+    protected AbstractExternalServiceProvider provider;
 
-    public void init(ExternalServiceProvider provider) {
+    public void init(AbstractExternalServiceProvider provider) {
         this.provider = provider;
     }
 

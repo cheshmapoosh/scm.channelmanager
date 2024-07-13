@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -18,8 +18,8 @@ import java.util.List;
 public interface ServiceProviderMapper {
     ServiceProviderMapper INSTANCE = Mappers.getMapper(ServiceProviderMapper.class);
 
-    ExternalServiceProvider toModel(ExternalServiceProviderEntity entity);
+    AbstractExternalServiceProvider toModel(AbstractExternalServiceProviderEntity entity);
 
-    List<ExternalServiceProvider> toModels(Iterable<ExternalServiceProviderEntity> entities);
+    List<AbstractExternalServiceProvider> toModels(Iterable<AbstractExternalServiceProviderEntity> entities);
 
 }

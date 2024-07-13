@@ -14,13 +14,15 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ExternalServiceProvider extends BaseModel<String> {
+public abstract class AbstractExternalServiceProvider extends BaseModel<String> {
 
     private String code;
     private String title;
     private String providerClassName;
     private ServiceProviderProtocol protocol;
-    private ExternalServiceProviderMetadata metadata;
+//    private AbstractExternalServiceProviderMetadata metadata;
     private AssetProvider assetProvider;
+
+    public abstract AbstractExternalServiceProviderMetadata getMetadata();
 
 }

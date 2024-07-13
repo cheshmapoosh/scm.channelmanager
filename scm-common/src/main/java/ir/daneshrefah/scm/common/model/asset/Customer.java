@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
 import lombok.Data;
 
 /**

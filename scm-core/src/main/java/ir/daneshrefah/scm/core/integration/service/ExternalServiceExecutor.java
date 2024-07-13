@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
@@ -40,9 +40,9 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
 
     @Override
     protected void initConfigs(RouteBuilderDelegator routeBuilder) {
-        List<ExternalServiceProvider> providers = serviceService.findServiceProviderList();
-        for (Iterator<ExternalServiceProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
-            ExternalServiceProvider provider = iterator.next();
+        List<AbstractExternalServiceProvider> providers = serviceService.findServiceProviderList();
+        for (Iterator<AbstractExternalServiceProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
+            AbstractExternalServiceProvider provider = iterator.next();
             registerExternalServiceProvider(provider, routeBuilder);
         }
     }
@@ -58,7 +58,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
         });
     }
 
-    private void registerExternalServiceProvider(ExternalServiceProvider serviceProviderModel, RouteBuilderDelegator routeBuilder) {
+    private void registerExternalServiceProvider(AbstractExternalServiceProvider serviceProviderModel, RouteBuilderDelegator routeBuilder) {
         if (null == serviceProviderModel)
             return;
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))

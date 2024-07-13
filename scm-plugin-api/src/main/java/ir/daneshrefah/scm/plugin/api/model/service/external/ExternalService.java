@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import ir.daneshrefah.scm.common.model.service.ExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 /**
@@ -12,13 +12,13 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public class ExternalService extends Service {
 
-    private ExternalServiceProvider serviceProvider;
+    private AbstractExternalServiceProvider serviceProvider;
 
-    public ExternalServiceProvider getServiceProvider() {
+    public AbstractExternalServiceProvider getServiceProvider() {
         return serviceProvider;
     }
 
-    public void setServiceProvider(ExternalServiceProvider serviceProvider) {
+    public void setServiceProvider(AbstractExternalServiceProvider serviceProvider) {
         this.serviceProvider = serviceProvider;
     }
 

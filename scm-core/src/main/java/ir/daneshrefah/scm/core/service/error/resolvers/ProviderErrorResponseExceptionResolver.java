@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolver;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
+import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.repository.ServiceProviderRepository;
 import ir.daneshrefah.scm.plugin.api.exception.ProviderErrorResponseException;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class ProviderErrorResponseExceptionResolver extends ExceptionResolver<Pr
     }
 
 
-    private ExternalServiceProviderEntity findProvider(String providerCode) {
+    private AbstractExternalServiceProviderEntity findProvider(String providerCode) {
         return serviceProviderRepository.findByCode(providerCode).orElse(null);
     }
 

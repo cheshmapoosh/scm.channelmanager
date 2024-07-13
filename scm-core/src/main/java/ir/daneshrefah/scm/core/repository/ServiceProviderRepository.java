@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.repository;
 
-import ir.daneshrefah.scm.core.entity.service.ExternalServiceProviderEntity;
+import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,6 +14,6 @@ import java.util.Optional;
  * @since 2024-01-20
  */
 @Repository
-public interface ServiceProviderRepository extends CrudRepository<ExternalServiceProviderEntity, String> {
-    Optional<ExternalServiceProviderEntity> findByCode(String providerCode);
+public interface ServiceProviderRepository extends CrudRepository<AbstractExternalServiceProviderEntity, String> {
+    Optional<AbstractExternalServiceProviderEntity> findByCode(String providerCode);
 }
