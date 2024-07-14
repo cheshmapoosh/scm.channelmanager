@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
@@ -31,8 +31,8 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
 
     @Override
     protected int vote(UserProfile profile, Service service, String asset) {
-        AbstractExternalServiceProvider provider = service instanceof ExternalService ?
-                ((ExternalService) service).getServiceProvider() : null;
+        AbstractExternalServiceProvider provider = service instanceof AbstractExternalService ?
+                ((AbstractExternalService) service).getServiceProvider() : null;
         if (Objects.isNull(provider) || Objects.isNull(provider.getAssetProvider())) {
             return ACCESS_ABSTAIN;
         }

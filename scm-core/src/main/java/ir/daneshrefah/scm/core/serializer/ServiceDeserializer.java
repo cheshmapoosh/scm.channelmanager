@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +53,8 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
         ir.daneshrefah.scm.common.model.service.Service newService = null;
         try {
             switch (implementationType) {
-                case EXTERNAL:
-                    newService = jsonParser.getCodec().treeToValue(node, ExternalService.class);
+                case CUSTOM_EXTERNAL:
+                    newService = jsonParser.getCodec().treeToValue(node, AbstractExternalService.class);
                     break;
                 case JAVA:
                     newService = jsonParser.getCodec().treeToValue(node, JavaService.class);

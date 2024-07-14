@@ -22,6 +22,7 @@ public class DefaultRestServiceProviderExecutor extends AbstractRestExternalServ
 
     @Override
     protected String prepareTargetUrl(Message message) {
+        message.getHeader().getService();
         return null;
     }
 

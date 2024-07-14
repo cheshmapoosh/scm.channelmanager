@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
         processorDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
-            ExternalService externalService = (ExternalService) message.getHeader().getService();
+            AbstractExternalService externalService = (AbstractExternalService) message.getHeader().getService();
             ExternalServiceProviderExecutor provider = serviceProviderMap.get(externalService.getServiceProvider().getCode());
             JsonNode response = provider.execute(message, externalService);
             message.payload(response);
@@ -63,9 +63,9 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
             return;
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
             return;
-
         AbstractExternalServiceProviderExecutor provider = null;
         try {
+            //TODO dariush handle serviceProviderModel.protocol and for rest use 'DefaultRestServiceProviderExecutor'
             provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
                     AbstractExternalServiceProviderExecutor.class, serviceProviderModel);
             if (null == provider) {

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.nab.provider.Bind;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +41,8 @@ public class NabResponseTransformer extends AbstractJsonTransformer {
         } catch (Exception e) {
             AbstractExternalServiceProvider provider = null;
             ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService();
-            if (service instanceof ExternalService) {
-                provider = ((ExternalService) service).getServiceProvider();
+            if (service instanceof AbstractExternalService) {
+                provider = ((AbstractExternalService) service).getServiceProvider();
             }
             throw new InvalidProviderResponseException(service.getCode(), provider.getCode(), e);
         }

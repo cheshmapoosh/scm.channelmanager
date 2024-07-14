@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -32,8 +32,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
     @Override
     protected Message internalIntercept(Message message) {
         Service serviceAccess = message.getHeader().getService();
-        ExternalService service = serviceAccess instanceof ExternalService ?
-                (ExternalService) serviceAccess : null;
+        AbstractExternalService service = serviceAccess instanceof AbstractExternalService ?
+                (AbstractExternalService) serviceAccess : null;
         if (Objects.isNull(service) || Objects.isNull(service.getServiceProvider().getAssetProvider()) ||
                 !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();

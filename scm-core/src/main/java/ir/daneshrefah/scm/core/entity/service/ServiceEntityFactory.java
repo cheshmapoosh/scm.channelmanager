@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.service.ServiceInfoRequest;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.util.Objects;
@@ -65,8 +66,11 @@ public class ServiceEntityFactory {
     public static ServiceEntity createEmptyServiceEntity(String serviceId, ServiceImplementationType implementationType) {
         ServiceEntity result = null;
         switch (implementationType) {
-            case EXTERNAL:
-                result = new ExternalServiceEntity();
+            case CUSTOM_EXTERNAL:
+                result = new CustomExternalServiceEntity();
+                break;
+            case REST_EXTERNAL:
+                result = new RestExternalServiceEntity();
                 break;
             case JAVA:
                 result = new JavaServiceEntity();

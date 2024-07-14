@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoRequestTransformer;
 import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoResponseTransformer;
@@ -35,7 +35,7 @@ public final class SayadServiceProvider extends AbstractRestExternalServiceProvi
     @Override
     @SneakyThrows
     protected String prepareTargetUrl(Message message) {
-        ExternalService service = (ExternalService) message.getHeader().getService();
+        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
         String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();
         String target = providerEndpoint + StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");

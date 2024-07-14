@@ -86,7 +86,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
                 new ServiceRequestTransformerInterceptor(transformerService));
         final List<MessageInterceptor> responseInterceptors = Arrays.asList(
                 new ServiceResponseTransformerInterceptor(transformerService));
-        executorMap.put(ServiceImplementationType.EXTERNAL, externalServiceExecutor);
+        executorMap.put(ServiceImplementationType.CUSTOM_EXTERNAL, externalServiceExecutor);
         executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
         executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
         for (Map.Entry<ServiceImplementationType, ServiceExecutor> entry : executorMap.entrySet()) {

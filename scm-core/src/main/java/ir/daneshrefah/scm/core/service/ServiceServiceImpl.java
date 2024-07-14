@@ -216,11 +216,11 @@ public class ServiceServiceImpl implements ServiceService {
                 StringUtils.isEmpty(service.getJavaImplementationClassName())) {
             throw new MissingRequiredInputException("javaImplementationClassName");
         }
-        if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
+        if (ServiceImplementationType.CUSTOM_EXTERNAL.equals(service.getImplementationType()) &&
                 (StringUtils.isEmpty(service.getServiceProviderId()))) {
             throw new MissingRequiredInputException("serviceProvider");
         }
-        if (ServiceImplementationType.EXTERNAL.equals(service.getImplementationType()) &&
+        if (ServiceImplementationType.CUSTOM_EXTERNAL.equals(service.getImplementationType()) &&
                 !checkServiceProviderExistById(service.getServiceProviderId())) {
             throw new InvalidInputException("serviceProvider");
         }
@@ -240,8 +240,8 @@ public class ServiceServiceImpl implements ServiceService {
 
 
     private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
-        if (entity instanceof ExternalServiceEntity) {
-            ((ExternalServiceEntity) entity)
+        if (entity instanceof AbstractExternalServiceEntity) {
+            ((AbstractExternalServiceEntity) entity)
                     .setServiceProvider(serviceProviderRepository
                             .findById(service.getServiceProviderId()).orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")
                             ));
@@ -354,7 +354,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (serviceEntity instanceof JavaServiceEntity javaServiceEntity) {
             String value = request.getJavaImplementationClassName();
             javaServiceEntity.setJavaImplementationClassName(StringUtils.isEmpty(value) ? javaServiceEntity.getJavaImplementationClassName() : value);
-        } else if (serviceEntity instanceof ExternalServiceEntity externalServiceEntity) {
+        } else if (serviceEntity instanceof AbstractExternalServiceEntity externalServiceEntity) {
             String reqProviderId = request.getServiceProviderId();
             String serviceProviderId = externalServiceEntity.getServiceProvider().getId();
             if (StringUtils.isNotEmpty(reqProviderId) && !reqProviderId.equals(serviceProviderId)) {

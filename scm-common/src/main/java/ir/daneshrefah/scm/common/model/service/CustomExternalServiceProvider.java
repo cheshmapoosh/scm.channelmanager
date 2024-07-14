@@ -12,6 +12,6 @@ import lombok.Data;
 @Data
 public class CustomExternalServiceProvider extends AbstractExternalServiceProvider {
 
-    private RestExternalServiceProviderMetadata metadata;
+    private CustomExternalServiceProviderMetadata metadata;
 
 }

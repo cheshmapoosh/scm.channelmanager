@@ -9,7 +9,7 @@ package ir.daneshrefah.scm.common.model.service;
  */
 public enum ServiceImplementationType {
 
-    EXTERNAL(1), JAVA(2), COMPOSITION(3), BPMN(4), PARENT(5);
+    CUSTOM_EXTERNAL(1), JAVA(2), COMPOSITION(3), BPMN(4), PARENT(5), REST_EXTERNAL(6);
 
     private Integer code;
 

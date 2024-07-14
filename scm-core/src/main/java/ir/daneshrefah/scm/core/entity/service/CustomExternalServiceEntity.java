@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.core.entity.service;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,16 +10,12 @@ import lombok.Setter;
  *
  * @author reza jamshidi
  * @version 1.0
- * @since 2023-08-06
+ * @since 2024-07-14
  */
 @Getter
 @Setter
 @Entity
 @DiscriminatorValue("1")
-public class ExternalServiceEntity extends ServiceEntity {
-
-    @ManyToOne
-    @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
-    private AbstractExternalServiceProviderEntity serviceProvider;
+public class CustomExternalServiceEntity extends AbstractExternalServiceEntity<CustomExternalServiceProviderEntity> {
 
 }
