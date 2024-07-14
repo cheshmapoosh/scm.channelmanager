@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoRequestTransformer;
@@ -25,7 +25,7 @@ import java.util.List;
  * @since 2024-04-08
  */
 @Component
-public final class SayadServiceProvider extends AbstractRestExternalServiceProvider {
+public final class SayadServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
     public SayadServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext,
                                   ResourceService resourceService, ObjectMapper objectMapper) {

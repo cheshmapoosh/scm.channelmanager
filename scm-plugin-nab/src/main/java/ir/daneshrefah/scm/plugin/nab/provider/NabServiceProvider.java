@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
@@ -27,7 +27,7 @@ import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
  * @since 2023-08-05
  */
 @Component("nabCoreServiceProvider")
-public final class NabServiceProvider extends AbstractRestExternalServiceProvider {
+public final class NabServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
     private final NabRequestTransformer requestTransformer;
     private final NabResponseTransformer responseTransformer;

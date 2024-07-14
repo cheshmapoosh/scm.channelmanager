@@ -22,7 +22,7 @@ import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
  * @version 1.0
  * @since 2024-06-05
  */
-public class DefaultRestServiceProvider extends AbstractRestExternalServiceProvider {
+public class DefaultRestServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
     private List<AbstractJsonTransformer> requestTransformers;
     private List<AbstractJsonTransformer> responseTransformers;

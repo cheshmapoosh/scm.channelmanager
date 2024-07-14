@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
@@ -33,10 +34,12 @@ public interface ServiceMapper {
     JavaServiceEntity toEntity(JavaService model);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
+    @Mapping(source = "serviceProvider", target = "serviceProvider", qualifiedByName = "toServiceProvider")
     ExternalService toModel(ExternalServiceEntity entity);
     List<ExternalService> externalEntitiesToModels(Iterable<ExternalServiceEntity> entities);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
+    @Mapping(source = "serviceProvider", target = "serviceProvider", qualifiedByName = "toServiceProviderEntity")
     ExternalServiceEntity toEntity(ExternalService model);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
@@ -99,6 +102,18 @@ public interface ServiceMapper {
     ServiceRelation toModel(ServiceRelationEntity entity);
 
     List<ServiceRelation> relationEntitiesToModels(Iterable<ServiceRelationEntity> entities);
+
+    @Named("toServiceProvider")
+    default AbstractExternalServiceProvider toServiceProvider(AbstractExternalServiceProviderEntity entity) {
+        // Delegate the mapping to the method in ServiceMapper
+        return ServiceProviderMapper.INSTANCE.toServiceProvider(entity);
+    }
+
+    @Named("toServiceProviderEntity")
+    default AbstractExternalServiceProviderEntity toServiceProviderEntity(AbstractExternalServiceProvider model) {
+        // Delegate the mapping to the method in ServiceMapper
+        return ServiceProviderMapper.INSTANCE.toServiceProviderEntity(model);
+    }
 
 //    @Mapping(source = "service", target = "service", qualifiedByName = "toService")
 //    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess")

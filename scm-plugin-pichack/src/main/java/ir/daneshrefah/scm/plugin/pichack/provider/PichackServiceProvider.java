@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ConstantService;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.plugin.api.transformer.ServiceCodeLookupTransformer;
@@ -34,7 +34,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
  * @since 2024-04-06
  */
 @Component
-public final class PichackServiceProvider extends AbstractRestExternalServiceProvider {
+public final class PichackServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
     private static final String PICHACK_CALLER_TERMINAL_NAME_HEADER = "callerTerminalName";
     private static final String PICHACK_CALLER_BRANCH_CODE_HEADER = "callerBranchCode";

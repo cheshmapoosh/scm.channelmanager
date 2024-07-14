@@ -19,11 +19,11 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-08-06
  */
-public abstract class AbstractRestExternalServiceProvider extends AbstractCamelExternalServiceProviderExecutor {
+public abstract class AbstractRestExternalServiceProviderExecutor extends AbstractCamelExternalServiceProviderExecutor {
 
     private static final String DEFAULT_HTTP_METHOD = "GET";
 
-    public AbstractRestExternalServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
+    public AbstractRestExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
         super(producerTemplate, camelContext, resourceService, objectMapper);
     }
 
