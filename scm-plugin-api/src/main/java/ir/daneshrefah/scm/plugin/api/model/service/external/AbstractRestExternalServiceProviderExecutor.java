@@ -2,15 +2,17 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.HttpContentType;
+import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.ProducerTemplate;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE;
 
 /**
  * Description of the class or purpose of the file.
@@ -21,18 +23,16 @@ import java.util.Map;
  */
 public abstract class AbstractRestExternalServiceProviderExecutor extends AbstractCamelExternalServiceProviderExecutor {
 
-    private static final String DEFAULT_HTTP_METHOD = "GET";
-
-    public AbstractRestExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public AbstractRestExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
+        super(resourceService, objectMapper);
     }
 
     @Override
-    protected final Map<String, Object> obtainRequestHeaders(Message message) {
+    protected final Map<String, Object> extractRequestHeaders(Message message) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(Exchange.HTTP_METHOD, extractHttpMethod(message));
         headers.putAll(extractAdditionalHeaders(message));
-        headers.put("Content-Type", "application/json");
+        headers.put(HTTP_HEADER_CONTENT_TYPE, extractContentType(message));
         return headers;
     }
 
@@ -41,24 +41,28 @@ public abstract class AbstractRestExternalServiceProviderExecutor extends Abstra
     }
 
     protected String extractHttpMethod(Message message) {
-        return DEFAULT_HTTP_METHOD;
+        return HttpMethod.GET.getValue();
+    }
+
+    protected String extractContentType(Message message) {
+        return HttpContentType.RAW_JSON.getValue();
     }
 
     @Override
-    protected final String extractTargetUrl(Message message) {
-        String targetUrl = prepareTargetUrl(message);
-        if (null != getProvider().getMetadata() && null != getProvider().getMetadata().getConnectTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "connectTimeout", getProvider().getMetadata().getConnectTimeout());
+    protected final String extractTargetEndpointUrl(Message message) {
+        String targetUrl = extractTargetUrl(message);
+        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getConnectTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "connectTimeout", getProviderModel().getMetadata().getConnectTimeout());
         }
-        if (null != getProvider().getMetadata() && null != getProvider().getMetadata().getResponseTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "responseTimeout", getProvider().getMetadata().getResponseTimeout());
+        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getResponseTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "responseTimeout", getProviderModel().getMetadata().getResponseTimeout());
         }
-        if (null != getProvider().getMetadata() && null != getProvider().getMetadata().getSoTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "soTimeout", getProvider().getMetadata().getSoTimeout());
+        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getSoTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "soTimeout", getProviderModel().getMetadata().getSoTimeout());
         }
         return targetUrl;
     }
 
-    protected abstract String prepareTargetUrl(Message message);
+    protected abstract String extractTargetUrl(Message message);
 
 }

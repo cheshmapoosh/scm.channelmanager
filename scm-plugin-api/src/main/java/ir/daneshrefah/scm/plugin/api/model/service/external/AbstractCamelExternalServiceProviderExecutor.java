@@ -3,8 +3,6 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.model.RouteDefinition;
 
 import java.util.Collections;
@@ -20,18 +18,19 @@ import java.util.Map;
  */
 public abstract class AbstractCamelExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractCamelExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext,
-                                                        ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    private static final String HEADER_TARGET_URL = "ScmTargetUrl";
+
+
+    public AbstractCamelExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
+        super(resourceService, objectMapper);
     }
 
     @Override
-    public final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
+    public final void intiEndpointCallRouteDefinitionInternal(RouteDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
             Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-            Object body = exchange.getMessage().getBody();
-            exchange.getMessage().setHeader(HEADER_TARGET_URL, extractTargetUrl(originalMessage));
-            Map<String, Object> headers = obtainRequestHeaders(originalMessage);
+            exchange.getMessage().setHeader(HEADER_TARGET_URL, extractTargetEndpointUrl(originalMessage));
+            Map<String, Object> headers = extractRequestHeaders(originalMessage);
             if (null != headers && !headers.isEmpty()) {
                 for (Iterator<String> iterator = headers.keySet().iterator(); iterator.hasNext(); ) {
                     String header = iterator.next();
@@ -43,9 +42,9 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
         routeDefinition.toD("${header." + HEADER_TARGET_URL + "}");
     }
 
-    protected Map<String, Object> obtainRequestHeaders(Message message) {
+    protected Map<String, Object> extractRequestHeaders(Message message) {
         return Collections.emptyMap();
     }
 
-    protected abstract String extractTargetUrl(Message message);
+    protected abstract String extractTargetEndpointUrl(Message message);
 }

@@ -1,36 +1,19 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractTransformer;
-import ir.daneshrefah.scm.utils.MessageInputContext;
+import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
+import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.support.DefaultExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -45,135 +28,64 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 
     protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
     protected static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
-    protected static final String HEADER_START_TIME = "ScmProviderStartTime";
-    protected static final String HEADER_END_TIME = "ScmProviderEndTime";
-    protected static final String HEADER_REQUEST_BODY = "ScmRequestBody";
-    protected static final String HEADER_RESPONSE_BODY = "ScmResponseBody";
-    protected static final String HEADER_TARGET_URL = "ScmTargetUrl";
 
-    //    private final ServiceService serviceService;
-    private final ProducerTemplate producerTemplate;
-    private final CamelContext camelContext;
     private final ResourceService resourceService;
     protected final ObjectMapper objectMapper;
-    @Getter(AccessLevel.PROTECTED)
-    @Setter
-    private AbstractExternalServiceProvider provider;
+    @Getter
+    private AbstractExternalServiceProvider providerModel;
 
-
-    public final void configureRouteDefinition(RouteDefinition routeDefinition, AbstractExternalServiceProvider provider) {
-        this.provider = provider;
-        routeDefinition.process(exchange -> {
-            Message message = exchange.getMessage().getBody(Message.class);
-            exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
-            Object requestBody = transformRequest(message);
-            exchange.getMessage().setBody(requestBody);
-            exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
-            exchange.setProperty(HEADER_START_TIME, Instant.now());
-        });
-        invokeTargetEndpoint(routeDefinition);
-        routeDefinition.process(exchange -> {
-            exchange.setProperty(HEADER_END_TIME, Instant.now());
-            String response = exchange.getMessage().getBody(String.class);
-            exchange.setProperty(HEADER_RESPONSE_BODY, response);
-            JsonNode jsonResponse = null;
-            try {
-                jsonResponse = objectMapper.readTree(response);
-            } catch (JsonProcessingException e) {
-                jsonResponse = objectMapper.valueToTree(response);
-            }
-            if (null != exchange.getException()) {
-                return;
-            }
-            Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-            message.payload(transformResponse(message, jsonResponse));
-            exchange.getMessage().setBody(message);
-        });
-        routeDefinition.end();
-    }
-
-    @Override
-    public final JsonNode execute(Message message, Service service) {
-        Exchange exchange = new DefaultExchange(camelContext);
-        String targetEndpoint = "direct:ESP_" + provider.getCode();
-        exchange.getMessage().setBody(message);
-        exchange = producerTemplate.send(targetEndpoint, exchange);
-        logOutboundEvent(exchange);
-        Exception exception = exchange.getException();
-        if (null != exception) {
-            throw new RuntimeException(exception);
-        }
-        Message responseMessage = exchange.getMessage().getBody(Message.class);
-        return responseMessage.getPayload();
+    public final void init(AbstractExternalServiceProvider provider) {
+        this.providerModel = provider;
     }
 
     protected String extractProviderEndpoint() {
-        if (null == provider || null == provider.getMetadata() || StringUtils.isEmpty(provider.getMetadata().getEndpoint())) {
+        if (null == providerModel || null == providerModel.getMetadata() || StringUtils.isEmpty(providerModel.getMetadata().getEndpoint())) {
             return null;
         }
-        String result = resourceService.prepareProperties(provider.getMetadata().getEndpoint());
+        String result = resourceService.prepareProperties(providerModel.getMetadata().getEndpoint());
         return StringUtils.appendIfMissing(result, "/");
     }
 
-    private void logOutboundEvent(Exchange exchange) {
-        Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-        Instant startTime = exchange.getProperty(HEADER_START_TIME, Instant.class);
-        Instant endTime = exchange.getProperty(HEADER_END_TIME, Instant.class);
-        endTime = null != endTime ? endTime : Instant.now();
-        String username = null;//MessageUtils.getUsername(message);
-        String cspUsername = null;//MessageUtils.getCSPUsername(message);
-        String requestBody = exchange.getProperty(HEADER_REQUEST_BODY, String.class);
-        String responseBody = exchange.getProperty(HEADER_RESPONSE_BODY, String.class);
-        String targetUrl = exchange.getMessage().getHeader(HEADER_TARGET_URL, String.class);
-        MessageInput messageInput = MessageInputContext.getCurrentContext();
-        Event event = OutboundEvent.builder()
-                .correlationId(messageInput.getCorrelationId())
-                .terminalCode(messageInput.getTerminalCode())
-                .channelCode(messageInput.getChannel().getCode())
-                .username(username)
-                .cspUsername(cspUsername)
-                .error(exchange.getException())
-                .exceptionClassName(null != exchange.getException() ? exchange.getException().getClass().getName() : null)
-                .threadName(Thread.currentThread().getName())
-                .startTime(startTime)
-                .providerCode(provider.getCode())
-                .providerTargetUrl(targetUrl)
-                .providerResponseCode(null)
-                .request(requestBody)
-                .response(responseBody)
-                .endTime(endTime)
-                .durationMillis(Duration.between(startTime, endTime).toMillis())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
+    @Override
+    public final void intiEndpointCallRouteDefinition(RouteDefinition routeDefinition) {
+        routeDefinition.process(exchange -> {
+            Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+            Object body = exchange.getMessage().getBody();
+            AbstractExternalService service = (AbstractExternalService) originalMessage.getHeader().getService();
+            switch (service.getRequestBodyType()) {
+                case NONE:
+                    exchange.getMessage().setBody(null);
+                    break;
+                case MESSAGE_BODY:
+                    exchange.getMessage().setBody(body);
+                    break;
+                case PARAMETERS:
+                    exchange.getMessage().setBody(extractServiceParametersBody(service, body));
+                    break;
+            }
+//            TODO dariush log sending request
+        });
+        intiEndpointCallRouteDefinitionInternal(routeDefinition);
     }
 
-    private Object transformRequest(Message message) {
-        Object requestBody = message.getPayload();
-        List<? extends AbstractTransformer> requestTransformers = prepareRequestTransformers();
-        for (Iterator<? extends AbstractTransformer> iterator = requestTransformers.iterator(); iterator.hasNext(); ) {
-            AbstractTransformer transformer = iterator.next();
-            requestBody = transformer.transform(requestBody, message, message.getHeader().getService().getMetadata());
-        }
-        return requestBody;
+    protected Object extractServiceParametersBody(AbstractExternalService service, Object body) {
+        return null;
     }
 
-    private JsonNode transformResponse(Message message, JsonNode response) {
-        List<AbstractJsonTransformer> responseTransformers = prepareResponseTransformers();
-        for (Iterator<AbstractJsonTransformer> iterator = responseTransformers.iterator(); iterator.hasNext(); ) {
-            AbstractJsonTransformer transformer = iterator.next();
-            response = transformer.transform(response, message, message.getHeader().getService().getMetadata());
-        }
-        return response;
-    }
+    protected abstract void intiEndpointCallRouteDefinitionInternal(RouteDefinition routeDefinition);
 
-    protected List<? extends AbstractTransformer> prepareRequestTransformers() {
+    public List<TransformerExecutionWrapper> getRequestTransformers() {
         return Collections.emptyList();
     }
 
-    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
+    public List<TransformerExecutionWrapper> getResponseTransformers() {
         return Collections.emptyList();
     }
 
-    public abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);
+    protected void extractParameterValue(Parameter parameter) {
+
+    }
+
+//    public abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);
 
 }

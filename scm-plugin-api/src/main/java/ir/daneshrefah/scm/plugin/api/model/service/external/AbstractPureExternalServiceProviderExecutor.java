@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.model.RouteDefinition;
 
 /**
@@ -17,13 +15,12 @@ import org.apache.camel.model.RouteDefinition;
  */
 public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractPureExternalServiceProviderExecutor(ProducerTemplate producerTemplate, CamelContext camelContext,
-                                                       ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public AbstractPureExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
+        super(resourceService, objectMapper);
     }
 
     @Override
-    public final void invokeTargetEndpoint(RouteDefinition routeDefinition) {
+    public final void intiEndpointCallRouteDefinitionInternal(RouteDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
             Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();

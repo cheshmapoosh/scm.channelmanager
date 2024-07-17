@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import org.apache.camel.model.RouteDefinition;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -13,6 +15,16 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public interface ExternalServiceProviderExecutor {
 
-    public JsonNode execute(Message message, Service service);
+    void init(AbstractExternalServiceProvider provider);
+
+    void intiEndpointCallRouteDefinition(RouteDefinition routeDefinition);
+
+    AbstractExternalServiceProvider getProviderModel();
+
+    List<TransformerExecutionWrapper> getRequestTransformers();
+
+    List<TransformerExecutionWrapper> getResponseTransformers();
+
+//    public JsonNode execute(Message message, Service service);
 
 }

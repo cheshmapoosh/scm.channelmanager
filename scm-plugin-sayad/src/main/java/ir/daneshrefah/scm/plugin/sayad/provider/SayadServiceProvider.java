@@ -4,18 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
-import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoRequestTransformer;
-import ir.daneshrefah.scm.plugin.sayad.transformer.SayadChequeInfoResponseTransformer;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -27,14 +20,13 @@ import java.util.List;
 @Component
 public final class SayadServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
-    public SayadServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext,
-                                  ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public SayadServiceProvider(ResourceService resourceService, ObjectMapper objectMapper) {
+        super(resourceService, objectMapper);
     }
 
     @Override
     @SneakyThrows
-    protected String prepareTargetUrl(Message message) {
+    protected String extractTargetUrl(Message message) {
         AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
         String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();
@@ -42,14 +34,14 @@ public final class SayadServiceProvider extends AbstractRestExternalServiceProvi
         return target;
     }
 
-    @Override
-    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
-        return List.of(new SayadChequeInfoRequestTransformer());
-    }
-
-    @Override
-    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
-        return List.of(new SayadChequeInfoResponseTransformer());
-    }
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
+//        return List.of(new SayadChequeInfoRequestTransformer());
+//    }
+//
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
+//        return List.of(new SayadChequeInfoResponseTransformer());
+//    }
 
 }
