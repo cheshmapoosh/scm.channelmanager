@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
+import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -82,8 +84,8 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         return Collections.emptyList();
     }
 
-    protected void extractParameterValue(Parameter parameter) {
-
+    protected Optional<Object> extractParameterValue(Parameter parameter) {
+        return ParameterDataProvider.getInstance().extractParameterValue(parameter);
     }
 
 //    public abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);

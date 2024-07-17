@@ -81,7 +81,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
         HttpContentType contentType = extractContentType(restService);
 //        TODO dariush
         Parameter parameter = null;
-        extractParameterValue(parameter);
+        Optional parameterValue = extractParameterValue(parameter);
         return null;
     }
 
