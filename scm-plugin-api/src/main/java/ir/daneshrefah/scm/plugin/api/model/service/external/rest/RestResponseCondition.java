@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external.rest;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
 import lombok.Data;
 
@@ -16,9 +17,12 @@ import java.util.List;
 @Data
 public class RestResponseCondition extends BaseModel<Integer> {
 
-    private Integer responseStatusCode;
-    private String propertyShouldExist;
-    private String propertyShouldValue;
-    private List<Parameter> parameters;
+    private Integer conditionHttpStatusCode;
+    private String conditionPropertyShouldExist;
+    private String conditionPropertyShouldValue;
+    private Transformer responseTransformer;
+    private String responseExceptionErrorCodeProperty;
+    private String responseExceptionErrorMessageProperty;
+    private List<Parameter> responseParameters;
 
 }

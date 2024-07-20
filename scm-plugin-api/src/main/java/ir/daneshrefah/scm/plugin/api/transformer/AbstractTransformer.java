@@ -23,7 +23,7 @@ public abstract class AbstractTransformer<T> {
      * @param  metadata metadata for mapping between source and target, refer to ServiceComponentRelation.metadata
      * @return     the transformed value
      */
-    public T transform(Object payload, Message message, JsonNode metadata) {
+    public final T transform(Object payload, Message message, JsonNode metadata) {
         Instant startTime = Instant.now();
         T result = null;
         boolean isSuccessful = true;
