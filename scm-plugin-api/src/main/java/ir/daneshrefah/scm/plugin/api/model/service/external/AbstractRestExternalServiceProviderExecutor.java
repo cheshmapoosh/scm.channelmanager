@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ResourceService;
@@ -50,15 +51,16 @@ public abstract class AbstractRestExternalServiceProviderExecutor extends Abstra
 
     @Override
     protected final String extractTargetEndpointUrl(Message message) {
+        AbstractExternalServiceProvider provider = ((AbstractExternalService) message.getHeader().getService()).getServiceProvider();
         String targetUrl = extractTargetUrl(message);
-        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getConnectTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "connectTimeout", getProviderModel().getMetadata().getConnectTimeout());
+        if (null != provider.getMetadata() && null != provider.getMetadata().getConnectTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "connectTimeout", provider.getMetadata().getConnectTimeout());
         }
-        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getResponseTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "responseTimeout", getProviderModel().getMetadata().getResponseTimeout());
+        if (null != provider.getMetadata() && null != provider.getMetadata().getResponseTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "responseTimeout", provider.getMetadata().getResponseTimeout());
         }
-        if (null != getProviderModel().getMetadata() && null != getProviderModel().getMetadata().getSoTimeout()) {
-            StringUtils.appendQueryParam(targetUrl, "soTimeout", getProviderModel().getMetadata().getSoTimeout());
+        if (null != provider.getMetadata() && null != provider.getMetadata().getSoTimeout()) {
+            StringUtils.appendQueryParam(targetUrl, "soTimeout", provider.getMetadata().getSoTimeout());
         }
         return targetUrl;
     }

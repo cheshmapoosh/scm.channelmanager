@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
@@ -16,8 +18,11 @@ import org.apache.camel.model.TryDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -49,8 +54,22 @@ public abstract class ServiceExecutor {
         // can override in child class for additional configs
     }
 
-    public JsonNode transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
+    protected final List<TransformerExecutionWrapper> prepareTransformerExecutionWrapper(List<TransformerRelation> transformerRelations,
+                                                                                         TransformerRelationType filter) {
+        if (Objects.isNull(transformerRelations) || transformerRelations.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return transformerRelations.stream()
+                .filter(t -> null == filter || filter.equals(t.getRelationType()))
+                .map(TransformerExecutionWrapper::new)
+                .collect(Collectors.toList());
+    }
+
+    public final JsonNode transformRequest(List<TransformerExecutionWrapper> transformerRelations, Message message) {
         JsonNode payload = message.getPayload();
+        if (Objects.isNull(transformerRelations) || transformerRelations.isEmpty()) {
+            return payload;
+        }
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
             payload = transformerExecutionWrapper.getTransformerInstance()
@@ -61,6 +80,9 @@ public abstract class ServiceExecutor {
     }
 
     public JsonNode transformResponse(List<TransformerExecutionWrapper> transformerRelations, Message message, JsonNode payload) {
+        if (Objects.isNull(transformerRelations) || transformerRelations.isEmpty()) {
+            return payload;
+        }
         for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
             TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
             payload = transformerExecutionWrapper.getTransformerInstance()

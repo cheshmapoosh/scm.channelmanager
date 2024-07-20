@@ -21,9 +21,9 @@ public interface ExternalServiceProviderExecutor {
 
     AbstractExternalServiceProvider getProviderModel();
 
-    List<TransformerExecutionWrapper> getRequestTransformers();
-
-    List<TransformerExecutionWrapper> getResponseTransformers();
+//    List<TransformerExecutionWrapper> getRequestTransformers();
+//
+//    List<TransformerExecutionWrapper> getResponseTransformers();
 
 //    public JsonNode execute(Message message, Service service);
 

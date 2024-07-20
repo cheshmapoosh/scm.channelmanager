@@ -68,6 +68,9 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 //            TODO dariush log sending request
         });
         intiEndpointCallRouteDefinitionInternal(routeDefinition);
+        routeDefinition.process(exchange -> {
+
+        });
     }
 
     protected Object extractServiceParametersBody(AbstractExternalService service, Object body) {
@@ -76,13 +79,13 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 
     protected abstract void intiEndpointCallRouteDefinitionInternal(RouteDefinition routeDefinition);
 
-    public List<TransformerExecutionWrapper> getRequestTransformers() {
-        return Collections.emptyList();
-    }
-
-    public List<TransformerExecutionWrapper> getResponseTransformers() {
-        return Collections.emptyList();
-    }
+//    public List<TransformerExecutionWrapper> getRequestTransformers() {
+//        return Collections.emptyList();
+//    }
+//
+//    public List<TransformerExecutionWrapper> getResponseTransformers() {
+//        return Collections.emptyList();
+//    }
 
     protected Optional<Object> extractParameterValue(Parameter parameter) {
         return ParameterDataProvider.getInstance().extractParameterValue(parameter);

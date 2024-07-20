@@ -21,5 +21,6 @@ public abstract class AbstractExternalServiceEntity<T extends AbstractExternalSe
     @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
     private T serviceProvider;
     private ExternalServiceRequestBodyType requestBodyType;
+    private ExternalServiceRequestBodyType responseBodyType;
 
 }

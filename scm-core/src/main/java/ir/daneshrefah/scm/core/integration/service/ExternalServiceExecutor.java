@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.integration.provider.DefaultRestServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -50,6 +53,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     private final CamelContext camelContext;
     private final ProducerTemplate producerTemplate;
     private final ServiceService serviceService;
+    private final TransformerService transformerService;
     private final Map<String, ExternalServiceProviderExecutor> serviceProviderMap = new HashMap<>();
 
     @Override
@@ -93,27 +97,32 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
             return;
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
             return;
-        AbstractExternalServiceProviderExecutor provider = (AbstractExternalServiceProviderExecutor) extractServiceProviderExecutorInstance(serviceProviderModel);
+        AbstractExternalServiceProviderExecutor provider = (AbstractExternalServiceProviderExecutor)
+                extractServiceProviderExecutorInstance(serviceProviderModel);
         if (Objects.isNull(provider)) {
             return;
         }
-        configureRouteDefinition(routeBuilder, provider);
+        configureRouteDefinition(serviceProviderModel, routeBuilder, provider);
 //        provider.configureRouteDefinition(routeDefinition, serviceProviderModel);
         serviceProviderMap.put(serviceProviderModel.getCode(), provider);
     }
 
-    private void configureRouteDefinition(RouteBuilderDelegator routeBuilder, ExternalServiceProviderExecutor provider) {
-        String fromUri = "ESP_" + provider.getProviderModel().getCode();
+    private void configureRouteDefinition(AbstractExternalServiceProvider provider, RouteBuilderDelegator routeBuilder,
+                                          ExternalServiceProviderExecutor providerExecutor) {
+        String fromUri = "ESP_" + provider.getCode();
         RouteDefinition routeDefinition = routeBuilder.from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
+        List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
+                provider.getId());
         routeDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
-            Object requestBody = transformRequest(provider.getRequestTransformers(), message);
+            Object requestBody = transformRequest(
+                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_REQUEST), message);
             exchange.getMessage().setBody(requestBody);
             exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
             exchange.setProperty(HEADER_START_TIME, Instant.now());
         });
-        provider.intiEndpointCallRouteDefinition(routeDefinition);
+        providerExecutor.intiEndpointCallRouteDefinition(routeDefinition);
         routeDefinition.process(exchange -> {
             exchange.setProperty(HEADER_END_TIME, Instant.now());
             String response = exchange.getMessage().getBody(String.class);
@@ -128,7 +137,8 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
                 return;
             }
             Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-            message.payload(transformResponse(provider.getResponseTransformers(), message, jsonResponse));
+            message.payload(transformResponse(
+                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_RESPONSE), message, jsonResponse));
             exchange.getMessage().setBody(message);
         });
         routeDefinition.end();

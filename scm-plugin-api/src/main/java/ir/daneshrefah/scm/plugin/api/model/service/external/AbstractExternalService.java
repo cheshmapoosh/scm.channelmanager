@@ -17,5 +17,6 @@ public abstract class AbstractExternalService<T extends AbstractExternalServiceP
 
     private T serviceProvider;
     private ExternalServiceRequestBodyType requestBodyType;
+    private ExternalServiceRequestBodyType responseBodyType;
 
 }
