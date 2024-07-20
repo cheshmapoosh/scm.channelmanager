@@ -76,9 +76,21 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     }
 
     @Override
-    protected Object extractServiceParametersBody(AbstractExternalService service, Object body) {
+    protected Object extractServiceParametersRequestBody(AbstractExternalService service, Object body) {
         RestExternalService restService = (RestExternalService) service;
         HttpContentType contentType = extractContentType(restService);
+//        TODO dariush
+        Parameter parameter = null;
+        Optional parameterValue = extractParameterValue(parameter);
+        return null;
+    }
+
+    @Override
+    protected Object extractServiceParametersResponseBody(AbstractExternalService service, Object body) {
+        RestExternalService restService = (RestExternalService) service;
+        HttpContentType contentType = extractContentType(restService);
+        restService.getResponseConditions();
+        restService.getServiceProvider().getResponseConditions();
 //        TODO dariush
         Parameter parameter = null;
         Optional parameterValue = extractParameterValue(parameter);

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProvider;
-import ir.daneshrefah.scm.common.model.service.RestExternalServiceProvider;
+import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalServiceProvider;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.CustomExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.RestExternalServiceProviderEntity;

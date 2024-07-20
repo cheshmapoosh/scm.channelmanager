@@ -3,10 +3,10 @@ package ir.daneshrefah.scm.plugin.api.model.service.external;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceRequestBodyType;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
-import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,6 @@ import org.apache.camel.model.RouteDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -62,18 +60,27 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
                     exchange.getMessage().setBody(body);
                     break;
                 case PARAMETERS:
-                    exchange.getMessage().setBody(extractServiceParametersBody(service, body));
+                    exchange.getMessage().setBody(extractServiceParametersRequestBody(service, body));
                     break;
             }
 //            TODO dariush log sending request
         });
         intiEndpointCallRouteDefinitionInternal(routeDefinition);
         routeDefinition.process(exchange -> {
-
+            Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+            AbstractExternalService service = (AbstractExternalService) originalMessage.getHeader().getService();
+//            TODO dariush log receiving response
+            if (ExternalServiceRequestBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
+                exchange.getMessage().setBody(extractServiceParametersResponseBody(service, exchange.getMessage().getBody()));
+            }
         });
     }
 
-    protected Object extractServiceParametersBody(AbstractExternalService service, Object body) {
+    protected Object extractServiceParametersResponseBody(AbstractExternalService service, Object body) {
+        return null;
+    }
+
+    protected Object extractServiceParametersRequestBody(AbstractExternalService service, Object body) {
         return null;
     }
 
