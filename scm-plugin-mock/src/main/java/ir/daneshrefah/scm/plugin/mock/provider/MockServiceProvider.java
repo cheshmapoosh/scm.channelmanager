@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.mock.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
@@ -29,4 +30,8 @@ public class MockServiceProvider extends AbstractPureExternalServiceProviderExec
         return null;
     }
 
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return null;
+    }
 }

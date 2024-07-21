@@ -19,6 +19,7 @@ public enum ServiceProviderProtocol {
     REST(1),
     SOAP(2),
     JMS(3),
+    TCP(4),
     CUSTOM(20);
 
     private final Integer code;

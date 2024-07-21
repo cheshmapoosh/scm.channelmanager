@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.message.HttpMessageOutput;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
@@ -66,5 +68,10 @@ public abstract class AbstractRestExternalServiceProviderExecutor extends Abstra
     }
 
     protected abstract String extractTargetUrl(Message message);
+
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return HttpMessageOutput.builder().build();
+    }
 
 }

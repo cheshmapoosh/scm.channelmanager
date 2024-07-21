@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.hps.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
 import org.springframework.stereotype.Component;
@@ -27,4 +28,8 @@ public class HpsServiceProvider extends AbstractPureExternalServiceProviderExecu
         return null;
     }
 
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return null;
+    }
 }

@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.plugin.nab.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
+import ir.daneshrefah.scm.common.model.message.TcpMessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
@@ -32,6 +34,11 @@ public final class NabTcpServiceProvider extends AbstractCamelExternalServicePro
             providerEndpoint = TCP_PREFIX + providerEndpoint;
         }
         return providerEndpoint;
+    }
+
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return TcpMessageOutput.builder().build();
     }
 
 //    @Override

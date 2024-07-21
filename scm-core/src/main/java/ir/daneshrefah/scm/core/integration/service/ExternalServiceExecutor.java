@@ -115,8 +115,6 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
             Object requestBody = transformRequest(
                     prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_REQUEST), message);
             exchange.getMessage().setBody(requestBody);
-            exchange.setProperty(HEADER_REQUEST_BODY, requestBody);
-            exchange.setProperty(HEADER_START_TIME, Instant.now());
         });
         providerExecutor.intiEndpointCallRouteDefinition(routeDefinition);
         routeDefinition.process(exchange -> {

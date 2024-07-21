@@ -1,10 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
-import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import org.apache.camel.model.RouteDefinition;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,11 +13,9 @@ import java.util.List;
 public interface ExternalServiceProviderExecutor {
 
     String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
-    String HEADER_START_TIME = "ScmProviderStartTime";
     String HEADER_END_TIME = "ScmProviderEndTime";
-    String HEADER_REQUEST_BODY = "ScmRequestBody";
+    String HEADER_MESSAGE_OUTPUT = "ScmMessageOutput";
     String HEADER_RESPONSE_BODY = "ScmResponseBody";
-    String HEADER_TARGET_URL = "ScmTargetUrl";
 
     void init(AbstractExternalServiceProvider provider);
 

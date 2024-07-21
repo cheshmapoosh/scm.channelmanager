@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.TryDefinition;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,9 +20,9 @@ public abstract class AbstractPureExternalServiceProviderExecutor extends Abstra
     }
 
     @Override
-    public final void intiEndpointCallRouteDefinitionInternal(RouteDefinition routeDefinition) {
+    public final void intiEndpointCallRouteDefinitionInternal(TryDefinition routeDefinition) {
         routeDefinition.process(exchange -> {
-            Message originalMessage = exchange.getMessage().getHeader(HEADER_ORIGINAL_MESSAGE, Message.class);
+            Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
             Object body = exchange.getMessage().getBody();
             JsonNode response = executeEndpoint(originalMessage, body);
             exchange.getMessage().setBody(response);
