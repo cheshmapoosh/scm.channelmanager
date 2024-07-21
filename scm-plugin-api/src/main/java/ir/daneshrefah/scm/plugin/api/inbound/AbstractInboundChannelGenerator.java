@@ -1,14 +1,18 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.InboundEvent;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -65,16 +69,18 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
         Message message = null;
         Exception exception = null;
         try {
-            message = MessageGenerator.getInstance().buildMessageFromInput();
-        } catch (Exception e) {
+            try {
+                message = MessageGenerator.getInstance().buildMessageFromInput();
+            } catch (Exception e) {
 //            TerminalServiceAccess serviceAccess = findServiceAccess(input.getHeader(SCM_PARAMETER_TERMINAL), input.getServiceCode());
-            message = errorHandlerService.resolveMessageByException(MessageGenerator.getInstance().buildEmptyMessageFromInput(), e);
-            exception = e;
+                message = errorHandlerService.resolveMessageByException(MessageGenerator.getInstance().buildEmptyMessageFromInput(), e);
+                exception = e;
+            }
+            if (message.isContinueAllowed()) {
+                message = executeService(message);
+            }
         } finally {
             logIncomingMessage(message, exception, startTime);
-        }
-        if (message.isContinueAllowed()) {
-            message = executeService(message);
         }
         return message;
     }
@@ -96,24 +102,31 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
     }
 
     private final void logIncomingMessage(Message message, Exception error, Instant startTime) {
-        Instant endTime = Instant.now();
-        /*Event event = Event.builder()
-                .type(EventType.INBOUND)
-                .status(null != message ? message.getStatus() : null)
-                .correlationId(message.getHeader().getCorrelationId())
-                .source(request.getServiceCode())
-                .terminalCode(request.getTerminalCode())
-                .channelCode(getChannel().getCode())
-                .startTime(startTime)
-                .endTime(endTime)
-                .durationMillis(Duration.between(startTime, endTime).toMillis())
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
+        Event event = InboundEvent.builder()
+                .terminalCode(messageInput.getTerminal().getCode())
+                .channelCode(messageInput.getChannel().getCode())
+                .clientId(messageInput.getClientId())
+                .correlationId(messageInput.getCorrelationId())
+                .clientCorrelationId(messageInput.getClientCorrelationId())
+                .clientFlowId(messageInput.getClientFlowId())
+                .serviceCode(Objects.nonNull(message.getHeader().getService()) ? message.getHeader().getService().getCode() : null)
+                .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
+                .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
+                .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
+                .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
+                .messageId(message.getHeader().getMessageId())
                 .threadName(Thread.currentThread().getName())
-                .input(request)
-                .output(null != message ? message.getPayload() : null)
-                .error(error)
-                .sourceClassName(this.getClass().getSimpleName())
-                .build();*/
-//        EventProducer.getInstance().sendEvent(event);
+//        private final String hostAddress;
+
+                .messageInput(messageInput)
+                .messageStatus(message.getStatus())
+                .errors(message.getErrors())
+                .response(message.getPayload())
+                .startTime(messageInput.getReceiveTimestamp())
+                .endTime(Instant.now())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
     }
 
 }
