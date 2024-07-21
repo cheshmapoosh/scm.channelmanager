@@ -23,9 +23,9 @@ import lombok.Setter;
 public class RestExternalServiceEntity extends AbstractExternalServiceEntity<RestExternalServiceProviderEntity> {
 
 //    TODO dariush complete rest model and use in DefaultRestServiceProviderExecutor
-    private String path;
-    private HttpMethod httpMethod;
-    private HttpContentType requestContentType;
+//    private String path;
+//    private HttpMethod httpMethod;
+//    private HttpContentType requestContentType;
 //    private RestContentType responseContentType;
 //    private Set<ParameterEntity> queryStringParameters;
 //    private Set<ParameterEntity> pathVariableParameters;

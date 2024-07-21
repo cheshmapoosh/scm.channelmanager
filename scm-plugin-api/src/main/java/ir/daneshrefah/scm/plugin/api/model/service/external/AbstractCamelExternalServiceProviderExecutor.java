@@ -18,8 +18,6 @@ import java.util.Map;
  */
 public abstract class AbstractCamelExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    private static final String HEADER_TARGET_URL = "ScmTargetUrl";
-
 
     public AbstractCamelExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
         super(resourceService, objectMapper);

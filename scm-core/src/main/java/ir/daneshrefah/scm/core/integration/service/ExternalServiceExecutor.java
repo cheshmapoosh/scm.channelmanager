@@ -30,6 +30,8 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.*;
 
+import static ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor.*;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -41,12 +43,6 @@ import java.util.*;
 @Slf4j
 @Service
 public class ExternalServiceExecutor extends ServiceExecutor implements ApplicationContextAware {
-
-    private static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
-    private static final String HEADER_START_TIME = "ScmProviderStartTime";
-    private static final String HEADER_END_TIME = "ScmProviderEndTime";
-    private static final String HEADER_REQUEST_BODY = "ScmRequestBody";
-    private static final String HEADER_RESPONSE_BODY = "ScmResponseBody";
 
     @Setter
     private ApplicationContext applicationContext;
@@ -159,6 +155,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
                 return null;
             }
             provider.init(serviceProviderModel);
+            return provider;
         } catch (Exception e) {
             log.error("error register external service provider: " + serviceProviderModel.getCode(), e);
         }

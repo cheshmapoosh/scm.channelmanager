@@ -34,4 +34,6 @@ public class Constants {
     public static final String CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS = "CamelNettyRemoteAddress";
 
 
+    public static final String SCM_PERSON_USERNAME_UNKNOWN = "UNKU";
+
 }

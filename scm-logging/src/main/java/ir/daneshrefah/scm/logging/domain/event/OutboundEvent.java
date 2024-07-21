@@ -21,6 +21,7 @@ public class OutboundEvent extends Event {
     private final String providerResponseCode;
     private final String request;
     private final String response;
+    private final Instant startTime;
     private final Instant endTime;
     private final Long durationMillis;
 

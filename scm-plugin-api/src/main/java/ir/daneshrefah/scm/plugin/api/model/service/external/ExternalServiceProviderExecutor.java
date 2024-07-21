@@ -15,6 +15,13 @@ import java.util.List;
  */
 public interface ExternalServiceProviderExecutor {
 
+    String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
+    String HEADER_START_TIME = "ScmProviderStartTime";
+    String HEADER_END_TIME = "ScmProviderEndTime";
+    String HEADER_REQUEST_BODY = "ScmRequestBody";
+    String HEADER_RESPONSE_BODY = "ScmResponseBody";
+    String HEADER_TARGET_URL = "ScmTargetUrl";
+
     void init(AbstractExternalServiceProvider provider);
 
     void intiEndpointCallRouteDefinition(RouteDefinition routeDefinition);

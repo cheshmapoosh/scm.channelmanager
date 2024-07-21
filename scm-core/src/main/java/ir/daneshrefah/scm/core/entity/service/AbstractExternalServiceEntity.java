@@ -20,7 +20,7 @@ public abstract class AbstractExternalServiceEntity<T extends AbstractExternalSe
     @ManyToOne(targetEntity = AbstractExternalServiceProviderEntity.class)
     @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
     private T serviceProvider;
-    private ExternalServiceRequestBodyType requestBodyType;
-    private ExternalServiceRequestBodyType responseBodyType;
+//    private ExternalServiceRequestBodyType requestBodyType;
+//    private ExternalServiceRequestBodyType responseBodyType;
 
 }

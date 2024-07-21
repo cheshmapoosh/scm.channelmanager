@@ -1,12 +1,7 @@
 package ir.daneshrefah.scm.logging.domain.event;
 
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Instant;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,18 +14,24 @@ import java.time.Instant;
 @Getter
 public abstract class Event {
 
-    private final String correlationId;
-    private final String messageId;
-    private final String parentMessageId;
-    private final int level;
     private final String terminalCode;
     private final String channelCode;
+    private final String clientId;
+
+    private final String correlationId;
+    private final String clientCorrelationId;
+    private final String clientFlowId;
+
+    private final String serviceCode;
+
     private final String username;
-    private final String cspUsername;
-    private final Exception error;
-    private final String exceptionClassName;
+    private final String nickname;
+    private final String delegatorUsername;
+    private final String delegatorNickname;
+
+    private final String messageId;
     private final String threadName;
-    private final Instant startTime;
+    private final String hostAddress;
 
     public abstract EventType getEventType();
 

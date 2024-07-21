@@ -24,8 +24,8 @@
         <appender-ref ref="CONSOLE"/>
     </root>
 
-    <logger name="ir.daneshrefah.scm.logging.api.EventProducer" level="TRACE" additivity="false">
-        <appender-ref ref="ASYNC"/>
-    </logger>
+<!--    <logger name="ir.daneshrefah.scm.logging.api.EventProducer" level="TRACE" additivity="false">-->
+<!--        <appender-ref ref="ASYNC"/>-->
+<!--    </logger>-->
 
 </configuration>
