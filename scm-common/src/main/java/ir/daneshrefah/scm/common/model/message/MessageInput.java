@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Getter;
@@ -23,7 +24,9 @@ public abstract class MessageInput<T> {
     private final Map<String, Object> headers;
     private final String serviceCode;
     private final String terminalCode;
+    @JsonIgnore
     private final Terminal terminal;
+    @JsonIgnore
     private final Channel channel;
     private final T body;
     private final String contentType;

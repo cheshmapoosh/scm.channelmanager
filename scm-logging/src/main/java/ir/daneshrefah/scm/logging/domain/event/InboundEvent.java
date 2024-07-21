@@ -23,12 +23,13 @@ import java.util.Objects;
 @Getter
 public class InboundEvent extends Event {
 
-    private final Instant startTime;
-    private final Instant endTime;
+    private final String channelClassName;
     private final MessageStatus messageStatus;
     private final List<Error> errors;
     private final JsonNode response;
     private final MessageInput messageInput;
+    private final Instant startTime;
+    private final Instant endTime;
 
     @Override
     public EventType getEventType() {

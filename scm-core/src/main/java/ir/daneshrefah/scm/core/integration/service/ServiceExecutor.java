@@ -3,13 +3,19 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.logging.api.EventProducer;
+import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.logging.domain.event.ServiceEvent;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.ChoiceDefinition;
 import org.apache.camel.model.OutputDefinition;
@@ -91,33 +97,32 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    private void logServiceCallEvent(Message message, Service service, Object input, Exception exception, Instant startTime) {
-        Instant endTime = Instant.now();
-//        String username = MessageUtils.getUsername(message);
-//        String cspUsername = MessageUtils.getCSPUsername(message);
-        String requestBody = null != input ? input.toString() : null;
-        String responseBody = null != message.getPayload() ? message.getPayload().toString() : null;
-    /*    Event event = ServiceEvent.builder()
-                .correlationId(message.getHeader().getCorrelationId())
-                .messageId(message.getHeader().getMessageId())
-                .parentMessageId(message.getHeader().getParentMessageId())
-                .level(message.getHeader().getLevel())
-                .terminalCode(message.getHeader().getTerminalCode())
-                .channelCode(message.getHeader().getChannel().getCode())
-                .username(username)
-                .cspUsername(cspUsername)
-                .error(exception)
-                .exceptionClassName(null != exception ? exception.getClass().getName() : null)
-                .threadName(Thread.currentThread().getName())
-                .startTime(startTime)
+    private void logServiceCallEvent(Message message, JsonNode input, Exception exception, Instant startTime) {
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
+        Service service = message.getHeader().getService();
+        Event event = ServiceEvent.builder()
+                .terminalCode(messageInput.getTerminal().getCode())
+                .channelCode(messageInput.getChannel().getCode())
+                .clientId(messageInput.getClientId())
+                .correlationId(messageInput.getCorrelationId())
+                .clientCorrelationId(messageInput.getClientCorrelationId())
+                .clientFlowId(messageInput.getClientFlowId())
                 .serviceCode(service.getCode())
-                .request(requestBody)
-                .response(responseBody)
-                .endTime(endTime)
-                .durationMillis(Duration.between(startTime, endTime).toMillis())
+                .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
+                .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
+                .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
+                .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
+                .messageId(message.getHeader().getMessageId())
+                .threadName(Thread.currentThread().getName())
+                .hostAddress(null)
+                .request(input)
+                .response(message.getPayload())
                 .status(message.getStatus())
-                .build();*/
-//        EventProducer.getInstance().sendEvent(event);
+                .exception(exception)
+                .startTime(startTime)
+                .endTime(Instant.now())
+                .build();
+        EventProducer.getInstance().sendEvent(event);
     }
 
     public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
@@ -172,7 +177,7 @@ public abstract class ServiceExecutor {
             Exception exception = extractException(exchange);
             Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
             JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
-            logServiceCallEvent(message, service, request, exception, startTime);
+            logServiceCallEvent(message, request, exception, startTime);
         });
         tryDefinition.end();
     }

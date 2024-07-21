@@ -119,6 +119,7 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
                 .threadName(Thread.currentThread().getName())
 //        private final String hostAddress;
 
+                .channelClassName(this.getClass().getName())
                 .messageInput(messageInput)
                 .messageStatus(message.getStatus())
                 .errors(message.getErrors())
