@@ -14,6 +14,7 @@ public class ParameterDatasource {
 
     private ParameterDatasourceProperty property;
     private String variableName;
+    private Integer length;
     private String convertorCode;
 
 }

@@ -14,10 +14,11 @@ import lombok.Data;
 public class Parameter extends BaseModel<Long> {
 
     private Long id;
-    private Integer order;
     private String name;
     private ParameterDatasource datasource;
     private ParameterType type;
+    private boolean required;
+    private Integer order;
     private Parameter parent;
 
 }
