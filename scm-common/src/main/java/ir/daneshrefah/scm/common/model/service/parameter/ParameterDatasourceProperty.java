@@ -1,0 +1,17 @@
+package ir.daneshrefah.scm.common.model.service.parameter;
+
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2024-07-14
+ */
+public enum ParameterDatasourceProperty {
+
+    MESSAGE_VARIABLE, CONFIG_VARIABLE, RESOURCE_VARIABLE, CACHE_VARIABLE,
+    TERMINAL_CODE, PROVIDER_TERMINAL_CODE, HTTP_STATUS_CODE,
+    AUTHENTICATION_USERNAME, AUTHENTICATION_NICKNAME, AUTHENTICATION_EFFECTIVE_USERNAME, AUTHENTICATION_EFFECTIVE_NICKNAME,
+    AUTHENTICATION_DELEGATOR_USERNAME, AUTHENTICATION_DELEGATOR_NICKNAME
+
+}

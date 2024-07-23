@@ -5,8 +5,6 @@ import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import lombok.Data;
 
-import java.util.List;
-
 /**
  * Description of the class or purpose of the file.
  *
@@ -20,6 +18,5 @@ public class RestExternalService extends AbstractExternalService<RestExternalSer
     private String path;
     private HttpMethod httpMethod;
     private HttpContentType requestContentType;
-    private List<RestResponseCondition> responseConditions;
 
 }

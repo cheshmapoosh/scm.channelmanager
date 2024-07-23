@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
-import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 
 import java.util.Optional;
 

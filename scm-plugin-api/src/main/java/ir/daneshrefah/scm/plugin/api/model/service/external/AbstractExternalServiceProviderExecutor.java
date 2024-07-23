@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceRequestBodyType;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
-import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;

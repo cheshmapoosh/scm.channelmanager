@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.ParameterDatasource;
-import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.ParameterType;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasource;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import lombok.Data;
 
 /**

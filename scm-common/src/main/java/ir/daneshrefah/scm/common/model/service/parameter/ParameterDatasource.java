@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.model.service.external.parameter;
+package ir.daneshrefah.scm.common.model.service.parameter;
 
 import lombok.Data;
 
@@ -12,8 +12,8 @@ import lombok.Data;
 @Data
 public class ParameterDatasource {
 
-    private ParameterDatasourceOriginType originType;
-    private String parameter;
+    private ParameterDatasourceProperty property;
+    private String variableName;
     private String convertorCode;
 
 }

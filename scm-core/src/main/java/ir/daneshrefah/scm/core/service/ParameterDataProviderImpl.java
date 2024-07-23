@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
-import ir.daneshrefah.scm.plugin.api.model.service.external.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -27,20 +27,12 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
     @Override
     public Optional<Object> extractParameterValue(Parameter parameter) {
         if (Objects.isNull(parameter) || Objects.isNull(parameter.getDatasource()) ||
-                Objects.isNull(parameter.getDatasource().getOriginType()) || StringUtils.isBlank(parameter.getDatasource().getParameter())) {
+                Objects.isNull(parameter.getDatasource().getProperty()) || StringUtils.isBlank(parameter.getDatasource().getVariableName())) {
             return Optional.empty();
         }
 //        TODO dariush
-        switch (parameter.getDatasource().getOriginType()) {
-            case CONFIG:
-                break;
-            case RESOURCE:
-                break;
-            case CACHE:
-                break;
-            case MESSAGE:
-                break;
-            case AUTHENTICATION:
+        switch (parameter.getDatasource().getProperty()) {
+            case MESSAGE_VARIABLE:
                 break;
         }
         return Optional.empty();

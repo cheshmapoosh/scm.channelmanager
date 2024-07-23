@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.model.service.external.parameter;
+package ir.daneshrefah.scm.common.model.service.parameter;
 
 /**
  * Description of the class or purpose of the file.

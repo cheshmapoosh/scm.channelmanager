@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.plugin.api.model.service.external.parameter;
+package ir.daneshrefah.scm.common.model.service.parameter;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Data;
@@ -14,6 +14,7 @@ import lombok.Data;
 public class Parameter extends BaseModel<Long> {
 
     private Long id;
+    private Integer order;
     private String name;
     private ParameterDatasource datasource;
     private ParameterType type;
