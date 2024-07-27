@@ -66,7 +66,7 @@ public final class NabTcpServiceProvider extends AbstractCamelExternalServicePro
     }
 
     private Object extractValue(AbstractExternalService service, Parameter parameter) {
-        switch (parameter.getDatasource().getVariableName()) {
+        switch (parameter.getDatasource().getValue()) {
             case "COMMAND":
                 return service.getRequestHeaderStaticValue("COMMAND");
 //            case "SERVICE": // => ParameterDatasourceProperty.PROVIDER_TERMINAL_CODE

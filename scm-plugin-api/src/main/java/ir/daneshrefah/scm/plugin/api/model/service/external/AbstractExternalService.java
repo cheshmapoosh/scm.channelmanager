@@ -42,7 +42,7 @@ public abstract class AbstractExternalService<T extends AbstractExternalServiceP
         return parameters.stream()
                 .filter(parameter -> ParameterDatasourceProperty.STATIC.equals(parameter.getDatasource().getProperty()))
                 .filter(parameter -> StringUtils.equals(parameterName, parameter.getName()))
-                .findFirst().map(parameter -> parameter.getDatasource().getVariableName());
+                .findFirst().map(parameter -> parameter.getDatasource().getValue());
     }
 
 }

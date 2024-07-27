@@ -27,7 +27,7 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
     @Override
     public Optional<Object> extractParameterValue(Parameter parameter) {
         if (Objects.isNull(parameter) || Objects.isNull(parameter.getDatasource()) ||
-                Objects.isNull(parameter.getDatasource().getProperty()) || StringUtils.isBlank(parameter.getDatasource().getVariableName())) {
+                Objects.isNull(parameter.getDatasource().getProperty()) || StringUtils.isBlank(parameter.getDatasource().getValue())) {
             return Optional.empty();
         }
 //        TODO dariush

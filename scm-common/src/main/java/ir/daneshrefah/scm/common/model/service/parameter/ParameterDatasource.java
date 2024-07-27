@@ -13,7 +13,7 @@ import lombok.Data;
 public class ParameterDatasource {
 
     private ParameterDatasourceProperty property;
-    private String variableName;
+    private String value;
     private Integer length;
     private String convertorCode;
 
