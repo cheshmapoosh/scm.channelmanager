@@ -9,8 +9,15 @@ package ir.daneshrefah.scm.common.model.service.parameter;
  */
 public enum ParameterDatasourceProperty {
 
+    /* provider based types */
     MESSAGE_VARIABLE, CONFIG_VARIABLE, RESOURCE_VARIABLE, CACHE_VARIABLE, STATIC,
-    TERMINAL_CODE, PROVIDER_TERMINAL_CODE, HTTP_STATUS_CODE,
+    /* terminal based types */
+    TERMINAL_CODE, PROVIDER_TERMINAL_CODE,
+    /* date based types */
+    DATE_YYYYMMDD, DATE_SHAMSI_YYYYMMDD,
+    /* http based types */
+    HTTP_STATUS_CODE,
+    /* authentication based types */
     AUTHENTICATION_USERNAME, AUTHENTICATION_NICKNAME, AUTHENTICATION_EFFECTIVE_USERNAME, AUTHENTICATION_EFFECTIVE_NICKNAME,
     AUTHENTICATION_DELEGATOR_USERNAME, AUTHENTICATION_DELEGATOR_NICKNAME
 
