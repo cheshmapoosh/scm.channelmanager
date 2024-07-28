@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +20,8 @@ import org.springframework.stereotype.Component;
 public class HpsServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
 
-    public HpsServiceProvider(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public HpsServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

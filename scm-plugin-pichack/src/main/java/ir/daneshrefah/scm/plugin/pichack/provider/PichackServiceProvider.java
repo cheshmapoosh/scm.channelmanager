@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ConstantService;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.pichack.util.PichakUtil;
@@ -37,8 +38,8 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
 
     private final ConstantService constantService;
 
-    public PichackServiceProvider(ResourceService resourceService, ObjectMapper objectMapper, ConstantService constantService) {
-        super(resourceService, objectMapper);
+    public PichackServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper, ConstantService constantService) {
+        super(resourceService, serviceService, objectMapper);
         this.constantService = constantService;
     }
 

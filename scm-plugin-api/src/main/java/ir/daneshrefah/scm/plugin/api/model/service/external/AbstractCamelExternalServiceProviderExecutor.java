@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import org.apache.camel.model.TryDefinition;
 
 import java.util.Collections;
@@ -21,8 +22,8 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
 
     private static final String HEADER_TARGET_URL = "ScmTargetUrl";
 
-    public AbstractCamelExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public AbstractCamelExternalServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 
@@ -26,8 +27,8 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 public abstract class AbstractRestExternalServiceProviderExecutor extends AbstractCamelExternalServiceProviderExecutor {
 
-    public AbstractRestExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public AbstractRestExternalServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

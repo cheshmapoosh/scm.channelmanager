@@ -6,7 +6,9 @@ import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceRequestBodyType;
+import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.logging.domain.event.OutboundEvent;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
@@ -39,7 +41,9 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
     protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
     private final ResourceService resourceService;
+    private final ServiceService serviceService;
     protected final ObjectMapper objectMapper;
+
     @Getter
     private AbstractExternalServiceProvider providerModel;
 
@@ -60,6 +64,9 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
         TryDefinition tryDefinition = routeDefinition.doTry();
         tryDefinition.process(exchange -> {
             Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+            MessageOutput messageOutput = buildMessageOutput();
+            messageOutput.setExternalCorrelationId(extractProviderCorrelationId(originalMessage));
+
             Object body = exchange.getMessage().getBody();
             AbstractExternalService service = (AbstractExternalService) originalMessage.getHeader().getService();
             if (Objects.nonNull(service.getRequestBodyType())) {
@@ -70,12 +77,11 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
                     case MESSAGE_BODY:
                         break;
                     case PARAMETERS:
-                        body = extractServiceParametersRequestBody(service, body);
+                        body = extractServiceParametersRequestBody(originalMessage, body, messageOutput);
                         break;
                 }
             }
 
-            MessageOutput messageOutput = buildMessageOutput();
             messageOutput.setBody(body);
 
             exchange.getMessage().setBody(messageOutput.getBody());
@@ -126,11 +132,15 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
             EventProducer.getInstance().sendEvent(event);
 
             if (ExternalServiceRequestBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
-                exchange.getMessage().setBody(extractServiceParametersResponseBody(service, exchange.getMessage().getBody()));
+                exchange.getMessage().setBody(extractServiceParametersResponseBody(originalMessage, exchange.getMessage().getBody()));
             }
         });
 
         tryDefinition.endDoTry();
+    }
+
+    protected String extractProviderCorrelationId(Message message) {
+        return MessageInputContext.getCurrentContext().getCorrelationId();
     }
 
     private Exception extractException(Exchange exchange) {
@@ -146,11 +156,11 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 
     protected abstract MessageOutput buildMessageOutput();
 
-    protected Object extractServiceParametersResponseBody(AbstractExternalService service, Object body) {
+    protected Object extractServiceParametersResponseBody(Message message, Object body) {
         return null;
     }
 
-    protected Object extractServiceParametersRequestBody(AbstractExternalService service, Object body) {
+    protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
         return null;
     }
 
@@ -164,10 +174,17 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 //        return Collections.emptyList();
 //    }
 
-    protected Optional<Object> extractParameterValue(Parameter parameter) {
-        return ParameterDataProvider.getInstance().extractParameterValue(parameter);
+    protected Optional<Object> extractParameterValue(Message message, Parameter parameter) {
+        return ParameterDataProvider.getInstance().extractParameterValue(message, parameter);
     }
 
-//    public abstract void invokeTargetEndpoint(RouteDefinition routeDefinition);
+    protected final Optional<String> prepareTerminalCode(AbstractExternalService service, String defaultValue) {
+        String terminalCode = AuthenticationUtils.getLoggedInTerminalCode().orElse(null);
+        String clientId = AuthenticationUtils.getLoggedInClientId().orElse(null);
+        String providerCode = service.getServiceProvider().getAssetProvider().getCode();
+        Optional<ProviderTerminalCoding> providerTerminalCoding = serviceService.findProviderTerminalCoding(terminalCode, clientId, providerCode);
+        return providerTerminalCoding.flatMap(po -> Optional.ofNullable(po.getCode()))
+                .or(() -> Optional.ofNullable(defaultValue));
+    }
 
 }

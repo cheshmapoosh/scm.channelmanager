@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.message.HttpMessageOutput;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
 import org.springframework.stereotype.Component;
 
@@ -18,8 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class IbanInquiryServiceProvider extends AbstractCamelExternalServiceProviderExecutor {
 
-    public IbanInquiryServiceProvider(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public IbanInquiryServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

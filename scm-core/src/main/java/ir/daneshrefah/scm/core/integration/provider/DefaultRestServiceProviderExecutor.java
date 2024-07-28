@@ -2,8 +2,10 @@ package ir.daneshrefah.scm.core.integration.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
@@ -28,8 +30,8 @@ import java.util.Optional;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public final class DefaultRestServiceProviderExecutor extends AbstractRestExternalServiceProviderExecutor {
 
-    public DefaultRestServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public DefaultRestServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override
@@ -76,24 +78,24 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     }
 
     @Override
-    protected Object extractServiceParametersRequestBody(AbstractExternalService service, Object body) {
-        RestExternalService restService = (RestExternalService) service;
+    protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
+        RestExternalService restService = (RestExternalService) message.getHeader().getService();
         HttpContentType contentType = extractContentType(restService);
 //        TODO dariush
         Parameter parameter = null;
-        Optional parameterValue = extractParameterValue(parameter);
+        Optional parameterValue = extractParameterValue(message, parameter);
         return null;
     }
 
     @Override
-    protected Object extractServiceParametersResponseBody(AbstractExternalService service, Object body) {
-        RestExternalService restService = (RestExternalService) service;
+    protected Object extractServiceParametersResponseBody(Message message, Object body) {
+        RestExternalService restService = (RestExternalService) message.getHeader().getService();
         HttpContentType contentType = extractContentType(restService);
         restService.getResponseConditions();
         restService.getServiceProvider().getResponseConditions();
 //        TODO dariush
         Parameter parameter = null;
-        Optional parameterValue = extractParameterValue(parameter);
+        Optional parameterValue = extractParameterValue(message, parameter);
         return null;
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -20,8 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public final class SayadServiceProvider extends AbstractRestExternalServiceProviderExecutor {
 
-    public SayadServiceProvider(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public SayadServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

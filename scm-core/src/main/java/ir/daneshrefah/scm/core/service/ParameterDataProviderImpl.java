@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service;
 
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -26,6 +27,11 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
 
     @Override
     public Optional<Object> extractParameterValue(Parameter parameter) {
+        return extractParameterValue(null, parameter);
+    }
+
+    @Override
+    public Optional<Object> extractParameterValue(Message message, Parameter parameter) {
         if (Objects.isNull(parameter) || Objects.isNull(parameter.getDatasource()) ||
                 Objects.isNull(parameter.getDatasource().getProperty()) || StringUtils.isBlank(parameter.getDatasource().getValue())) {
             return Optional.empty();
@@ -37,4 +43,5 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
         }
         return Optional.empty();
     }
+
 }

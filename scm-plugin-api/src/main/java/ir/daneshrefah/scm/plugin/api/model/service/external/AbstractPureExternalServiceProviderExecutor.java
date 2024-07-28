@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import org.apache.camel.model.TryDefinition;
 
 /**
@@ -15,8 +16,8 @@ import org.apache.camel.model.TryDefinition;
  */
 public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractExternalServiceProviderExecutor {
 
-    public AbstractPureExternalServiceProviderExecutor(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public AbstractPureExternalServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override

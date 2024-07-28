@@ -22,6 +22,8 @@ public abstract class MessageOutput {
 
     private final Instant startTime = Instant.now();
     @Setter
+    private String externalCorrelationId;
+    @Setter
     private Object body;
     @Setter
     private String providerUrl;

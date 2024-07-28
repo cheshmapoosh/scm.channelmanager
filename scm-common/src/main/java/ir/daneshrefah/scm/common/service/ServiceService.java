@@ -3,9 +3,11 @@ package ir.daneshrefah.scm.common.service;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -49,5 +51,7 @@ public interface ServiceService {
     void deleteService(ServiceDeleteRequest request);
 
     PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request);
+
+    Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode);
 
 }

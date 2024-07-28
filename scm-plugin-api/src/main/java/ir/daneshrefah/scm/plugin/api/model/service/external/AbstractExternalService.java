@@ -31,11 +31,11 @@ public abstract class AbstractExternalService<T extends AbstractExternalServiceP
     private List<Parameter> responseHeaders;
     private List<ResponseCondition> responseConditions;
 
-    public Optional<Object> getRequestHeaderStaticValue(String parameterName) {
+    public Optional<String> getRequestHeaderStaticValue(String parameterName) {
         return getParameterStaticValue(requestHeaders, parameterName);
     }
 
-    private Optional<Object> getParameterStaticValue(List<Parameter> parameters, String parameterName) {
+    private Optional<String> getParameterStaticValue(List<Parameter> parameters, String parameterName) {
         if (StringUtils.isBlank(parameterName) || CollectionUtils.isEmpty(parameters)) {
             Optional.empty();
         }

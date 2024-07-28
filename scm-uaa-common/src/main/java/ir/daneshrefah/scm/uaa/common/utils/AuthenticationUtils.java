@@ -32,6 +32,22 @@ public class AuthenticationUtils {
         return (UserAuthentication) authentication;
     }
 
+    public static Optional<String> getLoggedInTerminalCode() {
+        User user = getLoggedInUser();
+        if (Objects.isNull(user)) {
+            return Optional.empty();
+        }
+        return Optional.of(user.getTerminalCode());
+    }
+
+    public static Optional<String> getLoggedInClientId() {
+        User user = getLoggedInUser();
+        if (Objects.isNull(user)) {
+            return Optional.empty();
+        }
+        return Optional.of(MessageInputContext.getCurrentContext().getClientId());
+    }
+
     public static User getLoggedInUser() {
         UserAuthentication authentication = getLoggedInUserAuthentication();
         if (null == authentication ||

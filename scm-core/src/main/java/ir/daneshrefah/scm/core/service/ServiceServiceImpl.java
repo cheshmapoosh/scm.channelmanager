@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.*;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
@@ -490,6 +492,12 @@ public class ServiceServiceImpl implements ServiceService {
                 })
                 .collect(Collectors.toList());
         return new PagedResponseData<>(serviceList.getPageNo(),serviceList.getPageSize(),serviceList.getTotalCount().longValue(), result);
+    }
+
+    @Override
+    public Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode) {
+//        TODO dariush
+        return Optional.empty();
     }
 
     private Boolean hasTerminalAccess(ServiceAccessFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {

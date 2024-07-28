@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +20,8 @@ import org.springframework.stereotype.Component;
 @Component("mockCoreServiceProvider")
 public class MockServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
-    public MockServiceProvider(ResourceService resourceService, ObjectMapper objectMapper) {
-        super(resourceService, objectMapper);
+    public MockServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override
