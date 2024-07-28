@@ -33,9 +33,9 @@ public class CamelEventNotifierSupport extends EventNotifierSupport {
         if (event instanceof CamelEvent.ExchangeCreatedEvent) {
             Exchange exchange = ((CamelEvent.ExchangeCreatedEvent) event).getExchange();
             if (Objects.isNull(exchange.getProperty(PROPERTY_MESSAGE_INPUT))) {
-                String fromEndpoint = exchange.getFromEndpoint().getEndpointUri();
-                String routeId = exchange.getFromRouteId();
-                exchange.getContext().getRoute(routeId);
+//                String fromEndpoint = exchange.getFromEndpoint().getEndpointUri();
+//                String routeId = exchange.getFromRouteId();
+//                exchange.getContext().getRoute(routeId);
 
 //                MessageInputContext.getCurrentContext()
             }

@@ -10,26 +10,27 @@ scm:
   #    sayad: http://10.15.46.20:8080/sayad/services/api
   datasource:
     primary:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
-      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:mysql://localhost:3306/ref
+      username: root
+      password: 12345
+      driver-class-name: com.mysql.cj.jdbc.Driver
       max-connection: 10
       default-schema: REF
     secondary:
       -
         name: default
-        url: jdbc:db2://10.10.4.104:50001/DBREFSW
-        username: db2inst1
-        password: db2inst1
-        driver-class-name: com.ibm.db2.jcc.DB2Driver
+        url: jdbc:mysql://localhost:3306/ref
+        username: root
+        password: 12345
+        driver-class-name: com.mysql.cj.jdbc.Driver
         max-connection: 10
         default-schema: REF
-      - name: default2
-        url: jdbc:db2://10.10.4.104:50001/DBREFSW
-        username: db2inst1
-        password: db2inst1
-        driver-class-name: com.ibm.db2.jcc.DB2Driver
+      -
+        name: default2
+        url: jdbc:mysql://localhost:3306/ref
+        username: root
+        password: 12345
+        driver-class-name: com.mysql.cj.jdbc.Driver
         max-connection: 10
         default-schema: REF
   log:
@@ -54,15 +55,16 @@ scm:
             time-to-live-seconds: 10
   process:
     enabled: true
+    client-id: BPM
+    client-secret: myClientSecretValue
     datasource:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
-      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:mysql://localhost:3306/ref
+      username: root
+      password: 12345
+      driver-class-name: com.mysql.cj.jdbc.Driver
       max-connection: 10
-      default-schema: db-camunda
-  swagger:
-    server-host: localhost
+      default-schema: REF
+
 
 server:
   servlet:
@@ -89,6 +91,3 @@ logging:
 spring:
   jpa:
     show-sql: true
-
-BPMN:
-  resource.path: classpath:subscription_payment_transfer.bpmn

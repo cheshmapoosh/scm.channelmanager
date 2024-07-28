@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.common.model.transformer;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -7,6 +10,8 @@ package ir.daneshrefah.scm.common.model.transformer;
  * @version 1.0
  * @since 2023-07-19
  */
+@Getter
+@RequiredArgsConstructor
 public enum TransformerRelationType {
 
     SERVICE_REQUEST(1),
@@ -20,17 +25,11 @@ public enum TransformerRelationType {
     TERMINAL_REQUEST(9),
     TERMINAL_RESPONSE(10),
     TERMINAL_SERVICE_REQUEST(11),
-    TERMINAL_SERVICE_RESPONSE(12);
+    TERMINAL_SERVICE_RESPONSE(12),
+    SERVICE_PROVIDER_REQUEST(13),
+    SERVICE_PROVIDER_RESPONSE(14);
 
-    private Integer code;
-
-    TransformerRelationType(Integer code) {
-        this.code = code;
-    }
-
-    public Integer getCode() {
-        return code;
-    }
+    private final Integer code;
 
     public static TransformerRelationType findByCode(Integer code) {
         for (TransformerRelationType enumValue : TransformerRelationType.values()) {

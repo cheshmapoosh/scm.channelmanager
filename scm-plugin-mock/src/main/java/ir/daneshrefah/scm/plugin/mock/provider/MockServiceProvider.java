@@ -3,12 +3,11 @@ package ir.daneshrefah.scm.plugin.mock.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,8 +20,8 @@ import org.springframework.stereotype.Component;
 @Component("mockCoreServiceProvider")
 public class MockServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
-    public MockServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public MockServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override
@@ -32,4 +31,8 @@ public class MockServiceProvider extends AbstractPureExternalServiceProviderExec
         return null;
     }
 
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return null;
+    }
 }

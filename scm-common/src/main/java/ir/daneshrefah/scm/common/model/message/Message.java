@@ -27,7 +27,7 @@ import java.util.List;
 @Builder
 public class Message implements Serializable {
 
-    private Header header;
+    private final Header header;
     private MessageStatus status;
     private JsonNode payload;
     private List<Error> errors;

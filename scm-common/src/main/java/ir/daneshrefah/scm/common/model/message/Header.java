@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,5 +31,6 @@ public class Header implements Serializable {
 //    private final int level = 1;
 //    private final String parentMessageId;
     private final String messageId = UUID.randomUUID().toString();
+    private final Instant createTime = Instant.now();
 
 }

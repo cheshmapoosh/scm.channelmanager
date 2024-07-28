@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.uaa.common.utils;
 
 import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -12,6 +10,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
+import java.util.Optional;
+
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PERSON_USERNAME_UNKNOWN;
 
 /**
  * Description of the class or purpose of the file.
@@ -29,6 +30,22 @@ public class AuthenticationUtils {
             return null;
         }
         return (UserAuthentication) authentication;
+    }
+
+    public static Optional<String> getLoggedInTerminalCode() {
+        User user = getLoggedInUser();
+        if (Objects.isNull(user)) {
+            return Optional.empty();
+        }
+        return Optional.of(user.getTerminalCode());
+    }
+
+    public static Optional<String> getLoggedInClientId() {
+        User user = getLoggedInUser();
+        if (Objects.isNull(user)) {
+            return Optional.empty();
+        }
+        return Optional.of(MessageInputContext.getCurrentContext().getClientId());
     }
 
     public static User getLoggedInUser() {
@@ -107,6 +124,48 @@ public class AuthenticationUtils {
 
     public static Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    public static Optional<String> getEffectiveNickname() {
+        UserAuthentication authentication = getLoggedInUserAuthentication();
+        if (Objects.isNull(authentication) || !authentication.isFullyAuthenticated()) {
+            return Optional.empty();
+        }
+        if (authentication.isDelegated()) {
+            return Optional.of(authentication.getProfile().getNickname());
+        }
+        return Optional.of(authentication.getName());
+    }
+
+    public static Optional<String> getEffectiveUsername() {
+        UserAuthentication authentication = getLoggedInUserAuthentication();
+        if (Objects.isNull(authentication) || !authentication.isFullyAuthenticated()) {
+            return Optional.empty();
+        }
+        if (authentication.isDelegated()) {
+            return Optional.of(authentication.getProfile().getPersonUsername());
+        }
+        return Optional.of(authentication.getPrincipal().getPerson().getUsername());
+    }
+
+    public static Optional<String> getDelegatorNickname() {
+        UserAuthentication authentication = getLoggedInUserAuthentication();
+        if (Objects.isNull(authentication) || !authentication.isFullyAuthenticated() || !authentication.isDelegated()) {
+            return Optional.empty();
+        }
+        return Optional.of(authentication.getName());
+    }
+
+    public static Optional<String> getDelegatorUsername() {
+        UserAuthentication authentication = getLoggedInUserAuthentication();
+        if (Objects.isNull(authentication) || !authentication.isFullyAuthenticated() || !authentication.isDelegated()) {
+            return Optional.empty();
+        }
+        if (Objects.isNull(authentication.getPrincipal()) || Objects.isNull(authentication.getPrincipal().getPerson()) ||
+                StringUtils.isBlank(authentication.getPrincipal().getPerson().getUsername())) {
+            return Optional.of(SCM_PERSON_USERNAME_UNKNOWN);
+        }
+        return Optional.of(authentication.getPrincipal().getPerson().getUsername());
     }
 
     public static ir.daneshrefah.scm.common.model.message.Authentication getScmAuthentication() {

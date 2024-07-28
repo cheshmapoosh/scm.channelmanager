@@ -5,25 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ConstantService;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
-import ir.daneshrefah.scm.plugin.api.transformer.ServiceCodeLookupTransformer;
-import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterRequestTransformer;
-import ir.daneshrefah.scm.plugin.pichack.transformer.PichackChequeRegisterResponseTransformer;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.pichack.util.PichakUtil;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static ir.daneshrefah.scm.plugin.pichack.util.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
 
 /**
@@ -45,15 +38,14 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
 
     private final ConstantService constantService;
 
-    public PichackServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext,
-                                  ResourceService resourceService, ObjectMapper objectMapper, ConstantService constantService) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public PichackServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper, ConstantService constantService) {
+        super(resourceService, serviceService, objectMapper);
         this.constantService = constantService;
     }
 
     @Override
     @SneakyThrows
-    protected String prepareTargetUrl(Message message) {
+    protected String extractTargetUrl(Message message) {
         AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
         String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();
@@ -61,33 +53,33 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
         return target;
     }
 
-    @Override
-    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
-        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
-        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterRequestTransformer());
-        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
-        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
-        return List.of(new ServiceCodeLookupTransformer(transformerMap));
-    }
-
-    @Override
-    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
-        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
-        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterResponseTransformer());
-        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
-        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
-        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
-        return List.of(new ServiceCodeLookupTransformer(transformerMap));
-    }
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
+//        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
+//        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterRequestTransformer());
+//        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
+//        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
+//        return List.of(new ServiceCodeLookupTransformer(transformerMap));
+//    }
+//
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
+//        Map<String, AbstractJsonTransformer> transformerMap = new HashMap<>();
+//        transformerMap.put(SERVICE_CODE_CHEQUE_REGISTER, new PichackChequeRegisterResponseTransformer());
+//        transformerMap.put(SERVICE_CODE_CHEQUE_CONFIRM_BY_RECEIVER, null);
+//        transformerMap.put(SERVICE_CODE_CHEQUE_TRANSFER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_HOLDER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_ISSUER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_CHECK_RECEIVER, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_CHECK_PARAM, null);
+//        transformerMap.put(SERVICE_CODE_INQUIRY_BY_TRANSFERS_CHAIN, null);
+//        return List.of(new ServiceCodeLookupTransformer(transformerMap));
+//    }
 
     @Override
     protected Map<String, ?> extractAdditionalHeaders(Message message) {

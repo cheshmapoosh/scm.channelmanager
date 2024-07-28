@@ -4,18 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ResourceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
 
@@ -32,25 +28,25 @@ public final class NabServiceProvider extends AbstractRestExternalServiceProvide
     private final NabRequestTransformer requestTransformer;
     private final NabResponseTransformer responseTransformer;
 
-    public NabServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ObjectMapper objectMapper, ResourceService resourceService, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public NabServiceProvider(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService, NabRequestTransformer requestTransformer, NabResponseTransformer responseTransformer) {
+        super(resourceService, serviceService, objectMapper);
         this.requestTransformer = requestTransformer;
         this.responseTransformer = responseTransformer;
     }
 
-    @Override
-    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
-        return List.of(requestTransformer);
-    }
-
-    @Override
-    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
-        return List.of(responseTransformer);
-    }
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareRequestTransformers() {
+//        return List.of(requestTransformer);
+//    }
+//
+//    @Override
+//    protected List<AbstractJsonTransformer> prepareResponseTransformers() {
+//        return List.of(responseTransformer);
+//    }
 
     @Override
     @SneakyThrows
-    protected String prepareTargetUrl(Message message) {
+    protected String extractTargetUrl(Message message) {
         AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
         String providerEndpoint = extractProviderEndpoint();
         JsonNode componentMetadata = service.getMetadata();

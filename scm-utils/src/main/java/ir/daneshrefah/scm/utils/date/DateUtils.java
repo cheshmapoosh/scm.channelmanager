@@ -96,6 +96,10 @@ public class DateUtils {
             return Duration.between(fromDate, toDate).getSeconds();
         }
 
+        public static long calculateMillisBetween(Instant fromDate, Instant toDate) {
+            return Duration.between(fromDate, toDate).toMillis();
+        }
+
         public static long calculateSecondsFromNowToDate(Instant toDate) {
             return calculateSecondsBetween(currentDate(), toDate);
         }

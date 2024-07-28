@@ -1,11 +1,12 @@
 package ir.daneshrefah.scm.plugin.iban.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.message.HttpMessageOutput;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,13 +19,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class IbanInquiryServiceProvider extends AbstractCamelExternalServiceProviderExecutor {
 
-    public IbanInquiryServiceProvider(ProducerTemplate producerTemplate, CamelContext camelContext, ResourceService resourceService, ObjectMapper objectMapper) {
-        super(producerTemplate, camelContext, resourceService, objectMapper);
+    public IbanInquiryServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
+        super(resourceService, serviceService, objectMapper);
     }
 
     @Override
-    protected String extractTargetUrl(Message message) {
+    protected String extractTargetEndpointUrl(Message message) {
         return null;
     }
 
+    @Override
+    protected MessageOutput buildMessageOutput() {
+        return HttpMessageOutput.builder().build();
+    }
 }
