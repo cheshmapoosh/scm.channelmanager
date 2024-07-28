@@ -1,0 +1,33 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: scm-config-server
+  security:
+    user:
+      name: admin
+      password: admin
+  cloud:
+    config:
+      server:
+        git:
+          uri: /home/cheshmapoush.a@drp.local/Projects/samples/spring-config/config-repo
+          search-paths: '{application}'
+          clone-on-start: true
+          default-label: master
+          basedir: /home/cheshmapoush.a@drp.local/Projects/samples/spring-config/config-repo-clone
+        encrypt:
+          enabled: true
+scm:
+  config:
+    applications:
+      scm: ib, mb, pwa
+      uaa: dev, test, prod
+    scm-user:
+      name: scm
+      pass: scm
+    cfg-user:
+      name: cfg
+      pass: cfg
+encrypt:
+  key: "WW@MwjtA9znCPVMi"
