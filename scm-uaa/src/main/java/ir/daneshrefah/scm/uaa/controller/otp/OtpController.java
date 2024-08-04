@@ -1,6 +1,12 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.repository.PersonRepository;
+import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
@@ -9,12 +15,15 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,33 +43,35 @@ import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCo
  */
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/otp")
+@RequestMapping("/api/otp")
 public class OtpController extends BaseController {
 
     private final OtpService otpService;
+    private final PersonRepository personRepository;
 
     @PreAuthorize("isFullyAuthenticated()")
     @PostMapping("/sms")
+    @CrossOrigin
     public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request, HttpServletRequest httpRequest) {
-
         User user = AuthenticationUtils.getLoggedInUser();
+        ValidationUtils.checkNull(user, AuthenticationRequiredException::new);
         String terminalCode = extractRequestTerminalCode();
         String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
-
+        assert user != null;
+        GeneralPersonEntity personEntity = personRepository.findById(user.getPerson().getId()).orElseThrow(AuthenticationRequiredException::new);
         Recipient recipient = Recipient.builder()
-                .address(request.getRecipient())
+                .address(personEntity.getMobile1())
                 .identifier(user.getNickname())
                 .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();
-
+        //TODO OTP SHOULD NOT SEND IN RESPONSE
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .recipient(recipient)
                 .build();
-
         return otpService.sendOtp(otpRequest);
     }
 

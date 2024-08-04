@@ -10,12 +10,23 @@ import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTok
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -28,6 +39,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticationProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(OAuth2GeneralAuthenticationProvider.class);
     private final AuthenticationResponseTokenGenerator responseTokenGenerator;
 
     public OAuth2GeneralAuthenticationProvider(RegisteredClientRepository clientRepository, UserCache userCache,
@@ -65,23 +77,47 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
     @Override
     protected void throwError(Authentication authentication, Exception exception) {
         String parameterName = extractParameterName(exception);
-        String errorCodeSuffix = extractErrorSuffix(exception);
-        String errorCode = parameterName;
-        if (StringUtils.isNotEmpty(errorCodeSuffix))
-            errorCode = errorCode + ":" + errorCodeSuffix;
+        String errorCode = customizeExceptionMessage(exception);
+        if (StringUtils.isEmpty(errorCode)) {
+            errorCode = parameterName;
+        }
         ErrorUtils.throwError(errorCode, parameterName);
     }
 
-    private String extractErrorSuffix(Exception exception) {
-        if (null == exception || !(exception instanceof TwoStepAuthenticationRequiredException) || null != exception.getCause())
-            return null;
-        TwoStepAuthenticationRequiredException twoStepException = (TwoStepAuthenticationRequiredException) exception;
-        if (!(twoStepException.getAuthentication() instanceof  PostAuthenticationToken)) {
+    private String customizeExceptionMessage(Exception exception) {
+        if (null != exception.getCause()){
             return null;
         }
-        PostAuthenticationToken authenticationToken = (PostAuthenticationToken) twoStepException.getAuthentication();
-        return authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode() + ":" +
-                (null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getOtp().getExpireTime() : StringUtils.EMPTY);
+        if (exception instanceof TwoStepAuthenticationRequiredException twoStepException){
+            if (!(twoStepException.getAuthentication() instanceof PostAuthenticationToken authenticationToken)) {
+                return null;
+            }
+            String code = authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode();
+            Map<String,String> response = new HashMap<>();
+            String expirationDuration;
+            String recipient;
+            if (Objects.nonNull(authenticationToken.getOtpSendResponse())){
+                OtpSendResponse otpSendResponse = authenticationToken.getOtpSendResponse();
+                Instant expireTimeInstant = otpSendResponse.getOtp().getExpireTime();
+                LocalDateTime nowLocalDateTime = LocalDateTime.now();
+                LocalDateTime expirationLocalDateTime = DateUtils.DateConverter.convertToLocalDateTime(DateUtils.DateConverter.convertToTimestamp(expireTimeInstant));
+                expirationDuration = String.valueOf(Duration.between(nowLocalDateTime,expirationLocalDateTime).toSeconds());
+                recipient = StringUtils.maskPhoneNumber(otpSendResponse.getOtp().getRecipient().getAddress());
+                response.put("expirationDurationSeconds",expirationDuration);
+                response.put("recipient",recipient);
+                //TODO LOG FOR DEV
+                log.info(">>> OTP CODE : {}", otpSendResponse.getOtp().getOtpCode());
+            }
+            response.put("authenticationMethod",code);
+            String responseString = response.toString();
+            return applyErrorCodeResponsePattern(responseString);
+        }
+        return null;
+    }
+
+    private String applyErrorCodeResponsePattern(String responseString) {
+        responseString =responseString.replace("=",StringUtils.COLON);
+        return responseString;
     }
 
     @Override

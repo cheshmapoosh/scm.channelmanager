@@ -38,7 +38,7 @@ public class UserCache implements org.springframework.security.core.userdetails.
 
     @Override
     public void removeUserFromCache(String username) {
-
+        cacheTemplate.removeFromCache(USER_CACHE_NAME,username);
     }
 
 }
