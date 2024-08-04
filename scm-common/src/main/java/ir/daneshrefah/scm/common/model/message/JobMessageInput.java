@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.model.message;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -12,10 +14,11 @@ import lombok.experimental.SuperBuilder;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public class JobMessageInput extends AbstractInternalMessageInput {
 
-    private final String jobName;
-    private final String triggerName;
-    private final String jobId;
+    private String jobName;
+    private String triggerName;
+    private String jobId;
 
 }

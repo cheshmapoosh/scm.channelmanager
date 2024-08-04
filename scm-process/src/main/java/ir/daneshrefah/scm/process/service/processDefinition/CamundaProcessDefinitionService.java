@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitio
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployResponse;
-import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
+import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessDefinitionDeleteRequest;
 import ir.daneshrefah.scm.process.service.util.bpmnModelInstance.BpmnModelInstanceService;
 import ir.daneshrefah.scm.process.service.util.processDefinition.ProcessDefinitionService;
 import ir.daneshrefah.scm.process.service.util.processInstance.ProcessInstanceService;
@@ -34,13 +34,11 @@ public class CamundaProcessDefinitionService implements ProcessDefinitionManagem
     private final BpmnModelInstanceService bpmnModelInstanceService;
 
     @Override
-    public PagedResponseData<ProcessDefinitionResponse> getList(ProcessDefinitionRequest request) {
+    public PagedResponseData<ProcessDefinitionResponse> findProcessDefinitionList(ProcessDefinitionRequest request) {
         return processDefinitionService.getList(request);
     }
 
     public ProcessDeployResponse deployProcess(ProcessDeployRequest request) {
-        //TODO first find is exist with this name
-        //TODO if exist check version
         ValidationUtils.checkEmptyString(request.getXmlBPMN(), () -> {
             throw new InvalidInputException("xmlBPMN");
         });
@@ -71,7 +69,7 @@ public class CamundaProcessDefinitionService implements ProcessDefinitionManagem
     }
 
     @Override
-    public boolean deleteDefinition(ProcessInstanceRequest request) {
+    public boolean deleteDefinition(ProcessDefinitionDeleteRequest request) {
         Long count = processInstanceService.activeCount(request.getDeploymentId());
         if (count != null && count > 0) {
             throw new ProcessDefinitionExistsException(request.getDeploymentId(), "Cannot delete deployment because process definitions exist for deployment id = :deploymentId  " + request.getDeploymentId(), request.getDeploymentId());

@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.process.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.zaxxer.hikari.HikariDataSource;
+import jakarta.annotation.PostConstruct;
 import org.camunda.bpm.engine.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,6 +25,13 @@ import javax.sql.DataSource;
 @Configuration
 @ConditionalOnProperty(name = "scm.process.enabled", havingValue = "true")
 public class ProcessConfiguration {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    @PostConstruct
+    public void init() {
+        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+    }
 
     @Bean
     public DataSource processDataSource(ProcessProperties properties) {

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -12,8 +13,8 @@ import lombok.experimental.SuperBuilder;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public abstract class AbstractExternalMessageInput<T> extends MessageInput<T> {
 
-    private final String clientRemoteAddress;
-
+    private String clientRemoteAddress;
 }

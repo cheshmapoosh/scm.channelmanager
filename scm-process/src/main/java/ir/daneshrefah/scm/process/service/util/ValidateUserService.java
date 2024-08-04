@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.process.service.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -16,9 +15,10 @@ import java.util.Objects;
 @AllArgsConstructor
 public class ValidateUserService {
 
-    public boolean isUserAuthorized(Map<String, Object> variables, String userName, List<String> authorizedUsers){
+    private final ObjectMapper objectMapper;
+
+    public boolean isUserAuthorized(Map<String, Object> variables, String userName, List<String> authorizedUsers) {
         if (Objects.nonNull(authorizedUsers) && !authorizedUsers.isEmpty()) {
-            ObjectMapper objectMapper = new ObjectMapper();
             for (String authorizedUser : authorizedUsers) {
                 if (authorizedUser.contains(".")) {
                     String variableName = authorizedUser.substring(0, authorizedUser.indexOf("."));

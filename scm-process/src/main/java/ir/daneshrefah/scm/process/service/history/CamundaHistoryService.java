@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.process.model.process.ProcessInstanceInfo;
 import ir.daneshrefah.scm.process.model.task.Assignment;
 import ir.daneshrefah.scm.process.model.task.HistoryTaskInfo;
@@ -62,11 +63,10 @@ public class CamundaHistoryService implements HistoryManagement {
         Set<String> processInstanceIds = historicTaskInstanceList.stream().map(HistoricTaskInstance::getProcessInstanceId).collect(Collectors.toSet());
 
         HistoricProcessInstanceQuery historicProcessInstanceQuery = historyService.createHistoricProcessInstanceQuery().or();
-        if (!processInstanceIds.isEmpty()) {
-            historicProcessInstanceQuery.processInstanceIds(processInstanceIds);
-        } else if (historyProcessRequest.getFilters() == null) {
+        if (processInstanceIds.isEmpty()) {
             return new PagedResponseData<>(historyProcessRequest.getPageNo(), historyProcessRequest.getPageSize(), 0L, new ArrayList<>());
         }
+        historicProcessInstanceQuery.processInstanceIds(processInstanceIds);
         long count = historicProcessInstanceQuery.endOr().count();
         List<HistoryProcessResponse> processHistories = createProcessHistories(historicProcessInstanceQuery.endOr().listPage(firstResult, maxResult));
         return new PagedResponseData<>(historyProcessRequest.getPageNo(), historyProcessRequest.getPageSize(), count, processHistories);
@@ -83,7 +83,7 @@ public class CamundaHistoryService implements HistoryManagement {
         return new PagedResponseData<>(historyTaskRequest.getPageNo(), historyTaskRequest.getPageSize(), count, taskHistoryResponse);
     }
 
-    private void setDate(HistoricTaskInstanceQuery historicTaskInstanceQuery, HistoryProcessRequest historyProcessRequest){
+    private void setDate(HistoricTaskInstanceQuery historicTaskInstanceQuery, HistoryProcessRequest historyProcessRequest) {
         Long fromDateMillis = historyProcessRequest.getFromDate();
         Long toDateMillis = historyProcessRequest.getToDate();
 
@@ -117,8 +117,8 @@ public class CamundaHistoryService implements HistoryManagement {
             HistoryProcessResponse response = new HistoryProcessResponse();
             response.setId(instance.getId());
             response.setRootProcessInstanceId(instance.getRootProcessInstanceId());
-            response.setProcessName(resourceBundleService.get(locale,instance.getProcessDefinitionName()).orElse(instance.getProcessDefinitionName()));
-            response.setState(resourceBundleService.get(locale, getStateBundleKey(instance.getState(), PROCESS)).orElse(instance.getState()));
+            response.setProcessName(resourceBundleService.get(locale, instance.getProcessDefinitionName()).orElse(instance.getProcessDefinitionName()));
+            response.setState(resourceBundleService.get(locale, getStateFromBundle(instance.getState(), PROCESS)).orElse(instance.getState()));
             response.setDurationInMillis(instance.getDurationInMillis());
             response.setStartTime(Optional.ofNullable(instance.getStartTime()).map(Date::getTime).orElse(null));
             response.setEndTime(Optional.ofNullable(instance.getEndTime()).map(Date::getTime).orElse(null));
@@ -129,7 +129,7 @@ public class CamundaHistoryService implements HistoryManagement {
         return historyProcessResponseList;
     }
 
-    private static String getStateBundleKey(String state, String type) {
+    private static String getStateFromBundle(String state, String type) {
         if (StringUtils.isEmpty(state)) {
             return null;
         }
@@ -141,7 +141,7 @@ public class CamundaHistoryService implements HistoryManagement {
         return state;
     }
 
-    public GeneralRealPersonEntity findPerson(String nationalCode) {
+    public GeneralRealPerson findPerson(String nationalCode) {//TODO if needed change it with username
         if (nationalCode == null) {
             return null;
         }
@@ -160,7 +160,7 @@ public class CamundaHistoryService implements HistoryManagement {
             Assignment assignment = new Assignment();
             assignment.setUsername(instance.getAssignee());
             if (historyTaskRequest.isIncludePersonInfo()) {
-                GeneralRealPersonEntity person = findPerson(instance.getAssignee());
+                GeneralRealPerson person = findPerson(instance.getAssignee());
                 if (person != null) {
                     assignment.setFirstName(person.getFirstName());
                     assignment.setLastName(person.getLastName());
@@ -170,11 +170,11 @@ public class CamundaHistoryService implements HistoryManagement {
                 }
             }
             response.setAssignment(List.of(assignment));
-            response.setTaskName(resourceBundleService.get(locale,instance.getName()).orElse(instance.getName()));
+            response.setTaskName(resourceBundleService.get(locale, instance.getName()).orElse(instance.getName()));
             response.setStartTime(Optional.ofNullable(instance.getStartTime()).map(Date::getTime).orElse(null));
             response.setEndTime(Optional.ofNullable(instance.getEndTime()).map(Date::getTime).orElse(null));
             response.setDeleteReason(instance.getDeleteReason());
-            response.setState(resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), getStateBundleKey(instance.getDeleteReason(), TASK)).orElse(null));
+            response.setState(resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), getStateFromBundle(instance.getDeleteReason(), TASK)).orElse(null));
             response.setData(getTaskVariables(instance.getRootProcessInstanceId(), instance));
             ProcessInstanceInfo processInstance = new ProcessInstanceInfo();
             processInstance.setProcessInstanceId(instance.getProcessInstanceId());
@@ -184,7 +184,7 @@ public class CamundaHistoryService implements HistoryManagement {
         return responseList;
     }
 
-    private Map<String, Object> getProcessVariables(String processInstanceId){
+    private Map<String, Object> getProcessVariables(String processInstanceId) {
         Map<String, Object> data = new HashMap<>();
         Map<String, Object> businessData = new HashMap<>();
         Map<String, String> extensionProperties = bpmnExtensionExtractor.getExtensionProperties(processInstanceId, Collaboration.class);

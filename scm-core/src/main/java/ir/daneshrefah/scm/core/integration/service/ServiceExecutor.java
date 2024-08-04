@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -9,8 +10,8 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
-import ir.daneshrefah.scm.logging.domain.event.ServiceEvent;
+import ir.daneshrefah.scm.common.model.event.Event;
+import ir.daneshrefah.scm.common.model.event.ServiceEvent;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
@@ -97,7 +98,7 @@ public abstract class ServiceExecutor {
         return payload;
     }
 
-    private void logServiceCallEvent(Message message, JsonNode input, Exception exception, Instant startTime) {
+    private void logServiceCallEvent(Message message, JsonNode input, Exception exception, Instant startTime) throws JsonProcessingException {
         MessageInput messageInput = MessageInputContext.getCurrentContext();
         Service service = message.getHeader().getService();
         Event event = ServiceEvent.builder()
