@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.process.model.task;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.process.model.BaseProcessModel;
 import lombok.Data;
 
@@ -17,5 +18,5 @@ import java.util.List;
 public class TaskMetadata implements BaseProcessModel {
     private List<String> outputVariables = new ArrayList<>();
     private List<String> actions = new ArrayList<>();
-    private String validationSchema;
+    private JsonNode validationSchema;
 }

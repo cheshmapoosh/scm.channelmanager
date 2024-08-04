@@ -6,9 +6,11 @@ import ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFo
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployRequest;
+import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessDefinitionDeleteRequest;
 import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
 import lombok.AllArgsConstructor;
 import org.camunda.bpm.engine.RepositoryService;
+import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.repository.Deployment;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.repository.ProcessDefinitionQuery;
@@ -25,6 +27,7 @@ import java.util.List;
 public class ProcessDefinitionServiceImpl implements ProcessDefinitionService {
 
     private final RepositoryService repositoryService;
+    private final RuntimeService runtimeService;
 
     @Override
     public ProcessDefinition findByKey(String processKey) throws ProcessInstanceNotFoundWithKeyException {
@@ -59,11 +62,10 @@ public class ProcessDefinitionServiceImpl implements ProcessDefinitionService {
                 .list();
     }
 
-    public PagedResponseData<ProcessDefinitionResponse> getList(ProcessDefinitionRequest processDefinitionRequest) {
-        ProcessDefinitionQuery processDefinitionQuery = repositoryService
-                .createProcessDefinitionQuery();
-        int firstResult = (processDefinitionRequest.getPageNo() - 1) * processDefinitionRequest.getPageSize();
-        int maxResult = Math.max((processDefinitionRequest.getPageNo() * processDefinitionRequest.getPageSize()) - 1, processDefinitionRequest.getPageSize());
+    public PagedResponseData<ProcessDefinitionResponse> getList(ProcessDefinitionRequest request) {
+        ProcessDefinitionQuery processDefinitionQuery =repositoryService.createProcessDefinitionQuery().latestVersion();
+        int firstResult = (request.getPageNo() - 1) * request.getPageSize();
+        int maxResult = Math.max((request.getPageNo() * request.getPageSize()) - 1, request.getPageSize());
         long count = processDefinitionQuery.count();
         List<ProcessDefinitionResponse> processDefinitionResponses = processDefinitionQuery
                 .listPage(firstResult, maxResult)
@@ -79,9 +81,13 @@ public class ProcessDefinitionServiceImpl implements ProcessDefinitionService {
                     processDefinitionResponse.setSuspended(processDefinition.isSuspended());
                     processDefinitionResponse.setVersionTag(processDefinition.getVersionTag());
                     processDefinitionResponse.setHistoryTimeToLive(processDefinition.getHistoryTimeToLive());
+                    if (request.isIncludeActiveCount()) {
+                        long activeProcessCount = runtimeService.createProcessInstanceQuery().processDefinitionKey(processDefinition.getKey()).active().count();
+                        processDefinitionResponse.setActiveCount(activeProcessCount);
+                    }
                     return processDefinitionResponse;
                 }).toList();
-        return new PagedResponseData<>(processDefinitionRequest.getPageNo(), processDefinitionRequest.getPageSize(), count, processDefinitionResponses);
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), count, processDefinitionResponses);
     }
 
     @Override
@@ -95,7 +101,7 @@ public class ProcessDefinitionServiceImpl implements ProcessDefinitionService {
     }
 
     @Override
-    public boolean deleteDefinition(ProcessInstanceRequest request) {
+    public boolean deleteDefinition(ProcessDefinitionDeleteRequest request) {
         repositoryService.deleteDeployment(request.getDeploymentId(), false, true, true);
         return true;
     }

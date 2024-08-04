@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFo
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployRequest;
-import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
+import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessDefinitionDeleteRequest;
 import org.camunda.bpm.engine.repository.Deployment;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 
@@ -26,5 +26,5 @@ public interface ProcessDefinitionService {
 
     List<ProcessDefinition> getListByDeploymentId(String deploymentId);
 
-    boolean deleteDefinition(ProcessInstanceRequest request);
+    boolean deleteDefinition(ProcessDefinitionDeleteRequest request);
 }

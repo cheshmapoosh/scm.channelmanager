@@ -5,5 +5,6 @@ import lombok.Data;
 
 @Data
 public class ProcessInstanceRequest extends PagedRequestData {
-    private String deploymentId;
+    private String definitionId;
+    private Long count;
 }

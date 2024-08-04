@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.logging.api;
 
-import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.common.model.event.Event;
 
 /**
  * Description of the class or purpose of the file.

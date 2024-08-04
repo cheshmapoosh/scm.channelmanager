@@ -36,6 +36,12 @@ scm:
   log:
     enabled: true
     type: file
+    file-directory: appLogFolder
+    file-name: app.log
+    log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
+    file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
+    file-size: 1MB  #Max size of each log file
+    keep-log-history: 30 #Keep up to 30 days of log files
   security:
     client-id: scm
     client-secret:
@@ -58,12 +64,12 @@ scm:
     client-id: BPM
     client-secret: myClientSecretValue
     datasource:
-      url: jdbc:mysql://localhost:3306/ref
-      username: root
-      password: 12345
-      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
-      default-schema: REF
+      default-schema: db-camunda
 
 
 server:

@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.process.service.attachment;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import ir.daneshrefah.scm.process.service.dto.attachment.ProcessDeleteAttachmentRequest;
-import ir.daneshrefah.scm.process.service.dto.attachment.TaskDeleteAttachmentRequest;
 import ir.daneshrefah.scm.process.service.dto.attachment.ProcessAttachmentRequest;
+import ir.daneshrefah.scm.process.service.dto.attachment.ProcessDeleteAttachmentRequest;
 import ir.daneshrefah.scm.process.service.dto.attachment.TaskAttachmentRequest;
+import ir.daneshrefah.scm.process.service.dto.attachment.TaskDeleteAttachmentRequest;
 
 public interface AttachmentService {
     void taskAttachment(TaskAttachmentRequest taskAttachmentRequest) throws Exception;

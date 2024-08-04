@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.process.model.process;
 
-import ir.daneshrefah.scm.process.model.Action;
+import ir.daneshrefah.scm.process.model.task.Action;
 import ir.daneshrefah.scm.process.model.BaseProcessModel;
 import lombok.Data;
 

@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+    username: db2inst1
+    password: db2inst1
+    driver-class-name: com.ibm.db2.jcc.DB2Driver
+    hikari:
+      maximum-pool-size: 10
+#  jpa:
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+
+ibm:
+  mq:
+    queue-manager: CSQ1
+    channel: DEV.ADMIN.SVRCONN
+    conn-name: 10.10.4.238(11414)
+    user: admin
+    password: passw0rd
+
+server:
+  port: 9090
+
+scm:
+  mq:
+    concurrency: 10
+    destination: SCM2LOG

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.model.error;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,17 +13,19 @@ import lombok.Getter;
  * @since 2023-07-23
  */
 @Getter
+@NoArgsConstructor
 public class Error  {
 
     /**
      * It contains 'propertyName' that has error in 'VALIDATION' type
      * */
-    private final String source;
-    private final String errorCode;
-    private final String message;
+    private String source;
+    private String errorCode;
+    private String message;
     @JsonIgnore
-    private final Exception exception;
-    private final MessageStatus status;
+    private Exception exception;
+    private MessageStatus status;
+
 
     public Error(String source, Integer errorCode, String message) {
         this(source, "SCM-" + errorCode, message,null, null);

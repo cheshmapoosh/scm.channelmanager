@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.core.service;
 
-import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -53,7 +53,7 @@ public class PersonServiceRemoteImpl implements PersonService {
     }
 
     @Override
-    public GeneralRealPersonEntity findPersonByNationalCode(String nationalCode) {
+    public GeneralRealPerson findPersonByNationalCode(String nationalCode) {
         return null;
     }
 

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.logging.impl;
 
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
+import ir.daneshrefah.scm.common.model.event.Event;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -12,10 +13,11 @@ import lombok.experimental.SuperBuilder;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public class HttpMessageInput extends AbstractExternalMessageInput<String> {
 
-    private final String httpUrl;
-    private final String httpMethod;
-    private final String clientAgent;
+    private String httpUrl;
+    private String httpMethod;
+    private String clientAgent;
 
 }

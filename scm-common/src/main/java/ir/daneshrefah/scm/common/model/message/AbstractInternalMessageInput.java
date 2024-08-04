@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -13,6 +14,7 @@ import lombok.experimental.SuperBuilder;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public abstract class AbstractInternalMessageInput extends MessageInput<JsonNode> {
 
 
