@@ -239,7 +239,7 @@ public class UserService {
     public User createSmsVerifiedUserAndDeleteOld(String mobileNo, String terminalCode) {
         ValidationUtils.checkBlankString(terminalCode, () -> new MissingRequiredInputException("terminalCode"));
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
-        ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
+//        ValidationUtils.checkIsNotNullAndIsNotEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
 //TODO user must be create and store on database with person info,
 // also old user with same username must be update or set status to deleted
         Optional<UserEntity> currentUserEntity = loadUserEntityByUsername(mobileNo, terminalCode);

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
@@ -13,6 +14,7 @@ import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     private final ServiceService serviceService;
     private final TerminalService terminalService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     private ProducerTemplate producerTemplate;
@@ -68,8 +71,15 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     }
 
     @Override
+    @SneakyThrows
     public <T> T callService(String serviceCode, Object request, Class<T> responseType) {
-        return null;
+        JsonNode payload = objectMapper.convertValue(request, JsonNode.class);
+        Message message = callService(serviceCode, payload);
+        if (responseType == String.class) {
+            return responseType.cast(message.getPayload().toString());
+        } else {
+            return objectMapper.readValue(message.getPayload().toString(), responseType);
+        }
     }
 
     @Override

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -56,4 +57,8 @@ public class PersonServiceRemoteImpl implements PersonService {
         return null;
     }
 
+    @Override
+    public Optional<GeneralPerson> findPerson(PersonType personType,String nationalId, String subOrg) {
+        return Optional.empty();
+    }
 }

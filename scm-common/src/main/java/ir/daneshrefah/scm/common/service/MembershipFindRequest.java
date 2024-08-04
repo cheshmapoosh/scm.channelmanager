@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.customer.AssetType;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import lombok.Data;
 
 /**
@@ -14,7 +15,9 @@ import lombok.Data;
 @Data
 public class MembershipFindRequest implements RequestData {
 
+    private PersonType personType;
+    private String nationalId;
+    private String subOrganizationId;
     private AssetType assetType;
-    private String terminalCode;
 
 }

@@ -3,7 +3,8 @@ package ir.daneshrefah.scm.core.entity.asset;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,7 +13,8 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-03-25
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "MEMBERSHIP_CHANNEL_ACCESS")
 public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {

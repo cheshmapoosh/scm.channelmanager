@@ -5,7 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,7 +15,8 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-03-25
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "ACCOUNT_TYPE")
 public class AccountTypeEntity extends AbstractEntity<Long> {

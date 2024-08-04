@@ -19,6 +19,7 @@ public interface AssetProviderMapper {
     AssetProviderMapper INSTANCE = Mappers.getMapper(AssetProviderMapper.class);
 
     AssetProvider toModel(AssetProviderEntity entity);
+    AssetProviderEntity toEntity(AssetProvider model);
 
     List<AssetProvider> toModels(Iterable<AssetProviderEntity> entities);
 

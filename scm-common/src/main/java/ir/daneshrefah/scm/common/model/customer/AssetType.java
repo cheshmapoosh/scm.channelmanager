@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum AssetType {
 
-    ACCOUNT(1), LOAN(2), CARD(3);
+    ACCOUNT(AssetTypeCode.intValue(AssetTypeCode.ACCOUNT)),
+    LOAN(AssetTypeCode.intValue(AssetTypeCode.LOAN)),
+    CARD(AssetTypeCode.intValue(AssetTypeCode.CARD));
 
     private final Integer code;
 

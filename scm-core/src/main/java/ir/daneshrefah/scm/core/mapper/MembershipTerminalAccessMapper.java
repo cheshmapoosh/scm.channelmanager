@@ -37,7 +37,9 @@ public interface MembershipTerminalAccessMapper {
 
     @Named("toMembership")
     @Mapping(source = "person", target = "person", qualifiedByName = "toPerson")
-    Membership toMembership(MembershipEntity entity);
+    default Membership toMembership(MembershipEntity entity){
+        return MembershipMapper.INSTANCE.toModel(entity);
+    }
 
     @Named("toPerson")
     default GeneralPerson toPerson(GeneralPersonEntity entity) {

@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.common.data.repository;
 
-import ir.daneshrefah.scm.common.data.entity.person.EmployeePersonEntity;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
-import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -38,9 +35,14 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Int
             "WHERE uca.NICK_NAME = :nickname AND uca.CHANNEL_ID = :terminalId",
             nativeQuery = true)
     Optional<GeneralPersonEntity> findByNicknameAndTerminalId(@Param("nickname") String nickname, @Param("terminalId") Integer terminalId);
-//    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId AND p.subOrganizationId = :subOrganizationId")
-//    GeneralLegalPersonEntity findCorporatePersonByNationalCode(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
 
     List<GeneralPersonEntity> findPersonByUsername(String username);
+
+    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId")
+    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalId(@Param("nationalId") String nationalId);
+
+    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId and p.subOrganizationId = :subOrganizationId")
+    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(@Param("nationalId") String nationalId,@Param("subOrganizationId") String subOrganizationId);
+
 
 }

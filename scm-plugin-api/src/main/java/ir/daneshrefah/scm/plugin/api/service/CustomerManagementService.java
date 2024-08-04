@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.common.data.service.person.CustomerProviderFindRequest;
+import ir.daneshrefah.scm.common.model.asset.AccountMembership;
+import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,25 +28,19 @@ public class CustomerManagementService extends AbstractJavaService {
         this.customerService = customerService;
     }
 
-    public List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipFindRequest request) {
-        if (null == request) {
-            request = new MembershipFindRequest();
-        }
-        request.setTerminalCode(MessageInputContext.getCurrentContext().getTerminalCode());
-        return customerService.findLocalMembershipTerminalAccesses(request);
-    }
-    /*public Customer findCustomerByProviderIdAndPersonId(String providerId, Long personId) {
-        User user = AuthenticationUtils.getLoggedInUser(MessageContext.getCurrentContext().getMessage());
-        return customerService.findLocalCustomerByProviderIdAndPersonId(providerId, personId);
+    @JavaService
+    public List<Membership> findProviderMembershipList(CustomerProviderFindRequest request){
+        return customerService.findProviderMembershipList(request);
     }
 
-    public List<AccountAsset> findCustomerAccountList() {
-        UserAuthentication userAuthentication = AuthenticationUtils.getLoggedInUserAuthentication(MessageContext.getCurrentContext().getMessage());
-        return customerService.findLocalCustomerAssetListByPersonId(userAuthentication.getPersonProfile().getPersonId(), AccountAsset.class);
+    @JavaService
+    public List<Membership> findLocalMembershipList(MembershipFindRequest request){
+        return customerService.findLocalMembershipList(request);
     }
 
-    public Customer synchronizeCustomerInfoByProviderIdAndPersonId(CustomerSynchronizationRequest request) {
-        return customerService.synchronizeProviderCustomerInfoByPersonId(request);
-    }*/
+    @JavaService
+    public AccountMembership findAccountMembershipById(String membershipId){
+        return customerService.findLocalAccountMembership(membershipId);
+    }
 
 }

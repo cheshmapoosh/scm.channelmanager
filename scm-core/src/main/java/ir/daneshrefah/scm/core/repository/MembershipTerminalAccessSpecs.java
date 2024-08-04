@@ -24,9 +24,6 @@ public class MembershipTerminalAccessSpecs {
             if (null != request.getAssetType()) {
                 predicates.add(builder.equal(root.get("membership").get("assetType"), request.getAssetType()));
             }
-            if (StringUtils.isNotEmpty(request.getTerminalCode())) {
-                predicates.add(builder.equal(root.get("terminal").get("code"), request.getTerminalCode()));
-            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }
