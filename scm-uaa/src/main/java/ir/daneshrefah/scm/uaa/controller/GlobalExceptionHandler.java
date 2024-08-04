@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import ir.daneshrefah.scm.common.model.message.Message;
+
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -25,10 +28,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
         Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
+        Message message = Message
+                .builder()
+                .status(resolve.getStatus())
+                .errors(List.of(resolve))
+                .build();
         if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
-            return ResponseEntity.internalServerError().body(resolve);
+            return ResponseEntity.internalServerError().body(message);
         }
-        return ResponseEntity.badRequest().body(resolve);
+        return ResponseEntity.badRequest().body(message);
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {

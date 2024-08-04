@@ -100,6 +100,7 @@ public class ExceptionResolverHelper {
                                 error.getSource(),
                                 error.getErrorCode(),
                                 error.getMessage(),
+                                error.getMessageFa(),
                                 MessageStatus.SC_ERROR_SYSTEM,
                                 error.getException()
                         );

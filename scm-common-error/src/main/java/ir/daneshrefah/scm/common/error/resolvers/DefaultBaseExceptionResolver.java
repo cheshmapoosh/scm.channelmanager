@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.error.resolvers;
 
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
@@ -31,6 +32,7 @@ public class DefaultBaseExceptionResolver extends ExceptionResolver<AbstractBase
                 getSource(exception),
                 errorMapping.getScmErrorCode(),
                 getMessage(locale, exception),
+                getMessage(AccessibleLocale.FA_IR.getLocale(), exception),
                 errorMapping.getStatus(),
                 exception);
     }

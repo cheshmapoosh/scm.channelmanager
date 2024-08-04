@@ -14,32 +14,37 @@ import lombok.NoArgsConstructor;
  */
 @Getter
 @NoArgsConstructor
-public class Error  {
+public class Error {
 
     /**
      * It contains 'propertyName' that has error in 'VALIDATION' type
-     * */
+     */
     private String source;
     private String errorCode;
     private String message;
+    private String messageFa;
     @JsonIgnore
     private Exception exception;
     private MessageStatus status;
 
 
     public Error(String source, Integer errorCode, String message) {
-        this(source, "SCM-" + errorCode, message,null, null);
+        this(source, "SCM-" + errorCode, message, null, null, null);
     }
 
     public Error(String source, Integer errorCode, String message, Exception exception) {
-        this(source, "SCM-" + errorCode,message,null, exception);
+        this(source, "SCM-" + errorCode, message, null, null, exception);
     }
 
-    public Error(String source, Integer errorCode, String message,MessageStatus status, Exception exception) {
-        this(source, "SCM-" + errorCode, message,status, exception);
+    public Error(String source, Integer errorCode, String message, MessageStatus status, Exception exception) {
+        this(source, "SCM-" + errorCode, message, null, status, exception);
     }
 
-    public Error(String source, String errorCode, String message,Exception exception) {
+    public Error(String source, Integer errorCode, String message, String messageFa, MessageStatus status, Exception exception) {
+        this(source, "SCM-" + errorCode, message, messageFa, status, exception);
+    }
+
+    public Error(String source, String errorCode, String message, Exception exception) {
         this.source = source;
         this.errorCode = errorCode;
         this.message = message;
@@ -47,10 +52,11 @@ public class Error  {
         this.status = null;
     }
 
-    public Error(String source, String errorCode, String message, MessageStatus status,Exception exception) {
+    public Error(String source, String errorCode, String message, String messageFa, MessageStatus status, Exception exception) {
         this.source = source;
         this.errorCode = errorCode;
         this.message = message;
+        this.messageFa = messageFa;
         this.exception = exception;
         this.status = status;
     }
