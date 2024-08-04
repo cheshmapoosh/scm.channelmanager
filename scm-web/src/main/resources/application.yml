@@ -69,7 +69,7 @@ scm:
       password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
-      default-schema: db-camunda
+      default-schema: db-camunda #change it to REF
 
 
 server:

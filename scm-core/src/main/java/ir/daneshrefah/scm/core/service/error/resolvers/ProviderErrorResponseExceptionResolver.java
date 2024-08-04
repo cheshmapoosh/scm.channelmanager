@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.service.error.resolvers;
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider;
@@ -25,10 +26,12 @@ public class ProviderErrorResponseExceptionResolver extends ExceptionResolver<Pr
     public Error resolve(ProviderErrorResponseException exception, Locale locale) {
         ErrorMapping errorMapping = errorMappingService.findByRemoteErrorCodeAndProviderId(exception.getRemoteErrorCode(), findProvider(exception.getProviderCode()).getId()).orElseThrow(RuntimeException::new);
         String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, exception);
+        String exceptionMessageFa = messageBundleProvider.getExceptionMessage(AccessibleLocale.FA_IR, exception);
         return new Error(
                 "provider",
                 errorMapping.getScmErrorCode(),
                 exceptionMessage,
+                exceptionMessageFa,
                 errorMapping.getStatus(),
                 exception);
     }

@@ -20,6 +20,7 @@ import static ir.daneshrefah.scm.process.service.constant.ProcessConstants.*;
 public class ProcessMetadataExtractor {
     private final BpmnExtensionExtractor bpmnExtensionExtractor;
     private final CacheTemplate cacheTemplate;
+    private final ObjectMapper objectMapper;
 
     public <T extends ModelElementInstance> ProcessMetadata extractProcessMetadata(ProcessDefinition processDefinition, Class<T> clazz) throws Exception {
         ProcessMetadata processMetadata = (ProcessMetadata) cacheTemplate.getFromCache(processDefinition.getKey(),processDefinition.getDeploymentId());
@@ -46,7 +47,6 @@ public class ProcessMetadataExtractor {
     }
 
     private Map<String, String> convertToMap(String json) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(json, new TypeReference<>() {});
     }
 

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.error.resolvers;
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider;
@@ -26,6 +27,7 @@ public class SQLIntegrityConstraintViolationExceptionResolver extends ExceptionR
                 "constraint",
                 errorMapping.getScmErrorCode(),
                 getMessage(locale, exception),
+                getMessage(AccessibleLocale.FA_IR.getLocale(), exception),
                 errorMapping.getStatus(),
                 exception);
     }

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.error.resolvers;
 
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
@@ -29,12 +30,18 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
     public Error resolve(Exception exception, Locale locale) {
         ErrorMapping errorMapping = deepFindErrorMapping(exception);
         String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, errorMapping.getExceptionClassName());
+        String exceptionMessageFa = messageBundleProvider.getExceptionMessage(AccessibleLocale.FA_IR, errorMapping.getExceptionClassName());
         if (StringUtils.isEmpty(exceptionMessage)) {
             exceptionMessage = messageBundleProvider.getDefaultExceptionMessage(locale);
         }
+        if (StringUtils.isEmpty(exceptionMessageFa)) {
+            exceptionMessageFa = messageBundleProvider.getDefaultExceptionMessage(AccessibleLocale.FA_IR);
+        }
         return new Error(
                 getSource(exception),
-                errorMapping.getScmErrorCode(), exceptionMessage,
+                errorMapping.getScmErrorCode(),
+                exceptionMessage,
+                exceptionMessageFa,
                 errorMapping.getStatus(),
                 exception);
     }
