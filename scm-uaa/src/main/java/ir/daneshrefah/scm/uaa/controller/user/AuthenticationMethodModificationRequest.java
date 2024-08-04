@@ -10,14 +10,10 @@ import lombok.Data;
 @Data
 public class AuthenticationMethodModificationRequest implements RequestData {
 
-       private String username;
-       private String terminalCode;
-       private String otpCode;
-       private String recipient;
        private AuthenticationMethod authenticationMethod;
+       private String credential;
 
-//       private AuthenticationMethod authenticationMethod;
-//       private String credential;
+
 //       /*
 //        * TODO send OTP service must be handle selected authentication method
 //        * */

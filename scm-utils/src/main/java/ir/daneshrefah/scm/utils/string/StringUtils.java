@@ -48,6 +48,24 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.isNumeric(value);
     }
 
+    public static String maskPhoneNumber(String phoneNumber){
+        if (Objects.nonNull(phoneNumber) && !phoneNumber.isBlank()){
+            if (phoneNumber.length() == 10){
+                phoneNumber = "0"+phoneNumber;
+            }
+            if (phoneNumber.length() == 11 ){
+                String maskNeedNumber = String.valueOf(phoneNumber.charAt(4))+phoneNumber.charAt(5)+phoneNumber.charAt(6);
+                phoneNumber = phoneNumber.replace(maskNeedNumber,"***");
+                return phoneNumber;
+            }
+            if (phoneNumber.startsWith("+98")){
+                phoneNumber = phoneNumber.replace("+98",EMPTY);
+                return maskPhoneNumber(phoneNumber);
+            }
+        }
+        return EMPTY;
+    }
+
     public static boolean endsWith(final CharSequence str, final CharSequence suffix) {
         return org.apache.commons.lang3.StringUtils.endsWith(str, suffix);
     }

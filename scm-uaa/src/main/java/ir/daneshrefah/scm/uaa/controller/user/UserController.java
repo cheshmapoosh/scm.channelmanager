@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.uaa.controller.BaseController;
 import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +29,8 @@ public class UserController extends BaseController {
 
 
     @PutMapping("/change-nickName")
-    public ResponseEntity<User> changeUserName(@RequestBody UserNickNameModifyRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickName(request));
+    public ResponseEntity<User> changeUserName(@RequestBody UserNickNameModifyRequest request,HttpServletRequest servletRequest) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickName(request,servletRequest));
     }
 
     @PutMapping("/change-login-password")
@@ -48,8 +49,8 @@ public class UserController extends BaseController {
     }
 
     @PutMapping("/change-transaction-password-method")
-    public ResponseEntity<User> updateTransactionPasswordMethod(@RequestBody AuthenticationMethodModificationRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateTransactionPasswordMethod(request));
+    public ResponseEntity<User> updateTransactionPasswordMethod(@RequestBody AuthenticationMethodModificationRequest request, HttpServletRequest servletRequest) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateTransactionPasswordMethod(request,servletRequest));
     }
 
     @PostMapping("/list")

@@ -35,4 +35,5 @@ public class GlobalConfig {
         return registration;
     }
 
+
 }
