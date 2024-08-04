@@ -7,15 +7,15 @@ import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitio
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployResponse;
-import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
+import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessDefinitionDeleteRequest;
 
 public interface ProcessDefinitionManagement {
 
-    PagedResponseData<ProcessDefinitionResponse> getList(ProcessDefinitionRequest request);
+    PagedResponseData<ProcessDefinitionResponse> findProcessDefinitionList(ProcessDefinitionRequest request);
 
     ProcessDeployResponse deployProcess(ProcessDeployRequest request) throws Exception;
 
     BpmnModelInstanceResponse getProcessInstanceXml(BpmnModelInstanceRequest request);
 
-    boolean deleteDefinition(ProcessInstanceRequest request);
+    boolean deleteDefinition(ProcessDefinitionDeleteRequest request);
 }

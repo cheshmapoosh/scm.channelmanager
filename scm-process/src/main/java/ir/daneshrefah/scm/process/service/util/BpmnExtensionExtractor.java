@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.process.service.util;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.process.service.util.bpmnModelInstance.BpmnModelInstanceService;
 import ir.daneshrefah.scm.process.service.util.historicProcess.HistoricProcessService;
 import ir.daneshrefah.scm.process.service.util.processDefinition.ProcessDefinitionService;
@@ -30,6 +31,7 @@ public class BpmnExtensionExtractor {
     private final BpmnModelInstanceService bpmnModelInstanceService;
     private final ProcessDefinitionService processDefinitionService;
     private final ProcessInstanceService processInstanceService;
+    private final CacheTemplate cacheTemplate;
 
     public <T extends ModelElementInstance> Map<String, String> getExtensionProperties(String processInstanceId, Class<T> clazz) {
         HistoricProcessInstance historicProcessInstance = historicProcessService.getProcessInstance(processInstanceId);
@@ -55,7 +57,11 @@ public class BpmnExtensionExtractor {
     }
 
     public Map<String, String> getExtensionProperties(Task task) {
-        Map<String, String> extensionProperties = new HashMap<>();
+        Map<String, String> extensionProperties = (Map<String, String>) cacheTemplate.getFromCache(task.getProcessDefinitionId(),task.getTaskDefinitionKey());
+        if (extensionProperties != null) {
+            return extensionProperties;
+        }
+        extensionProperties = new HashMap<>();
         ProcessInstance processInstance = processInstanceService.getProcessInstance(task.getProcessInstanceId());
         BpmnModelInstance modelInstance = bpmnModelInstanceService.getBpmnModelInstance(processInstance.getProcessDefinitionId());
         BaseElement baseElement = modelInstance.getModelElementById(task.getTaskDefinitionKey());
@@ -66,6 +72,7 @@ public class BpmnExtensionExtractor {
                 extractExtension(extensionProperties,baseElement.getExtensionElements());
             }
         }
+        cacheTemplate.putInCache(task.getProcessDefinitionId(), task.getName(), extensionProperties);
         return extensionProperties;
     }
 

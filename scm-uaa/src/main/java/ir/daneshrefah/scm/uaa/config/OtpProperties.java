@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OtpProperties {
 
+    @Value("${scm.otp.ttl:#{null}}")
     private Integer timeToLiveMinutes;
 
 }

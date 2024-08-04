@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.process.config.ProcessProperties;
-import ir.daneshrefah.scm.process.model.ProcessMessage;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import jakarta.annotation.PostConstruct;
@@ -48,16 +47,16 @@ public class ProcessServiceInvoker {
         INSTANCE = this;
     }
 
-    public JsonNode callService(String serviceCode, JsonNode payload,  ProcessMessage processMessage) throws Exception {
+    public JsonNode callService(String serviceCode, JsonNode payload, ProcessMessageInput processMessage) throws Exception {
         String authorizationHeader = "Basic " + Base64Utils.encodeWithBase64(properties.getClientId() + COLON + properties.getClientSecret());
         Channel channel = channelService.findChannelByCode(BPMS_CHANNEL_CODE)
                 .orElseThrow(() -> new InvalidInputException("channelCode"));
         Map<String, Object> headers = new HashMap<>();
         headers.put(SCM_PARAMETER_TERMINAL, null);
-        headers.put(SCM_PARAMETER_ACCESS_PARAMETER, processMessage.getAccessParameter());
+        headers.put(SCM_PARAMETER_ACCESS_PARAMETER, "123");//TODO processMessage.getAccessParameter() is null
 //        headers.put(SCM_PARAMETER_AUTHORIZATION, null);
 //        headers.put(SCM_PARAMETER_CLAIM_CODE, null);
-        headers.put(SCM_PARAMETER_USERNAME, processMessage.getDelegateUsername());
+        headers.put(SCM_PARAMETER_USERNAME, "");
 //        headers.put(SCM_PARAMETER_CLIENT_ID, null);
 //        headers.put(SCM_PARAMETER_CLIENT_CORRELATION_ID, correlationId);
 //        headers.put(SCM_PARAMETER_CLIENT_TIMESTAMP, null);
@@ -83,7 +82,8 @@ public class ProcessServiceInvoker {
         return msgResponse.getPayload();
     }
 
-    public void callServiceAsync(String serviceCode, JsonNode payload) {}
+    public void callServiceAsync(String serviceCode, JsonNode payload) {
+    }
 
     public static ProcessServiceInvoker getInstance() {
         return INSTANCE;

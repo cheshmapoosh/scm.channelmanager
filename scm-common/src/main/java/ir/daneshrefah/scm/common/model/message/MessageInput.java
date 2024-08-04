@@ -1,9 +1,13 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
@@ -18,32 +22,43 @@ import java.util.*;
  */
 @SuperBuilder
 @Getter
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = AbstractExternalMessageInput.class, name = "AbstractExternalMessageInput"),
+        @JsonSubTypes.Type(value = AbstractInternalMessageInput.class, name = "AbstractInternalMessageInput"),
+        @JsonSubTypes.Type(value = HttpMessageInput.class, name = "HttpMessageInput"),
+        @JsonSubTypes.Type(value = JobMessageInput.class, name = "JobMessageInput"),
+        @JsonSubTypes.Type(value = ProcessMessageInput.class, name = "ProcessMessageInput")
+})
+@NoArgsConstructor
 public abstract class MessageInput<T> {
-
+    @Builder.Default
     private final String correlationId = UUID.randomUUID().toString();
-    private final Map<String, Object> headers;
-    private final String serviceCode;
-    private final String terminalCode;
+    private Map<String, Object> headers;
+    private String serviceCode;
+    private String terminalCode;
     @JsonIgnore
-    private final Terminal terminal;
+    private Terminal terminal;
     @JsonIgnore
-    private final Channel channel;
-    private final T body;
-    private final String contentType;
-    private final Instant receiveTimestamp = Instant.now();
-    private final String serverHost;
-    private final boolean isForCheck;
-    private final String clientId;
-    private final String clientCorrelationId;
-    private final String clientFlowId;
-    private final Instant clientTimestamp;
-    private final String accessParameter;
-    private final String username;
-    private final ClientAuthenticationType authenticationType;
-    private final String authenticationValue;
-    private final ClientAuthenticationType transactionAuthenticationType;
-    private final String transactionAuthenticationValue;
-
+    private Channel channel;
+    private T body;
+    private String contentType;
+    @Builder.Default
+    private Instant receiveTimestamp = Instant.now();
+    private String serverHost;
+    private boolean isForCheck;
+    private String clientId;
+    private String clientCorrelationId;
+    private String clientFlowId;
+    private Instant clientTimestamp;
+    private String accessParameter;
+    private String username;
+    private ClientAuthenticationType authenticationType;
+    private String authenticationValue;
+    private ClientAuthenticationType transactionAuthenticationType;
+    private String transactionAuthenticationValue;
     public String getHeader(String key) {
         return null != headers ? (String) headers.get(key) : null;
     }

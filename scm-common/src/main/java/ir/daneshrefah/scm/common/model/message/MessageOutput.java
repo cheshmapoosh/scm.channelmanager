@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
@@ -18,9 +20,10 @@ import java.util.Objects;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public abstract class MessageOutput {
-
-    private final Instant startTime = Instant.now();
+    @Builder.Default
+    private Instant startTime = Instant.now();
     @Setter
     private String externalCorrelationId;
     @Setter

@@ -18,6 +18,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class JsonTransformationUtil {
     private final ConvertorFunction convertorFunction;
+    private final ObjectMapper objectMapper;
 
     public void transformBusinessData(JsonNode jsonNode, Map<String, String> inputConverters) {
         if (Objects.isNull(jsonNode) || jsonNode.isEmpty() || Objects.isNull(inputConverters) || inputConverters.isEmpty()) {
@@ -38,23 +39,18 @@ public class JsonTransformationUtil {
                 if (nextNode != null) {
                     transformJsonNodeHelper(nextNode, keys, index + 1, methodToInvoke);
                 }
+                if (index == keys.length - 1) {
+                    ObjectNode objectNode = (ObjectNode) node;
+                    JsonNode oldValue = objectNode.get(key);
+                    if (oldValue != null) {
+                        JsonNode newValue = convertJsonNode(oldValue, methodToInvoke);
+                        objectNode.set(key, newValue);
+                    }
+                }
             } else if (node.isArray()) {
                 ArrayNode arrayNode = (ArrayNode) node;
                 for (JsonNode element : arrayNode) {
                     transformJsonNodeHelper(element, keys, index, methodToInvoke);
-                }
-            }
-            if (index == keys.length - 1 && key.equals(keys[index])) {
-                if (node.isObject()) {
-                    ObjectNode objectNode = (ObjectNode) node;
-                    objectNode.set(key, convertJsonNode(objectNode.get(key), methodToInvoke));
-                } else if (node.isArray()) {
-                    for (JsonNode element : node) {
-                        if (element.isObject()) {
-                            ObjectNode objectNode = (ObjectNode) element;
-                            objectNode.set(key, convertJsonNode(objectNode.get(key), methodToInvoke));
-                        }
-                    }
                 }
             }
         }
@@ -62,7 +58,6 @@ public class JsonTransformationUtil {
 
     private JsonNode convertJsonNode(JsonNode jsonNode, String methodToInvoke) {
         Object data = invokeConversionMethod(jsonNode, methodToInvoke);
-        ObjectMapper objectMapper = new ObjectMapper();
         if (data instanceof String) {
             return TextNode.valueOf((String) data);
         } else if (data instanceof Number) {
@@ -86,9 +81,8 @@ public class JsonTransformationUtil {
                 }
             }
             return list;
-        } else if (node.isObject()) {
+        } else {
             return convertorFunction.call(methodToInvoke, node);
         }
-        return null;
     }
 }

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.process.service.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.process.model.process.ProcessMetadata;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.AllArgsConstructor;
@@ -17,17 +18,22 @@ import static ir.daneshrefah.scm.process.service.constant.ProcessConstants.*;
 @Component
 @AllArgsConstructor
 public class ProcessMetadataExtractor {
-    private BpmnExtensionExtractor bpmnExtensionExtractor;
+    private final BpmnExtensionExtractor bpmnExtensionExtractor;
+    private final CacheTemplate cacheTemplate;
 
     public <T extends ModelElementInstance> ProcessMetadata extractProcessMetadata(ProcessDefinition processDefinition, Class<T> clazz) throws Exception {
+        ProcessMetadata processMetadata = (ProcessMetadata) cacheTemplate.getFromCache(processDefinition.getKey(),processDefinition.getDeploymentId());
+        if (processMetadata != null) {
+            return processMetadata;
+        }
         Map<String, String> extensionProperties = getExtensionProperties(processDefinition,clazz);
-        ProcessMetadata processMetadata = new ProcessMetadata();
+        processMetadata = new ProcessMetadata();
         for (Map.Entry<String, String> entry : extensionProperties.entrySet()) {
             String propertyKey = entry.getKey();
             String propertyValue = entry.getValue();
             validateMetadata(propertyValue, propertyKey);
             switch (propertyKey) {
-                case JSON_SCHEMA -> processMetadata.setStartValidationSchema(propertyValue);
+                case JSON_SCHEMA -> processMetadata.setStartValidationSchema(ValidationSchema.getJsonNode(propertyValue));
                 case JS_VALIDATION -> processMetadata.setStartValidationScript(propertyValue);
                 case CONVERTORS -> processMetadata.setInputConverters(convertToMap(propertyValue));
                 case CANCEL_PROCESS_USER -> processMetadata.setCancelAuthorizedUsers(Arrays.asList(propertyValue.split(",")));
@@ -35,6 +41,7 @@ public class ProcessMetadataExtractor {
                 default -> throw new IllegalArgumentException("Unexpected property key: " + propertyKey);
             }
         }
+        cacheTemplate.putInCache(processDefinition.getKey(),processDefinition.getDeploymentId(),processMetadata);
         return processMetadata;
     }
 

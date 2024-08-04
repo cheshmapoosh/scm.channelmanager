@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -12,11 +13,10 @@ import lombok.experimental.SuperBuilder;
  */
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 public class ProcessMessageInput extends AbstractInternalMessageInput {
-
-    private final String processDefinitionKey;
-    private final String processInstanceId;
-    private final String taskName;
-    private final String taskId;
-
+    private String processDefinitionKey;
+    private String processInstanceId;
+    private String taskName;
+    private String taskId;
 }

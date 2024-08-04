@@ -4,15 +4,18 @@ import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
+import ch.qos.logback.core.util.FileSize;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ir.daneshrefah.scm.common.model.event.Event;
 import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.logging.domain.event.Event;
 import ir.daneshrefah.scm.logging.serializer.ExchangeSerializer;
 import ir.daneshrefah.scm.logging.serializer.HttpServletRequestSerializer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -45,7 +49,13 @@ public class FileEventProducer extends EventProducer {
 //    ConcurrentLinkedQueue<Event> loggingQueue = new ConcurrentLinkedQueue<>();
 
 
-    public FileEventProducer(@Value("${scm.log.file-name}") String logFileName) {
+    public FileEventProducer(@Value("${scm.log.file-name}") String logFileName,
+                             @Value("${scm.log.file-directory}") String fileDirectory,
+                             @Value("${scm.log.log-pattern}") String logPattern,
+                             @Value("${scm.log.file-name-pattern}") String fileNamePattern,
+                             @Value("${scm.log.file-size}") String fileSize,
+                             @Value("${scm.log.keep-log-history}") int keepLogHistory
+    ) {
         this.objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -55,36 +65,52 @@ public class FileEventProducer extends EventProducer {
         module.addSerializer(Exchange.class, ExchangeSerializer.INSTANT);
         objectMapper.registerModule(module);
         initLogThread();
-        LOGGER = initLogger(logFileName);
+        LOGGER = initLogger(logFileName, fileDirectory,logPattern,fileNamePattern,fileSize,keepLogHistory);
     }
 
-    private Logger initLogger(String logFileName) {
+    private Logger initLogger(String logFileName,
+                              String fileDirectory,
+                              String logPattern,
+                              String fileNamePattern,
+                              String fileSize,
+                              int keepLogHistory) {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
-        // Create and configure the file appender
-        FileAppender fileAppender = new FileAppender();
-        fileAppender.setContext(context);
-        fileAppender.setName("FileEventProducerFileAppender");
-        fileAppender.setFile(logFileName);
-
+        // Create and configure the rolling file appender
+        RollingFileAppender<ILoggingEvent> rollingFileAppender = new RollingFileAppender<>();
+        rollingFileAppender.setContext(context);
+        rollingFileAppender.setName("FileEventProducerFileAppender");
+        rollingFileAppender.setFile(logFileName);
 
         // Create and configure the encoder
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(context);
-        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n");
+        encoder.setPattern(logPattern);
         encoder.start();
 
-        fileAppender.setEncoder(encoder);
-        fileAppender.start();
+        rollingFileAppender.setEncoder(encoder);
+
+        // Create and configure the rolling policy
+        SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
+        rollingPolicy.setContext(context);
+        rollingPolicy.setParent(rollingFileAppender);
+        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + logFileName + fileNamePattern); // Filename pattern
+        rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
+        rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to 30 days of log files
+        rollingPolicy.start();
+
+
+        rollingFileAppender.setRollingPolicy(rollingPolicy);
+        rollingFileAppender.start();
 
         // Create and configure the AsyncAppender
         AsyncAppender asyncAppender = new AsyncAppender();
         asyncAppender.setContext(context);
-        asyncAppender.addAppender(fileAppender);
+        asyncAppender.addAppender(rollingFileAppender);
         asyncAppender.start();
 
         // Get the logger and attach the async appender
-        Logger logger = (Logger) LoggerFactory.getLogger(FileEventProducer.class);
+        Logger logger = LoggerFactory.getLogger(FileEventProducer.class);
         ((ch.qos.logback.classic.Logger) logger).setLevel(Level.ALL);
         ((ch.qos.logback.classic.Logger) logger).detachAndStopAllAppenders();
         ((ch.qos.logback.classic.Logger) logger).addAppender(asyncAppender);

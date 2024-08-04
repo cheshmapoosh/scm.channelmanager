@@ -42,6 +42,7 @@ public class CamundaAttachmentService implements AttachmentService {
     private final BpmnExtensionExtractor bpmnExtensionExtractor;
     private final ProcessVariableService processVariableService;
     private final ValidateUserService validateUserService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void taskAttachment(TaskAttachmentRequest taskAttachmentRequest) throws Exception {
@@ -149,7 +150,6 @@ public class CamundaAttachmentService implements AttachmentService {
     }
     private AttachmentProcessInfo getProcessAttachmentInfos(String processId) throws JsonProcessingException {
         Map<String, String> extensionProperties = bpmnExtensionExtractor.getExtensionProperties(processId, Collaboration.class);
-        ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(extensionProperties.get(PROCESS_ATTACHMENT), new TypeReference<>() {
         });
     }
@@ -166,7 +166,6 @@ public class CamundaAttachmentService implements AttachmentService {
 
     private AttachmentTaskInfo getAttachmentInfos(Task task) throws JsonProcessingException {
         Map<String, String> extensionProperties = bpmnExtensionExtractor.getExtensionProperties(task);
-        ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(extensionProperties.get(ATTACHMENT), new TypeReference<>() {
         });
     }

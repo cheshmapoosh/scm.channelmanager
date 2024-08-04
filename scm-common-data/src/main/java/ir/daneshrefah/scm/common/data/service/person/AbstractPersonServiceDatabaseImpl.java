@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
@@ -11,6 +10,7 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
@@ -119,8 +119,8 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         return foundList.get(0);
     }
 
-    public GeneralRealPersonEntity findPersonByNationalCode(String nationalCode) {
-        return personRepository.findRealPersonByNationalCode(nationalCode);
+    public GeneralRealPerson findPersonByNationalCode(String nationalCode) {
+        return (GeneralRealPerson) PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalCode));
     }
 
     @Override
