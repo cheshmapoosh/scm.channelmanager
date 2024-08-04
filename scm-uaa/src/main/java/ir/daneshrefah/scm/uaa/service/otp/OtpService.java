@@ -2,14 +2,12 @@ package ir.daneshrefah.scm.uaa.service.otp;
 
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.BaseOtpException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.otp.provder.AbstractOtpProvider;
-import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Service;
 

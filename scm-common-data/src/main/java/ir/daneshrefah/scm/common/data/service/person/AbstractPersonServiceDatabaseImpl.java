@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.common.data.service.person;
 
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
-import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
@@ -12,6 +11,7 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -102,10 +102,10 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         Optional<GeneralPersonEntity> personEntity = personRepository.findByNicknameAndTerminalId(nickname, terminal.get().getLegacyTerminalId().intValue());
         if (personEntity.isEmpty()) {
             throw new PersonNotFoundException("person with nickname '" + nickname + "' and terminalCode '" + terminalCode + "' not found."
-            ,new ExceptionDynamicMessage()
+                    , new ExceptionDynamicMessage()
                     .setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION_NICK_NAME_AND_TERMINAL)
-                    .addParameter("nickname",nickname)
-                    .addParameter("terminalCode",terminalCode));
+                    .addParameter("nickname", nickname)
+                    .addParameter("terminalCode", terminalCode));
         }
         return PersonMapper.INSTANCE.toPerson(personEntity.get());
     }
@@ -113,8 +113,8 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     @Override
     public GeneralPerson findLocalPerson(PersonFindRequest request) {
         List<GeneralPerson> foundList = findPagedPersonList(request).getData();
-        if (foundList.size() != 1){
-            throw new PersonNotFoundException("could not found person.",new ExceptionDynamicMessage().setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION));
+        if (foundList.size() != 1) {
+            throw new PersonNotFoundException("could not found person.", new ExceptionDynamicMessage().setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION));
         }
         return foundList.get(0);
     }
@@ -122,6 +122,19 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     public GeneralRealPersonEntity findPersonByNationalCode(String nationalCode) {
         return personRepository.findRealPersonByNationalCode(nationalCode);
     }
+
+    @Override
+    public Optional<GeneralPerson> findPerson(PersonType personType,String nationalId, String subOrg) {
+        boolean isRealPerson = personType.equals(PersonType.REAL) || ValidationUtils.checkIsValidNationalCode(nationalId);
+        if (isRealPerson) {
+            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
+        } else if (Objects.nonNull(subOrg) && !subOrg.isBlank()) {
+            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
+        } else {
+            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalId(nationalId)));
+        }
+    }
+
 
     /*private final ServiceProducerTemplate serviceProducerTemplate;
     private final ErrorHandlerService errorHandlerService;

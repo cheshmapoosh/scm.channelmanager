@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service.interceptor;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.NoAssetFoundException;
 import ir.daneshrefah.scm.common.exception.NoCustomerFoundException;
 import ir.daneshrefah.scm.common.model.asset.Customer;
@@ -16,6 +18,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,6 +31,7 @@ import java.util.Objects;
 public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     private final PersonProfileLoader personProfileLoader;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected Message internalIntercept(Message message) {
@@ -51,7 +55,7 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         }
         if (StringUtils.isNotEmpty(customerProperty)) {
             Customer customer = profile.getCustomer(service.getServiceProvider().getAssetProvider().getId());
-            message.setPayloadValue(customerProperty, customer.getCustomerNo());
+            message.setPayloadValue(customerProperty,getMessageCustomerNo(message).orElse(customer.getCustomerNo()));
         }
         return message;
     }
@@ -69,6 +73,14 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
     private boolean isLoadCustomerRequired(Service service) {
         Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         return StringUtils.isNotEmpty(service.getCustomerProperty()) && terminal.isSupportCustomerInjection();
+    }
+
+    private Optional<String> getMessageCustomerNo(Message message){
+        JsonNode payload = message.getPayload();
+        if (Objects.nonNull(payload) && payload.has("customerNo")){
+            return Optional.ofNullable(payload.get("customerNo").asText(null));
+        }
+        return Optional.empty();
     }
 
 }

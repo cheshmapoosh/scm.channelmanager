@@ -632,6 +632,36 @@ VALUES ('a637116f-6bc1-47a4-80a1-8cf6f65edf57', 'SVC_ERROR_EDIT', 'ویرایش 
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
+--------------------------------------------- CUSTOMER MANAGEMENT SERVICE -----------------------------------------------
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CREATOR, LAST_EDITOR)
+VALUES ('1b5ac43d-3f44-4201-bd36-952ee2392bb7', 'SVC_ASSETS_PARENT', 'پرنت دارایی ها', '/assets',
+        1, 1, 4, 5, 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('a1c7053d-9902-4f60-b597-0e6e39273da5', 'SVC_ASSETS_LIST', 'لیست دارایی های یک کاربر', '/list', 1, 1, 1, 2, 1,
+        'bean:customerManagementService.findProviderMembershipList(ir.daneshrefah.scm.common.data.service.person.CustomerProviderFindRequest)',
+        '1b5ac43d-3f44-4201-bd36-952ee2392bb7', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('e181c6c3-06b5-44eb-a197-c9c38892423d', 'SVC_ASSETS_LIST_LOCAL', 'لیست لوکال دارایی های یک کاربر', '/local-list', 1, 1, 1, 2, 1,
+        'bean:customerManagementService.findLocalMembershipList(ir.daneshrefah.scm.common.service.MembershipFindRequest)',
+        '1b5ac43d-3f44-4201-bd36-952ee2392bb7', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('9c13ebd9-ac83-4c8a-82bf-494577067fc8', 'SVC_ASSETS_FIND_ACCOUNT_MEMBERSHIP', 'یافتن دارایی اکانت با شناسه', '/local-account/{membershipId}', 1, 1,
+        3, 2, 1,
+        'bean:customerManagementService.findAccountMembershipById(String)', '1b5ac43d-3f44-4201-bd36-952ee2392bb7',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+
 
 CREATE TABLE REF.TBL_SCM_TERMINAL_SERVICE_ACCESS
 (
@@ -756,6 +786,20 @@ VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '1a84e734-b7ef-4173-bda2-7f49b4c
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'a637116f-6bc1-47a4-80a1-8cf6f65edf57', 'Dariush Abdolahi',
         'Dariush Abdolahi'); -- add 'SVC_ERROR_EDIT' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'a1c7053d-9902-4f60-b597-0e6e39273da5', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ASSETS_LIST' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', 'e181c6c3-06b5-44eb-a197-c9c38892423d', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ASSETS_LIST_LOCAL' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '9c13ebd9-ac83-4c8a-82bf-494577067fc8', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_ASSETS_FIND_ACCOUNT_MEMBERSHIP' to 'SCM'
+
+
+
+
+
 
 
 CREATE TABLE REF.TBL_SCM_SERVICE_RELATION

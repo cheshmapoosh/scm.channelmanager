@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.common.model.asset;
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -16,5 +18,8 @@ public class Account extends BaseModel<Long> {
     private String accountNo;
     private AccountType accountType;
     private AssetProvider assetProvider;
+    private Integer close;
+    private LocalDateTime closeDate;
+    private Integer reasonClose;
 
 }

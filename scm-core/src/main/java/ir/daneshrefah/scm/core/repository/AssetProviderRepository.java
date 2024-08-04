@@ -1,8 +1,11 @@
 package ir.daneshrefah.scm.core.repository;
 
 import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,6 +15,5 @@ import org.springframework.stereotype.Repository;
  * @since 2024-07-06
  */
 @Repository
-public interface AssetProviderRepository extends CrudRepository<AssetProviderEntity, Integer> {
-
+public interface AssetProviderRepository extends JpaRepository<AssetProviderEntity, Integer> {
 }

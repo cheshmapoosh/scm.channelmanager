@@ -80,7 +80,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
                 new AuthenticationInterceptor(authenticationClientTemplate),
                 new TransactionAuthenticationInterceptor(authenticationClientTemplate),
                 new TerminalRequestTransformerInterceptor(),
-                new CustomerEnrichInterceptor(personProfileLoader),
+                new CustomerEnrichInterceptor(personProfileLoader,objectMapper),
                 new ServiceRequestValidationInterceptor(objectMapper),
                 new DecisionManagerInterceptor(decisionManager),
                 new ServiceRequestTransformerInterceptor(transformerService));
