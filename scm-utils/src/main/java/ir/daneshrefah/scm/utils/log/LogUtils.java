@@ -15,7 +15,6 @@ public class LogUtils {
          PURPLE    ( "\u001B[35m"),
          CYAN      ( "\u001B[36m"),
          WHITE     ( "\u001B[37m");
-         @Getter
          private final String code;
          Color(String code){
              this.code = code;

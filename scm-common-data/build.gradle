@@ -15,6 +15,9 @@ dependencies {
     compileOnly 'org.springframework.data:spring-data-jpa'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     compileOnly 'jakarta.persistence:jakarta.persistence-api'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
     compileOnly project(':scm-common')
     compileOnly project(':scm-utils')
 }
