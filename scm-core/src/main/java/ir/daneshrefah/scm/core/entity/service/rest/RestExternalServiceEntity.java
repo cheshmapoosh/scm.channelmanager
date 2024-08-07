@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.RestExternalServiceProviderEntity;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,13 +24,10 @@ import lombok.Setter;
 @DiscriminatorValue("6")
 public class RestExternalServiceEntity extends AbstractExternalServiceEntity<RestExternalServiceProviderEntity> {
 
-//    TODO dariush complete rest model and use in DefaultRestServiceProviderExecutor
-//    private String path;
-//    private HttpMethod httpMethod;
-//    private HttpContentType requestContentType;
-//    private RestContentType responseContentType;
-//    private Set<ParameterEntity> queryStringParameters;
-//    private Set<ParameterEntity> pathVariableParameters;
-//    private Set<ParameterEntity> requestBodyParameters;
+    private String path;
+    @Enumerated(EnumType.STRING)
+    private HttpMethod httpMethod;
+    @Enumerated(EnumType.STRING)
+    private HttpContentType requestContentType;
 
 }

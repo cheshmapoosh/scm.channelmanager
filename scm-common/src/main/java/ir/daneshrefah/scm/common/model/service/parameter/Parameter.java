@@ -18,9 +18,11 @@ public class Parameter extends BaseModel<Long> {
     private ParameterDatasource datasource;
     private ParameterType type;
     private boolean required;
-    private boolean internal; // TODO dariush
-    private String tag; // TODO dariush
+    private boolean internal;
+    private String tag;
     private Integer order;
     private Parameter parent;
+    private ParameterActionType actionType;
+    private String defaultValue;
 
 }

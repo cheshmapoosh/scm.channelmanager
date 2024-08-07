@@ -217,12 +217,18 @@ public class StringUtils {
     }
 
     public static String cleanUpJsonCharacters(String json) {
+        return cleanUpJsonCharacters(json,true);
+    }
+
+    public static String cleanUpJsonCharacters(String json,boolean cleanBlankSpace) {
         if (json.startsWith("\"") && json.endsWith("\"")) {
             //remove start and end quotations
             json = json.substring(1, json.length() - 1);
         }
         //remove text gap
-        json = json.replace(" ", "");
+        if (cleanBlankSpace) {
+            json = json.replace(" ", "");
+        }
         if (json.contains("\\n") || json.contains("\\r")) {
             //remove \n\r characters
             json = json.replace("\\n", "").replace("\\r", "");

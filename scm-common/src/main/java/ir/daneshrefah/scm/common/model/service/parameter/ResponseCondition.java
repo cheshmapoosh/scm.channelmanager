@@ -17,7 +17,7 @@ import java.util.Map;
 @Data
 public class ResponseCondition extends BaseModel<Integer> {
 
-    private Map<ParameterDatasource, Object> conditions;
+    private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;
     private String responseExceptionErrorCodeProperty;
     private String responseExceptionErrorMessageProperty;

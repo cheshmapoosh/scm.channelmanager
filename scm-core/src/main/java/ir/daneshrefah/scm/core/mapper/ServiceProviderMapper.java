@@ -2,11 +2,17 @@ package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
+import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalServiceProvider;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.CustomExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.RestExternalServiceProviderEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
@@ -27,13 +33,45 @@ public interface ServiceProviderMapper {
 
     ServiceProviderMapper INSTANCE = Mappers.getMapper(ServiceProviderMapper.class);
 
+    @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsModel")
+    @Mapping(source = "parameters", target = "requestHeaders",qualifiedByName = "toRequestHeadersModel")
+    @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
+    @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
     RestExternalServiceProvider toModel(RestExternalServiceProviderEntity entity);
 
+    @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsModel")
+    @Mapping(source = "parameters", target = "requestHeaders",qualifiedByName = "toRequestHeadersModel")
+    @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
+    @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
     CustomExternalServiceProvider toModel(CustomExternalServiceProviderEntity entity);
 
-    RestExternalServiceProviderEntity toEntity(RestExternalServiceProvider model);
+    @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsEntity")
+    @Mapping(target = "parameters" ,ignore = true)
+    RestExternalServiceProviderEntity toEntityWithoutParameter(RestExternalServiceProvider model);
 
-    CustomExternalServiceProviderEntity toEntity(CustomExternalServiceProvider model);
+    @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsEntity")
+    @Mapping(target = "parameters" ,ignore = true)
+    CustomExternalServiceProviderEntity toEntityWithoutParameter(CustomExternalServiceProvider model);
+
+    default RestExternalServiceProviderEntity toEntity(RestExternalServiceProvider model){
+        RestExternalServiceProviderEntity entity = toEntityWithoutParameter(model);
+        List<ParameterEntity> parameterEntities = new ArrayList<>();
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestBody()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestHeaders()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getResponseHeaders()));
+        entity.setParameters(parameterEntities);
+        return entity;
+    }
+
+    default CustomExternalServiceProviderEntity toEntity(CustomExternalServiceProvider model){
+        CustomExternalServiceProviderEntity entity = toEntityWithoutParameter(model);
+        List<ParameterEntity> parameterEntities = new ArrayList<>();
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestBody()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestHeaders()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getResponseHeaders()));
+        entity.setParameters(parameterEntities);
+        return entity;
+    }
 
     default List<AbstractExternalServiceProvider> toModels(Iterable<AbstractExternalServiceProviderEntity> entities) {
         if (Objects.isNull(entities)) {
@@ -49,22 +87,47 @@ public interface ServiceProviderMapper {
 
     @Named("toServiceProvider")
     default AbstractExternalServiceProvider toServiceProvider(AbstractExternalServiceProviderEntity entity) {
-        if (entity instanceof RestExternalServiceProviderEntity) {
-            return toModel((RestExternalServiceProviderEntity) entity);
-        } else if (entity instanceof CustomExternalServiceProviderEntity) {
-            return toModel((CustomExternalServiceProviderEntity) entity);
+        if (entity instanceof RestExternalServiceProviderEntity restExternalServiceProviderEntity) {
+            return toModel(restExternalServiceProviderEntity);
+        } else if (entity instanceof CustomExternalServiceProviderEntity customExternalServiceProviderEntity) {
+            return toModel(customExternalServiceProviderEntity);
         }
         return null;
     }
 
     @Named("toServiceProviderEntity")
     default AbstractExternalServiceProviderEntity toServiceProviderEntity(AbstractExternalServiceProvider model) {
-        if (model instanceof RestExternalServiceProvider) {
-            return toEntity((RestExternalServiceProvider) model);
-        } else if (model instanceof CustomExternalServiceProvider) {
-            return toEntity((CustomExternalServiceProvider) model);
+        if (model instanceof RestExternalServiceProvider restExternalServiceProvider) {
+            return toEntity(restExternalServiceProvider);
+        } else if (model instanceof CustomExternalServiceProvider customExternalServiceProvider) {
+            return toEntity(customExternalServiceProvider);
         }
         return null;
+    }
+
+    @Named("toResponseConditionsModel")
+    default List<ResponseCondition> toResponseConditionsModel(List<ResponseConditionEntity> entities){
+        return entities.stream().map(ResponseConditionMapper.INSTANCE::toModel).toList();
+    }
+
+    @Named("toResponseConditionsEntity")
+    default List<ResponseConditionEntity> toResponseConditionsEntity(List<ResponseCondition> models){
+        return models.stream().map(ResponseConditionMapper.INSTANCE::toEntity).toList();
+    }
+
+    @Named("toRequestHeadersModel")
+    default List<Parameter> toRequestHeadersModel(List<ParameterEntity> entities){
+        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_HEADER);
+    }
+
+    @Named("toRequestBodyModel")
+    default List<Parameter> toRequestBodyModel(List<ParameterEntity> entities){
+        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_BODY);
+    }
+
+    @Named("toResponseHeadersModel")
+    default List<Parameter> toResponseHeadersModel(List<ParameterEntity> entities){
+        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.RESPONSE_HEADER);
     }
 
 }

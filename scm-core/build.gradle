@@ -46,7 +46,7 @@ dependencies {
     implementation group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.2.15'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 
-
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     api project(':scm-common-data')
     //    api project(':scm-common')
     api project(':scm-plugin-nab')

@@ -6,9 +6,13 @@ import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.core.converter.ExternalServiceProviderMetadataConverter;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
 import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -39,6 +43,14 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractDefa
     @ManyToOne
     @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
     private AssetProviderEntity assetProvider;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "SERVICE_PROVIDER_ID")
+    private List<ResponseConditionEntity> responseConditions;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_PROVIDER_RELATION"
+            , joinColumns = @JoinColumn(name = "SERVICE_PROVIDER_ID")
+            , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
+    private List<ParameterEntity> parameters;
 //    private String customerProviderClassName;
 //    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)
 //    @Convert(converter = CustomerProvideMethodConverter.class)

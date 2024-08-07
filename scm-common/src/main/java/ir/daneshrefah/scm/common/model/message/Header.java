@@ -31,6 +31,14 @@ public class Header implements Serializable {
 //    private final int level = 1;
 //    private final String parentMessageId;
     private final String messageId = UUID.randomUUID().toString();
+    @Getter
+    private final HttpHeader httpHeader = new HttpHeader();
     private final Instant createTime = Instant.now();
+
+    @Getter
+    @Setter
+    public class HttpHeader{
+        private Integer httpStatusCode;
+    }
 
 }

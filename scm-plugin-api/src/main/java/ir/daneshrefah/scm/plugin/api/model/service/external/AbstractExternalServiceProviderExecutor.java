@@ -25,8 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -129,10 +128,16 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
                     .startTime(messageOutput.getStartTime())
                     .endTime(endTime)
                     .build();
-            EventProducer.getInstance().sendEvent(event);
+//            EventProducer.getInstance().sendEvent(event);
 
             if (ExternalServiceRequestBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
+                originalMessage.getHeader().getHttpHeader().setHttpStatusCode(Integer.parseInt(String.valueOf(exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE))));
                 exchange.getMessage().setBody(extractServiceParametersResponseBody(originalMessage, exchange.getMessage().getBody()));
+                Map<String, ?> responseHeaders = extractResponseHeaders(originalMessage);
+                Set<String> headersNames = responseHeaders.keySet();
+                for (String headersName : headersNames) {
+                    exchange.getMessage().setHeader(headersName,responseHeaders.get(headersName));
+                }
             }
         });
 
@@ -162,6 +167,10 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 
     protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
         return null;
+    }
+
+    protected Map<String, ?> extractResponseHeaders(Message message){
+        return Collections.emptyMap();
     }
 
     protected abstract void intiEndpointCallRouteDefinitionInternal(TryDefinition routeDefinition);
