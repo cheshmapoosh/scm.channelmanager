@@ -9,6 +9,12 @@ plugins {
     id 'org.springframework.boot' version '3.1.1'
 }
 
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.data.audit.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.data.audit.config.AuditConfig;
 import ir.daneshrefah.scm.common.data.audit.domain.AuditLogEntity;
 import ir.daneshrefah.scm.common.data.audit.model.AuditDetails;
 import ir.daneshrefah.scm.common.data.audit.util.InstanceManager;
@@ -9,7 +9,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -22,8 +21,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DataBaseAuditService implements AuditService {
 
-    @Qualifier("auditObjectMapper")
-    private final ObjectMapper objectMapper;
     private final InstanceManager instanceManager;
     @PersistenceContext
     private EntityManager entityManager;
@@ -52,7 +49,7 @@ public class DataBaseAuditService implements AuditService {
 
     @SneakyThrows
     private String getShallowJSON(AuditDetails auditDetails) {
-        return objectMapper.writeValueAsString(instanceManager.shallowCopy(auditDetails));
+        return AuditConfig.getObjectMapper().writeValueAsString(instanceManager.shallowCopy(auditDetails));
     }
 
 
@@ -63,7 +60,7 @@ public class DataBaseAuditService implements AuditService {
         } else if (instanceId instanceof Number || instanceId instanceof String){
             return String.valueOf(instanceId);
         }else {
-            return objectMapper.writeValueAsString(instanceId);
+            return AuditConfig.getObjectMapper().writeValueAsString(instanceId);
         }
     }
 
