@@ -36,8 +36,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
                     authorizationManagerRequestMatcherRegistry
-                            .anyRequest()
-                            .fullyAuthenticated();
+                            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                            .anyRequest().fullyAuthenticated();
                 })
                 .httpBasic(httpBasicCustomizer ->
                         httpBasicCustomizer

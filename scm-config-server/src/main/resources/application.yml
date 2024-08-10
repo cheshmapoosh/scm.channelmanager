@@ -11,13 +11,14 @@ spring:
     config:
       server:
         git:
-          uri: /home/cheshmapoush.a@drp.local/Projects/samples/spring-config/config-repo
+          uri: /home/cheshmapoush.a@drp.local/Projects/scm/config-repo-server
           search-paths: '{application}'
           clone-on-start: true
           default-label: master
-          basedir: config-repo
+          basedir: /home/cheshmapoush.a@drp.local/Projects/scm/config-repo
         encrypt:
           enabled: true
+        prefix: /config
 scm:
   config:
     applications:
