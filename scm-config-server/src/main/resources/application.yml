@@ -15,7 +15,7 @@ spring:
           search-paths: '{application}'
           clone-on-start: true
           default-label: master
-          basedir: /home/cheshmapoush.a@drp.local/Projects/samples/spring-config/config-repo-clone
+          basedir: config-repo
         encrypt:
           enabled: true
 scm:
@@ -29,5 +29,8 @@ scm:
     cfg-user:
       name: cfg
       pass: cfg
+    opr-user:
+      name: opr
+      pass: opr
 encrypt:
   key: "WW@MwjtA9znCPVMi"

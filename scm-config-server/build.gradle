@@ -5,7 +5,7 @@ plugins {
 }
 
 tasks.named("bootJar") {
-    mainClass = 'com.example.demo.ConfigServerApplication'
+    mainClass = 'ir.daneshrefah.scm.config.server.ConfigServerApplication'
     archiveClassifier = 'boot'
 
 }

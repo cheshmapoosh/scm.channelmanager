@@ -43,20 +43,21 @@ public class ConfigServerController {
     }
 
     @GetMapping("/application")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public Set<String> getApplications() {
         return applications.keySet();
 
     }
 
     @GetMapping("/application/{application}/profile")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public Set<String> getProfiles(@PathVariable String application) {
         return applications.get(application);
     }
 
 
     @GetMapping("/property/{application}/{profile}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public Map<String, Map<?, ?>> getProperty(@PathVariable String application,
                                               @PathVariable String profile) {
         Map<String, Set<String>> applications = new HashMap<>(this.applications);
@@ -101,15 +102,10 @@ public class ConfigServerController {
                         (k, v) -> v,
                         HashMap::new));
 
-//        return environment.getPropertySources().stream()
-//                .map(propertySource -> propertySource.getSource().get(""))
-//                .filter(value -> value != null)
-//                .map(Object::toString)
-//                .findFirst()
-//                .orElse("Property not found");
     }
 
     @PutMapping("/property")
+    @PreAuthorize("hasRole('ADMIN')")
     public String updateProperty(@RequestParam(required = false) String application,
                                  @RequestParam(required = false) String profile,
                                  @RequestParam String key,
@@ -127,7 +123,10 @@ public class ConfigServerController {
     }
 
     private String applicationName(String application) {
-        return StringUtils.defaultString(application);
+        if (StringUtils.isEmpty(application) || StringUtils.endsWithIgnoreCase(application, DEFAULT)) {
+            return StringUtils.EMPTY;
+        }
+        return application;
     }
 
     private String profileName(String profile) {

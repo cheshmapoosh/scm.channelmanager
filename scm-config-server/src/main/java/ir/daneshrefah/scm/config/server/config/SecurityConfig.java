@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -25,14 +26,19 @@ public class SecurityConfig {
     private String cfgUserName;
     @Value("${scm.config.cfg-user.name}")
     private String cfgUserPass;
+    @Value("${scm.config.opr-user.name}")
+    private String oprUserName;
+    @Value("${scm.config.opr-user.name}")
+    private String oprUserPass;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeRequests(authorizeRequests ->
-                        authorizeRequests
-                                .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
+                    authorizationManagerRequestMatcherRegistry
+                            .anyRequest()
+                            .fullyAuthenticated();
+                })
                 .httpBasic(httpBasicCustomizer ->
                         httpBasicCustomizer
                                 .realmName("Config Server")
@@ -40,7 +46,7 @@ public class SecurityConfig {
                                     response.addHeader("WWW-Authenticate", "Basic realm=\"Config Server\"");
                                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
                                 })
-                );
+                ).csrf(AbstractHttpConfigurer::disable) ;
         return http.build();
     }
 
@@ -56,6 +62,11 @@ public class SecurityConfig {
                 .username(cfgUserName)
                 .password(cfgUserPass)
                 .roles("CONFIG")
+                .build());
+        manager.createUser(User.withDefaultPasswordEncoder()
+                .username(oprUserName)
+                .password(oprUserPass)
+                .roles("OPERATOR")
                 .build());
         return manager;
     }
