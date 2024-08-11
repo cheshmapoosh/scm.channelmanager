@@ -11,11 +11,11 @@ spring:
     config:
       server:
         git:
-          uri: /home/cheshmapoush.a@drp.local/Projects/scm/config-repo-server
+          uri: config-repo-server
           search-paths: '{application}'
           clone-on-start: true
           default-label: master
-          basedir: /home/cheshmapoush.a@drp.local/Projects/scm/config-repo
+          basedir: config-repo
         encrypt:
           enabled: true
         prefix: /config
@@ -24,6 +24,7 @@ scm:
     applications:
       scm: ib, mb, pwa
       uaa: dev, test, prod
+      cache: dev, test, prod
     scm-user:
       name: scm
       pass: scm

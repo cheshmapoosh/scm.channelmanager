@@ -6,9 +6,15 @@ spring:
     username: casadm
     password: a
     driver-class-name: com.ibm.db2.jcc.DB2Driver
+  config:
+    import: 'optional:configserver:'
   cloud:
     config:
-      enabled: false
+      username: scm
+      password: scm
+      name: cache
+      enabled: true
+      uri: http://scm-config.daneshrefah.ir/config
 
   jpa:
     properties:
