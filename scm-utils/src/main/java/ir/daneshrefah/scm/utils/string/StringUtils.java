@@ -50,18 +50,7 @@ public class StringUtils {
 
     public static String maskPhoneNumber(String phoneNumber){
         if (Objects.nonNull(phoneNumber) && !phoneNumber.isBlank()){
-            if (phoneNumber.length() == 10){
-                phoneNumber = "0"+phoneNumber;
-            }
-            if (phoneNumber.length() == 11 ){
-                String maskNeedNumber = String.valueOf(phoneNumber.charAt(4))+phoneNumber.charAt(5)+phoneNumber.charAt(6);
-                phoneNumber = phoneNumber.replace(maskNeedNumber,"***");
-                return phoneNumber;
-            }
-            if (phoneNumber.startsWith("+98")){
-                phoneNumber = phoneNumber.replace("+98",EMPTY);
-                return maskPhoneNumber(phoneNumber);
-            }
+            return phoneNumber.replaceAll("(?<=\\d{4})\\d(?=\\d{4})", "*");
         }
         return EMPTY;
     }

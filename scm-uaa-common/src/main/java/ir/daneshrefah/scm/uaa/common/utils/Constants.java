@@ -33,7 +33,8 @@ public class Constants {
     public final static String CLAIM_KEY_PERSON_IDENTIFIER = "pid";
     public final static String CLAIM_KEY_USER_CHALLENGE_CODE = "ucc";
     public final static String CLAIM_KEY_TIME_TO_LIVE = "ttl";
-    public final static String CLAIM_KEY_MAX_IDLE_TIME = "mit";
+    public static final String CLAIM_KEY_MAX_IDLE_TIME = "mit";
+    public static final String CLAIM_KEY_PERSON_PHONE_NUMBER = "ppn";
 
 
 
@@ -49,7 +50,7 @@ public class Constants {
     public final static String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
     public final static String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
 
-    public final static String OAUTH2_SCOPE_NAME_SESSION = "session";
+    public static final  String OAUTH2_SCOPE_NAME_SESSION = "session";
 
     public final static String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
     public final static String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";

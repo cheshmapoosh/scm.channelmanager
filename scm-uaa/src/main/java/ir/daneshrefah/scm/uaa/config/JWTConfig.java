@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
@@ -84,6 +85,7 @@ public class JWTConfig {
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
                 addTokenLifeTimeClaims(principal,claims);
             } else if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                     PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
@@ -122,6 +124,7 @@ public class JWTConfig {
                         claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitle());
                         break;
                 }
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
                 addTokenLifeTimeClaims(principal,claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
@@ -167,9 +170,15 @@ public class JWTConfig {
                 if (authenticationToken.includeChallengeCode()) {
                     claims.claim(CLAIM_KEY_USER_CHALLENGE_CODE, user.getLoginStaticPassword());
                 }
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
+    }
+
+    private Object getPersonMaskedPhoneNumber(GeneralPerson person) {
+        String mobileNumber = person.getMobile1();
+        return ir.daneshrefah.scm.utils.string.StringUtils.maskPhoneNumber(mobileNumber);
     }
 
 
