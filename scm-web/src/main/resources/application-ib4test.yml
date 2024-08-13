@@ -1,0 +1,13 @@
+
+spring:
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: ib4test
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: scm
+      enabled: true
+      uri: http://scm-config.daneshrefah.ir/config

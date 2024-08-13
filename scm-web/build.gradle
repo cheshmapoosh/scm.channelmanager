@@ -21,6 +21,7 @@ dependencies {
     implementation project(':scm-gateway')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation project(':scm-cache-client')
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
 }
 
 application {
