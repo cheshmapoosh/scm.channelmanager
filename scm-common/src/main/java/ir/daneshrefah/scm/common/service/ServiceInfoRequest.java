@@ -37,9 +37,14 @@ public class ServiceInfoRequest implements RequestData {
      * */
     private String javaImplementationClassName;
     /**
-     * this property used when implementationType is external
+     * this property used when implementationType is rest external
      * */
     private String serviceProviderId;
+    private String path;
+    private HttpMethod httpMethod;
+    private HttpContentType requestContentType;
+    private ExternalServiceRequestBodyType requestBodyType;
+    private ExternalServiceRequestBodyType responseBodyType;
     /**
      * this property used when implementationType is composite
      */
