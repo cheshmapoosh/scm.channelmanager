@@ -122,6 +122,20 @@ public class ConfigServerController {
         return "Configuration updated and pushed to Git repository.";
     }
 
+    @DeleteMapping("/property")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String deleteProperty(@RequestParam(required = false) String application,
+                                 @RequestParam(required = false) String profile,
+                                 @RequestParam String key,
+                                 @RequestParam String value) throws Exception {
+        Path path = Paths.get(gitService.getGitBaseDir(),
+                applicationName(application),
+                profileName(profile));
+        yamlService.deleteProperty(path, key);
+        gitService.commitAndPush("Delete config property " + key);
+        return "Configuration delete and pushed to Git repository.";
+    }
+
     private String applicationName(String application) {
         if (StringUtils.isEmpty(application) || StringUtils.endsWithIgnoreCase(application, DEFAULT)) {
             return StringUtils.EMPTY;
