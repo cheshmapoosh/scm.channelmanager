@@ -9,10 +9,7 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
-import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
-import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
-import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.*;
 import ir.daneshrefah.scm.common.service.*;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
@@ -231,6 +228,10 @@ public class ServiceServiceImpl implements ServiceService {
             throw new MissingRequiredInputException("compositionType");
         }
 
+        if (ServiceImplementationType.REST_EXTERNAL.equals(service.getImplementationType())) {
+            validateRestExternalRequest(service);
+        }
+
         ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
         setServiceParent(entity, service);
         checkServiceProvider(entity, service);
@@ -240,13 +241,27 @@ public class ServiceServiceImpl implements ServiceService {
         return result;
     }
 
+    private void validateRestExternalRequest(ServiceInfoRequest service) {
+        HttpMethod httpMethod = service.getHttpMethod();
+        ExternalServiceRequestBodyType responseBodyType = service.getResponseBodyType();
+        ExternalServiceRequestBodyType requestBodyType = service.getRequestBodyType();
+        String serviceProviderId = service.getServiceProviderId();
+        String path = service.getPath();
+        HttpContentType requestContentType = service.getRequestContentType();
+        ValidationUtils.checkNull(httpMethod,()->new MissingRequiredInputException("httpMethod"));
+        ValidationUtils.checkNull(responseBodyType,()->new MissingRequiredInputException("responseBodyType"));
+        ValidationUtils.checkNull(requestBodyType,()->new MissingRequiredInputException("requestBodyType"));
+        ValidationUtils.checkNull(requestContentType,()->new MissingRequiredInputException("requestContentType"));
+        ValidationUtils.checkBlankString(serviceProviderId,()->new MissingRequiredInputException("serviceProviderId"));
+        ValidationUtils.checkBlankString(path,()->new MissingRequiredInputException("path"));
+    }
 
+    @SuppressWarnings("unchecked")
     private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
-        if (entity instanceof AbstractExternalServiceEntity) {
-            ((AbstractExternalServiceEntity) entity)
-                    .setServiceProvider(serviceProviderRepository
-                            .findById(service.getServiceProviderId()).orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")
-                            ));
+        if (entity instanceof AbstractExternalServiceEntity externalServiceEntity) {
+                    externalServiceEntity.setServiceProvider(serviceProviderRepository
+                            .findById(service.getServiceProviderId())
+                            .orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")));
         }
     }
 

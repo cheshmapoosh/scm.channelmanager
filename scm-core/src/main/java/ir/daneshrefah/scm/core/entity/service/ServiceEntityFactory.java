@@ -56,6 +56,13 @@ public class ServiceEntityFactory {
         if (entity instanceof CompositionServiceEntity compositionService){
             compositionService.setCompositionType(request.getCompositionType());
         }
+        if (entity instanceof RestExternalServiceEntity restExternalService){
+            restExternalService.setPath(request.getPath());
+            restExternalService.setHttpMethod(request.getHttpMethod());
+            restExternalService.setRequestBodyType(request.getRequestBodyType());
+            restExternalService.setResponseBodyType(request.getResponseBodyType());
+            restExternalService.setRequestContentType(request.getRequestContentType());
+        }
         return entity;
     }
 
