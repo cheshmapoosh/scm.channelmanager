@@ -1,13 +1,12 @@
-
 spring:
   config:
     import: 'optional:configserver:'
     activate:
-      on-profile: dev
+      on-profile: scm4dev
   cloud:
     config:
       username: scm
       password: scm
-      name: cache
+      name: scm
       enabled: true
       uri: http://10.10.4.125:8888/config

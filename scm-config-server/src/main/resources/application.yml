@@ -11,7 +11,7 @@ spring:
     config:
       server:
         git:
-          uri: config-repo-server
+          uri: /home/pwausr/scm/config-repo-server
           search-paths: '{application}'
           clone-on-start: true
           default-label: master
@@ -22,7 +22,7 @@ spring:
 scm:
   config:
     applications:
-      scm: ib, mb, pwa
+      scm: ib4dev ,ib4test ,ib4prod ,scm4dev ,scm4test ,scm4prod , mb4dev, mb4test, mb4prod, pwa4dev, pwa4test, pwa4prod
       uaa: dev, test, prod
       cache: dev, test, prod
     scm-user:
