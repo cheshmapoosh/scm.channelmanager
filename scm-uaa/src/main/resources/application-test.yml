@@ -1,0 +1,16 @@
+
+spring:
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: test
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: uaa
+      enabled: true
+      uri: http://scm-config.daneshrefah.ir/config
+
+
+

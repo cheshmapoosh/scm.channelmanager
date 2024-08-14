@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.utils.validation.regex.CommonRegex;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -42,6 +43,12 @@ public class ValidationUtils {
 
     public static void checkNumericInput(Object input,Supplier<RuntimeException> throwsException){
         if (StringUtils.isNotNumeric(String.valueOf(input))){
+            throw throwsException.get();
+        }
+    }
+
+    public static void checkNumericInputIfNotNull(Object input,Supplier<RuntimeException> throwsException) {
+        if (Objects.nonNull(input)  && StringUtils.isNotNumeric(String.valueOf(input))){
             throw throwsException.get();
         }
     }

@@ -236,16 +236,13 @@ public class SecurityConfig {
         String responseType = request.getParameter("response_type");
         String scope = request.getParameter("scope");
         response.setStatus(HttpServletResponse.SC_OK);
-        if (StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope)){
-            response.sendRedirect("/");
-        }else {
+        if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
             String serverHost = request.getRequestURL().toString().split("/logout")[0];
-            String redirection = serverHost+"/oauth2/authorize?response_type="
+            String redirection = serverHost + "/oauth2/authorize?response_type="
                                  + responseType + "&client_id="
                                  + clientId + "&redirect_uri="
                                  + redirectUri + "&scope=" + scope;
             response.sendRedirect(redirection);
-
         }
     }
 

@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
-import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
-import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import ir.daneshrefah.scm.core.entity.transformer.TransformerEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

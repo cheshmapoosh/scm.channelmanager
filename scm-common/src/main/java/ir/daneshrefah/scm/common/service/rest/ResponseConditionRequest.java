@@ -1,0 +1,13 @@
+package ir.daneshrefah.scm.common.service.rest;
+
+import ir.daneshrefah.scm.common.dto.RequestData;
+import lombok.Data;
+
+@Data
+public class ResponseConditionRequest implements RequestData {
+
+    private String transformerId;
+    private String errorCode;
+    private String errorMessage;
+
+}
