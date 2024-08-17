@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.common.service;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Setter
+@Getter
 public class ServiceAccessFindRequest extends ServiceFindRequest {
     private String terminalId;
     private Boolean hasTerminalAccess;

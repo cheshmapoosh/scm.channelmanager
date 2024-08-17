@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
@@ -31,18 +32,20 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
 import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
+import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
+import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
@@ -60,15 +63,18 @@ public class SwaggerGenerator {
 
     private static final ObjectMapper OBJECT_MAPPER;
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
-    private static final String SWAGGER_VERSION = "1.0.0";
+    private static final String SWAGGER_VERSION = "1.0.1";
+
+    private static final Map<String, Object> SCHEMA_INSTANCE_CACHE = new ConcurrentHashMap<>();
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS,false);
-        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
-        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS,false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
     }
+
     private SwaggerGenerator() {
     }
 
@@ -77,13 +83,12 @@ public class SwaggerGenerator {
     }
 
 
-
     public OpenAPI generateOpenAPI(Channel channel, List<TerminalServiceAccess> serviceAccesses,
                                    RestUrlBuilder urlBuilder, String contextPath, Integer port) {
         OpenAPI openAPI = new OpenAPI();
         openAPI.info(new Info().title(channel.getTitle()).version(SWAGGER_VERSION));
         //server information
-        generateServerInformation(openAPI,channel, contextPath, port);
+        generateServerInformation(openAPI, channel, contextPath, port);
         //create components
         Components components = new Components();
         //generate security component
@@ -92,6 +97,8 @@ public class SwaggerGenerator {
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
             if (exposedAble(serviceAccess)) {
                 RestUrl restUrl = urlBuilder.build(serviceAccess);
+                //generate tags
+                generateApiTag(openAPI,serviceAccess);
                 //Create Operation object
                 Operation operation = new Operation();
                 //path item
@@ -113,14 +120,45 @@ public class SwaggerGenerator {
         return openAPI;
     }
 
+    private void generateApiTag(OpenAPI openAPI, TerminalServiceAccess serviceAccess) {
+        Service parent = serviceAccess.getService().getParent();
+        if(Objects.nonNull(parent)){
+            List<Tag> tags = openAPI.getTags();
+            if (Objects.isNull(tags)){
+                tags = new ArrayList<>();
+            }
+            Tag tag = new Tag();
+            tag.setName(provideTageName(parent));
+            tags.add(tag);
+            openAPI.setTags(tags);
+        }
+    }
+
+    private String provideTageName(Service parent) {
+       if (Objects.nonNull(parent)){
+           String alias = parent.getAlias();
+           String code = parent.getCode();
+           if (Objects.nonNull(alias) && !alias.isBlank()){
+               if (alias.contains("-")){
+                   return alias.replace("-"," ").toUpperCase().replace("/","");
+               }else {
+                   return String.join(" ", org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase(alias)).toUpperCase().replace("/","");
+               }
+           }
+           return code;
+       }
+       return null;
+    }
+
+
     private boolean exposedAble(TerminalServiceAccess serviceAccess) {
         Service service = serviceAccess.getService();
         ServiceStatus status = service.getStatus();
         return Objects.nonNull(status) && !status.equals(ServiceStatus.INTERNAL);
     }
 
-    private void generatePathItems(OpenAPI openAPI, Operation operation,RestUrl restUrl) {
-        PathItem pathItem ;
+    private void generatePathItems(OpenAPI openAPI, Operation operation, RestUrl restUrl) {
+        PathItem pathItem;
         String url = "/" + restUrl.getUrl();
         if (null != openAPI.getPaths() && null != openAPI.getPaths().get(url)) {
             pathItem = openAPI.getPaths().get(url);
@@ -140,15 +178,15 @@ public class SwaggerGenerator {
         apiKeySecurityScheme.in(SecurityScheme.In.HEADER);
         apiKeySecurityScheme.setName(SCM_PARAMETER_AUTHORIZATION);
         //create security map
-        securityRequirementMap.put("Authorization",apiKeySecurityScheme);
+        securityRequirementMap.put("Authorization", apiKeySecurityScheme);
         components.securitySchemes(securityRequirementMap);
     }
 
     private void generatePathParameters(String url, Operation operation) {
-        if (url.contains("{") ){
+        if (url.contains("{")) {
             List<String> allParameters = StringUtils.findAllParameters(url);
-            allParameters.forEach(param->{
-                addPathParameter(operation,param);
+            allParameters.forEach(param -> {
+                addPathParameter(operation, param);
             });
         }
     }
@@ -157,25 +195,26 @@ public class SwaggerGenerator {
     private void generateSecurityHeaders(Operation operation, TerminalServiceAccess serviceAccess) {
         Boolean loginAuthentication = serviceAccess.getService().getCheckAccessFirstAuthentication();
         Boolean transactionAuthentication = serviceAccess.getService().getCheckAccessSecondAuthentication();
-        if (Objects.nonNull(transactionAuthentication) && transactionAuthentication){
-            addHeaderParameter(operation,SCM_PARAMETER_CLAIM_CODE,"Transaction claim",true);
+        if (Objects.nonNull(transactionAuthentication) && transactionAuthentication) {
+            addHeaderParameter(operation, SCM_PARAMETER_CLAIM_CODE, "Transaction claim", true);
         }
-        if (Objects.nonNull(loginAuthentication) && loginAuthentication){
+        if (Objects.nonNull(loginAuthentication) && loginAuthentication) {
             SecurityRequirement securityRequirement = new SecurityRequirement();
             securityRequirement.addList("Authorization");
             operation.addSecurityItem(securityRequirement);
         }
     }
 
-    private void generateServerInformation(OpenAPI openAPI,Channel channel, String contextPath, Integer port) {
+    private void generateServerInformation(OpenAPI openAPI, Channel channel, String contextPath, Integer port) {
         Server server = new Server();
         server.description(channel.getTitle());
         server.setUrl(generateBaseUrl(contextPath, port));
         openAPI.setServers(List.of(server));
     }
 
-    private void generateBasicInformation(Channel channel,TerminalServiceAccess serviceAccess, Operation operation, RestUrl restUrl) {
-        operation.setTags(List.of(channel.getTitle()));
+    private void generateBasicInformation(Channel channel, TerminalServiceAccess serviceAccess, Operation operation, RestUrl restUrl) {
+        String tagName = provideTageName(serviceAccess.getService().getParent());
+        operation.setTags(List.of(Objects.nonNull(tagName) ? tagName : "UNDEFINED !"));
         operation.setSummary(serviceAccess.getService().getCode());
         operation.setDescription(serviceAccess.getService().getTitle());
         operation.setOperationId(serviceAccess.getTerminal().getCode() + "_" + serviceAccess.getService().getCode());
@@ -190,7 +229,7 @@ public class SwaggerGenerator {
         addHeaderParameter(operation, SCM_PARAMETER_CLAIM_CODE, "Claim Code", false);
     }
 
-    private void addHeaderParameter(Operation operation,String ref,String description,boolean required){
+    private void addHeaderParameter(Operation operation, String ref, String description, boolean required) {
         Parameter parameter = new HeaderParameter();
         parameter.setIn("header");
         parameter.setName(ref);
@@ -203,7 +242,7 @@ public class SwaggerGenerator {
         operation.addParametersItem(parameter);
     }
 
-    private void addPathParameter(Operation operation,String param){
+    private void addPathParameter(Operation operation, String param) {
         Parameter parameter = new PathParameter();
         parameter.setIn("path");
         parameter.setName(param);
@@ -228,6 +267,11 @@ public class SwaggerGenerator {
 
     private void generateResponseSchema(TerminalServiceAccess serviceAccess, Operation operation, Components components) {
         String responseJsonSchema = serviceAccess.getService().getResponseJsonSchema();
+        if (Objects.isNull(responseJsonSchema) || responseJsonSchema.isBlank()) {
+            if (serviceAccess.getService() instanceof JavaService javaService) {
+                responseJsonSchema = generateJavaServiceResponseJsonSchema(javaService);
+            }
+        }
         if (Objects.nonNull(responseJsonSchema) && !responseJsonSchema.isBlank()) {
             try {
                 //parse json
@@ -254,6 +298,24 @@ public class SwaggerGenerator {
         }
     }
 
+    private String generateJavaServiceResponseJsonSchema(JavaService javaService) {
+        try {
+            String implPath = javaService.getJavaImplementationClassName();
+            String[] split = org.apache.commons.lang3.StringUtils.split(implPath,".");
+            String bean = split[0];
+            String methodName = split[1].substring(0,split[1].indexOf("("));
+            AbstractJavaService beanInstance = ClassLoader.findBeanOrCreateInstanceOfClass(bean, AbstractJavaService.class);
+            Method method = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(beanInstance.getClass()))
+                    .filter(m -> m.getName().contains(methodName))
+                    .findFirst().orElse(null);
+            assert method != null;
+            Class<?> returnType = method.getReturnType();
+            return generateJavaServiceResponseSchema(returnType.getName());
+        }catch (Exception ignore){
+            return null;
+        }
+    }
+
     private void generateDefaultResponseSchema(Operation operation) {
         ApiResponses apiResponses = new ApiResponses();
         ApiResponse apiResponse = new ApiResponse();
@@ -270,12 +332,12 @@ public class SwaggerGenerator {
         operation.setResponses(apiResponses);
     }
 
-    private void generateRequestSchema(RestUrl restUrl,TerminalServiceAccess serviceAccess, Operation operation, Components components) {
-        if (!restUrl.getHttpMethod().equalsIgnoreCase("get")){
+    private void generateRequestSchema(RestUrl restUrl, TerminalServiceAccess serviceAccess, Operation operation, Components components) {
+        if (!restUrl.getHttpMethod().equalsIgnoreCase("get")) {
             Service service = serviceAccess.getService();
             String requestJsonSchema = service.getRequestJsonSchema();
             ServiceImplementationType implementationType = service.getImplementationType();
-            if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)){
+            if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)) {
                 requestJsonSchema = generateJavaServiceRequestSchema(service);
             } else if (StringUtils.isNotEmpty(requestJsonSchema) && StringUtils.containsNone(requestJsonSchema, "{}")) {
                 requestJsonSchema = generateJavaClassSchema(requestJsonSchema);
@@ -287,7 +349,7 @@ public class SwaggerGenerator {
                     Content reqContent = new Content();
                     MediaType reqMediaType = new MediaType();
                     Schema<Object> objectSchema = new Schema<>();
-                    String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode())+ "ReqTO";
+                    String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode()) + "ReqTO";
                     objectSchema.set$ref(schemaName);
                     reqMediaType.schema(objectSchema);
                     reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
@@ -298,7 +360,7 @@ public class SwaggerGenerator {
                     components.addSchemas(schemaName, schemaItem);
                 } catch (Exception ignore) {
                 }
-            }else {
+            } else {
                 generateDefaultRequestSchema(operation);
             }
         }
@@ -327,14 +389,26 @@ public class SwaggerGenerator {
             JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService);
             Class<?>[] parameterTypes = methodInfo.getMethod().getParameterTypes();
             for (Class<?> parameterType : parameterTypes) {
-                if (parameterType.toString().contains(basePackage) && !parameterType.toString().contains(ignoreType)){
+                if (parameterType.toString().contains(basePackage) && !parameterType.toString().contains(ignoreType)) {
                     Class<?> modelClass = Class.forName(parameterType.getName());
                     JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
                     JsonSchema schema = schemaGen.generateSchema(modelClass);
                     return OBJECT_MAPPER.writeValueAsString(schema);
                 }
             }
-        }catch (Exception ignore){}
+        } catch (Exception ignore) {
+        }
+        return null;
+    }
+
+    private String generateJavaServiceResponseSchema(String instanceClassPath) {
+        try {
+            Class<?> modelClass = Class.forName(instanceClassPath);
+            JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
+            JsonSchema schema = schemaGen.generateSchema(modelClass);
+            return OBJECT_MAPPER.writeValueAsString(schema);
+        } catch (Exception ignore) {
+        }
         return null;
     }
 
@@ -351,12 +425,12 @@ public class SwaggerGenerator {
     }
 
 
-    public String cleanupSwaggerJson(String swaggerJson)  {
-        swaggerJson  = swaggerJson.replace(SecurityScheme.Type.APIKEY.name(), SecurityScheme.Type.APIKEY.toString());
-        swaggerJson = swaggerJson.replace(SecurityScheme.In.HEADER.name(),SecurityScheme.In.HEADER.toString());
-        swaggerJson = swaggerJson.replace(SecurityScheme.Type.HTTP.name(),SecurityScheme.Type.HTTP.toString());
-        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":false","");
-        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":true","");
+    public String cleanupSwaggerJson(String swaggerJson) {
+        swaggerJson = swaggerJson.replace(SecurityScheme.Type.APIKEY.name(), SecurityScheme.Type.APIKEY.toString());
+        swaggerJson = swaggerJson.replace(SecurityScheme.In.HEADER.name(), SecurityScheme.In.HEADER.toString());
+        swaggerJson = swaggerJson.replace(SecurityScheme.Type.HTTP.name(), SecurityScheme.Type.HTTP.toString());
+        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":false", "");
+        swaggerJson = swaggerJson.replace(",\"exampleSetFlag\":true", "");
         return swaggerJson;
     }
 }

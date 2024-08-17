@@ -24,4 +24,10 @@ public enum ParameterActionType {
                 .filter(parameterActionType -> parameterActionType.getCode().equals(code))
                 .findFirst().orElse(null);
     }
+
+    public static ParameterActionType findByValue(String value) {
+        return Arrays.stream(values())
+                .filter(parameterActionType -> parameterActionType.name().equalsIgnoreCase(value))
+                .findFirst().orElse(null);
+    }
 }

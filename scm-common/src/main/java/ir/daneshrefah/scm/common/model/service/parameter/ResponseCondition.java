@@ -15,7 +15,7 @@ import java.util.Map;
  * @since 2024-07-20
  */
 @Data
-public class ResponseCondition extends BaseModel<Integer> {
+public class ResponseCondition extends BaseModel<Long> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;
