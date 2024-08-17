@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasource;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
@@ -20,7 +21,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_PARAMETERS")
-public class ParameterEntity extends AbstractDefaultEntity<Long> {
+public class ParameterEntity extends AbstractVersionAbleDefaultEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

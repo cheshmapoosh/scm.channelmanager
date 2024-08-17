@@ -673,7 +673,97 @@ VALUES ('8cf1b268-dc93-43ba-8679-df6fa68c7620', 'SVC_RESPONSE_CONDITION_CREATE',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('5becbcf4-c2a1-45b1-819b-2432dc3c9c12', 'SVC_PARAMETER_CHANGE', 'ویرایش پارامتر', '/parameter', 1, 1, 6, 2, 1,
+        'bean:dynamicRestManagementService.changeParameter(ir.daneshrefah.scm.common.service.rest.ParameterChangeRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('1cfb8e2b-fd67-4bf4-9b19-373b4877be3b', 'SVC_RESPONSE_CONDITION_CHANGE', 'ویرایش شرط پاسخ دهی سرویس', '/response-condition', 1, 1, 6, 2, 1,
+        'bean:dynamicRestManagementService.changeResponseCondition(ir.daneshrefah.scm.common.service.rest.ResponseConditionChangeRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('8e10018a-eb27-44a8-9c7d-2cf4ed1e5b93', 'SVC_CONDITION_DATA_SOURCE_CHANGE', 'ویرایش دیتاسورس شرط پاسخ دهی سرویس', '/data-source', 1, 1, 6, 2, 1,
+        'bean:dynamicRestManagementService.changeResponseConditionDatasource(ir.daneshrefah.scm.common.service.rest.ResponseConditionDatasourceChangeRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
+                                 RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+                                 IMPLEMENTATION_BPMN_CONTENT, IMPLEMENTATION_COMPOSITION_TYPE_CODE,
+                                 CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION,
+                                 CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET,
+                                 PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES ('95d2b762-5ad8-4c3c-bb7b-e1097d3c43be', 'SVC_PARAMETER_DELETE', 'حذف پارامتر', '/parameter', 1, 1, 1, null, null,
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
+        'bean:dynamicRestManagementService.remove(ir.daneshrefah.scm.common.service.rest.ResponseConditionDeleteRequest)', null,
+        null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
+                                 RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+                                 IMPLEMENTATION_BPMN_CONTENT, IMPLEMENTATION_COMPOSITION_TYPE_CODE,
+                                 CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION,
+                                 CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET,
+                                 PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES ('87ee23d3-4996-44b9-ba14-0d983a6e9f7d', 'SVC_RESPONSE_CONDITION_DELETE', 'حذف شرط پاسخ دهی سرویس', '/response-condition', 1, 1, 1, null, null,
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
+        'bean:dynamicRestManagementService.removeResponseCondition(ir.daneshrefah.scm.common.service.rest.ResponseConditionDeleteRequest)', null,
+        null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
+                                 RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, IMPLEMENTATION_SERVICE_PROVIDER_ID,
+                                 IMPLEMENTATION_BPMN_CONTENT, IMPLEMENTATION_COMPOSITION_TYPE_CODE,
+                                 CHECK_ACCESS_FIRST_AUTHENTICATION, CHECK_ACCESS_SECOND_AUTHENTICATION,
+                                 CHECK_ACCESS_SERVICE, CHECK_ACCESS_ASSET, PROPERTY_NAME_AMOUNT, PROPERTY_NAME_ASSET,
+                                 PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES ('10faa773-0b5a-45f7-812d-ca5602747ba8', 'SVC_CONDITION_DATA_SOURCE_DELETE', 'حذف دیتاسورس شرط پاسخ دهی سرویس', '/data-source', 1, 1, 1, null, null,
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
+        'bean:dynamicRestManagementService.removeResponseConditionDatasource(ir.daneshrefah.scm.common.service.rest.ResponseConditionDatasourceRemoveRequest)', null,
+        null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('8a51107a-0b3f-4e2b-9e1f-2cd34b0031ea', 'SVC_PARAMETER_FIND_BY_ID', 'یافتن پارامتر با شناسه', '/parameter/{id}', 1, 1,
+        3, 2, 1,
+        'bean:dynamicRestManagementService.findParameterById(String)', '04dfb077-7539-46a8-a4d5-0548ef986867',
+        'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('77646c1b-3d42-43bb-9c94-c258e3db939e', 'SVC_PARAMETER_FIND', 'لیست پارامتر', '/parameter/find', 1, 1, 1, 2, 1,
+        'bean:dynamicRestManagementService.findParameter(ir.daneshrefah.scm.common.service.rest.ParameterFindRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('193c26ce-5daf-44dc-90eb-d871a0a61fac', 'SVC_PARAMETER_FIND_TREE', 'درخت پارامتر', '/parameter/find-tree', 1, 1, 1, 2, 1,
+        'bean:dynamicRestManagementService.findParameterTree(ir.daneshrefah.scm.common.service.rest.ParameterTreeFindRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
+                                 SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
+                                 IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('35f45d53-3991-4752-8ae9-bac35dd8ba39', 'SVC_RESPONSE_CONDITION_FIND', 'لیست شرط پاسخ دهی سرویس', '/response-condition/find', 1, 1, 1, 2, 1,
+        'bean:dynamicRestManagementService.findResponseCondition(ir.daneshrefah.scm.common.service.rest.ResponseConditionFindRequest)',
+        '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 --------------------------------------------- CUSTOMER MANAGEMENT SERVICE -----------------------------------------------
 
@@ -850,11 +940,36 @@ VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '8cf1b268-dc93-43ba-8679-df6fa68
 INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '743f6bce-0306-4dd8-a671-1398b716532f', 'Dariush Abdolahi',
         'Dariush Abdolahi'); -- add 'SVC_CONDITION_DATA_SOURCE_CREATE' to 'SCM'
-
-
-
-
-
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '5becbcf4-c2a1-45b1-819b-2432dc3c9c12', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_PARAMETER_CHANGE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '1cfb8e2b-fd67-4bf4-9b19-373b4877be3b', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_RESPONSE_CONDITION_CHANGE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '8e10018a-eb27-44a8-9c7d-2cf4ed1e5b93', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_CONDITION_DATA_SOURCE_CHANGE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '95d2b762-5ad8-4c3c-bb7b-e1097d3c43be', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_PARAMETER_DELETE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '87ee23d3-4996-44b9-ba14-0d983a6e9f7d', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_RESPONSE_CONDITION_DELETE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '10faa773-0b5a-45f7-812d-ca5602747ba8', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_CONDITION_DATA_SOURCE_DELETE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '8a51107a-0b3f-4e2b-9e1f-2cd34b0031ea', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_PARAMETER_FIND_BY_ID' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '77646c1b-3d42-43bb-9c94-c258e3db939e', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_PARAMETER_FIND' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '193c26ce-5daf-44dc-90eb-d871a0a61fac', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_PARAMETER_FIND_TREE' to 'SCM'
+INSERT INTO REF.TBL_SCM_TERMINAL_SERVICE_ACCESS (TERMINAL_ID, SERVICE_ID, CREATOR, LAST_EDITOR)
+VALUES ('b9a79451-2141-40b6-98a0-72055a0042c5', '35f45d53-3991-4752-8ae9-bac35dd8ba39', 'Dariush Abdolahi',
+        'Dariush Abdolahi'); -- add 'SVC_RESPONSE_CONDITION_FIND' to 'SCM'
 
 
 

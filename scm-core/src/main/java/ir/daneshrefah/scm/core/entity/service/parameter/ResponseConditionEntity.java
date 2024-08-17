@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.core.entity.transformer.TransformerEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import java.util.List;
 @Getter
 @Table(name = "TBL_SCM_SERVICE_RESPONSE_CONDITION")
 @Entity
-public class ResponseConditionEntity extends AbstractDefaultEntity<Long> {
+public class ResponseConditionEntity extends AbstractVersionAbleDefaultEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

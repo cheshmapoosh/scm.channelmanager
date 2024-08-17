@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
+import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
@@ -86,7 +87,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     protected Map<String, ?> extractAdditionalHeaders(Message message) {
         RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
         ParameterParser.RestExternalServiceParameterCache parameterTreeMap = parameterParser.getParametersCache(service);
-        ParameterParser.ParameterNode node = parameterTreeMap.getRequestHeaderVariableNode();
+        ParameterNode node = parameterTreeMap.getRequestHeaderVariableNode();
         Map<String, Object> headerMap = new HashMap<>();
         parameterParser.writeHeadersVariable(node, headerMap, message, this::extractParameterValue);
         return headerMap;
@@ -96,7 +97,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     protected Map<String, ?> extractResponseHeaders(Message message) {
         RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
         ParameterParser.RestExternalServiceParameterCache parameterTreeMap = parameterParser.getParametersCache(service);
-        ParameterParser.ParameterNode node = parameterTreeMap.getResponseHeaderVariableNode();
+        ParameterNode node = parameterTreeMap.getResponseHeaderVariableNode();
         Map<String, Object> headerMap = new HashMap<>();
         parameterParser.writeHeadersVariable(node, headerMap, message, this::extractParameterValue);
         return headerMap;
@@ -111,8 +112,8 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
         }
         String targetUrl = StringUtils.joinWith("/", providerEndpoint, service.getPath());
         ParameterParser.RestExternalServiceParameterCache parametersCache = parameterParser.getParametersCache(service);
-        ParameterParser.ParameterNode pathVariableNode = parametersCache.getRequestPathVariableNode();
-        ParameterParser.ParameterNode requestQueryNode = parametersCache.getRequestQueryStringVariableNode();
+        ParameterNode pathVariableNode = parametersCache.getRequestPathVariableNode();
+        ParameterNode requestQueryNode = parametersCache.getRequestQueryStringVariableNode();
         targetUrl = parameterParser.writeRequestPathVariable(targetUrl, pathVariableNode, message, this::extractParameterValue);
         targetUrl = parameterParser.writeRequestQueryStringVariable(targetUrl, requestQueryNode, message, this::extractParameterValue);
         return targetUrl;
@@ -122,7 +123,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
         RestExternalService restService = (RestExternalService) message.getHeader().getService();
         ParameterParser.RestExternalServiceParameterCache parametersCache = parameterParser.getParametersCache(restService);
-        ParameterParser.ParameterNode requestNode = parametersCache.getRequestBodyNode();
+        ParameterNode requestNode = parametersCache.getRequestBodyNode();
         return parameterParser.writeBodyValue(requestNode, message, this::extractParameterValue);
     }
 
@@ -137,7 +138,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
             ResponseCondition responseCondition = findResponseCondition(conditionCache, message);
             checkResponseHasException(restService,responseCondition);
             Transformer responseTransformer = responseCondition.getResponseTransformer();  //TODO
-            ParameterParser.ParameterNode requestNode = conditionCache.getResponseBodyNode(responseCondition);
+            ParameterNode requestNode = conditionCache.getResponseBodyNode(responseCondition);
             return parameterParser.writeBodyValue(requestNode, wrapMessage, this::extractParameterValue);
         }
         return null;

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.service;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
@@ -58,9 +59,9 @@ public class ParameterParser {
     private ConditionCache createConditionCache(List<ResponseCondition> responseConditions) {
         ConditionCache conditionCache =new ConditionCache();
         conditionCache.setConditions(responseConditions);
-        Map<Integer,ParameterNode> responseBodyNodeMap = new HashMap<>();
+        Map<Long, ParameterNode> responseBodyNodeMap = new HashMap<>();
         responseConditions.forEach(responseCondition -> {
-            Integer id = responseCondition.getId();
+            Long id = responseCondition.getId();
             ParameterNode node = createBodyParameterNode(responseCondition.getResponseParameters());
             responseBodyNodeMap.put(id,node);
         });
@@ -290,14 +291,6 @@ public class ParameterParser {
 
     }
 
-    @Getter
-    @Setter
-    @Accessors(chain = true)
-    public static class ParameterNode   {
-        private String name;
-        private Parameter value;
-        private List<ParameterNode> nextNodes;
-    }
 
     @Getter
     @Setter
@@ -305,7 +298,7 @@ public class ParameterParser {
     public static class ConditionCache {
         private List<ResponseCondition> conditions;
         private ConditionCache providerConditionCache;
-        private Map<Integer,ParameterNode> responseBodyNodes;
+        private Map<Long,ParameterNode> responseBodyNodes;
 
         public ParameterNode getResponseBodyNode(ResponseCondition responseCondition){
             return responseBodyNodes.get(responseCondition.getId());
