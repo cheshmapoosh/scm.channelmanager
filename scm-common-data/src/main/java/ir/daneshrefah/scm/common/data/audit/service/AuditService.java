@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.common.data.audit.service;
 
-
-import ir.daneshrefah.scm.common.data.audit.model.AuditDetails;
+import ir.daneshrefah.scm.common.model.audit.AuditEvent;
 
 public interface AuditService {
-    void log(AuditDetails auditDetails);
+    void log(AuditEvent auditEvent);
 }

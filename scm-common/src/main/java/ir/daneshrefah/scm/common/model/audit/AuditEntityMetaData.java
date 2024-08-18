@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.common.data.audit.model;
+package ir.daneshrefah.scm.common.model.audit;
 
-import ir.daneshrefah.scm.common.data.audit.model.constants.PrimaryKeyType;
+import ir.daneshrefah.scm.common.model.audit.constants.PrimaryKeyType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

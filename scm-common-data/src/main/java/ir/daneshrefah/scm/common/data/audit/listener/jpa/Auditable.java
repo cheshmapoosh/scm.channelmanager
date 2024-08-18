@@ -1,9 +1,10 @@
 package ir.daneshrefah.scm.common.data.audit.listener.jpa;
 
-import ir.daneshrefah.scm.common.data.audit.listener.event.AuditEvent;
-import ir.daneshrefah.scm.common.data.audit.model.AuditDetails;
-import ir.daneshrefah.scm.common.data.audit.model.constants.RevisionType;
-import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.audit.config.AuditConfig;
+import ir.daneshrefah.scm.common.data.audit.listener.event.ApplicationAuditEvent;
+import ir.daneshrefah.scm.common.data.entity.AbstractDefaultAuditableEntity;
+import ir.daneshrefah.scm.common.model.audit.AuditEvent;
+import ir.daneshrefah.scm.common.model.audit.constants.RevisionType;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
@@ -14,35 +15,44 @@ import org.springframework.stereotype.Component;
 @Component
 public class Auditable {
 
+    @Autowired
     private ApplicationEventPublisher applicationEventPublisher;
 
-    @Autowired
-    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-        this.applicationEventPublisher = applicationEventPublisher;
+    public ApplicationEventPublisher getApplicationEventPublisher() {
+        return applicationEventPublisher;
     }
 
     @PostPersist
-    public void postSave(AbstractDefaultEntity<?> abstractDefaultEntity) {
-        applicationEventPublisher.publishEvent(createAuditEvent(RevisionType.INSERT, abstractDefaultEntity));
+    public void postSave(Object entity) {
+        publishAuditEvent(RevisionType.INSERT, entity);
     }
 
     @PostUpdate
-    public void postUpdate(AbstractDefaultEntity<?> abstractDefaultEntity) {
-        applicationEventPublisher.publishEvent(createAuditEvent(RevisionType.UPDATE, abstractDefaultEntity));
+    public void postUpdate(Object entity) {
+        publishAuditEvent(RevisionType.UPDATE, entity);
     }
 
     @PostRemove
-    public void postRemove(AbstractDefaultEntity<?> abstractDefaultEntity) {
-        applicationEventPublisher.publishEvent(createAuditEvent(RevisionType.DELETE, abstractDefaultEntity));
+    public void postRemove(Object entity) {
+        publishAuditEvent(RevisionType.DELETE, entity);
     }
 
-    private AuditEvent createAuditEvent(RevisionType revisionType, AbstractDefaultEntity<?> abstractDefaultEntity) {
-        AuditDetails auditInfo = new AuditDetails()
-                .setData(abstractDefaultEntity)
-                .setType(abstractDefaultEntity.getClass())
-                .setInstanceId(abstractDefaultEntity.getId())
-                .setRevisionType(revisionType);
-        return new AuditEvent(this, auditInfo);
+    private void publishAuditEvent(RevisionType revisionType, Object entity) {
+        if (entity instanceof AbstractDefaultAuditableEntity<?> abstractDefaultEntity) {
+            Auditable auditable = AuditConfig.getApplicationContext().getBean(Auditable.class);
+            ApplicationAuditEvent auditEvent = createAuditEvent(revisionType, abstractDefaultEntity);
+            auditable.getApplicationEventPublisher().publishEvent(auditEvent);
+        }
     }
 
+    public ApplicationAuditEvent createAuditEvent(RevisionType revisionType, AbstractDefaultAuditableEntity<?> abstractDefaultEntity) {
+        AuditEvent auditEvent = AuditEvent.builder()
+                .data(abstractDefaultEntity)
+                .classType(abstractDefaultEntity.getClass())
+                .classTypeStr(abstractDefaultEntity.getClass().toString())
+                .instanceId(abstractDefaultEntity.getId())
+                .revisionType(revisionType)
+                .build();
+        return new ApplicationAuditEvent(this, auditEvent);
+    }
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.data.audit.model;
+package ir.daneshrefah.scm.common.model.audit;
 
 import lombok.Getter;
 import lombok.Setter;

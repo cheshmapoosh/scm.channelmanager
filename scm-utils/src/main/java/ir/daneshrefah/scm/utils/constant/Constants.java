@@ -18,6 +18,7 @@ public class Constants {
     public static final String SCM_PARAMETER_CLIENT_SIGNATURE = "X-SCM-Client-Signature";
     public static final String SCM_PARAMETER_CLIENT_CORRELATION_ID = "X-SCM-Client-Correlation-ID";
     public static final String SCM_PARAMETER_CLIENT_FLOW_ID = "X-SCM-Client-Flow-ID";
+    public static final String SCM_PARAMETER_FLOW_ID = "X-SCM-Flow-ID";
     public static final String SCM_PARAMETER_CLIENT_TIMESTAMP = "X-SCM-Client-Timestamp";
     public static final String SCM_PARAMETER_RECEIVE_TIMESTAMP = "X-SCM-Receive-Timestamp";
     public static final String SCM_PARAMETER_RESPONSE_TIMESTAMP = "X-SCM-Response-Timestamp";

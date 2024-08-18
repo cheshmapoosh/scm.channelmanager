@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.data.audit.converter;
 
-import ir.daneshrefah.scm.common.data.audit.model.constants.RevisionType;
+import ir.daneshrefah.scm.common.model.audit.constants.RevisionType;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

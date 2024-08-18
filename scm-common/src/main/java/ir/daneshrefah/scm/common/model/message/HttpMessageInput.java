@@ -19,5 +19,7 @@ public class HttpMessageInput extends AbstractExternalMessageInput<String> {
     private String httpUrl;
     private String httpMethod;
     private String clientAgent;
+    private String requestBody;
+    private String contentType;
 
 }

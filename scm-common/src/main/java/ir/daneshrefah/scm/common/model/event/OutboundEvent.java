@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.common.model.event;
 
+import ir.daneshrefah.scm.common.model.event.constants.EventType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Duration;
@@ -18,6 +20,7 @@ import java.util.Objects;
  */
 @SuperBuilder
 @Getter
+@Setter
 @NoArgsConstructor
 public class OutboundEvent extends Event {
 

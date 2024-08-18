@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_PORT;
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_FLOW_ID;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
 
 /**
@@ -80,6 +81,8 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         String inputClaimCode = (String) headers.get(SCM_PARAMETER_CLAIM_CODE);
         Instant clientTimestamp = StringUtils.isEmpty(inputClientTimestamp) ? null :
                 DateUtils.InstantTools.convertToInstant(inputClientTimestamp); //throw exception
+        String flowId = headers.get(SCM_PARAMETER_FLOW_ID) == null ? UUID.randomUUID().toString() : (String) headers.get(SCM_PARAMETER_FLOW_ID);
+
         MessageInput result = HttpMessageInput.builder()
                 .headers(headers)
                 .terminalCode(CamelUtils.getTerminalCodeFromExchange(input))
@@ -91,12 +94,14 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .clientId((String) headers.get(SCM_PARAMETER_CLIENT_ID))
                 .clientCorrelationId((String) headers.get(SCM_PARAMETER_CLIENT_CORRELATION_ID))
                 .clientFlowId((String) headers.get(SCM_PARAMETER_CLIENT_FLOW_ID))
+                .flowId(flowId)
                 .clientTimestamp(clientTimestamp)
                 .accessParameter((String) headers.get(SCM_PARAMETER_ACCESS_PARAMETER))
                 .username((String) headers.get(SCM_PARAMETER_USERNAME))
                 .authenticationType(AuthenticationUtils.extractAuthenticationType(
                         (String) headers.get(SCM_PARAMETER_AUTHORIZATION),
-                        (String) headers.get(SCM_PARAMETER_USERNAME), (String) headers.get(SCM_PARAMETER_CREDENTIAL)))
+                        (String) headers.get(SCM_PARAMETER_USERNAME),
+                        (String) headers.get(SCM_PARAMETER_CREDENTIAL)))
                 .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headers.get(SCM_PARAMETER_AUTHORIZATION)))
                 .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
                 .transactionAuthenticationValue(inputClaimCode)
@@ -141,6 +146,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         responseMessage.setHeader(Constants.SCM_PARAMETER_RECEIVE_TIMESTAMP, messageInput.getReceiveTimestamp());
         Instant responseTime = Instant.now();
         responseMessage.setHeader(Constants.SCM_PARAMETER_RESPONSE_TIMESTAMP, responseTime);
+        responseMessage.setHeader(SCM_PARAMETER_FLOW_ID, messageInput.getFlowId());
         String duration = null;
         if (null != messageInput.getReceiveTimestamp()) {
             duration = Duration.between(messageInput.getReceiveTimestamp(), responseTime).toMillis() + "(ms)";

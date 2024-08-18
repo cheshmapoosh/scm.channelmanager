@@ -30,8 +30,11 @@ import java.util.Objects;
  */
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(
-        basePackages = {"ir.daneshrefah.scm.common.data", "ir.daneshrefah.scm.notification", "ir.daneshrefah.scm.uaa.repository.authentication"},
+@EnableJpaRepositories(basePackages = {
+        "ir.daneshrefah.scm.common.data",
+        "ir.daneshrefah.scm.notification",
+        "ir.daneshrefah.scm.uaa.repository.authentication",
+        "ir.daneshrefah.scm.logging"},
         entityManagerFactoryRef = "authenticationEntityManagerFactory",
         transactionManagerRef = "authenticationTransactionManager"
 )
@@ -75,6 +78,7 @@ public class AuthenticationDataSourceConfig {
     }
 
     @Bean
+    @Primary
     public PlatformTransactionManager authenticationTransactionManager(
             @Qualifier("authenticationEntityManagerFactory") LocalContainerEntityManagerFactoryBean todosEntityManagerFactory) {
         return new JpaTransactionManager(Objects.requireNonNull(todosEntityManagerFactory.getObject()));

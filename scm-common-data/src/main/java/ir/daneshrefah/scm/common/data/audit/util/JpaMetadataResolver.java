@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.common.data.audit.util;
 
-import ir.daneshrefah.scm.common.data.audit.model.MetaData;
-import ir.daneshrefah.scm.common.data.audit.model.Parameter;
+
+import ir.daneshrefah.scm.common.model.audit.MetaData;
+import ir.daneshrefah.scm.common.model.audit.Parameter;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;

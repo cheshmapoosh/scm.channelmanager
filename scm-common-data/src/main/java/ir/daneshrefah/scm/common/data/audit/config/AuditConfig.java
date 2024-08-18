@@ -5,15 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @Configuration
 @Slf4j
 @EnableJpaAuditing
+@RequiredArgsConstructor
 public class AuditConfig {
 
     private static final ObjectMapper OBJECT_MAPPER;
+    private final ApplicationContext applicationContext;
+    private static ApplicationContext APPLICATION_CONTEXT ;
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -22,8 +28,16 @@ public class AuditConfig {
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    @PostConstruct
+    public void init() {
+        AuditConfig.APPLICATION_CONTEXT = applicationContext;
+    }
+
     public static ObjectMapper getObjectMapper(){
         return OBJECT_MAPPER;
     }
 
+    public static ApplicationContext getApplicationContext() {
+        return APPLICATION_CONTEXT;
+    }
 }

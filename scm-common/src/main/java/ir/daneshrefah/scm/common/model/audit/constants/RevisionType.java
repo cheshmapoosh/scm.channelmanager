@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.data.audit.model.constants;
+package ir.daneshrefah.scm.common.model.audit.constants;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -10,4 +10,5 @@ plugins {
 
 dependencies {
     implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'
 }

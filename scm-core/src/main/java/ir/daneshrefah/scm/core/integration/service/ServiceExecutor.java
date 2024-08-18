@@ -113,6 +113,7 @@ public abstract class ServiceExecutor {
                 .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
                 .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
                 .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
+                .flowId(messageInput.getFlowId())
                 .messageId(message.getHeader().getMessageId())
                 .threadName(Thread.currentThread().getName())
                 .hostAddress(null)

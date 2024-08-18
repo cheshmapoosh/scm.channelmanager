@@ -27,9 +27,11 @@ public class Header implements Serializable {
     private final Service service;
     @Setter
     private Map<ConditionKey, Condition> withdrawConditions;
-//    @Builder.Default
-//    private final int level = 1;
-//    private final String parentMessageId;
+    @Builder.Default
+    @Setter
+    private int level = 1;
+    @Setter
+    private String parentMessageId;
     private final String messageId = UUID.randomUUID().toString();
     @Getter
     private final HttpHeader httpHeader = new HttpHeader();

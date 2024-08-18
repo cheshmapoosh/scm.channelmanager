@@ -11,11 +11,14 @@ plugins {
 
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     compileOnly 'org.apache.camel:camel-api'
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     compileOnly 'org.springframework:spring-context'
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'ch.qos.logback:logback-classic'
     implementation 'ch.qos.logback:logback-core'
-    compileOnly project(':scm-common')
+    api project(':scm-common-data')
+    api project(':scm-uaa-common')
 }

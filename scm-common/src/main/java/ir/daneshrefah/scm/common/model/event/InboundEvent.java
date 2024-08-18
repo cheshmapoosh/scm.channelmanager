@@ -2,10 +2,12 @@ package ir.daneshrefah.scm.common.model.event;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.event.constants.EventType;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Duration;
@@ -22,6 +24,7 @@ import java.util.Objects;
  */
 @SuperBuilder
 @Getter
+@Setter
 @NoArgsConstructor
 public class InboundEvent extends Event {
 
@@ -30,6 +33,7 @@ public class InboundEvent extends Event {
     private List<Error> errors;
     private JsonNode response;
     private MessageInput messageInput;
+    private Exception exception;
     private Instant startTime;
     private Instant endTime;
 
@@ -44,5 +48,7 @@ public class InboundEvent extends Event {
         }
         return Duration.between(startTime, endTime).toMillis();
     }
-
+    public String getExceptionClassName() {
+        return Objects.isNull(exception) ? null : exception.getClass().getName();
+    }
 }
