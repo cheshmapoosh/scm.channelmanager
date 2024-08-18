@@ -29,16 +29,19 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     @JavaService
+    @SuppressWarnings("unused")
     public List<Membership> findProviderMembershipList(CustomerProviderFindRequest request){
         return customerService.findProviderMembershipList(request);
     }
 
     @JavaService
+    @SuppressWarnings("unused")
     public List<Membership> findLocalMembershipList(MembershipFindRequest request){
         return customerService.findLocalMembershipList(request);
     }
 
     @JavaService
+    @SuppressWarnings("unused")
     public AccountMembership findAccountMembershipById(String membershipId){
         return customerService.findLocalAccountMembership(membershipId);
     }
