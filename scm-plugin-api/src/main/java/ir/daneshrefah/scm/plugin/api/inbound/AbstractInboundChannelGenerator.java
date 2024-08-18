@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.event.InboundEvent;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.common.model.event.Event;
-import ir.daneshrefah.scm.common.model.event.InboundEvent;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -110,6 +110,7 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
                 .correlationId(messageInput.getCorrelationId())
                 .clientCorrelationId(messageInput.getClientCorrelationId())
                 .clientFlowId(messageInput.getClientFlowId())
+                .flowId(message.getHeader().getMessageId())
                 .serviceCode(Objects.nonNull(message.getHeader().getService()) ? message.getHeader().getService().getCode() : null)
                 .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
                 .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))

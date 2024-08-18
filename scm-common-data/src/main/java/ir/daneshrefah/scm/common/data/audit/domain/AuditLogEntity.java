@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.data.audit.domain;
 
 import ir.daneshrefah.scm.common.data.audit.converter.RevisionTypeConverter;
-import ir.daneshrefah.scm.common.data.audit.model.constants.RevisionType;
+import ir.daneshrefah.scm.common.model.audit.constants.RevisionType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

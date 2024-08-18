@@ -16,7 +16,8 @@ import org.springframework.context.annotation.FilterType;
  */
 @SpringBootApplication
 @EnableCaching
-@ComponentScan(basePackages = "ir.daneshrefah.scm.cache", excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
+@ComponentScan(basePackages = {"ir.daneshrefah.scm.cache","ir.daneshrefah.scm.logging"},
+        excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
 public class CacheServerApplication {
     public static void main(String[] args) {
         SpringApplication.run(CacheServerApplication.class, args);

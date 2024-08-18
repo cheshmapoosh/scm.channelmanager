@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -20,6 +21,7 @@ import org.apache.camel.ProducerTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -39,6 +41,18 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     @Autowired
     private ProducerTemplate producerTemplate;
+
+    @Override
+    public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message, Message parentMessage) {
+        Header header = message.getHeader();// TODO:{RAYANI}test functionality of this method,I doubt that it works properly
+        if (Objects.nonNull(parentMessage)) {
+            header.setLevel(header.getLevel() + 1);
+            Header parentHeader = parentMessage.getHeader();
+            String messageId = parentHeader.getMessageId();
+            header.setParentMessageId(messageId);
+        }
+        return message;
+    }
 
     @Override
     public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message) {

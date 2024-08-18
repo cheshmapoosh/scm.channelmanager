@@ -45,27 +45,29 @@ public class FileEventProducer extends EventProducer {
     private final Logger LOGGER;
 
     private final ObjectMapper objectMapper;
-    BlockingQueue<Event> loggingQueue = new LinkedBlockingQueue<>();
-//    ConcurrentLinkedQueue<Event> loggingQueue = new ConcurrentLinkedQueue<>();
-
+    private final BlockingQueue<Event> loggingQueue;
 
     public FileEventProducer(@Value("${scm.log.file-name}") String logFileName,
                              @Value("${scm.log.file-directory}") String fileDirectory,
+                             @Value("${scm.log.has-exchange}") boolean hasExchange,
                              @Value("${scm.log.log-pattern}") String logPattern,
                              @Value("${scm.log.file-name-pattern}") String fileNamePattern,
                              @Value("${scm.log.file-size}") String fileSize,
                              @Value("${scm.log.keep-log-history}") int keepLogHistory
     ) {
         this.objectMapper = new ObjectMapper();
+        this.loggingQueue = new LinkedBlockingQueue<>();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         SimpleModule module = new SimpleModule();
         module.addSerializer(HttpServletRequest.class, HttpServletRequestSerializer.INSTANT);
-        module.addSerializer(Exchange.class, ExchangeSerializer.INSTANT);
+        if (hasExchange) {
+            module.addSerializer(Exchange.class, ExchangeSerializer.INSTANT);
+        }
         objectMapper.registerModule(module);
         initLogThread();
-        LOGGER = initLogger(logFileName, fileDirectory,logPattern,fileNamePattern,fileSize,keepLogHistory);
+        LOGGER = initLogger(logFileName, fileDirectory, logPattern, fileNamePattern, fileSize, keepLogHistory);
     }
 
     private Logger initLogger(String logFileName,
@@ -96,7 +98,7 @@ public class FileEventProducer extends EventProducer {
         rollingPolicy.setParent(rollingFileAppender);
         rollingPolicy.setFileNamePattern(fileDirectory + File.separator + logFileName + fileNamePattern); // Filename pattern
         rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
-        rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to 30 days of log files
+        rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to ? days of log files
         rollingPolicy.start();
 
 

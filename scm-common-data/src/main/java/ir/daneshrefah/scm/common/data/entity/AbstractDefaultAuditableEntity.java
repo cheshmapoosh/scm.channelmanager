@@ -1,9 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity;
 
 import ir.daneshrefah.scm.common.data.audit.listener.jpa.Auditable;
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
@@ -17,19 +15,23 @@ import java.time.LocalDateTime;
 @Setter
 @MappedSuperclass
 @EntityListeners(Auditable.class)
+@Access(AccessType.FIELD)
 public abstract class AbstractDefaultAuditableEntity<T> extends AbstractEntity<T> {
 
     @Column(name = "CREATOR", updatable = false)
     @CreatedBy
-    private String creator;
+    public abstract <E> E getCreator();
+
     @Column(name = "LAST_EDITOR")
     @LastModifiedBy
-    private String lastEditor;
+    public abstract <E> E getLastEditor();
+
     @Column(name = "CREATE_DATE", insertable = false, updatable = false)
     @CreatedDate
-    private LocalDateTime createDate;
+    public abstract LocalDateTime getCreateDate();
+
     @Column(name = "LAST_EDIT_DATE", insertable = false)
     @LastModifiedDate
-    private LocalDateTime lastEditDate;
+    public abstract LocalDateTime getLastEditDate();
 
 }

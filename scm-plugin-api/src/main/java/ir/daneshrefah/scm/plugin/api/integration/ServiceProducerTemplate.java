@@ -14,6 +14,7 @@ import org.springframework.lang.Nullable;
  */
 public interface ServiceProducerTemplate {
 
+    Message callService(Service service, Message message, Message parentMessage);
     public Message callService(Service service, Message message);
 
     public Message callService(String serviceCode, JsonNode payload);

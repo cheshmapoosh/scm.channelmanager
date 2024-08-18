@@ -2,17 +2,14 @@ package ir.daneshrefah.scm.common.data.audit.service;
 
 import ir.daneshrefah.scm.common.data.audit.config.AuditConfig;
 import ir.daneshrefah.scm.common.data.audit.domain.AuditLogEntity;
-import ir.daneshrefah.scm.common.data.audit.model.AuditDetails;
 import ir.daneshrefah.scm.common.data.audit.util.InstanceManager;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.model.audit.AuditEvent;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -25,22 +22,22 @@ public class DataBaseAuditService implements AuditService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Async("auditLogThreadPool")
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
-    public void log(AuditDetails auditInfo) {
-        AuditLogEntity auditLogEntity = createAuditLogRepository(auditInfo);
+    public void log(AuditEvent auditEvent) {
+        AuditLogEntity auditLogEntity = createAuditLogRepository(auditEvent);
         entityManager.persist(auditLogEntity);
     }
 
-    private AuditLogEntity createAuditLogRepository(AuditDetails auditInfo) {
+
+    private AuditLogEntity createAuditLogRepository(AuditEvent auditEvent) {
         AuditLogEntity auditLogEntity = new AuditLogEntity();
-        auditLogEntity.setRevisionType(auditInfo.getRevisionType());
-        auditLogEntity.setClassType(auditInfo.getType().getName());
-        auditLogEntity.setTypeId(getInstanceId(auditInfo.getInstanceId()));
-        auditLogEntity.setValue(getShallowJSON(auditInfo));
-        auditLogEntity.setTimestamp(new Timestamp(System.currentTimeMillis()));
-        if (auditInfo.getData() instanceof AbstractDefaultEntity<?> baseEntity){
+        auditLogEntity.setRevisionType(auditEvent.getRevisionType());
+        auditLogEntity.setClassType(auditEvent.getClassType().getName());
+        auditLogEntity.setTypeId(getInstanceId(auditEvent.getInstanceId()));
+        auditLogEntity.setValue(getShallowJSON(auditEvent));
+        auditEvent.setTimestamp(new Timestamp(System.currentTimeMillis()));
+        auditLogEntity.setTimestamp(auditEvent.getTimestamp());
+        if (auditEvent.getData() instanceof AbstractDefaultEntity<?> baseEntity) {
             auditLogEntity.setCreator(baseEntity.getCreator());
             auditLogEntity.setModifyBy(baseEntity.getLastEditor());
         }
@@ -48,8 +45,8 @@ public class DataBaseAuditService implements AuditService {
     }
 
     @SneakyThrows
-    private String getShallowJSON(AuditDetails auditDetails) {
-        return AuditConfig.getObjectMapper().writeValueAsString(instanceManager.shallowCopy(auditDetails));
+    private String getShallowJSON(AuditEvent auditEvent) {
+        return AuditConfig.getObjectMapper().writeValueAsString(instanceManager.shallowCopy(auditEvent));
     }
 
 

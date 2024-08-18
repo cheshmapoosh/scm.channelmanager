@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.event;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.event.constants.EventType;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

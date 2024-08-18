@@ -1,5 +1,3 @@
-
-
 scm:
   cif:
     url: http://scm-core.daneshrefah.ir/Service/
@@ -62,9 +60,18 @@ scm:
           font:
             color: '255,255,255'
 
-
-
-
+  log:
+    enabled: true
+    has-exchange: false
+    type: file
+    file-directory: appLogFolder
+    file-name: uaa.log
+    log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
+    file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
+    file-size: 10MB  #Max size of each log file
+    keep-log-history: 30 #Keep up to 30 days of log files
+    aspect:
+      enable: true
 
 
 #spring:

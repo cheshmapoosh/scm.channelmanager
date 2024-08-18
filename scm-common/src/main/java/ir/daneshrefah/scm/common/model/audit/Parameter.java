@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.common.data.audit.model;
+package ir.daneshrefah.scm.common.model.audit;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.metamodel.Attribute;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,6 +14,8 @@ import java.lang.reflect.Method;
 public class Parameter {
     private String name;
     private Attribute.PersistentAttributeType type;
+    @JsonIgnore
     private Method getterMethod;
+    @JsonIgnore
     private Method setterMethod;
 }

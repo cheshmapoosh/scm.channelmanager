@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * @version 1.0
  * @since 2023-11-18
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"ir.daneshrefah.scm"})
 @EnableConfigServer
 @EnableCaching
 @EnableJpaAuditing

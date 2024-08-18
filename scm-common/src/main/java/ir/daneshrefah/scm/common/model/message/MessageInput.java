@@ -52,6 +52,7 @@ public abstract class MessageInput<T> {
     private String clientId;
     private String clientCorrelationId;
     private String clientFlowId;
+    private String flowId;
     private Instant clientTimestamp;
     private String accessParameter;
     private String username;

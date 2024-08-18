@@ -10,4 +10,4 @@
 
 rootProject.name = 'ChannelManager'
 include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 'scm-web', 'scm-common-data', 'scm-plugin-scm', 'scm-plugin-nab', 'scm-plugin-pichack', 'scm-plugin-sayad', 'scm-plugin-mock', 'scm-plugin-hps', 
-'scm-config', 'scm-config-server','scm-cache','scm-cache-client', 'scm-uaa', 'scm-uaa-client', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-process', 'scm-plugin-iban','scm-common-error','scm-message-queue')
+'scm-config', 'scm-config-server','scm-cache','scm-cache-client', 'scm-uaa', 'scm-uaa-client', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-process', 'scm-logging-server','scm-plugin-iban','scm-common-error','scm-message-queue')
