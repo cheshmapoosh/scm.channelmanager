@@ -96,7 +96,6 @@ public class CustomerServiceImpl implements CustomerService {
         ir.daneshrefah.scm.common.model.service.Service service =
                 serviceService.findAssetProviderProviderServiceByAssetProviderId(Integer.parseInt(request.getAssetProviderId()));
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-        //TODO : WAITING FOR NAB ACCOUNT LIST CHANGES (GET ACCOUNT LIST WITH NATIONAL ID INSTEAD OF CUSTOMER NO)
         List<NabAccountResponseData> accountList = getPersonAccountList(person, service.getCode());
         List<Membership> accountMembership = syncAccountMembership(accountList, person, request.getAssetProviderId());
         List<Membership> cardMembership = new ArrayList<>(); //TODO
@@ -206,14 +205,18 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private List<NabAccountResponseData> getPersonAccountList(GeneralPerson person, String serviceCode) {
-        List<MembershipEntity> membershipEntityList = membershipRepository.findAllByPersonUsername(person.getUsername());
-        String customerNo = null;
-        if (!membershipEntityList.isEmpty()) {
-            MembershipEntity membershipEntity = membershipEntityList.get(0);
-            customerNo = membershipEntity.getCustomerAccount().getCustomer().getCustomerNo();
-        }
+        String nationalId = null;
         Map<String, String> requestMap = new HashMap<>();
-        requestMap.put("customerNo", customerNo);
+        if (person instanceof GeneralRealPerson realPerson){
+            nationalId = realPerson.getNationalCode();
+        }else if (person instanceof GeneralLegalPerson legalPerson){
+            nationalId = legalPerson.getNationalId();
+            String subOrg = legalPerson.getSubOrganizationId();
+            if (Objects.nonNull(subOrg)){
+                requestMap.put("subOrg",subOrg);
+            }
+        }
+        requestMap.put("nationalId", nationalId);
         NabAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callService(serviceCode, requestMap, NabAccountResponseData[].class);
         return Arrays.stream(nabAccountListResponseData).toList();
     }
