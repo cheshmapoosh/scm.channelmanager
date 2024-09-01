@@ -47,7 +47,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             return resolveMessageByException(message, (Exception) exception.getCause());
         }
         Locale locale = findRequestLocale();
-        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, locale);
+        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception,message, locale);
         message.addError(resolve);
         return message;
     }

@@ -61,7 +61,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
                     .filter(m ->
                     accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
             ).findFirst();
-            if (membership.isEmpty()) {
+            if (membership.isEmpty() || !membership.get().getActive() ) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
                 sourceNode.put("favorite", StringUtils.EMPTY);
                 return null;

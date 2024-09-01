@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.exception;
 
 import ir.daneshrefah.scm.common.error.ExceptionInformation;
 import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
+import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 /**
@@ -11,7 +12,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
  * @version 1.0
  * @since 2024-02-14
  */
-public class InvalidRemoteResponseException extends AbstractValidationException {
+public class InvalidRemoteResponseException extends AbstractValidationException implements ExceptionSourceAware {
 
     private final String providerCode;
 
@@ -25,11 +26,14 @@ public class InvalidRemoteResponseException extends AbstractValidationException 
     }
 
     @Override
+    public String getSource() {
+        return providerCode;
+    }
+
+    @Override
     public ExceptionInformation getExceptionInformation() {
         return ExceptionInformationBuilder
                 .createInstance()
-                .defineMessageParameter("source",getSource())
-                .defineMessageParameter("providerCode",providerCode)
                 .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 

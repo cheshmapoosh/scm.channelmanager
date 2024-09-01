@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.core.entity.transformer.TransformerEntity;
 import jakarta.persistence.*;

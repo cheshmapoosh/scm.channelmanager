@@ -704,7 +704,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('95d2b762-5ad8-4c3c-bb7b-e1097d3c43be', 'SVC_PARAMETER_DELETE', 'حذف پارامتر', '/parameter', 1, 1, 1, null, null,
         '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
-        'bean:dynamicRestManagementService.remove(ir.daneshrefah.scm.common.service.rest.ResponseConditionDeleteRequest)', null,
+        'bean:dynamicRestManagementService.removeParameter(ir.daneshrefah.scm.common.service.rest.ParameterDeleteRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -2608,6 +2608,7 @@ CREATE TABLE REF.TBL_SCM_DATASOURCE_CONDITION
     DATA_SOURCE_VALUE          VARCHAR(255),
     DATA_SOURCE_LENGTH         INTEGER,
     DATA_SOURCE_CONVERTOR_CODE VARCHAR(255),
+    OPERATION                  INTEGER,
     CREATOR                    VARCHAR(255),
     LAST_EDITOR                VARCHAR(255),
     CREATE_DATE                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

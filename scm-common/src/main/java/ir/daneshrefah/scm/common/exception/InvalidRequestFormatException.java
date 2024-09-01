@@ -32,8 +32,6 @@ public class InvalidRequestFormatException extends AbstractValidationException {
     public ExceptionInformation getExceptionInformation() {
         return ExceptionInformationBuilder
                 .createInstance()
-                .defineMessageParameter("source",getSource())
-                .defineMessageParameter("message",message)
                 .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
@@ -15,7 +14,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.core.mapper.ResponseConditionMapper;
+import ir.daneshrefah.scm.core.service.DatasourceConditionHelper;
 import ir.daneshrefah.scm.core.service.ParameterParser;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
@@ -28,7 +27,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -136,7 +138,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
             ParameterParser.ConditionCache conditionCache = parametersCache.getConditionCache();
             Message wrapMessage = Message.builder().payload(convertResponseToJsonNode(body)).build();
             ResponseCondition responseCondition = findResponseCondition(conditionCache, message);
-            checkResponseHasException(restService,responseCondition);
+            checkResponseHasException(restService, responseCondition);
             Transformer responseTransformer = responseCondition.getResponseTransformer();  //TODO
             ParameterNode requestNode = conditionCache.getResponseBodyNode(responseCondition);
             return parameterParser.writeBodyValue(requestNode, wrapMessage, this::extractParameterValue);
@@ -144,23 +146,23 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
         return null;
     }
 
-    private void checkResponseHasException(RestExternalService restService,ResponseCondition responseCondition) {
+    private void checkResponseHasException(RestExternalService restService, ResponseCondition responseCondition) {
         if (Objects.isNull(responseCondition)
-        || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorMessageProperty())
-        || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorCodeProperty())) {
-            throw new RestExternalServiceProviderException(responseCondition,restService.getServiceProvider().getCode(),restService.getCode());
+            || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorMessageProperty())
+            || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorCodeProperty())) {
+            throw new RestExternalServiceProviderException(responseCondition, restService.getServiceProvider().getCode(), restService.getCode());
         }
     }
 
     private ResponseCondition findResponseCondition(ParameterParser.ConditionCache conditionCache, Message message) {
-        ResponseCondition providerCondition = findCompatibaleResponseCondition(conditionCache.getProviderConditionCache(),message);
+        ResponseCondition providerCondition = findCompatibaleResponseCondition(conditionCache.getProviderConditionCache(), message);
         if (Objects.nonNull(providerCondition)) {
             return providerCondition;
         }
-        return findCompatibaleResponseCondition(conditionCache,message);
+        return findCompatibaleResponseCondition(conditionCache, message);
     }
 
-    private ResponseCondition findCompatibaleResponseCondition(ParameterParser.ConditionCache conditionCache,Message message) {
+    private ResponseCondition findCompatibaleResponseCondition(ParameterParser.ConditionCache conditionCache, Message message) {
         return conditionCache
                 .getConditions()
                 .stream()
@@ -168,7 +170,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
                     for (ParameterDatasourceCondition condition : responseCondition.getConditions()) {
                         Parameter wrapper = new Parameter();
                         wrapper.setDatasource(condition.getParameter());
-                        if(extractParameterValue(message, wrapper).filter(extractedValue -> String.valueOf(extractedValue).equals(String.valueOf(condition.getConditionValue()))).isEmpty()){
+                        if (extractParameterValue(message, wrapper).filter(extractedValue -> DatasourceConditionHelper.getInstance().checkCondition(condition.getOperation(),String.valueOf(extractedValue),String.valueOf(condition.getConditionValue()))).isEmpty()) {
                             return false;
                         }
                     }
@@ -181,6 +183,9 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
 
     @SneakyThrows
     private JsonNode convertResponseToJsonNode(Object body) {
+        if (body instanceof String) {
+            return objectMapper.readTree(body.toString());
+        }
         InputStream inputStream = (InputStream) body;
         inputStream.reset();
         byte[] bytes = inputStream.readAllBytes();

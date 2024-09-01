@@ -5,11 +5,15 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
+import org.apache.camel.Exchange;
 import org.apache.camel.model.TryDefinition;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+
+import static org.apache.camel.builder.Builder.simple;
 
 /**
  * Description of the class or purpose of the file.
@@ -33,8 +37,15 @@ public abstract class AbstractCamelExternalServiceProviderExecutor extends Abstr
             MessageOutput messageOutput = exchange.getProperty(HEADER_MESSAGE_OUTPUT, MessageOutput.class);
             messageOutput.setProviderUrl(extractTargetEndpointUrl(originalMessage));
             messageOutput.setHeaders(extractRequestHeaders(originalMessage));
-
-            exchange.getMessage().setHeader(HEADER_TARGET_URL, messageOutput.getProviderUrl());
+            String providerUrl = messageOutput.getProviderUrl();
+            if (providerUrl.contains("?")){
+                //check query String
+                String[] split = StringUtils.split(providerUrl, "?");
+                providerUrl = split[0];
+                String queryString = split[1];
+                exchange.getMessage().setHeader(Exchange.HTTP_QUERY,  queryString);
+            }
+            exchange.getMessage().setHeader(HEADER_TARGET_URL,providerUrl );
             Map<String, Object> headers = messageOutput.getHeaders();
             if (null != headers && !headers.isEmpty()) {
                 for (Iterator<String> iterator = headers.keySet().iterator(); iterator.hasNext(); ) {

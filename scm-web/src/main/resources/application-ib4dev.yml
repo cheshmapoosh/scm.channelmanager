@@ -10,3 +10,4 @@ spring:
       name: scm
       enabled: true
       uri: http://10.10.4.125:8888/config
+      allow-override: true

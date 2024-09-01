@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.model.service.parameter;
 
+import java.io.Serializable;
+
 /**
  * Description of the class or purpose of the file.
  *

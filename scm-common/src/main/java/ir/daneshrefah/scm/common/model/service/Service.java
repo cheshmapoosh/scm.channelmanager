@@ -14,7 +14,6 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-
 public abstract class Service extends BaseModel<String> {
 
     private String code;
@@ -36,5 +35,7 @@ public abstract class Service extends BaseModel<String> {
     private String customerProperty;
     private String amountProperty;
     private String assetProperty;
+    private transient boolean proxy;
+    private transient String targetProxyCode;
 
 }

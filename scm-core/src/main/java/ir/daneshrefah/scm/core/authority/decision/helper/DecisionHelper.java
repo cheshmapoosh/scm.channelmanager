@@ -10,8 +10,12 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.common.type.ConditionType;
-import ir.daneshrefah.scm.core.model.condition.*;
+import ir.daneshrefah.scm.core.model.condition.BaseCondition;
+import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
+import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
+import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
 import ir.daneshrefah.scm.core.service.ConditionService;
+import ir.daneshrefah.scm.core.service.ProxyServiceManager;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -53,8 +57,8 @@ public class DecisionHelper {
 
             UserProfile profile, String terminalCode) {
         /*
-        * Controls if the 'service access' data has already been loaded, does not reload.
-        * */
+         * Controls if the 'service access' data has already been loaded, does not reload.
+         * */
         if (null != profile.getServiceAccesses()) {
             return profile;
         }

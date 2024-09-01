@@ -60,7 +60,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
         }
         Deque<ServiceRelation> reverseServiceStack = new LinkedList<>();
         Queue<ServiceRelation> commitServiceQueueQueue = new ArrayDeque<>();
-
+        JsonNode responsePayload = null;
         for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
             ServiceRelation serviceRelation = iterator.next();
             CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
@@ -108,7 +108,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
 //            message.setPayload((JsonNode) relationResponsePayload);
 
-            transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
+             responsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
 
 
             reverseServiceStack.push(serviceRelation);
@@ -116,7 +116,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
         }
 
-        return message.getPayload();
+        return Objects.nonNull(responsePayload) ? responsePayload : message.getPayload();
     }
 
     private CompositeServiceExecutionWrapper prepareServiceExecutionWrapper(ServiceRelation serviceRelation) {

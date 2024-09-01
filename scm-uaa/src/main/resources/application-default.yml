@@ -106,7 +106,7 @@ spring:
 #      maximum-pool-size: 10
 
 server:
-  port: 8001
+  port: 8000
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true

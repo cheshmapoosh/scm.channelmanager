@@ -21,6 +21,7 @@ import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
@@ -29,8 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +54,9 @@ public class ServiceServiceImpl implements ServiceService {
     private final TerminalRepository terminalRepository;
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
+    private final ProxyServiceManager proxyServiceManager;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
+    private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
     private List<AbstractExternalServiceProvider> serviceProviders;
     private List<AssetProvider> assetProviders;
 
@@ -132,6 +137,40 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    public List<ir.daneshrefah.scm.common.model.service.Service> findProxyServiceList() {
+        if (null == proxyServices || proxyServices.isEmpty()) {
+            synchronized (this) {
+                proxyServices = new ArrayList<>();
+                ServiceMapper.INSTANCE.toServices(serviceRepository.findAll())
+                        .stream()
+                        .filter(service -> service.getImplementationType().equals(ServiceImplementationType.PROXY))
+                        .map(service -> (ProxyService) service)
+                        .map(proxyServiceManager::initializeProxy)
+                        .forEach(proxyServices::add);
+            }
+        }
+        return proxyServices;
+    }
+
+    @Override
+    public Optional<ir.daneshrefah.scm.common.model.service.Service> findProxyServiceByTatgetCode(String targetProxyCode) {
+        return findProxyServiceList()
+                .stream()
+                .parallel()
+                .filter(proxy -> proxy.getCode().equals(targetProxyCode))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<ir.daneshrefah.scm.common.model.service.Service> findProxyService(String proxyServiceId) {
+        return findProxyServiceList()
+                .stream()
+                .parallel()
+                .filter(proxy -> proxy.getId().equals(proxyServiceId))
+                .findFirst();
+    }
+
+    @Override
     public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceFindRequest request) {
         List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
                 .filter(service -> null == request || null == request.getCode() || service.getCode().trim().toUpperCase().contains(request.getCode().trim().toUpperCase()))
@@ -149,7 +188,7 @@ public class ServiceServiceImpl implements ServiceService {
                     return true;
                 })
                 .filter(service -> null == request || null == request.getImplementationType() || request.getImplementationType().equals(service.getImplementationType()))
-                .filter(service->serviceAccessFindFilter(request,service))
+                .filter(service -> serviceAccessFindFilter(request, service))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, serviceList);
 
@@ -157,11 +196,11 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     private boolean serviceAccessFindFilter(ServiceFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
-        if (request instanceof ServiceAccessFindRequest serviceAccessFindRequest){
+        if (request instanceof ServiceAccessFindRequest serviceAccessFindRequest) {
             Boolean hasTerminalAccess = serviceAccessFindRequest.getHasTerminalAccess();
-            if (Objects.isNull(hasTerminalAccess)){
+            if (Objects.isNull(hasTerminalAccess)) {
                 return true;
-            }else {
+            } else {
                 Boolean access = hasTerminalAccess(serviceAccessFindRequest, service);
                 return hasTerminalAccess == access;
             }
@@ -201,6 +240,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    @Transactional
     public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest service) {
         if (StringUtils.isEmpty(service.getCode())) {
             throw new MissingRequiredInputException("service code");
@@ -212,19 +252,19 @@ public class ServiceServiceImpl implements ServiceService {
             throw new MissingRequiredInputException("service type");
         }
         if (ServiceImplementationType.JAVA.equals(service.getImplementationType()) &&
-                StringUtils.isEmpty(service.getJavaImplementationClassName())) {
+            StringUtils.isEmpty(service.getJavaImplementationClassName())) {
             throw new MissingRequiredInputException("javaImplementationClassName");
         }
         if (ServiceImplementationType.CUSTOM_EXTERNAL.equals(service.getImplementationType()) &&
-                (StringUtils.isEmpty(service.getServiceProviderId()))) {
+            (StringUtils.isEmpty(service.getServiceProviderId()))) {
             throw new MissingRequiredInputException("serviceProvider");
         }
         if (ServiceImplementationType.CUSTOM_EXTERNAL.equals(service.getImplementationType()) &&
-                !checkServiceProviderExistById(service.getServiceProviderId())) {
+            !checkServiceProviderExistById(service.getServiceProviderId())) {
             throw new InvalidInputException("serviceProvider");
         }
         if (ServiceImplementationType.COMPOSITION.equals(service.getImplementationType()) &&
-                Objects.isNull(service.getCompositionType())) {
+            Objects.isNull(service.getCompositionType())) {
             throw new MissingRequiredInputException("compositionType");
         }
 
@@ -248,20 +288,20 @@ public class ServiceServiceImpl implements ServiceService {
         String serviceProviderId = service.getServiceProviderId();
         String path = service.getPath();
         HttpContentType requestContentType = service.getRequestContentType();
-        ValidationUtils.checkNull(httpMethod,()->new MissingRequiredInputException("httpMethod"));
-        ValidationUtils.checkNull(responseBodyType,()->new MissingRequiredInputException("responseBodyType"));
-        ValidationUtils.checkNull(requestBodyType,()->new MissingRequiredInputException("requestBodyType"));
-        ValidationUtils.checkNull(requestContentType,()->new MissingRequiredInputException("requestContentType"));
-        ValidationUtils.checkBlankString(serviceProviderId,()->new MissingRequiredInputException("serviceProviderId"));
-        ValidationUtils.checkBlankString(path,()->new MissingRequiredInputException("path"));
+        ValidationUtils.checkNull(httpMethod, () -> new MissingRequiredInputException("httpMethod"));
+        ValidationUtils.checkNull(responseBodyType, () -> new MissingRequiredInputException("responseBodyType"));
+        ValidationUtils.checkNull(requestBodyType, () -> new MissingRequiredInputException("requestBodyType"));
+        ValidationUtils.checkNull(requestContentType, () -> new MissingRequiredInputException("requestContentType"));
+        ValidationUtils.checkBlankString(serviceProviderId, () -> new MissingRequiredInputException("serviceProviderId"));
+        ValidationUtils.checkBlankString(path, () -> new MissingRequiredInputException("path"));
     }
 
     @SuppressWarnings("unchecked")
     private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
         if (entity instanceof AbstractExternalServiceEntity externalServiceEntity) {
-                    externalServiceEntity.setServiceProvider(serviceProviderRepository
-                            .findById(service.getServiceProviderId())
-                            .orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")));
+            externalServiceEntity.setServiceProvider(serviceProviderRepository
+                    .findById(service.getServiceProviderId())
+                    .orElseThrow(() -> new NoMatchRecordFoundException("serviceProvider")));
         }
     }
 
@@ -270,7 +310,7 @@ public class ServiceServiceImpl implements ServiceService {
             entity.setParent(null);
         } else {
             String parentId = service.getParentId();
-            if (Objects.nonNull(parentId)) {
+            if (Objects.nonNull(parentId) && !parentId.isBlank()) {
                 entity.setParent(serviceRepository.findById(service.getParentId())
                         .orElseThrow(() -> new NoMatchRecordFoundException("parent")));
             }
@@ -427,9 +467,16 @@ public class ServiceServiceImpl implements ServiceService {
         return findServiceProviderList().stream().anyMatch(serviceProvider -> serviceProviderId.equals(serviceProvider.getId()));
     }
 
+    /**
+     * @apiNote This method remove parent service and add created target proxy services
+     */
     public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
-        return findServiceList().stream().filter(service -> !ServiceImplementationType.PARENT.equals(service.getImplementationType()))
+        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
+                .filter(Objects::nonNull)
+                .filter(service -> !ServiceImplementationType.PARENT.equals(service.getImplementationType()))
                 .collect(Collectors.toList());
+        findProxyServiceList().stream().map(service -> (ProxyService) service).map(ProxyService::getTargetService).forEach(serviceList::add);
+        return serviceList;
 //        Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
 //        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
 //        return services;
@@ -444,7 +491,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId) {
-        Iterable<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
+        List<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
         return ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
     }
 
@@ -501,12 +548,12 @@ public class ServiceServiceImpl implements ServiceService {
                 .map(service -> {
                     TerminalServiceAccessAssignmentResponse accessAssignmentResponse = new TerminalServiceAccessAssignmentResponse();
                     accessAssignmentResponse.setService(service);
-                    Boolean access = hasTerminalAccess(request,service);
+                    Boolean access = hasTerminalAccess(request, service);
                     accessAssignmentResponse.setHasTerminalAccess(access);
                     return accessAssignmentResponse;
                 })
                 .collect(Collectors.toList());
-        return new PagedResponseData<>(serviceList.getPageNo(),serviceList.getPageSize(),serviceList.getTotalCount().longValue(), result);
+        return new PagedResponseData<>(serviceList.getPageNo(), serviceList.getPageSize(), serviceList.getTotalCount().longValue(), result);
     }
 
     @Override
@@ -516,7 +563,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     private Boolean hasTerminalAccess(ServiceAccessFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
-       return terminalService
+        return terminalService
                 .findAllTerminalServiceAccesses()
                 .stream()
                 .filter(serviceAccess -> request.getTerminalId().equals(serviceAccess.getTerminal().getId()))

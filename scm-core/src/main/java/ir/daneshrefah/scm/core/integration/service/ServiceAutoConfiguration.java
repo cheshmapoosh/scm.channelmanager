@@ -10,10 +10,12 @@ import ir.daneshrefah.scm.core.integration.inbound.interceptor.RequestValidation
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.TerminalRequestTransformerInterceptor;
 import ir.daneshrefah.scm.core.integration.inbound.interceptor.TransactionAuthenticationInterceptor;
 import ir.daneshrefah.scm.core.integration.service.interceptor.*;
+import ir.daneshrefah.scm.core.service.ProxyServiceManager;
 import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.core.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
@@ -41,6 +43,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
     private final ExternalServiceExecutor externalServiceExecutor;
     private final JavaServiceExecutor javaServiceExecutor;
     private final CompositionServiceExecutor compositionServiceExecutor;
+    private final ProxyServiceExecutor proxyServiceExecutor;
     private final DecisionManager decisionManager;
     private final PersonProfileLoader personProfileLoader;
     private final TransformerService transformerService;
@@ -59,8 +62,13 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
                 continue;
             }
 
-            String fromUri = "SVI_" + service.getCode();
-
+            String serviceCode = service.getCode();
+            // For created dynamic proxy service , the route created by $_proxy ... name , but the service code set as same as
+            // target service.
+            if (service.isProxy()) {
+                serviceCode = service.getTargetProxyCode();
+            }
+            String fromUri = "SVI_" +serviceCode;
             LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
             RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("SERVICE_" + fromUri);
             ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
@@ -71,7 +79,7 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
 
     private boolean isPublishableService(Service service) {
         return !ServiceImplementationType.PARENT.equals(service.getImplementationType()) &&
-                !ServiceStatus.INACTIVE.equals(service.getStatus());
+               !ServiceStatus.INACTIVE.equals(service.getStatus());
     }
 
     private void initServiceExecutorList() {
@@ -80,16 +88,17 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
                 new AuthenticationInterceptor(authenticationClientTemplate),
                 new TransactionAuthenticationInterceptor(authenticationClientTemplate),
                 new TerminalRequestTransformerInterceptor(),
-                new CustomerEnrichInterceptor(personProfileLoader,objectMapper),
+                new CustomerEnrichInterceptor(personProfileLoader, objectMapper),
                 new ServiceRequestValidationInterceptor(objectMapper),
                 new DecisionManagerInterceptor(decisionManager),
                 new ServiceRequestTransformerInterceptor(transformerService));
-        final List<MessageInterceptor> responseInterceptors = Arrays.asList(
+        final List<MessageInterceptor> responseInterceptors = List.of(
                 new ServiceResponseTransformerInterceptor(transformerService));
         executorMap.put(ServiceImplementationType.CUSTOM_EXTERNAL, externalServiceExecutor);
         executorMap.put(ServiceImplementationType.REST_EXTERNAL, externalServiceExecutor);
         executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
         executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
+        executorMap.put(ServiceImplementationType.PROXY, proxyServiceExecutor);
         for (Map.Entry<ServiceImplementationType, ServiceExecutor> entry : executorMap.entrySet()) {
             ServiceImplementationType key = entry.getKey();
             ServiceExecutor executor = entry.getValue();

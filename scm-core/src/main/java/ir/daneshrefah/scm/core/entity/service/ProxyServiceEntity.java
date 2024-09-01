@@ -1,0 +1,26 @@
+package ir.daneshrefah.scm.core.entity.service;
+
+import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
+
+@Getter
+@Setter
+@Entity
+@DiscriminatorValue("7")
+public class ProxyServiceEntity extends ServiceEntity {
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION"
+            , joinColumns = @JoinColumn(name = "SERVICE_ID")
+            , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
+    private List<ParameterEntity> parameters;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "SERVICE_ID")
+    private List<ResponseConditionEntity> responseConditions;
+
+}

@@ -1,5 +1,5 @@
 scm:
-  channels: SCM4DEV
+  channels: IB4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
@@ -48,7 +48,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://localhost:8000
+    issuer-uri: http://10.10.4.125:8000
   cache:
     client:
       config:
@@ -76,7 +76,7 @@ scm:
 server:
   servlet:
     context-path: /scm
-  port: 8087
+  port: 8086
 #spring:
 #  datasource:
 #    url: jdbc:db2://10.10.4.104:50001/DBREFSW

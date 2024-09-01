@@ -33,6 +33,9 @@ public interface ServiceService {
     AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value);
 
     List<Service> findServiceList();
+    List<Service> findProxyServiceList();
+    Optional<Service> findProxyServiceByTatgetCode(String targetServiceCode);
+    Optional<Service> findProxyService(String proxyServiceId);
 
     PagedResponseData<Service> findServiceList(ServiceFindRequest request);
 

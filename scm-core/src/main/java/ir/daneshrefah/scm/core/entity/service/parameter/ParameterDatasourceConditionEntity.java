@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.core.entity.service.parameter;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.model.service.parameter.DatasourceConditionOperation;
+import ir.daneshrefah.scm.core.converter.DatasourceConditionOperationConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,4 +19,7 @@ public class ParameterDatasourceConditionEntity extends AbstractVersionAbleDefau
     @Embedded
     private ParameterDatasourceEntity parameter;
     private String conditionValue;
+    @Column(name = "OPERATION")
+    @Convert(converter = DatasourceConditionOperationConverter.class)
+    private DatasourceConditionOperation operation;
 }

@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
