@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.TryDefinition;
+import org.apache.hc.core5.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +132,9 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
 //            EventProducer.getInstance().sendEvent(event);
 
             if (ExternalServiceRequestBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
-                originalMessage.getHeader().getHttpHeader().setHttpStatusCode(Integer.parseInt(String.valueOf(exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE))));
+                Object header = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE);
+                header = Objects.isNull(header) ? -1 : header;
+                originalMessage.getHeader().getHttpHeader().setHttpStatusCode(Integer.parseInt(String.valueOf(header)));
                 exchange.getMessage().setBody(extractServiceParametersResponseBody(originalMessage, exchange.getMessage().getBody()));
                 Map<String, ?> responseHeaders = extractResponseHeaders(originalMessage);
                 Set<String> headersNames = responseHeaders.keySet();

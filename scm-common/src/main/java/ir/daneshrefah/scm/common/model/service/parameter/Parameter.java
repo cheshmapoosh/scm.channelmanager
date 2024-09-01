@@ -21,6 +21,11 @@ public class Parameter extends BaseModel<Long> {
     private boolean internal;
     private String tag;
     private Integer order;
+    /**
+     * If action type was proxy , the parent id
+     * is target of proxy and the datasource of
+     * proxy parameter replaced with parent vales
+     */
     private Parameter parent;
     private ParameterActionType actionType;
     private String defaultValue;

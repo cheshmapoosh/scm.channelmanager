@@ -4,9 +4,10 @@ import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ServiceRelationRepository extends CrudRepository<ServiceRelationEntity, String> {
 
-    Iterable<ServiceRelationEntity> findAllBySourceServiceId(String sourceServiceId);
-
+    List<ServiceRelationEntity> findAllBySourceServiceId(String sourceServiceId);
 }

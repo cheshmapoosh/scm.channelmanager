@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.CustomExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
@@ -75,6 +76,12 @@ public interface ServiceMapper {
         return entity;
     }
 
+
+    @Mapping(source = "parameters",target = "parameters" , qualifiedByName = "toParameterModel")
+    @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
+    @Mapping(target = "targetService",ignore = true)
+    ProxyService toModel(ProxyServiceEntity entity);
+
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     @Mapping(target = "parameters", ignore = true)
     @Mapping(source = "responseConditions",target = "responseConditions" ,qualifiedByName = "toResponseConditionEntity")
@@ -89,6 +96,14 @@ public interface ServiceMapper {
     @Named("toResponseConditionModel")
     default List<ResponseCondition> toResponseConditionModel(List<ResponseConditionEntity> conditions){
         return conditions.stream().map(ResponseConditionMapper.INSTANCE::toModel).toList();
+    }
+
+    @Named("toParameterModel")
+    default List<Parameter> toParameterModel(List<ParameterEntity> entities){
+        return entities
+                .stream()
+                .map(ParameterMapper.INSTANCE::toModel)
+                .toList();
     }
 
     default RestExternalServiceEntity toEntity(RestExternalService model){
@@ -128,9 +143,17 @@ public interface ServiceMapper {
             return toModel(parentServiceEntity);
         } else if (serviceEntity instanceof CompositionServiceEntity compositionServiceEntity) {
             return toModel(compositionServiceEntity);
+        }else if (serviceEntity instanceof ProxyServiceEntity proxyExternalServiceEntity){
+            return toModel(proxyExternalServiceEntity);
         }
         return null;
     }
+
+    @Named("toServiceRelationModel")
+    default ServiceRelation toServiceRelationModel(ServiceRelationEntity entity){
+        return toModel(entity);
+    }
+
 
     @Named("toServiceEntity")
     default ServiceEntity toServiceEntity(Service service) {

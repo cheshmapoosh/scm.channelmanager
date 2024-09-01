@@ -30,8 +30,6 @@ public class NoMatchRecordFoundException extends AbstractValidationException {
     public ExceptionInformation getExceptionInformation() {
         return ExceptionInformationBuilder
                 .createInstance()
-                .defineMessageParameter("providerCode",null != providerCode ? providerCode : "local")
-                .defineMessageParameter("source",getSource())
                 .buildWithStatus(MessageStatus.SC_NOT_FOUND);
     }
 

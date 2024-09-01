@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.core.service.ProxyServiceManager;
 import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.common.model.event.Event;
 import ir.daneshrefah.scm.common.model.event.ServiceEvent;

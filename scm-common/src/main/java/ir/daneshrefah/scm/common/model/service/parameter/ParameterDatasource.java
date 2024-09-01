@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.model.service.parameter;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -10,7 +12,7 @@ import lombok.Data;
  * @since 2024-07-14
  */
 @Data
-public class ParameterDatasource {
+public class ParameterDatasource implements Serializable {
 
     private ParameterDatasourceProperty property;
     private String value;

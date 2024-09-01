@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.error.management;
 
 import ir.daneshrefah.scm.common.constant.ExceptionResolverLevel;
 import ir.daneshrefah.scm.common.model.error.Error;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,25 +69,9 @@ public class ExceptionResolverHelper {
                 .findFirst();
     }
 
-    @SuppressWarnings("unchecked")
+
     public Error resolve(Throwable throwable, Locale locale) {
-        Error error = null;
-        for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
-            if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
-                try {
-                    ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
-                    error = resolver.resolve(throwable, locale);
-                    break;
-                } catch (Throwable t) {
-                    /*If developer resolver throws any un handled exception during resolving the default
-                    resolver handled it */
-                    ExceptionResolver<Throwable> defaultResolver = (ExceptionResolver<Throwable>) getDefaultResolver();
-                    error = defaultResolver.resolve(throwable, locale);
-                    break;
-                }
-            }
-        }
-        return getValidatedError(error);
+        return resolve(throwable,null,locale);
     }
 
     private Error getValidatedError(Error error) {
@@ -124,5 +109,24 @@ public class ExceptionResolverHelper {
         throw new RuntimeException(">>> There is no any default resolver");
     }
 
-
+    @SuppressWarnings("unchecked")
+    public Error resolve(Throwable throwable, Message message, Locale locale) {
+        Error error = null;
+        for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
+            if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
+                try {
+                    ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
+                    error = resolver.resolve(message,throwable, locale);
+                    break;
+                } catch (Throwable t) {
+                    /*If developer resolver throws any un handled exception during resolving the default
+                    resolver handled it */
+                    ExceptionResolver<Throwable> defaultResolver = (ExceptionResolver<Throwable>) getDefaultResolver();
+                    error = defaultResolver.resolve(message,throwable, locale);
+                    break;
+                }
+            }
+        }
+        return getValidatedError(error);
+    }
 }

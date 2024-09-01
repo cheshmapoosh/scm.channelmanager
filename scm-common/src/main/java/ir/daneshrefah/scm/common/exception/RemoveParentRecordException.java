@@ -4,17 +4,18 @@ import ir.daneshrefah.scm.common.error.ExceptionInformation;
 import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
-/**
- * Description of the class or purpose of the file.
- *
- * @author reza jamshidi
- * @version 1.0
- * @since 2024-02-14
- */
-public class InvalidInputDateFormatException extends AbstractValidationException {
+public class RemoveParentRecordException extends AbstractValidationException {
 
-    public InvalidInputDateFormatException(String source) {
-        super(source, source + " is invalid.");
+    private final String source;
+
+    public RemoveParentRecordException(String source) {
+        super(  source + "' is duplicated.", null);
+        this.source = source;
+    }
+
+    @Override
+    public String getSource() {
+        return source;
     }
 
     @Override

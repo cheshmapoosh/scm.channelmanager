@@ -29,7 +29,7 @@ public abstract class AbstractExternalServiceEntity<T extends AbstractExternalSe
     private ExternalServiceRequestBodyType requestBodyType;
     @Enumerated(EnumType.STRING)
     private ExternalServiceRequestBodyType responseBodyType;
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     @JoinTable(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION"
             ,joinColumns = @JoinColumn(name = "SERVICE_ID")
             ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))

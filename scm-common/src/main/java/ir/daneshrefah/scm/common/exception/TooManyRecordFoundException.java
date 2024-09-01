@@ -23,8 +23,6 @@ public class TooManyRecordFoundException extends AbstractValidationException {
     public ExceptionInformation getExceptionInformation() {
         return ExceptionInformationBuilder
                 .createInstance()
-                .defineMessageParameter("count",String.valueOf(this.count))
-                .defineMessageParameter("source",getSource())
                 .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 }

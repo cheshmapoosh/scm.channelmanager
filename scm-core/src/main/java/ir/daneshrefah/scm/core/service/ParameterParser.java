@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Data;
@@ -26,14 +27,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ParameterParser {
 
     private static final Map<String, RestExternalServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
+    private final ServiceService serviceService;
 
+    public static void clearCache() {
+        PARAMETER_TREE_CACHE.clear();
+    }
 
     public RestExternalServiceParameterCache getParametersCache(RestExternalService restExternalService) {
         return PARAMETER_TREE_CACHE
                 .computeIfAbsent(
-                        restExternalService.getCode(),
+                        getCacheKey(restExternalService),
                         serviceCode -> createParameterTreeCache(restExternalService)
                 );
+    }
+
+    private String getCacheKey(RestExternalService restExternalService) {
+        if (restExternalService.isProxy()) {
+            return restExternalService.getTargetProxyCode();
+        }
+        return restExternalService.getCode();
     }
 
     private RestExternalServiceParameterCache createParameterTreeCache(RestExternalService service) {
@@ -41,7 +53,7 @@ public class ParameterParser {
         List<ResponseCondition> responseConditions = service.getResponseConditions();
         parameterTree.setExternalService(service);
         parameterTree.setRequestBodyNode(createBodyParameterNode(service.getRequestBody()));
-        parameterTree.setConditionCache(createConditionCache(service,responseConditions));
+        parameterTree.setConditionCache(createConditionCache(service, responseConditions));
         parameterTree.setRequestHeaderVariableNode(createLineaerParameterNode(service.getRequestHeaders()));
         parameterTree.setRequestPathVariableNode(createLineaerParameterNode(service.getRequestPathVariables()));
         parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(service.getRequestQueryStringVariables()));
@@ -49,7 +61,7 @@ public class ParameterParser {
         return parameterTree;
     }
 
-    private ConditionCache createConditionCache(RestExternalService service,List<ResponseCondition> responseConditions) {
+    private ConditionCache createConditionCache(RestExternalService service, List<ResponseCondition> responseConditions) {
         ConditionCache conditionCache = createConditionCache(responseConditions);
         List<ResponseCondition> providerConditions = service.getServiceProvider().getResponseConditions();
         conditionCache.setProviderConditionCache(createConditionCache(providerConditions));
@@ -57,13 +69,13 @@ public class ParameterParser {
     }
 
     private ConditionCache createConditionCache(List<ResponseCondition> responseConditions) {
-        ConditionCache conditionCache =new ConditionCache();
+        ConditionCache conditionCache = new ConditionCache();
         conditionCache.setConditions(responseConditions);
         Map<Long, ParameterNode> responseBodyNodeMap = new HashMap<>();
         responseConditions.forEach(responseCondition -> {
             Long id = responseCondition.getId();
             ParameterNode node = createBodyParameterNode(responseCondition.getResponseParameters());
-            responseBodyNodeMap.put(id,node);
+            responseBodyNodeMap.put(id, node);
         });
         conditionCache.setResponseBodyNodes(responseBodyNodeMap);
         return conditionCache;
@@ -253,6 +265,7 @@ public class ParameterParser {
                 Parameter parameter = childNode.getValue();
                 String pathVariableName = parameter.getName();
                 String value = parameterHandler.apply(message, parameter).map(String::valueOf).orElse("");
+                value = value.replace("\"", "");
                 targetUrl = targetUrl.replace("{" + pathVariableName + "}", value);
             }
         }
@@ -266,6 +279,7 @@ public class ParameterParser {
                 Parameter parameter = childNode.getValue();
                 String queryVariableName = parameter.getName();
                 String value = parameterHandler.apply(message, parameter).map(String::valueOf).orElse("");
+                value = value.replace("\"", "");
                 targetUrlBuilder.append(queryVariableName).append("=").append(value).append("&");
             }
             targetUrl = targetUrlBuilder.toString();
@@ -298,9 +312,9 @@ public class ParameterParser {
     public static class ConditionCache {
         private List<ResponseCondition> conditions;
         private ConditionCache providerConditionCache;
-        private Map<Long,ParameterNode> responseBodyNodes;
+        private Map<Long, ParameterNode> responseBodyNodes;
 
-        public ParameterNode getResponseBodyNode(ResponseCondition responseCondition){
+        public ParameterNode getResponseBodyNode(ResponseCondition responseCondition) {
             return responseBodyNodes.get(responseCondition.getId());
         }
     }

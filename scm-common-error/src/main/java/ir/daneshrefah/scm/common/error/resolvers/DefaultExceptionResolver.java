@@ -24,7 +24,7 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
 
     private final ExceptionMessageBundleProvider messageBundleProvider;
     private final ErrorMappingService errorMappingService;
-    private final int ERROR_CODE_SYSTEM_ERROR = 1001;
+    private final int ERROR_CODE_SYSTEM_ERROR = 9999;
 
     @Override
     public Error resolve(Exception exception, Locale locale) {

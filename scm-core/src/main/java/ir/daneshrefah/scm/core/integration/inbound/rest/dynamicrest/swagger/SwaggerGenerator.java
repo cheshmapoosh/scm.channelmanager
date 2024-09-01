@@ -44,8 +44,6 @@ import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON;
@@ -65,7 +63,6 @@ public class SwaggerGenerator {
     private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.1";
 
-    private static final Map<String, Object> SCHEMA_INSTANCE_CACHE = new ConcurrentHashMap<>();
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -75,13 +72,14 @@ public class SwaggerGenerator {
         OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
     }
 
+    private final Set<String> TAGS = new HashSet<>();
+
     private SwaggerGenerator() {
     }
 
     public static SwaggerGenerator getInstance() {
         return SWAGGER_GENERATOR;
     }
-
 
     public OpenAPI generateOpenAPI(Channel channel, List<TerminalServiceAccess> serviceAccesses,
                                    RestUrlBuilder urlBuilder, String contextPath, Integer port) {
@@ -98,7 +96,7 @@ public class SwaggerGenerator {
             if (exposedAble(serviceAccess)) {
                 RestUrl restUrl = urlBuilder.build(serviceAccess);
                 //generate tags
-                generateApiTag(openAPI,serviceAccess);
+                generateApiTag(openAPI, serviceAccess);
                 //Create Operation object
                 Operation operation = new Operation();
                 //path item
@@ -122,32 +120,35 @@ public class SwaggerGenerator {
 
     private void generateApiTag(OpenAPI openAPI, TerminalServiceAccess serviceAccess) {
         Service parent = serviceAccess.getService().getParent();
-        if(Objects.nonNull(parent)){
+        if (Objects.nonNull(parent)) {
             List<Tag> tags = openAPI.getTags();
-            if (Objects.isNull(tags)){
+            if (Objects.isNull(tags)) {
                 tags = new ArrayList<>();
             }
-            Tag tag = new Tag();
-            tag.setName(provideTageName(parent));
-            tags.add(tag);
-            openAPI.setTags(tags);
+            String tageName = provideTageName(parent);
+            if (TAGS.add(tageName)) {
+                Tag tag = new Tag();
+                tag.setName(tageName);
+                tags.add(tag);
+                openAPI.setTags(tags);
+            }
         }
     }
 
     private String provideTageName(Service parent) {
-       if (Objects.nonNull(parent)){
-           String alias = parent.getAlias();
-           String code = parent.getCode();
-           if (Objects.nonNull(alias) && !alias.isBlank()){
-               if (alias.contains("-")){
-                   return alias.replace("-"," ").toUpperCase().replace("/","");
-               }else {
-                   return String.join(" ", org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase(alias)).toUpperCase().replace("/","");
-               }
-           }
-           return code;
-       }
-       return null;
+        if (Objects.nonNull(parent)) {
+            String alias = parent.getAlias();
+            String code = parent.getCode();
+            if (Objects.nonNull(alias) && !alias.isBlank()) {
+                if (alias.contains("-")) {
+                    return alias.replace("-", " ").toUpperCase().replace("/", "");
+                } else {
+                    return String.join(" ", org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase(alias)).toUpperCase().replace("/", "");
+                }
+            }
+            return code;
+        }
+        return null;
     }
 
 
@@ -290,6 +291,7 @@ public class SwaggerGenerator {
                 operation.setResponses(apiResponses);
                 //create schema
                 Schema<?> schemaItem = OBJECT_MAPPER.readValue(StringUtils.cleanUpJsonCharacters(responseJsonSchema), Schema.class);
+                schemaItem.$ref(schemaName);
                 components.addSchemas(schemaName, schemaItem);
             } catch (Exception ignore) {
             }
@@ -301,9 +303,9 @@ public class SwaggerGenerator {
     private String generateJavaServiceResponseJsonSchema(JavaService javaService) {
         try {
             String implPath = javaService.getJavaImplementationClassName();
-            String[] split = org.apache.commons.lang3.StringUtils.split(implPath,".");
+            String[] split = org.apache.commons.lang3.StringUtils.split(implPath, ".");
             String bean = split[0];
-            String methodName = split[1].substring(0,split[1].indexOf("("));
+            String methodName = split[1].substring(0, split[1].indexOf("("));
             AbstractJavaService beanInstance = ClassLoader.findBeanOrCreateInstanceOfClass(bean, AbstractJavaService.class);
             Method method = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(beanInstance.getClass()))
                     .filter(m -> m.getName().contains(methodName))
@@ -311,7 +313,7 @@ public class SwaggerGenerator {
             assert method != null;
             Class<?> returnType = method.getReturnType();
             return generateJavaServiceResponseSchema(returnType.getName());
-        }catch (Exception ignore){
+        } catch (Exception ignore) {
             return null;
         }
     }

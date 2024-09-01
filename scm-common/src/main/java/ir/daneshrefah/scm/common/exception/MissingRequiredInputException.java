@@ -21,7 +21,6 @@ public class MissingRequiredInputException extends AbstractValidationException {
     public ExceptionInformation getExceptionInformation() {
         return ExceptionInformationBuilder
                 .createInstance()
-                .defineMessageParameter("source",getSource())
                 .buildWithStatus(MessageStatus.SC_ERROR_VALIDATION);
     }
 

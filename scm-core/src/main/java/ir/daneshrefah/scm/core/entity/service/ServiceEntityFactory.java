@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEnti
 import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -62,6 +63,8 @@ public class ServiceEntityFactory {
             restExternalService.setRequestBodyType(request.getRequestBodyType());
             restExternalService.setResponseBodyType(request.getResponseBodyType());
             restExternalService.setRequestContentType(request.getRequestContentType());
+            restExternalService.setParameters(new ArrayList<>());
+            restExternalService.setResponseConditions(new ArrayList<>());
         }
         return entity;
     }

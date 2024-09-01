@@ -7,4 +7,5 @@ import lombok.Data;
 public class ParameterDatasourceCondition extends BaseModel<Long> {
     private ParameterDatasource parameter;
     private String conditionValue;
+    private DatasourceConditionOperation operation;
 }

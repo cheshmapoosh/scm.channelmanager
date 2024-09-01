@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.core.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
+import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
 import ir.daneshrefah.scm.common.model.error.Error;
@@ -13,6 +15,7 @@ import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -56,7 +59,12 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     @Override
     public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
-        String serviceUrl = "direct:SVI_" + service.getCode();
+        return callService(service.getCode(),message);
+    }
+
+    @Override
+    public Message callService(String serviceCode, Message message) {
+        String serviceUrl = "direct:SVI_" +serviceCode;
         Exchange exchangeResult = producerTemplate.send(serviceUrl, exchange -> {
             exchange.getIn().setBody(message);
         });

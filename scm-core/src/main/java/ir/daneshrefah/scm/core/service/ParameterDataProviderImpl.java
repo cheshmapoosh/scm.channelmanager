@@ -1,8 +1,13 @@
 package ir.daneshrefah.scm.core.service;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasource;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
@@ -31,6 +36,7 @@ import java.util.Optional;
 public class ParameterDataProviderImpl extends ParameterDataProvider {
 
     private final CacheTemplate cacheTemplate;
+    private final PersonService personService;
 
 
     @PostConstruct
@@ -64,11 +70,46 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
                 case AUTHENTICATION_EFFECTIVE_NICKNAME -> null;
                 case AUTHENTICATION_DELEGATOR_USERNAME -> null;
                 case AUTHENTICATION_DELEGATOR_NICKNAME -> null;
+                case AUTHENTICATION_NATIONAL_ID -> provideAuthenticationNationalId(parameter);
+                case AUTHENTICATION_SUB_ORGANIZATION -> provideAuthenticationSubOrg(parameter);
             };
             return Optional.ofNullable(value);
         }
         return Optional.empty();
     }
+
+    private Object provideAuthenticationSubOrg(Parameter parameter) {
+        Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        assert authentication != null;
+        UserProfile profile = authentication.getProfile();
+        Long personId = profile.getPersonId();
+        GeneralPerson foundPerson = personService.findPersonByPersonId(personId.intValue());
+        String subOrganizationId = null;
+        if (foundPerson instanceof GeneralLegalPerson legalPerson) {
+            subOrganizationId = legalPerson.getSubOrganizationId();
+        }
+        return Objects.nonNull(subOrganizationId) && !subOrganizationId.isBlank()
+                ? subOrganizationId
+                : parameter.getDefaultValue();
+    }
+
+    private Object provideAuthenticationNationalId(Parameter parameter) {
+        Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        assert authentication != null;
+        UserProfile profile = authentication.getProfile();
+        Long personId = profile.getPersonId();
+        GeneralPerson foundPerson = personService.findPersonByPersonId(personId.intValue());
+        String nationalId = null;
+        if (foundPerson instanceof GeneralRealPerson realPerson) {
+            nationalId = realPerson.getNationalCode();
+        } else if (foundPerson instanceof GeneralLegalPerson legalPerson) {
+            nationalId = legalPerson.getNationalId();
+        }
+        return Objects.nonNull(nationalId) && !nationalId.isBlank()
+                ? nationalId
+                : parameter.getDefaultValue();
+    }
+
 
     private Object provideCorrelationId() {
         return MessageInputContext.getCurrentContext().getCorrelationId();
@@ -104,12 +145,12 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
     }
 
     private Object provideStaticVariable(Parameter parameter) {
-        return  parameter.getDatasource().getValue();
+        return parameter.getDatasource().getValue();
     }
 
     private Object provideMessageVariable(Parameter parameter, Message message) {
         String dataSource = parameter.getDatasource().getValue();
-        if (StringUtils.isBlank(dataSource)){
+        if (StringUtils.isBlank(dataSource)) {
             return null;
         }
         return message.getPayload().get(dataSource);
