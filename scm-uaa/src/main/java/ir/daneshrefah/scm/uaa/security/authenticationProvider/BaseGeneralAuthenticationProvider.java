@@ -17,9 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -48,6 +50,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private final UserDetailsService userDetailsService;
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
+    private final AuthenticationTrustResolver authenticationTrustResolver;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -55,6 +58,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         if (null == preAuthenticationToken.getRegisteredClient()) {
             preAuthenticationToken.setRegisteredClient(clientRepository.findByClientId(preAuthenticationToken.getClientId()));
         }
+        checkClientAuthenticatedIfRequired(preAuthenticationToken);
         checkClientVersionIfRequired(preAuthenticationToken);
         String clientTerminalCode = preAuthenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
@@ -106,6 +110,19 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
 
         return buildResponse(authentication, preAuthenticationToken, authorization);
+    }
+
+    private void checkClientAuthenticatedIfRequired(PreAuthenticationToken preAuthenticationToken) {
+        RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
+        if (Objects.isNull(registeredClient)) {
+            throwError(preAuthenticationToken, new ClientAuthenticationRequiredException());
+        }
+        if (!registeredClient.getClientAuthenticationMethods().contains(ClientAuthenticationMethod.NONE)) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (!authenticationTrustResolver.isFullyAuthenticated(authentication)) {
+                throwError(preAuthenticationToken, new ClientAuthenticationRequiredException());
+            }
+        }
     }
 
     private void checkClientVersionIfRequired(PreAuthenticationToken preAuthenticationToken) {

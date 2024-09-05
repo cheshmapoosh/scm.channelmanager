@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
@@ -47,8 +48,9 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                                                UserDetailsService userDetailsService,
                                                OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                                DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                               AuthenticationResponseTokenGenerator responseTokenGenerator) {
-        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
+                                               AuthenticationResponseTokenGenerator responseTokenGenerator,
+                                               AuthenticationTrustResolver authenticationTrustResolver) {
+        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider, authenticationTrustResolver);
         this.responseTokenGenerator = responseTokenGenerator;
     }
 

@@ -55,6 +55,9 @@ public interface ClientMapper {
         if (entity.isClientAuthenticationMethodKeyJwt()) {
             list.add(ClientAuthenticationMethod.PRIVATE_KEY_JWT);
         }
+        if (entity.isClientAuthenticationMethodNone()) {
+            list.add(ClientAuthenticationMethod.NONE);
+        }
         return list;
     }
 
