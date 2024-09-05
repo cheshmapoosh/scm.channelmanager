@@ -14,6 +14,7 @@ public class Constants {
     public static final String CLIENT_SETTING_KEY_TERMINAL_CODE = "terminalCode";
     public static final String CLIENT_SETTING_KEY_CHECK_VERSION = "checkVersion";
     public static final String CLIENT_SETTING_KEY_CHECK_ACTIVATION = "checkActivation";
+    public static final String CLIENT_SETTING_KEY_CHECK_AUTHENTICATION = "checkAuthentication";
 
     public final static String CLAIM_KEY_TERMINAL = "trm";
     public final static String CLAIM_KEY_GRANT = "grn";

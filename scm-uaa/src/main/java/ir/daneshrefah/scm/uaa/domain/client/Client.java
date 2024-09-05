@@ -26,7 +26,6 @@ public class Client {
     private List<AuthorizationGrantType> authorizationGrantTypes;
     private List<String> redirectUris;
     private boolean requireAuthorizationConsent;
-    private boolean requireClientAuthentication;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;

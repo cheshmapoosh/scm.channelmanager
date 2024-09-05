@@ -32,7 +32,6 @@ public class ClientServiceTest {
         client.setRedirectUris(Arrays.asList("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc",
                 "http://127.0.0.1:8080/authorized"));
         client.setRequireAuthorizationConsent(true);
-        client.setRequireClientAuthentication(false);
         client.setRequireProofKey(false);
         client.setCheckVersion(true);
         client.setCheckActivation(true);
