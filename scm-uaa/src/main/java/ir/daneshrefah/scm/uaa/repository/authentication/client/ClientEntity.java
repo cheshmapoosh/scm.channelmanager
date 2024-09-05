@@ -59,8 +59,8 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
-    private boolean checkAccessAddressesMatch;
-    private String accessAddresses;
+    private boolean checkIpAddressesMatch;
+    private String allowIpAddresses;
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;

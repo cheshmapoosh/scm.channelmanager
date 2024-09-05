@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -32,5 +33,6 @@ public class Client {
     private Long sessionTimeToLiveMinute;
     private List<ClientVersion> versions;
     private List<ClientScopeRelation> scopes;
-
+    private boolean checkIpAddressesMatch;
+    private Set<String> allowIpAddresses;
 }

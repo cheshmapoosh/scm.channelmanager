@@ -1,8 +1,9 @@
 # Ignore Gradle project-specific cache directory
 .gradle
-
+*.log
 # Ignore Gradle build output directory
 build
 /.idea/SCM.iml
 /.idea/.name
 /.idea/
+
