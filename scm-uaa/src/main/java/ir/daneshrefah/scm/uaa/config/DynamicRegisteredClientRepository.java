@@ -76,6 +76,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
                     .setting(CLIENT_SETTING_KEY_CHECK_VERSION, client.isCheckVersion())
                     .setting(CLIENT_SETTING_KEY_CHECK_ACTIVATION, client.isCheckActivation())
+                    .setting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS, client.isCheckIpAddress())
                     .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses())
                     .build();
             RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))

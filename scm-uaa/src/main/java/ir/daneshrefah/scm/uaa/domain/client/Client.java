@@ -33,6 +33,6 @@ public class Client {
     private Long sessionTimeToLiveMinute;
     private List<ClientVersion> versions;
     private List<ClientScopeRelation> scopes;
-    private boolean checkIpAddressesMatch;
+    private boolean checkIpAddress;
     private Set<String> allowIpAddresses;
 }

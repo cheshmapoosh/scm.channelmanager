@@ -13,6 +13,11 @@ public class ClientIpAddressNotAllowedException extends BaseAuthenticationExcept
         super("client ip address not allowed.", null);
     }
 
+    public ClientIpAddressNotAllowedException(String message) {
+        super(message, null);
+    }
+
+
     @Override
     public String getErrorCode() {
         return "client_ip_address_not_allowed";

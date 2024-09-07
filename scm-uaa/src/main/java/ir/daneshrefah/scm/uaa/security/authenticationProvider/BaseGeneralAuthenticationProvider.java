@@ -116,14 +116,19 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private void checkClientIpAddressMatchIfRequired(PreAuthenticationToken preAuthenticationToken) {
         RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
         if (Objects.isNull(registeredClient)) {
-            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException());
+            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException("registeredClient is null"));
         }
-        Set<String> allowIpAddresses = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES);
-        if (CollectionUtils.isEmpty(allowIpAddresses)) {
+        boolean checkIpAddress = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS);
+        if (!checkIpAddress) {
             return;
         }
-        boolean match = allowIpAddresses.stream().anyMatch(ipAddress -> AuthenticationUtils.isIpAddressMatches(ipAddress, preAuthenticationToken.getRemoteAddress()));
 
+        Set<String> allowIpAddresses = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES);
+        if (CollectionUtils.isEmpty(allowIpAddresses)) {
+            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException("allowIpAddresses is empty"));
+        }
+
+        boolean match = allowIpAddresses.stream().anyMatch(ipAddress -> AuthenticationUtils.isIpAddressMatches(ipAddress, preAuthenticationToken.getRemoteAddress()));
         if (!match) {
             throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException());
         }

@@ -59,7 +59,7 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
-    private boolean checkIpAddressesMatch;
+    private boolean checkIpAddress;
     private String allowIpAddresses;
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
