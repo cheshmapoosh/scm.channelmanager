@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.exception.*;
@@ -50,7 +51,6 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private final UserDetailsService userDetailsService;
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
-    private final AuthenticationTrustResolver authenticationTrustResolver;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -122,10 +122,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         if (CollectionUtils.isEmpty(allowIpAddresses)) {
             return;
         }
-        boolean match = allowIpAddresses.stream().anyMatch(s -> {
-            IpAddressMatcher ipAddressMatcher = new IpAddressMatcher(s);
-            return ipAddressMatcher.matches(preAuthenticationToken.getRemoteAddress());
-        });
+        boolean match = allowIpAddresses.stream().anyMatch(ipAddress -> AuthenticationUtils.isIpAddressMatches(ipAddress, preAuthenticationToken.getRemoteAddress()));
 
         if (!match) {
             throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException());
@@ -139,7 +136,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
         if (!registeredClient.getClientAuthenticationMethods().contains(ClientAuthenticationMethod.NONE)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (!authenticationTrustResolver.isFullyAuthenticated(authentication)) {
+            if (!AuthenticationUtils.isFullyAuthenticated()) {
                 throwError(preAuthenticationToken, new ClientAuthenticationRequiredException());
             }
         }

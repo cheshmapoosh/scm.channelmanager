@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
-import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -98,12 +97,12 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .clientTimestamp(clientTimestamp)
                 .accessParameter((String) headers.get(SCM_PARAMETER_ACCESS_PARAMETER))
                 .username((String) headers.get(SCM_PARAMETER_USERNAME))
-                .authenticationType(AuthenticationUtils.extractAuthenticationType(
+                .authenticationType(AuthenticationUtils.extractTokenType(
                         (String) headers.get(SCM_PARAMETER_AUTHORIZATION),
                         (String) headers.get(SCM_PARAMETER_USERNAME),
                         (String) headers.get(SCM_PARAMETER_CREDENTIAL)))
                 .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headers.get(SCM_PARAMETER_AUTHORIZATION)))
-                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? ClientAuthenticationType.BASIC : ClientAuthenticationType.ANONYMOUS)
+                .transactionAuthenticationType(StringUtils.isNotEmpty(inputClaimCode) ? TokenType.BASIC : TokenType.ANONYMOUS)
                 .transactionAuthenticationValue(inputClaimCode)
                 .serverHost(CamelUtils.getServerHostFromExchange(input))
                 .body(body)

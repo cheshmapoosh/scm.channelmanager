@@ -56,9 +56,9 @@ public abstract class MessageInput<T> {
     private Instant clientTimestamp;
     private String accessParameter;
     private String username;
-    private ClientAuthenticationType authenticationType;
+    private TokenType authenticationType;
     private String authenticationValue;
-    private ClientAuthenticationType transactionAuthenticationType;
+    private TokenType transactionAuthenticationType;
     private String transactionAuthenticationValue;
     public String getHeader(String key) {
         return null != headers ? (String) headers.get(key) : null;

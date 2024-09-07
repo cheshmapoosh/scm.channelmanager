@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -23,7 +23,7 @@ public class ClientAuthenticationConverter extends org.springframework.security.
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !ClientAuthenticationType.CLIENT.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.CLIENT.equals(request.getAuthenticationType())) {
             return null;
         }
 

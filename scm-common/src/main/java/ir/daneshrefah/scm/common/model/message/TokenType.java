@@ -7,7 +7,7 @@ package ir.daneshrefah.scm.common.model.message;
  * @version 1.0
  * @since 2024-01-06
  */
-public enum ClientAuthenticationType {
+public enum TokenType {
 
     ANONYMOUS, BASIC, CLIENT, BEARER, SESSION;
 

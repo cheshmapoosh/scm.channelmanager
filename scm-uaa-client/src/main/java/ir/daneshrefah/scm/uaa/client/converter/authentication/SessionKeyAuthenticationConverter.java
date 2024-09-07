@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -50,7 +50,7 @@ public class SessionKeyAuthenticationConverter implements AuthenticationConverte
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !ClientAuthenticationType.SESSION.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.SESSION.equals(request.getAuthenticationType())) {
             return null;
         }
 

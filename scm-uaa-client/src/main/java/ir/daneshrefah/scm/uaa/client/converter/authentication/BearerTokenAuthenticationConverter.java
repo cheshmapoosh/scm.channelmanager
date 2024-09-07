@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.converter.authentication;
 
 import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
-import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -17,7 +17,7 @@ public class BearerTokenAuthenticationConverter implements AuthenticationConvert
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !ClientAuthenticationType.BEARER.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.BEARER.equals(request.getAuthenticationType())) {
             return null;
         }
 
