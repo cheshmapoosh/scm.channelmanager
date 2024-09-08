@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.message;
 
-import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.common.model.message.HttpMessageInput;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
@@ -63,9 +63,9 @@ public class DefaultHttpMessageInputBuilder {
         return new DefaultHttpMessageInputBuilder(request, serviceCode);
     }
 
-    private ClientAuthenticationType extractAuthenticationType(String authorizationHeader) {
+    private TokenType extractAuthenticationType(String authorizationHeader) {
         if (StringUtils.isEmpty(authorizationHeader)) {
-            return ClientAuthenticationType.ANONYMOUS;
+            return TokenType.ANONYMOUS;
         }
 
         String AUTHENTICATION_SCHEME_BASIC = "Basic";
@@ -73,13 +73,13 @@ public class DefaultHttpMessageInputBuilder {
         String AUTHENTICATION_SCHEME_SESSION = "Session";
 
         if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return ClientAuthenticationType.BASIC;
+            return TokenType.BASIC;
         } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
-            return ClientAuthenticationType.SESSION;
+            return TokenType.SESSION;
         } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
-            return ClientAuthenticationType.BEARER;
+            return TokenType.BEARER;
         }
-        return ClientAuthenticationType.ANONYMOUS;
+        return TokenType.ANONYMOUS;
     }
 
     private String extractAuthenticationValue(String authorizationHeader) {

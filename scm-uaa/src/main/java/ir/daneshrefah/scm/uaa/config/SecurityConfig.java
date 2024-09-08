@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.uaa.config;
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
-import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
@@ -15,23 +14,18 @@ import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConve
 import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import jakarta.servlet.*;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationManagerResolver;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,16 +40,15 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -223,6 +216,11 @@ public class SecurityConfig {
         DelegatingPasswordEncoder passwordEncoder = new DelegatingPasswordEncoder("MD5", encoders);
         passwordEncoder.setDefaultPasswordEncoderForMatches(defaultPasswordEncoder);
         return passwordEncoder;
+    }
+
+    @Bean
+    public AuthenticationTrustResolver authenticationTrustResolver() {
+        return new AuthenticationTrustResolverImpl();
     }
 
     @Bean

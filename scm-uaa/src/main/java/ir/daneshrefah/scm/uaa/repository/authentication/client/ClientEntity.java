@@ -40,6 +40,8 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean clientAuthenticationMethodSecretJwt;
     @Column(name = "CLIENT_AUTH_METHOD_KEY_JWT")
     private boolean clientAuthenticationMethodKeyJwt;
+    @Column(name = "CLIENT_AUTH_METHOD_NONE")
+    private boolean clientAuthenticationMethodNone;
 //    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
 //    private boolean authorizationGrantTypeAuthorizationCode;
 //    @Column(name = "AUTH_GRANT_REFRESH_TOKEN")
@@ -54,10 +56,11 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     @Convert(converter = StringSetConverter.class)
     private Set<String> redirectUris;
     private boolean requireAuthorizationConsent;
-    private boolean requireClientAuthentication;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
+    private boolean checkIpAddress;
+    private String allowIpAddresses;
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;

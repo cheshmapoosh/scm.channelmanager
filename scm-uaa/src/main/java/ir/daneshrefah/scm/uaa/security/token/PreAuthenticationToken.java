@@ -26,6 +26,10 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     private String claimCode;
     @Getter
     private AuthorizationGrantType grantType;
+    @Setter
+    @Getter
+    private String remoteAddress;
+
     /**
      * if in user authentication time, client doesn't authenticate. user must send client's id
      * */

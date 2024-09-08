@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.exception.*;
@@ -14,20 +15,22 @@ import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
@@ -55,6 +58,8 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         if (null == preAuthenticationToken.getRegisteredClient()) {
             preAuthenticationToken.setRegisteredClient(clientRepository.findByClientId(preAuthenticationToken.getClientId()));
         }
+        checkClientAuthenticatedIfRequired(preAuthenticationToken);
+        checkClientIpAddressMatchIfRequired(preAuthenticationToken);
         checkClientVersionIfRequired(preAuthenticationToken);
         String clientTerminalCode = preAuthenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
 
@@ -106,6 +111,40 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
 
         return buildResponse(authentication, preAuthenticationToken, authorization);
+    }
+
+    private void checkClientIpAddressMatchIfRequired(PreAuthenticationToken preAuthenticationToken) {
+        RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
+        if (Objects.isNull(registeredClient)) {
+            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException("registeredClient is null"));
+        }
+        boolean checkIpAddress = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS);
+        if (!checkIpAddress) {
+            return;
+        }
+
+        Set<String> allowIpAddresses = registeredClient.getClientSettings().getSetting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES);
+        if (CollectionUtils.isEmpty(allowIpAddresses)) {
+            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException("allowIpAddresses is empty"));
+        }
+
+        boolean match = allowIpAddresses.stream().anyMatch(ipAddress -> AuthenticationUtils.isIpAddressMatches(ipAddress, preAuthenticationToken.getRemoteAddress()));
+        if (!match) {
+            throwError(preAuthenticationToken, new ClientIpAddressNotAllowedException());
+        }
+    }
+
+    private void checkClientAuthenticatedIfRequired(PreAuthenticationToken preAuthenticationToken) {
+        RegisteredClient registeredClient = preAuthenticationToken.getRegisteredClient();
+        if (Objects.isNull(registeredClient)) {
+            throwError(preAuthenticationToken, new ClientAuthenticationRequiredException());
+        }
+        if (!registeredClient.getClientAuthenticationMethods().contains(ClientAuthenticationMethod.NONE)) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (!AuthenticationUtils.isFullyAuthenticated()) {
+                throwError(preAuthenticationToken, new ClientAuthenticationRequiredException());
+            }
+        }
     }
 
     private void checkClientVersionIfRequired(PreAuthenticationToken preAuthenticationToken) {

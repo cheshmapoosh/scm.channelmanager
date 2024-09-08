@@ -1,13 +1,16 @@
 package ir.daneshrefah.scm.uaa.common.utils;
 
-import ir.daneshrefah.scm.common.model.message.ClientAuthenticationType;
+import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.security.authentication.AuthenticationTrustResolver;
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +25,12 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PERSON_USERNAME_UN
  * @since 2024-02-12
  */
 public class AuthenticationUtils {
+
+    private final static AuthenticationTrustResolver authenticationTrustResolver= new AuthenticationTrustResolverImpl();
+    private final static String TOKEN_TYPE_BASIC = "Basic";
+    private final static String TOKEN_TYPE_BEARER = "Bearer";
+    private final static String TOKEN_TYPE_SESSION = "Session";
+
 
     public static UserAuthentication getLoggedInUserAuthentication() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -77,27 +86,23 @@ public class AuthenticationUtils {
                 .build();
     }
 
-    public static ClientAuthenticationType extractAuthenticationType(String authorizationHeader, String username, String credential) {
+    public static TokenType extractTokenType(String authorizationHeader, String username, String credential) {
         if (StringUtils.isEmpty(authorizationHeader)) {
-            return ClientAuthenticationType.ANONYMOUS;
+            return TokenType.ANONYMOUS;
         }
 
-        String AUTHENTICATION_SCHEME_BASIC = "Basic";
-        String AUTHENTICATION_SCHEME_BEARER = "Bearer";
-        String AUTHENTICATION_SCHEME_SESSION = "Session";
-
-        if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BASIC)) {
-            return ClientAuthenticationType.CLIENT;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_SESSION)) {
-            return ClientAuthenticationType.SESSION;
-        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, AUTHENTICATION_SCHEME_BEARER)) {
-            return ClientAuthenticationType.BEARER;
+        if (StringUtils.startsWithIgnoreCase(authorizationHeader, TOKEN_TYPE_BASIC)) {
+            return TokenType.CLIENT;
+        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, TOKEN_TYPE_SESSION)) {
+            return TokenType.SESSION;
+        } else if (StringUtils.startsWithIgnoreCase(authorizationHeader, TOKEN_TYPE_BEARER)) {
+            return TokenType.BEARER;
         } else {
             if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(credential)) {
-                return ClientAuthenticationType.BASIC;
+                return TokenType.BASIC;
             }
         }
-        return ClientAuthenticationType.ANONYMOUS;
+        return TokenType.ANONYMOUS;
     }
 
     public static String extractAuthenticationValue(String authorizationHeader) {
@@ -113,13 +118,11 @@ public class AuthenticationUtils {
 
     public static boolean isFullyAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {
-            return false;
-        }
-        if (!(authentication instanceof ir.daneshrefah.scm.common.model.message.Authentication)) {
-            return false;
-        }
-        return ((ir.daneshrefah.scm.common.model.message.Authentication) authentication).isFullyAuthenticated();
+        return isFullyAuthenticated(authentication);
+    }
+
+    public static boolean isFullyAuthenticated(Authentication authentication) {
+        return authenticationTrustResolver.isFullyAuthenticated(authentication);
     }
 
     public static Authentication getAuthentication() {
@@ -190,6 +193,14 @@ public class AuthenticationUtils {
             throw new RuntimeException("invalid operation for authenticateTransaction");
         }
         authentication.authenticateTransaction(isAuthenticated);
+    }
+
+    public static boolean isIpAddressMatches (String ipAddress, String matchesIpAddress) {
+        if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(matchesIpAddress)) {
+            return false;
+        }
+        IpAddressMatcher ipAddressMatcher = new IpAddressMatcher(ipAddress);
+        return ipAddressMatcher.matches(matchesIpAddress);
     }
 
 }

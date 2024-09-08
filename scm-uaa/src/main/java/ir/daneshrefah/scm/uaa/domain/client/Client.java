@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,12 +27,12 @@ public class Client {
     private List<AuthorizationGrantType> authorizationGrantTypes;
     private List<String> redirectUris;
     private boolean requireAuthorizationConsent;
-    private boolean requireClientAuthentication;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
     private Long sessionTimeToLiveMinute;
     private List<ClientVersion> versions;
     private List<ClientScopeRelation> scopes;
-
+    private boolean checkIpAddress;
+    private Set<String> allowIpAddresses;
 }

@@ -6,14 +6,13 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientScopeRelation;
-import jakarta.persistence.Column;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -29,6 +28,7 @@ public interface ClientMapper {
 
     @Mapping(target = "authenticationMethods", expression = "java(mapClientAuthenticationMethods(entity))")
     @Mapping(target = "authorizationGrantTypes", expression = "java(mapAuthorizationGrantTypes(entity))")
+    @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(entity))")
     Client toModel(ClientEntity entity);
 
     default List<AuthorizationGrantType> mapAuthorizationGrantTypes(ClientEntity entity) {
@@ -39,6 +39,14 @@ public interface ClientMapper {
         }
 
         return list;
+    }
+
+    default Set<String> mapAllowIpAddresses(ClientEntity entity) {
+        String[] elements = StringUtils.split(entity.getAllowIpAddresses(), ",;");
+        if (ArrayUtils.isNotEmpty(elements)) {
+            return Set.of(elements);
+        }
+        return Collections.emptySet();
     }
 
     default List<ClientAuthenticationMethod> mapClientAuthenticationMethods(ClientEntity entity) {
@@ -54,6 +62,9 @@ public interface ClientMapper {
         }
         if (entity.isClientAuthenticationMethodKeyJwt()) {
             list.add(ClientAuthenticationMethod.PRIVATE_KEY_JWT);
+        }
+        if (entity.isClientAuthenticationMethodNone()) {
+            list.add(ClientAuthenticationMethod.NONE);
         }
         return list;
     }
@@ -82,7 +93,13 @@ public interface ClientMapper {
 
     List<Client> toModels(Iterable<ClientEntity> clientEntities);
 
+    @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(model))")
     ClientEntity toClientIdEntity(Client model);
+
+    default String mapAllowIpAddresses(Client model) {
+        return StringUtils.join(model.getAllowIpAddresses(), ',');
+    }
+
 
 //    @Mapping(source = "client", target = "client", qualifiedByName = "toClientIdEntity")
 //    ClientScopeRelation toScopeEntity(ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation model);

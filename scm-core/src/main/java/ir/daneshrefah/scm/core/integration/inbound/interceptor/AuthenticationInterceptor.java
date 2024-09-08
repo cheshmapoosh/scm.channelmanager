@@ -44,7 +44,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                 .username(messageInput.getUsername())
                 .terminalCode(messageInput.getTerminalCode())
                 .clientId(messageInput.getClientId())
-                .authenticationType(messageInput.getAuthenticationType())
+                .tokenType(messageInput.getAuthenticationType())
                 .authenticationValue(messageInput.getAuthenticationValue())
                 .accessParameter(messageInput.getAccessParameter())
                 .build();
@@ -52,6 +52,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
         Exception error = null;
         try {
             userAuthentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+            SecurityContextHolder.getContext().setAuthentication(userAuthentication);
         } catch (ClientAuthenticationException e) {
             userAuthentication = e.getAuthentication();
             error = null != e.getCause() ? (Exception) e.getCause() : e;
@@ -67,7 +68,6 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                     ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED, errorMessage), MessageStatus.SC_UNAUTHORIZED);
         }
 //        logAuthenticationEvent(authenticationRequest, message, authentication, error, startTime);
-        SecurityContextHolder.getContext().setAuthentication(userAuthentication);
         return message;
     }
 
