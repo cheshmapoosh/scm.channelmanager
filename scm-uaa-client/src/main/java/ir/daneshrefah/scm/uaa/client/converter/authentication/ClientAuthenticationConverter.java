@@ -23,7 +23,7 @@ public class ClientAuthenticationConverter extends org.springframework.security.
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !TokenType.CLIENT.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.CLIENT.equals(request.getTokenType())) {
             return null;
         }
 

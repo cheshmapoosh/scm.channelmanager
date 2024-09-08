@@ -37,9 +37,8 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                                          ClientService clientService,
                                          UserDetailsService userDetailsService,
                                          OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
-                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                         AuthenticationTrustResolver authenticationTrustResolver) {
-        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider, authenticationTrustResolver);
+                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider) {
+        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
     }
 
     @Override

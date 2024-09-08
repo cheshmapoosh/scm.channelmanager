@@ -48,9 +48,8 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                                                UserDetailsService userDetailsService,
                                                OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                                DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                               AuthenticationResponseTokenGenerator responseTokenGenerator,
-                                               AuthenticationTrustResolver authenticationTrustResolver) {
-        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider, authenticationTrustResolver);
+                                               AuthenticationResponseTokenGenerator responseTokenGenerator) {
+        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
         this.responseTokenGenerator = responseTokenGenerator;
     }
 

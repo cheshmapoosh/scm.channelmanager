@@ -17,7 +17,7 @@ public class BearerTokenAuthenticationConverter implements AuthenticationConvert
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !TokenType.BEARER.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.BEARER.equals(request.getTokenType())) {
             return null;
         }
 

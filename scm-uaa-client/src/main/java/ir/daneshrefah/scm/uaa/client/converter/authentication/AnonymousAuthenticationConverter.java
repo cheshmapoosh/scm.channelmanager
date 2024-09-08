@@ -33,7 +33,7 @@ public class AnonymousAuthenticationConverter extends org.springframework.securi
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null != request && !TokenType.ANONYMOUS.equals(request.getAuthenticationType())) {
+        if (null != request && !TokenType.ANONYMOUS.equals(request.getTokenType())) {
             return null;
         }
         return new AnonymousAuthenticationToken(

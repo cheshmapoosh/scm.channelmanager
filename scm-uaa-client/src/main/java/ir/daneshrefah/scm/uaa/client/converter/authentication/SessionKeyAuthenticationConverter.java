@@ -50,7 +50,7 @@ public class SessionKeyAuthenticationConverter implements AuthenticationConverte
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !TokenType.SESSION.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.SESSION.equals(request.getTokenType())) {
             return null;
         }
 

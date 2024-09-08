@@ -18,7 +18,7 @@ public class ClientAuthenticationRequest {
     private String username;
     private String terminalCode;
     private String clientId;
-    private TokenType authenticationType;
+    private TokenType tokenType;
     private String authenticationValue;
     private String accessParameter;
 

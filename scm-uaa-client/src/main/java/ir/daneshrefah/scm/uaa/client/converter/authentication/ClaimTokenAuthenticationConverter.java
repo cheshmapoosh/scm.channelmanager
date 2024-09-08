@@ -19,7 +19,7 @@ public class ClaimTokenAuthenticationConverter implements AuthenticationConverte
 
     @Override
     public BaseTerminalAuthenticationToken convertByRequest(ClientAuthenticationRequest request) {
-        if (null == request || !TokenType.BASIC.equals(request.getAuthenticationType())) {
+        if (null == request || !TokenType.BASIC.equals(request.getTokenType())) {
             return null;
         }
 

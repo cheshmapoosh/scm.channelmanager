@@ -39,7 +39,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
         ClientAuthenticationRequest authenticationRequest = ClientAuthenticationRequest.builder()
                 .username(messageInput.getUsername())
                 .terminalCode(messageInput.getTerminalCode())
-                .authenticationType(messageInput.getTransactionAuthenticationType())
+                .tokenType(messageInput.getTransactionAuthenticationType())
                 .authenticationValue(messageInput.getTransactionAuthenticationValue())
                 .build();
         UserAuthentication authentication = null;

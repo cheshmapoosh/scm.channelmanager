@@ -44,7 +44,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
                 .username(messageInput.getUsername())
                 .terminalCode(messageInput.getTerminalCode())
                 .clientId(messageInput.getClientId())
-                .authenticationType(messageInput.getAuthenticationType())
+                .tokenType(messageInput.getAuthenticationType())
                 .authenticationValue(messageInput.getAuthenticationValue())
                 .accessParameter(messageInput.getAccessParameter())
                 .build();
