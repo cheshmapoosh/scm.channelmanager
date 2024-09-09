@@ -24,6 +24,7 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     runtimeOnly 'com.ibm.db2:db2jcc:9.1'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz:9.1'
+    runtimeOnly 'com.ibm.db2:db2jcc_license_cu:9.1'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
