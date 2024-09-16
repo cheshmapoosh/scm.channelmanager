@@ -7,6 +7,8 @@ import lombok.Data;
 public class ResponseConditionRequest implements RequestData {
 
     private String transformerId;
+    private String serviceId;
+    private String serviceProviderId;
     private String errorCode;
     private String errorMessage;
 

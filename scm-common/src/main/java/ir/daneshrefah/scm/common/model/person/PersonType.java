@@ -16,23 +16,34 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum PersonType {
 
-    UNKNOWN(20),
-    REAL(1),
-    EMPLOYEE(2),
-    CORPORATE(3),
-    GOVERNANCE(4),
-    BANK(5),
-    TAMIN(6),
+    UNKNOWN(20,-1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
+    REAL(1,50),
+    EMPLOYEE(2,-1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
+    CORPORATE(3,4),
+    GOVERNANCE(4,1),
+    BANK(5,2),
+    TAMIN(6,3),
     /**
      * this person type is used for clients that defined in {@link ClientPerson}
      * */
-    CLIENT(7);
+    CLIENT(7,-1); //TODO 'NAB' DOES NOT HAVE TYPE CODE
 
     private final int code;
+    /**
+     * Provided from : https://scm-core.daneshrefah.ir/Service/scmread.GETDETAILSTATUS
+     */
+    private final int detailCode;
 
     public static PersonType findByCode(int code) {
         return Arrays.stream(PersonType.values())
                 .filter(s -> s.code == code)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static PersonType findNabDetailCode(int detailCode) {
+        return Arrays.stream(PersonType.values())
+                .filter(s -> s.detailCode == detailCode)
                 .findFirst()
                 .orElse(null);
     }

@@ -16,11 +16,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Membership extends BaseModel<Long> {
-
-    private Long id;
     private String nickname;
     private GeneralPerson person;
     private AssetType assetType;
     private CustomerAccount customerAccount;
-
 }

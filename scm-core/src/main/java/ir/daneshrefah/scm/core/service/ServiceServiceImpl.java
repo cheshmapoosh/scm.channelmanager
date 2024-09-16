@@ -64,6 +64,16 @@ public class ServiceServiceImpl implements ServiceService {
         return ApplicationConfig.getObjectMapperInstance();
     }
 
+
+    public void cacheEvict(){
+        synchronized (this){
+            proxyServices.clear();
+            services.clear();
+            proxyServices.clear();
+            assetProviders.clear();
+        }
+    }
+
     @Override
     public List<AssetProvider> findAssetProviderList() {
         if (null == assetProviders || assetProviders.isEmpty()) {
@@ -191,8 +201,6 @@ public class ServiceServiceImpl implements ServiceService {
                 .filter(service -> serviceAccessFindFilter(request, service))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, serviceList);
-
-
     }
 
     private boolean serviceAccessFindFilter(ServiceFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
@@ -554,6 +562,24 @@ public class ServiceServiceImpl implements ServiceService {
                 })
                 .collect(Collectors.toList());
         return new PagedResponseData<>(serviceList.getPageNo(), serviceList.getPageSize(), serviceList.getTotalCount().longValue(), result);
+    }
+
+    @Override
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList(ParentServiceFindRequest request) {
+        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
+                .filter(service -> !ServiceStatus.INACTIVE.equals(service.getStatus()))
+                .filter(service -> ServiceType.PARENT.equals(service.getType()))
+                .filter(service -> ServiceImplementationType.PARENT.equals(service.getImplementationType()))
+                .filter(service -> Objects.isNull(service.getParent()))
+                .filter(service ->
+                        null == request
+                        || null == request.getSearch()
+                        || request.getSearch().isBlank()
+                        || service.getCode().trim().toUpperCase().contains(request.getSearch().trim().toUpperCase())
+                        ||service.getTitle().trim().toLowerCase().contains(request.getSearch().trim().toLowerCase()))
+                .collect(Collectors.toList());
+        return new PagedResponseData<>(request, serviceList);
+
     }
 
     @Override
