@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.common.model.asset.AccountMembership;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.common.service.MembershipLocalFindRequest;
 
@@ -29,6 +31,8 @@ public interface CustomerService {
     List<Membership> findLocalMembershipList(MembershipLocalFindRequest request);
     List<Membership> findMembershipList(MembershipFindRequest request);
     List<AssetProvider> findAllAssetProvider();
+
+    AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
 
 //    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);
