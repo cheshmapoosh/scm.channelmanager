@@ -42,10 +42,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
                 !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();
         }
-        String customerProperty = service.getCustomerProperty();
 
-        if (!isLoadAssetRequired(serviceAccess) && isLoadCustomerRequired(serviceAccess) &&
-                message.hasNonBlankProperty(customerProperty)) {
+        if (!isLoadAssetRequired(serviceAccess)) {
             return message;
         }
 
@@ -53,16 +51,13 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         if (Objects.isNull(profile) || !profile.hasMembership(service.getServiceProvider().getAssetProvider().getId())) {
             throw new NoAssetFoundException();
         }
-        if (StringUtils.isNotEmpty(customerProperty)) {
-            Customer customer = profile.getCustomer(service.getServiceProvider().getAssetProvider().getId());
-            message.setPayloadValue(customerProperty,getMessageCustomerNo(message).orElse(customer.getCustomerNo()));
-        }
+
         return message;
     }
 
     @Override
     protected boolean support(Service service) {
-        return isLoadCustomerRequired(service) || isLoadAssetRequired(service);
+        return  isLoadAssetRequired(service);
     }
 
     private boolean isLoadAssetRequired(Service service) {
@@ -70,17 +65,5 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
         return service.getCheckAccessAsset() && terminal.isSupportCheckAssetAccess();
     }
 
-    private boolean isLoadCustomerRequired(Service service) {
-        Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
-        return StringUtils.isNotEmpty(service.getCustomerProperty()) && terminal.isSupportCustomerInjection();
-    }
-
-    private Optional<String> getMessageCustomerNo(Message message){
-        JsonNode payload = message.getPayload();
-        if (Objects.nonNull(payload) && payload.has("customerNo")){
-            return Optional.ofNullable(payload.get("customerNo").asText(null));
-        }
-        return Optional.empty();
-    }
 
 }
