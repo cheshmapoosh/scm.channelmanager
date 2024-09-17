@@ -65,12 +65,20 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
 
-    public void cacheEvict(){
-        synchronized (this){
-            proxyServices.clear();
-            services.clear();
-            proxyServices.clear();
-            assetProviders.clear();
+    public void cacheEvict() {
+        synchronized (this) {
+            if (Objects.nonNull(serviceProviders)) {
+                serviceProviders.clear();
+            }
+            if (Objects.nonNull(services)) {
+                services.clear();
+            }
+            if (Objects.nonNull(proxyServices)) {
+                proxyServices.clear();
+            }
+            if (Objects.nonNull(assetProviders)) {
+                assetProviders.clear();
+            }
         }
     }
 
@@ -576,7 +584,7 @@ public class ServiceServiceImpl implements ServiceService {
                         || null == request.getSearch()
                         || request.getSearch().isBlank()
                         || service.getCode().trim().toUpperCase().contains(request.getSearch().trim().toUpperCase())
-                        ||service.getTitle().trim().toLowerCase().contains(request.getSearch().trim().toLowerCase()))
+                        || service.getTitle().trim().toLowerCase().contains(request.getSearch().trim().toLowerCase()))
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, serviceList);
 

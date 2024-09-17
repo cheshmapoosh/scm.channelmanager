@@ -12,36 +12,50 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
+import java.util.Objects;
 
 @Mapper
 public interface ResponseConditionMapper {
     ResponseConditionMapper INSTANCE = Mappers.getMapper(ResponseConditionMapper.class);
 
-    @Mapping(source = "conditions",target = "conditions",qualifiedByName = "toConditionsModel")
-    @Mapping(source = "responseParameters",target = "responseParameters",qualifiedByName = "toParametersModel")
+    @Mapping(source = "conditions", target = "conditions", qualifiedByName = "toConditionsModel")
+    @Mapping(source = "responseParameters", target = "responseParameters", qualifiedByName = "toParametersModel")
     ResponseCondition toModel(ResponseConditionEntity entity);
-    @Mapping(source = "conditions",target = "conditions",qualifiedByName = "toConditionsEntity")
-    @Mapping(source = "responseParameters",target = "responseParameters",qualifiedByName = "toParametersEntity")
+
+    @Mapping(source = "conditions", target = "conditions", qualifiedByName = "toConditionsEntity")
+    @Mapping(source = "responseParameters", target = "responseParameters", qualifiedByName = "toParametersEntity")
     ResponseConditionEntity toEntity(ResponseCondition model);
 
     @Named("toConditionsModel")
-    default List<ParameterDatasourceCondition> toConditionsModel(List<ParameterDatasourceConditionEntity> entities){
-        return entities.stream().map(ParameterDatasourceConditionMapper.INSTANCE::toModel).toList();
+    default List<ParameterDatasourceCondition> toConditionsModel(List<ParameterDatasourceConditionEntity> entities) {
+        if (Objects.nonNull(entities)) {
+            return entities.stream().map(ParameterDatasourceConditionMapper.INSTANCE::toModel).toList();
+        }
+        return null;
     }
 
     @Named("toConditionsEntity")
-    default List<ParameterDatasourceConditionEntity> toConditionsEntity(List<ParameterDatasourceCondition> models){
-        return models.stream().map(ParameterDatasourceConditionMapper.INSTANCE::toEntity).toList();
+    default List<ParameterDatasourceConditionEntity> toConditionsEntity(List<ParameterDatasourceCondition> models) {
+        if (Objects.nonNull(models)) {
+            return models.stream().map(ParameterDatasourceConditionMapper.INSTANCE::toEntity).toList();
+        }
+        return null;
     }
 
     @Named("toParametersModel")
-    default List<Parameter> toParametersModel(List<ParameterEntity> entities){
-        return entities.stream().map(ParameterMapper.INSTANCE::toModel).toList();
+    default List<Parameter> toParametersModel(List<ParameterEntity> entities) {
+        if (Objects.nonNull(entities)) {
+            return entities.stream().map(ParameterMapper.INSTANCE::toModel).toList();
+        }
+        return null;
     }
 
     @Named("toParametersEntity")
-    default List<ParameterEntity> toParametersEntity(List<Parameter> models){
-        return models.stream().map(ParameterMapper.INSTANCE::toEntity).toList();
+    default List<ParameterEntity> toParametersEntity(List<Parameter> models) {
+        if ((Objects.nonNull(models))) {
+            return models.stream().map(ParameterMapper.INSTANCE::toEntity).toList();
+        }
+        return null;
     }
 
 }

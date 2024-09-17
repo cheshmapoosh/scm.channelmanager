@@ -65,7 +65,6 @@ public class ErrorMappingService {
         return ERROR_MAPPINGS_CACHE
                 .stream()
                 .filter(errorMapping -> errorMapping.getExceptionClassName().equals(className))
-                .filter(errorMapping -> Objects.nonNull(errorMapping.getExceptionOverrideName()))
                 .filter(errorMapping -> errorMapping.getScmErrorCode().equals(Integer.parseInt(errorCode)))
                 .findFirst();
     }

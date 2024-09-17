@@ -33,4 +33,15 @@ public enum DatasourceConditionOperation {
                 .findFirst()
                 .orElse(NONE);
     }
+
+    public static DatasourceConditionOperation findByValue(String value) {
+        if (Objects.isNull(value)) {
+            return NONE;
+        }
+        return Arrays
+                .stream(values())
+                .filter(p -> p.name().equals(value))
+                .findFirst()
+                .orElse(NONE);
+    }
 }

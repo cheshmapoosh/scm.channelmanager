@@ -3,12 +3,10 @@ package ir.daneshrefah.scm.core.service.rest;
 import ir.daneshrefah.scm.common.constant.BundleDefaults;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
-import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
-import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
-import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.model.service.parameter.*;
 import ir.daneshrefah.scm.common.service.rest.*;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
@@ -274,6 +272,7 @@ public class ParameterServiceImpl implements ParameterService {
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getValue(), datasource::setValue);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getLength(), datasource::setLength);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getProperty(), datasource::setProperty);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value)-> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
         datasourceConditionRepository.save(entity);
@@ -351,7 +350,7 @@ public class ParameterServiceImpl implements ParameterService {
         entity.setResponseExceptionErrorCodeProperty(request.getErrorCode());
         String errorMessage = errorMappingService
                 .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
-                .map(errorMapping -> BundleDefaults.EXCEPTION_BUNDLE_DEFAULT_PREFIX + errorMapping.getExceptionClassName())
+                .map(ErrorMapping::getExceptionClassName)
                 .orElse(request.getErrorMessage());
         entity.setResponseExceptionErrorMessageProperty(errorMessage);
         responseConditionRepository.save(entity);
@@ -394,6 +393,9 @@ public class ParameterServiceImpl implements ParameterService {
         if (StringUtils.isBlank(request.getServiceId()) && StringUtils.isBlank(request.getServiceProviderId())) {
             throw new MissingRequiredInputException("targetId(serviceId or serviceProviderId)");
         }
+        if (StringUtils.isNotBlank(request.getErrorMessage()) && StringUtils.isBlank(request.getErrorCode())) {
+            throw new MissingRequiredInputException("errorCode");
+        }
     }
 
     @Override
@@ -429,6 +431,7 @@ public class ParameterServiceImpl implements ParameterService {
         entity.setCreator(getCurrentUser());
         entity.setLastEditor(getCurrentUser());
         entity.setCreateDate(LocalDateTime.now());
+        entity.setOperation(request.getOperation());
         entity.setLastEditDate(LocalDateTime.now());
         return entity;
     }
