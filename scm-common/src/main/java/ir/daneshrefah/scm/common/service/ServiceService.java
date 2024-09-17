@@ -57,4 +57,5 @@ public interface ServiceService {
 
     Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode);
 
+    PagedResponseData<Service> findParentServiceList(ParentServiceFindRequest request);
 }

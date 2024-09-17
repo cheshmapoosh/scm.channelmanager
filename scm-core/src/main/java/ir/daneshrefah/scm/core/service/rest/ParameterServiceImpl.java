@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.service.rest;
 
+import ir.daneshrefah.scm.common.constant.BundleDefaults;
+import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
@@ -22,8 +24,10 @@ import ir.daneshrefah.scm.core.mapper.ResponseConditionMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.core.service.ParameterParser;
+import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +53,10 @@ public class ParameterServiceImpl implements ParameterService {
     private final ServiceProviderRepository serviceProviderRepository;
     private final TransformerRepository transformerRepository;
     private final ParameterRepository parameterRepository;
+    private final ErrorMappingService errorMappingService;
     private final ServiceRepository serviceRepository;
     private final ParameterParser parameterParser;
+    private final ServiceServiceImpl serviceServiceImpl;
 
     @Override
     public List<RestExternalProviderResponse> getRestExternalProviderNameList() {
@@ -121,6 +127,16 @@ public class ParameterServiceImpl implements ParameterService {
         ValidationUtils.checkNumericInput(id, () -> new InvalidInputException("id"));
         ParameterEntity entity = parameterRepository.findById(Long.parseLong(id)).orElseThrow(() -> new NoMatchRecordFoundException("id"));
         return ParameterMapper.INSTANCE.toModel(entity);
+    }
+
+    @Override
+    public List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request) {
+        ValidationUtils.checkNull(request.getResponseConditionId(), () -> new MissingRequiredInputException("responseConditionId"));
+        ResponseConditionEntity entity = responseConditionRepository.findById(request.getResponseConditionId()).orElseThrow(() -> new InvalidInputException("responseConditionId"));
+        return entity.getConditions()
+                .stream()
+                .map(ParameterDatasourceConditionMapper.INSTANCE::toModel)
+                .toList();
     }
 
     @Override
@@ -333,16 +349,51 @@ public class ParameterServiceImpl implements ParameterService {
             entity.setResponseTransformer(transformerEntity);
         }
         entity.setResponseExceptionErrorCodeProperty(request.getErrorCode());
-        entity.setResponseExceptionErrorMessageProperty(request.getErrorMessage());
+        String errorMessage = errorMappingService
+                .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
+                .map(errorMapping -> BundleDefaults.EXCEPTION_BUNDLE_DEFAULT_PREFIX + errorMapping.getExceptionClassName())
+                .orElse(request.getErrorMessage());
+        entity.setResponseExceptionErrorMessageProperty(errorMessage);
         responseConditionRepository.save(entity);
+        setResponseConditionTargetId(request, entity);
         ParameterParser.clearCache();
         return ResponseConditionMapper.INSTANCE.toModel(entity);
+    }
+
+    private void setResponseConditionTargetId(ResponseConditionRequest request, ResponseConditionEntity entity) {
+        String serviceId = request.getServiceId();
+        String serviceProviderId = request.getServiceProviderId();
+        if (Objects.nonNull(serviceProviderId) && !serviceProviderId.isBlank()) {
+            AbstractExternalServiceProviderEntity provider = serviceProviderRepository.findById(serviceProviderId).orElseThrow(() -> new NoMatchRecordFoundException("serviceProviderId"));
+            List<ResponseConditionEntity> responseConditions = provider.getResponseConditions();
+            if (Objects.isNull(responseConditions)) {
+                responseConditions = new ArrayList<>();
+            }
+            responseConditions.add(entity);
+            serviceProviderRepository.save(provider);
+        } else {
+            ServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("serviceId"));
+            if (serviceEntity instanceof RestExternalServiceEntity restService) {
+                List<ResponseConditionEntity> responseConditions = restService.getResponseConditions();
+                if (Objects.isNull(responseConditions)) {
+                    responseConditions = new ArrayList<>();
+                }
+                responseConditions.add(entity);
+                serviceRepository.save(restService);
+            } else {
+                throw new InvalidInputException("serviceId");
+            }
+        }
+        serviceServiceImpl.cacheEvict();
     }
 
     private void validateResponseConditionRequest(ResponseConditionRequest request) {
         ValidationUtils.checkBlankStringIfNotNull(request.getTransformerId(), () -> new InvalidInputException("transformerId"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorCode(), () -> new InvalidInputException("errorCode"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorMessage(), () -> new InvalidInputException("errorMessage"));
+        if (StringUtils.isBlank(request.getServiceId()) && StringUtils.isBlank(request.getServiceProviderId())) {
+            throw new MissingRequiredInputException("targetId(serviceId or serviceProviderId)");
+        }
     }
 
     @Override
@@ -398,12 +449,12 @@ public class ParameterServiceImpl implements ParameterService {
     public Parameter create(ParameterCreateRequest request) {
         validateParameterCreateRequest(request);
         ParameterEntity parameterEntity = createParameterEntity(request);
-        applyParameterRelation(request, parameterEntity);
+        parameterEntity = applyParameterRelation(request, parameterEntity);
         ParameterParser.clearCache();
         return ParameterMapper.INSTANCE.toModel(parameterEntity);
     }
 
-    private void applyParameterRelation(ParameterCreateRequest request, ParameterEntity parameterEntity) {
+    private ParameterEntity applyParameterRelation(ParameterCreateRequest request, ParameterEntity parameterEntity) {
         String serviceProviderId = request.getServiceProviderId();
         String serviceId = request.getServiceId();
         Long responseConditionId = request.getResponseConditionId();
@@ -420,7 +471,7 @@ public class ParameterServiceImpl implements ParameterService {
             ResponseConditionEntity entity = responseConditionRepository.findById(responseConditionId).orElseThrow(() -> new InvalidInputException("responseConditionId"));
             parameterEntity.setResponseCondition(entity);
         }
-        parameterRepository.save(parameterEntity);
+        return parameterRepository.save(parameterEntity);
     }
 
     private ParameterEntity createParameterEntity(ParameterCreateRequest request) {
@@ -472,6 +523,11 @@ public class ParameterServiceImpl implements ParameterService {
     }
 
     private void checkParameterTargetId(ParameterCreateRequest request) {
+        if (Objects.isNull(request.getServiceId())
+            && Objects.isNull(request.getServiceProviderId())
+            && Objects.isNull(request.getResponseConditionId())) {
+            throw new MissingRequiredInputException("targetId(serviceId,serviceProviderId,responseConditionId)");
+        }
         //checking service provider if exists
         ChainValidation
                 .crateValidator(request.getServiceProviderId(), "serviceProviderId")

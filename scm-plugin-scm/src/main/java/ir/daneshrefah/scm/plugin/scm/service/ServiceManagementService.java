@@ -2,6 +2,9 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
+import ir.daneshrefah.scm.common.model.service.ServiceStatus;
+import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.common.service.*;
 import ir.daneshrefah.scm.common.service.TerminalServiceAccessAssignmentResponse;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
@@ -30,6 +33,11 @@ public class ServiceManagementService extends AbstractJavaService {
     @JavaService
     public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
+    }
+
+    @JavaService
+    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> parentServiceList(ParentServiceFindRequest request) {
+        return this.service.findParentServiceList(request);
     }
 
     @JavaService

@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.cache.client.config.exception.HazelCastClientInitializ
 import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
@@ -62,7 +63,10 @@ public class CacheClientAutoConfiguration {
     }
 
     private String getServerAddress() {
-        return clientProperties.getServerHost() + ":" + clientProperties.getServerPort();
+        if (StringUtils.isNoneBlank(clientProperties.getServerPort())){
+            return clientProperties.getServerHost() + ":" + clientProperties.getServerPort();
+        }
+        return clientProperties.getServerHost();
     }
 
     @Bean

@@ -61,6 +61,15 @@ public class ErrorMappingService {
                 .findFirst();
     }
 
+    public Optional<ErrorMapping> findByExceptionClassNameAndErrorCode(String className, String errorCode) {
+        return ERROR_MAPPINGS_CACHE
+                .stream()
+                .filter(errorMapping -> errorMapping.getExceptionClassName().equals(className))
+                .filter(errorMapping -> Objects.nonNull(errorMapping.getExceptionOverrideName()))
+                .filter(errorMapping -> errorMapping.getScmErrorCode().equals(Integer.parseInt(errorCode)))
+                .findFirst();
+    }
+
     public Optional<ErrorMapping> findByRemoteErrorCode(String remoteErrorCode) {
         return ERROR_MAPPINGS_CACHE
                 .stream()

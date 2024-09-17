@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.core.repository;
 
-import ir.daneshrefah.scm.common.service.MembershipFindRequest;
+import ir.daneshrefah.scm.common.service.MembershipLocalFindRequest;
 import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -18,7 +17,7 @@ import java.util.List;
  */
 public class MembershipTerminalAccessSpecs {
 
-    public static Specification<MembershipTerminalAccessEntity> toSpecification(MembershipFindRequest request) {
+    public static Specification<MembershipTerminalAccessEntity> toSpecification(MembershipLocalFindRequest request) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (null != request.getAssetType()) {

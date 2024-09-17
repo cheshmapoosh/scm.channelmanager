@@ -35,4 +35,6 @@ public interface ParameterService {
     ParameterTreeFindResponse findParameterTree(ParameterTreeFindRequest request);
 
     PagedResponseData<ResponseCondition> findResponseCondition(ResponseConditionFindRequest request);
+
+    List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request);
 }

@@ -30,6 +30,9 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity,Lon
     @Query("SELECT O FROM AccountMembershipEntity O WHERE O.id = :membershipId")
     Optional<AccountMembershipEntity> findAccountMembershipById(@Param("membershipId") Long membershipId);
 
+    @Query("SELECT O FROM MembershipEntity O WHERE O.id = :membershipId")
+    Optional<MembershipEntity> findMembershipById(@Param("membershipId") Long membershipId);
+
     interface MembershipSpecs {
 
         static Specification<MembershipEntity> toSpecification(String username, AssetType assetType) {

@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.data.service.person.CustomerProviderFindRequest;
+import ir.daneshrefah.scm.common.data.service.person.CustomerProviderSyncRequest;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.AccountMembership;
+import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.asset.Membership;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
+import ir.daneshrefah.scm.common.service.MembershipLocalFindRequest;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import org.springframework.stereotype.Service;
@@ -31,14 +35,21 @@ public class CustomerManagementService extends AbstractJavaService {
 
     @JavaService
     @SuppressWarnings("unused")
-    public List<Membership> findProviderMembershipList(CustomerProviderFindRequest request){
-        return customerService.findProviderMembershipList(request);
+    public List<Membership> syncMembershipList(CustomerProviderSyncRequest request){
+        return customerService.syncMembershipList(request);
     }
 
     @JavaService
     @SuppressWarnings("unused")
-    public PagedResponseData<Membership> findLocalMembershipList(MembershipFindRequest request){
+    public PagedResponseData<Membership> findLocalMembershipList(MembershipLocalFindRequest request){
         List<Membership> result = customerService.findLocalMembershipList(request);
+        return new PagedResponseData<>(request,result);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public PagedResponseData<Membership> findMembershipList(MembershipFindRequest request){
+        List<Membership> result = customerService.findMembershipList(request);
         return new PagedResponseData<>(request,result);
     }
 
@@ -46,6 +57,18 @@ public class CustomerManagementService extends AbstractJavaService {
     @SuppressWarnings("unused")
     public AccountMembership findAccountMembershipById(String membershipId){
         return customerService.findLocalAccountMembership(membershipId);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public List<AssetProvider> findAllAssetProvider(){
+        return customerService.findAllAssetProvider();
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
+        return customerService.accountFavoriteActivity(request);
     }
 
 }
