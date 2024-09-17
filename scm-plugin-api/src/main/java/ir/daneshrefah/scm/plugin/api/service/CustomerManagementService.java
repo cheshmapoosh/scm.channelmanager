@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.AccountMembership;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.asset.Membership;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.service.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.service.MembershipFindRequest;
 import ir.daneshrefah.scm.common.service.MembershipLocalFindRequest;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
@@ -61,6 +63,12 @@ public class CustomerManagementService extends AbstractJavaService {
     @SuppressWarnings("unused")
     public List<AssetProvider> findAllAssetProvider(){
         return customerService.findAllAssetProvider();
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
+        return customerService.accountFavoriteActivity(request);
     }
 
 }
