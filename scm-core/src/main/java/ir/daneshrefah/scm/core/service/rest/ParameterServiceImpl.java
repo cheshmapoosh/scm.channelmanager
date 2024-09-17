@@ -409,7 +409,7 @@ public class ParameterServiceImpl implements ParameterService {
             conditions = new ArrayList<>();
         }
         ParameterDatasourceConditionEntity entity = createParameterDatasourceConditionEntity(request);
-        datasourceConditionRepository.save(entity);
+        entity = datasourceConditionRepository.save(entity);
         conditions.add(entity);
         responseConditionEntity.setConditions(conditions);
         responseConditionRepository.save(responseConditionEntity);
