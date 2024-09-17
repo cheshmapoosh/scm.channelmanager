@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NabAccountResponseData {
+public class ExternalAccountResponseData {
     private Long accountOwnerCustomerNo;
     private String accountOwnerName;
     private String ownerNationalId;

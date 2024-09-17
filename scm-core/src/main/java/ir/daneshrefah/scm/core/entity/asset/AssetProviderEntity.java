@@ -1,10 +1,10 @@
 package ir.daneshrefah.scm.core.entity.asset;
 
+import ir.daneshrefah.scm.common.constant.AssetProviderCode;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import ir.daneshrefah.scm.core.converter.AssetProviderCodeConverter;
+import ir.daneshrefah.scm.core.converter.CustomerRelationTypeConverter;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,7 +25,8 @@ public class AssetProviderEntity extends AbstractEntity<Integer> {
     @Column(name = "CORE_BANKING_SYSTEM_ID")
     private Integer id;
     private String name;
-    private String code;
+    @Convert(converter = AssetProviderCodeConverter.class)
+    private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
     private String providerServiceId;

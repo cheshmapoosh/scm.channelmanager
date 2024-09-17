@@ -193,7 +193,7 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
     protected final Optional<String> prepareTerminalCode(AbstractExternalService service, String defaultValue) {
         String terminalCode = AuthenticationUtils.getLoggedInTerminalCode().orElse(null);
         String clientId = AuthenticationUtils.getLoggedInClientId().orElse(null);
-        String providerCode = service.getServiceProvider().getAssetProvider().getCode();
+        String providerCode = service.getServiceProvider().getAssetProvider().getCode().getValue();
         Optional<ProviderTerminalCoding> providerTerminalCoding = serviceService.findProviderTerminalCoding(terminalCode, clientId, providerCode);
         return providerTerminalCoding.flatMap(po -> Optional.ofNullable(po.getCode()))
                 .or(() -> Optional.ofNullable(defaultValue));

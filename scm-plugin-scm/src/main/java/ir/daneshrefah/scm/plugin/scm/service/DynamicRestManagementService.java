@@ -114,6 +114,13 @@ public class DynamicRestManagementService extends AbstractJavaService {
     }
 
 
+    @JavaService(serviceCode = "SVC_CONDITION_DATA_SOURCE_LIST")
+    @SuppressWarnings("unused")
+    public List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request) {
+        return parameterService.findResponseConditionDatasourceList(request);
+    }
+
+
 
 
 }
