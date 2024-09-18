@@ -459,4 +459,25 @@ public class StringUtils {
         return result.toString();
     }
 
+    public static String convertToPersianStandardCharacters(String text){
+        if (Objects.nonNull(text)) {
+            //Replace arabic 'ي' to persian 'ی'
+            return text
+                    .replace((char) 1610, (char) 1740) //ی
+                    .replace((char)1603, (char) 1705); // ک
+        }
+        return null;
+    }
+
+    public static String convertToArabicStandardCharacters(String text){
+        if (Objects.nonNull(text)) {
+            //Cif service use arabic characters
+            //Replace persian 'ی' to arabic 'ي'
+            return text
+                    .replace((char) 1740, (char) 1610)
+                    .replace((char)1705, (char) 1603);
+        }
+        return null;
+    }
+
 }

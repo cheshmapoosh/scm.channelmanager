@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.service.error.ErrorMappingEditRequest;
 import ir.daneshrefah.scm.common.service.error.ErrorMappingFindRequest;
+import ir.daneshrefah.scm.common.service.error.ErrorMappingSearchRequest;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -39,6 +40,22 @@ public class ExceptionManagementService extends AbstractJavaService {
                 .filter(error -> null == request || null == request.getScmErrorCode() || request.getScmErrorCode().equals(error.getScmErrorCode()))
                 .filter(error -> null == request || null == request.getProviderErrorCode() || request.getProviderErrorCode().equals(error.getProviderErrorCode()))
                 .filter(error -> null == request || null == request.getExceptionClassName() || error.getExceptionClassName().toLowerCase().contains(request.getExceptionClassName().toLowerCase()))
+                .map(this::normalizeResponse)
+                .collect(Collectors.toList());
+        return new PagedResponseData<>(request, result);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public PagedResponseData<ErrorMapping> search(ErrorMappingSearchRequest request){
+        assert request != null;
+        List<ErrorMapping> errorMappingsList = errorMappingService.getErrorMappingsCache();
+        List<ErrorMapping> result = errorMappingsList
+                .stream()
+                .filter(error -> Objects.isNull(request.getSearch()) ||
+                             request.getSearch().isBlank() ||
+                             error.getExceptionClassName().toLowerCase().contains(request.getSearch().toLowerCase()) ||
+                             String.valueOf(error.getScmErrorCode()).contains(request.getSearch().toLowerCase()))
                 .map(this::normalizeResponse)
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, result);

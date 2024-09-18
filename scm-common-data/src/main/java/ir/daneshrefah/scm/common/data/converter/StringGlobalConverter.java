@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.common.data.converter;
 
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
