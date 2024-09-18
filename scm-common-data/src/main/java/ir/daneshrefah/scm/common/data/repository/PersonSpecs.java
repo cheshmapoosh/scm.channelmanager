@@ -45,10 +45,10 @@ public class PersonSpecs {
                 predicates.add(builder.like(root.get("username"),getLikeQueryString(request.getUsername())));
             }
             if (StringUtils.isNotEmpty(request.getFirstName())){
-                predicates.add(builder.like(root.get("firstName"),getLikeQueryString(request.getFirstName())));
+                predicates.add(builder.or(builder.like(root.get("firstName"),getLikeQueryString(request.getFirstName())),builder.like(root.get("firstName"),getLikeQueryString(StringUtils.convertToArabicStandardCharacters(request.getFirstName())))));
             }
             if (StringUtils.isNotEmpty(request.getLastName())){
-                predicates.add(builder.like(root.get("lastName"),getLikeQueryString(request.getLastName())));
+                predicates.add(builder.or(builder.like(root.get("lastName"),getLikeQueryString(request.getLastName())),builder.like(root.get("lastName"),getLikeQueryString(StringUtils.convertToArabicStandardCharacters(request.getLastName())))));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

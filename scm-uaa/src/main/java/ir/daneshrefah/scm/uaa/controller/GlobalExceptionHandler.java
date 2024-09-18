@@ -6,11 +6,12 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import ir.daneshrefah.scm.common.model.message.Message;
 
 import java.util.List;
 import java.util.Locale;
@@ -28,15 +29,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
         Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
-        Message message = Message
-                .builder()
-                .status(resolve.getStatus())
-                .errors(List.of(resolve))
-                .build();
+        ResponseResult result = new ResponseResult()
+                .setResult(null)
+                .setStatus(resolve.getStatus())
+                .setErrors(List.of(resolve));
+
         if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
-            return ResponseEntity.internalServerError().body(message);
+            return ResponseEntity.internalServerError().body(result);
         }
-        return ResponseEntity.badRequest().body(message);
+        return ResponseEntity.badRequest().body(result);
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {
@@ -46,6 +47,15 @@ public class GlobalExceptionHandler {
         } else {
             return request.getLocale();
         }
+    }
+
+    @Getter
+    @Setter
+    @Accessors(chain = true)
+    private static class ResponseResult {
+        private List<Error> errors;
+        private MessageStatus status;
+        private Object result;
     }
 
 

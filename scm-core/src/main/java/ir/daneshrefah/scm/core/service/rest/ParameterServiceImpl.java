@@ -273,7 +273,6 @@ public class ParameterServiceImpl implements ParameterService {
         DynamicUpdateUtils.applyChangesIfNotNull(request.getLength(), datasource::setLength);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getProperty(), datasource::setProperty);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value)-> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
-        entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
         datasourceConditionRepository.save(entity);
         ParameterParser.clearCache();
