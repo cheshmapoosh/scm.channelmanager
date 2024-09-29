@@ -202,5 +202,9 @@ public class AuthenticationUtils {
         IpAddressMatcher ipAddressMatcher = new IpAddressMatcher(ipAddress);
         return ipAddressMatcher.matches(matchesIpAddress);
     }
-
+    public static Integer getLoggedInUserId() {
+        User loggedInUser = AuthenticationUtils.getLoggedInUser();
+        assert loggedInUser != null;
+        return loggedInUser.getPerson().getId();
+    }
 }

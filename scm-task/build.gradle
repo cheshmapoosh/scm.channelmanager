@@ -1,0 +1,15 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+dependencies {
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compileOnly 'org.springframework.boot:spring-boot-starter'
+    compileOnly 'org.springframework:spring-context'
+    compileOnly project(':scm-uaa-common')
+    compileOnly project(':scm-common')
+    compileOnly project(':scm-common-data')
+    compileOnly project(':scm-common-error')
+    compileOnly project(':scm-cache-client')
+    compileOnly project(':scm-plugin-api')
+}

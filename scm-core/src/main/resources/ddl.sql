@@ -2005,6 +2005,31 @@ VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'PENDING',
+        'درانتظار اقدام');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'COMPLETE',
+        'کامل‌ شده');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'CANCEL',
+        'لغو شده');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'WAITING_FOR_CONFIRM',
+        'در انتظار‌ تایید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'WAITING_FOR_ACKNOWLEDGE',
+        'در انتظار‌ پاسخ');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
         (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.task.InvalidAssigneeException',
         'Invalid assignee: Either the assignee is blank or does not match for a non-admin user.');
 
@@ -2025,6 +2050,43 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', (CURRENT DATE),
         (CURRENT DATE), 'en-US',
         'ex::ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException',
         'It is currently not possible to call the destination service.');
+
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.task.exception.ProcessInstanceCompleteException',
+        'Cannot update description of a completed process instance.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.task.exception.ProcessInstanceCompleteException',
+        'نمی‌توان فرآیند تکمیل شده را به‌روزرسانی کرد.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.task.exception.InvalidTaskStatusException',
+        'Invalid task status.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.task.exception.InvalidTaskStatusException',
+        'وضعیت تسک نامعتبر است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.task.exception.InvalidProcessStatusException',
+        'Invalid process status.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+        CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.task.exception.InvalidProcessStatusException',
+        'وضعیت فرآیند نامعتبر است');
 
 CREATE TABLE REF.TBL_SCM_ERROR_MAPPING
 (
@@ -2451,6 +2513,24 @@ INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 VALUES( 'ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException',
         1300, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.task.exception.ProcessInstanceCompleteException',
+        1304, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.task.exception.InvalidTaskStatusException',
+        1305, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.task.exception.InvalidProcessStatusException',
+        1306, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
 
 
 -- finalized tables
