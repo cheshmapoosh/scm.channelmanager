@@ -139,8 +139,11 @@ public class ParameterServiceImpl implements ParameterService {
 
     @Override
     public PagedResponseData<ResponseCondition> findResponseCondition(ResponseConditionFindRequest request) {
-        String providerId = request.getProviderId();
+        String providerId = request.getServiceProviderId();
         String serviceId = request.getServiceId();
+        if (Objects.isNull(providerId) && Objects.isNull(serviceId)){
+            throw new MissingRequiredInputException("serviceId or serviceProviderId is empty");
+        }
         List<ResponseCondition> responseConditions = new ArrayList<>();
         if (Objects.nonNull(providerId) && !providerId.isBlank()) {
             if (Objects.nonNull(serviceId)) {

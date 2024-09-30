@@ -8,5 +8,5 @@ import lombok.Setter;
 @Getter
 public class ResponseConditionFindRequest extends PagedRequestData {
     private String serviceId;
-    private String providerId;
+    private String serviceProviderId;
 }
