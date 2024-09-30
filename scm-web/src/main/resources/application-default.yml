@@ -95,9 +95,16 @@ server:
 #      path: /
 logging:
   config: classpath:logback-spring.xml
+  level:
+    org.hibernate.SQL: debug #just for develop
+    org.hibernate.type.descriptor.sql: trace #just for develop
+    org.hibernate.orm.jdbc.bind: trace #just for develop
 spring:
   jpa:
     show-sql: true
+#  properties:
+#    hibernate:
+#      format_sql: true
   cloud:
     config:
       enabled: false
