@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.common.model.asset.*;
 import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.*;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.*;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.entity.asset.*;
@@ -186,7 +187,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request) {
-        ValidationUtils.checkNull(request.getAccountNo(), () -> new InvalidInputException("accountNo"));
+        ValidationUtils.checkNullOrEmptyList(request.getAccountNoList(), () -> new InvalidInputException("accountNoList"));
         ValidationUtils.checkNull(request.getIsFavorite(), () -> new InvalidInputException("isFavorite"));
         GeneralPerson currentPerson = getRequestCurrentPerson();
         Authentication scmAuthentication = AuthenticationUtils.getScmAuthentication();
@@ -194,33 +195,50 @@ public class CustomerServiceImpl implements CustomerService {
         assert scmAuthentication != null;
         String terminalCode = scmAuthentication.getTerminalCode();
         ValidationUtils.checkNull(terminalCode, () -> new MissingRequiredInputException("terminal"));
-        Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessList = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(Long.valueOf(currentPerson.getId()), terminalCode);
+        Terminal terminal = terminalService.findTerminalByCode(terminalCode).orElseThrow(() -> new InvalidInputException("terminal"));
+        Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessList = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(Long.valueOf(currentPerson.getId()), terminal.getId());
         Iterator<MembershipTerminalAccessEntity> iterator = membershipTerminalAccessList.iterator();
-        AccountFavoriteActivityResponse response;
+        final AccountFavoriteActivityResponse response = new AccountFavoriteActivityResponse();
+        response.setIsFavorite(request.getIsFavorite());
+        applyAccountsFavouriteStatus(scmAuthentication,iterator,request,response);
+        if (Objects.nonNull(request.getAccountNoList())) {
+            return response;
+        }
+        throw new InvalidInputException("accountNoList");
+    }
+
+    private void applyAccountsFavouriteStatus(Authentication authentication,Iterator<MembershipTerminalAccessEntity> iterator, AccountFavoriteActivityRequest request, AccountFavoriteActivityResponse response) {
         while (iterator.hasNext()) {
             MembershipTerminalAccessEntity entity = iterator.next();
-            if (entity.getMembership().getCustomerAccount().getAccount().getAccountNo().equals(request.getAccountNo())) {
-                entity.setFavorite(request.getIsFavorite());
-                membershipTerminalAccessRepository.save(entity);
-                response = new AccountFavoriteActivityResponse();
-                response.setIsFavorite(entity.getFavorite());
-                response.setAccountNo(request.getAccountNo());
-                updateScmProfile(scmAuthentication, entity);
-                return response;
-            }
+            request.getAccountNoList()
+                    .stream()
+                    .filter(entity.getMembership().getCustomerAccount().getAccount().getAccountNo()::equals)
+                    .findFirst()
+                    .ifPresent(accountId -> {
+                        entity.setFavorite(request.getIsFavorite());
+                        membershipTerminalAccessRepository.save(entity);
+                        List<String> accountNoList = response.getAccountNoList();
+                        if (Objects.isNull(accountNoList)) {
+                            accountNoList = new ArrayList<>();
+                            response.setAccountNoList(accountNoList);
+                        }
+                        accountNoList.add(accountId);
+                        updateScmProfile(authentication, entity);
+                    });
         }
-        throw new InvalidInputException("accountNo");
     }
 
     private void updateScmProfile(Authentication scmAuthentication, MembershipTerminalAccessEntity entity) {
         List<MembershipTerminalAccess> memberships = scmAuthentication.getProfile().getMemberships();
-        memberships
-                .stream()
-                .filter(membership -> membership.getId().equals(entity.getId()))
-                .findFirst()
-                .ifPresent(membership -> {
-                    membership.setFavorite(entity.getFavorite());
-                });
+        if (Objects.nonNull(memberships)) {
+            memberships
+                    .stream()
+                    .filter(membership -> membership.getId().equals(entity.getId()))
+                    .findFirst()
+                    .ifPresent(membership -> {
+                        membership.setFavorite(entity.getFavorite());
+                    });
+        }
     }
 
     @Override
