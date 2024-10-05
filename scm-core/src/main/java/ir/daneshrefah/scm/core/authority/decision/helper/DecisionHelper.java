@@ -15,7 +15,6 @@ import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
 import ir.daneshrefah.scm.core.service.ConditionService;
-import ir.daneshrefah.scm.core.service.ProxyServiceManager;
 import ir.daneshrefah.scm.core.service.ServiceAccessService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.MessageInputContext;

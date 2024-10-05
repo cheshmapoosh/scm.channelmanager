@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 /**
  * Description of the class or purpose of the file.
@@ -47,6 +48,11 @@ public class ApplicationConfig implements ApplicationContextAware {
         if (null == objectMapper)
             initObjectMapper(service);
         return objectMapper;
+    }
+
+    @Bean
+    public LocalValidatorFactoryBean validator() {
+        return new LocalValidatorFactoryBean();
     }
 
     public static ObjectMapper getObjectMapperInstance() {

@@ -43,8 +43,7 @@ public class ServiceInfoRequest implements RequestData {
     private String path;
     private HttpMethod httpMethod;
     private HttpContentType requestContentType;
-    private ExternalServiceRequestBodyType requestBodyType;
-    private ExternalServiceRequestBodyType responseBodyType;
+    private ExternalServiceBodyType requestBodyType;
     /**
      * this property used when implementationType is composite
      */

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.service.parameter;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import lombok.Data;
 
@@ -14,12 +15,13 @@ import java.util.List;
  * @since 2024-07-20
  */
 @Data
-public class ResponseCondition extends BaseModel<Long> {
+public class Response extends BaseModel<Long> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;
     private String responseExceptionErrorCodeProperty;
     private String responseExceptionErrorMessageProperty;
     private List<Parameter> responseParameters;
+    private ExternalServiceBodyType responseBodyType;
 
 }

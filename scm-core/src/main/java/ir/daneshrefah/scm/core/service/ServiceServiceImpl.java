@@ -11,6 +11,8 @@ import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.*;
 import ir.daneshrefah.scm.common.service.*;
+import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindRequest;
+import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindResponse;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.*;
@@ -299,13 +301,11 @@ public class ServiceServiceImpl implements ServiceService {
 
     private void validateRestExternalRequest(ServiceInfoRequest service) {
         HttpMethod httpMethod = service.getHttpMethod();
-        ExternalServiceRequestBodyType responseBodyType = service.getResponseBodyType();
-        ExternalServiceRequestBodyType requestBodyType = service.getRequestBodyType();
+        ExternalServiceBodyType requestBodyType = service.getRequestBodyType();
         String serviceProviderId = service.getServiceProviderId();
         String path = service.getPath();
         HttpContentType requestContentType = service.getRequestContentType();
         ValidationUtils.checkNull(httpMethod, () -> new MissingRequiredInputException("httpMethod"));
-        ValidationUtils.checkNull(responseBodyType, () -> new MissingRequiredInputException("responseBodyType"));
         ValidationUtils.checkNull(requestBodyType, () -> new MissingRequiredInputException("requestBodyType"));
         ValidationUtils.checkNull(requestContentType, () -> new MissingRequiredInputException("requestContentType"));
         ValidationUtils.checkBlankString(serviceProviderId, () -> new MissingRequiredInputException("serviceProviderId"));
@@ -607,5 +607,22 @@ public class ServiceServiceImpl implements ServiceService {
                 .orElse(false);
     }
 
-
+    @Override
+    public PagedResponseData<ServiceProviderFindResponse> findServiceProviderList(ServiceProviderFindRequest request) {
+        return new PagedResponseData<>(request,
+                findServiceProviderList()
+                        .stream()
+                        .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getId()) || provider.getId().equals(request.getId()))
+                        .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getCode()) || provider.getCode().toLowerCase().contains(request.getCode().toLowerCase()))
+                        .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getTitle()) || provider.getTitle().toLowerCase().contains(request.getTitle().toLowerCase()))
+                        .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getProviderClassName()) || provider.getProviderClassName().toLowerCase().contains(request.getProviderClassName().toLowerCase()))
+                        .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getProtocol()) || Objects.equals(provider.getProtocol(), request.getProtocol()))
+                        .map(provider-> new ServiceProviderFindResponse()
+                                .setCode(provider.getCode())
+                                .setTitle(provider.getTitle())
+                                .setProtocol(provider.getProtocol())
+                                .setAssetProvider(provider.getAssetProvider())
+                                .setProviderClassName(provider.getProviderClassName()))
+                        .toList());
+    }
 }

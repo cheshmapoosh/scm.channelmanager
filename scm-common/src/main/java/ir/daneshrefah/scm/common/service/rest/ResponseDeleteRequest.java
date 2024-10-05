@@ -6,7 +6,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class ResponseConditionDeleteRequest implements RequestData {
+public class ResponseDeleteRequest implements RequestData {
 
     private Long id;
     private LocalDateTime lastEditDate;

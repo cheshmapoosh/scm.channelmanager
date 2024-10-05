@@ -3,11 +3,10 @@ package ir.daneshrefah.scm.core.entity.service;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
-import ir.daneshrefah.scm.core.converter.ExternalServiceProviderMetadataConverter;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
 import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
-import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,7 +44,7 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractDefa
     private AssetProviderEntity assetProvider;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "SERVICE_PROVIDER_ID")
-    private List<ResponseConditionEntity> responseConditions;
+    private List<ResponseEntity> responseConditions;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_PROVIDER_RELATION"
             , joinColumns = @JoinColumn(name = "SERVICE_PROVIDER_ID")

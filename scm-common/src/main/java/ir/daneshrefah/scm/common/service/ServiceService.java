@@ -5,6 +5,8 @@ import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindRequest;
+import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +27,7 @@ public interface ServiceService {
     Service findAssetProviderProviderServiceByAssetProviderId(Integer id);
 
     List<AbstractExternalServiceProvider> findServiceProviderList();
+    PagedResponseData<ServiceProviderFindResponse> findServiceProviderList(ServiceProviderFindRequest request);
 
     AbstractExternalServiceProvider findServiceProviderById(String id);
 

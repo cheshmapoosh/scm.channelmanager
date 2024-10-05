@@ -21,7 +21,4 @@ public class RestExternalService extends AbstractExternalService<RestExternalSer
     private String path;
     private HttpMethod httpMethod;
     private HttpContentType requestContentType;
-    private List<Parameter> requestPathVariables;
-    private List<Parameter> requestQueryStringVariables;
-
 }

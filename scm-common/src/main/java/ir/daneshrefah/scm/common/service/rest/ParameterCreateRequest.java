@@ -24,7 +24,6 @@ public class ParameterCreateRequest implements RequestData {
     private ParameterActionType actionType;
     private String defaultValue;
     //Parameter target usage
-    private Boolean applyOnProvider;
     private String serviceProviderId;
     private String serviceId;
     private Long responseConditionId;

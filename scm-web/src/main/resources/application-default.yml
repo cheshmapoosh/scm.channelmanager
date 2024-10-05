@@ -1,5 +1,5 @@
 scm:
-  channels: IB4DEV
+  channels: SCM4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
