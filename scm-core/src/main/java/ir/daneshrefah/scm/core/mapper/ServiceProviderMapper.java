@@ -4,9 +4,9 @@ import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
-import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalServiceProvider;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.CustomExternalServiceProviderEntity;
@@ -106,13 +106,13 @@ public interface ServiceProviderMapper {
     }
 
     @Named("toResponseConditionsModel")
-    default List<ResponseCondition> toResponseConditionsModel(List<ResponseConditionEntity> entities){
-        return entities.stream().map(ResponseConditionMapper.INSTANCE::toModel).toList();
+    default List<Response> toResponseConditionsModel(List<ResponseEntity> entities){
+        return entities.stream().map(ResponseMapper.INSTANCE::toModel).toList();
     }
 
     @Named("toResponseConditionsEntity")
-    default List<ResponseConditionEntity> toResponseConditionsEntity(List<ResponseCondition> models){
-        return models.stream().map(ResponseConditionMapper.INSTANCE::toEntity).toList();
+    default List<ResponseEntity> toResponseConditionsEntity(List<Response> models){
+        return models.stream().map(ResponseMapper.INSTANCE::toEntity).toList();
     }
 
     @Named("toRequestHeadersModel")

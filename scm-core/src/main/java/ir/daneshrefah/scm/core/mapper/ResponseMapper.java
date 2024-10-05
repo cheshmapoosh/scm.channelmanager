@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterDatasourceConditionEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
-import ir.daneshrefah.scm.core.entity.service.parameter.ResponseConditionEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -15,16 +15,16 @@ import java.util.List;
 import java.util.Objects;
 
 @Mapper
-public interface ResponseConditionMapper {
-    ResponseConditionMapper INSTANCE = Mappers.getMapper(ResponseConditionMapper.class);
+public interface ResponseMapper {
+    ResponseMapper INSTANCE = Mappers.getMapper(ResponseMapper.class);
 
     @Mapping(source = "conditions", target = "conditions", qualifiedByName = "toConditionsModel")
     @Mapping(source = "responseParameters", target = "responseParameters", qualifiedByName = "toParametersModel")
-    ResponseCondition toModel(ResponseConditionEntity entity);
+    Response toModel(ResponseEntity entity);
 
     @Mapping(source = "conditions", target = "conditions", qualifiedByName = "toConditionsEntity")
     @Mapping(source = "responseParameters", target = "responseParameters", qualifiedByName = "toParametersEntity")
-    ResponseConditionEntity toEntity(ResponseCondition model);
+    ResponseEntity toEntity(Response model);
 
     @Named("toConditionsModel")
     default List<ParameterDatasourceCondition> toConditionsModel(List<ParameterDatasourceConditionEntity> entities) {

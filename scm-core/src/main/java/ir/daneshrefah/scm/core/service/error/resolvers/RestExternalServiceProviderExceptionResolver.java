@@ -8,7 +8,7 @@ import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider
 import ir.daneshrefah.scm.common.error.management.ExceptionResolver;
 import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +31,7 @@ public class RestExternalServiceProviderExceptionResolver extends ExceptionResol
 
 
     private Error customProviderException(RestExternalServiceProviderException exception, Locale locale) {
-        ResponseCondition responseCondition = exception.getResponseCondition();
+        Response responseCondition = exception.getResponseCondition();
         String exceptionMessage = getProviderExceptionMessage(exception, locale);
         String exceptionMessageFa = getProviderExceptionMessage(exception, AccessibleLocale.FA_IR.getLocale());
         return new Error(

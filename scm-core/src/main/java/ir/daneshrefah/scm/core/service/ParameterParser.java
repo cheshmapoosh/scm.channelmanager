@@ -3,10 +3,11 @@ package ir.daneshrefah.scm.core.service;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
-import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Data;
@@ -26,50 +27,53 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ParameterParser {
 
-    private static final Map<String, RestExternalServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
-    private final ServiceService serviceService;
+    private static final Map<String, ServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
 
     public static void clearCache() {
         PARAMETER_TREE_CACHE.clear();
     }
 
-    public RestExternalServiceParameterCache getParametersCache(RestExternalService restExternalService) {
+    public ServiceParameterCache getParametersCache(Service service) {
         return PARAMETER_TREE_CACHE
                 .computeIfAbsent(
-                        getCacheKey(restExternalService),
-                        serviceCode -> createParameterTreeCache(restExternalService)
+                        getCacheKey(service),
+                        serviceCode -> createParameterTreeCache(service)
                 );
     }
 
-    private String getCacheKey(RestExternalService restExternalService) {
-        if (restExternalService.isProxy()) {
-            return restExternalService.getTargetProxyCode();
+    private String getCacheKey(Service service) {
+        if (service.isProxy()) {
+            return service.getTargetProxyCode();
         }
-        return restExternalService.getCode();
+        return service.getCode();
     }
 
-    private RestExternalServiceParameterCache createParameterTreeCache(RestExternalService service) {
-        RestExternalServiceParameterCache parameterTree = new RestExternalServiceParameterCache();
-        List<ResponseCondition> responseConditions = service.getResponseConditions();
-        parameterTree.setExternalService(service);
-        parameterTree.setRequestBodyNode(createBodyParameterNode(service.getRequestBody()));
-        parameterTree.setConditionCache(createConditionCache(service, responseConditions));
-        parameterTree.setRequestHeaderVariableNode(createLineaerParameterNode(service.getRequestHeaders()));
-        parameterTree.setRequestPathVariableNode(createLineaerParameterNode(service.getRequestPathVariables()));
-        parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(service.getRequestQueryStringVariables()));
-        parameterTree.setResponseHeaderVariableNode(createLineaerParameterNode(service.getResponseHeaders()));
+    private ServiceParameterCache createParameterTreeCache(Service service) {
+        ServiceParameterCache parameterTree = new ServiceParameterCache();
+        List<Parameter> parameters = service.getParameters();
+        parameterTree.setResponseCache(createResponseCache(service));
+        parameterTree.setService(service);
+        parameterTree.setRequestBodyNode(createBodyParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_BODY)));
+        parameterTree.setRequestHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_HEADER)));
+        parameterTree.setRequestPathVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_PATH_VARIABLE)));
+        parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_QUERY_STRING)));
+        parameterTree.setResponseHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.RESPONSE_HEADER)));
         return parameterTree;
     }
 
-    private ConditionCache createConditionCache(RestExternalService service, List<ResponseCondition> responseConditions) {
-        ConditionCache conditionCache = createConditionCache(responseConditions);
-        List<ResponseCondition> providerConditions = service.getServiceProvider().getResponseConditions();
-        conditionCache.setProviderConditionCache(createConditionCache(providerConditions));
-        return conditionCache;
+    private ResponseCache createResponseCache(Service service) {
+        if (service instanceof RestExternalService restExternalService) {
+            List<Response> responseConditions = restExternalService.getResponseList();
+            ResponseCache conditionCache = createResponseCache(responseConditions);
+            List<Response> providerConditions = restExternalService.getServiceProvider().getResponseConditions();
+            conditionCache.setProviderConditionCache(createResponseCache(providerConditions));
+            return conditionCache;
+        }
+        return null;
     }
 
-    private ConditionCache createConditionCache(List<ResponseCondition> responseConditions) {
-        ConditionCache conditionCache = new ConditionCache();
+    private ResponseCache createResponseCache(List<Response> responseConditions) {
+        ResponseCache conditionCache = new ResponseCache();
         conditionCache.setConditions(responseConditions);
         Map<Long, ParameterNode> responseBodyNodeMap = new HashMap<>();
         responseConditions.forEach(responseCondition -> {
@@ -294,9 +298,9 @@ public class ParameterParser {
     }
 
     @Data
-    public static class RestExternalServiceParameterCache {
-        private RestExternalService externalService;
-        private ConditionCache conditionCache;
+    public static class ServiceParameterCache {
+        private Service service;
+        private ResponseCache responseCache;
         private ParameterNode requestBodyNode;
         private ParameterNode requestPathVariableNode;
         private ParameterNode requestQueryStringVariableNode;
@@ -309,14 +313,22 @@ public class ParameterParser {
     @Getter
     @Setter
     @Accessors(chain = true)
-    public static class ConditionCache {
-        private List<ResponseCondition> conditions;
-        private ConditionCache providerConditionCache;
+    public static class ResponseCache {
+        private List<Response> conditions;
+        private ResponseCache providerConditionCache;
         private Map<Long, ParameterNode> responseBodyNodes;
 
-        public ParameterNode getResponseBodyNode(ResponseCondition responseCondition) {
+        public ParameterNode getResponseBodyNode(Response responseCondition) {
             return responseBodyNodes.get(responseCondition.getId());
         }
+    }
+
+    public List<Parameter> filterByActionType(List<Parameter> parameters, ParameterActionType actionType){
+        return parameters
+                .stream()
+                .filter(parameter -> actionType.equals(parameter.getActionType()))
+                .toList();
+
     }
 
 }

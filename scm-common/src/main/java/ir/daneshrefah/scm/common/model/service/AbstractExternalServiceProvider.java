@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.model.service;
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
-import ir.daneshrefah.scm.common.model.service.parameter.ResponseCondition;
+import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,7 +29,7 @@ public abstract class AbstractExternalServiceProvider extends BaseModel<String> 
     private List<Parameter> requestHeaders;
     private List<Parameter> requestBody;
     private List<Parameter> responseHeaders;
-    private List<ResponseCondition> responseConditions;
+    private List<Response> responseConditions;
 
     public abstract AbstractExternalServiceProviderMetadata getMetadata();
 

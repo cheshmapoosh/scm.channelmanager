@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class ResponseConditionFindRequest extends PagedRequestData {
+public class ResponseFindRequest extends PagedRequestData {
     private String serviceId;
     private String serviceProviderId;
 }

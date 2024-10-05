@@ -6,16 +6,13 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.message.TcpMessageOutput;
-import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.CustomExternalService;
-import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
-import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
@@ -64,8 +61,8 @@ public final class NabTcpServiceProvider extends AbstractCamelExternalServicePro
 
         List<Parameter> providerRequestHeaders = externalService.getServiceProvider().getRequestHeaders();
         List<Parameter> providerRequestBody = externalService.getServiceProvider().getRequestBody();
-        List<Parameter> serviceRequestHeaders = externalService.getRequestHeaders();
-        List<Parameter> serviceRequestBody = externalService.getRequestBody();
+        List<Parameter> serviceRequestHeaders = externalService.getParameters(ParameterActionType.REQUEST_HEADER);
+        List<Parameter> serviceRequestBody = externalService.getParameters(ParameterActionType.REQUEST_BODY);
 
         appendParameterToRequest(request, message, providerRequestHeaders);
         appendParameterToRequest(request, message, providerRequestBody);

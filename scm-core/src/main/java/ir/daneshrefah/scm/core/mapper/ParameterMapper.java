@@ -43,6 +43,13 @@ public interface ParameterMapper {
                 .toList();
     }
 
+    default List<Parameter> toModelList(List<ParameterEntity> entities) {
+        return entities
+                .stream()
+                .map(this::toModel)
+                .toList();
+    }
+
     default List<ParameterEntity> toEntityList(List<Parameter> models) {
         return models
                 .stream()

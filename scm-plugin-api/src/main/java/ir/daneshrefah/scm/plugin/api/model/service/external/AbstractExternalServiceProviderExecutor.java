@@ -5,11 +5,10 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
-import ir.daneshrefah.scm.common.model.service.ExternalServiceRequestBodyType;
+import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.logging.api.EventProducer;
 import ir.daneshrefah.scm.common.model.event.OutboundEvent;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
@@ -21,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.TryDefinition;
-import org.apache.hc.core5.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +129,7 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
                     .build();
 //            EventProducer.getInstance().sendEvent(event);
 
-            if (ExternalServiceRequestBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
+            if (ExternalServiceBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
                 Object header = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE);
                 header = Objects.isNull(header) ? -1 : header;
                 originalMessage.getHeader().getHttpHeader().setHttpStatusCode(Integer.parseInt(String.valueOf(header)));

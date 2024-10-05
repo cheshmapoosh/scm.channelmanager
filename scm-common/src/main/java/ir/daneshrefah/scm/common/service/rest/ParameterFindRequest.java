@@ -7,7 +7,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class ParameterFindRequest extends PagedRequestData {
-
     private String parameterName;
     private Long parentId;
     private String actionType;

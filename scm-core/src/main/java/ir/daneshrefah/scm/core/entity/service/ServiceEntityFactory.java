@@ -61,10 +61,9 @@ public class ServiceEntityFactory {
             restExternalService.setPath(request.getPath());
             restExternalService.setHttpMethod(request.getHttpMethod());
             restExternalService.setRequestBodyType(request.getRequestBodyType());
-            restExternalService.setResponseBodyType(request.getResponseBodyType());
             restExternalService.setRequestContentType(request.getRequestContentType());
             restExternalService.setParameters(new ArrayList<>());
-            restExternalService.setResponseConditions(new ArrayList<>());
+            restExternalService.setResponseList(new ArrayList<>());
         }
         return entity;
     }
@@ -90,6 +89,9 @@ public class ServiceEntityFactory {
                 break;
             case PARENT:
                 result = new ParentServiceEntity();
+                break;
+            case PROXY:
+                result = new ProxyServiceEntity();
                 break;
             case BPMN:
                 return null;

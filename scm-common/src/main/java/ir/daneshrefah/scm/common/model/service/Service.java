@@ -1,9 +1,14 @@
 package ir.daneshrefah.scm.common.model.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
+import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -37,5 +42,14 @@ public abstract class Service extends BaseModel<String> {
     private String assetProperty;
     private transient boolean proxy;
     private transient String targetProxyCode;
+    @JsonIgnore
+    private List<Parameter> parameters;
+
+    public List<Parameter> getParameters(ParameterActionType actionType){
+        return getParameters()
+                .stream()
+                .filter(parameter -> actionType.equals(parameter.getActionType()))
+                .toList();
+    }
 
 }

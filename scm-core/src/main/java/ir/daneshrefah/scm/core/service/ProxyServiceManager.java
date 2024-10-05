@@ -35,7 +35,7 @@ public class ProxyServiceManager {
             if (allRelations.size() == 1) {
                 ServiceRelationEntity relationEntity = allRelations.get(0);
                 Service targetService = ServiceMapper.INSTANCE.toService(relationEntity.getTargetService());
-                Service clonedService = (Service) deepCopy(targetService);
+                Service clonedService = serviceDeepCopy(targetService);
                 String serviceCode = clonedService.getCode();
                 proxyService.setProxyServiceCode(proxyService.getCode() + TARGET_PROXY_SERVICE_CODE_SYMBOL + serviceCode);
                 clonedService.setStatus(ServiceStatus.INTERNAL);
@@ -50,6 +50,23 @@ public class ProxyServiceManager {
         } catch (Exception e) {
             throw new RuntimeException(">>> couldn't initialized proxy service  [" + proxyService.getClass() + "]");
         }
+    }
+
+
+    private Service serviceDeepCopy(Service service){
+        List<Parameter> parameters = service.getParameters();
+        Service serviceCopy = (Service) deepCopy(service);
+        //Maybe In Service Model 'parameters list' annotated by @JsonIgnore
+        if (Objects.nonNull(parameters) && Objects.isNull(serviceCopy.getParameters())){
+            List<Parameter> parametersDeepCopy = new ArrayList<>(parameters.size());
+            parameters
+                    .stream()
+                    .map(this::deepCopy)
+                    .map(Parameter.class::cast)
+                    .forEach(parametersDeepCopy::add);
+            serviceCopy.setParameters(parametersDeepCopy);
+        }
+        return serviceCopy;
     }
 
     @SneakyThrows
@@ -68,7 +85,7 @@ public class ProxyServiceManager {
 
 
     private void applyProxyParameters(ProxyService proxyService, AbstractExternalService<?> targetService) {
-        List<Parameter> restParameters = combineAllRestParameters(targetService);
+        List<Parameter> restParameters = targetService.getParameters();
         List<Parameter> proxyParameters = proxyService.getParameters();
         proxyParameters.forEach(proxyParameter -> {
             findParameter(restParameters, proxyParameter.getParent().getId())
@@ -91,18 +108,6 @@ public class ProxyServiceManager {
             DynamicUpdateUtils.applyChangesIfNotNull(datasource.getLength(), targetDatasource::setLength);
             DynamicUpdateUtils.applyChangesIfNotNull(datasource.getConvertorCode(), targetDatasource::setConvertorCode);
         }
-    }
-
-    private List<Parameter> combineAllRestParameters(AbstractExternalService<?> externalService) {
-        List<Parameter> parameters = new ArrayList<>(20);
-        parameters.addAll(externalService.getRequestHeaders());
-        parameters.addAll(externalService.getResponseHeaders());
-        parameters.addAll(externalService.getRequestBody());
-        if (externalService instanceof RestExternalService restExternalService) {
-            parameters.addAll(restExternalService.getRequestQueryStringVariables());
-            parameters.addAll(restExternalService.getRequestPathVariables());
-        }
-        return parameters;
     }
 
     private Optional<Parameter> findParameter(List<Parameter> parameters, Long targetParameterId) {

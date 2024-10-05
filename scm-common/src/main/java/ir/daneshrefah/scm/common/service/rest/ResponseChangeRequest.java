@@ -6,12 +6,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class ResponseConditionChangeRequest implements RequestData {
+public class ResponseChangeRequest implements RequestData {
 
     private Long id;
     private String transformerId;
     private String errorCode;
     private String errorMessage;
+    private String responseBodyType;
     private LocalDateTime lastEditDate;
 
 }

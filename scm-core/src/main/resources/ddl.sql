@@ -194,7 +194,6 @@ CREATE TABLE REF.TBL_SCM_SERVICE
     LAST_EDITOR                          VARCHAR(255),
     --External service
     REQUEST_BODY_TYPE                    VARCHAR(64),
-    RESPONSE_BODY_TYPE                   VARCHAR(64),
     PATH                                 VARCHAR(1024),
     HTTP_METHOD                          VARCHAR(16),
     REQUEST_CONTENT_TYPE                 VARCHAR(128),
@@ -2694,6 +2693,7 @@ CREATE TABLE REF.TBL_SCM_SERVICE_RESPONSE_CONDITION
     SERVICE_PROVIDER_ID     VARCHAR(36),
     RESP_ERROR_CODE         VARCHAR(255),
     RESP_ERROR_MESSAGE      VARCHAR(255),
+    RESPONSE_BODY_TYPE      VARCHAR(64) NOT NULL ,
     CREATOR                 VARCHAR(255),
     LAST_EDITOR             VARCHAR(255),
     CREATE_DATE             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

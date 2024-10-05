@@ -9,9 +9,12 @@ import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceImplementationTypeConverter;
 import ir.daneshrefah.scm.core.converter.ServiceStatusConverter;
 import ir.daneshrefah.scm.core.converter.ServiceTypeConverter;
+import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -58,5 +61,10 @@ public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<Str
     @ManyToOne
     @JoinColumn(name = "PARENT_SERVICE_ID")
     private ServiceEntity parent;
+    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @JoinTable(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION"
+            ,joinColumns = @JoinColumn(name = "SERVICE_ID")
+            ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
+    private List<ParameterEntity> parameters;
 
 }

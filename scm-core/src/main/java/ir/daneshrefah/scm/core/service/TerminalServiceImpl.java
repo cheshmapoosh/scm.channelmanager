@@ -298,7 +298,7 @@ public class TerminalServiceImpl extends TerminalService {
                 .computeIfAbsent(code, toCacheCode -> {
                     Long legacyTerminalId = terminalRepository.findLegacyTerminalId(code);
                     if (Objects.isNull(legacyTerminalId)) {
-                        throw new InvalidInputException("code");
+                        throw new InvalidInputException("code (could not found legacy terminal id)");
                     }
                     //if the method could not find id it means the terminal code
                     //was wrong.
