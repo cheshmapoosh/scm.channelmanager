@@ -14,17 +14,17 @@ import java.util.List;
 @Getter
 @Table(name = "TBL_SCM_SERVICE_RESPONSE_CONDITION")
 @Entity
-public class ResponseEntity extends AbstractVersionAbleDefaultEntity<Long> {
+public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ID")
-    private Long id;
+    private String id;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "RESPONSE_CONDITION_ID")
     private List<ParameterDatasourceConditionEntity> conditions;
     @ManyToOne
-    @JoinColumn(name = "RESPONSE_TRANSFORMER_ID")
+    @JoinColumn(name = "RESP_TRANSFORMER_ID")
     private TransformerEntity responseTransformer;
     @Column(name = "RESP_ERROR_CODE")
     private String responseExceptionErrorCodeProperty;
@@ -36,5 +36,6 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<Long> {
     ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
     private List<ParameterEntity> responseParameters;
     @Convert(converter = ExternalServiceRequestBodyTypeConverter.class)
+    @Column(name = "RESP_BODY_TYPE")
     private ExternalServiceBodyType responseBodyType;
 }

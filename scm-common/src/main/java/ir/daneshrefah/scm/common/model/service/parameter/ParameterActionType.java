@@ -15,7 +15,9 @@ public enum ParameterActionType {
     REQUEST_PATH_VARIABLE(4),
     //RESPONSE
     RESPONSE_BODY(5),
-    RESPONSE_HEADER(6);
+    RESPONSE_HEADER(6),
+    //INTERNAL CONFIG
+    CONFIG(7);
 
     private final Integer code;
 

@@ -32,6 +32,7 @@ public class TransformerRelationEntity extends AbstractDefaultEntity<Long> {
     private TransformerEntity transformer;
     private String sourceId;
     @Convert(converter = JsonNodeTypeConverter.class)
+    @Column(name = "TRANSFORMER_METADATA")
     private JsonNode metadata;
     private Integer order;
 }

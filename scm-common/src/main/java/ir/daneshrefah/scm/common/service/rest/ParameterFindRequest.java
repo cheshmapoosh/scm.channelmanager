@@ -8,10 +8,10 @@ import lombok.Setter;
 @Getter
 public class ParameterFindRequest extends PagedRequestData {
     private String parameterName;
-    private Long parentId;
+    private String parentId;
     private String actionType;
     //Parameter target usage
     private String serviceProviderId;
     private String serviceId;
-    private Long responseConditionId;
+    private String responseConditionId;
 }

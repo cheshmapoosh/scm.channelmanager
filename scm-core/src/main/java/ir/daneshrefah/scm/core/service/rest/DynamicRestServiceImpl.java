@@ -43,7 +43,7 @@ import java.util.Objects;
 public class DynamicRestServiceImpl implements DynamicRestService {
     private static final List<RestExternalProviderResponse> EXTERNAL_PROVIDER_NAME_CACHE = new ArrayList<>();
     private final ParameterDatasourceConditionRepository datasourceConditionRepository;
-    private final ResponseConditionRepository responseConditionRepository;
+    private final ResponseRepository responseConditionRepository;
     private final ServiceProviderRepository serviceProviderRepository;
     private final TransformerRepository transformerRepository;
     private final ErrorMappingService errorMappingService;

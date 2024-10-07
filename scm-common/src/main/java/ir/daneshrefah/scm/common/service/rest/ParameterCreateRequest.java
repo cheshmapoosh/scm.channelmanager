@@ -20,12 +20,12 @@ public class ParameterCreateRequest implements RequestData {
     private boolean internal;
     private String tag;
     private Integer order;
-    private Long parentId;
+    private String parentId;
     private ParameterActionType actionType;
     private String defaultValue;
     //Parameter target usage
     private String serviceProviderId;
     private String serviceId;
-    private Long responseConditionId;
+    private String responseConditionId;
 
 }

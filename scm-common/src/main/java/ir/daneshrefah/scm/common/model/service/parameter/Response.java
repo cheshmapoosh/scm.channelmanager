@@ -15,7 +15,7 @@ import java.util.List;
  * @since 2024-07-20
  */
 @Data
-public class Response extends BaseModel<Long> {
+public class Response extends BaseModel<String> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;

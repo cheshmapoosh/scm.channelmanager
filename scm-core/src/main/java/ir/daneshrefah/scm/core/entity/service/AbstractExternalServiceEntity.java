@@ -22,7 +22,7 @@ import java.util.List;
 public abstract class AbstractExternalServiceEntity<T extends AbstractExternalServiceProviderEntity> extends ServiceEntity {
 
     @ManyToOne(targetEntity = AbstractExternalServiceProviderEntity.class)
-    @JoinColumn(name = "IMPLEMENTATION_SERVICE_PROVIDER_ID")
+    @JoinColumn(name = "IMPL_SERVICE_PROVIDER_ID")
     private T serviceProvider;
     @Convert(converter = ExternalServiceRequestBodyTypeConverter.class)
     private ExternalServiceBodyType requestBodyType;

@@ -9,5 +9,4 @@ import lombok.Setter;
 public class ProcessInstanceCompleteRequest {
     private Long id;
     private ProcessStatusEnum status;
-    private String nationalId;//TODO remove it
 }

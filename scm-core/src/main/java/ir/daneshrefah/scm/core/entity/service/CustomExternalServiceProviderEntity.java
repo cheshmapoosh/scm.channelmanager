@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.entity.service;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.core.converter.CustomExternalServiceProviderMetadataConverter;
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -21,6 +22,7 @@ import lombok.Data;
 public class CustomExternalServiceProviderEntity extends AbstractExternalServiceProviderEntity {
 
     @Convert(converter = CustomExternalServiceProviderMetadataConverter.class)
+    @Column(name = "SRV_PROVIDER_METADATA")
     private CustomExternalServiceProviderMetadata metadata;
 
     @Override

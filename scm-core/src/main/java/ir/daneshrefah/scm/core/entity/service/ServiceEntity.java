@@ -21,7 +21,7 @@ import java.util.List;
 @Entity
 @Table(name = "TBL_SCM_SERVICE")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "SERVICE_IMPLEMENTATION_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
+@DiscriminatorColumn(name = "SERVICE_IMPL_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
 public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
@@ -35,20 +35,23 @@ public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<Str
     @Column(insertable = false, updatable = false)
     private Boolean isSystemic;
     @Convert(converter = JsonNodeTypeConverter.class)
+    @Column(name = "SERVICE_METADATA")
     private JsonNode metadata;
     @Column(name = "SERVICE_TYPE_CODE")
     @Convert(converter = ServiceTypeConverter.class)
     private ServiceType type;
     @Convert(converter = ServiceStatusConverter.class)
     private ServiceStatus status;
-    @Column(name = "SERVICE_IMPLEMENTATION_TYPE_CODE", insertable = false, updatable = false)
+    @Column(name = "SERVICE_IMPL_TYPE_CODE", insertable = false, updatable = false)
     @Convert(converter = ServiceImplementationTypeConverter.class)
     private ServiceImplementationType implementationType;
     @Column(name = "REQUEST_JSON_SCHEMA", nullable = true)
     private String requestJsonSchema;
     @Column(name = "RESPONSE_JSON_SCHEMA", nullable = true)
     private String responseJsonSchema;
+    @Column(name = "CHECK_ACCESS_FIRST_AUTH")
     private Boolean checkAccessFirstAuthentication;
+    @Column(name = "CHECK_ACCESS_SECOND_AUTH")
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
     private Boolean checkAccessAsset;

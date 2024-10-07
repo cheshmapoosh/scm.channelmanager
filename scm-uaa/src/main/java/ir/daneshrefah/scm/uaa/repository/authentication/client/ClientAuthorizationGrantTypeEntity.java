@@ -25,7 +25,7 @@ public class ClientAuthorizationGrantTypeEntity extends AbstractDefaultEntity<Lo
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CLIENT_AUTHORIZATION_GRANT_TYPE_ID")
+    @Column(name = "CLIENT_AUTH_GRANT_TYPE_ID")
     private Long id;
     @Column(name = "GRANT_TYPE_CODE")
     @Convert(converter = AuthorizationGrantTypeConverter.class)

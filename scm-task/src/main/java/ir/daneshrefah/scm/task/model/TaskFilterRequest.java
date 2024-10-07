@@ -16,5 +16,4 @@ public class TaskFilterRequest extends PagedRequestData {
     private Long toDate;
     private Integer userId;
     private ProcessCodeEnum transactionType;
-    private String nationalId;//TODO remove it
 }

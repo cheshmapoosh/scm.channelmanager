@@ -13,11 +13,11 @@ public class TerminalServiceConditionEntity extends ConditionBaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TERMINAL_SERVICE_CONDITION_ID")
+    @Column(name = "TERMINAL_SRV_CONDITION_ID")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "TERMINAL_SERVICE_ACCESS_ID")
+    @JoinColumn(name = "TERMINAL_SRV_ACCESS_ID")
     private TerminalServiceAccessEntity terminalServiceAccess;
 
 }

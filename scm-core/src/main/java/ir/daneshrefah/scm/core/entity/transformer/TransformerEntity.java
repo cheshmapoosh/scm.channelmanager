@@ -12,6 +12,7 @@ public class TransformerEntity extends AbstractDefaultEntity<String> {
     @Column(name = "TRANSFORMER_ID")
     private String id;
     private String title;
+    @Column(name = "TRANSFORMER_METADATA")
     private String metadata;
     private String javaClassName;
 

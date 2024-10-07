@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 public class ParameterChangeRequest implements RequestData {
 
-    private Long id;
+    private String id;
     private String parameterName;
     //Datasource
     private ParameterDatasourceProperty datasourcePropertyType;
@@ -24,7 +24,7 @@ public class ParameterChangeRequest implements RequestData {
     private Boolean internal;
     private String tag;
     private Integer order;
-    private Long parentId;
+    private String parentId;
     private ParameterActionType actionType;
     private String defaultValue;
     private LocalDateTime lastEditDate;

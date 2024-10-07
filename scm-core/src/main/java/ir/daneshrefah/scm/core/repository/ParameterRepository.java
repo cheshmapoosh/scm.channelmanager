@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ParameterRepository extends JpaRepository<ParameterEntity,Long> {
+public interface ParameterRepository extends JpaRepository<ParameterEntity,String> {
 
     List<ParameterEntity> findAllByParent(ParameterEntity parent);
 

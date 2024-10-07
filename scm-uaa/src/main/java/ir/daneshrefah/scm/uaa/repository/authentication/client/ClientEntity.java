@@ -55,12 +55,14 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     @Column(name = "REDIRECT_URIS")
     @Convert(converter = StringSetConverter.class)
     private Set<String> redirectUris;
+    @Column(name = "REQUIRE_AUTH_CONSENT")
     private boolean requireAuthorizationConsent;
     private boolean requireProofKey;
     private boolean checkVersion;
     private boolean checkActivation;
     private boolean checkIpAddress;
     private String allowIpAddresses;
+    @Column(name = "SESSION_TTL _MINUTE")
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;

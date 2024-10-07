@@ -12,13 +12,13 @@ import lombok.Setter;
 public class ParameterDatasourceEntity  {
 
     @Convert(converter = ParameterDatasourcePropertyConverter.class)
-    @Column(name = "DATA_SOURCE_PROPERTY")
+    @Column(name = "DATA_SRC_PROPERTY")
     private ParameterDatasourceProperty property;
-    @Column(name = "DATA_SOURCE_VALUE")
+    @Column(name = "DATA_SRC_VALUE")
     private String value;
-    @Column(name = "DATA_SOURCE_LENGTH")
+    @Column(name = "DATA_SRC_LENGTH")
     private Integer length;
-    @Column(name = "DATA_SOURCE_CONVERTOR_CODE")
+    @Column(name = "DATA_SRC_CONVERTOR_CODE")
     private String convertorCode;
 
 }

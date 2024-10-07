@@ -19,7 +19,7 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("3")
 public class CompositionServiceEntity extends ServiceEntity {
 
-    @Column(name = "IMPLEMENTATION_COMPOSITION_TYPE_CODE", insertable = false, updatable = false)
+    @Column(name = "IMPL_COMPOSITION_TYPE_CODE", insertable = false, updatable = false)
     @Convert(converter = ServiceCompositionTypeConverter.class)
     private ServiceCompositionType compositionType;
 
