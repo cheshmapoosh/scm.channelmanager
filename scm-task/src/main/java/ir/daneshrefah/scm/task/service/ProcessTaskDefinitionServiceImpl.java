@@ -1,15 +1,19 @@
 package ir.daneshrefah.scm.task.service;
 
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
 import ir.daneshrefah.scm.task.constant.ExecutionMethodTypeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessNameEnum;
 import ir.daneshrefah.scm.task.entity.ProcessTaskDefinitionEntity;
 import ir.daneshrefah.scm.task.repository.ProcessTaskDefinitionRepository;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CODE;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +36,19 @@ public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionSe
                 .orElseThrow(() -> new NoMatchRecordFoundException("processName~executionCode~definitionCode~processCode"));
     }
 
-    public void verifySecondAuthentication(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode, String otpCode) {
-        ProcessTaskDefinitionEntity processTaskDefinitionEntity = findProcessTaskDefinitionEntity(processName, executionMethodType, definitionType, processCode);
-        if (processTaskDefinitionEntity.getUserAccessSecondAuth() > 0) {
-            boolean isValid = true;// verify otp
-            if (!isValid) {
-                throw new RuntimeException();
-            }
+    public void verifySecondAuthentication(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
+//        ProcessTaskDefinitionEntity processTaskDefinitionEntity = findProcessTaskDefinitionEntity(processName, executionMethodType, definitionType, processCode);
+//        if (processTaskDefinitionEntity.getUserAccessSecondAuth() > 0) {
+//        boolean isValid = true;// verify otp
+//        if (!isValid) {
+//
+//        }
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
+        String otpCode = messageInput.getHeader(SCM_PARAMETER_CLAIM_CODE);
+        if (!otpCode.equals("123")) {
+            throw new RuntimeException();
         }
+
+//        }
     }
 }

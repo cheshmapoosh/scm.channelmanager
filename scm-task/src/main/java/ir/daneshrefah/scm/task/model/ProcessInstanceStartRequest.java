@@ -20,5 +20,4 @@ public class ProcessInstanceStartRequest {
     private String destination;
     private String description;
     private ProcessNameEnum processName;
-    private String otpCode;
 }

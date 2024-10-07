@@ -21,7 +21,7 @@ public class MapCacheConfigEntity extends InstanceConfigEntity {
     /**
      * by set this value all data remove from cache after spending the time value as seconds.
      */
-    @Column(name = "TIME_TO_LIVE_SECONDS")
+    @Column(name = "TTL_SECONDS")
     private Integer timeToLiveSeconds;
     @Column(name = "BACKUP_COUNT")
     private Integer backupCount;
@@ -33,14 +33,14 @@ public class MapCacheConfigEntity extends InstanceConfigEntity {
      * MapConfig documentation.
      * notice : by setting this config, you must set evictionMaxSizePolicy value.
      */
-    @Column(name = "EVICTION_SIZE")
+    @Column(name = "EVIC_SIZE")
     private Integer evictionSize;
     /**
      * @see MaxSizePolicy
      * stratagy of evecting like maxheep size or etc.
      * set this value as number in idepent on  MaxSizePolicy.
      */
-    @Column(name = "EVICTION_MAX_SIZE_POLICY")
+    @Column(name = "EVIC_MAX_SIZE_POLICY")
     private Integer evictionMaxSizePolicy;
     @Column(name = "ASYNC_BACKUP_COUNT")
     private Integer asyncBackupCount;

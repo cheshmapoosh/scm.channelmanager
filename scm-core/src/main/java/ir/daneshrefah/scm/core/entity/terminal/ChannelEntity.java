@@ -29,6 +29,7 @@ public class ChannelEntity extends AbstractVersionAbleDefaultEntity<String> {
     private ChannelProtocol protocol;
     private String channelClassName;
     @Convert(converter = JsonNodeTypeConverter.class)
+    @Column(name = "CHANNEL_METADATA")
     private JsonNode metadata;
 
 }

@@ -9,5 +9,4 @@ import lombok.Setter;
 public class TaskRequest {
     private Long taskId;
     private TaskStatusEnum action;
-    private String nationalId; //TODO remove it
 }

@@ -21,18 +21,17 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_PARAMETERS")
-public class ParameterEntity extends AbstractVersionAbleDefaultEntity<Long> {
+public class ParameterEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "PARAMETER_ID")
-    private Long id;
+    private String id;
     private String name;
     @Embedded
     private ParameterDatasourceEntity datasource;
     @Enumerated(EnumType.STRING)
     private ParameterType type;
-    private boolean internal;
     private String tag;
     private boolean required;
     private Integer order;
@@ -41,6 +40,7 @@ public class ParameterEntity extends AbstractVersionAbleDefaultEntity<Long> {
     private ParameterEntity parent;
     @Convert(converter = ParameterActionTypeConverter.class)
     private ParameterActionType actionType;
+    @Column(name = "DEFAULT_VALUE")
     private String defaultValue;
 
     @ManyToOne

@@ -15,7 +15,7 @@ public class ParameterServiceRelationEntity {
 
     @Id
     @Column(name = "PARAMETER_ID")
-    private Long parameterId;
+    private String parameterId;
     @Column(name = "SERVICE_ID")
     private String serviceId;
 

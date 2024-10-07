@@ -25,6 +25,7 @@ import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import ir.daneshrefah.scm.task.service.TaskAssetService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -51,7 +52,7 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_CU
 @RequiredArgsConstructor
 @Service
 @Slf4j
-public class CustomerServiceImpl implements CustomerService {
+public class CustomerServiceImpl implements CustomerService , TaskAssetService {
 
     private static final List<AssetProvider> ASSET_PROVIDERS_CACHE = new ArrayList<>();
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
@@ -504,6 +505,17 @@ public class CustomerServiceImpl implements CustomerService {
         List<MembershipTerminalAccessEntity> entities = membershipTerminalAccessRepository.findAll(
                 MembershipTerminalAccessSpecs.toSpecification(request)/*, pageable*/);
         return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(entities);
+    }
+
+    @Override
+    public Optional<String> findCustomerNo(Integer userId) {
+        return membershipRepository.findMembershipListByUserId(userId)
+                .stream() .map(MembershipEntity::getCustomerAccount)
+                .filter(Objects::nonNull)
+                .map(CustomerAccountEntity::getCustomer)
+                .filter(Objects::nonNull)
+                .map(CustomerEntity::getCustomerNo)
+                .findFirst();
     }
 
 

@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public class ProcessInstanceApproveRequest {
     private Long id;
-    private String nationalId;//TODO remove it
+    private String correlationId;
 }

@@ -25,7 +25,7 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<Long> {
     @Column(name = "ERROR_MAPPING_ID")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "EXTERNAL_SERVICE_PROVIDER_ID")
+    @Column(name = "EXT_SRV_PROVIDER_ID")
     private String providerId;
     private String providerErrorCode;
     private String exceptionClassName;

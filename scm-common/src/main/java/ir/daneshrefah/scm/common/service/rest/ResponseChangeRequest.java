@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class ResponseChangeRequest implements RequestData {
 
-    private Long id;
+    private String id;
     private String transformerId;
     private String errorCode;
     private String errorMessage;

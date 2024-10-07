@@ -11,14 +11,12 @@ import lombok.Data;
  * @since 2024-07-17
  */
 @Data
-public class Parameter extends BaseModel<Long> {
+public class Parameter extends BaseModel<String> {
 
-    private Long id;
     private String name;
     private ParameterDatasource datasource;
     private ParameterType type;
     private boolean required;
-    private boolean internal;
     private String tag;
     private Integer order;
     /**

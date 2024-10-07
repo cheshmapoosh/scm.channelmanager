@@ -36,7 +36,7 @@ public class TaskInstanceService extends AbstractJavaService {
     }
     @JavaService
     @SuppressWarnings("unused")
-    public List<TaskResponse> findAllTasksByProcessId(Long processID,String loggedInUserID) {//TODO remove loggedInUserID and from service table
-       return taskManagementService.findAllTasksByProcessId(processID,loggedInUserID);
+    public List<TaskResponse> findAllTasksByProcessId(Long processID) {
+       return taskManagementService.findAllTasksByProcessId(processID);
     }
 }

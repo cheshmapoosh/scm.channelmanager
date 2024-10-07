@@ -41,14 +41,14 @@ public class ParameterServiceImpl implements ParameterService {
     private final ParameterResponseConditionRelationRepository responseConditionRelationRepository;
     private final ParameterProviderRelationRepository providerRelationRepository;
     private final ParameterServiceRelationRepository serviceRelationRepository;
-    private final ResponseConditionRepository responseConditionRepository;
+    private final ResponseRepository responseConditionRepository;
     private final ServiceProviderRepository serviceProviderRepository;
     private final ParameterRepository parameterRepository;
     private final ServiceRepository serviceRepository;
     private final ParameterParser parameterParser;
 
 
-    private void removeParameterRelation(Long parameterId) {
+    private void removeParameterRelation(String parameterId) {
         serviceRelationRepository.findById(parameterId)
                 .ifPresentOrElse(serviceRelationRepository::delete, () -> {
                     providerRelationRepository.findById(parameterId).ifPresentOrElse(providerRelationRepository::delete, () -> {
@@ -84,7 +84,7 @@ public class ParameterServiceImpl implements ParameterService {
         ValidationUtils.checkNull(id, () -> new InvalidInputException("id"));
         ValidationUtils.checkBlankString(id, () -> new InvalidInputException("id"));
         ValidationUtils.checkNumericInput(id, () -> new InvalidInputException("id"));
-        ParameterEntity entity = parameterRepository.findById(Long.parseLong(id)).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+        ParameterEntity entity = parameterRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
         return ParameterMapper.INSTANCE.toModel(entity);
     }
 
@@ -99,7 +99,7 @@ public class ParameterServiceImpl implements ParameterService {
         RestExternalServiceEntity service = (RestExternalServiceEntity) serviceEntity;
         ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(ServiceMapper.INSTANCE.toModel(service));
         ParameterActionType actionType = ParameterActionType.findByValue(request.getActionType());
-        Long responseConditionId = request.getResponseConditionId();
+        String responseConditionId = request.getResponseConditionId();
         Response responseCondition = null;
         if (actionType.equals(ParameterActionType.RESPONSE_BODY) && Objects.isNull(responseConditionId)) {
             throw new InvalidInputException("responseConditionId");
@@ -115,6 +115,7 @@ public class ParameterServiceImpl implements ParameterService {
             case REQUEST_QUERY_STRING -> parametersCache.getRequestQueryStringVariableNode();
             case RESPONSE_BODY -> parametersCache .getResponseCache().getResponseBodyNode(responseCondition);
             case RESPONSE_HEADER -> parametersCache.getResponseHeaderVariableNode();
+            case CONFIG -> parametersCache.getConfig();
         };
         return new ParameterTreeFindResponse().setTree(foundNode);
     }
@@ -124,7 +125,7 @@ public class ParameterServiceImpl implements ParameterService {
     public PagedResponseData<Parameter> findParameter(ParameterFindRequest request) {
         String serviceProviderId = request.getServiceProviderId();
         String serviceId = request.getServiceId();
-        Long responseConditionId = request.getResponseConditionId();
+        String responseConditionId = request.getResponseConditionId();
         validateParameterFindRequest(request);
         List<ParameterEntity> parameters;
         if (Objects.nonNull(serviceProviderId)) {
@@ -156,7 +157,7 @@ public class ParameterServiceImpl implements ParameterService {
         ChainValidation.crateValidator(request.getActionType(), "actionType").breakCheckIfNull()
                 .checkFunction(input -> !Objects.isNull(ParameterActionType.findByValue(String.valueOf(input))));
         ChainValidation.crateValidator(request.getParentId(), "parentId").breakCheckIfNull().checkNumeral()
-                .checkFunction((input) -> parameterRepository.findById(Long.parseLong(String.valueOf(input))).isPresent());
+                .checkFunction((input) -> parameterRepository.findById(String.valueOf(input)).isPresent());
         ChainValidation.crateValidator(request.getServiceProviderId(), "serviceProviderId").breakCheckIfNull().checkBlank()
                 .checkFunction(input -> {
                     boolean present = serviceProviderRepository.findById(String.valueOf(input)).isPresent();
@@ -171,7 +172,7 @@ public class ParameterServiceImpl implements ParameterService {
                 });
         ChainValidation.crateValidator(request.getResponseConditionId(), "responseConditionId").breakCheckIfNull().checkNumeral()
                 .checkFunction(input -> {
-                    boolean present = responseConditionRepository.findById(Long.parseLong(String.valueOf(input))).isPresent();
+                    boolean present = responseConditionRepository.findById(String.valueOf(input)).isPresent();
                     hasParameterTargetId.set(present);
                     return present;
                 });
@@ -199,7 +200,6 @@ public class ParameterServiceImpl implements ParameterService {
         DynamicUpdateUtils.applyChangesIfNotNull(request.getActionType(), entity::setActionType);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getOrder(), entity::setOrder);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getRequired(), entity::setRequired);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getInternal(), entity::setInternal);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getParameterType(), entity::setType);
         ParameterDatasourceEntity datasource = entity.getDatasource();
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getValue(), datasource::setValue);
@@ -240,7 +240,7 @@ public class ParameterServiceImpl implements ParameterService {
     private ParameterEntity applyParameterRelation(ParameterCreateRequest request, ParameterEntity parameterEntity) {
         String serviceProviderId = request.getServiceProviderId();
         String serviceId = request.getServiceId();
-        Long responseConditionId = request.getResponseConditionId();
+        String responseConditionId = request.getResponseConditionId();
         if (Objects.nonNull(serviceProviderId)) {
             AbstractExternalServiceProviderEntity provider = serviceProviderRepository.findById(serviceProviderId).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
             parameterEntity.setServiceProvider(provider);
@@ -266,7 +266,6 @@ public class ParameterServiceImpl implements ParameterService {
         //Adding datasource
         entity.setDatasource(datasource);
         entity.setType(request.getParameterType());
-        entity.setInternal(request.isInternal());
         entity.setTag(request.getTag());
         entity.setRequired(request.isRequired());
         entity.setOrder(request.getOrder());
@@ -282,7 +281,7 @@ public class ParameterServiceImpl implements ParameterService {
         return entity;
     }
 
-    private ParameterEntity findParameterParent(Long parentId) {
+    private ParameterEntity findParameterParent(String parentId) {
         return parameterRepository
                 .findById(parentId)
                 .orElseThrow(() -> new NoMatchRecordFoundException("parentId"));
@@ -323,7 +322,7 @@ public class ParameterServiceImpl implements ParameterService {
                 .crateValidator(request.getResponseConditionId(), "responseConditionId")
                 .breakCheckIfNull()
                 .checkNumeral()
-                .checkFunction((input -> responseConditionRepository.findById(Long.parseLong(String.valueOf(input))).isPresent()));
+                .checkFunction((input -> responseConditionRepository.findById(String.valueOf(input)).isPresent()));
     }
 
     private String getCurrentUser() {

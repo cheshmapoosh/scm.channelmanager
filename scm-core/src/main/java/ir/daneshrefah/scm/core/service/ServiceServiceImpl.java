@@ -290,13 +290,27 @@ public class ServiceServiceImpl implements ServiceService {
             validateRestExternalRequest(service);
         }
 
+        if (ServiceImplementationType.PROXY.equals(service.getImplementationType())) {
+            validateProxyService(service);
+        }
+
         ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
         setServiceParent(entity, service);
         checkServiceProvider(entity, service);
 
         ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
+        if (ServiceImplementationType.PROXY.equals(service.getImplementationType())){
+            ServiceRelationEntity serviceRelation = new ServiceRelationEntity();
+//            serviceRelation.setSourceService(result.getId());
+            //TODO
+        }
         emptyServiceListCache();
         return result;
+    }
+
+    private void validateProxyService(ServiceInfoRequest service) {
+        String proxyTargetServiceId = service.getProxyTargetServiceId();
+        serviceRepository.findById(proxyTargetServiceId).orElseThrow(() -> new NoMatchRecordFoundException("proxyTargetServiceId"));
     }
 
     private void validateRestExternalRequest(ServiceInfoRequest service) {
@@ -617,12 +631,21 @@ public class ServiceServiceImpl implements ServiceService {
                         .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getTitle()) || provider.getTitle().toLowerCase().contains(request.getTitle().toLowerCase()))
                         .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getProviderClassName()) || provider.getProviderClassName().toLowerCase().contains(request.getProviderClassName().toLowerCase()))
                         .filter(provider -> Objects.isNull(request) || Objects.isNull(request.getProtocol()) || Objects.equals(provider.getProtocol(), request.getProtocol()))
-                        .map(provider-> new ServiceProviderFindResponse()
-                                .setCode(provider.getCode())
-                                .setTitle(provider.getTitle())
-                                .setProtocol(provider.getProtocol())
-                                .setAssetProvider(provider.getAssetProvider())
-                                .setProviderClassName(provider.getProviderClassName()))
+                        .map(this::map)
                         .toList());
+    }
+
+    private ServiceProviderFindResponse map(AbstractExternalServiceProvider provider){
+        return new ServiceProviderFindResponse()
+                .setCode(provider.getCode())
+                .setTitle(provider.getTitle())
+                .setProtocol(provider.getProtocol())
+                .setAssetProvider(provider.getAssetProvider())
+                .setProviderClassName(provider.getProviderClassName())
+                .setId(provider.getId())
+                .setCreateDate(provider.getCreateDate())
+                .setCreator(provider.getCreator())
+                .setLastEditor(provider.getLastEditor())
+                .setLastEditDate(provider.getLastEditDate());
     }
 }

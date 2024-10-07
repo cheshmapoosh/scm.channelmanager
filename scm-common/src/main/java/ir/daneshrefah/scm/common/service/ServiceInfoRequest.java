@@ -48,5 +48,9 @@ public class ServiceInfoRequest implements RequestData {
      * this property used when implementationType is composite
      */
     private ServiceCompositionType compositionType;
+    /**
+     * this property used in proxy services
+     */
+    private String proxyTargetServiceId;
 
 }

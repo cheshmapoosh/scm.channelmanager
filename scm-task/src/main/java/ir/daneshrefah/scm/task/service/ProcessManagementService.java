@@ -13,7 +13,7 @@ public interface ProcessManagementService {
 
     ProcessInstanceEntity findByID(Long processId);
 
-    ProcessInstanceResponse approve(ProcessInstanceApproveRequest request);
+    ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request);
 
     void complete(ProcessInstanceCompleteRequest request);
 }

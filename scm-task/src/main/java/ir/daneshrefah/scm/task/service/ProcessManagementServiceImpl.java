@@ -5,8 +5,10 @@ import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
@@ -29,6 +31,7 @@ import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +52,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     private final TaskLogService taskLogService;
     private final ResourceBundleService bundle;
     private final PersonService personService;
+    private final TaskAssetService taskAssetService;
 
     @Override
     public ProcessInstanceStartResponse start(ProcessInstanceStartRequest request) {
@@ -60,11 +64,12 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private void validateProcessBeforeStart(ProcessInstanceStartRequest request) {
-        try { //TODO remove try cache
-            processTaskDefinitionService.verifySecondAuthentication(request.getProcessName(), ExecutionMethodTypeEnum.START_PROCESS, DefinitionTypeEnum.PROCESS, request.getProcessCode(), request.getOtpCode());
-        } catch (Exception e) {
-
-        }
+//        try { //TODO remove try cache
+        processTaskDefinitionService
+                    .verifySecondAuthentication(request.getProcessName(), ExecutionMethodTypeEnum.START_PROCESS, DefinitionTypeEnum.PROCESS, request.getProcessCode());
+//        } catch (Exception e) {
+//
+//        }
     }
 
     private ProcessInstanceEntity createProcessInstanceEntity(ProcessInstanceStartRequest request) {
@@ -156,17 +161,19 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public PagedResponseData<ProcessInstanceResponse> findAll(ProcessInstanceFilterRequest request) {
         request = Objects.nonNull(request) ? request : new ProcessInstanceFilterRequest();
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
-        if (request.getConfirmUserId() == null) {//TODO remove this if
-            loggedInUserId = request.getConfirmUserId();
+        if (request.isReport()) {
+            request.setUserId(loggedInUserId);
+        } else {
+            request.setConfirmUserId(loggedInUserId);
         }
-        request.setConfirmUserId(loggedInUserId);
         Pageable pageable = PageableUtils.getPageable(request);
         Page<ProcessInstanceEntity> entities = processInstanceRepository.findAll(ProcessInstanceSpecs.toSpecification(request), pageable);
-        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList());
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList().stream().distinct().toList());
     }
 
     private GeneralPerson findUserByPersonTypeAndNationalCodeAndSubOrg(UserModel confirmUserModel) {
-        return personService.findPerson(confirmUserModel.getPersonType(), confirmUserModel.getNationalId(), confirmUserModel.getSubOrganization()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        return personService.findPerson(confirmUserModel.getPersonType(), confirmUserModel.getNationalId(), confirmUserModel.getSubOrganization())
+                .orElseThrow(() -> new NoMatchRecordFoundException("user"));
     }
 
     public ProcessInstanceEntity findByID(Long processId) {
@@ -184,12 +191,12 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstanceMapper.toProcessInstanceUpdateResponse(processInstanceEntity);
     }
 
-    public ProcessInstanceResponse approve(ProcessInstanceApproveRequest request) {
+    public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
+        ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
+            throw new InvalidInputException("correlationId");
+        });
         ProcessInstanceEntity processInstance = findByID(request.getId());
-//        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId(); //TODO uncomment this
-        GeneralRealPerson generalRealPerson = personService.findPersonByNationalCode(request.getNationalId());//TODO remove this line
-        Integer loggedInUserId = generalRealPerson.getId();//TODO remove this line
-
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
         validateUserAccess(processInstance, loggedInUserId);
@@ -201,12 +208,30 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
                 .filter(task -> task.getTaskStatus().equals(TaskStatusEnum.WAITING_FOR_CONFIRM))
                 .findFirst()
                 .orElseThrow(() -> new NoMatchRecordFoundException("task"));
+
         taskEntity.setTaskStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE);
-        processInstance.setCorrelationId(UUID.randomUUID().toString());
+        processInstance.setCorrelationId(request.getCorrelationId());
+        ProcessInstanceApproveResponse processInstanceApproveResponse = processInstanceMapper.toProcessInstanceApproveResponse(processInstance);
+        List<UserModel> users = processInstance.getTasks().stream()
+                .filter(task -> task.getTaskStatus().equals(TaskStatusEnum.COMPLETE))
+                .map(task -> {
+                    GeneralPerson personByPersonId = personService.findPersonByPersonId(task.getUserId());
+                    UserModel userModel = new UserModel();
+                    if (personByPersonId instanceof GeneralRealPerson generalRealPerson) {
+                        userModel.setNationalId(generalRealPerson.getNationalCode());
+                    } else if (personByPersonId instanceof GeneralLegalPerson generalLegalPerson) {
+                        userModel.setNationalId(generalLegalPerson.getNationalId());
+                    }
+                    userModel.setPersonType(personByPersonId.getPersonType());
+                    userModel.setCustomerNo(taskAssetService.findCustomerNo(personByPersonId.getId()).orElseThrow(() ->  new NoMatchRecordFoundException("customerNo")));
+                    return userModel;
+                })
+                .toList();
+        processInstanceApproveResponse.setUsers(users);
         persistTaskLogEntity(taskLogEntity, taskEntity);
         processInstanceRepository.save(processInstance);
-        return processInstanceMapper.toProcessInstanceResponse(processInstance);
+        return processInstanceApproveResponse;
     }
 
     private void persistTaskLogEntity(TaskLogEntity taskLogEntity, TaskEntity taskEntity) {
@@ -221,10 +246,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         validateProcessStatus(request.getStatus(), EnumSet.of(ProcessStatusEnum.COMPLETE, ProcessStatusEnum.FAIL));
 
         ProcessInstanceEntity processInstance = findByID(request.getId());
-//        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId(); //TODO uncomment this
-        GeneralRealPerson generalRealPerson = personService.findPersonByNationalCode(request.getNationalId()); //TODO remove this line
-        Integer loggedInUserId = generalRealPerson.getId();//TODO remove this line
-
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         validateUserAccess(processInstance, loggedInUserId);

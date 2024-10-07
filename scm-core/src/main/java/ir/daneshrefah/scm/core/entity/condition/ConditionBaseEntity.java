@@ -12,11 +12,11 @@ import lombok.Setter;
 @Getter
 public abstract class ConditionBaseEntity<T> extends AbstractDefaultEntity<T> {
 
-    @Column(name = "LOGIN_AUTHENTICATION_METHOD_ID")
+    @Column(name = "LOGIN_AUTH_METHOD_ID")
     @Convert(converter = AuthenticationMethodConverter.class)
     private AuthenticationMethod loginAuthenticationMethod;
 
-    @Column(name = "TRANSACTION_AUTHENTICATION_METHOD_ID")
+    @Column(name = "TXN_AUTH_METHOD_ID")
     @Convert(converter = AuthenticationMethodConverter.class)
     private AuthenticationMethod transactionAuthenticationMethod;
 

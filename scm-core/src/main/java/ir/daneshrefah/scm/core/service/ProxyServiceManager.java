@@ -110,7 +110,7 @@ public class ProxyServiceManager {
         }
     }
 
-    private Optional<Parameter> findParameter(List<Parameter> parameters, Long targetParameterId) {
+    private Optional<Parameter> findParameter(List<Parameter> parameters, String targetParameterId) {
         return parameters
                 .stream()
                 .filter(parameter -> parameter.getId().equals(targetParameterId))

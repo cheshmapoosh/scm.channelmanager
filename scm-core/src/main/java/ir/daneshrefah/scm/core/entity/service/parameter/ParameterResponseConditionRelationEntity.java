@@ -14,7 +14,7 @@ import lombok.Setter;
 public class ParameterResponseConditionRelationEntity {
     @Id
     @Column(name = "PARAMETER_ID")
-    private Long parameterId;
+    private String parameterId;
     @Column(name = "RESPONSE_CONDITION_ID")
-    private Long responseConditionId;
+    private String responseConditionId;
 }

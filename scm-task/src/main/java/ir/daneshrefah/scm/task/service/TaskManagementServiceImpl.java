@@ -1,14 +1,10 @@
 package ir.daneshrefah.scm.task.service;
 
-import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
@@ -41,17 +37,13 @@ public class TaskManagementServiceImpl implements TaskManagementService {
 
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskRepository taskRepository;
-    private final PersonService personService;
     private final TaskMapper taskMapper;
     private final TaskLogService taskLogService;
     private final ProcessManagementService processManagementService;
 
     public PagedResponseData<TaskResponse> findAllTaskByUserIDAndFilter(TaskFilterRequest request) {
         request = Objects.nonNull(request) ? request : new TaskFilterRequest();
-        //request.setUserId(AuthenticationUtils.getLoggedInUserId()); //TODO uncomment it
-        //TODO remove it
-        GeneralPerson generalPerson = personService.findPerson(PersonType.REAL, request.getNationalId(), "").orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));//TODO remove it
-        request.setUserId(generalPerson.getId());//TODO remove it
+        request.setUserId(AuthenticationUtils.getLoggedInUserId());
         Pageable pageable = PageableUtils.getPageable(request);
         Page<TaskEntity> entities = taskRepository.findAll(TaskSpecs.toSpecification(request), pageable);
         List<TaskResponse> taskResponseList = taskMapper.toTaskResponseListWithProcessInstance(entities.stream().toList());
@@ -117,7 +109,9 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             confirmationTask.setProcessInstance(processInstance);
             confirmationTask.setUserId(processInstance.getConfirmUserId());
 
-            processInstance.getTasks().stream().filter(task -> task.getUserId().equals(processInstance.getConfirmUserId())).findFirst().ifPresent(task -> confirmationTask.setFullName(task.getFullName()));
+            processInstance.getTasks().stream().filter(task -> task.getUserId().equals(processInstance.getConfirmUserId()))
+                    .findFirst()
+                    .ifPresent(task -> confirmationTask.setFullName(task.getFullName()));
 
             confirmationTask.setTaskStatus(WAITING_FOR_CONFIRM);
             confirmationTask.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
@@ -203,18 +197,13 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     }
 
     private TaskEntity findTaskByTaskIDAndUserID(TaskRequest taskRequest) {
-        GeneralPerson generalPerson = personService.findPerson(PersonType.REAL, taskRequest.getNationalId(), "")//TODO remove it
-                .orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));//TODO remove it
-        return taskRepository.findByIdAndUserId(taskRequest.getTaskId(), generalPerson.getId()).orElseThrow(() -> new NoMatchRecordFoundException("taskID"));//TODO remove it
-        //return taskRepository.findByIdAndUserId(taskRequest.getTaskId(), getLoggedInUserId())//TODO uncomment it
-        // .orElseThrow(() -> new NoMatchRecordFoundException("taskID"));//TODO uncomment it
+        return taskRepository.findByIdAndUserId(taskRequest.getTaskId(), AuthenticationUtils.getLoggedInUserId())
+         .orElseThrow(() -> new NoMatchRecordFoundException("taskID"));
     }
 
-    public List<TaskResponse> findAllTasksByProcessId(Long processID, String loggedInUserID) { //TODO remove loggedInUserID
+    public List<TaskResponse> findAllTasksByProcessId(Long processID) {
         ProcessInstanceEntity processInstance = processManagementService.findByID(processID);
-//        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();//TODO uncomment
-        GeneralRealPerson personByNationalCode = personService.findPersonByNationalCode(loggedInUserID);//TODO remove loggedInUserID
-        Integer loggedInUserId = personByNationalCode.getId();//TODO remove loggedInUserID
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         boolean hasAccess = processInstance.getTasks()
                 .stream()
                 .anyMatch(task -> loggedInUserId.equals(task.getUserId())) || loggedInUserId.equals(processInstance.getConfirmUserId());

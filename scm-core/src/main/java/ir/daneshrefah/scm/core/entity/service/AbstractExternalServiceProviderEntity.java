@@ -43,7 +43,7 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractDefa
     @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
     private AssetProviderEntity assetProvider;
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "SERVICE_PROVIDER_ID")
+    @JoinColumn(name = "SRV_PROVIDER_ID")
     private List<ResponseEntity> responseConditions;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_PROVIDER_RELATION"

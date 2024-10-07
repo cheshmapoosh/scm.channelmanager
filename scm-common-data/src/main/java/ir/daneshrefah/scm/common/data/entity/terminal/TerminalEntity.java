@@ -25,10 +25,14 @@ public class TerminalEntity extends AbstractVersionAbleDefaultEntity<String> {
     private Long legacyTerminalId;
     @Convert(converter = TerminalStatusConverter.class)
     private TerminalStatus status;
+    @Column(name = "SUPPORT_CHECK_AUTH")
     private Boolean supportCheckAuthentication;
+    @Column(name = "SUPPORT_CHECK_SECOND_AUTH")
     private Boolean supportCheckSecondAuthentication;
+    @Column(name = "SUPPORT_CHECK_SRV_ACCESS")
     private Boolean supportCheckServiceAccess;
     private Boolean supportCheckAssetAccess;
+    @Column(name = "SUPPORT_CUSTOMER_INJ")
     private Boolean supportCustomerInjection;
 
 }

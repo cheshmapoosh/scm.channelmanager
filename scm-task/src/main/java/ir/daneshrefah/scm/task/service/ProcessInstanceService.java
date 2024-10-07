@@ -44,7 +44,7 @@ public class ProcessInstanceService extends AbstractJavaService {
 
     @JavaService
     @SuppressWarnings("unused")
-    public ProcessInstanceResponse approve(ProcessInstanceApproveRequest request) {
+    public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
         return processManagementService.approve(request);
     }
 }

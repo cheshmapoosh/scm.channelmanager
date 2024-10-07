@@ -26,13 +26,13 @@ public class ServiceRelationEntity extends AbstractDefaultEntity<Long> {
     private ServiceEntity sourceService;
     private Integer order;
     @ManyToOne
-    @JoinColumn(name = "TARGET_SERVICE_ID")
+    @JoinColumn(name = "TARGET_SRV_ID")
     private ServiceEntity targetService;
     @ManyToOne
-    @JoinColumn(name = "TARGET_SERVICE_COMMIT_ID")
+    @JoinColumn(name = "TARGET_SRV_COMMIT_ID")
     private ServiceEntity targetServiceCommit;
     @ManyToOne
-    @JoinColumn(name = "TARGET_SERVICE_REVERSE_ID")
+    @JoinColumn(name = "TARGET_SRV_REVERSE_ID")
     private ServiceEntity targetServiceReverse;
 
 }

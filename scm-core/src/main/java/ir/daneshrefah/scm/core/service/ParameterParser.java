@@ -58,6 +58,7 @@ public class ParameterParser {
         parameterTree.setRequestPathVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_PATH_VARIABLE)));
         parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_QUERY_STRING)));
         parameterTree.setResponseHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.RESPONSE_HEADER)));
+        parameterTree.setConfig(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.CONFIG)));
         return parameterTree;
     }
 
@@ -75,9 +76,9 @@ public class ParameterParser {
     private ResponseCache createResponseCache(List<Response> responseConditions) {
         ResponseCache conditionCache = new ResponseCache();
         conditionCache.setConditions(responseConditions);
-        Map<Long, ParameterNode> responseBodyNodeMap = new HashMap<>();
+        Map<String, ParameterNode> responseBodyNodeMap = new HashMap<>();
         responseConditions.forEach(responseCondition -> {
-            Long id = responseCondition.getId();
+            String id = responseCondition.getId();
             ParameterNode node = createBodyParameterNode(responseCondition.getResponseParameters());
             responseBodyNodeMap.put(id, node);
         });
@@ -109,7 +110,7 @@ public class ParameterParser {
     }
 
     private ParameterNode readParameterNodeTree(Parameter parameter, ParameterNode rootNode, List<Parameter> parameters) {
-        Long id = parameter.getId();
+        String id = parameter.getId();
         List<Parameter> parameterList = findByParentId(parameters, id);
         List<ParameterNode> parameterNodes = new ArrayList<>();
         for (Parameter p : parameterList) {
@@ -226,7 +227,7 @@ public class ParameterParser {
                 .findFirst().orElse(null);
     }
 
-    private List<Parameter> findByParentId(List<Parameter> parameters, Long parentId) {
+    private List<Parameter> findByParentId(List<Parameter> parameters, String parentId) {
         return parameters
                 .stream()
                 .filter(parameter -> Objects.nonNull(parameter.getParent()))
@@ -306,6 +307,7 @@ public class ParameterParser {
         private ParameterNode requestQueryStringVariableNode;
         private ParameterNode requestHeaderVariableNode;
         private ParameterNode responseHeaderVariableNode;
+        private ParameterNode config;
 
     }
 
@@ -316,7 +318,7 @@ public class ParameterParser {
     public static class ResponseCache {
         private List<Response> conditions;
         private ResponseCache providerConditionCache;
-        private Map<Long, ParameterNode> responseBodyNodes;
+        private Map<String, ParameterNode> responseBodyNodes;
 
         public ParameterNode getResponseBodyNode(Response responseCondition) {
             return responseBodyNodes.get(responseCondition.getId());

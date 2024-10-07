@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class ResponseConditionDatasourceRequest implements RequestData {
 
-    private Long responseConditionId;
+    private String responseConditionId;
     private ParameterDatasourceProperty property;
     private String value;
     private Integer length;

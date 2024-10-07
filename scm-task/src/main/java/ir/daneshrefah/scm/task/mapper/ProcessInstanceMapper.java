@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
+import ir.daneshrefah.scm.task.model.ProcessInstanceApproveResponse;
 import ir.daneshrefah.scm.task.model.ProcessInstanceResponse;
 import ir.daneshrefah.scm.task.model.ProcessInstanceStartResponse;
 import ir.daneshrefah.scm.task.model.ProcessInstanceUpdateResponse;
@@ -25,6 +26,11 @@ public abstract class ProcessInstanceMapper {
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
     @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")
     public abstract ProcessInstanceResponse toProcessInstanceResponse(ProcessInstanceEntity processInstance);
+
+    @Mapping(target = "tasks",ignore = true)
+    @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
+    @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")
+    public abstract ProcessInstanceApproveResponse toProcessInstanceApproveResponse(ProcessInstanceEntity processInstance);
 
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
     @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")

@@ -103,7 +103,8 @@ public final class NabTcpServiceProvider extends AbstractCamelExternalServicePro
     private void appendParameterToRequest(StringBuffer request, Message message, List<Parameter> providerHeaders) {
         for (Iterator<Parameter> iterator = providerHeaders.iterator(); iterator.hasNext(); ) {
             Parameter parameter = iterator.next();
-            if (!parameter.isInternal()) {
+            //todo alireza >> 'internal' has been removed (use 'CONFIG' action type)
+            if (!parameter.getActionType().equals(ParameterActionType.CONFIG)) {
                 request.append(adjustValue(parameter, extractParameterValue(message, parameter)));
             }
         }

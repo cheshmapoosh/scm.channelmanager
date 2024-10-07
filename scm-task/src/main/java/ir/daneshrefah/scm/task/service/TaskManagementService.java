@@ -13,5 +13,5 @@ public interface TaskManagementService {
 
     TaskResponse completeTask(TaskRequest taskRequest);
 
-    List<TaskResponse> findAllTasksByProcessId(Long processID,String loggedInUserID);
+    List<TaskResponse> findAllTasksByProcessId(Long processID);
 }
