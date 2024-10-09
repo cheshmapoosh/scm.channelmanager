@@ -22,7 +22,7 @@ public class QueueCacheConfigEntity extends InstanceConfigEntity {
     private Integer asyncBackupCount;
     @Column(name = "MAX_SIZE")
     private Integer maxSize;
-    @Column(name = "PRIORITY_COMPARATOR_CLASS_NAME")
+    @Column(name = "PRIORITY_COMP_CLASS_NAME")
     private String priorityComparatorClassName;
     @Column(name = "EMPTY_QUEUE_TTL")
     private Integer emptyQueueTtl;

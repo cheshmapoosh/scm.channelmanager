@@ -18,7 +18,7 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @Column(name = "RESP_CONDITION_ID")
     private String id;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "RESPONSE_CONDITION_ID")

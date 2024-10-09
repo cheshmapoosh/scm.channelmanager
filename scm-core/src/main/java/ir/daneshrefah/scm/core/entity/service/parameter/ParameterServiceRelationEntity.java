@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION")
+@Table(name = "TBL_SCM_PARAMETER_SERVICE_RELATION")
 @Getter
 @Setter
 public class ParameterServiceRelationEntity {
