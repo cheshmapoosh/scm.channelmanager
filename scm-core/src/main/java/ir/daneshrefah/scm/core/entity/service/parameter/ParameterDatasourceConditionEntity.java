@@ -15,6 +15,7 @@ import lombok.Setter;
 public class ParameterDatasourceConditionEntity extends AbstractVersionAbleDefaultEntity<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "DATASOURCE_CONDITION_ID")
     private Long id;
     @Embedded
     private ParameterDatasourceEntity parameter;

@@ -62,7 +62,7 @@ public class ClientEntity extends AbstractDefaultEntity<Long> {
     private boolean checkActivation;
     private boolean checkIpAddress;
     private String allowIpAddresses;
-    @Column(name = "SESSION_TTL _MINUTE")
+    @Column(name = "SESSION_TTL_MINUTE")
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;

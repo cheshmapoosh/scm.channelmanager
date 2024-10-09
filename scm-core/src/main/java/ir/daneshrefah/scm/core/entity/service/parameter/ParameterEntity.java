@@ -44,7 +44,7 @@ public class ParameterEntity extends AbstractVersionAbleDefaultEntity<String> {
     private String defaultValue;
 
     @ManyToOne
-    @JoinTable(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION"
+    @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_RELATION"
             ,joinColumns = @JoinColumn(name = "PARAMETER_ID")
             ,inverseJoinColumns = @JoinColumn(name = "SERVICE_ID"))
     private ServiceEntity service;

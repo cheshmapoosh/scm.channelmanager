@@ -65,7 +65,7 @@ public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<Str
     @JoinColumn(name = "PARENT_SERVICE_ID")
     private ServiceEntity parent;
     @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
-    @JoinTable(name = "TBL_SCM_PARAMETER_EXTERNAL_SERVICE_RELATION"
+    @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_RELATION"
             ,joinColumns = @JoinColumn(name = "SERVICE_ID")
             ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
     private List<ParameterEntity> parameters;
