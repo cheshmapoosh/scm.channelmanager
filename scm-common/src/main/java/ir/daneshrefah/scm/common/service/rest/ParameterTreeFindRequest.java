@@ -7,5 +7,5 @@ import lombok.Data;
 public class ParameterTreeFindRequest implements RequestData {
     private String actionType;
     private String serviceId;
-    private String responseConditionId;
+    private String responseId;
 }

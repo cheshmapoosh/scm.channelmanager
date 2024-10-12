@@ -17,11 +17,9 @@ import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
-import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
+import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
+import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,6 +46,7 @@ public class OtpController extends BaseController {
 
     private final OtpService otpService;
     private final PersonRepository personRepository;
+
 
     @PreAuthorize("isFullyAuthenticated()")
     @PostMapping("/sms")

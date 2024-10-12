@@ -29,8 +29,7 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
 
     @Override
     public Message resolveMessageByValidationMessage(Message message, Set<ValidationMessage> errors) {
-        for (Iterator<ValidationMessage> iterator = errors.iterator(); iterator.hasNext(); ) {
-            ValidationMessage validationMessage = iterator.next();
+        for (ValidationMessage validationMessage : errors) {
             Error error = new Error(validationMessage.getProperty(),
                     validationMessage.getCode(), validationMessage.getMessage(), null);
             message.addError(error, MessageStatus.SC_ERROR_VALIDATION);

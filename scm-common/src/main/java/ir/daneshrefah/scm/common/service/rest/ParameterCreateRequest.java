@@ -26,6 +26,6 @@ public class ParameterCreateRequest implements RequestData {
     //Parameter target usage
     private String serviceProviderId;
     private String serviceId;
-    private String responseConditionId;
+    private String responseId;
 
 }

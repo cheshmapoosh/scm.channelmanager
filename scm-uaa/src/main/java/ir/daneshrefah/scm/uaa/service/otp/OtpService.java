@@ -8,7 +8,9 @@ import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.BaseOtpException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.otp.provder.AbstractOtpProvider;
+import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,9 +32,11 @@ public class OtpService {
 
     private final TerminalService terminalService;
     private final Map<OtpType, AbstractOtpProvider> providers;
+    private final ProfileInfo profileInfo;
 
-    public OtpService(List<AbstractOtpProvider> providers, TerminalService terminalService) {
+    public OtpService(List<AbstractOtpProvider> providers, TerminalService terminalService, ProfileInfo profileInfo) {
         this.terminalService = terminalService;
+        this.profileInfo = profileInfo;
         this.providers = providers.stream()
                 .collect(Collectors.toMap(AbstractOtpProvider::getType, Function.identity()));
     }
