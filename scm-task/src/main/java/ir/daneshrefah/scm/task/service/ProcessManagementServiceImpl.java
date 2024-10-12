@@ -237,6 +237,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     private void persistTaskLogEntity(TaskLogEntity taskLogEntity, TaskEntity taskEntity) {
         taskLogEntity.setTaskEntity(taskEntity);
         taskLogEntity.setStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
+        taskLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         taskLogEntity.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
         taskLogEntity.setCreateAt(new Date());
         taskLogService.save(taskLogEntity);

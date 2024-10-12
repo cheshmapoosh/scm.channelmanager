@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceWatcherEntity;
 import ir.daneshrefah.scm.task.repository.ProcessInstanceWatcherRepository;
+import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class ProcessInstanceWatcherServiceImpl implements ProcessInstanceWatcher
         ProcessInstanceWatcherEntity processInstanceWatcherEntity = new ProcessInstanceWatcherEntity();
         processInstanceWatcherEntity.setUserId(getLoggedInUserId());
         processInstanceWatcherEntity.setProcessInstance(processInstance);
+        processInstanceWatcherEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         processInstanceWatcherEntity.setCreateBy(getLoggedInUserId());
         processInstanceWatcherEntity.setCreateAt(new Date());
         return processInstanceWatcherEntity;

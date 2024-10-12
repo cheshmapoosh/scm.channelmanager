@@ -29,6 +29,9 @@ public class TaskLogEntity {
     @Convert(converter = TaskStatusConverter.class)
     private TaskStatusEnum status;
 
+    @Column(name = "ARCHIVE_NO", updatable = false)
+    private Long archiveNo;
+
     @Column(name = "CREATE_BY")
     private Integer createdBy;
 

@@ -32,7 +32,6 @@ public class ProcessInstanceEntity {
     private String accountNo;
 
     @Column(name = "TRANSACTION_DATA", nullable = false)
-    @Lob
     @Convert(converter = TransactionDataConverter.class)
     private JsonNode transactionData;
 
