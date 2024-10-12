@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
 import ir.daneshrefah.scm.task.constant.ExecutionMethodTypeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
@@ -20,12 +21,14 @@ import ir.daneshrefah.scm.task.entity.TaskEntity;
 import ir.daneshrefah.scm.task.entity.TaskLogEntity;
 import ir.daneshrefah.scm.task.exception.InvalidProcessStatusException;
 import ir.daneshrefah.scm.task.exception.InvalidTaskStatusException;
+import ir.daneshrefah.scm.task.exception.ProcessAuthorityException;
 import ir.daneshrefah.scm.task.exception.ProcessInstanceCompleteException;
 import ir.daneshrefah.scm.task.mapper.ProcessInstanceMapper;
 import ir.daneshrefah.scm.task.model.*;
 import ir.daneshrefah.scm.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.task.repository.ProcessInstanceSpecs;
 import ir.daneshrefah.scm.task.utils.PageableUtils;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
@@ -182,7 +185,11 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     public ProcessInstanceUpdateResponse updateDescription(ProcessInstanceUpdateRequest request) {
         ChainValidation.crateValidator(request.getDescription(), "description").checkBlank();
-        ProcessInstanceEntity processInstanceEntity = processInstanceRepository.findByIdAndConfirmUserId(request.getId(), AuthenticationUtils.getLoggedInUserId()).orElseThrow(() -> new NoMatchRecordFoundException("processId"));
+        ProcessInstanceEntity processInstanceEntity = processInstanceRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("processId"));
+
+        if (!hasUserAccess(processInstanceEntity)) {
+            throw new ProcessAuthorityException("update Description","have not permission");
+        }
         if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)) {
             throw new ProcessInstanceCompleteException("process state", "Cannot update description of a completed process instance.");
         }
@@ -190,7 +197,15 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceRepository.save(processInstanceEntity);
         return processInstanceMapper.toProcessInstanceUpdateResponse(processInstanceEntity);
     }
-
+    public boolean hasUserAccess(ProcessInstanceEntity processInstanceEntity) {
+        Integer confirmUserId = processInstanceEntity.getConfirmUserId();
+        Integer loggedInUser = AuthenticationUtils.getLoggedInUserId();
+        if (Objects.equals(confirmUserId, loggedInUser)) {
+            return true;
+        }
+        return processInstanceEntity.getTasks().stream()
+                .noneMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
+    }
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
         ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
             throw new InvalidInputException("correlationId");
