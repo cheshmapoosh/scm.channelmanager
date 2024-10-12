@@ -24,6 +24,9 @@ public class ProcessInstanceWatcherEntity {
     @JoinColumn(name = "PROCESS_ID")
     private ProcessInstanceEntity processInstance;
 
+    @Column(name = "ARCHIVE_NO", updatable = false)
+    private Long archiveNo;
+
     @Column(name = "CREATE_BY", nullable = false)
     private Integer createBy;
 

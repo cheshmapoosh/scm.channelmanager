@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.task.entity.TaskLogEntity;
 import ir.daneshrefah.scm.task.repository.TaskLogRepository;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
+import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class TaskLogServiceImpl implements TaskLogService {
         taskLogEntity.setLastChannelCode(context.getChannel().getCode());
         taskLogEntity.setTaskEntity(taskEntity);
         taskLogEntity.setStatus(taskEntity.getTaskStatus());
+        taskLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         taskLogEntity.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
         taskLogEntity.setCreateAt(new Date());
         return save(taskLogEntity);
