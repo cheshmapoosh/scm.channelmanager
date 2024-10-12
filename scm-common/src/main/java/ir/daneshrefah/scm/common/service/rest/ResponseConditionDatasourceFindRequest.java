@@ -7,5 +7,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ResponseConditionDatasourceFindRequest implements RequestData {
-    private String responseConditionId;
+    private String responseId;
 }

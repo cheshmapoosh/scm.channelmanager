@@ -15,9 +15,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum OtpReason {
 
-    AUTHENTICATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1),
-    CHANGE_LOGIN_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
-    CHANGE_TRANSACTION_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
+    AUTHENTICATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 0, 1),
+    CHANGE_LOGIN_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 0, 1),
+    CHANGE_TRANSACTION_AUTHENTICATION_METHOD(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 0, 1),
     ACTIVATION(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1),
     ACH(2, 4, OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1);
 

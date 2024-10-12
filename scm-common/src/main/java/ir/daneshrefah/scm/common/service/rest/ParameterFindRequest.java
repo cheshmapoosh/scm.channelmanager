@@ -13,5 +13,5 @@ public class ParameterFindRequest extends PagedRequestData {
     //Parameter target usage
     private String serviceProviderId;
     private String serviceId;
-    private String responseConditionId;
+    private String responseId;
 }

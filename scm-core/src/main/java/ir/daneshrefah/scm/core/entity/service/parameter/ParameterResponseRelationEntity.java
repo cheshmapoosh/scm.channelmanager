@@ -11,7 +11,7 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_PARAMETER_RESPONSE_CONDITION_RELATION")
 @Setter
 @Getter
-public class ParameterResponseConditionRelationEntity {
+public class ParameterResponseRelationEntity {
     @Id
     @Column(name = "PARAMETER_ID")
     private String parameterId;

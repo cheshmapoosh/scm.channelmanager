@@ -85,8 +85,8 @@ public class DynamicRestServiceImpl implements DynamicRestService {
 
     @Override
     public List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request) {
-        ValidationUtils.checkNull(request.getResponseConditionId(), () -> new MissingRequiredInputException("responseConditionId"));
-        ResponseEntity entity = responseConditionRepository.findById(request.getResponseConditionId()).orElseThrow(() -> new InvalidInputException("responseConditionId"));
+        ValidationUtils.checkNull(request.getResponseId(), () -> new MissingRequiredInputException("responseId"));
+        ResponseEntity entity = responseConditionRepository.findById(request.getResponseId()).orElseThrow(() -> new InvalidInputException("responseId"));
         return entity.getConditions()
                 .stream()
                 .map(ParameterDatasourceConditionMapper.INSTANCE::toModel)
@@ -196,7 +196,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     public ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceRequest request) {
         validateResponseConditionDatasourceRequest(request);
         ResponseEntity responseConditionEntity = responseConditionRepository
-                .findById(request.getResponseConditionId()).orElseThrow(() -> new NoMatchRecordFoundException("responseConditionId"));
+                .findById(request.getResponseId()).orElseThrow(() -> new NoMatchRecordFoundException("responseId"));
         List<ParameterDatasourceConditionEntity> conditions = responseConditionEntity.getConditions();
         if (Objects.isNull(conditions)) {
             conditions = new ArrayList<>();
@@ -271,8 +271,8 @@ public class DynamicRestServiceImpl implements DynamicRestService {
 
     private void validateResponseConditionDatasourceRequest(ResponseConditionDatasourceRequest request) {
         ChainValidation
-                .crateValidator(request.getResponseConditionId(), "responseConditionId")
-                .checkNull().checkNumeral();
+                .crateValidator(request.getResponseId(), "responseId")
+                .checkNull();
         ValidationUtils.checkNull(request.getProperty(), () -> new InvalidInputException("property"));
         ValidationUtils.checkBlankStringIfNotNull(request.getValue(), () -> new InvalidInputException("value"));
         ValidationUtils.checkBlankStringIfNotNull(request.getConvertorCode(), () -> new InvalidInputException("convertorCode"));

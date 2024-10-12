@@ -15,9 +15,11 @@ import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException;
 import ir.daneshrefah.scm.uaa.exception.OtpNotFoundException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
+import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import ir.daneshrefah.scm.utils.validation.regex.CommonRegex;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
@@ -37,13 +39,19 @@ public class SmsOtpProvider extends AbstractOtpProvider {
 
     private final NotificationService notificationService;
 
-    public SmsOtpProvider(CacheTemplate cacheTemplate, OtpProperties otpProperties, NotificationService notificationService) {
-        super(cacheTemplate, otpProperties);
+
+    public SmsOtpProvider(
+            CacheTemplate cacheTemplate,
+            OtpProperties otpProperties,
+            NotificationService notificationService,
+            ProfileInfo profileInfo
+    ) {
+        super(cacheTemplate, otpProperties,profileInfo);
         this.notificationService = notificationService;
     }
 
     @Override
-    public OtpSendResponse sendOtp(OtpSendRequest request) {
+    public OtpSendResponse sendOtpInternal(OtpSendRequest request) {
         validateRequest(request);
         Otp otp = buildOtpInstance(request, true);
         if (!otp.isDelivered()) {
