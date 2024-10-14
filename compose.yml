@@ -1,0 +1,111 @@
+services:
+  scm-config:
+    image: scm-config:0.0.1
+    container_name: scm-config-container
+    volumes:
+      - /home/scm/docker/cache/scm-config-server-boot.jar:/app/scm-config-server-boot.jar
+      - /home/scm/docker/config/config-repo-server:/home/scm/docker/config/config-repo-server
+      - /home/scm/docker/config/config-repo:/home/scm/docker/config/config-repo
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: [ "java", "-jar", "/home/app/scm-config-server-boot.jar" ]
+
+  scm-cache:
+    depends_on:
+      scm-config:
+        condition: service_healthy
+    image: scm-cache:0.0.1
+    container_name: scm-cache-container
+    volumes:
+      - /home/scm/docker/cache/scm-cache-boot.jar:/app/scm-cache-boot.jar
+    ports:
+      - "8080:8080"
+      - "5701:5701"
+      - "5702:5702"
+      - "5703:5703"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: [ "java", "-jar", "/home/app/scm-cache-boot.jar" ]
+
+
+  scm-uaa:
+    depends_on:
+      scm-config:
+        condition: service_healthy
+    image: scm-uaa:0.0.1
+    container_name: scm-uaa-container
+    volumes:
+      - /home/scm/docker/uaa/scm-uaa-boot.jar:/app/scm-uaa-boot.jar
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: [ "java", "-jar", "/home/app/scm-uaa-boot.jar" ]
+
+
+  scm-web:
+    depends_on:
+      scm-config:
+        condition: service_healthy
+    image: scm-web:0.0.1
+    container_name: scm-web-container
+    volumes:
+      - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
+    ports:
+      - "8083:8083"
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=scm4dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["java", "-jar", "/home/app/scm-web.jar","--scm.swagger.target-host=10.10.4.125"]
+
+  ib-web:
+    depends_on:
+      scm-config:
+        condition: service_healthy
+    image: scm-web:0.0.1
+    container_name: scm-ib-container
+    volumes:
+    - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
+    ports:
+      - "8082:8082"
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=ib4dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: [ "java", "-jar", "/home/app/scm-web.jar","--scm.swagger.target-host=10.10.4.125" ]
+
+
+
+
