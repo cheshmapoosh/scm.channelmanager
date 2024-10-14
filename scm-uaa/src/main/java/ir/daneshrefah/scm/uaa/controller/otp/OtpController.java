@@ -48,6 +48,10 @@ public class OtpController extends BaseController {
     private final PersonRepository personRepository;
 
 
+    /**
+     * Otp response (code,issuer,...) just in dev environment.
+     * @see ProfileInfo
+     */
     @PreAuthorize("isFullyAuthenticated()")
     @PostMapping("/sms")
     @CrossOrigin
@@ -65,7 +69,6 @@ public class OtpController extends BaseController {
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();
-        //TODO OTP SHOULD NOT SEND IN RESPONSE
         OtpSendRequest otpRequest = OtpSendRequest.builder()
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())

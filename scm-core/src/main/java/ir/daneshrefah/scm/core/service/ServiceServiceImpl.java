@@ -298,11 +298,14 @@ public class ServiceServiceImpl implements ServiceService {
         setServiceParent(entity, service);
         checkServiceProvider(entity, service);
 
-        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(serviceRepository.save(entity));
+        ServiceEntity savedEntity = serviceRepository.save(entity);
+        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(savedEntity);
         if (ServiceImplementationType.PROXY.equals(service.getImplementationType())){
             ServiceRelationEntity serviceRelation = new ServiceRelationEntity();
-//            serviceRelation.setSourceService(result.getId());
-            //TODO
+            serviceRelation.setSourceService(savedEntity);
+            ServiceEntity targetService = serviceRepository.findById(service.getProxyTargetServiceId()).orElseThrow(()->new InvalidInputException("proxyTargetServiceId"));
+            serviceRelation.setTargetService(targetService);
+            serviceRelationRepository.save(serviceRelation);
         }
         emptyServiceListCache();
         return result;
@@ -532,6 +535,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    @Transactional
     public void deleteService(ServiceDeleteRequest request) {
         validateServiceDeleteRequest(request);
         serviceRepository.findById(request.getId())
@@ -542,8 +546,9 @@ public class ServiceServiceImpl implements ServiceService {
                     if (found.getLastEditDate().equals(request.getLastEditDate())) {
                         //if record version passed.
                         try {
-                            serviceRepository.delete(found);
+                            serviceRelationRepository.deleteAll(serviceRelationRepository.findAllBySourceServiceId(found.getId()));
                             transformerRelationRepository.deleteAll(transformerRelationRepository.findAllBySourceId(found.getId()));
+                            serviceRepository.delete(found);
                         } catch (ObjectOptimisticLockingFailureException e) {
                             throw new RecordVersionException("service");
                         }

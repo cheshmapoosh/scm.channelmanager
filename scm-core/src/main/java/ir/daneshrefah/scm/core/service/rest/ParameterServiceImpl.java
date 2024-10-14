@@ -13,7 +13,6 @@ import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterDatasourceEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
-import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.core.mapper.ParameterMapper;
 import ir.daneshrefah.scm.core.mapper.ResponseMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
@@ -95,8 +94,7 @@ public class ParameterServiceImpl implements ParameterService {
         ValidationUtils.checkBlankString(request.getServiceId(), () -> new InvalidInputException("serviceId"));
         ValidationUtils.checkBlankString(request.getActionType(), () -> new InvalidInputException("actionType"));
         ServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new NoMatchRecordFoundException("serviceID"));
-        RestExternalServiceEntity service = (RestExternalServiceEntity) serviceEntity;
-        ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(ServiceMapper.INSTANCE.toModel(service));
+        ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(ServiceMapper.INSTANCE.toService(serviceEntity));
         ParameterActionType actionType = ParameterActionType.findByValue(request.getActionType());
         String responseId = request.getResponseId();
         Response responseCondition = null;
@@ -131,8 +129,7 @@ public class ParameterServiceImpl implements ParameterService {
             parameters = serviceProviderRepository.findById(serviceProviderId).orElseThrow(() -> new InvalidInputException("serviceProviderId")).getParameters();
         } else if (Objects.nonNull(serviceId)) {
             ServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new InvalidInputException("serviceId"));
-            RestExternalServiceEntity entity = (RestExternalServiceEntity) serviceEntity;
-            parameters = entity.getParameters();
+            parameters = serviceEntity.getParameters();
         } else {
             parameters = responseRepository.findById(responseConditionId).orElseThrow(() -> new InvalidInputException("responseId")).getResponseParameters();
         }

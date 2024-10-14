@@ -197,6 +197,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceRepository.save(processInstanceEntity);
         return processInstanceMapper.toProcessInstanceUpdateResponse(processInstanceEntity);
     }
+
     public boolean hasUserAccess(ProcessInstanceEntity processInstanceEntity) {
         Integer confirmUserId = processInstanceEntity.getConfirmUserId();
         Integer loggedInUser = AuthenticationUtils.getLoggedInUserId();
@@ -204,7 +205,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             return true;
         }
         return processInstanceEntity.getTasks().stream()
-                .noneMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
+                .anyMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
     }
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
         ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {

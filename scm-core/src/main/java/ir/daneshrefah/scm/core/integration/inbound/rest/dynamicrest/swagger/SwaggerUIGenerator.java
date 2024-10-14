@@ -26,6 +26,8 @@ public class SwaggerUIGenerator {
     @Value("${server.servlet.context-path}")
     private String servletContextPrefix;
     private static SwaggerUIGenerator SWAGGER_UI_HANDLER;
+    @Value("${scm.swagger.target-host:#{null}}")
+    private String targetHost;
 
     @PostConstruct
     public void init() {
@@ -44,7 +46,7 @@ public class SwaggerUIGenerator {
         String baseUrl = "http://" + ipAddress;
         try {
             InetAddress inetAddress = NetworkUtils.findCurrentInet4Address().orElse(Inet4Address.getLocalHost());
-            String host = inetAddress.getHostAddress();
+            String host = (Objects.nonNull(targetHost)) ? targetHost : inetAddress.getHostAddress();
             return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
             return baseUrl.replace(ipAddress, "127.0.0.1");

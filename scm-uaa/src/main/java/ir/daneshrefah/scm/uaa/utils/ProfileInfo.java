@@ -6,12 +6,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
 public class ProfileInfo {
 
     private static final String DEVELOPMENT_PROFILE = "dev";
+    private static Boolean TRACE_MODE_STATUS = null;
     private final Environment environment;
 
     public String getCurrentProfile() {
@@ -28,10 +30,20 @@ public class ProfileInfo {
         return Arrays.stream(activeProfiles).toList();
     }
 
+    /**
+     * This status used for logging business detail or any tracing activity on development environment.
+     */
     public boolean isTraceMode() {
-        return getActiveProfiles()
-                .stream()
-                .anyMatch(profile -> profile.equals(DEVELOPMENT_PROFILE));
+        if (Objects.isNull(TRACE_MODE_STATUS)) {
+            synchronized (this) {
+                if (Objects.nonNull(TRACE_MODE_STATUS)) {
+                    TRACE_MODE_STATUS = getActiveProfiles()
+                            .stream()
+                            .anyMatch(profile -> profile.equals(DEVELOPMENT_PROFILE));
+                }
+            }
+        }
+        return TRACE_MODE_STATUS;
     }
 
 }

@@ -37,9 +37,11 @@ import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
+import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -60,9 +62,8 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
 public class SwaggerGenerator {
 
     private static final ObjectMapper OBJECT_MAPPER;
-    private static final SwaggerGenerator SWAGGER_GENERATOR = new SwaggerGenerator();
     private static final String SWAGGER_VERSION = "1.0.1";
-
+    private static SwaggerGenerator SWAGGER_GENERATOR;
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -73,12 +74,19 @@ public class SwaggerGenerator {
     }
 
     private final Set<String> TAGS = new HashSet<>();
+    @Value("${scm.swagger.target-host:#{null}}")
+    private String targetHost;
 
     private SwaggerGenerator() {
     }
 
     public static SwaggerGenerator getInstance() {
         return SWAGGER_GENERATOR;
+    }
+
+    @PostConstruct
+    public void init() {
+        SWAGGER_GENERATOR = this;
     }
 
     public OpenAPI generateOpenAPI(Channel channel, List<TerminalServiceAccess> serviceAccesses,
@@ -259,7 +267,7 @@ public class SwaggerGenerator {
         String baseUrl = "http://" + ipAddress + ":" + port + contextPath;
         try {
             InetAddress inetAddress = NetworkUtils.findCurrentInet4Address().orElse(Inet4Address.getLocalHost());
-            String host = inetAddress.getHostAddress();
+            String host = (Objects.nonNull(targetHost)) ? targetHost : inetAddress.getHostAddress();
             return baseUrl.replace(ipAddress, host);
         } catch (Exception e) {
             return baseUrl.replace(ipAddress, "127.0.0.1");
