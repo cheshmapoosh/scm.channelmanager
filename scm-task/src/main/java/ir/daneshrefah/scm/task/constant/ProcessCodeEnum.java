@@ -25,7 +25,9 @@ public enum ProcessCodeEnum {
     ACH_BATCH(14, "achBatch"),
     BILL_BATCH(15, "billBatch"),
     INTERNAL_BATCH(16, "internalBatch"),
-    INSURANCE_BATCH(17, "insuranceBatch");
+    INSURANCE_BATCH(17, "insuranceBatch"),
+    RECURRING_ADD_ACH(18, "recurringAddAch"),
+    RECURRING_ADD_BATCH_ACH(19, "recurringAddBatchAch");
 
     private final Integer code;
     private final String transactionTypeName;

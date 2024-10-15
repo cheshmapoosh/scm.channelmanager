@@ -16,11 +16,13 @@ public class ProcessInstanceSpecs {
 
     public static Specification<ProcessInstanceEntity> toSpecification(ProcessInstanceFilterRequest request) {
         return (root, query, builder) -> {
+            query.distinct(true);
             List<Predicate> predicates = new ArrayList<>();
             if (request.isReport()) {
                 Join<Object, Object> tasks = root.join("tasks");
                 predicates.add(builder.or(
                         builder.equal(root.get("createBy"),request.getUserId()),
+                        builder.equal(root.get("confirmUserId"),request.getUserId()),
                         builder.equal(tasks.get("userId"), request.getUserId())
                 ));
             }
