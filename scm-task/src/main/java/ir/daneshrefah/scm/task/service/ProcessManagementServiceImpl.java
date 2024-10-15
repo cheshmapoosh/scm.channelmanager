@@ -59,20 +59,11 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     @Override
     public ProcessInstanceStartResponse start(ProcessInstanceStartRequest request) {
-        validateProcessBeforeStart(request);
+        processTaskDefinitionService.validateProcessBeforeStart(request);
         ProcessInstanceEntity processInstanceEntity = createProcessInstanceEntity(request);
         processInstanceEntity.getTasks().forEach(taskEntity -> taskEntity.setProcessInstance(processInstanceEntity));
         ProcessInstanceEntity processInstance = processInstanceRepository.save(processInstanceEntity);
         return processInstanceMapper.toProcessInstanceStartResponse(processInstance);
-    }
-
-    private void validateProcessBeforeStart(ProcessInstanceStartRequest request) {
-//        try { //TODO remove try cache
-        processTaskDefinitionService
-                    .verifySecondAuthentication(request.getProcessName(), ExecutionMethodTypeEnum.START_PROCESS, DefinitionTypeEnum.PROCESS, request.getProcessCode());
-//        } catch (Exception e) {
-//
-//        }
     }
 
     private ProcessInstanceEntity createProcessInstanceEntity(ProcessInstanceStartRequest request) {
@@ -171,7 +162,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
         Pageable pageable = PageableUtils.getPageable(request);
         Page<ProcessInstanceEntity> entities = processInstanceRepository.findAll(ProcessInstanceSpecs.toSpecification(request), pageable);
-        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList().stream().distinct().toList());
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList());
     }
 
     private GeneralPerson findUserByPersonTypeAndNationalCodeAndSubOrg(UserModel confirmUserModel) {
@@ -207,7 +198,9 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstanceEntity.getTasks().stream()
                 .anyMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
     }
+
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
+        processTaskDefinitionService.validateProcessBeforeApprove(request);
         ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
             throw new InvalidInputException("correlationId");
         });

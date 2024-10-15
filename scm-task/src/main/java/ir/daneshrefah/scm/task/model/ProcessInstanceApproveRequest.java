@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.task.model;
 
+import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
+import ir.daneshrefah.scm.task.constant.ProcessNameEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,4 +10,6 @@ import lombok.Setter;
 public class ProcessInstanceApproveRequest {
     private Long id;
     private String correlationId;
+    private ProcessNameEnum processName;
+    private ProcessCodeEnum processCode;
 }

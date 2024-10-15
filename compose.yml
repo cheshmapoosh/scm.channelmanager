@@ -8,6 +8,7 @@ services:
       - /home/scm/docker/config/config-repo:/home/scm/docker/config/config-repo
     ports:
       - "8888:8888"
+      - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
     logging:
@@ -21,7 +22,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    command: [ "java", "-jar", "/home/app/scm-config-server-boot.jar" ]
+    command:
+      - java
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-jar"
+      - "/home/app/scm-config-server-boot.jar"
 
   scm-cache:
     depends_on:
@@ -36,6 +41,7 @@ services:
       - "5701:5701"
       - "5702:5702"
       - "5703:5703"
+      - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
     logging:
@@ -43,7 +49,11 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: [ "java", "-jar", "/home/app/scm-cache-boot.jar" ]
+    command:
+      - java
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-jar"
+      - "/home/app/scm-cache-boot.jar"
 
 
   scm-uaa:
@@ -56,6 +66,7 @@ services:
       - /home/scm/docker/uaa/scm-uaa-boot.jar:/app/scm-uaa-boot.jar
     ports:
       - "8000:8000"
+      - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
     logging:
@@ -63,7 +74,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: [ "java", "-jar", "/home/app/scm-uaa-boot.jar" ]
+    command:
+      - java
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-jar"
+      - "/home/app/scm-uaa-boot.jar"
+      - "--scm.swagger.target-host=10.10.4.125"
 
 
   scm-web:
@@ -84,7 +100,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: ["java", "-jar", "/home/app/scm-web.jar","--scm.swagger.target-host=10.10.4.125"]
+    command:
+      - java
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-jar"
+      - "/home/app/scm-web.jar"
+      - "--scm.swagger.target-host=10.10.4.125"
+
 
   ib-web:
     depends_on:
@@ -97,6 +119,7 @@ services:
     ports:
       - "8082:8082"
       - "8086:8086"
+      - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=ib4dev
     logging:
@@ -104,7 +127,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: [ "java", "-jar", "/home/app/scm-web.jar","--scm.swagger.target-host=10.10.4.125" ]
+    command:
+      - java
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-jar"
+      - "/home/app/scm-web.jar"
+      - "--scm.swagger.target-host=10.10.4.125"
+
 
 
 

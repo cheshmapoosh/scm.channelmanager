@@ -10,7 +10,7 @@ import java.util.Arrays;
 public enum ExecutionMethodTypeEnum {
 
     START_PROCESS(1),
-    REJECT_PROCESS(2),
+    APPROVE_PROCESS(2),
     UPDATE_DESCRIPTION(3),
     COMPLETE_TASK(4);
 

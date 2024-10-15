@@ -41,6 +41,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     private final TaskLogService taskLogService;
     private final ProcessManagementService processManagementService;
 
+    private final ProcessTaskDefinitionService processTaskDefinitionService;
+
     public PagedResponseData<TaskResponse> findAllTaskByUserIDAndFilter(TaskFilterRequest request) {
         request = Objects.nonNull(request) ? request : new TaskFilterRequest();
         request.setUserId(AuthenticationUtils.getLoggedInUserId());
@@ -51,6 +53,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     }
 
     public TaskResponse completeTask(TaskRequest taskRequest) {
+        processTaskDefinitionService.validateTaskBeforeComplete(taskRequest);
         if (taskRequest.getAction() == null) {
             throw new InvalidInputException("action");
         }
@@ -64,7 +67,6 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             case COMPLETE -> handleCompletion(taskEntity);
             default -> throw new InvalidInputException("Invalid action");
         }
-
         return taskMapper.toTaskResponseWithProcessInstance(taskEntity);
     }
 
