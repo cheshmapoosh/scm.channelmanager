@@ -33,8 +33,7 @@ import java.util.Objects;
 @EnableJpaRepositories(basePackages = {
         "ir.daneshrefah.scm.common.data",
         "ir.daneshrefah.scm.notification",
-        "ir.daneshrefah.scm.uaa.repository.authentication",
-        "ir.daneshrefah.scm.logging"},
+        "ir.daneshrefah.scm.uaa.repository.authentication"},
         entityManagerFactoryRef = "authenticationEntityManagerFactory",
         transactionManagerRef = "authenticationTransactionManager"
 )

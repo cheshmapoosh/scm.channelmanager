@@ -1,6 +1,15 @@
 scm:
   cif:
     url: http://scm-core.daneshrefah.ir/Service/
+  logging:
+    datasource:
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF
+      enabled: true
   security:
     key-store:
       name: config/keystore.p12
@@ -61,14 +70,11 @@ scm:
             color: '255,255,255'
 
   log:
-    enabled: true
-    has-exchange: false
-    type: file
     file-directory: appLogFolder
-    file-name: uaa.log
+    file-name: ${spring.application.name}.log
     log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
     file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
-    file-size: 10MB  #Max size of each log file
+    file-size: 1MB  #Max size of each log file
     keep-log-history: 30 #Keep up to 30 days of log files
     aspect:
       enable: true
@@ -92,7 +98,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  application:
+    name: uaa
 
 
 
@@ -113,3 +120,9 @@ springdoc:
     path: /public/index.html
   api-docs:
     path: /public/v3/api-docs
+
+logging:
+  level:
+    org.hibernate.SQL: debug #just for develop
+    org.hibernate.type.descriptor.sql: trace #just for develop
+    org.hibernate.orm.jdbc.bind: trace #just for develop

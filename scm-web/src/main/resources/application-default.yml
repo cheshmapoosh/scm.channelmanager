@@ -1,5 +1,5 @@
 scm:
-  channels: SCM4DEV
+  channels: IB4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
@@ -34,15 +34,12 @@ scm:
         max-connection: 10
         default-schema: REF
   log:
-    enabled: false
-    type: file
     file-directory: appLogFolder
-    file-name: app.log
+    file-name: ${spring.application.name}.log
     log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
     file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
     file-size: 1MB  #Max size of each log file
     keep-log-history: 30 #Keep up to 30 days of log files
-    has-exchange: true
   security:
     client-id: scm
     client-secret:
@@ -108,3 +105,5 @@ spring:
   cloud:
     config:
       enabled: false
+  application:
+    name: scm-web

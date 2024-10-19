@@ -1,17 +1,18 @@
 package ir.daneshrefah.scm.plugin.api.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.event.InboundEvent;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.common.model.event.Event;
+import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,10 +20,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -44,6 +44,10 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
     private Channel channel;
     @Getter(AccessLevel.PROTECTED)
     private List<TerminalServiceAccess> services;
+    @Autowired
+    private Tracer tracer;
+    @Autowired
+    private TraceLogUtils traceLogUtils;
 
     public final boolean initConfig(Channel channel, List<TerminalServiceAccess> services) {
         this.channel = channel;
@@ -61,11 +65,17 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
 
     protected abstract boolean registerEndpoints();
 
-    protected boolean initConfig() {return true;}
+    protected boolean initConfig() {
+        return true;
+    }
 
     @Override
     public Message execute() {
-        Instant startTime = Instant.now();
+        MessageInput messageInput = MessageInputContext.getCurrentContext();
+        Span rootSpan = tracer.spanBuilder(messageInput.getServiceCode())
+                .setSpanKind(SpanKind.SERVER).setNoParent()
+                .startSpan()
+                .setStatus(StatusCode.OK);
         Message message = null;
         Exception exception = null;
         try {
@@ -75,12 +85,18 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
 //            TerminalServiceAccess serviceAccess = findServiceAccess(input.getHeader(SCM_PARAMETER_TERMINAL), input.getServiceCode());
                 message = errorHandlerService.resolveMessageByException(MessageGenerator.getInstance().buildEmptyMessageFromInput(), e);
                 exception = e;
+            } finally {
+                traceLogUtils.recordMessageTrace(message, null, exception, rootSpan);
+                rootSpan.makeCurrent();
             }
             if (message.isContinueAllowed()) {
                 message = executeService(message);
             }
-        } finally {
-            logIncomingMessage(message, exception, startTime);
+        } catch (Exception ex) {
+            rootSpan.setStatus(StatusCode.ERROR);
+            rootSpan.recordException(ex);
+        }finally {
+            rootSpan.end();
         }
         return message;
     }
@@ -97,38 +113,6 @@ public abstract class AbstractInboundChannelGenerator implements InboundChannelG
 
     private Message executeServiceInternal(Message message) {
         producerTemplate.callService(message.getHeader().getService(), message);
-
         return message;
     }
-
-    private final void logIncomingMessage(Message message, Exception error, Instant startTime) {
-        MessageInput messageInput = MessageInputContext.getCurrentContext();
-        Event event = InboundEvent.builder()
-                .terminalCode(messageInput.getTerminal().getCode())
-                .channelCode(messageInput.getChannel().getCode())
-                .clientId(messageInput.getClientId())
-                .correlationId(messageInput.getCorrelationId())
-                .clientCorrelationId(messageInput.getClientCorrelationId())
-                .clientFlowId(messageInput.getClientFlowId())
-                .flowId(message.getHeader().getMessageId())
-                .serviceCode(Objects.nonNull(message.getHeader().getService()) ? message.getHeader().getService().getCode() : null)
-                .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
-                .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
-                .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
-                .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
-                .messageId(message.getHeader().getMessageId())
-                .threadName(Thread.currentThread().getName())
-//        private final String hostAddress;
-
-                .channelClassName(this.getClass().getName())
-                .messageInput(messageInput)
-                .messageStatus(message.getStatus())
-                .errors(message.getErrors())
-                .response(message.getPayload())
-                .startTime(messageInput.getReceiveTimestamp())
-                .endTime(Instant.now())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
-    }
-
 }

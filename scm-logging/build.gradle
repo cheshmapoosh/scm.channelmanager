@@ -8,17 +8,18 @@ plugins {
     id 'ir.daneshrefah.scm.java-library-conventions'
 }
 
-
-
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    implementation'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
-    compileOnly 'org.apache.camel:camel-api'
+    api 'io.opentelemetry:opentelemetry-api:1.25.0'
+    api 'io.opentelemetry:opentelemetry-sdk:1.25.0'
+    api 'io.opentelemetry:opentelemetry-exporter-logging:1.25.0'
+    runtimeOnly 'com.ibm.db2:jcc'
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     compileOnly 'org.springframework:spring-context'
     implementation 'ch.qos.logback:logback-classic'
     implementation 'ch.qos.logback:logback-core'
-    api project(':scm-common-data')
     api project(':scm-uaa-common')
 }

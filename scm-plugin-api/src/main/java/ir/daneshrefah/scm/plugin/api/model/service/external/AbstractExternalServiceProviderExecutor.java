@@ -1,6 +1,12 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
@@ -9,8 +15,8 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.common.model.event.OutboundEvent;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
+import ir.daneshrefah.scm.logging.constant.LogAttribute;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -22,9 +28,10 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.TryDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -41,6 +48,9 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
     private final ResourceService resourceService;
     private final ServiceService serviceService;
     protected final ObjectMapper objectMapper;
+
+    @Autowired
+    private  Tracer tracer;
 
     @Getter
     private AbstractExternalServiceProvider providerModel;
@@ -93,42 +103,49 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
             Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
             AbstractExternalService service = (AbstractExternalService) originalMessage.getHeader().getService();
             Exception exception = extractException(exchange);
-            Instant endTime = Instant.now();
-
             MessageInput messageInput = MessageInputContext.getCurrentContext();
             MessageOutput messageOutput = exchange.getProperty(HEADER_MESSAGE_OUTPUT, MessageOutput.class);
-
-            OutboundEvent event = OutboundEvent.builder()
-                    .terminalCode(messageInput.getTerminal().getCode())
-                    .channelCode(messageInput.getChannel().getCode())
-                    .clientId(messageInput.getClientId())
-                    .correlationId(messageInput.getCorrelationId())
-                    .clientCorrelationId(messageInput.getClientCorrelationId())
-                    .clientFlowId(messageInput.getClientFlowId())
-                    .serviceCode(service.getCode())
-                    .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
-                    .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
-                    .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
-                    .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
-                    .messageId(originalMessage.getHeader().getMessageId())
-                    .threadName(Thread.currentThread().getName())
-                    .providerClassName(this.getClass().getName())
-                    .hostAddress(null)
-                    .providerCode(service.getServiceProvider().getCode())
-                    .providerTargetUrl(messageOutput.getProviderUrl())
-                    .providerProtocol(messageOutput.getProtocol().name())
-                    .requestBody(messageOutput.getBody())
-                    .requestBodyType(messageOutput.getBodyType())
-                    .requestHeaders(messageOutput.getHeaders())
-                    .responseBody(exchange.getMessage().getBody(String.class))
-                    .responseBodyType(null != exchange.getMessage().getBody() ? exchange.getMessage().getBody().getClass().getName() : "null")
-                    .responseHeaders(exchange.getMessage().getHeaders())
-                    .exception(exception)
-                    .startTime(messageOutput.getStartTime())
-                    .endTime(endTime)
-                    .build();
-//            EventProducer.getInstance().sendEvent(event);
-
+            Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.CLIENT).startSpan();
+            try (Scope rootScope = span.makeCurrent()) {
+                span.setAttribute(LogAttribute.TERMINAL_CODE.getAttributeName(), messageInput.getTerminal().getCode());
+                span.setAttribute(LogAttribute.CHANNEL_CODE.getAttributeName(), messageInput.getChannel().getCode());
+                span.setAttribute(LogAttribute.CLIENT_ID.getAttributeName(), messageInput.getClientId());
+                span.setAttribute(LogAttribute.CORRELATION_ID.getAttributeName(), messageInput.getCorrelationId());
+                span.setAttribute(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName(), messageInput.getClientCorrelationId());
+                span.setAttribute(LogAttribute.CLIENT_FLOW_ID.getAttributeName(), messageInput.getClientFlowId());
+                span.setAttribute(LogAttribute.FLOW_ID.getAttributeName(), messageInput.getFlowId());
+                span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), originalMessage.getHeader().getMessageId());
+                span.setAttribute(LogAttribute.SERVICE_CODE.getAttributeName(), service.getCode());
+                span.setAttribute(LogAttribute.USERNAME.getAttributeName(), AuthenticationUtils.getEffectiveUsername().orElse(""));
+                span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
+                span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), AuthenticationUtils.getDelegatorUsername().orElse(""));
+                span.setAttribute(LogAttribute.DELEGATOR_NICKNAME.getAttributeName(), AuthenticationUtils.getDelegatorNickname().orElse(""));
+                span.setAttribute(LogAttribute.THREAD_NAME.getAttributeName(), Thread.currentThread().getName());
+                span.setAttribute(LogAttribute.CHANNEL_CLASS_NAME.getAttributeName(), this.getClass().getName());
+                span.setAttribute(LogAttribute.PROVIDER_CODE.getAttributeName(), service.getServiceProvider().getCode());
+                span.setAttribute(LogAttribute.PROVIDER_TARGET_URL.getAttributeName(), messageOutput.getProviderUrl());
+                span.setAttribute(LogAttribute.PROVIDER_PROTOCOL.getAttributeName(), messageOutput.getProtocol().name());
+                span.setAttribute(LogAttribute.REQUEST_BODY_TYPE.getAttributeName(), messageOutput.getBodyType());
+                String requestHeaders = messageOutput.getHeaders().entrySet()
+                        .stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue())
+                        .collect(Collectors.joining(", "));
+                span.setAttribute(LogAttribute.REQUEST_HEADERS.getAttributeName(), requestHeaders);
+                span.setAttribute(LogAttribute.RESPONSE_BODY_TYPE.getAttributeName(), null != exchange.getMessage().getBody() ? exchange.getMessage().getBody().getClass().getName() : "null");
+                String responseHeader = exchange.getMessage().getHeaders().entrySet()
+                        .stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.joining(", "));
+                span.setAttribute(LogAttribute.RESPONSE_HEADERS.getAttributeName(), responseHeader);
+                span.setAttribute(LogAttribute.RESPONSE.getAttributeName(), exchange.getMessage().getBody(String.class));
+                span.setAttribute(LogAttribute.REQUEST.getAttributeName(), objectMapper.writeValueAsString(messageOutput.getBody()));
+                span.setStatus(StatusCode.OK);
+                span.recordException(exception);
+            } catch (JsonProcessingException ex) {
+                span.setStatus(StatusCode.ERROR);
+                span.recordException(ex);
+            }finally {
+                span.end();
+            }
             if (ExternalServiceBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
                 Object header = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE);
                 header = Objects.isNull(header) ? -1 : header;
@@ -141,7 +158,6 @@ public abstract class AbstractExternalServiceProviderExecutor implements Externa
                 }
             }
         });
-
         tryDefinition.endDoTry();
     }
 

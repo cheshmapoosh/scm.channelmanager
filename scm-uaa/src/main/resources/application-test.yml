@@ -1,5 +1,6 @@
-
 spring:
+  application:
+    name: uua
   config:
     import: 'optional:configserver:'
     activate:
