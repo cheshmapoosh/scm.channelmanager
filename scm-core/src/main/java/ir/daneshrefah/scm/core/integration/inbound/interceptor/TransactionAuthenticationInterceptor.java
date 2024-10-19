@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -17,6 +18,7 @@ import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @since 2024-01-29
  */
+@Component
 @RequiredArgsConstructor
 public class TransactionAuthenticationInterceptor extends MessageInterceptor {
 
@@ -71,6 +74,15 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
         Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         return terminal.isSupportCheckSecondAuthentication() &&
                 service.getCheckAccessSecondAuthentication();
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(3)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
 }

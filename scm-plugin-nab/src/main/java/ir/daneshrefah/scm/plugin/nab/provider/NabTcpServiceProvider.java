@@ -5,14 +5,15 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
-import ir.daneshrefah.scm.common.model.message.TcpMessageOutput;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractCamelExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.CustomExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.NettyOptions;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.Options;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.TcpProtocol;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
@@ -31,25 +32,17 @@ import java.util.Optional;
  * @since 2024-06-22
  */
 @Component
-public final class NabTcpServiceProvider extends AbstractCamelExternalServiceProviderExecutor {
+public final class NabTcpServiceProvider extends NabTcpExternalServiceProviderExecutor {
 
-    private static final String TCP_PREFIX = "netty4:tcp://";
 
     public NabTcpServiceProvider(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService) {
-        super(resourceService, serviceService, objectMapper);
+        super(objectMapper, resourceService, serviceService);
     }
 
-    @Override
-    protected String extractTargetEndpointUrl(Message message) {
-        String providerEndpoint = extractProviderEndpoint();
-        if (StringUtils.startsWithIgnoreCase(providerEndpoint, TCP_PREFIX)) {
-            providerEndpoint = TCP_PREFIX + providerEndpoint;
-        }
-        return providerEndpoint;
-    }
 
     @Override
-    protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
+    public Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
+//        return "190514030724145442999998    12345678909299540710124072333000444         0                                                ";
         AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
         CustomExternalService externalService = (CustomExternalService) service;
         StringBuffer request = new StringBuffer();
@@ -111,13 +104,33 @@ public final class NabTcpServiceProvider extends AbstractCamelExternalServicePro
     }
 
     @Override
-    protected String extractProviderCorrelationId(Message message) {
+    public String getProviderCorrelationId(Message message) {
         return StringUtils.randomNumeric(MessageHeaderFields.RQUID.getLength());
     }
 
     @Override
-    protected MessageOutput buildMessageOutput() {
-        return TcpMessageOutput.builder().build();
+    public TcpProtocol getTcpProtocol() {
+        return TcpProtocol.ATPS;
+    }
+
+    @Override
+    public Options getTcpOptions() {
+        return Options
+                .create()
+                .set(NettyOptions.SYNC,true)
+                .set(NettyOptions.RE_USE_CHANNEL,true);
+    }
+
+    @Override
+    public void connectionAcknowledge(Object body) {
+       // first request response
+    }
+
+
+    @Override
+    public Object extractServiceParametersResponseBody(Message message, Object body) {
+        // service response
+        return null;
     }
 
     private StringBuffer adjustValue(Parameter parameter, Object value) {

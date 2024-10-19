@@ -3,7 +3,9 @@ package ir.daneshrefah.scm.plugin.api.inbound.interceptor;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
+import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 
 /**
@@ -13,6 +15,7 @@ import java.time.Instant;
  * @version 1.0
  * @since 2024-01-29
  */
+@Slf4j
 public abstract class MessageInterceptor {
 
     public final Message intercept(Message message) {
@@ -34,9 +37,16 @@ public abstract class MessageInterceptor {
         return message;
     }
 
+    @PostConstruct
+    public void init(){
+        log.info("[ {} ] Message Interceptor has benn initialized", this.getClass().getName());
+    }
+
     protected abstract Message internalIntercept(Message message);
 
     protected abstract boolean support(Service service);
+
+    public abstract InterceptorConfig interceptorConfig();
 
     private void logMessageInterceptor(Message orgMessage, Message message, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

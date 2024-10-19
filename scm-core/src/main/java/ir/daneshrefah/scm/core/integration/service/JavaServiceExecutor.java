@@ -26,10 +26,10 @@ import java.util.Map;
 @Service
 public class JavaServiceExecutor extends ServiceExecutor {
 
-    private Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
+    private final Map<String, JavaServiceFinder.MethodInfo> serviceCache = new HashMap<>();
 
     @Override
-    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
+    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition<?> processorDefinition) {
         processorDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             JsonNode response = executeJavaService(message);
@@ -44,7 +44,6 @@ public class JavaServiceExecutor extends ServiceExecutor {
             throw methodInfo.getError();
         }
 
-//        try {
             Object[] args = prepareMethodArgs(message, service, methodInfo);
             Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
             if (response instanceof JsonNode) {

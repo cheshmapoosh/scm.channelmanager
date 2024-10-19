@@ -53,7 +53,7 @@ public abstract class AbstractTransformerInterceptor extends MessageInterceptor 
                     service.getId());
             List<TransformerExecutionWrapper> transformerList = transformerRelations.stream().filter(
                             t -> relationType.equals(t.getRelationType()))
-                    .map(t -> new TransformerExecutionWrapper(t))
+                    .map(TransformerExecutionWrapper::new)
                     .collect(Collectors.toList());
             transformers.put(service.getCode(), transformerList);
         }
@@ -64,8 +64,7 @@ public abstract class AbstractTransformerInterceptor extends MessageInterceptor 
 
     public Message doTransform(List<TransformerExecutionWrapper> transformerRelations, Message message) {
         JsonNode payload = message.getPayload();
-        for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
-            TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+        for (TransformerExecutionWrapper transformerExecutionWrapper : transformerRelations) {
             payload = transformerExecutionWrapper.getTransformerInstance()
                     .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
 

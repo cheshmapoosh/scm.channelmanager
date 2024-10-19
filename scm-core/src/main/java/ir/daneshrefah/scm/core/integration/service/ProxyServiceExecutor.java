@@ -22,7 +22,7 @@ public class ProxyServiceExecutor extends ServiceExecutor {
     private final ServiceService serviceService;
 
     @Override
-    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
+    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition<?> processorDefinition) {
         processorDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             JsonNode response = executeProxyService(message);

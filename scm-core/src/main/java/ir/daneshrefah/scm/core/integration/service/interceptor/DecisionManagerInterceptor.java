@@ -4,9 +4,11 @@ import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2024-01-29
  */
 @RequiredArgsConstructor
+@Component
 public class DecisionManagerInterceptor extends MessageInterceptor {
 
     private final DecisionManager decisionManager;
@@ -36,6 +39,15 @@ public class DecisionManagerInterceptor extends MessageInterceptor {
     @Override
     protected boolean support(Service service) {
         return true;
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(7)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
 }

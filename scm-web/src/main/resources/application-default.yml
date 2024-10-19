@@ -2,6 +2,7 @@ scm:
   channels: IB4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
+    nab-tcp: 10.15.27.12:3080
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
     #    iban: http://10.15.8.195:8080/ibanq/services/IBANService
     pichack: http://10.15.27.51:8080/dpi/api/pichak

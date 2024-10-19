@@ -53,12 +53,12 @@ public class ParameterParser {
         List<Parameter> parameters = service.getParameters();
         parameterTree.setResponseCache(createResponseCache(service));
         parameterTree.setService(service);
-        parameterTree.setRequestBodyNode(createBodyParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_BODY)));
-        parameterTree.setRequestHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_HEADER)));
-        parameterTree.setRequestPathVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_PATH_VARIABLE)));
-        parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.REQUEST_QUERY_STRING)));
-        parameterTree.setResponseHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.RESPONSE_HEADER)));
-        parameterTree.setConfig(createLineaerParameterNode(filterByActionType(parameters,ParameterActionType.CONFIG)));
+        parameterTree.setRequestBodyNode(createBodyParameterNode(filterByActionType(parameters, ParameterActionType.REQUEST_BODY)));
+        parameterTree.setRequestHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters, ParameterActionType.REQUEST_HEADER)));
+        parameterTree.setRequestPathVariableNode(createLineaerParameterNode(filterByActionType(parameters, ParameterActionType.REQUEST_PATH_VARIABLE)));
+        parameterTree.setRequestQueryStringVariableNode(createLineaerParameterNode(filterByActionType(parameters, ParameterActionType.REQUEST_QUERY_STRING)));
+        parameterTree.setResponseHeaderVariableNode(createLineaerParameterNode(filterByActionType(parameters, ParameterActionType.RESPONSE_HEADER)));
+        parameterTree.setConfig(createLineaerParameterNode(filterByActionType(parameters, ParameterActionType.CONFIG)));
         return parameterTree;
     }
 
@@ -277,21 +277,29 @@ public class ParameterParser {
         return targetUrl;
     }
 
-    public String writeRequestQueryStringVariable(String targetUrl, ParameterNode node, Message message, ParameterHandler parameterHandler) {
+    public String getRequestQueryStringVariable(ParameterNode node, Message message, ParameterHandler parameterHandler) {
         if (Objects.nonNull(node) && !node.getNextNodes().isEmpty()) {
-            StringBuilder targetUrlBuilder = new StringBuilder(targetUrl + "?");
+            StringBuilder queryString = new StringBuilder("?");
             for (ParameterNode childNode : node.getNextNodes()) {
                 Parameter parameter = childNode.getValue();
                 String queryVariableName = parameter.getName();
                 String value = parameterHandler.apply(message, parameter).map(String::valueOf).orElse("");
                 value = value.replace("\"", "");
-                targetUrlBuilder.append(queryVariableName).append("=").append(value).append("&");
+                queryString.append(queryVariableName).append("=").append(value).append("&");
             }
-            targetUrl = targetUrlBuilder.toString();
+            return queryString.toString();
+        } else {
+            return null;
         }
-        return targetUrl;
     }
 
+    public List<Parameter> filterByActionType(List<Parameter> parameters, ParameterActionType actionType) {
+        return parameters
+                .stream()
+                .filter(parameter -> actionType.equals(parameter.getActionType()))
+                .toList();
+
+    }
 
     @FunctionalInterface
     public interface ParameterHandler {
@@ -311,7 +319,6 @@ public class ParameterParser {
 
     }
 
-
     @Getter
     @Setter
     @Accessors(chain = true)
@@ -323,14 +330,6 @@ public class ParameterParser {
         public ParameterNode getResponseBodyNode(Response responseCondition) {
             return responseBodyNodes.get(responseCondition.getId());
         }
-    }
-
-    public List<Parameter> filterByActionType(List<Parameter> parameters, ParameterActionType actionType){
-        return parameters
-                .stream()
-                .filter(parameter -> actionType.equals(parameter.getActionType()))
-                .toList();
-
     }
 
 }

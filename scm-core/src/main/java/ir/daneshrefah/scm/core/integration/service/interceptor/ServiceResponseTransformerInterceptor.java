@@ -5,9 +5,11 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.service.TransformerService;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2024-01-31
  */
+@Component
 public class ServiceResponseTransformerInterceptor extends AbstractTransformerInterceptor {
 
     public ServiceResponseTransformerInterceptor(TransformerService transformerService) {
@@ -31,5 +34,14 @@ public class ServiceResponseTransformerInterceptor extends AbstractTransformerIn
     @Override
     protected TransformerRelationType extractTransformerRelationType() {
         return TransformerRelationType.SERVICE_RESPONSE;
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(1)
+                .type(InterceptorConfig.Type.RESPONSE)
+                .build();
     }
 }

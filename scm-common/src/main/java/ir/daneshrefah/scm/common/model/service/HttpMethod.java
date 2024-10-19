@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.common.model.service;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -20,5 +22,12 @@ public enum HttpMethod {
     DELETE("DELETE");
 
     private final String value;
+
+    public static HttpMethod fromValue(String value) {
+        return Arrays.stream(values())
+                .filter(v -> v.value.equalsIgnoreCase(value))
+                .findFirst()
+                .orElse(null);
+    }
 
 }
