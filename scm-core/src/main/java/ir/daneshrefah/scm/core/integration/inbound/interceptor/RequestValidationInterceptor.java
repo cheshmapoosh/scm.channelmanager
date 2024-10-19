@@ -5,7 +5,9 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,6 +16,7 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
  * @version 1.0
  * @since 2024-01-29
  */
+@Component
 public class RequestValidationInterceptor extends MessageInterceptor {
 
     @Override
@@ -28,6 +31,15 @@ public class RequestValidationInterceptor extends MessageInterceptor {
     @Override
     protected boolean support(Service service) {
         return true;
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(1)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
 }

@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
@@ -18,6 +19,7 @@ import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
@@ -29,6 +31,7 @@ import java.util.Objects;
  * @since 2024-01-29
  */
 @RequiredArgsConstructor
+@Component
 public class AuthenticationInterceptor extends MessageInterceptor {
 
     private final AuthenticationClientTemplate authenticationClientTemplate;
@@ -75,6 +78,15 @@ public class AuthenticationInterceptor extends MessageInterceptor {
     protected boolean support(Service service) {
         return MessageInputContext.getCurrentContext().getTerminal().isSupportCheckAuthentication() &&
                 service.getCheckAccessFirstAuthentication();
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(2)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
 }

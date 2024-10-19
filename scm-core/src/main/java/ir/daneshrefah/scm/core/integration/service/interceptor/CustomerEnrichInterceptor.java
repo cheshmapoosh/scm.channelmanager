@@ -10,12 +10,14 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -28,6 +30,7 @@ import java.util.Optional;
  * @since 2024-01-29
  */
 @RequiredArgsConstructor
+@Component
 public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     private final PersonProfileLoader personProfileLoader;
@@ -58,6 +61,15 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
     @Override
     protected boolean support(Service service) {
         return  isLoadAssetRequired(service);
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(5)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
     private boolean isLoadAssetRequired(Service service) {

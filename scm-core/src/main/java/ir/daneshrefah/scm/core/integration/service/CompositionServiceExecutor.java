@@ -42,7 +42,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     private final Map<String, CompositeServiceExecutionWrapper> serviceExecutionMap = new HashMap<>();
 
     @Override
-    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
+    protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition<?> processorDefinition) {
         processorDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             JsonNode response = executeCompositeService(message);
@@ -51,18 +51,15 @@ public class CompositionServiceExecutor extends ServiceExecutor {
     }
 
     protected JsonNode executeCompositeService(Message message) {
-
         CompositionService compositionService = (CompositionService) message.getHeader().getService();
-        List<ServiceRelation> relations = compositionService.getRelations();
-        if (null == relations) {
-            relations = serviceService.findServiceRelationListBySourceServiceId(compositionService.getId());
-            compositionService.setRelations(relations);
-        }
+        List<ServiceRelation> relations = getCompositionServiceRelation(compositionService);
+
         Deque<ServiceRelation> reverseServiceStack = new LinkedList<>();
         Queue<ServiceRelation> commitServiceQueueQueue = new ArrayDeque<>();
         JsonNode responsePayload = null;
-        for (Iterator<ServiceRelation> iterator = relations.iterator(); iterator.hasNext(); ) {
-            ServiceRelation serviceRelation = iterator.next();
+
+
+        for (ServiceRelation serviceRelation : relations) {
             CompositeServiceExecutionWrapper serviceExecutionWrapper = prepareServiceExecutionWrapper(serviceRelation);
 
             JsonNode relationRequestPayload = null;
@@ -77,7 +74,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
             String serviceCode = serviceRelation.getTargetService().getCode();
             Optional<TerminalServiceAccess> serviceAccess = terminalService
                     .findTerminalServiceAccessByTerminalCodeAndServiceCode(terminalCode, serviceCode);
-            if (!serviceAccess.isPresent()) {
+            if (serviceAccess.isEmpty()) {
                 throw new TerminalServiceNotFoundException(terminalCode, serviceCode);
             }
             Message tempMessage = MessageGenerator.getInstance().generateInternalMessage(serviceAccess.get().getService(), relationRequestPayload);
@@ -108,8 +105,7 @@ public class CompositionServiceExecutor extends ServiceExecutor {
 
 //            message.setPayload((JsonNode) relationResponsePayload);
 
-             responsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
-
+            responsePayload = transformResponse(serviceExecutionWrapper.getTargetServiceResponseTransformers(), message, tempMessage.getPayload());
 
             reverseServiceStack.push(serviceRelation);
             commitServiceQueueQueue.add(serviceRelation);
@@ -117,6 +113,15 @@ public class CompositionServiceExecutor extends ServiceExecutor {
         }
 
         return Objects.nonNull(responsePayload) ? responsePayload : message.getPayload();
+    }
+
+    private List<ServiceRelation> getCompositionServiceRelation(CompositionService compositionService) {
+        List<ServiceRelation> relations = compositionService.getRelations();
+        if (null == relations) {
+            relations = serviceService.findServiceRelationListBySourceServiceId(compositionService.getId());
+            compositionService.setRelations(relations);
+        }
+        return relations;
     }
 
     private CompositeServiceExecutionWrapper prepareServiceExecutionWrapper(ServiceRelation serviceRelation) {

@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.TryDefinition;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,14 +21,8 @@ public interface ExternalServiceProviderExecutor {
 
     void init(AbstractExternalServiceProvider provider);
 
-    void intiEndpointCallRouteDefinition(RouteDefinition routeDefinition);
+    void endpointCallRouteDefinition(RouteDefinition routeDefinition);
 
     AbstractExternalServiceProvider getProviderModel();
-
-//    List<TransformerExecutionWrapper> getRequestTransformers();
-//
-//    List<TransformerExecutionWrapper> getResponseTransformers();
-
-//    public JsonNode execute(Message message, Service service);
 
 }

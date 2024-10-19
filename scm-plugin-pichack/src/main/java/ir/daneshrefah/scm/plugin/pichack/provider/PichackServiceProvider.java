@@ -3,11 +3,14 @@ package ir.daneshrefah.scm.plugin.pichack.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageOutput;
+import ir.daneshrefah.scm.common.model.service.HttpContentType;
+import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ConstantService;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractBaseRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.pichack.util.PichakUtil;
 import ir.daneshrefah.scm.utils.base64.Base64Utils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
 
@@ -27,7 +31,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.*;
  * @since 2024-04-06
  */
 @Component
-public final class PichackServiceProvider extends AbstractRestExternalServiceProviderExecutor {
+public final class PichackServiceProvider extends AbstractBaseRestExternalServiceProviderExecutor {
 
     private static final String PICHACK_CALLER_TERMINAL_NAME_HEADER = "callerTerminalName";
     private static final String PICHACK_CALLER_BRANCH_CODE_HEADER = "callerBranchCode";
@@ -38,19 +42,63 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
 
     private final ConstantService constantService;
 
-    public PichackServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper, ConstantService constantService) {
-        super(resourceService, serviceService, objectMapper);
+    public PichackServiceProvider(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService, ConstantService constantService) {
+        super(objectMapper, resourceService, serviceService);
         this.constantService = constantService;
+    }
+
+
+    @Override
+    protected Optional<Map<String, ?>> extractRequestHeaders(Message message) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(HTTP_HEADER_CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
+        headers.put(HTTP_HEADER_AUTHORIZATION, createAuthorizationData());
+
+        String cmTerminalName = PichakUtil.provideTerminalName(message);
+        String cmBranchCode = PichakUtil.provideBranchCode(message);
+        String cmBranchUsername = PichakUtil.provideBranchUsername(message);
+        String customerAuthStatus = PichakUtil.provideCustomerAuthStatus(message);
+
+        if (null != cmTerminalName)
+            headers.put(PICHACK_CALLER_TERMINAL_NAME_HEADER, cmTerminalName);
+        if (null != cmBranchCode)
+            headers.put(PICHACK_CALLER_BRANCH_CODE_HEADER, cmBranchCode);
+        if (null != cmBranchUsername)
+            headers.put(PICHACK_CALLER_BRANCH_USERNAME_HEADER, cmBranchUsername);
+        if (null != customerAuthStatus)
+            headers.put(PICHACK_CUSTOMER_AUTH_STATUS_HEADER, customerAuthStatus);
+
+        return Optional.of(headers);
+    }
+
+    @Override
+    protected Optional<Map<String, ?>> extractResponseHeaders(Message message) {
+        return Optional.empty();
+    }
+
+    @Override
+    protected HttpMethod extractHttpMethod(Message message) {
+        return null;
+    }
+
+    @Override
+    protected HttpContentType extractContentType(Message message) {
+        return null;
     }
 
     @Override
     @SneakyThrows
     protected String extractTargetUrl(Message message) {
         AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
-        String providerEndpoint = extractProviderEndpoint();
+        String providerEndpoint = getProviderEndpoint().orElse(null);
         JsonNode componentMetadata = service.getMetadata();
         String target = providerEndpoint + StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
         return target;
+    }
+
+    @Override
+    protected Optional<String> extractQueryString(Message message) {
+        return Optional.empty();
     }
 
 //    @Override
@@ -81,28 +129,6 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
 //        return List.of(new ServiceCodeLookupTransformer(transformerMap));
 //    }
 
-    @Override
-    protected Map<String, ?> extractAdditionalHeaders(Message message) {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(HTTP_HEADER_CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
-        headers.put(HTTP_HEADER_AUTHORIZATION, createAuthorizationData());
-
-        String cmTerminalName = PichakUtil.provideTerminalName(message);
-        String cmBranchCode = PichakUtil.provideBranchCode(message);
-        String cmBranchUsername = PichakUtil.provideBranchUsername(message);
-        String customerAuthStatus = PichakUtil.provideCustomerAuthStatus(message);
-
-        if (null != cmTerminalName)
-            headers.put(PICHACK_CALLER_TERMINAL_NAME_HEADER, cmTerminalName);
-        if (null != cmBranchCode)
-            headers.put(PICHACK_CALLER_BRANCH_CODE_HEADER, cmBranchCode);
-        if (null != cmBranchUsername)
-            headers.put(PICHACK_CALLER_BRANCH_USERNAME_HEADER, cmBranchUsername);
-        if (null != customerAuthStatus)
-            headers.put(PICHACK_CUSTOMER_AUTH_STATUS_HEADER, customerAuthStatus);
-
-        return headers;
-    }
 
     private String createAuthorizationData() {
         String username = constantService.findConstantValueByKey(PICHACK_WEBSERVICE_AUTHORIZATION_USERNAME).orElse(null);
@@ -117,4 +143,13 @@ public final class PichackServiceProvider extends AbstractRestExternalServicePro
         return "Basic " + encodedAuth;
     }
 
+    @Override
+    protected Object extractServiceParametersResponseBody(Message message, Object body) {
+        return null;
+    }
+
+    @Override
+    protected Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
+        return null;
+    }
 }

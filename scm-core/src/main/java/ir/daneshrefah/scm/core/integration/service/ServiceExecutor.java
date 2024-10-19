@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -80,8 +79,7 @@ public abstract class ServiceExecutor {
         if (Objects.isNull(transformerRelations) || transformerRelations.isEmpty()) {
             return payload;
         }
-        for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
-            TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+        for (TransformerExecutionWrapper transformerExecutionWrapper : transformerRelations) {
             payload = transformerExecutionWrapper.getTransformerInstance()
                     .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
 
@@ -93,13 +91,13 @@ public abstract class ServiceExecutor {
         if (Objects.isNull(transformerRelations) || transformerRelations.isEmpty()) {
             return payload;
         }
-        for (Iterator<TransformerExecutionWrapper> iterator = transformerRelations.iterator(); iterator.hasNext(); ) {
-            TransformerExecutionWrapper transformerExecutionWrapper = iterator.next();
+        for (TransformerExecutionWrapper transformerExecutionWrapper : transformerRelations) {
             payload = transformerExecutionWrapper.getTransformerInstance()
                     .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
         }
         return payload;
     }
+
 
     public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
         TryDefinition tryDefinition = routeDefinition.doTry();
@@ -107,8 +105,7 @@ public abstract class ServiceExecutor {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(PROPERTY_START_TIME, Instant.now());
             exchange.setProperty(PROPERTY_REQUEST_BODY, message.getPayload().deepCopy());
-            for (Iterator<MessageInterceptor> iterator = requestInterceptors.iterator(); iterator.hasNext(); ) {
-                MessageInterceptor messageInterceptor = iterator.next();
+            for (MessageInterceptor messageInterceptor : requestInterceptors) {
                 message = messageInterceptor.intercept(message);
                 if (!message.isContinueAllowed()) {
                     break;
@@ -116,10 +113,7 @@ public abstract class ServiceExecutor {
             }
         });
         ChoiceDefinition choiceDefinition = tryDefinition.choice()
-                .when(exchange -> {
-                    boolean isContinueAllowed = exchange.getMessage().getBody(Message.class).isContinueAllowed();
-                    return isContinueAllowed;
-                });
+                .when(exchange -> exchange.getMessage().getBody(Message.class).isContinueAllowed());
         defineServiceRoute(service, choiceDefinition);
         choiceDefinition.endChoice();
         tryDefinition = tryDefinition.process(exchange -> {
@@ -128,8 +122,7 @@ public abstract class ServiceExecutor {
                 exchange.setProperty(PROPERTY_END_TIME, Instant.now());
                 return;
             }
-            for (Iterator<MessageInterceptor> iterator = responseInterceptors.iterator(); iterator.hasNext(); ) {
-                MessageInterceptor messageInterceptor = iterator.next();
+            for (MessageInterceptor messageInterceptor : responseInterceptors) {
                 message = messageInterceptor.intercept(message);
                 if (!message.isContinueAllowed()) {
                     return;
@@ -153,7 +146,7 @@ public abstract class ServiceExecutor {
             Exception exception = extractException(exchange);
             Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
             JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
-            MessageInput messageInput = MessageInputContext.getCurrentContext();
+            MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
             Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.SERVER).startSpan();
             try {
                 traceLogUtils.recordMessageTrace(message, request, exception, span);
@@ -176,6 +169,6 @@ public abstract class ServiceExecutor {
         return exception;
     }
 
-    protected abstract void defineServiceRoute(Service service, ProcessorDefinition processorDefinition);
+    protected abstract void defineServiceRoute(Service service, ProcessorDefinition<?> processorDefinition);
 
 }

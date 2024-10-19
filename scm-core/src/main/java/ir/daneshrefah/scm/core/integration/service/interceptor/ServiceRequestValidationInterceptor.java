@@ -9,11 +9,13 @@ import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.Set;
  */
 @Slf4j
 @RequiredArgsConstructor
+@Component
 public class ServiceRequestValidationInterceptor extends MessageInterceptor {
 
     private final ObjectMapper objectMapper;
@@ -49,6 +52,15 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
     @Override
     protected boolean support(Service service) {
         return true;
+    }
+
+    @Override
+    public InterceptorConfig interceptorConfig() {
+        return InterceptorConfig
+                .create()
+                .order(6)
+                .type(InterceptorConfig.Type.REQUEST)
+                .build();
     }
 
     private JsonSchema loadJsonSchemaIfRequired(Service service) {

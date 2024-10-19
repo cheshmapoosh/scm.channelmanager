@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractPureExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractPureExternalServiceProviderExecutor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,8 +20,8 @@ import org.springframework.stereotype.Component;
 public class HpsServiceProvider extends AbstractPureExternalServiceProviderExecutor {
 
 
-    public HpsServiceProvider(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper) {
-        super(resourceService, serviceService, objectMapper);
+    public HpsServiceProvider(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService) {
+        super(objectMapper, resourceService, serviceService);
     }
 
     @Override

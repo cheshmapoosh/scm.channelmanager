@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
+import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
@@ -17,7 +18,7 @@ import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.service.DatasourceConditionHelper;
 import ir.daneshrefah.scm.core.service.ParameterParser;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractRestExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractBaseRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
@@ -42,37 +43,34 @@ import java.util.Optional;
  */
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public final class DefaultRestServiceProviderExecutor extends AbstractRestExternalServiceProviderExecutor {
+public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestExternalServiceProviderExecutor {
 
     private final ParameterParser parameterParser;
-    private final RequestBodyService requestBodyBuilder;
-
 
     public DefaultRestServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper, ParameterParser parameterParser, RequestBodyService requestBodyBuilder) {
-        super(resourceService, serviceService, objectMapper);
+        super(objectMapper,resourceService, serviceService);
         this.parameterParser = parameterParser;
-        this.requestBodyBuilder = requestBodyBuilder;
     }
 
 
     @Override
-    protected String extractHttpMethod(Message message) {
+    protected HttpMethod extractHttpMethod(Message message) {
         RestExternalService service = extractRestService(message).get();
         if (Objects.nonNull(service.getHttpMethod())) {
-            return service.getHttpMethod().getValue();
+            return HttpMethod.fromValue(service.getHttpMethod().getValue());
         }
         if (Objects.nonNull(service.getServiceProvider().getMetadata()) &&
             Objects.nonNull(service.getServiceProvider().getMetadata().getDefaultHttpMethod())) {
-            return service.getServiceProvider().getMetadata().getDefaultHttpMethod().getValue();
+            return HttpMethod.fromValue(service.getServiceProvider().getMetadata().getDefaultHttpMethod().getValue());
         }
-        return super.extractContentType(message);
+        return HttpMethod.GET;
     }
 
     @Override
-    protected String extractContentType(Message message) {
+    protected HttpContentType extractContentType(Message message) {
         RestExternalService service = extractRestService(message).get();
         HttpContentType contentType = extractContentType(service);
-        return null != contentType ? contentType.getValue() : super.extractContentType(message);
+        return null != contentType ? contentType : HttpContentType.RAW_JSON;
     }
 
     private HttpContentType extractContentType(RestExternalService service) {
@@ -87,39 +85,46 @@ public final class DefaultRestServiceProviderExecutor extends AbstractRestExtern
     }
 
     @Override
-    protected Map<String, ?> extractAdditionalHeaders(Message message) {
+    protected Optional<Map<String, ?>> extractRequestHeaders(Message message) {
         RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
         ParameterParser.ServiceParameterCache parameterTreeMap = parameterParser.getParametersCache(service);
         ParameterNode node = parameterTreeMap.getRequestHeaderVariableNode();
         Map<String, Object> headerMap = new HashMap<>();
         parameterParser.writeHeadersVariable(node, headerMap, message, this::extractParameterValue);
-        return headerMap;
+        return Optional.of(headerMap);
     }
 
+
     @Override
-    protected Map<String, ?> extractResponseHeaders(Message message) {
+    protected Optional<Map<String, ?>> extractResponseHeaders(Message message) {
         RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
         ParameterParser.ServiceParameterCache parameterTreeMap = parameterParser.getParametersCache(service);
         ParameterNode node = parameterTreeMap.getResponseHeaderVariableNode();
         Map<String, Object> headerMap = new HashMap<>();
         parameterParser.writeHeadersVariable(node, headerMap, message, this::extractParameterValue);
-        return headerMap;
+        return Optional.of(headerMap);
     }
 
     @Override
     protected String extractTargetUrl(Message message) {
         RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
-        String providerEndpoint = extractProviderEndpoint();
+        String providerEndpoint = getProviderEndpoint().orElseThrow(() -> new NoMatchRecordFoundException("provider"));
         if (providerEndpoint.endsWith("/")) {
             providerEndpoint = providerEndpoint.substring(0, providerEndpoint.length() - 1);
         }
         String targetUrl = StringUtils.joinWith("/", providerEndpoint, service.getPath());
         ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(service);
         ParameterNode pathVariableNode = parametersCache.getRequestPathVariableNode();
-        ParameterNode requestQueryNode = parametersCache.getRequestQueryStringVariableNode();
         targetUrl = parameterParser.writeRequestPathVariable(targetUrl, pathVariableNode, message, this::extractParameterValue);
-        targetUrl = parameterParser.writeRequestQueryStringVariable(targetUrl, requestQueryNode, message, this::extractParameterValue);
         return targetUrl;
+    }
+
+    @Override
+    protected Optional<String> extractQueryString(Message message) {
+        RestExternalService service = extractRestService(message).orElseThrow(() -> new NoMatchRecordFoundException("service"));
+        ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(service);
+        ParameterNode requestQueryNode = parametersCache.getRequestQueryStringVariableNode();
+        return Optional.ofNullable(parameterParser.getRequestQueryStringVariable(requestQueryNode, message, this::extractParameterValue));
     }
 
     @Override

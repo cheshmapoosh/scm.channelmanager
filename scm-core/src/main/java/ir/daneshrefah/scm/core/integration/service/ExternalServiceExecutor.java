@@ -10,8 +10,8 @@ import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.integration.provider.DefaultRestServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractBaseExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +93,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
             return;
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
             return;
-        AbstractExternalServiceProviderExecutor provider = (AbstractExternalServiceProviderExecutor)
+        AbstractBaseExternalServiceProviderExecutor provider = (AbstractBaseExternalServiceProviderExecutor)
                 extractServiceProviderExecutorInstance(serviceProviderModel);
         if (Objects.isNull(provider)) {
             return;
@@ -116,7 +116,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
                     prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_REQUEST), message);
             exchange.getMessage().setBody(requestBody);
         });
-        providerExecutor.intiEndpointCallRouteDefinition(routeDefinition);
+        providerExecutor.endpointCallRouteDefinition(routeDefinition);
         routeDefinition.process(exchange -> {
             exchange.setProperty(HEADER_END_TIME, Instant.now());
             String response = exchange.getMessage().getBody(String.class);
@@ -145,7 +145,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
                 provider = applicationContext.getBean(DefaultRestServiceProviderExecutor.class);
             } else if (ServiceProviderProtocol.CUSTOM.equals(serviceProviderModel.getProtocol())) {
                 provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
-                        AbstractExternalServiceProviderExecutor.class, serviceProviderModel);
+                        AbstractBaseExternalServiceProviderExecutor.class, serviceProviderModel);
             }
             if (null == provider) {
                 log.warn("error on create instance of '{}' provider with className '{}'", serviceProviderModel.getCode(),
