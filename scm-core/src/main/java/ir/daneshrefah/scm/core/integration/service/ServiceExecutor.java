@@ -1,22 +1,20 @@
 package ir.daneshrefah.scm.core.integration.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
-import ir.daneshrefah.scm.core.service.ProxyServiceManager;
-import ir.daneshrefah.scm.logging.api.EventProducer;
-import ir.daneshrefah.scm.common.model.event.Event;
-import ir.daneshrefah.scm.common.model.event.ServiceEvent;
+import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.ChoiceDefinition;
@@ -46,9 +44,13 @@ public abstract class ServiceExecutor {
     protected static final String PROPERTY_REQUEST_BODY = "ScmServiceRequestBody";
 
     @Autowired
+    private Tracer tracer;
+    @Autowired
     protected ErrorHandlerService errorHandlerService;
     @Autowired
     protected ObjectMapper objectMapper;
+    @Autowired
+    protected TraceLogUtils traceLogUtils;
     private List<MessageInterceptor> requestInterceptors;
     private List<MessageInterceptor> responseInterceptors;
 
@@ -97,35 +99,6 @@ public abstract class ServiceExecutor {
                     .transform(payload, message, transformerExecutionWrapper.getTransformerRelation().getMetadata());
         }
         return payload;
-    }
-
-    private void logServiceCallEvent(Message message, JsonNode input, Exception exception, Instant startTime) throws JsonProcessingException {
-        MessageInput messageInput = MessageInputContext.getCurrentContext();
-        Service service = message.getHeader().getService();
-        Event event = ServiceEvent.builder()
-                .terminalCode(messageInput.getTerminal().getCode())
-                .channelCode(messageInput.getChannel().getCode())
-                .clientId(messageInput.getClientId())
-                .correlationId(messageInput.getCorrelationId())
-                .clientCorrelationId(messageInput.getClientCorrelationId())
-                .clientFlowId(messageInput.getClientFlowId())
-                .serviceCode(service.getCode())
-                .username(AuthenticationUtils.getEffectiveUsername().orElse(null))
-                .nickname(AuthenticationUtils.getEffectiveNickname().orElse(null))
-                .delegatorUsername(AuthenticationUtils.getDelegatorUsername().orElse(null))
-                .delegatorNickname(AuthenticationUtils.getDelegatorNickname().orElse(null))
-                .flowId(messageInput.getFlowId())
-                .messageId(message.getHeader().getMessageId())
-                .threadName(Thread.currentThread().getName())
-                .hostAddress(null)
-                .request(input)
-                .response(message.getPayload())
-                .status(message.getStatus())
-                .exception(exception)
-                .startTime(startTime)
-                .endTime(Instant.now())
-                .build();
-        EventProducer.getInstance().sendEvent(event);
     }
 
     public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
@@ -180,7 +153,14 @@ public abstract class ServiceExecutor {
             Exception exception = extractException(exchange);
             Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
             JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
-            logServiceCallEvent(message, request, exception, startTime);
+            MessageInput messageInput = MessageInputContext.getCurrentContext();
+            Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.SERVER).startSpan();
+            try {
+                traceLogUtils.recordMessageTrace(message, request, exception, span);
+                span.makeCurrent();
+            } catch (Exception ex) {
+                span.end();
+            }
         });
         tryDefinition.end();
     }

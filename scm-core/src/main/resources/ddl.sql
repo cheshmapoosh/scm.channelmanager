@@ -1843,6 +1843,28 @@ VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.task.exception.InvalidPasswordException',
+        'Invalid password.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR',
+        'ex::ir.daneshrefah.scm.task.exception.InvalidPasswordException',
+        'رمز وارد شده نادرست است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.task.exception.ProcessAuthorityException',
+        'have not permission');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR',
+        'ex::ir.daneshrefah.scm.task.exception.ProcessAuthorityException',
+        'دسترسی ندارید');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
         (CURRENT DATE), 'en-US', 'process.state.active',
         'ACTIVE');
 
@@ -2026,6 +2048,11 @@ INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
         (CURRENT DATE), 'fa-IR', 'WAITING_FOR_ACKNOWLEDGE',
         'در انتظار‌ پاسخ');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
+        (CURRENT DATE), 'fa-IR', 'FAIL',
+        'خطا');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
@@ -2529,6 +2556,18 @@ INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
 VALUES( 'ir.daneshrefah.scm.task.exception.InvalidProcessStatusException',
         1306, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.task.exception.ProcessAuthorityException',
+        1308, 'sc_acd',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.task.exception.InvalidPasswordException',
+        1309, 'sc_evl',
         'Alireza Rayani', 'Alireza Rayani');
 
 

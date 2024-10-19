@@ -19,21 +19,18 @@ tasks.named("bootJar") {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'com.hazelcast:hazelcast:5.4.0'
-    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
-    runtimeOnly 'com.ibm.db2:db2jcc:9.1'
-    runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz:9.1'
-    runtimeOnly 'com.ibm.db2:db2jcc_license_cu:9.1'
-    runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+//    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
+    runtimeOnly 'com.ibm.db2:jcc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
-    implementation project(':scm-uaa-common')
+    api project(':scm-uaa-common')
     implementation 'org.springframework.security:spring-security-core'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    api project(':scm-logging')
+    implementation project(':scm-logging')
 //    implementation files('lib/db2jcc_license_cisuz-9.1.jar','lib/db2jcc_license_cu-9.1.jar')
 //    implementation files('C:\\Users\\abdolahi.d\\IdeaProjects\\channelmanager-cache-release\\scm-cache\\src\\main\\resources\\lib\\db2jcc_license_cisuz-9.1.jar','C:\\Users\\abdolahi.d\\IdeaProjects\\channelmanager-cache-release\\scm-cache\\src\\main\\resources\\lib\\db2jcc_license_cu-9.1.jar')
 }
