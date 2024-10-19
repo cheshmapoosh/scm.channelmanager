@@ -70,7 +70,7 @@ scm:
             color: '255,255,255'
 
   log:
-    file-directory: appLogFolder
+    file-directory: log
     file-name: ${spring.application.name}.log
     log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
     file-name-pattern: "%d{yyyy-MM-dd}.%i.log"

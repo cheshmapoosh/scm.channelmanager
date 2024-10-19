@@ -179,7 +179,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         ProcessInstanceEntity processInstanceEntity = processInstanceRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("processId"));
 
         if (!hasUserAccess(processInstanceEntity)) {
-            throw new ProcessAuthorityException("update Description","have not permission");
+            throw new ProcessAuthorityException("update Description", "have not permission");
         }
         if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)) {
             throw new ProcessInstanceCompleteException("process state", "Cannot update description of a completed process instance.");
@@ -200,50 +200,78 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
-        processTaskDefinitionService.validateProcessBeforeApprove(request);
-        ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
-            throw new InvalidInputException("correlationId");
-        });
+        validateApproveRequest(request);
         ProcessInstanceEntity processInstance = findByID(request.getId());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
         validateUserAccess(processInstance, loggedInUserId);
-        TaskLogEntity taskLogEntity = new TaskLogEntity();
-        MessageInput context = MessageInputContext.getCurrentContext();
-        taskLogEntity.setLastChannelCode(context.getChannel().getCode());
-        TaskEntity taskEntity = processInstance.getTasks()
-                .stream()
-                .filter(task -> task.getTaskStatus().equals(TaskStatusEnum.WAITING_FOR_CONFIRM))
-                .findFirst()
-                .orElseThrow(() -> new NoMatchRecordFoundException("task"));
+
+        TaskEntity taskEntity = findTaskByStatus(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
 
         taskEntity.setTaskStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         processInstance.setCorrelationId(request.getCorrelationId());
-        ProcessInstanceApproveResponse processInstanceApproveResponse = processInstanceMapper.toProcessInstanceApproveResponse(processInstance);
-        List<UserModel> users = processInstance.getTasks().stream()
-                .filter(task -> task.getTaskStatus().equals(TaskStatusEnum.COMPLETE))
-                .map(task -> {
-                    GeneralPerson personByPersonId = personService.findPersonByPersonId(task.getUserId());
-                    UserModel userModel = new UserModel();
-                    if (personByPersonId instanceof GeneralRealPerson generalRealPerson) {
-                        userModel.setNationalId(generalRealPerson.getNationalCode());
-                    } else if (personByPersonId instanceof GeneralLegalPerson generalLegalPerson) {
-                        userModel.setNationalId(generalLegalPerson.getNationalId());
-                    }
-                    userModel.setPersonType(personByPersonId.getPersonType());
-                    userModel.setCustomerNo(taskAssetService.findCustomerNo(personByPersonId.getId()).orElseThrow(() ->  new NoMatchRecordFoundException("customerNo")));
-                    return userModel;
-                })
-                .toList();
-        processInstanceApproveResponse.setUsers(users);
-        persistTaskLogEntity(taskLogEntity, taskEntity);
+        ProcessInstanceApproveResponse response = createResponseWithConfirmUser(processInstance);
+        List<UserModel> users = getTaskUsers(processInstance);
+        response.setUsers(users);
+
+        persistTaskLogEntity(taskEntity);
         processInstanceRepository.save(processInstance);
-        return processInstanceApproveResponse;
+        return response;
     }
 
-    private void persistTaskLogEntity(TaskLogEntity taskLogEntity, TaskEntity taskEntity) {
+    private ProcessInstanceApproveResponse createResponseWithConfirmUser(ProcessInstanceEntity processInstance) {
+        ProcessInstanceApproveResponse response = processInstanceMapper.toProcessInstanceApproveResponse(processInstance);
+        if (Objects.nonNull(processInstance.getConfirmUserId())) {
+            GeneralPerson confirmUser = personService.findPersonByPersonId(processInstance.getConfirmUserId());
+            UserModel userModel = createUserModel(confirmUser);
+            response.setConfirmUser(userModel);
+        }
+
+        return response;
+    }
+
+    private List<UserModel> getTaskUsers(ProcessInstanceEntity processInstance) {
+        return processInstance.getTasks().stream()
+                .map(task -> {
+                    GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
+                    return createUserModel(person);
+                })
+                .toList();
+    }
+
+    private UserModel createUserModel(GeneralPerson person) {
+        UserModel userModel = new UserModel();
+        if (person instanceof GeneralRealPerson realPerson) {
+            userModel.setNationalId(realPerson.getNationalCode());
+        } else if (person instanceof GeneralLegalPerson legalPerson) {
+            userModel.setNationalId(legalPerson.getNationalId());
+        }
+        userModel.setPersonType(person.getPersonType());
+        userModel.setCustomerNo(taskAssetService.findCustomerNo(person.getId())
+                .orElseThrow(() -> new NoMatchRecordFoundException("customerNo")));
+        return userModel;
+    }
+
+    private TaskEntity findTaskByStatus(ProcessInstanceEntity processInstance, TaskStatusEnum status) {
+        return processInstance.getTasks().stream()
+                .filter(task -> task.getTaskStatus().equals(status))
+                .findFirst()
+                .orElseThrow(() -> new NoMatchRecordFoundException("task"));
+    }
+
+    private void validateApproveRequest(ProcessInstanceApproveRequest request) {
+        processTaskDefinitionService.validateProcessBeforeApprove(request);
+        ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
+            throw new InvalidInputException("correlationId");
+        });
+    }
+
+    private void persistTaskLogEntity(TaskEntity taskEntity) {
+        TaskLogEntity taskLogEntity = new TaskLogEntity();
+        MessageInput context = MessageInputContext.getCurrentContext();
+        taskLogEntity.setLastChannelCode(context.getChannel().getCode());
         taskLogEntity.setTaskEntity(taskEntity);
         taskLogEntity.setStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         taskLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
