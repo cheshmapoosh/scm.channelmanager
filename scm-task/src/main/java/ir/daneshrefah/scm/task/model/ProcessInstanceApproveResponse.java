@@ -22,4 +22,5 @@ public class ProcessInstanceApproveResponse {
     private String correlationId;
     private List<TaskResponse> tasks;
     private List<UserModel> users;
+    private UserModel confirmUser;
 }

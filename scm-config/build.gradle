@@ -15,7 +15,6 @@ dependencies {
     implementation 'com.hazelcast:hazelcast-spring:5.2.2'
     implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: '3.0.0'
-    api project(':scm-logging')
     implementation project(':scm-common')
 }
 
