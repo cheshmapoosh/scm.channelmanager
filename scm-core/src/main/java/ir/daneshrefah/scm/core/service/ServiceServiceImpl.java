@@ -4,17 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.exception.RecordVersionException;
+import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.*;
 import ir.daneshrefah.scm.common.service.*;
-import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindRequest;
-import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindResponse;
+import ir.daneshrefah.scm.common.service.provider.*;
 import ir.daneshrefah.scm.common.service.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
+import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
@@ -23,9 +20,12 @@ import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
+import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -35,10 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
@@ -300,10 +297,10 @@ public class ServiceServiceImpl implements ServiceService {
 
         ServiceEntity savedEntity = serviceRepository.save(entity);
         ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(savedEntity);
-        if (ServiceImplementationType.PROXY.equals(service.getImplementationType())){
+        if (ServiceImplementationType.PROXY.equals(service.getImplementationType())) {
             ServiceRelationEntity serviceRelation = new ServiceRelationEntity();
             serviceRelation.setSourceService(savedEntity);
-            ServiceEntity targetService = serviceRepository.findById(service.getProxyTargetServiceId()).orElseThrow(()->new InvalidInputException("proxyTargetServiceId"));
+            ServiceEntity targetService = serviceRepository.findById(service.getProxyTargetServiceId()).orElseThrow(() -> new InvalidInputException("proxyTargetServiceId"));
             serviceRelation.setTargetService(targetService);
             serviceRelationRepository.save(serviceRelation);
         }
@@ -640,7 +637,7 @@ public class ServiceServiceImpl implements ServiceService {
                         .toList());
     }
 
-    private ServiceProviderFindResponse map(AbstractExternalServiceProvider provider){
+    private ServiceProviderFindResponse map(AbstractExternalServiceProvider provider) {
         return new ServiceProviderFindResponse()
                 .setCode(provider.getCode())
                 .setTitle(provider.getTitle())
@@ -652,5 +649,152 @@ public class ServiceServiceImpl implements ServiceService {
                 .setCreator(provider.getCreator())
                 .setLastEditor(provider.getLastEditor())
                 .setLastEditDate(provider.getLastEditDate());
+    }
+
+    @Override
+    @Transactional
+    public AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
+        validateServiceProviderCreteRequest(request);
+        AbstractExternalServiceProviderEntity entity = mapToServiceProviderEntity(request);
+        AbstractExternalServiceProviderEntity savedEntity = serviceProviderRepository.save(entity);
+        return ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
+    }
+
+    @Override
+    @Transactional
+    public AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
+        AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
+        checkServiceProviderRecordVersion(serviceProvider,request.getLastEditDate());
+        services
+                .stream()
+                .filter(service -> service instanceof AbstractExternalService)
+                .map(service -> (AbstractExternalService<?>) service)
+                .filter(service -> service.getServiceProvider().getId().equals(serviceProvider.getId()))
+                .findFirst()
+                .ifPresent(service -> {
+                    throw new UncheckedRecordChildException("serviceProviderId", "provider has unhandled service children");
+                });
+        serviceProviderRepository.delete(serviceProvider);
+        cacheEvict();
+        return ServiceMapper.INSTANCE.toServiceProvider(serviceProvider);
+    }
+
+    @Override
+    @Transactional
+    public AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
+        AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
+        checkServiceProviderRecordVersion(serviceProvider,request.getLastEditDate());
+        //General service provider properties
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getCode(), serviceProvider::setCode);
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), serviceProvider::setTitle);
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getProviderClassName(), serviceProvider::setProviderClassName);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getStatus(), serviceProvider::setStatus);
+        String assetProviderId = request.getAssetProviderId();
+        if (StringUtils.isNotBlank(assetProviderId) && StringUtils.isNumeric(assetProviderId)) {
+            AssetProvider foundAssetProvider = assetProviders
+                    .stream()
+                    .filter(assetProvider -> assetProvider.getId().equals(Integer.parseInt(request.getAssetProviderId())))
+                    .findFirst()
+                    .orElseThrow(() -> new InvalidInputException("assetProviderId"));
+            serviceProvider.setAssetProvider(AssetProviderMapper.INSTANCE.toEntity(foundAssetProvider));
+        }
+        applyServiceProviderMetadataDynamicChanges(serviceProvider, request);
+        AbstractExternalServiceProviderEntity saved = serviceProviderRepository.save(serviceProvider);
+        cacheEvict();
+        return ServiceMapper.INSTANCE.toServiceProvider(saved);
+    }
+
+    private void checkServiceProviderRecordVersion(AbstractExternalServiceProviderEntity serviceProvider, LocalDateTime reqLastEditDate) {
+        LocalDateTime lastEditDate = serviceProvider.getLastEditDate();
+        ValidationUtils.checkNull(reqLastEditDate,()->new InvalidInputException("lastEditDate"));
+        if (!lastEditDate.equals(reqLastEditDate)){
+            throw new RecordVersionException("lastEditDate");
+        }
+    }
+
+    private void applyServiceProviderMetadataDynamicChanges(AbstractExternalServiceProviderEntity serviceProvider, ServiceProviderChangeRequest request) {
+        ServiceProviderProtocol protocol = serviceProvider.getProtocol();
+        AbstractExternalServiceProviderMetadata metadata = serviceProvider.getMetadata();
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getEndpoint(), metadata::setEndpoint);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getSoTimeout(), metadata::setSoTimeout);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getResponseTimeout(), metadata::setResponseTimeout);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getConnectTimeout(), metadata::setConnectTimeout);
+        List<ServiceProviderData> additionalParams = request.getAdditionalParams();
+        Map<String, Object> metadataAdditionalParams = metadata.getAdditionalParams();
+        additionalParams.forEach((param) -> {
+            metadataAdditionalParams.put(param.getKey(), param.getValue());
+        });
+        if (protocol.equals(ServiceProviderProtocol.REST)) {
+            RestExternalServiceProviderMetadata restMetadata = (RestExternalServiceProviderMetadata) metadata;
+            DynamicUpdateUtils.applyChangesIfNotNull(request.getDefaultHttpMethod(), restMetadata::setDefaultHttpMethod);
+            DynamicUpdateUtils.applyChangesIfNotNull(request.getDefaultRequestContentType(), restMetadata::setDefaultRequestContentType);
+        }
+    }
+
+    private AbstractExternalServiceProviderEntity mapToServiceProviderEntity(ServiceProviderCreteRequest request) {
+        AbstractExternalServiceProviderEntity entity;
+        ServiceProviderProtocol protocol = request.getProtocol();
+        switch (protocol) {
+            case REST -> {
+                entity = new RestExternalServiceProviderEntity();
+                RestExternalServiceProviderMetadata metadata = new RestExternalServiceProviderMetadata();
+                metadata.setDefaultHttpMethod(request.getDefaultHttpMethod());
+                metadata.setDefaultRequestContentType(request.getDefaultRequestContentType());
+                entity.setMetadata(metadata);
+            }
+            case CUSTOM -> {
+                entity = new CustomExternalServiceProviderEntity();
+                CustomExternalServiceProviderMetadata metadata = new CustomExternalServiceProviderMetadata();
+                entity.setMetadata(metadata);
+            }
+            default -> throw new InvalidInputException("the protocol does not supported yet");
+        }
+        entity.setStatus(request.getStatus());
+        entity.setProtocol(protocol);
+        entity.setCode(request.getCode());
+        entity.setTitle(request.getTitle());
+        entity.setProviderClassName(request.getProviderClassName());
+        String assetProviderId = request.getAssetProviderId();
+        if (StringUtils.isNotBlank(assetProviderId)) {
+            AssetProvider assetProvider = findAssetProviderById(Integer.parseInt(assetProviderId));
+            AssetProviderEntity assetProviderEntity = AssetProviderMapper.INSTANCE.toEntity(assetProvider);
+            entity.setAssetProvider(assetProviderEntity);
+        }
+        mapProviderGeneralMetadataProperties(entity, request);
+        return entity;
+    }
+
+    private void mapProviderGeneralMetadataProperties(AbstractExternalServiceProviderEntity entity, ServiceProviderCreteRequest request) {
+        List<ServiceProviderData> additionalParams = request.getAdditionalParams();
+        AbstractExternalServiceProviderMetadata metadata = entity.getMetadata();
+        if (Objects.nonNull(metadata)) {
+            metadata.setEndpoint(request.getEndpoint());
+            metadata.setConnectTimeout(request.getConnectTimeout());
+            metadata.setResponseTimeout(request.getResponseTimeout());
+            metadata.setSoTimeout(request.getSoTimeout());
+            if (Objects.nonNull(additionalParams)) {
+                additionalParams.forEach(additionalParam -> metadata.addParam(additionalParam.getKey(), additionalParam.getValue()));
+            }
+        }
+    }
+
+    private void validateServiceProviderCreteRequest(ServiceProviderCreteRequest request) {
+        ValidationUtils.checkBlankString(request.getCode(), () -> new InvalidInputException("code"));
+        ValidationUtils.checkBlankString(request.getTitle(), () -> new InvalidInputException("title"));
+        ValidationUtils.checkBlankString(request.getEndpoint(), () -> new InvalidInputException("endpoint"));
+        ValidationUtils.checkNull(request.getProtocol(), () -> new InvalidInputException("protocol"));
+        ChainValidation
+                .crateValidator(request.getProviderClassName(), "providerClassName")
+                .breakCheckIfNull()
+                .checkBlank();
+        ChainValidation
+                .crateValidator(request.getAssetProviderId(), "assetProviderId")
+                .breakCheckIfNull()
+                .checkBlank()
+                .checkNumeral()
+                .checkFunction((assetProviderId) -> assetProviders
+                        .stream()
+                        .anyMatch(assetProvider -> assetProvider.getId().equals(assetProviderId)));
+
     }
 }

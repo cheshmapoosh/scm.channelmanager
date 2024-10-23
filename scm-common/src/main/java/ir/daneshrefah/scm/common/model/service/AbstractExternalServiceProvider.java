@@ -24,6 +24,7 @@ public abstract class AbstractExternalServiceProvider extends BaseModel<String> 
     private String title;
     private String providerClassName;
     private ServiceProviderProtocol protocol;
+    private ServiceProviderStatus status;
 //    private AbstractExternalServiceProviderMetadata metadata;
     private AssetProvider assetProvider;
     private List<Parameter> requestHeaders;

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,4 +31,5 @@ public abstract class AbstractVersionAbleDefaultEntity<T> extends AbstractEntity
     @Version
     @LastModifiedDate
     private LocalDateTime lastEditDate;
+
 }

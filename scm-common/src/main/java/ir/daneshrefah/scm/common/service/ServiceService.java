@@ -5,8 +5,7 @@ import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindRequest;
-import ir.daneshrefah.scm.common.service.provider.ServiceProviderFindResponse;
+import ir.daneshrefah.scm.common.service.provider.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,4 +60,10 @@ public interface ServiceService {
     Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode);
 
     PagedResponseData<Service> findParentServiceList(ParentServiceFindRequest request);
+
+    AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request);
+
+    AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
+
+    AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
 }
