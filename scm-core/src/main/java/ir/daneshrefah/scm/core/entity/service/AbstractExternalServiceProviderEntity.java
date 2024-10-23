@@ -1,9 +1,12 @@
 package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
+import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
+import ir.daneshrefah.scm.core.converter.ServiceProviderStatusConverter;
 import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
@@ -25,20 +28,19 @@ import java.util.List;
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
 @DiscriminatorColumn(name = "PROTOCOL",discriminatorType =  DiscriminatorType.INTEGER)
-//@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-public abstract class AbstractExternalServiceProviderEntity extends AbstractDefaultEntity<String> {
+public abstract class AbstractExternalServiceProviderEntity extends AbstractVersionAbleDefaultEntity<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "SERVICE_PROVIDER_ID")
     private String id;
     private String code;
     private String title;
+    @Convert(converter = ServiceProviderStatusConverter.class)
+    private ServiceProviderStatus status;
     @Column(name = "PROTOCOL", insertable = false, updatable = false)
     @Convert(converter = ServiceProviderProtocolConverter.class)
     private ServiceProviderProtocol protocol;
     private String providerClassName;
-//    @Convert(converter = ExternalServiceProviderMetadataConverter.class)
-//    private AbstractExternalServiceProviderMetadata metadata;
     @ManyToOne
     @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
     private AssetProviderEntity assetProvider;
@@ -50,10 +52,6 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractDefa
             , joinColumns = @JoinColumn(name = "SERVICE_PROVIDER_ID")
             , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
     private List<ParameterEntity> parameters;
-//    private String customerProviderClassName;
-//    @Column(name = "CUSTOMER_PROVIDE_METHOD_CODE"/*, insertable = false, updatable = false*/)
-//    @Convert(converter = CustomerProvideMethodConverter.class)
-//    private CustomerProvideMethod customerProvideMethod;
 
     public abstract AbstractExternalServiceProviderMetadata getMetadata();
     public abstract void setMetadata(AbstractExternalServiceProviderMetadata metadata);

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.service.provider;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.dto.RequestData;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @Accessors(chain = true)
-public class ServiceProviderFindResponse  {
+public class ServiceProviderFindResponse implements RequestData {
     private String id;
     private String creator;
     private String lastEditor;

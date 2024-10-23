@@ -2,9 +2,11 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.exception.ServiceProviderActivationStatusException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
+import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -73,10 +75,13 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
         });
     }
 
-    public final JsonNode executeServiceProvider(Message message, AbstractExternalService service) {
+    public final JsonNode executeServiceProvider(Message message, AbstractExternalService<?> service) {
         Exchange exchange = new DefaultExchange(camelContext);
-//        ExternalServiceProviderExecutor provider = serviceProviderMap.get(service.getServiceProvider().getCode());
-        String targetEndpoint = "direct:ESP_" + service.getServiceProvider().getCode();
+        AbstractExternalServiceProvider serviceProvider = service.getServiceProvider();
+        if (!serviceProvider.getStatus().equals(ServiceProviderStatus.ACTIVE)){
+            throw new ServiceProviderActivationStatusException(serviceProvider.getCode());
+        }
+        String targetEndpoint = "direct:ESP_" + serviceProvider.getCode();
         exchange.getMessage().setBody(message);
         exchange = producerTemplate.send(targetEndpoint, exchange);
 //        logOutboundEvent(exchange);
