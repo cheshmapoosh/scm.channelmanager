@@ -143,6 +143,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
         ParameterParser.ResponseCache responseCache = parametersCache.getResponseCache();
         Message wrapMessage = Message.builder().payload(convertResponseToJsonNode(body)).build();
         Response response = findResponse(responseCache, message);
+        checkResponseHasException(restService, response);
         ExternalServiceBodyType responseType = response.getResponseBodyType();
         if (responseType.equals(ExternalServiceBodyType.NONE)) {
             return message;
@@ -150,7 +151,6 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
             return wrapMessage;
         } else {
             // IF RESPONSE BODY TYPE IS PARAMETER
-            checkResponseHasException(restService, response);
             if (HttpContentType.RAW_JSON.equals(contentType)) {
                 Transformer responseTransformer = response.getResponseTransformer();  //TODO
                 ParameterNode requestNode = responseCache.getResponseBodyNode(response);
