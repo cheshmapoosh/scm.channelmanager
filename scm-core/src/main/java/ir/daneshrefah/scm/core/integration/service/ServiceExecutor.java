@@ -21,6 +21,7 @@ import org.apache.camel.model.ChoiceDefinition;
 import org.apache.camel.model.OutputDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.TryDefinition;
+import org.apache.camel.spi.ErrorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
@@ -41,15 +42,14 @@ public abstract class ServiceExecutor {
     protected static final String PROPERTY_START_TIME = "ScmServiceStartTime";
     protected static final String PROPERTY_END_TIME = "ScmServiceEndTime";
     protected static final String PROPERTY_REQUEST_BODY = "ScmServiceRequestBody";
-
-    @Autowired
-    private Tracer tracer;
     @Autowired
     protected ErrorHandlerService errorHandlerService;
     @Autowired
     protected ObjectMapper objectMapper;
     @Autowired
     protected TraceLogUtils traceLogUtils;
+    @Autowired
+    private Tracer tracer;
     private List<MessageInterceptor> requestInterceptors;
     private List<MessageInterceptor> responseInterceptors;
 
@@ -99,7 +99,7 @@ public abstract class ServiceExecutor {
     }
 
 
-    public final void initServiceExecution(Service service, OutputDefinition routeDefinition) {
+    public final void initServiceExecution(Service service, OutputDefinition<?> routeDefinition) {
         TryDefinition tryDefinition = routeDefinition.doTry();
         tryDefinition = tryDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
@@ -133,29 +133,29 @@ public abstract class ServiceExecutor {
                 message.status(MessageStatus.SC_SUCCESS);
             }
         });
-        tryDefinition = tryDefinition.doCatch(Exception.class);
-        tryDefinition.process(exchange -> {
-            Exception exception = extractException(exchange);
-            Message message = exchange.getMessage().getBody(Message.class);
-            errorHandlerService.resolveMessageByException(message, exception);
-            exchange.getMessage().setBody(message);
-        });
-        tryDefinition = tryDefinition.doFinally();
-        tryDefinition.process(exchange -> {
-            Message message = exchange.getMessage().getBody(Message.class);
-            Exception exception = extractException(exchange);
-            Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
-            JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
-            MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
-            Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.SERVER).startSpan();
-            try {
-                traceLogUtils.recordMessageTrace(message, request, exception, span);
-                span.makeCurrent();
-            } catch (Exception ex) {
-                span.end();
-            }
-        });
-        tryDefinition.end();
+        tryDefinition.doCatch(Exception.class)
+                .process((ErrorHandler) exchange -> {
+                    Exception exception = extractException(exchange);
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    errorHandlerService.resolveMessageByException(message, exception);
+                    exchange.getMessage().setBody(message);
+                })
+                .doFinally()
+                .process(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    Exception exception = extractException(exchange);
+                    Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
+                    JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
+                    MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
+                    Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.SERVER).startSpan();
+                    try {
+                        traceLogUtils.recordMessageTrace(message, request, exception, span);
+                        span.makeCurrent();
+                    } catch (Exception ex) {
+                        span.end();
+                    }
+                })
+                .end();
     }
 
     private Exception extractException(Exchange exchange) {

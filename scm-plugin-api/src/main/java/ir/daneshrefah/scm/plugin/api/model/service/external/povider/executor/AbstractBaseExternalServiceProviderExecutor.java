@@ -7,6 +7,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
@@ -56,9 +57,9 @@ public abstract class AbstractBaseExternalServiceProviderExecutor implements Ext
         TryDefinition tryDefinition = routeDefinition.doTry();
         tryDefinition.process(this::beforeRouteCalling);
         callRoute(tryDefinition).forEach(camelInvocationStep -> camelInvocationStep.call(tryDefinition));
+        tryDefinition.process(this::afterRouteCalling);
         tryDefinition.doFinally();
         tryDefinition.process(this::logResult);
-        tryDefinition.process(this::afterRouteCalling);
         tryDefinition.endDoTry();
     }
 
