@@ -13,7 +13,5 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Getter
 public class OtpVerifyRequest extends OtpBaseRequest {
-
     private String claimCode;
-
 }

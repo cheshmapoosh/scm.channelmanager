@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import lombok.Data;
 

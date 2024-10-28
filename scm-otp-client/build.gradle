@@ -1,0 +1,11 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+dependencies {
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compileOnly 'org.springframework.boot:spring-boot-starter'
+    compileOnly 'org.springframework:spring-context'
+    compileOnly 'org.springframework.boot:spring-boot-starter-webflux'
+    compileOnly project(':scm-plugin-api')
+}

@@ -1,13 +1,14 @@
 package ir.daneshrefah.scm.task.service;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.otp.service.OtpClientService;
 import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
 import ir.daneshrefah.scm.task.constant.ExecutionMethodTypeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessNameEnum;
 import ir.daneshrefah.scm.task.entity.ProcessTaskDefinitionEntity;
-import ir.daneshrefah.scm.task.exception.InvalidPasswordException;
 import ir.daneshrefah.scm.task.model.ProcessInstanceApproveRequest;
 import ir.daneshrefah.scm.task.model.ProcessInstanceStartRequest;
 import ir.daneshrefah.scm.task.model.TaskRequest;
@@ -17,17 +18,21 @@ import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CODE;
 
 @Service
 @RequiredArgsConstructor
-public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionService { //TODO complete and test this service after otp is complete
+public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionService {
 
     private final ProcessTaskDefinitionRepository processTaskDefinitionRepository;
+    private final OtpClientService otpClientService;
+    private final CacheTemplate cacheTemplate;
+    public static final String CACHE_NAME_OTP = "task_definition_otp";
 
     @Override
     public ProcessTaskDefinitionEntity findProcessTaskDefinitionEntity(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
-        return processTaskDefinitionRepository.findByProcessNameAndExecutionMethodTypeAndDefinitionTypeAndProcessCode(processName.name(), executionMethodType.getCode(), definitionType.getCode(), processCode)
+        return processTaskDefinitionRepository.findByProcessNameAndExecutionMethodTypeAndDefinitionTypeAndProcessCode(processName, executionMethodType, definitionType, processCode)
                 .orElseThrow(() -> new NoMatchRecordFoundException("processName~executionCode~definitionCode~processCode"));
     }
 
@@ -37,21 +42,27 @@ public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionSe
                 .orElseThrow(() -> new NoMatchRecordFoundException("processName~executionCode~definitionCode~processCode"));
     }
 
-    public  void verifySecondAuthentication(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
+    public void verifySecondAuthentication(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
         ChainValidation.crateValidator(processName, "processName").checkNull();
         ChainValidation.crateValidator(processCode, "processCode").checkNull();
-//        ProcessTaskDefinitionEntity processTaskDefinitionEntity = findProcessTaskDefinitionEntity(processName, executionMethodType, definitionType, processCode);
-//        if (processTaskDefinitionEntity.getUserAccessSecondAuth() > 0) {
-//        boolean isValid = true;// verify otp
-//        if (!isValid) {
-//
-//        }
-        MessageInput messageInput = MessageInputContext.getCurrentContext();
-        String otpCode = messageInput.getHeader(SCM_PARAMETER_CLAIM_CODE);
-        if (!otpCode.equals("test")) {
-            throw new InvalidPasswordException("password","invalid password");
+        ProcessTaskDefinitionEntity processTaskDefinitionEntity = getProcessTaskDefinitionEntityFromCache(processName, executionMethodType, definitionType, processCode);
+        if (processTaskDefinitionEntity.isUserAccessSecondAuth()) {
+            MessageInput messageInput = MessageInputContext.getCurrentContext();
+            String otpCode = messageInput.getHeader(SCM_PARAMETER_CLAIM_CODE);
+            String authorization = messageInput.getAuthenticationValue();
+            String accessParameter = messageInput.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
+            otpClientService.verifyOtpOrStaticPasswordLoggedInUserWithException(authorization, otpCode, processTaskDefinitionEntity.getOtpReason(), accessParameter);
         }
-//        }
+    }
+
+    private ProcessTaskDefinitionEntity getProcessTaskDefinitionEntityFromCache(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
+        String key = processName.getProcessName() + "~" + executionMethodType.getCode() + "~" + definitionType.getCode() + "~" + processCode.getCode();
+        ProcessTaskDefinitionEntity processTaskDefinitionEntity = (ProcessTaskDefinitionEntity) cacheTemplate.getFromCache(CACHE_NAME_OTP, key);
+        if (processTaskDefinitionEntity == null) {
+            processTaskDefinitionEntity = findProcessTaskDefinitionEntity(processName, executionMethodType, definitionType, processCode);
+            cacheTemplate.putInCache(CACHE_NAME_OTP, key, processTaskDefinitionEntity);
+        }
+        return processTaskDefinitionEntity;
     }
 
     public void validateProcessBeforeStart(ProcessInstanceStartRequest request) {

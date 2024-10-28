@@ -13,5 +13,4 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Getter
 public class OtpSendRequest extends OtpBaseRequest {
-
 }

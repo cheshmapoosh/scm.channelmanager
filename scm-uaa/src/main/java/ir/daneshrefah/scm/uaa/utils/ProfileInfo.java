@@ -36,7 +36,7 @@ public class ProfileInfo {
     public boolean isTraceMode() {
         if (Objects.isNull(TRACE_MODE_STATUS)) {
             synchronized (this) {
-                if (Objects.nonNull(TRACE_MODE_STATUS)) {
+                if (Objects.isNull(TRACE_MODE_STATUS)) {
                     TRACE_MODE_STATUS = getActiveProfiles()
                             .stream()
                             .anyMatch(profile -> profile.equals(DEVELOPMENT_PROFILE));

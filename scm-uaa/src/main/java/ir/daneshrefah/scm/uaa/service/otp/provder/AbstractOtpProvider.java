@@ -1,17 +1,17 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
-import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.constant.otp.OtpPattern;
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportedException;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpPattern;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -40,6 +40,8 @@ public abstract class AbstractOtpProvider {
     protected final CacheTemplate cacheTemplate;
     private final OtpProperties otpProperties;
     private final ProfileInfo profileInfo;
+    protected final UserService userService;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @PostConstruct
@@ -149,7 +151,10 @@ public abstract class AbstractOtpProvider {
     }
 
     public abstract OtpVerifyResponse verifyOtp(OtpVerifyRequest request);
-
+    public abstract OtpVerifyResponse verifyOtpByDelegatedUser(VerifyOtpByDelegatedUserRequest request);
+    public abstract OtpVerifyResponse verifyOtpByLoggedInUser(VerifyOtpByLoggedInUserRequest request);
+    public abstract OtpVerifyResponse verifyOtpByUsername(VerifyOtpByUsernameRequest request);
+    public abstract OtpVerifyResponse verifyOtpByNickname(VerifyOtpByNicknameRequest request);
     public abstract OtpType getType();
 
 }

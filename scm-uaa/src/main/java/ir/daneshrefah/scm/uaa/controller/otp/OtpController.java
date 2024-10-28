@@ -1,36 +1,11 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.data.repository.PersonRepository;
-import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.recipient.Recipient;
-import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
-import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
-import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
-import ir.daneshrefah.scm.uaa.service.user.UserService;
-import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
-import ir.daneshrefah.scm.utils.string.StringUtils;
-import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Objects;
-
-import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
-import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 
 /**
  * Description of the class or purpose of the file.
@@ -39,101 +14,76 @@ import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCo
  * @version 1.0
  * @since 2024-02-05
  */
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/otp")
+@RequiredArgsConstructor
 public class OtpController extends BaseController {
 
     private final OtpService otpService;
-    private final PersonRepository personRepository;
-
 
     /**
-     * Otp response (code,issuer,...) just in dev environment.
-     * @see ProfileInfo
+     * Sends an OTP SMS to the currently logged-in user.
      */
     @PreAuthorize("isFullyAuthenticated()")
-    @PostMapping("/sms")
+    @PostMapping("/sms-by-logged-in-user")
     @CrossOrigin
-    public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request, HttpServletRequest httpRequest) {
-        User user = AuthenticationUtils.getLoggedInUser();
-        ValidationUtils.checkNull(user, AuthenticationRequiredException::new);
-        String terminalCode = extractRequestTerminalCode();
-        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
-        assert user != null;
-        GeneralPersonEntity personEntity = personRepository.findById(user.getPerson().getId()).orElseThrow(AuthenticationRequiredException::new);
-        Recipient recipient = Recipient.builder()
-                .address(personEntity.getMobile1())
-                .identifier(user.getNickname())
-                .identifierType(UserIdentifierType.USER_NICKNAME)
-                .terminalCode(terminalCode)
-                .accessParameter(accessParameter)
-                .build();
-        OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .otpType(OtpType.SMS)
-                .reason(request.getReason())
-                .recipient(recipient)
-                .build();
-        return otpService.sendOtp(otpRequest);
+    public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request) {
+        return otpService.sendOtpByLoggedInUser(request);
     }
 
+    /**
+     * Sends an OTP SMS to a delegated user
+     */
     @PreAuthorize("hasAuthority(ROLE_CSP)")
-    @PostMapping("/sms-to")
+    @PostMapping("/sms-by-delegated-user")
     public OtpSendResponse sendDelegatedOtpSms(@RequestBody DelegatedSmsOtpSendRequest request) {
-
-        UserAuthentication user = AuthenticationUtils.getLoggedInUserAuthentication();
-//        if (!user.hasAuthority(ROLE_CSP)) {
-//            throw new InvalidDelegationException(user.getName());
-//        }
-        String terminalCode = extractRequestTerminalCode();
-        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
-
-        Recipient recipient = Recipient.builder()
-                .address(request.getRecipient())
-                .identifier(StringUtils.isNotBlank(request.getRecipientId()) ? request.getRecipientId() : request.getRecipient())
-                .identifierType(Objects.nonNull(request.getRecipientIdType()) ? request.getRecipientIdType() : UserIdentifierType.MOBILE_NUMBER)
-                .terminalCode(StringUtils.isNotBlank(request.getTerminalCode()) ? request.getTerminalCode() : terminalCode)
-                .accessParameter(StringUtils.isNotBlank(request.getAccessParameter()) ? request.getAccessParameter() : accessParameter)
-                .build();
-
-        OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .otpType(OtpType.SMS)
-                .reason(request.getReason())
-                .recipient(recipient)
-                .build();
-
-        return otpService.sendOtp(otpRequest);
+        return otpService.sendOtpByDelegated(request);
     }
 
+    /**
+     * Sends OTP TO User By Username
+     */
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
+    @PostMapping("/sms-by-username")
+    public OtpSendResponse sendOtpSmsByUsername(@RequestBody OtpSmsBasedUsernameRequest request) {
+        return otpService.sendOtpByUsername(request);
+    }
+
+    /**
+     * Sends OTP TO User By Nickname
+     */
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
+    @PostMapping("/sms-by-nickname")
+    public OtpSendResponse sendOtpSmsByNickname(@RequestBody OtpSmsBasedNicknameRequest request) {
+        return otpService.sendOtpByNickname(request);
+    }
+
+    /**
+     * Send OTP TO anonymous By Address
+     */
     @PreAuthorize("isAnonymous()")
     @GetMapping("/public/sms-authentication/{recipient}")
     public OtpSendResponse sendAuthenticationOtpSms(@PathVariable("recipient") String recipientAddress) {
-
-        UserAuthentication user = AuthenticationUtils.getLoggedInUserAuthentication();
-        String terminalCode = extractRequestTerminalCode();
-        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
-
-        Recipient recipient = Recipient.builder()
-                .address(recipientAddress)
-                .identifier(recipientAddress)
-                .identifierType(UserIdentifierType.MOBILE_NUMBER)
-                .terminalCode(terminalCode)
-                .accessParameter(accessParameter)
-                .build();
-
-        OtpSendRequest otpRequest = OtpSendRequest.builder()
-                .otpType(OtpType.SMS)
-                .reason(OtpReason.AUTHENTICATION)
-                .recipient(recipient)
-                .build();
-
-        return otpService.sendOtp(otpRequest);
+        return otpService.sendOtpByAddress(recipientAddress);
     }
 
-    @PostMapping("/verify")
-    public OtpVerifyResponse verifyOtp(@RequestBody OtpVerifyRequest request, HttpServletRequest httpRequest) {
-        User loggedInUser = AuthenticationUtils.getLoggedInUser();
-        return otpService.verifyOtp(request);
+    @PostMapping("/verify-by-logged-in-user")
+    public OtpVerifyResponse verifyOtpByLoggedInUser(@RequestBody VerifyOtpByLoggedInUserRequest request) {
+        return otpService.verifyOtpByLoggedInUser(request);
     }
 
+    @PostMapping("/verify-by-delegated")
+    public OtpVerifyResponse verifyOtpByDelegatedUser(@RequestBody VerifyOtpByDelegatedUserRequest request) {
+        return otpService.verifyOtpByDelegatedUser(request);
+    }
+
+    @PostMapping("/verify-by-username")
+    public OtpVerifyResponse verifyOtpByUsername(@RequestBody VerifyOtpByUsernameRequest request) {
+        return otpService.verifyOtpByUsername(request);
+    }
+
+    @PostMapping("/verify-by-nickname")
+    public OtpVerifyResponse verifyOtpNickname(@RequestBody VerifyOtpByNicknameRequest request) {
+        return otpService.verifyOtpByNickname(request);
+    }
 }

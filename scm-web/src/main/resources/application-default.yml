@@ -26,8 +26,7 @@ scm:
         driver-class-name: com.ibm.db2.jcc.DB2Driver
         max-connection: 10
         default-schema: REF
-      -
-        name: default2
+      - name: default2
         url: jdbc:db2://10.10.4.104:50001/DBREFSW
         username: db2inst1
         password: db2inst1
@@ -69,8 +68,13 @@ scm:
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: db-camunda #change it to REF
-
-
+  otp:
+    rest-client:
+      enabled: true
+      auth-header-name: "authorization"
+      auth-prefix: "Bearer "
+      base-url: "http://localhost:8000/api"
+      verify-logged-in-url: "/otp/verify-by-logged-in-user"
 server:
   servlet:
     context-path: /scm
@@ -100,9 +104,9 @@ logging:
 spring:
   jpa:
     show-sql: true
-#  properties:
-#    hibernate:
-#      format_sql: true
+  #  properties:
+  #    hibernate:
+  #      format_sql: true
   cloud:
     config:
       enabled: false

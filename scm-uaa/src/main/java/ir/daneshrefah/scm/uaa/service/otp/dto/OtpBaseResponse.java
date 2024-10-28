@@ -13,8 +13,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 public abstract class OtpBaseResponse {
-
     private boolean isSuccessful;
     private String errorMessage;
-
 }

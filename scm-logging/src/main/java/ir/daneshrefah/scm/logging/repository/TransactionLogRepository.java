@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.logging.repository;
 
-import ir.daneshrefah.scm.logging.entity.TransactionLogEntity;
+import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.model.TransactionLogResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,13 +12,13 @@ import org.springframework.stereotype.Repository;
 import java.util.Date;
 
 @Repository
-public interface TransactionLogRepository extends JpaRepository<TransactionLogEntity, Long>{
+public interface TransactionLogRepository extends JpaRepository<LogTraceEntity, Long>{
 
     @Query("SELECT new ir.daneshrefah.scm.logging.model.TransactionLogResponse(" +
             "t.id, t.channelCode, t.terminalCode, t.clientId, t.correlationId, t.clientCorrelationId, " +
             "t.messageId, t.statusCode, t.nickname, t.username, t.delegatorUsername, t.endPoint, " +
-            "t.amount, t.accountNo, t.cardNo, t.startTime, t.endTime, t.durationMills) " +
-            "FROM TransactionLogEntity t " +
+            "t.amount, t.accountNo, t.cardNo, t.startTime, t.endTime) " +
+            "FROM LogTraceEntity t " +
             "WHERE (:channelCode IS NULL OR t.channelCode = :channelCode) " +
             "AND (:terminalCode IS NULL OR t.terminalCode = :terminalCode) " +
             "AND (:clientId IS NULL OR t.clientId = :clientId) " +
