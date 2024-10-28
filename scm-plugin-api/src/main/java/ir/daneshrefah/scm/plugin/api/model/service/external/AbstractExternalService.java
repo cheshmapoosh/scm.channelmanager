@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceProp
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Data;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;

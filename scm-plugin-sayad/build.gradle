@@ -10,4 +10,7 @@ plugins {
 
 dependencies {
     api project(":scm-plugin-api")
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
 }

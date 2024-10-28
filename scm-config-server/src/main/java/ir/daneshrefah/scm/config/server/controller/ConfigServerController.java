@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.config.server.controller;
 import ir.daneshrefah.scm.config.server.config.ConfigConfiguration;
 import ir.daneshrefah.scm.config.server.service.GitService;
 import ir.daneshrefah.scm.config.server.service.YamlService;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.config.environment.Environment;

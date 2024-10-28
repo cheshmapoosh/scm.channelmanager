@@ -1,6 +1,5 @@
 plugins {
     id 'ir.daneshrefah.scm.java-library-conventions'
-    id "org.springframework.boot" version'3.1.2'
     id 'java'
 }
 
@@ -18,9 +17,9 @@ tasks.named("bootJar") {
 
 dependencies {
     compileOnly 'org.projectlombok:lombok'
-    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    implementation 'org.mapstruct:mapstruct'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+    annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'com.ibm.mq:com.ibm.mq.allclient:9.3.5.1'
     api 'jakarta.jms:jakarta.jms-api:3.1.0'

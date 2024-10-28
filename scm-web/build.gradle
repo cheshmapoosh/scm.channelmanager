@@ -6,8 +6,13 @@
 
 plugins {
     id 'ir.daneshrefah.scm.java-application-conventions'
-    id 'org.springframework.boot' version '3.1.1'
+//    id 'org.springframework.boot' version '3.1.1'
 }
+
+bootJar {
+    enabled = true
+}
+
 
 compileJava.options.encoding = 'UTF-8'
 
@@ -17,10 +22,10 @@ tasks.withType(JavaCompile).configureEach {
 
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
-    runtimeOnly 'com.ibm.db2:jcc'
     implementation project(':scm-gateway')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation project(':scm-cache-client')
+    implementation project(':scm-common-data')
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
 }
 

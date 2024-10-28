@@ -9,16 +9,17 @@ plugins {
     id "io.freefair.lombok" version "8.0.1"
 }
 
+
 dependencies {
     implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.0.2'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.hibernate:hibernate-validator:6.2.0.Final'
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '0.11.0'
+    compileOnly group: 'org.projectlombok', name: 'lombok'
     api 'org.apache.camel.springboot:camel-spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-    implementation 'org.projectlombok:lombok:1.18.22'
+    implementation 'org.mapstruct:mapstruct'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+    implementation 'org.projectlombok:lombok'
     api 'org.apache.camel.springboot:camel-core-starter'
     api 'org.apache.camel.springboot:camel-rest-starter'
     api 'org.apache.camel.springboot:camel-direct-starter'
@@ -29,8 +30,8 @@ dependencies {
 //    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
 //    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
     api 'org.springframework.boot:spring-boot-starter-web'
-    implementation "org.projectlombok:lombok:1.18.20"
-    annotationProcessor 'org.projectlombok:lombok:1.18.20'
+    implementation "org.projectlombok:lombok"
+    annotationProcessor 'org.projectlombok:lombok'
 //    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema-jakarta'
 
     // JUnit 5
@@ -44,7 +45,7 @@ dependencies {
 
 //    implementation 'org.openapi4j:openapi-core:1.0.7'
     implementation group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.2.15'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
 
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     api project(':scm-common-data')
@@ -57,4 +58,7 @@ dependencies {
     api project(':scm-common-error')
     api project(':scm-task')
     api project(':scm-logging')
+    implementation 'org.apache.commons:commons-collections4'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema'
 }

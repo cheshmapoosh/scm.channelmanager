@@ -10,4 +10,9 @@ plugins {
 
 dependencies {
     compileOnly project(":scm-common")
+    implementation 'org.apache.commons:commons-collections4'
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.apache.commons:commons-text'
 }

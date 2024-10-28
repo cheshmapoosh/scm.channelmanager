@@ -20,10 +20,14 @@ dependencies {
     compileOnly project(':scm-plugin-api')
 //    implementation ('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter:7.21.0') {
 //    implementation 'org.camunda.bpm:camunda-engine-spring:7.19.0'
-    implementation ('org.graalvm.js:js:23.0.4')
+    implementation('org.graalvm.js:js:23.0.4')
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation('org.camunda.bpm:camunda-engine:7.21.0') {
         exclude group: 'javax.xml.bind', module: 'jaxb-core'
         exclude group: 'com.sun.xml.bind', module: 'jaxb-impl'
     }
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.mapstruct:mapstruct'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
 }

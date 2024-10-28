@@ -7,7 +7,20 @@
  * in the user manual at https://docs.gradle.org/7.4.2/userguide/multi_project_builds.html
  * This project uses @Incubating APIs which are subject to change.
  */
+pluginManagement {
+    repositories {
+        mavenLocal()
+        maven {
+            url 'https://swd.daneshrefah.ir/artifactory/libs-release/'
+            credentials {
+                username = 'builder'
+                password = 'AP9XCqyRCWrtUydrRwLiL7RpuRq'
+            }
+        }
+        mavenCentral()
+    }
+}
 
 rootProject.name = 'ChannelManager'
 include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 'scm-web', 'scm-common-data', 'scm-plugin-scm', 'scm-plugin-nab', 'scm-plugin-pichack', 'scm-plugin-sayad', 'scm-plugin-mock', 'scm-plugin-hps', 
-'scm-config', 'scm-config-server','scm-cache','scm-cache-client', 'scm-uaa', 'scm-uaa-client', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-process', 'scm-logging-server','scm-plugin-iban','scm-common-error','scm-message-queue','scm-task')
+'scm-config-server','scm-cache','scm-cache-client', 'scm-uaa', 'scm-uaa-client', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-process', 'scm-logging-server','scm-plugin-iban','scm-common-error','scm-message-queue','scm-task')
