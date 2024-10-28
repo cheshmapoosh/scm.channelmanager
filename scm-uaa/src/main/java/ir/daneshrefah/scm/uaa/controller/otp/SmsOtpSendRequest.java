@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import lombok.Data;
 
 /**
@@ -12,7 +12,5 @@ import lombok.Data;
  */
 @Data
 public class SmsOtpSendRequest {
-
     private OtpReason reason;
-
 }

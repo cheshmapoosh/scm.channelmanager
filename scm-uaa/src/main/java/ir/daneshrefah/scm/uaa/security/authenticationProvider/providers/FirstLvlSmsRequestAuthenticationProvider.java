@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlSmsRequestAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;

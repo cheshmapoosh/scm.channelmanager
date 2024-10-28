@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.model.recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
@@ -15,16 +16,27 @@ import java.io.Serializable;
  */
 @Getter
 @Builder
+@Setter
 public class Recipient implements Serializable {
 
     /**
      * this property is otp delivery target like cellphone number, email address, ...
-     * */
-    private final String address;
-//    private final AuthenticationLevel authenticationLevel;
-    private final String identifier;
-    private final UserIdentifierType identifierType;
-    private final String terminalCode;
-    private final String accessParameter;
+     */
+    private String address;
+    //    private final AuthenticationLevel authenticationLevel;
+    private String identifier;
+    private UserIdentifierType identifierType;
+    private String terminalCode;
+    private String accessParameter;
 
+    public Recipient() {
+    }
+
+    public Recipient(String address, String identifier, UserIdentifierType identifierType, String terminalCode, String accessParameter) {
+        this.address = address;
+        this.identifier = identifier;
+        this.identifierType = identifierType;
+        this.terminalCode = terminalCode;
+        this.accessParameter = accessParameter;
+    }
 }

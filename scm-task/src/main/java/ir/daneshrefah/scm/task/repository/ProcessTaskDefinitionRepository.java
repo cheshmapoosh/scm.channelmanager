@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.task.repository;
 
+import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
+import ir.daneshrefah.scm.task.constant.ExecutionMethodTypeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
+import ir.daneshrefah.scm.task.constant.ProcessNameEnum;
 import ir.daneshrefah.scm.task.entity.ProcessTaskDefinitionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -12,5 +15,5 @@ public interface ProcessTaskDefinitionRepository extends JpaRepository<ProcessTa
 
     Optional<ProcessTaskDefinitionEntity> findByProcessNameAndExecutionMethodTypeAndDefinitionType(String processName, Integer executionMethodType, Integer definitionType);
 
-    Optional<ProcessTaskDefinitionEntity> findByProcessNameAndExecutionMethodTypeAndDefinitionTypeAndProcessCode(String processName, Integer executionMethodType, Integer definitionType, ProcessCodeEnum processCode);
+    Optional<ProcessTaskDefinitionEntity> findByProcessNameAndExecutionMethodTypeAndDefinitionTypeAndProcessCode(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode);
 }

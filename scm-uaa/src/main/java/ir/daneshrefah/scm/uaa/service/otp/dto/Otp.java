@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +10,6 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.

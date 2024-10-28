@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.logging.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.logging.entity.TransactionLogEntity;
+import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.mapper.TransactionLogMapper;
 import ir.daneshrefah.scm.logging.model.LogMessage;
 import ir.daneshrefah.scm.logging.model.TransactionLogDetailResponse;
@@ -24,17 +24,17 @@ import java.util.Objects;
 @Slf4j
 public class TransactionLogServiceImpl implements LogService {
     private final TransactionLogRepository transactionLogRepository;
-    private final ConverterServiceImpl converterService;
+    private final ConverterService converterService;
 
     private final ObjectMapper objectMapper;
 
     public void save(String msg) {
-        TransactionLogEntity transactionLogEntity;
+        LogTraceEntity logTraceEntity;
         try {
             LogMessage logMessage = converterService.convertToLogMessage(msg);
-            transactionLogEntity = converterService.convertToTransactionLogEntity(logMessage);
-            transactionLogEntity.setPayload(objectMapper.writeValueAsString(logMessage));
-            transactionLogRepository.save(transactionLogEntity);
+            logTraceEntity = converterService.convertToTransactionLogEntity(logMessage);
+            logTraceEntity.setPayload(objectMapper.writeValueAsString(logMessage));
+            transactionLogRepository.save(logTraceEntity);
         } catch (Exception e) {
             log.error("Failed to save message: {} due to error: {}", msg, e.getMessage(), e);
         }
@@ -68,7 +68,7 @@ public class TransactionLogServiceImpl implements LogService {
     @Override
     public TransactionLogDetailResponse findById(Long id) {
         TransactionLogMapper instance = TransactionLogMapper.INSTANCE;
-        TransactionLogEntity transactionLogEntity = transactionLogRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return instance.toModel(transactionLogEntity);
+        LogTraceEntity logTraceEntity = transactionLogRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+        return instance.toModel(logTraceEntity);
     }
 }

@@ -11,8 +11,7 @@ public enum ExecutionMethodTypeEnum {
 
     START_PROCESS(1),
     APPROVE_PROCESS(2),
-    UPDATE_DESCRIPTION(3),
-    COMPLETE_TASK(4);
+    COMPLETE_TASK(3);
 
     private final Integer code;
 

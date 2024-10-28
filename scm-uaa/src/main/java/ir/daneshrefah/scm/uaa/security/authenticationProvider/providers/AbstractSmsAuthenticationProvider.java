@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;

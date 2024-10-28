@@ -11,8 +11,8 @@ import java.util.Date;
 @Getter
 @Setter
 @Entity
-@Table(name = "TBL_SCM_TRANSACTION_LOG", schema = "REF")
-public class TransactionLogEntity {
+@Table(name = "TBL_LOG_TRACE", schema = "REF")
+public class LogTraceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,18 +26,12 @@ public class TransactionLogEntity {
     private String correlationId;
     @Column(name = "CLIENT_CORRELATION_ID")
     private String clientCorrelationId;
-    @Column(name = "CLIENT_FLOW_ID")
-    private String clientFlowId;
     @Column(name = "FLOW_ID")
     private String flowId;
     @Column(name = "MESSAGE_ID")
     private String messageId;
-    @Column(name = "PARENT_MESSAGE_ID")
-    private String parentMessageId;
     @Column(name = "SPAN_STATUS")
     private String spanStatus;
-    @Column(name = "CLIENT_IP_ADDRESS")
-    private String clientIpAddress;
     @Column(name = "SERVICE_CODE")
     private String serviceCode;
     @Column(name = "NICKNAME")
@@ -60,8 +54,8 @@ public class TransactionLogEntity {
     private Date startTime;
     @Column(name = "END_TIME")
     private Date endTime;
-    @Column(name = "DURATION_MILLS")
-    private Long durationMills;
+    @Column(name = "CLIENT_IP_ADDRESS")
+    private String clientIpAddress;
     @Column(name = "VERSION")
     private String  version;
     @Column(name = "PROVIDER_CODE")
@@ -72,8 +66,6 @@ public class TransactionLogEntity {
     private Integer statusCode;
     @Column(name = "EXCEPTION_CLASS_NAME")
     private String exceptionClassName;
-    @Column(name = "METHOD_TYPE")
-    private String methodType;
     @Column(name = "ENDPOINT")
     private String endPoint;
     @Column(name = "AMOUNT")
@@ -92,4 +84,6 @@ public class TransactionLogEntity {
     @Lob
     @Basic(fetch = FetchType.LAZY)
     private String payload;
+    @Column(name = "ARCHIVE_NO", updatable = false)
+    private Long archiveNo;
 }

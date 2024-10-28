@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.uaa.service.user;
 
 import ir.daneshrefah.scm.common.constant.SecurityConstants;
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
@@ -21,8 +23,7 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.user.*;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpReason;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpType;
+import ir.daneshrefah.scm.uaa.domain.otp.OtpAuthenticationType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
@@ -35,6 +36,8 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -61,6 +64,8 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
 @Service
 public class UserService {
 
+    public static final String DELETE_FROM_X_USER = "DELETE FROM REF.XUSER_DETAIL WHERE USERNAME = ? AND CHANNEL_CODE = ?";
+
     private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
@@ -69,7 +74,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final UserCache userCache;
-
+    @PersistenceContext
+    private final EntityManager entityManager;
 
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         validateUserNickNameRequest(request, servletRequest);
@@ -94,15 +100,19 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-    private UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
+    public UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
         String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-            || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
+                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
-        Terminal terminal = terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminalCode"));
+        Terminal terminal = findTerminalByCode(terminalCode);
         return loadUserEntityByUsername(username, terminal.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+    }
+
+    public Terminal findTerminalByCode(String terminalCode) {
+        return terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminalCode"));
     }
 
     public User updateUserLoginStaticPassword(PasswordModificationRequest request) {
@@ -115,6 +125,7 @@ public class UserService {
         userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -131,6 +142,7 @@ public class UserService {
         userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -393,9 +405,10 @@ public class UserService {
     }
 
     public Optional<UserEntity> loadUserEntityByUsername(String username, String terminalCode) {
-        Integer channelId = terminalService.findTerminalByCode(terminalCode).get().getLegacyTerminalId().intValue();
+        Integer channelId = findTerminalByCode(terminalCode).getLegacyTerminalId().intValue();
+//        Integer channelId = terminalService.findTerminalByCode(terminalCode).get().getLegacyTerminalId().intValue();
 //        Integer channelId = integrationService.findChannelIdByTerminalCode(terminalCode);
-        Iterable<UserEntity> userEntities = userRepository.findByNicknameAndLegacyTerminalId(username, channelId);
+        Iterable<UserEntity> userEntities = findByNicknameAndLegacyTerminalId(username, channelId);
         if (!userEntities.iterator().hasNext()) {
             return Optional.empty();
         }
@@ -412,12 +425,12 @@ public class UserService {
         return Optional.of(user);
     }
 
-    private GeneralPersonEntity findPersonByUsername(String username) {
+    public GeneralPersonEntity findPersonByUsername(String username) {
         List<GeneralPersonEntity> persons = personRepository.findPersonByUsername(username);
         return null != persons && !persons.isEmpty() ? persons.get(0) : null;
     }
 
-    private GeneralPersonEntity findPersonById(Integer id) {
+    public GeneralPersonEntity findPersonById(Integer id) {
         Optional<GeneralPersonEntity> person = personRepository.findById(id);
         return person.orElse(null);
     }
@@ -469,11 +482,12 @@ public class UserService {
         userEntity.setLastEditDate(LocalDateTime.now());
         userEntity.setLoginAuthenticationMethod(requestMethod);
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(nickname + "::" + terminalCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-    private void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason) {
+    public void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason) {
         OtpVerifyRequest otpVerifyRequest = OtpVerifyRequest.builder()
                 .otpType(OtpType.SMS)
                 .recipient(getCurrentRecipient(loggedInUserAuthentication))
@@ -486,7 +500,7 @@ public class UserService {
         }
     }
 
-    private Recipient getCurrentRecipient(UserAuthentication loggedInUserAuthentication) {
+    public Recipient getCurrentRecipient(UserAuthentication loggedInUserAuthentication) {
         User principal = loggedInUserAuthentication.getPrincipal();
         GeneralPerson principalPerson = principal.getPerson();
         GeneralPersonEntity personEntity = personRepository.findById(principalPerson.getId()).orElseThrow(AuthenticationRequiredException::new);
@@ -533,8 +547,18 @@ public class UserService {
         String terminalCode = currentUserAuthentication.getTerminalCode();
         String nickname = currentUserAuthentication.getName();
         userCache.removeUserFromCache(nickname + "::" + terminalCode);
+        removeXUser(userEntity);
         userRepository.save(userEntity);
         return UserMapper.INSTANCE.toModel(userEntity);
+    }
+
+    private void removeXUser(UserEntity userEntity) {
+        UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        assert currentAuthentication != null;
+        entityManager.createNativeQuery(DELETE_FROM_X_USER)
+                .setParameter(1, userEntity.getNickname())
+                .setParameter(2, currentAuthentication.getTerminalCode())
+                .executeUpdate();
     }
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
@@ -551,13 +575,24 @@ public class UserService {
         }
     }
 
-    private void checkStaticPassword(UserEntity userEntity, String credential) {
+    public void checkStaticPassword(UserEntity userEntity, String credential) {
         if (!userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()))) {
             throw new InvalidInputException("static password");
         }
     }
 
-    private UserEntity findUser(UserAuthentication loggedInUserAuthentication) {
+    public boolean validateStaticPassword(UserEntity userEntity, String credential, OtpAuthenticationType otpAuthenticationType) {
+        if (StringUtils.isBlank(userEntity.getTransactionStaticPassword()) || otpAuthenticationType == null) {
+            return false;
+        }
+        if (otpAuthenticationType.equals(OtpAuthenticationType.TRANSACTION)) {
+            return userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
+        } else {
+            return userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
+        }
+    }
+
+    public UserEntity findUser(UserAuthentication loggedInUserAuthentication) {
         User principal = loggedInUserAuthentication.getPrincipal();
         String terminalCode = principal.getTerminalCode();
         String nickname = loggedInUserAuthentication.getName();
@@ -609,13 +644,27 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
     }
 
+    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Integer userId, String terminalCode) {
+        Terminal terminal = findTerminalByCode(terminalCode);
+        return userRepository.findByPersonIdAndLegacyTerminalId(userId, terminal.getLegacyTerminalId().intValue());
+    }
+
     public User findByNicknameAndTerminalCode(String nickname, String terminalCode) {
         Integer terminalId = Integer.valueOf(terminalService.findTerminalByCode(terminalCode)
                 .orElseThrow(() -> new InvalidInputException("terminalCode")).getId());
-        List<UserEntity> userEntities = userRepository.findByNicknameAndLegacyTerminalId(nickname, terminalId);
+        List<UserEntity> userEntities = findByNicknameAndLegacyTerminalId(nickname, terminalId);
         if (Objects.nonNull(userEntities) && userEntities.size() > 0) {
             return UserMapper.INSTANCE.toModel(userEntities.get(0));
         }
         return null;
+    }
+
+    public List<UserEntity> findByNicknameAndLegacyTerminalId(String nickname, Integer terminalId) {
+        return userRepository.findByNicknameAndLegacyTerminalId(nickname, terminalId);
+    }
+
+    public List<UserEntity> findByNicknameAndLegacyTerminalCode(String nickname, String terminalCode) {
+        Terminal terminal = findTerminalByCode(terminalCode);
+        return userRepository.findByNicknameAndLegacyTerminalId(nickname, terminal.getLegacyTerminalId().intValue());
     }
 }

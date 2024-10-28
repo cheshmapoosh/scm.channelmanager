@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.domain.otp;
+package ir.daneshrefah.scm.common.constant.otp;
 
 /**
  * Description of the class or purpose of the file.
@@ -7,7 +7,9 @@ package ir.daneshrefah.scm.uaa.domain.otp;
  * @version 1.0
  * @since 2023-12-30
  */
-public enum OtpPattern {
-
-    NUMERIC, ALPHABETIC, ALPHA_NUMERIC,
+public enum OtpType {
+    TIME_BASED,
+    DEVICE,
+    EMAIL,
+    SMS;
 }

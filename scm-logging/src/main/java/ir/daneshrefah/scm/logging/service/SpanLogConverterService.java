@@ -7,9 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.logging.constant.LogAttribute;
-import ir.daneshrefah.scm.logging.entity.TransactionLogEntity;
+import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.model.LogMessage;
 import ir.daneshrefah.scm.logging.model.SpanModel;
+import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class SpanLogConverterService implements ConverterServiceImpl {
+public class SpanLogConverterService implements ConverterService {
 
     private final ObjectMapper objectMapper;
     public LogMessage convertToLogMessage(String msg) throws JsonProcessingException {
@@ -31,54 +32,48 @@ public class SpanLogConverterService implements ConverterServiceImpl {
     }
 
     @Override
-    public TransactionLogEntity convertToTransactionLogEntity(LogMessage logMessage) {
-        TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
+    public LogTraceEntity convertToTransactionLogEntity(LogMessage logMessage) {
+        LogTraceEntity logTraceEntity = new LogTraceEntity();
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
-        transactionLogEntity.setChannelCode(attributes.get(LogAttribute.CHANNEL_CODE.getAttributeName()));
-        transactionLogEntity.setTerminalCode(attributes.get(LogAttribute.TERMINAL_CODE.getAttributeName()));
-        transactionLogEntity.setClientId(attributes.get(LogAttribute.CLIENT_ID.getAttributeName()));
-        transactionLogEntity.setCorrelationId(attributes.get(LogAttribute.CORRELATION_ID.getAttributeName()));
-        transactionLogEntity.setClientCorrelationId(attributes.get(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName()));
-        transactionLogEntity.setClientFlowId(attributes.get(LogAttribute.CLIENT_FLOW_ID.getAttributeName()));
-        transactionLogEntity.setFlowId(attributes.get(LogAttribute.FLOW_ID.getAttributeName()));
-        transactionLogEntity.setMessageId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
-        transactionLogEntity.setParentMessageId(attributes.get(LogAttribute.PARENT_MESSAGE_ID.getAttributeName()));
-        transactionLogEntity.setExceptionClassName(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
-        transactionLogEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()));
-        transactionLogEntity.setMethodType(attributes.get(LogAttribute.METHOD_TYPE.getAttributeName()));
+        logTraceEntity.setChannelCode(attributes.get(LogAttribute.CHANNEL_CODE.getAttributeName()));
+        logTraceEntity.setTerminalCode(attributes.get(LogAttribute.TERMINAL_CODE.getAttributeName()));
+        logTraceEntity.setClientId(attributes.get(LogAttribute.CLIENT_ID.getAttributeName()));
+        logTraceEntity.setCorrelationId(attributes.get(LogAttribute.CORRELATION_ID.getAttributeName()));
+        logTraceEntity.setClientCorrelationId(attributes.get(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName()));
+        logTraceEntity.setFlowId(attributes.get(LogAttribute.FLOW_ID.getAttributeName()));
+        logTraceEntity.setMessageId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
+        logTraceEntity.setExceptionClassName(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
+        logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()));
         String statusCodeStr = attributes.get(LogAttribute.RESPONSE_STATUS_CODE.getAttributeName());
         Integer statusCode = statusCodeStr != null ? Integer.valueOf(statusCodeStr) : null;
-        transactionLogEntity.setStatusCode(statusCode);
-        transactionLogEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
+        logTraceEntity.setStatusCode(statusCode);
+        logTraceEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
         if (spanModel.getStartEpochNanos() > 0) {
-            transactionLogEntity.setStartTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos())));
+            logTraceEntity.setStartTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos())));
         }
         if (spanModel.getEndEpochNanos() > 0) {
-            transactionLogEntity.setEndTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos())));
+            logTraceEntity.setEndTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos())));
         }
-        if (spanModel.getStartEpochNanos() > 0 && spanModel.getEndEpochNanos() > 0) {
-            long duration = spanModel.getEndEpochNanos() - spanModel.getStartEpochNanos() ;
-            transactionLogEntity.setDurationMills(TimeUnit.NANOSECONDS.toMillis(duration));
-        }
-        transactionLogEntity.setServiceCode(attributes.get(LogAttribute.SERVICE_CODE.getAttributeName()));
-        transactionLogEntity.setNickname(attributes.get(LogAttribute.NICKNAME.getAttributeName()));
-        transactionLogEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
-        transactionLogEntity.setDelegatorUsername(attributes.get(LogAttribute.DELEGATOR_USERNAME.getAttributeName()));
-        transactionLogEntity.setDelegatorNickname(attributes.get(LogAttribute.DELEGATOR_NICKNAME.getAttributeName()));
-        transactionLogEntity.setHostAddress(attributes.get(LogAttribute.HOST_ADDRESS.getAttributeName()));
-        transactionLogEntity.setMessageStatus(attributes.get(LogAttribute.MESSAGE_STATUS.getAttributeName()));
-        transactionLogEntity.setAccountNo(attributes.get(LogAttribute.ACCOUNT_NO.getAttributeName()));
-        transactionLogEntity.setCardNo(attributes.get(LogAttribute.CARD_NO.getAttributeName()));
-        transactionLogEntity.setAmount(attributes.get(LogAttribute.AMOUNT.getAttributeName()));
-        transactionLogEntity.setProviderCode(attributes.get(LogAttribute.PROVIDER_CODE.getAttributeName()));
-        transactionLogEntity.setProviderResponseCode(attributes.get(LogAttribute.PROVIDER_RESPONSE_CODE.getAttributeName()));
-        transactionLogEntity.setTraceId(spanModel.getTraceId());
-        transactionLogEntity.setSpanId(spanModel.getSpanId());
-        transactionLogEntity.setSpanKind(spanModel.getKind());
-        transactionLogEntity.setSpanStatus(spanModel.getStatus().get("statusCode"));
-        transactionLogEntity.setParentSpanId(spanModel.getParentSpanId());
-        transactionLogEntity.setSpanName(spanModel.getName());
-        return transactionLogEntity;
+        logTraceEntity.setServiceCode(attributes.get(LogAttribute.SERVICE_CODE.getAttributeName()));
+        logTraceEntity.setNickname(attributes.get(LogAttribute.NICKNAME.getAttributeName()));
+        logTraceEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
+        logTraceEntity.setDelegatorUsername(attributes.get(LogAttribute.DELEGATOR_USERNAME.getAttributeName()));
+        logTraceEntity.setDelegatorNickname(attributes.get(LogAttribute.DELEGATOR_NICKNAME.getAttributeName()));
+        logTraceEntity.setHostAddress(attributes.get(LogAttribute.HOST_ADDRESS.getAttributeName()));
+        logTraceEntity.setMessageStatus(attributes.get(LogAttribute.MESSAGE_STATUS.getAttributeName()));
+        logTraceEntity.setAccountNo(attributes.get(LogAttribute.ACCOUNT_NO.getAttributeName()));
+        logTraceEntity.setCardNo(attributes.get(LogAttribute.CARD_NO.getAttributeName()));
+        logTraceEntity.setAmount(attributes.get(LogAttribute.AMOUNT.getAttributeName()));
+        logTraceEntity.setProviderCode(attributes.get(LogAttribute.PROVIDER_CODE.getAttributeName()));
+        logTraceEntity.setProviderResponseCode(attributes.get(LogAttribute.PROVIDER_RESPONSE_CODE.getAttributeName()));
+        logTraceEntity.setTraceId(spanModel.getTraceId());
+        logTraceEntity.setSpanId(spanModel.getSpanId());
+        logTraceEntity.setSpanKind(spanModel.getKind());
+        logTraceEntity.setSpanStatus(spanModel.getStatus().get("statusCode"));
+        logTraceEntity.setParentSpanId(spanModel.getParentSpanId());
+        logTraceEntity.setSpanName(spanModel.getName());
+        logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
+        return logTraceEntity;
     }
 }
