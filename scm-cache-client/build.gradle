@@ -3,7 +3,6 @@ plugins {
     id 'maven-publish'
     id 'java'
 }
-
 publishing {
     publications {
         maven(MavenPublication) {
@@ -21,18 +20,19 @@ publishing {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-        api 'com.hazelcast:hazelcast-spring:5.4.0'
+    implementation 'org.apache.commons:commons-lang3'
+    api 'com.hazelcast:hazelcast-spring'
     implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    annotationProcessor 'org.projectlombok:lombok'
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-             groupId = 'ir.daneshrefah.scm.cache'
-             artifactId = 'scm-cache-client'
+            groupId = 'ir.daneshrefah.scm.cache'
+            artifactId = 'scm-cache-client'
             version = '1.0.0-SNAPSHOT'
         }
     }

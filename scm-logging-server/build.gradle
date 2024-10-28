@@ -1,6 +1,5 @@
 plugins {
     id 'ir.daneshrefah.scm.java-library-conventions'
-    id "org.springframework.boot" version'3.1.2'
     id 'java'
 }
 
@@ -8,6 +7,10 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+}
+
+bootJar {
+    enabled = true
 }
 
 compileJava.options.encoding = 'UTF-8'
@@ -25,10 +28,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'com.ibm.mq:mq-jms-spring-boot-starter:3.3.3'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'com.ibm.db2:jcc'
-    compileOnly 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     implementation 'jakarta.servlet:jakarta.servlet-api'
     api project(':scm-logging')
 }

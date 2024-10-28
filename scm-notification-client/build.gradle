@@ -5,25 +5,18 @@ plugins {
 }
 
 dependencies {
-//    compileOnly 'javax.jms:javax.jms-api:2.0.1'
-//    compileOnly 'jakarta.jms:jakarta.jms-api:3.1.0'
-//    implementation 'com.ibm.mq:com.ibm.mq.allclient:9.3.5.1'
-//    implementation 'jakarta.jms:jakarta.jms-api:3.1.0'
-//    implementation 'org.springframework:spring-jms'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.apache.velocity:velocity:1.7'
     implementation 'org.apache.velocity:velocity-tools:2.0'
-//    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-//    implementation 'org.springframework.boot:spring-boot-starter-jms'
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.springframework:spring-context'
     compileOnly 'org.projectlombok:lombok'
-    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
-//    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
+    implementation 'org.mapstruct:mapstruct'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+    annotationProcessor 'org.projectlombok:lombok'
     api project(':scm-common-data')
     api project(':scm-common')
     api project(':scm-utils')
     api project(':scm-message-queue')
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 }

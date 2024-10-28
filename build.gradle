@@ -1,0 +1,76 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+ext {
+    set('springCloudVersion', "2023.0.3")
+    set('springCamelVersion', "4.8.0")
+    set('ibmDb2Version', "9.1")
+    set('mapstructVersion', "1.5.3.Final")
+}
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'org.springframework.boot'
+
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+
+    repositories {
+        repositories {
+            mavenLocal()
+            maven {
+                url 'https://swd.daneshrefah.ir/artifactory/libs-release/'
+                credentials {
+                    username = 'builder'
+                    password = 'AP9XCqyRCWrtUydrRwLiL7RpuRq'
+                }
+            }
+            mavenCentral()
+        }
+    }
+    bootJar {
+        archiveBaseName = project.name  // Use project-specific names
+        destinationDirectory = file("$buildDir/libs")
+        enabled = false
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+
+        dependencies {
+            dependency "org.mapstruct:mapstruct:${mapstructVersion}"
+            dependency "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+            dependency 'org.projectlombok:lombok:1.18.28'
+            dependency "org.apache.camel.springboot:camel-spring-boot-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-jackson-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-json-validator-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-http-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-netty-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-netty-http-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-direct-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-timer-starter:${springCamelVersion}"
+            dependency "org.apache.camel:camel-netty:${springCamelVersion}"
+            dependency "org.apache.camel:camel-bean:${springCamelVersion}"
+            dependency "com.ibm.db2:db2jcc_license_cisuz:${ibmDb2Version}"
+            dependency "com.ibm.db2:db2jcc:${ibmDb2Version}"
+            dependency "com.ibm.db2.jcc:db2jcc:db2jcc4"
+            dependency "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0"
+            dependency "io.springfox:springfox-swagger-ui:3.0.0"
+            dependency "com.hazelcast:hazelcast:5.5.0"
+            dependency "org.apache.commons:commons-lang3:3.12.0"
+            dependency "commons-io:commons-io:2.17.0"
+            dependency "org.apache.commons:commons-collections4:4.4"
+            dependency "org.apache.commons:commons-text:1.12.0"
+            dependency "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2"
+
+
+        }
+    }
+
+    dependencies {
+        implementation "org.springframework.boot:spring-boot-starter"
+    }
+}

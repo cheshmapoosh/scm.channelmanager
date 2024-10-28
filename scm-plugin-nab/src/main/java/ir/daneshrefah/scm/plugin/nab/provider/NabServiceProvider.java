@@ -14,9 +14,17 @@ import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
+import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePropertyKey;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.DefaultCamelContext;
+import org.apache.camel.support.processor.idempotent.MemoryIdempotentRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
@@ -84,6 +92,57 @@ public final class NabServiceProvider extends AbstractBaseRestExternalServicePro
     @Override
     protected HttpContentType extractContentType(Message message) {
         return null;
+    }
+
+    public static void main(String[] args) throws Exception {
+        CamelContext context = new DefaultCamelContext();
+
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                onException(Throwable.class)
+                        .process(exchange -> {
+                            exchange.getException();
+                        })
+                        .handled(true);
+                from("timer://firstSend?repeatCount=1")
+                        .to("direct:secondSend")
+                ;
+
+                // First send
+//                from("timer://firstSend?repeatCount=1") // Sends only once
+//                        .setBody(constant("ATPS"))
+//                        .to("netty:tcp://10.15.27.12:3080?sync=true&reuseChannel=true")
+//                        .process(exchange -> System.out.println("First: " + exchange.getMessage().getBody()))
+//                        .log("First message sent")
+//                        .to("direct:secondSend")
+//                ;
+//
+//                // Second send
+                from("direct:secondSend") // Second send with a 5-second delay
+                        .process(exchange -> {
+//                            exchange.getIn().setHeader("txnId", "1");
+                        })
+                        .idempotentConsumer(header("txnId"), new MemoryIdempotentRepository())
+                        .skipDuplicate(false)
+                        .choice()
+                        // When the message is not a duplicate, process it normally
+                            .when(exchange -> {
+                              Boolean duplicate = exchange.getProperty(ExchangePropertyKey.DUPLICATE_MESSAGE, Boolean.class);
+                              return Objects.equals(duplicate, Boolean.TRUE);
+                            })
+                                .log("Duplicate transaction detected: ${header.txnId}")
+                        // Otherwise, handle the duplicate
+                            .otherwise()
+                                .log("Processing new transaction: ${header.txnId}")
+                        .endChoice()
+                        .end();
+            }
+        });
+
+        context.start();
+        Thread.sleep(5000); // Keep the route alive for a while
+        context.stop();
     }
 
     @Override

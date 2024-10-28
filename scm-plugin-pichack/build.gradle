@@ -11,4 +11,6 @@ plugins {
 dependencies {
     compileOnly 'org.springframework:spring-jdbc'
     api project(":scm-plugin-api")
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 }

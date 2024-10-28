@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.data.service.bundle;
 
 import ir.daneshrefah.scm.common.constant.BundleParameterPattern;
-import ir.daneshrefah.scm.common.data.entity.bundle.ResourceBundleEntity;
 import ir.daneshrefah.scm.common.data.mapper.ResourceBundleMapper;
 import ir.daneshrefah.scm.common.data.repository.ResourceBundleRepository;
 import ir.daneshrefah.scm.common.model.bundle.ResourceBundle;

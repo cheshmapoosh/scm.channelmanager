@@ -12,4 +12,9 @@ dependencies {
     compileOnly project(':scm-common-error')
     compileOnly project(':scm-cache-client')
     compileOnly project(':scm-plugin-api')
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.mapstruct:mapstruct'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+
 }
