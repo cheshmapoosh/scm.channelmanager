@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
+import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.support.DefaultExchange;
@@ -55,7 +56,8 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     private final Map<String, ExternalServiceProviderExecutor> serviceProviderMap = new HashMap<>();
 
     @Override
-    protected void initConfigs(RouteBuilderDelegator routeBuilder) {
+    protected void initConfigs(RouteBuilder routeBuilder) {
+        super.initConfigs(routeBuilder);
         List<AbstractExternalServiceProvider> providers = serviceService.findServiceProviderList();
         for (Iterator<AbstractExternalServiceProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
             AbstractExternalServiceProvider provider = iterator.next();
@@ -87,13 +89,18 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
 //        logOutboundEvent(exchange);
         Exception exception = exchange.getException();
         if (null != exception) {
-            throw new RuntimeException(exception);
+            if (exception instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            else {
+             throw new RuntimeException(exception);
+            }
         }
         Message responseMessage = exchange.getMessage().getBody(Message.class);
         return responseMessage.getPayload();
     }
 
-    private void registerExternalServiceProvider(AbstractExternalServiceProvider serviceProviderModel, RouteBuilderDelegator routeBuilder) {
+    private void registerExternalServiceProvider(AbstractExternalServiceProvider serviceProviderModel, RouteBuilder routeBuilder) {
         if (null == serviceProviderModel)
             return;
         if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
@@ -108,7 +115,7 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
         serviceProviderMap.put(serviceProviderModel.getCode(), provider);
     }
 
-    private void configureRouteDefinition(AbstractExternalServiceProvider provider, RouteBuilderDelegator routeBuilder,
+    private void configureRouteDefinition(AbstractExternalServiceProvider provider, RouteBuilder routeBuilder,
                                           ExternalServiceProviderExecutor providerExecutor) {
         String fromUri = "ESP_" + provider.getCode();
         RouteDefinition routeDefinition = routeBuilder.from("direct:" + fromUri).routeId("ROUTE_" + fromUri);

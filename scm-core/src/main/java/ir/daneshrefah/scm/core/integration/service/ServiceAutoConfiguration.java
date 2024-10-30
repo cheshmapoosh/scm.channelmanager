@@ -27,7 +27,7 @@ import java.util.Map;
  */
 @RequiredArgsConstructor
 @Component
-public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuilderDelegator {
+public class ServiceAutoConfiguration extends RouteBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);
 
@@ -48,18 +48,8 @@ public class ServiceAutoConfiguration extends RouteBuilder implements RouteBuild
                 .stream()
                 .filter(this::isPublishableService)
                 .forEach(service -> {
-                    String serviceCode = service.getCode();
-                    // For created dynamic proxy service , the route created by $_proxy ... name , but the service code set as same as
-                    // target service.
-                    if (service.isProxy()) {
-                        serviceCode = service.getTargetProxyCode();
-                    }
-                    String fromUri = "SVI_" + serviceCode;
-                    LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
-                    RouteDefinition routeDefinition = from("direct:" + fromUri).routeId("SERVICE_" + fromUri);
                     ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
-                    serviceExecutor.initServiceExecution(service, routeDefinition);
-                    routeDefinition.end();
+                    serviceExecutor.initServiceExecution(service, this);
                 });
     }
 

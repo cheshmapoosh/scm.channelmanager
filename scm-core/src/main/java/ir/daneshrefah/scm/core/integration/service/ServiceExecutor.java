@@ -16,18 +16,22 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.MessageInputContext;
+import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.model.ChoiceDefinition;
-import org.apache.camel.model.OutputDefinition;
-import org.apache.camel.model.ProcessorDefinition;
-import org.apache.camel.model.TryDefinition;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.DefaultCamelContext;
+import org.apache.camel.model.*;
 import org.apache.camel.spi.ErrorHandler;
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +42,7 @@ import java.util.stream.Collectors;
  * @since 2023-08-07
  */
 public abstract class ServiceExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceExecutor.class);
 
     protected static final String PROPERTY_START_TIME = "ScmServiceStartTime";
     protected static final String PROPERTY_END_TIME = "ScmServiceEndTime";
@@ -53,13 +58,82 @@ public abstract class ServiceExecutor {
     private List<MessageInterceptor> requestInterceptors;
     private List<MessageInterceptor> responseInterceptors;
 
-    public final void init(RouteBuilderDelegator routeBuilder, List<MessageInterceptor> requestInterceptors, List<MessageInterceptor> responseInterceptors) {
+    public final void init(RouteBuilder routeBuilder, List<MessageInterceptor> requestInterceptors, List<MessageInterceptor> responseInterceptors) {
         this.requestInterceptors = requestInterceptors;
         this.responseInterceptors = responseInterceptors;
         initConfigs(routeBuilder);
     }
 
-    protected void initConfigs(RouteBuilderDelegator routeBuilder) {
+    protected void initConfigs(RouteBuilder routeBuilder) {
+        AtomicReference<MessageInterceptor> nextMessageInterceptorRef = new AtomicReference<>(null);
+
+        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
+            routeBuilder.interceptSendToEndpoint("log:request-interceptors")
+                    .to("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName())
+                    .skipSendToOriginalEndpoint()
+                    .when(exchange -> {
+                        Message message = exchange.getMessage().getBody(Message.class);
+                        return !message.isContinueAllowed();
+                    });
+
+
+            requestInterceptors.stream()
+                    .sorted(Collections.reverseOrder())
+                    .forEach(messageInterceptor -> {
+                        RouteDefinition routeDefinition = routeBuilder.from("direct:REQ_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
+
+                        MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
+                        if (nextMessageInterceptor != null) {
+                            routeDefinition
+                                    .process(exchange -> {
+                                        Message message = exchange.getMessage().getBody(Message.class);
+                                        nextMessageInterceptor.intercept(message);
+                                    })
+                                    .choice()
+                                    .when(exchange -> {
+                                        Message message = exchange.getMessage().getBody(Message.class);
+                                        return message.isContinueAllowed();
+                                    })
+                                    .to("direct:REQ_INTERCEPTOR_" + nextMessageInterceptor.getClass().getSimpleName())
+                                    .endChoice();
+                        }
+                        nextMessageInterceptorRef.set(messageInterceptor);
+                    });
+        }
+
+        nextMessageInterceptorRef.set(null);
+
+        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
+            routeBuilder.interceptSendToEndpoint("log:response-interceptors")
+                    .to("direct:RES_INTERCEPTOR_" + responseInterceptors.get(0).getClass().getSimpleName())
+                    .skipSendToOriginalEndpoint()
+                    .when(exchange -> {
+                        Message message = exchange.getMessage().getBody(Message.class);
+                        return message.isContinueAllowed();
+                    });
+
+            responseInterceptors.stream()
+                    .sorted(Collections.reverseOrder())
+                    .forEach(messageInterceptor -> {
+                        RouteDefinition routeDefinition = routeBuilder.from("direct:RES_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
+                        MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
+                        if (nextMessageInterceptor != null) {
+                            routeDefinition
+                                    .process(exchange -> {
+                                        Message message = exchange.getMessage().getBody(Message.class);
+                                        nextMessageInterceptor.intercept(message);
+                                    })
+                                    .choice()
+                                    .when(exchange -> {
+                                        Message message = exchange.getMessage().getBody(Message.class);
+                                        return message.isContinueAllowed();
+                                    })
+                                    .to("direct:RES_INTERCEPTOR_" + nextMessageInterceptor.getClass().getSimpleName())
+                                    .endChoice();
+                        }
+                        nextMessageInterceptorRef.set(messageInterceptor);
+                    });
+        }
         // can override in child class for additional configs
     }
 
@@ -99,23 +173,64 @@ public abstract class ServiceExecutor {
     }
 
 
-    public final void initServiceExecution(Service service, OutputDefinition<?> routeDefinition) {
+    public final void initServiceExecution(Service service, RouteBuilder routeBuilder) {
+        String serviceCode = service.getCode();
+        // For created dynamic proxy service , the route created by $_proxy ... name , but the service code set as same as
+        // target service.
+        if (service.isProxy()) {
+            serviceCode = service.getTargetProxyCode();
+        }
+        String fromUri = "SVI_" + serviceCode;
+        LOGGER.info("start define service '{}' with uri '{}'", service.getId(), fromUri);
+        RouteDefinition routeDefinition = routeBuilder.from("direct:" + fromUri).routeId("SERVICE_" + fromUri);
+
         TryDefinition tryDefinition = routeDefinition.doTry();
         tryDefinition = tryDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             exchange.setProperty(PROPERTY_START_TIME, Instant.now());
             exchange.setProperty(PROPERTY_REQUEST_BODY, message.getPayload().deepCopy());
-            for (MessageInterceptor messageInterceptor : requestInterceptors) {
-                message = messageInterceptor.intercept(message);
-                if (!message.isContinueAllowed()) {
-                    break;
-                }
-            }
         });
+
+//        Request Interceptors
+//        tryDefinition.setProperty("index", () -> 0)
+//                .loopDoWhile(exchange -> {
+//                    Message message = exchange.getMessage().getBody(Message.class);
+//                    Integer index = exchange.getProperty("index", Integer.class);
+//                    index++;
+//                    exchange.setProperty("index", index);
+//                    return message.isContinueAllowed() && index < requestInterceptors.size();
+//                }).process(exchange -> {
+//                    Message message = exchange.getMessage().getBody(Message.class);
+//                    Integer counter = exchange.getProperty("index", Integer.class);
+//                    requestInterceptors.get(counter).intercept(message);
+//                })
+//                .end()
+//                .removeProperty("index");
+        tryDefinition.to("log:request-interceptors");
+
         ChoiceDefinition choiceDefinition = tryDefinition.choice()
                 .when(exchange -> exchange.getMessage().getBody(Message.class).isContinueAllowed());
         defineServiceRoute(service, choiceDefinition);
         choiceDefinition.endChoice();
+
+//        Response Interceptors
+//        tryDefinition.setProperty("index", () -> 0)
+//                .loopDoWhile(exchange -> {
+//                    Message message = exchange.getMessage().getBody(Message.class);
+//                    Integer index = exchange.getProperty("index", Integer.class);
+//                    index++;
+//                    exchange.setProperty("index", index);
+//                    return message.isContinueAllowed() && index < responseInterceptors.size();
+//                }).process(exchange -> {
+//                    Message message = exchange.getMessage().getBody(Message.class);
+//                    Integer counter = exchange.getProperty("index", Integer.class);
+//                    responseInterceptors.get(counter).intercept(message);
+//                })
+//                .end()
+//                .removeProperty("index");
+
+        tryDefinition.to("log:response-interceptors");
+
         tryDefinition = tryDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);
             if (!message.isContinueAllowed()) {
@@ -170,5 +285,79 @@ public abstract class ServiceExecutor {
     }
 
     protected abstract void defineServiceRoute(Service service, ProcessorDefinition<?> processorDefinition);
+
+    public static void main(String[] args) throws Exception {
+        // Setup the main Camel context
+        CamelContext context = new DefaultCamelContext();
+
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+
+//                // First global intercept (applies to all routes)
+//                intercept()
+//                        .to("log:firstIntercept")
+//                        .process(exchange -> {
+//                            // Additional processing or logging
+//                            System.out.println("First global intercept executed");
+//                        });
+//
+//                // Second global intercept
+//                intercept()
+//                        .to("log:secondIntercept")
+//                        .process(exchange -> {
+//                            // Additional processing or logging
+//                            System.out.println("Second global intercept executed");
+//                        });
+
+                // Specific endpoint intercept
+
+//                interceptSendToEndpoint("direct:endpointA")
+//                        .to("log:endpointIntercept1")
+//                        .process(exchange -> {
+//                            // Processing logic for first endpoint intercept
+//                            System.out.println("Endpoint intercept 1 executed");
+//                        });
+
+                interceptSendToEndpoint("log:endpointA")
+//                        .to("direct:intercept1")
+                        .skipSendToOriginalEndpoint()
+                        .when(exchange -> true)
+                        .to("log:skip")
+                        .process(exchange -> {
+                            // Custom logic
+                            System.out.println("Intercepted and stopped message for ServiceA");
+                            // You could also set a custom response here if needed
+                            exchange.getMessage().setBody("Intercepted message; stopping further processing.");
+                        }).afterUri("log:afterUri");
+
+                ;
+
+
+                from("direct:intercept1")
+                        .log("intercept1 run endpointA")
+                        .choice().when(exchange -> true).to("direct:intercept2").otherwise().log("Skip direct:intercept2").endChoice();
+
+                from("direct:intercept2")
+                        .log("intercept2 run endpointA");
+
+                // Main route definition
+                from("timer://start?repeatCount=1&delay=1000")
+                        .doTry()
+                        .to("log:endpointA")
+                        .to("log:end")
+                        .doFinally().to("log:finally")
+                        .endDoTry();
+
+//                from("direct:endpointA")
+//                        .log("Successful run endpointA");
+
+            }
+        });
+
+        context.start();
+        Thread.sleep(5000);
+        context.stop();
+    }
 
 }
