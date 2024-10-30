@@ -66,76 +66,62 @@ public abstract class ServiceExecutor {
     }
 
     protected void initConfigs(RouteBuilder routeBuilder) {
-        AtomicReference<MessageInterceptor> nextMessageInterceptorRef = new AtomicReference<>(null);
         if (CollectionUtils.isNotEmpty(requestInterceptors)) {
-            routeBuilder.interceptSendToEndpoint("log:request-interceptors")
-                    .to("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName())
-                    .skipSendToOriginalEndpoint()
-                    .when(exchange -> {
-                        Message message = exchange.getMessage().getBody(Message.class);
-                        return !message.isContinueAllowed();
-                    });
-
-            final int size = requestInterceptors.size();
-            IntStream.rangeClosed(1, size)
-                    .mapToObj(index -> responseInterceptors.get(size - index))
-                    .forEach(messageInterceptor -> {
-                        RouteDefinition routeDefinition = routeBuilder.from("direct:REQ_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
-
-                        MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
-                        if (nextMessageInterceptor != null) {
-                            routeDefinition
-                                    .process(exchange -> {
-                                        Message message = exchange.getMessage().getBody(Message.class);
-                                        nextMessageInterceptor.intercept(message);
-                                    })
-                                    .choice()
-                                    .when(exchange -> {
-                                        Message message = exchange.getMessage().getBody(Message.class);
-                                        return message.isContinueAllowed();
-                                    })
-                                    .to("direct:REQ_INTERCEPTOR_" + nextMessageInterceptor.getClass().getSimpleName())
-                                    .endChoice();
-                        }
-                        nextMessageInterceptorRef.set(messageInterceptor);
-                    });
+            registerInterceptSendToEndpoint(routeBuilder,
+                    "log:request-interceptors",
+                    ("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
         }
-
-        nextMessageInterceptorRef.set(null);
 
         if (CollectionUtils.isNotEmpty(responseInterceptors)) {
-            routeBuilder.interceptSendToEndpoint("log:response-interceptors")
-                    .to("direct:RES_INTERCEPTOR_" + responseInterceptors.get(0).getClass().getSimpleName())
-                    .skipSendToOriginalEndpoint()
-                    .when(exchange -> {
-                        Message message = exchange.getMessage().getBody(Message.class);
-                        return message.isContinueAllowed();
-                    });
+            registerInterceptSendToEndpoint(routeBuilder,
+                    "log:response-interceptors",
+                    ("direct:RES_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
+        }
 
-            final int size = responseInterceptors.size();
-            IntStream.rangeClosed(1, size)
-                    .mapToObj(index -> responseInterceptors.get(size - index))
-                    .forEach(messageInterceptor -> {
-                        RouteDefinition routeDefinition = routeBuilder.from("direct:RES_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
-                        MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
-                        if (nextMessageInterceptor != null) {
-                            routeDefinition
-                                    .process(exchange -> {
-                                        Message message = exchange.getMessage().getBody(Message.class);
-                                        nextMessageInterceptor.intercept(message);
-                                    })
-                                    .choice()
-                                    .when(exchange -> {
-                                        Message message = exchange.getMessage().getBody(Message.class);
-                                        return message.isContinueAllowed();
-                                    })
-                                    .to("direct:RES_INTERCEPTOR_" + nextMessageInterceptor.getClass().getSimpleName())
-                                    .endChoice();
-                        }
-                        nextMessageInterceptorRef.set(messageInterceptor);
-                    });
+        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
+            registerInterceptors(routeBuilder, requestInterceptors, "direct:REQ_INTERCEPTOR_");
+        }
+
+        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
+            registerInterceptors(routeBuilder, responseInterceptors, "direct:RES_INTERCEPTOR_");
         }
         // can override in child class for additional configs
+    }
+
+    private void registerInterceptSendToEndpoint(RouteBuilder routeBuilder, String endpoint, String toUri) {
+        routeBuilder.interceptSendToEndpoint(endpoint)
+                .to(toUri)
+                .skipSendToOriginalEndpoint()
+                .when(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    return !message.isContinueAllowed();
+                });
+    }
+
+    private void registerInterceptors(RouteBuilder routeBuilder, List<MessageInterceptor> messageInterceptors, String uriPrefix) {
+        AtomicReference<MessageInterceptor> nextMessageInterceptorRef = new AtomicReference<>();
+        final int size = messageInterceptors.size();
+        IntStream.rangeClosed(1, size)
+                .mapToObj(index -> messageInterceptors.get(size - index))
+                .forEach(messageInterceptor -> {
+                    RouteDefinition routeDefinition = routeBuilder.from(uriPrefix + messageInterceptor.getClass().getSimpleName());
+                    MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
+                    if (nextMessageInterceptor != null) {
+                        routeDefinition
+                                .process(exchange -> {
+                                    Message message = exchange.getMessage().getBody(Message.class);
+                                    nextMessageInterceptor.intercept(message);
+                                })
+                                .choice()
+                                .when(exchange -> {
+                                    Message message = exchange.getMessage().getBody(Message.class);
+                                    return message.isContinueAllowed();
+                                })
+                                .to(uriPrefix + nextMessageInterceptor.getClass().getSimpleName())
+                                .endChoice();
+                    }
+                    nextMessageInterceptorRef.set(messageInterceptor);
+                });
     }
 
     protected final List<TransformerExecutionWrapper> prepareTransformerExecutionWrapper(List<TransformerRelation> transformerRelations,
