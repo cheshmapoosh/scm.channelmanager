@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Description of the class or purpose of the file.
@@ -66,7 +67,6 @@ public abstract class ServiceExecutor {
 
     protected void initConfigs(RouteBuilder routeBuilder) {
         AtomicReference<MessageInterceptor> nextMessageInterceptorRef = new AtomicReference<>(null);
-
         if (CollectionUtils.isNotEmpty(requestInterceptors)) {
             routeBuilder.interceptSendToEndpoint("log:request-interceptors")
                     .to("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName())
@@ -76,9 +76,9 @@ public abstract class ServiceExecutor {
                         return !message.isContinueAllowed();
                     });
 
-
-            requestInterceptors.stream()
-                    .sorted(Collections.reverseOrder())
+            final int size = requestInterceptors.size();
+            IntStream.rangeClosed(1, size)
+                    .mapToObj(index -> responseInterceptors.get(size - index))
                     .forEach(messageInterceptor -> {
                         RouteDefinition routeDefinition = routeBuilder.from("direct:REQ_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
 
@@ -112,8 +112,9 @@ public abstract class ServiceExecutor {
                         return message.isContinueAllowed();
                     });
 
-            responseInterceptors.stream()
-                    .sorted(Collections.reverseOrder())
+            final int size = responseInterceptors.size();
+            IntStream.rangeClosed(1, size)
+                    .mapToObj(index -> responseInterceptors.get(size - index))
                     .forEach(messageInterceptor -> {
                         RouteDefinition routeDefinition = routeBuilder.from("direct:RES_INTERCEPTOR_" + messageInterceptor.getClass().getSimpleName());
                         MessageInterceptor nextMessageInterceptor = nextMessageInterceptorRef.get();
