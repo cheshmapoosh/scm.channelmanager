@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.model.service.parameter;
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
+import jakarta.persistence.Column;
 import lombok.Data;
 
 import java.util.List;
@@ -23,5 +24,8 @@ public class Response extends BaseModel<String> {
     private String responseExceptionErrorMessageProperty;
     private List<Parameter> responseParameters;
     private ExternalServiceBodyType responseBodyType;
+    private Boolean status;
+    private Integer httpResponseStatusCode;
+    private String title;
 
 }

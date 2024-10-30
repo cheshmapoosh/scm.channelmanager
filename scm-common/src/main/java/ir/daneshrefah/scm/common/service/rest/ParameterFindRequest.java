@@ -10,6 +10,7 @@ public class ParameterFindRequest extends PagedRequestData {
     private String parameterName;
     private String parentId;
     private String actionType;
+    private String title;
     //Parameter target usage
     private String serviceProviderId;
     private String serviceId;

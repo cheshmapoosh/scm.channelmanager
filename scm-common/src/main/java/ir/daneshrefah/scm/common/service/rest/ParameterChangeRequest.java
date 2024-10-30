@@ -13,6 +13,7 @@ public class ParameterChangeRequest implements RequestData {
 
     private String id;
     private String parameterName;
+    private String title;
     //Datasource
     private ParameterDatasourceProperty datasourcePropertyType;
     private String value;

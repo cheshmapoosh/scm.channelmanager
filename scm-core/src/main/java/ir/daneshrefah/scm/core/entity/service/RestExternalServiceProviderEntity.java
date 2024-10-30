@@ -22,13 +22,13 @@ import lombok.Data;
 public class RestExternalServiceProviderEntity extends AbstractExternalServiceProviderEntity {
 
 
-    @Convert(converter = RestExternalServiceProviderMetadataConverter.class)
-    @Column(name = "SRV_PROVIDER_METADATA")
-    private RestExternalServiceProviderMetadata metadata;
-
-    @Override
-    public void setMetadata(AbstractExternalServiceProviderMetadata metadata) {
-        this.metadata = (RestExternalServiceProviderMetadata) metadata;
-    }
+//    @Convert(converter = RestExternalServiceProviderMetadataConverter.class)
+//    @Column(name = "SRV_PROVIDER_METADATA")
+//    private RestExternalServiceProviderMetadata metadata;
+//
+//    @Override
+//    public void setMetadata(AbstractExternalServiceProviderMetadata metadata) {
+//        this.metadata = (RestExternalServiceProviderMetadata) metadata;
+//    }
 
 }

@@ -47,7 +47,6 @@ public class ServiceEntityFactory {
         entity.setCheckAccessSecondAuthentication(null != request.getCheckAccessSecondAuthentication() ? request.getCheckAccessSecondAuthentication() : false);
         entity.setCheckAccessService(null != request.getCheckAccessService() ? request.getCheckAccessService() : false);
         entity.setCheckAccessAsset(null != request.getCheckAccessAsset() ? request.getCheckAccessAsset() : false);
-        entity.setCustomerProperty(request.getCustomerProperty());
         entity.setAmountProperty(request.getAmountProperty());
         entity.setAssetProperty(request.getAssetProperty());
         if (entity instanceof JavaServiceEntity javaServiceEntity) {

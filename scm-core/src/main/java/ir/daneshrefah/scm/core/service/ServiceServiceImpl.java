@@ -35,7 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
@@ -54,6 +57,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
     private final ProxyServiceManager proxyServiceManager;
+    private final ServiceProviderMetadataResolver providerMetadataResolver;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
     private List<AbstractExternalServiceProvider> serviceProviders;
@@ -112,7 +116,14 @@ public class ServiceServiceImpl implements ServiceService {
     public List<AbstractExternalServiceProvider> findServiceProviderList() {
         if (null == serviceProviders || serviceProviders.isEmpty()) {
             synchronized (this) {
-                serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll());
+                serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll())
+                        .stream()
+                        .peek(provider -> {
+                            AbstractExternalServiceProviderMetadata metadata = providerMetadataResolver.resolve(provider);
+                            if (Objects.nonNull(metadata)) {
+                                provider.setMetadata(metadata);
+                            }
+                        }).collect(Collectors.toCollection(ArrayList::new));
             }
         }
         return serviceProviders;
@@ -424,7 +435,6 @@ public class ServiceServiceImpl implements ServiceService {
     private void applyEditStringBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         serviceEntity.setAssetProperty(compareObject(request.getAssetProperty(), serviceEntity.getAssetProperty(), String.class));
         serviceEntity.setAmountProperty(compareObject(request.getAmountProperty(), serviceEntity.getAmountProperty(), String.class));
-        serviceEntity.setCustomerProperty(compareObject(request.getCustomerProperty(), serviceEntity.getCustomerProperty(), String.class));
         serviceEntity.setTitle(StringUtils.isNotEmpty(request.getTitle()) ? request.getTitle() : serviceEntity.getTitle());
         serviceEntity.setAlias(StringUtils.isNotEmpty(request.getAlias()) ? request.getAlias() : serviceEntity.getAlias());
         //check service code
@@ -657,14 +667,20 @@ public class ServiceServiceImpl implements ServiceService {
         validateServiceProviderCreteRequest(request);
         AbstractExternalServiceProviderEntity entity = mapToServiceProviderEntity(request);
         AbstractExternalServiceProviderEntity savedEntity = serviceProviderRepository.save(entity);
-        return ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
+        AbstractExternalServiceProvider serviceProvider = ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
+        if (Objects.isNull(serviceProvider)) {
+            throw new InvalidInputException("protocol");
+        }
+        cacheEvict();
+        return serviceProvider;
     }
 
     @Override
     @Transactional
     public AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
+        ValidationUtils.checkBlankString(request.getServiceProviderId(),()-> new InvalidInputException("serviceProviderId"));
         AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
-        checkServiceProviderRecordVersion(serviceProvider,request.getLastEditDate());
+        checkServiceProviderRecordVersion(serviceProvider, request.getLastEditDate());
         services
                 .stream()
                 .filter(service -> service instanceof AbstractExternalService)
@@ -682,8 +698,9 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     @Transactional
     public AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
+        validateServiceProviderChangeRequest(request);
         AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
-        checkServiceProviderRecordVersion(serviceProvider,request.getLastEditDate());
+        checkServiceProviderRecordVersion(serviceProvider, request.getLastEditDate());
         //General service provider properties
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getCode(), serviceProvider::setCode);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), serviceProvider::setTitle);
@@ -698,36 +715,25 @@ public class ServiceServiceImpl implements ServiceService {
                     .orElseThrow(() -> new InvalidInputException("assetProviderId"));
             serviceProvider.setAssetProvider(AssetProviderMapper.INSTANCE.toEntity(foundAssetProvider));
         }
-        applyServiceProviderMetadataDynamicChanges(serviceProvider, request);
         AbstractExternalServiceProviderEntity saved = serviceProviderRepository.save(serviceProvider);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toServiceProvider(saved);
+        AbstractExternalServiceProvider serviceProviderModel = ServiceMapper.INSTANCE.toServiceProvider(saved);
+        if (Objects.isNull(serviceProviderModel)) {
+            throw new InvalidInputException("protocol");
+        }
+        return serviceProviderModel;
+    }
+
+    private void validateServiceProviderChangeRequest(ServiceProviderChangeRequest request) {
+        ValidationUtils.checkBlankString(request.getServiceProviderId(),()->new MissingRequiredInputException("serviceProviderId"));
+        ValidationUtils.checkNull(request.getLastEditDate(),()->new MissingRequiredInputException("lastEditDate"));
     }
 
     private void checkServiceProviderRecordVersion(AbstractExternalServiceProviderEntity serviceProvider, LocalDateTime reqLastEditDate) {
         LocalDateTime lastEditDate = serviceProvider.getLastEditDate();
-        ValidationUtils.checkNull(reqLastEditDate,()->new InvalidInputException("lastEditDate"));
-        if (!lastEditDate.equals(reqLastEditDate)){
+        ValidationUtils.checkNull(reqLastEditDate, () -> new InvalidInputException("lastEditDate"));
+        if (!lastEditDate.equals(reqLastEditDate)) {
             throw new RecordVersionException("lastEditDate");
-        }
-    }
-
-    private void applyServiceProviderMetadataDynamicChanges(AbstractExternalServiceProviderEntity serviceProvider, ServiceProviderChangeRequest request) {
-        ServiceProviderProtocol protocol = serviceProvider.getProtocol();
-        AbstractExternalServiceProviderMetadata metadata = serviceProvider.getMetadata();
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getEndpoint(), metadata::setEndpoint);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getSoTimeout(), metadata::setSoTimeout);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getResponseTimeout(), metadata::setResponseTimeout);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getConnectTimeout(), metadata::setConnectTimeout);
-        List<ServiceProviderData> additionalParams = request.getAdditionalParams();
-        Map<String, Object> metadataAdditionalParams = metadata.getAdditionalParams();
-        additionalParams.forEach((param) -> {
-            metadataAdditionalParams.put(param.getKey(), param.getValue());
-        });
-        if (protocol.equals(ServiceProviderProtocol.REST)) {
-            RestExternalServiceProviderMetadata restMetadata = (RestExternalServiceProviderMetadata) metadata;
-            DynamicUpdateUtils.applyChangesIfNotNull(request.getDefaultHttpMethod(), restMetadata::setDefaultHttpMethod);
-            DynamicUpdateUtils.applyChangesIfNotNull(request.getDefaultRequestContentType(), restMetadata::setDefaultRequestContentType);
         }
     }
 
@@ -737,15 +743,9 @@ public class ServiceServiceImpl implements ServiceService {
         switch (protocol) {
             case REST -> {
                 entity = new RestExternalServiceProviderEntity();
-                RestExternalServiceProviderMetadata metadata = new RestExternalServiceProviderMetadata();
-                metadata.setDefaultHttpMethod(request.getDefaultHttpMethod());
-                metadata.setDefaultRequestContentType(request.getDefaultRequestContentType());
-                entity.setMetadata(metadata);
             }
             case CUSTOM -> {
                 entity = new CustomExternalServiceProviderEntity();
-                CustomExternalServiceProviderMetadata metadata = new CustomExternalServiceProviderMetadata();
-                entity.setMetadata(metadata);
             }
             default -> throw new InvalidInputException("the protocol does not supported yet");
         }
@@ -760,28 +760,13 @@ public class ServiceServiceImpl implements ServiceService {
             AssetProviderEntity assetProviderEntity = AssetProviderMapper.INSTANCE.toEntity(assetProvider);
             entity.setAssetProvider(assetProviderEntity);
         }
-        mapProviderGeneralMetadataProperties(entity, request);
         return entity;
     }
 
-    private void mapProviderGeneralMetadataProperties(AbstractExternalServiceProviderEntity entity, ServiceProviderCreteRequest request) {
-        List<ServiceProviderData> additionalParams = request.getAdditionalParams();
-        AbstractExternalServiceProviderMetadata metadata = entity.getMetadata();
-        if (Objects.nonNull(metadata)) {
-            metadata.setEndpoint(request.getEndpoint());
-            metadata.setConnectTimeout(request.getConnectTimeout());
-            metadata.setResponseTimeout(request.getResponseTimeout());
-            metadata.setSoTimeout(request.getSoTimeout());
-            if (Objects.nonNull(additionalParams)) {
-                additionalParams.forEach(additionalParam -> metadata.addParam(additionalParam.getKey(), additionalParam.getValue()));
-            }
-        }
-    }
 
     private void validateServiceProviderCreteRequest(ServiceProviderCreteRequest request) {
         ValidationUtils.checkBlankString(request.getCode(), () -> new InvalidInputException("code"));
         ValidationUtils.checkBlankString(request.getTitle(), () -> new InvalidInputException("title"));
-        ValidationUtils.checkBlankString(request.getEndpoint(), () -> new InvalidInputException("endpoint"));
         ValidationUtils.checkNull(request.getProtocol(), () -> new InvalidInputException("protocol"));
         ChainValidation
                 .crateValidator(request.getProviderClassName(), "providerClassName")

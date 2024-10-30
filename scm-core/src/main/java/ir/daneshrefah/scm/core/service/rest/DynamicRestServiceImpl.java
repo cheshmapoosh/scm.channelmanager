@@ -158,6 +158,9 @@ public class DynamicRestServiceImpl implements DynamicRestService {
                     .orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformer);
         }));
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getStatus(), entity::setStatus);
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getHttpResponseStatusCode(), entity::setHttpResponseStatusCode);
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), entity::setTitle);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorCode(), entity::setResponseExceptionErrorCodeProperty);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorMessage(), entity::setResponseExceptionErrorMessageProperty);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getResponseBodyType(),responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)) );
@@ -179,6 +182,9 @@ public class DynamicRestServiceImpl implements DynamicRestService {
             entity.setResponseTransformer(transformerEntity);
         }
         entity.setResponseExceptionErrorCodeProperty(request.getErrorCode());
+        entity.setTitle(request.getTitle());
+        entity.setHttpResponseStatusCode(request.getHttpResponseStatusCode());
+        entity.setStatus(request.getStatus());
         String errorMessage = errorMappingService
                 .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
                 .map(ErrorMapping::getExceptionClassName)
@@ -242,6 +248,9 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         ValidationUtils.checkBlankStringIfNotNull(request.getTransformerId(), () -> new InvalidInputException("transformerId"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorCode(), () -> new InvalidInputException("errorCode"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorMessage(), () -> new InvalidInputException("errorMessage"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getTitle(),()->new InvalidInputException("title"));
+        ValidationUtils.checkBlankString(String.valueOf(request.getHttpResponseStatusCode()),()->new InvalidInputException("httpResponseStatusCode"));
+        ValidationUtils.checkBlankString(String.valueOf(request.getStatus()),()->new InvalidInputException("status"));
         if (StringUtils.isBlank(request.getServiceId()) && StringUtils.isBlank(request.getServiceProviderId())) {
             throw new MissingRequiredInputException("targetId(serviceId or serviceProviderId)");
         }

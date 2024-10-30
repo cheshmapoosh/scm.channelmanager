@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.core.service.rest;
 
+import ir.daneshrefah.scm.common.constant.ParameterAutoCompleteDefinition;
+import ir.daneshrefah.scm.common.constant.ParameterAutoCompleteProperty;
+import ir.daneshrefah.scm.common.constant.ParameterTarget;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
@@ -20,6 +23,7 @@ import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.core.service.ParameterParser;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,15 +32,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType.*;
 
 @Service
 @RequiredArgsConstructor
 @Validated
 public class ParameterServiceImpl implements ParameterService {
 
+    private final static Map<String, List<String>> PARAMETER_AUTO_COMPLETE_CACHE = new ConcurrentHashMap<>();
     private final ParameterResponseRelationRepository responseRelationRepository;
     private final ParameterProviderRelationRepository providerRelationRepository;
     private final ParameterServiceRelationRepository serviceRelationRepository;
@@ -45,7 +52,6 @@ public class ParameterServiceImpl implements ParameterService {
     private final ParameterRepository parameterRepository;
     private final ServiceRepository serviceRepository;
     private final ParameterParser parameterParser;
-
 
     private void removeParameterRelation(String parameterId) {
         serviceRelationRepository.findById(parameterId)
@@ -57,6 +63,7 @@ public class ParameterServiceImpl implements ParameterService {
     }
 
     @Override
+    @Transactional
     public Parameter remove(ParameterDeleteRequest request) {
         ValidationUtils.checkNull(request.getId(), () -> new InvalidInputException("id"));
         ValidationUtils.checkNull(request.getLastEditDate(), () -> new InvalidInputException("lastEditDate"));
@@ -86,6 +93,67 @@ public class ParameterServiceImpl implements ParameterService {
         return ParameterMapper.INSTANCE.toModel(entity);
     }
 
+    @Override
+    public List<AutoComplete> autoCompleteParameter(ParameterAutoCompleteSearchRequest request) {
+        validateParameterAutoCompleteSearchRequest(request);
+        ParameterTarget targetType = ParameterTarget.fromValue(request.getTargetType());
+        ParameterAutoCompleteProperty propertyName = ParameterAutoCompleteProperty.fromValue(request.getPropertyName());
+        ParameterActionType actionType = ParameterActionType.findByValue(request.getParameterActionType());
+        String cacheKey = targetType.name() + "::" + propertyName.name() + "::" + request.getParameterActionType();
+        return PARAMETER_AUTO_COMPLETE_CACHE.computeIfAbsent(cacheKey, (key) -> {
+                    Set<String> fieldsName = new HashSet<>();
+                    ParameterAutoCompleteDefinition.find(targetType, actionType, propertyName)
+                            .forEach(autoCompleteDefinition -> {
+                                addToSet(fieldsName, autoCompleteDefinition);
+                            });
+                    return fieldsName.stream().toList();
+                })
+                .stream().filter(value -> StringUtils.isBlank(request.getSearch()) || value.toLowerCase().contains(request.getSearch().toLowerCase()))
+                .map(param -> {
+                    AutoComplete response = new AutoComplete();
+                    response.setTitle(param);
+                    response.setValue(param);
+                    return response;
+                })
+                .toList();
+    }
+
+    private void addToSet(Set<String> fieldsName, ParameterAutoCompleteDefinition autoCompleteDefinition) {
+        List<String> ignoreList = Arrays.stream(autoCompleteDefinition.getIgnoreProperties().split(",")).toList();
+        Class<?> modelClass = autoCompleteDefinition.getModelClass();
+        Arrays.stream(modelClass.getDeclaredFields()).forEach(field ->
+        {
+            if (!ignoreList.contains(field.getName())) {
+                String prefix = autoCompleteDefinition.getPrefix();
+                fieldsName.add(StringUtils.isBlank(prefix) ? field.getName() : prefix + "." + field.getName());
+            }
+        });
+    }
+
+    private void validateParameterAutoCompleteSearchRequest(ParameterAutoCompleteSearchRequest request) {
+        ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request"));
+        ValidationUtils.checkBlankString(request.getTargetType(), () -> new MissingRequiredInputException("targetType"));
+        ValidationUtils.checkBlankString(request.getPropertyName(), () -> new MissingRequiredInputException("propertyName"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getParameterActionType(), () -> new InvalidInputException("actionType"));
+    }
+
+    @Override
+    public List<ParameterActionTypeFindResponse> findParameterActionTypeList(ParameterActionTypeFindRequest request) {
+        ParameterActionTypeFindRequest.ActionTypeUsage actionTypeUsage = ParameterActionTypeFindRequest.ActionTypeUsage.fromValue(request.getUsage());
+        ValidationUtils.checkNull(actionTypeUsage, () -> new MissingRequiredInputException("usage"));
+        assert actionTypeUsage != null;
+        return (switch (actionTypeUsage) {
+            case REQUEST -> List.of(REQUEST_HEADER, REQUEST_BODY, REQUEST_QUERY_STRING, REQUEST_PATH_VARIABLE, CONFIG);
+            case RESPONSE -> List.of(RESPONSE_BODY, RESPONSE_HEADER, CONFIG);
+            case CONFIG -> List.of(CONFIG);
+            default -> Arrays.stream(values()).toList();
+        }).stream().map(parameterActionType -> {
+            ParameterActionTypeFindResponse response = new ParameterActionTypeFindResponse();
+            response.setTitle(parameterActionType.name());
+            response.setValue(parameterActionType.name());
+            return response;
+        }).toList();
+    }
 
     @Override
     public ParameterTreeFindResponse findParameterTree(ParameterTreeFindRequest request) {
@@ -110,7 +178,7 @@ public class ParameterServiceImpl implements ParameterService {
             case REQUEST_HEADER -> parametersCache.getRequestHeaderVariableNode();
             case REQUEST_PATH_VARIABLE -> parametersCache.getRequestPathVariableNode();
             case REQUEST_QUERY_STRING -> parametersCache.getRequestQueryStringVariableNode();
-            case RESPONSE_BODY -> parametersCache .getResponseCache().getResponseBodyNode(responseCondition);
+            case RESPONSE_BODY -> parametersCache.getResponseCache().getResponseBodyNode(responseCondition);
             case RESPONSE_HEADER -> parametersCache.getResponseHeaderVariableNode();
             case CONFIG -> parametersCache.getConfig();
         };
@@ -142,8 +210,22 @@ public class ParameterServiceImpl implements ParameterService {
                         .stream()
                         .map(ParameterMapper.INSTANCE::toModel)
                         .filter(parameter -> Objects.isNull(request.getParameterName()) || parameter.getName().contains(request.getParameterName()))
+                        .filter(parameter -> Objects.isNull(request.getTitle()) || parameter.getTitle().contains(request.getTitle()))
                         .filter(parameter -> Objects.isNull(request.getParentId()) || Objects.isNull(parameter.getParent()) || parameter.getParent().getId().equals(request.getParentId()))
                         .filter(parameter -> Objects.isNull(request.getActionType()) || parameter.getActionType().equals(ParameterActionType.findByValue(request.getActionType())))
+                        .peek(parameter -> {
+                            //REPLACE EMPTY TITLE FOR FRONT-END HANDLING
+                            String title = parameter.getTitle();
+                            if (StringUtils.isBlank(title)) {
+                                String name = parameter.getName();
+                                parameter.setTitle(name);
+                            }
+                            if (StringUtils.isBlank(title)) {
+                                ParameterType type = parameter.getType();
+                                parameter.setTitle("[" + type.name() + "]");
+                            }
+                        })
+                        .distinct()
                         .toList());
     }
 
@@ -191,6 +273,7 @@ public class ParameterServiceImpl implements ParameterService {
         });
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getParameterName(), entity::setName);
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), entity::setTitle);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getDefaultValue(), entity::setDefaultValue);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getTag(), entity::setTag);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getActionType(), entity::setActionType);
@@ -268,6 +351,7 @@ public class ParameterServiceImpl implements ParameterService {
         if (Objects.nonNull(request.getParentId())) {
             entity.setParent(findParameterParent(request.getParentId()));
         }
+        entity.setTitle(request.getTitle());
         entity.setActionType(request.getActionType());
         entity.setDefaultValue(request.getDefaultValue());
         entity.setCreator(getCurrentUser());
@@ -289,6 +373,7 @@ public class ParameterServiceImpl implements ParameterService {
         ValidationUtils.checkNull(request.getParameterType(), () -> new MissingRequiredInputException("parameterType"));
         ValidationUtils.checkBlankStringIfNotNull(request.getValue(), () -> new MissingRequiredInputException("value"));
         ValidationUtils.checkBlankStringIfNotNull(request.getTag(), () -> new InvalidInputException("tag"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getTitle(), () -> new InvalidInputException("title"));
         ValidationUtils.checkBlankStringIfNotNull(String.valueOf(request.getDefaultValue()), () -> new InvalidInputException("defaultValue"));
         ValidationUtils.checkBlankStringIfNotNull(String.valueOf(request.getOrder()), () -> new InvalidInputException("order"));
         ValidationUtils.checkBlankStringIfNotNull(String.valueOf(request.getParentId()), () -> new InvalidInputException("parentId"));

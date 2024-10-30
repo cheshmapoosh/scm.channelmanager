@@ -8,6 +8,12 @@ import java.util.Arrays;
 @Getter
 @RequiredArgsConstructor
 public enum ParameterActionType {
+
+    /*
+    Any Changes on this enum should apply on below service
+    ir.daneshrefah.scm.plugin.scm.service.ParameterManagementService.findParameterActionTypeList
+    */
+
     //REQUEST
     REQUEST_BODY(1),
     REQUEST_HEADER(2),

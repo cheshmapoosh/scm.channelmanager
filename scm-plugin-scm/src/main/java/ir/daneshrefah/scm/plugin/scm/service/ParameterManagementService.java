@@ -9,6 +9,9 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Set;
+
 @Service
 public class ParameterManagementService extends AbstractJavaService {
     private final ParameterService parameterService;
@@ -52,6 +55,16 @@ public class ParameterManagementService extends AbstractJavaService {
     @SuppressWarnings("unused")
     public ParameterTreeFindResponse findParameterTree(ParameterTreeFindRequest request) {
         return parameterService.findParameterTree(request);
+    }
+
+    @JavaService(serviceCode = "SVC_PARAMETER_ACTION_TYPE_LIST")
+    public List<ParameterActionTypeFindResponse> findParameterActionTypeList(ParameterActionTypeFindRequest request){
+        return parameterService.findParameterActionTypeList(request);
+    }
+
+    @JavaService(serviceCode = "SVC_PARAMETER_AUTO_COMPLETE")
+    public PagedResponseData<AutoComplete> searchParameterProviderNameAutoCompleteList(ParameterAutoCompleteSearchRequest request){
+        return new PagedResponseData<>(request,parameterService.autoCompleteParameter(request));
     }
 
 }

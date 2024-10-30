@@ -37,7 +37,6 @@ public abstract class Service extends BaseModel<String> {
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
     private Boolean checkAccessAsset;
-    private String customerProperty;
     private String amountProperty;
     private String assetProperty;
     private transient boolean proxy;

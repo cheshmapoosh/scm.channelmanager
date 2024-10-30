@@ -480,4 +480,14 @@ public class StringUtils {
         return null;
     }
 
+    public static String replacePrefixAndSuffix(String value, String prefix, String replacePrefix, String suffix, String replaceSuffix) {
+        if (value.startsWith(prefix)) {
+            value = replacePrefix + value.substring(prefix.length());
+        }
+        if (value.endsWith(suffix)) {
+            value = value.substring(0, value.length() - suffix.length()) + replaceSuffix;
+        }
+        return value;
+    }
+
 }
