@@ -8,4 +8,6 @@ dependencies {
     compileOnly 'org.springframework:spring-context'
     compileOnly 'org.springframework.boot:spring-boot-starter-webflux'
     compileOnly project(':scm-plugin-api')
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 }
