@@ -29,5 +29,4 @@ public class TransactionLogResponse {
     private String cardNo;
     private Date startTime;
     private Date endTime;
-    private Long durationMills;
 }
