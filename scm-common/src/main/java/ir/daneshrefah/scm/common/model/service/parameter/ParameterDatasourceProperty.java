@@ -22,7 +22,7 @@ public enum ParameterDatasourceProperty {
     /* terminal based types */
     TERMINAL_CODE(20), PROVIDER_TERMINAL_CODE(21),
     /* date based types */
-    DATE_YYYYMMDD(30), DATE_SHAMSI_YYYYMMDD(31),
+    DATE_YYYYMMDD(30), DATE_SHAMSI_YYYYMMDD(31),DATE_SHAMSI_YYYYMMDDHHMMDD(32),
     /* http based types */
     HTTP_STATUS_CODE(40),
     /* authentication based types */

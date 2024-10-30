@@ -22,14 +22,4 @@ public class ServiceProviderChangeRequest  implements RequestData {
     private String providerClassName;
     private ServiceProviderStatus status;
     private String assetProviderId;
-    //GENERAL METADATA
-    private String endpoint;
-    private Integer connectTimeout;
-    private Integer responseTimeout;
-    private Integer soTimeout;
-    private List<ServiceProviderData> additionalParams;
-
-    //REST METADATA
-    private HttpMethod defaultHttpMethod;
-    private HttpContentType defaultRequestContentType;
 }

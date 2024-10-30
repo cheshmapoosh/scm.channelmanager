@@ -55,8 +55,6 @@ public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<Str
     private Boolean checkAccessSecondAuthentication;
     private Boolean checkAccessService;
     private Boolean checkAccessAsset;
-    @Column(name = "PROPERTY_NAME_CUSTOMER")
-    private String customerProperty;
     @Column(name = "PROPERTY_NAME_AMOUNT")
     private String amountProperty;
     @Column(name = "PROPERTY_NAME_ASSET")

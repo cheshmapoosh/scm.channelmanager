@@ -13,5 +13,8 @@ public class ResponseCreateRequest implements RequestData {
     private String errorCode;
     private String errorMessage;
     private ExternalServiceBodyType responseBodyType;
+    private Boolean status;
+    private Integer httpResponseStatusCode;
+    private String title;
 
 }

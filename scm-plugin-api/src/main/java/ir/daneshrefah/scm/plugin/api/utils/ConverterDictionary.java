@@ -12,10 +12,10 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @since 2024-03-27
  */
+@Getter
 @RequiredArgsConstructor
 public abstract class ConverterDictionary<T> {
 
-    @Getter
     private final T source;
 
     public abstract JsonNode convert(ParameterDefinition definition);

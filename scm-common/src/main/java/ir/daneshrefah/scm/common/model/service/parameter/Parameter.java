@@ -18,6 +18,9 @@ public class Parameter extends BaseModel<String> {
     private ParameterType type;
     private boolean required;
     private String tag;
+    private String title;
+
+
     private Integer order;
     /**
      * If action type was proxy , the parent id

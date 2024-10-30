@@ -38,4 +38,10 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
     @Convert(converter = ExternalServiceRequestBodyTypeConverter.class)
     @Column(name = "RESP_BODY_TYPE")
     private ExternalServiceBodyType responseBodyType;
+    @Column(name = "STATUS")
+    private Boolean status;
+    @Column(name = "HTTP_RESP_STATUS_CODE")
+    private Integer httpResponseStatusCode;
+    @Column(name = "RESP_TITLE")
+    private String title;
 }

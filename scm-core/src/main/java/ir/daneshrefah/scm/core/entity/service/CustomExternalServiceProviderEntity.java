@@ -21,12 +21,12 @@ import lombok.Data;
 @DiscriminatorValue("20") // ServiceProviderProtocol.CUSTOM
 public class CustomExternalServiceProviderEntity extends AbstractExternalServiceProviderEntity {
 
-    @Convert(converter = CustomExternalServiceProviderMetadataConverter.class)
-    @Column(name = "SRV_PROVIDER_METADATA")
-    private CustomExternalServiceProviderMetadata metadata;
-
-    @Override
-    public void setMetadata(AbstractExternalServiceProviderMetadata metadata) {
-        this.metadata = (CustomExternalServiceProviderMetadata) metadata;
-    }
+//    @Convert(converter = CustomExternalServiceProviderMetadataConverter.class)
+//    @Column(name = "SRV_PROVIDER_METADATA")
+//    private CustomExternalServiceProviderMetadata metadata;
+//
+//    @Override
+//    public void setMetadata(AbstractExternalServiceProviderMetadata metadata) {
+//        this.metadata = (CustomExternalServiceProviderMetadata) metadata;
+//    }
 }

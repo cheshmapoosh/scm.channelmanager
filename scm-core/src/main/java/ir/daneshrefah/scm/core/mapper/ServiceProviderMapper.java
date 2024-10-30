@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.core.entity.service.RestExternalServiceProviderEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
@@ -37,12 +38,14 @@ public interface ServiceProviderMapper {
     @Mapping(source = "parameters", target = "requestHeaders",qualifiedByName = "toRequestHeadersModel")
     @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
     @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
+    @Mapping(source = "parameters", target = "configParameter",qualifiedByName = "toConfigParameter")
     RestExternalServiceProvider toModel(RestExternalServiceProviderEntity entity);
 
     @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsModel")
     @Mapping(source = "parameters", target = "requestHeaders",qualifiedByName = "toRequestHeadersModel")
     @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
     @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
+    @Mapping(source = "parameters", target = "configParameter",qualifiedByName = "toConfigParameter")
     CustomExternalServiceProvider toModel(CustomExternalServiceProviderEntity entity);
 
     @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsEntity")
@@ -59,6 +62,7 @@ public interface ServiceProviderMapper {
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestBody()));
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestHeaders()));
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getResponseHeaders()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getConfigParameter()));
         entity.setParameters(parameterEntities);
         return entity;
     }
@@ -69,6 +73,7 @@ public interface ServiceProviderMapper {
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestBody()));
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getRequestHeaders()));
         parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getResponseHeaders()));
+        parameterEntities.addAll(ParameterMapper.INSTANCE.toEntityList(model.getConfigParameter()));
         entity.setParameters(parameterEntities);
         return entity;
     }
@@ -107,27 +112,50 @@ public interface ServiceProviderMapper {
 
     @Named("toResponseConditionsModel")
     default List<Response> toResponseConditionsModel(List<ResponseEntity> entities){
-        return entities.stream().map(ResponseMapper.INSTANCE::toModel).toList();
+        if (Objects.nonNull(entities)) {
+            return entities.stream().map(ResponseMapper.INSTANCE::toModel).toList();
+        }
+        return null;
     }
 
     @Named("toResponseConditionsEntity")
     default List<ResponseEntity> toResponseConditionsEntity(List<Response> models){
-        return models.stream().map(ResponseMapper.INSTANCE::toEntity).toList();
+        if(Objects.nonNull(models)) {
+            return models.stream().map(ResponseMapper.INSTANCE::toEntity).toList();
+        }
+        return null;
     }
 
     @Named("toRequestHeadersModel")
     default List<Parameter> toRequestHeadersModel(List<ParameterEntity> entities){
-        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_HEADER);
+        if(Objects.nonNull(entities)) {
+            return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_HEADER);
+        }
+        return null;
     }
 
     @Named("toRequestBodyModel")
     default List<Parameter> toRequestBodyModel(List<ParameterEntity> entities){
-        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_BODY);
+        if(Objects.nonNull(entities)) {
+            return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.REQUEST_BODY);
+        }
+        return null;
     }
 
     @Named("toResponseHeadersModel")
     default List<Parameter> toResponseHeadersModel(List<ParameterEntity> entities){
-        return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.RESPONSE_HEADER);
+        if(Objects.nonNull(entities)) {
+            return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.RESPONSE_HEADER);
+        }
+        return null;
+    }
+
+    @Named("toConfigParameter")
+    default List<Parameter> toConfigParameter(List<ParameterEntity> entities){
+        if(Objects.nonNull(entities)) {
+            return ParameterMapper.INSTANCE.toModelList(entities, ParameterActionType.CONFIG);
+        }
+        return null;
     }
 
 }

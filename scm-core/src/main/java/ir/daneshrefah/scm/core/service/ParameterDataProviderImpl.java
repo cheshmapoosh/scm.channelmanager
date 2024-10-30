@@ -17,9 +17,11 @@ import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,6 +39,7 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
 
     private final CacheTemplate cacheTemplate;
     private final PersonService personService;
+    private final Environment environment;
 
 
     @PostConstruct
@@ -57,11 +60,12 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
                 case STATIC -> provideStaticVariable(parameter);
                 case DATE_YYYYMMDD -> provideDateVariable();
                 case DATE_SHAMSI_YYYYMMDD -> provideShamsiDateVariable();
+                case DATE_SHAMSI_YYYYMMDDHHMMDD -> provideShamsiDateTimeVariable();
                 case CACHE_VARIABLE -> provideCacheVariable(parameter);
                 case TERMINAL_CODE -> provideTerminalCodeVariable(); //provide from authentication
                 case HTTP_STATUS_CODE -> provideHttpStatusCodeVariable(message);
                 case CORRELATION_ID -> provideCorrelationId();
-                case CONFIG_VARIABLE -> null;
+                case CONFIG_VARIABLE -> provideValueFromConfig(parameter);
                 case RESOURCE_VARIABLE -> null;
                 case PROVIDER_TERMINAL_CODE -> null;
                 case AUTHENTICATION_USERNAME -> null;
@@ -91,6 +95,16 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
         return Objects.nonNull(subOrganizationId) && !subOrganizationId.isBlank()
                 ? subOrganizationId
                 : parameter.getDefaultValue();
+    }
+
+    private Object provideShamsiDateTimeVariable() {
+        return DateUtils.ShamsiCalendarConvertor.convertToShamsiDateString(LocalDateTime.now(), "yyyyMMddHHmmss");
+    }
+
+    private Object provideValueFromConfig(Parameter parameter) {
+        String value = parameter.getDatasource().getValue();
+        String propertyKey = StringUtils.replacePrefixAndSuffix(value,"${","","}","");
+        return environment.getProperty(propertyKey, parameter.getDefaultValue());
     }
 
     private Object provideAuthenticationNationalId(Parameter parameter) {

@@ -3,6 +3,9 @@ package ir.daneshrefah.scm.common.service.rest;
 import ir.daneshrefah.scm.common.dto.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 
+import java.util.List;
+import java.util.Set;
+
 public interface ParameterService {
     Parameter create(ParameterCreateRequest request);
 
@@ -15,5 +18,9 @@ public interface ParameterService {
     PagedResponseData<Parameter> findParameter(ParameterFindRequest request);
 
     ParameterTreeFindResponse findParameterTree(ParameterTreeFindRequest request);
+
+    List<ParameterActionTypeFindResponse> findParameterActionTypeList(ParameterActionTypeFindRequest request);
+
+    List<AutoComplete> autoCompleteParameter(ParameterAutoCompleteSearchRequest request);
 
 }

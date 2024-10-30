@@ -13,7 +13,7 @@ import java.util.List;
 
 @Setter
 @Getter
-public class ServiceProviderCreteRequest extends BaseModel<String> implements RequestData {
+public class ServiceProviderCreteRequest implements RequestData {
 
     private String code;
     private String title;
@@ -21,15 +21,6 @@ public class ServiceProviderCreteRequest extends BaseModel<String> implements Re
     private ServiceProviderProtocol protocol;
     private ServiceProviderStatus status;
     private String assetProviderId;
-    //GENERAL METADATA
-    private String endpoint;
-    private Integer connectTimeout;
-    private Integer responseTimeout;
-    private Integer soTimeout;
-    private List<ServiceProviderData> additionalParams;
-
-    //REST METADATA
-    private HttpMethod defaultHttpMethod;
-    private HttpContentType defaultRequestContentType;
+    //METADATA HANDLED BY PARAMETER
 
 }

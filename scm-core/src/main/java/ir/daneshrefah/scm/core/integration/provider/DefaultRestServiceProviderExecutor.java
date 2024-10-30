@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
+import ir.daneshrefah.scm.common.model.service.RestExternalServiceProviderMetadata;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
@@ -48,7 +49,7 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
     private final ParameterParser parameterParser;
 
     public DefaultRestServiceProviderExecutor(ResourceService resourceService, ServiceService serviceService, ObjectMapper objectMapper, ParameterParser parameterParser, RequestBodyService requestBodyBuilder) {
-        super(objectMapper,resourceService, serviceService);
+        super(objectMapper, resourceService, serviceService);
         this.parameterParser = parameterParser;
     }
 
@@ -59,9 +60,9 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
         if (Objects.nonNull(service.getHttpMethod())) {
             return HttpMethod.fromValue(service.getHttpMethod().getValue());
         }
-        if (Objects.nonNull(service.getServiceProvider().getMetadata()) &&
-            Objects.nonNull(service.getServiceProvider().getMetadata().getDefaultHttpMethod())) {
-            return HttpMethod.fromValue(service.getServiceProvider().getMetadata().getDefaultHttpMethod().getValue());
+        if (service.getServiceProvider().getMetadata() instanceof RestExternalServiceProviderMetadata metadata
+            && (Objects.nonNull(metadata.getDefaultHttpMethod()))) {
+            return HttpMethod.fromValue(metadata.getDefaultHttpMethod().getValue());
         }
         return HttpMethod.GET;
     }
@@ -77,9 +78,9 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
         if (Objects.nonNull(service.getRequestContentType())) {
             return service.getRequestContentType();
         }
-        if (Objects.nonNull(service.getServiceProvider().getMetadata()) &&
-            Objects.nonNull(service.getServiceProvider().getMetadata().getDefaultRequestContentType())) {
-            return service.getServiceProvider().getMetadata().getDefaultRequestContentType();
+        if (service.getServiceProvider().getMetadata() instanceof RestExternalServiceProviderMetadata metadata
+            && (Objects.nonNull(metadata.getDefaultRequestContentType()))) {
+            return metadata.getDefaultRequestContentType();
         }
         return null;
     }

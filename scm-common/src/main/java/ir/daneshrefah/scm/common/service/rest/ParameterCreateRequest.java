@@ -9,6 +9,7 @@ import lombok.Data;
 @Data
 public class ParameterCreateRequest implements RequestData {
     private String parameterName;
+    private String title;
     //Datasource
     private ParameterDatasourceProperty datasourcePropertyType;
     private String value;
@@ -17,7 +18,6 @@ public class ParameterCreateRequest implements RequestData {
     //
     private ParameterType parameterType;
     private boolean required;
-    private boolean internal;
     private String tag;
     private Integer order;
     private String parentId;
