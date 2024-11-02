@@ -15,7 +15,7 @@ import org.apache.camel.model.TryDefinition;
  * @version 1.0
  * @since 2024-03-30
  */
-public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractPreparedExternalServiceProviderExecutor {
+public abstract class AbstractPureExternalServiceProviderExecutor extends AbstractSingleStepExternalServiceProviderExecutor {
 
 
     public AbstractPureExternalServiceProviderExecutor(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService) {

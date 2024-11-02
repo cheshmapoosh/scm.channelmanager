@@ -7,7 +7,6 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
-import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
@@ -29,7 +28,6 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.TryDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,24 +53,48 @@ public abstract class AbstractBaseExternalServiceProviderExecutor implements Ext
     @Override
     public void endpointCallRouteDefinition(RouteDefinition routeDefinition) {
         TryDefinition tryDefinition = routeDefinition.doTry();
-        tryDefinition.process(this::beforeRouteCalling);
-        callRoute(tryDefinition).forEach(camelInvocationStep -> camelInvocationStep.call(tryDefinition));
-        tryDefinition.process(this::afterRouteCalling);
+        tryDefinition.process(this::startLog);
+        callRoute(tryDefinition).forEach(camelInvocationStep -> {
+            tryDefinition.process(exchange ->adviseBeforeStepCall(camelInvocationStep,exchange));
+            camelInvocationStep.callStepRoute(tryDefinition);
+            tryDefinition.process(exchange -> adviseAfterStepCall(camelInvocationStep,exchange));
+        });
         tryDefinition.doFinally();
-        tryDefinition.process(this::logResult);
+        tryDefinition.process(this::endLog);
         tryDefinition.endDoTry();
     }
 
-    protected abstract void beforeRouteCalling(Exchange exchange);
+    private void endLog(Exchange exchange) {
+        //TODO ALIREZA
+    }
 
-    protected abstract void afterRouteCalling(Exchange exchange);
+    private void startLog(Exchange exchange) {
+        //TODO ALIREZA
+    }
+
+    private void startStepLog(Exchange exchange) {
+        //TODO ALIREZA
+    }
+
+    private void endStepLog(Exchange exchange) {
+        //TODO ALIREZA
+    }
 
     protected abstract List<CamelInvocationStep> callRoute(TryDefinition routeDefinition);
+
+    private void adviseBeforeStepCall(CamelInvocationStep camelInvocationStep,Exchange exchange){
+        startStepLog(exchange);
+        camelInvocationStep.beforeStepRouteCalling(exchange);
+    }
+
+    private void adviseAfterStepCall(CamelInvocationStep camelInvocationStep,Exchange exchange){
+        camelInvocationStep.afterStepRouteCalling(exchange);
+        endStepLog(exchange);
+    }
 
     private void logResult(Exchange exchange) {
         Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
         AbstractExternalService<?> service = (AbstractExternalService<?>) originalMessage.getHeader().getService();
-        Instant endTime = Instant.now();
         executeEventLog(service, originalMessage, exchange);
     }
 

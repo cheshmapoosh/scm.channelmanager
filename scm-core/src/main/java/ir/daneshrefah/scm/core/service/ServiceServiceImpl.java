@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
+import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
@@ -58,6 +59,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final TransformerRelationRepository transformerRelationRepository;
     private final ProxyServiceManager proxyServiceManager;
     private final ServiceProviderMetadataResolver providerMetadataResolver;
+    private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
     private List<AbstractExternalServiceProvider> serviceProviders;
@@ -454,6 +456,12 @@ public class ServiceServiceImpl implements ServiceService {
         } else if (serviceEntity instanceof AbstractExternalServiceEntity externalServiceEntity) {
             String reqProviderId = request.getServiceProviderId();
             String serviceProviderId = externalServiceEntity.getServiceProvider().getId();
+            if (externalServiceEntity instanceof RestExternalServiceEntity restExternalService){
+                DynamicUpdateUtils.applyChangesIfNotNull(request.getPath(),restExternalService::setPath);
+                DynamicUpdateUtils.applyChangesIfNotNull(request.getHttpMethod(),restExternalService::setHttpMethod);
+                DynamicUpdateUtils.applyChangesIfNotNull(request.getRequestContentType(),restExternalService::setRequestContentType);
+                DynamicUpdateUtils.applyChangesIfNotNull(request.getRequestBodyType(),restExternalService::setRequestBodyType);
+            }
             if (StringUtils.isNotEmpty(reqProviderId) && !reqProviderId.equals(serviceProviderId)) {
                 AbstractExternalServiceProviderEntity foundProvider = serviceProviderRepository.findById(reqProviderId)
                         .orElseThrow(() -> new InvalidInputException("serviceProviderId"));
@@ -553,6 +561,7 @@ public class ServiceServiceImpl implements ServiceService {
                     if (found.getLastEditDate().equals(request.getLastEditDate())) {
                         //if record version passed.
                         try {
+                            checkTerminalServiceAccess(found);
                             serviceRelationRepository.deleteAll(serviceRelationRepository.findAllBySourceServiceId(found.getId()));
                             transformerRelationRepository.deleteAll(transformerRelationRepository.findAllBySourceId(found.getId()));
                             serviceRepository.delete(found);
@@ -565,6 +574,16 @@ public class ServiceServiceImpl implements ServiceService {
                     }
                 }, () -> {
                     throw new NoMatchRecordFoundException("service");
+                });
+    }
+
+    private void checkTerminalServiceAccess(ServiceEntity found) {
+        terminalServiceAccessRepository
+                .findAllByServiceId(found.getId())
+                .stream()
+                .findFirst()
+                .ifPresent((f)->{
+                    throw new UncheckedRecordChildException("terminalServiceAccess","service has unhandled terminal access children");
                 });
     }
 

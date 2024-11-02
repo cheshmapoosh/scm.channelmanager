@@ -66,4 +66,5 @@ public interface ServiceService {
     AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
 
     AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
+    void cacheEvict();
 }

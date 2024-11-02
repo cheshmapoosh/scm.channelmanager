@@ -1,9 +1,7 @@
 package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.RequestData;
-import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
-import ir.daneshrefah.scm.common.model.service.ServiceStatus;
-import ir.daneshrefah.scm.common.model.service.ServiceType;
+import ir.daneshrefah.scm.common.model.service.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -37,6 +35,10 @@ public class ServiceInfoEditRequest implements RequestData {
      * this property used when implementationType is external
      * */
     private String serviceProviderId;
+    private String path;
+    private HttpMethod httpMethod;
+    private HttpContentType requestContentType;
+    private ExternalServiceBodyType requestBodyType;
     /**
      * this property used when implementationType is composite
      */

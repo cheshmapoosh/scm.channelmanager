@@ -62,7 +62,7 @@ public abstract class ServiceEntity extends AbstractVersionAbleDefaultEntity<Str
     @ManyToOne
     @JoinColumn(name = "PARENT_SERVICE_ID")
     private ServiceEntity parent;
-    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL,orphanRemoval = true)
     @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_RELATION"
             ,joinColumns = @JoinColumn(name = "SERVICE_ID")
             ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))

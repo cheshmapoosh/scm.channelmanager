@@ -8,6 +8,9 @@ import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
+import ir.daneshrefah.scm.common.service.ServiceService;
+import ir.daneshrefah.scm.core.mapper.ServiceMapper;
+import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Data;
@@ -28,8 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ParameterParser {
 
     private static final Map<String, ServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
+    private final ServiceRepository serviceRepository;
 
-    public static void clearCache() {
+    public void clearCache() {
         PARAMETER_TREE_CACHE.clear();
     }
 

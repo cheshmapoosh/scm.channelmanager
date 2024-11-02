@@ -11,6 +11,7 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
+import java.util.Objects;
 
 @Mapper
 public interface ParameterMapper {
@@ -20,27 +21,36 @@ public interface ParameterMapper {
     Parameter toModel(ParameterEntity entity);
 
     @Mapping(source = "datasource", target = "datasource", qualifiedByName = "toDatasourceEntity")
-    @Mapping(target = "serviceProvider",ignore = true)
-    @Mapping(target = "service",ignore = true)
-    @Mapping(target = "responseCondition",ignore = true)
+    @Mapping(target = "serviceProvider", ignore = true)
+    @Mapping(target = "service", ignore = true)
+    @Mapping(target = "responseCondition", ignore = true)
     ParameterEntity toEntity(Parameter entity);
 
     @Named("toDatasourceModel")
     default ParameterDatasource toDatasourceModel(ParameterDatasourceEntity entity) {
-        return ParameterDatasourceMapper.INSTANCE.toModel(entity);
+        if (Objects.nonNull(entity)) {
+            return ParameterDatasourceMapper.INSTANCE.toModel(entity);
+        }
+        return null;
     }
 
     @Named("toDatasourceEntity")
     default ParameterDatasourceEntity toDatasourceEntity(ParameterDatasource model) {
-        return ParameterDatasourceMapper.INSTANCE.toEntity(model);
+        if (Objects.nonNull(model)) {
+            return ParameterDatasourceMapper.INSTANCE.toEntity(model);
+        }
+        return null;
     }
 
     default List<Parameter> toModelList(List<ParameterEntity> entities, ParameterActionType actionType) {
-        return entities
-                .stream()
-                .map(this::toModel)
-                .filter(parameter -> parameter.getActionType().equals(actionType))
-                .toList();
+        if (Objects.nonNull(entities)) {
+            return entities
+                    .stream()
+                    .map(this::toModel)
+                    .filter(parameter -> parameter.getActionType().equals(actionType))
+                    .toList();
+        }
+        return null;
     }
 
     default List<Parameter> toModelList(List<ParameterEntity> entities) {
@@ -51,9 +61,12 @@ public interface ParameterMapper {
     }
 
     default List<ParameterEntity> toEntityList(List<Parameter> models) {
-        return models
-                .stream()
-                .map(this::toEntity)
-                .toList();
+        if (Objects.nonNull(models)) {
+            return models
+                    .stream()
+                    .map(this::toEntity)
+                    .toList();
+        }
+        return null;
     }
 }

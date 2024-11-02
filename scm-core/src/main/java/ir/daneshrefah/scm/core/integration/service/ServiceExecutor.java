@@ -66,25 +66,25 @@ public abstract class ServiceExecutor {
     }
 
     protected void initConfigs(RouteBuilder routeBuilder) {
-        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
-            registerInterceptSendToEndpoint(routeBuilder,
-                    "log:request-interceptors",
-                    ("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
-        }
-
-        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
-            registerInterceptSendToEndpoint(routeBuilder,
-                    "log:response-interceptors",
-                    ("direct:RES_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
-        }
-
-        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
-            registerInterceptors(routeBuilder, requestInterceptors, "direct:REQ_INTERCEPTOR_");
-        }
-
-        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
-            registerInterceptors(routeBuilder, responseInterceptors, "direct:RES_INTERCEPTOR_");
-        }
+//        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
+//            registerInterceptSendToEndpoint(routeBuilder,
+//                    "log:request-interceptors",
+//                    ("direct:REQ_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
+//        }
+//
+//        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
+//            registerInterceptSendToEndpoint(routeBuilder,
+//                    "log:response-interceptors",
+//                    ("direct:RES_INTERCEPTOR_" + requestInterceptors.get(0).getClass().getSimpleName()));
+//        }
+//
+//        if (CollectionUtils.isNotEmpty(requestInterceptors)) {
+//            registerInterceptors(routeBuilder, requestInterceptors, "direct:REQ_INTERCEPTOR_");
+//        }
+//
+//        if (CollectionUtils.isNotEmpty(responseInterceptors)) {
+//            registerInterceptors(routeBuilder, responseInterceptors, "direct:RES_INTERCEPTOR_");
+//        }
         // can override in child class for additional configs
     }
 
@@ -179,21 +179,21 @@ public abstract class ServiceExecutor {
         });
 
 //        Request Interceptors
-//        tryDefinition.setProperty("index", () -> 0)
-//                .loopDoWhile(exchange -> {
-//                    Message message = exchange.getMessage().getBody(Message.class);
-//                    Integer index = exchange.getProperty("index", Integer.class);
-//                    index++;
-//                    exchange.setProperty("index", index);
-//                    return message.isContinueAllowed() && index < requestInterceptors.size();
-//                }).process(exchange -> {
-//                    Message message = exchange.getMessage().getBody(Message.class);
-//                    Integer counter = exchange.getProperty("index", Integer.class);
-//                    requestInterceptors.get(counter).intercept(message);
-//                })
-//                .end()
-//                .removeProperty("index");
-        tryDefinition.to("log:request-interceptors");
+        tryDefinition.setProperty("index", () -> 0)
+                .loopDoWhile(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    Integer index = exchange.getProperty("index", Integer.class);
+                    index++;
+                    exchange.setProperty("index", index);
+                    return message.isContinueAllowed() && index < requestInterceptors.size();
+                }).process(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    Integer counter = exchange.getProperty("index", Integer.class);
+                    requestInterceptors.get(counter).intercept(message);
+                })
+                .end()
+                .removeProperty("index");
+//        tryDefinition.to("log:request-interceptors");
 
         ChoiceDefinition choiceDefinition = tryDefinition.choice()
                 .when(exchange -> exchange.getMessage().getBody(Message.class).isContinueAllowed());
@@ -201,22 +201,22 @@ public abstract class ServiceExecutor {
         choiceDefinition.endChoice();
 
 //        Response Interceptors
-//        tryDefinition.setProperty("index", () -> 0)
-//                .loopDoWhile(exchange -> {
-//                    Message message = exchange.getMessage().getBody(Message.class);
-//                    Integer index = exchange.getProperty("index", Integer.class);
-//                    index++;
-//                    exchange.setProperty("index", index);
-//                    return message.isContinueAllowed() && index < responseInterceptors.size();
-//                }).process(exchange -> {
-//                    Message message = exchange.getMessage().getBody(Message.class);
-//                    Integer counter = exchange.getProperty("index", Integer.class);
-//                    responseInterceptors.get(counter).intercept(message);
-//                })
-//                .end()
-//                .removeProperty("index");
+        tryDefinition.setProperty("index", () -> 0)
+                .loopDoWhile(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    Integer index = exchange.getProperty("index", Integer.class);
+                    index++;
+                    exchange.setProperty("index", index);
+                    return message.isContinueAllowed() && index < responseInterceptors.size();
+                }).process(exchange -> {
+                    Message message = exchange.getMessage().getBody(Message.class);
+                    Integer counter = exchange.getProperty("index", Integer.class);
+                    responseInterceptors.get(counter).intercept(message);
+                })
+                .end()
+                .removeProperty("index");
 
-        tryDefinition.to("log:response-interceptors");
+//        tryDefinition.to("log:response-interceptors");
 
         tryDefinition = tryDefinition.process(exchange -> {
             Message message = exchange.getMessage().getBody(Message.class);

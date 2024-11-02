@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface TerminalServiceAccessRepository extends CrudRepository<TerminalServiceAccessEntity, String> {
 
     List<TerminalServiceAccessEntity> findAllByTerminalId(String terminalId);
+    List<TerminalServiceAccessEntity> findAllByServiceId(String serviceId);
 
     Optional<TerminalServiceAccessEntity> findByTerminal_IdAndService_Id(String terminalId,String serviceId);
 }

@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.common.service.rest.*;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
@@ -52,15 +53,8 @@ public class ParameterServiceImpl implements ParameterService {
     private final ParameterRepository parameterRepository;
     private final ServiceRepository serviceRepository;
     private final ParameterParser parameterParser;
+    private final ServiceService serviceService;
 
-    private void removeParameterRelation(String parameterId) {
-        serviceRelationRepository.findById(parameterId)
-                .ifPresentOrElse(serviceRelationRepository::delete, () -> {
-                    providerRelationRepository.findById(parameterId).ifPresentOrElse(providerRelationRepository::delete, () -> {
-                        responseRelationRepository.findById(parameterId).ifPresent(responseRelationRepository::delete);
-                    });
-                });
-    }
 
     @Override
     @Transactional
@@ -70,10 +64,31 @@ public class ParameterServiceImpl implements ParameterService {
         ParameterEntity entity = parameterRepository.findById(request.getId()).orElseThrow(() -> new InvalidInputException("id"));
         checkParameterRecordChildren(entity);
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
-        removeParameterRelation(entity.getId());
-        parameterRepository.delete(entity);
-        ParameterParser.clearCache();
+        removeParameterCompletely(entity);
+        evictEffectedCache();
         return ParameterMapper.INSTANCE.toModel(entity);
+    }
+
+    private void removeParameterCompletely(ParameterEntity entity) {
+        ServiceEntity service = entity.getService();
+        ResponseEntity responseCondition = entity.getResponseCondition();
+        AbstractExternalServiceProviderEntity serviceProvider = entity.getServiceProvider();
+        if (Objects.nonNull(service)) {
+            service.getParameters().remove(entity);
+        }
+        if (Objects.nonNull(responseCondition)) {
+            responseCondition.getResponseParameters().remove(entity);
+        }
+        if (Objects.nonNull(serviceProvider)) {
+            serviceProvider.getParameters().remove(entity);
+        }
+        parameterRepository.delete(entity);
+
+    }
+
+    private void evictEffectedCache(){
+        serviceService.cacheEvict();
+        parameterParser.clearCache();
     }
 
     private void checkParameterRecordChildren(ParameterEntity entity) {
@@ -205,6 +220,7 @@ public class ParameterServiceImpl implements ParameterService {
     }
 
     private PagedResponseData<Parameter> applyParameterFindFilters(List<ParameterEntity> parameters, ParameterFindRequest request) {
+        //REPLACE EMPTY TITLE FOR FRONT-END HANDLING
         return new PagedResponseData<>(request,
                 parameters
                         .stream()
@@ -213,20 +229,23 @@ public class ParameterServiceImpl implements ParameterService {
                         .filter(parameter -> Objects.isNull(request.getTitle()) || parameter.getTitle().contains(request.getTitle()))
                         .filter(parameter -> Objects.isNull(request.getParentId()) || Objects.isNull(parameter.getParent()) || parameter.getParent().getId().equals(request.getParentId()))
                         .filter(parameter -> Objects.isNull(request.getActionType()) || parameter.getActionType().equals(ParameterActionType.findByValue(request.getActionType())))
-                        .peek(parameter -> {
-                            //REPLACE EMPTY TITLE FOR FRONT-END HANDLING
-                            String title = parameter.getTitle();
-                            if (StringUtils.isBlank(title)) {
-                                String name = parameter.getName();
-                                parameter.setTitle(name);
-                            }
-                            if (StringUtils.isBlank(title)) {
-                                ParameterType type = parameter.getType();
-                                parameter.setTitle("[" + type.name() + "]");
-                            }
-                        })
-                        .distinct()
+                        .peek(this::assignParameterTitle)
                         .toList());
+    }
+
+    private void assignParameterTitle(Parameter parameter) {
+        if (Objects.nonNull(parameter.getParent())) {
+            assignParameterTitle(parameter.getParent());
+        }
+        String title = parameter.getTitle();
+        if (StringUtils.isBlank(title)) {
+            title = parameter.getName();
+        }
+        if (StringUtils.isBlank(title)) {
+            ParameterType type = parameter.getType();
+            title = "[" + type.name() + "]";
+        }
+        parameter.setTitle(title);
     }
 
     private void validateParameterFindRequest(ParameterFindRequest request) {
@@ -287,9 +306,9 @@ public class ParameterServiceImpl implements ParameterService {
         DynamicUpdateUtils.applyChangesIfNotNull(request.getDatasourcePropertyType(), datasource::setProperty);
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
-        parameterRepository.save(entity);
-        ParameterParser.clearCache();
-        return ParameterMapper.INSTANCE.toModel(entity);
+        ParameterEntity save = parameterRepository.save(entity);
+        evictEffectedCache();
+        return ParameterMapper.INSTANCE.toModel(save);
     }
 
     private void checkOptimisticRecordVersion(LocalDateTime request, LocalDateTime entity) {
@@ -304,7 +323,7 @@ public class ParameterServiceImpl implements ParameterService {
         validateParameterCreateRequest(request);
         ParameterEntity parameterEntity = createParameterEntity(request);
         parameterEntity = applyParameterRelation(request, parameterEntity);
-        ParameterParser.clearCache();
+        evictEffectedCache();
         return ParameterMapper.INSTANCE.toModel(parameterEntity);
     }
 
