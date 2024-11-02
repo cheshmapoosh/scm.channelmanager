@@ -30,7 +30,7 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
     private String responseExceptionErrorCodeProperty;
     @Column(name = "RESP_ERROR_MESSAGE")
     private String responseExceptionErrorMessageProperty;
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinTable(name = "TBL_SCM_PARAMETER_RESPONSE_CONDITION_RELATION"
     ,joinColumns = @JoinColumn(name = "RESPONSE_CONDITION_ID")
     ,inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))

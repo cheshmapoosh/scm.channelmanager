@@ -6,25 +6,21 @@ import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.message.TcpMessageOutput;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractPreparedExternalServiceProviderExecutor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.CamelInvocationStep;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractMultipleStepsExternalServiceProviderExecutor;
+import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.CamelInvocationStepBuilder;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.Options;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.TcpProtocol;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.TryDefinition;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.apache.camel.builder.Builder.constant;
-
-public abstract class NabTcpExternalServiceProviderExecutor extends AbstractPreparedExternalServiceProviderExecutor {
+public abstract class NabTcpExternalServiceProviderExecutor extends AbstractMultipleStepsExternalServiceProviderExecutor {
 
     private static final String TCP_PREFIX = "netty:tcp://";
 
     public NabTcpExternalServiceProviderExecutor(ObjectMapper objectMapper, ResourceService resourceService, ServiceService serviceService) {
         super(objectMapper, resourceService, serviceService);
     }
+
 
     /* TCP CONNECTION STANDARD PARTS */
     public abstract TcpProtocol getTcpProtocol();
@@ -33,21 +29,58 @@ public abstract class NabTcpExternalServiceProviderExecutor extends AbstractPrep
 
     public abstract void connectionAcknowledge(Object body);
 
+    public abstract Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput);
+    public abstract Object extractServiceParametersResponseBody(Message message, Object body);
+
+    protected MessageOutput buildMessageOutput() {
+        return TcpMessageOutput.builder().build();
+    }
+
 
     @Override
-    protected void beforeRouteCalling(Exchange exchange) {
-        Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-        MessageOutput messageOutput = buildMessageOutput();
-        messageOutput.setExternalCorrelationId(getProviderCorrelationId(originalMessage));
-        Object body = getTcpProtocol().name();
-        messageOutput.setBody(body);
-        exchange.getMessage().setBody(messageOutput.getBody());
-        exchange.setProperty(HEADER_MESSAGE_OUTPUT, messageOutput);
+    protected CamelInvocationStepBuilder call(TryDefinition routeDefinition) {
+        return CamelInvocationStepBuilder.create()
+                .add(this::beforeConnect, this::internalConnect, this::afterConnect)
+                .add(this::beforeCallService, this::callService, this::afterCallService);
     }
 
-    protected void beforeRouteCallingService(Exchange exchange) {
-        super.beforeRouteCalling(exchange);
+
+    /* START CONNECT PHASE */
+    private void beforeConnect(Exchange exchange) {
+        MessageOutput messageOutput = buildMessageOutput();
+        Object body = getTcpProtocol().name();
+        exchange.getIn().setBody(getTcpProtocol().name());
+        setupMessageOutput(exchange,messageOutput,body);
     }
+
+    private void internalConnect(TryDefinition tryDefinition) {
+        tryDefinition.to(getTargetUrl());
+    }
+
+    private void afterConnect(Exchange exchange) {
+        connectionAcknowledge(exchange.getMessage().getBody());
+    }
+
+    /* END CONNECT PHASE */
+
+
+    /* START CALL PHASE */
+    private void beforeCallService(Exchange exchange) {
+        MessageOutput messageOutput = buildMessageOutput();
+        Object body = extractBody(exchange, messageOutput,this::extractServiceParametersRequestBody);
+        setupMessageOutput(exchange,messageOutput,body);
+    }
+
+    protected void callService(TryDefinition tryDefinition) {
+        tryDefinition.to(getTargetUrl());
+    }
+
+    private void afterCallService(Exchange exchange) {
+        Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+        exchange.getMessage().setBody(extractServiceParametersResponseBody(originalMessage, exchange.getMessage().getBody()));
+    }
+
+    /* START END PHASE */
 
 
     public String getTargetUrl() {
@@ -56,31 +89,4 @@ public abstract class NabTcpExternalServiceProviderExecutor extends AbstractPrep
     }
 
 
-    private void internalConnect(TryDefinition tryDefinition) {
-        tryDefinition
-                .setBody(constant(getTcpProtocol().name()))
-                .to(getTargetUrl())
-                .process(exchange -> connectionAcknowledge(exchange.getMessage().getBody()));
-    }
-
-    @Override
-    protected void call(TryDefinition tryDefinition) {
-        tryDefinition
-                .process(this::beforeRouteCallingService)
-                .to(getTargetUrl())
-                .process(this::afterRouteCalling);
-    }
-
-    @Override
-    protected MessageOutput buildMessageOutput() {
-        return TcpMessageOutput.builder().build();
-    }
-
-    @Override
-    protected List<CamelInvocationStep> callRoute(TryDefinition routeDefinition) {
-        List<CamelInvocationStep> steps = new ArrayList<>();
-        steps.add(this::internalConnect);
-        steps.add(this::call);
-        return steps;
-    }
 }

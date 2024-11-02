@@ -39,6 +39,7 @@ import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -531,6 +532,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public User updateTransactionPasswordMethod(AuthenticationMethodModificationRequest request, HttpServletRequest servletRequest) {
         validateAuthenticationMethodModificationRequest(request);
         String headerClaimCode = servletRequest.getHeader(SCM_PARAMETER_CLAIM_CODE);

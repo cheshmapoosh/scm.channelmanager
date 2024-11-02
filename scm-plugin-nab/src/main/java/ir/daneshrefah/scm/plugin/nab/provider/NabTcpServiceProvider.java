@@ -42,29 +42,29 @@ public final class NabTcpServiceProvider extends NabTcpExternalServiceProviderEx
 
     @Override
     public Object extractServiceParametersRequestBody(Message message, Object body, MessageOutput messageOutput) {
-//        return "190514030724145442999998    12345678909299540710124072333000444         0                                                ";
-        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
-        CustomExternalService externalService = (CustomExternalService) service;
-        StringBuffer request = new StringBuffer();
-
-        for (MessageHeaderFields headerField : MessageHeaderFields.values()) {
-            request.append(adjustValue(headerField.getLength(), true, headerField.name(),
-                    prepareMessageHeaderField(headerField, message, body, messageOutput)));
-        }
-
-        List<Parameter> providerRequestHeaders = externalService.getServiceProvider().getRequestHeaders();
-        List<Parameter> providerRequestBody = externalService.getServiceProvider().getRequestBody();
-        List<Parameter> serviceRequestHeaders = externalService.getParameters(ParameterActionType.REQUEST_HEADER);
-        List<Parameter> serviceRequestBody = externalService.getParameters(ParameterActionType.REQUEST_BODY);
-
-        appendParameterToRequest(request, message, providerRequestHeaders);
-        appendParameterToRequest(request, message, providerRequestBody);
-        appendParameterToRequest(request, message, serviceRequestHeaders);
-        appendParameterToRequest(request, message, serviceRequestBody);
-
-        Parameter parameter = null;
-        Optional parameterValue = extractParameterValue(message, parameter);
-        return null;
+        return "190514030724145442999998    12345678909299540710124072333000444         0                                                ";
+//        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
+//        CustomExternalService externalService = (CustomExternalService) service;
+//        StringBuffer request = new StringBuffer();
+//
+//        for (MessageHeaderFields headerField : MessageHeaderFields.values()) {
+//            request.append(adjustValue(headerField.getLength(), true, headerField.name(),
+//                    prepareMessageHeaderField(headerField, message, body, messageOutput)));
+//        }
+//
+//        List<Parameter> providerRequestHeaders = externalService.getServiceProvider().getRequestHeaders();
+//        List<Parameter> providerRequestBody = externalService.getServiceProvider().getRequestBody();
+//        List<Parameter> serviceRequestHeaders = externalService.getParameters(ParameterActionType.REQUEST_HEADER);
+//        List<Parameter> serviceRequestBody = externalService.getParameters(ParameterActionType.REQUEST_BODY);
+//
+//        appendParameterToRequest(request, message, providerRequestHeaders);
+//        appendParameterToRequest(request, message, providerRequestBody);
+//        appendParameterToRequest(request, message, serviceRequestHeaders);
+//        appendParameterToRequest(request, message, serviceRequestBody);
+//
+//        Parameter parameter = null;
+//        Optional parameterValue = extractParameterValue(message, parameter);
+//        return null;
     }
 
     private String prepareMessageHeaderField(MessageHeaderFields headerField, Message message, Object body, MessageOutput messageOutput) {

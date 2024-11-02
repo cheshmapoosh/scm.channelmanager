@@ -49,6 +49,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     private final ErrorMappingService errorMappingService;
     private final ServiceRepository serviceRepository;
     private final ServiceServiceImpl serviceServiceImpl;
+    private final ParameterParser parameterParser;
 
 
     @Override
@@ -72,6 +73,11 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         return EXTERNAL_PROVIDER_NAME_CACHE;
     }
 
+    private void evictEffectCache(){
+        parameterParser.clearCache();
+        serviceServiceImpl.cacheEvict();
+    }
+
     @Override
     public Response removeResponse(ResponseDeleteRequest request) {
         ValidationUtils.checkNull(request.getId(), () -> new InvalidInputException("id"));
@@ -79,7 +85,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         ResponseEntity entity = responseConditionRepository.findById(request.getId()).orElseThrow(() -> new InvalidInputException("id"));
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
         responseConditionRepository.delete(entity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ResponseMapper.INSTANCE.toModel(entity);
     }
 
@@ -126,7 +132,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         ParameterDatasourceConditionEntity entity = datasourceConditionRepository.findById(request.getId()).orElseThrow(() -> new InvalidInputException("id"));
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
         datasourceConditionRepository.delete(entity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ParameterDatasourceConditionMapper.INSTANCE.toModel(entity);
     }
 
@@ -143,7 +149,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value)-> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
         entity.setLastEditor(getCurrentUser());
         datasourceConditionRepository.save(entity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ParameterDatasourceConditionMapper.INSTANCE.toModel(entity);
     }
 
@@ -167,7 +173,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
         responseConditionRepository.save(entity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ResponseMapper.INSTANCE.toModel(entity);
     }
 
@@ -193,7 +199,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         entity.setResponseBodyType(request.getResponseBodyType());
         responseConditionRepository.save(entity);
         setResponseConditionTargetId(request, entity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ResponseMapper.INSTANCE.toModel(entity);
     }
 
@@ -212,7 +218,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         conditions.add(entity);
         responseConditionEntity.setConditions(conditions);
         responseConditionRepository.save(responseConditionEntity);
-        ParameterParser.clearCache();
+        evictEffectCache();
         return ParameterDatasourceConditionMapper.INSTANCE.toModel(entity);
     }
 
@@ -241,7 +247,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
                 throw new InvalidInputException("serviceId");
             }
         }
-        serviceServiceImpl.cacheEvict();
+        evictEffectCache();
     }
 
     private void validateResponseConditionRequest(ResponseCreateRequest request) {

@@ -19,7 +19,7 @@ import java.util.*;
 
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE;
 
-public abstract class AbstractBaseRestExternalServiceProviderExecutor extends AbstractPreparedExternalServiceProviderExecutor {
+public abstract class AbstractBaseRestExternalServiceProviderExecutor extends AbstractSingleStepExternalServiceProviderExecutor {
 
     private static final String HEADER_TARGET_URL = "ScmTargetUrl";
 
@@ -64,7 +64,7 @@ public abstract class AbstractBaseRestExternalServiceProviderExecutor extends Ab
     }
 
     @Override
-    protected void afterRouteCalling(Exchange exchange) {
+    protected void afterCallRoute(Exchange exchange) {
         Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
         AbstractExternalService<?> service = (AbstractExternalService<?>) originalMessage.getHeader().getService();
         if (ExternalServiceBodyType.PARAMETERS.equals(service.getRequestBodyType())) {

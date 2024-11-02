@@ -11,9 +11,6 @@ import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
-import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
-import ir.daneshrefah.scm.task.constant.ExecutionMethodTypeEnum;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
@@ -28,7 +25,6 @@ import ir.daneshrefah.scm.task.model.*;
 import ir.daneshrefah.scm.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.task.repository.ProcessInstanceSpecs;
 import ir.daneshrefah.scm.task.utils.PageableUtils;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
@@ -228,7 +224,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             UserModel userModel = createUserModel(confirmUser);
             response.setConfirmUser(userModel);
         }
-
         return response;
     }
 
@@ -236,7 +231,9 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstance.getTasks().stream()
                 .map(task -> {
                     GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
-                    return createUserModel(person);
+                    UserModel userModel = createUserModel(person);
+                    userModel.setSigner(true);
+                    return userModel;
                 })
                 .toList();
     }

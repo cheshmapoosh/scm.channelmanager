@@ -47,7 +47,7 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractVers
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "SRV_PROVIDER_ID")
     private List<ResponseEntity> responseConditions;
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_PROVIDER_RELATION"
             , joinColumns = @JoinColumn(name = "SERVICE_PROVIDER_ID")
             , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
