@@ -1,15 +1,14 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
-import ir.daneshrefah.scm.common.data.service.person.CustomerProviderSyncRequest;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
 import ir.daneshrefah.scm.common.model.asset.AccountMembership;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
-import ir.daneshrefah.scm.common.service.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.service.AccountFavoriteActivityResponse;
-import ir.daneshrefah.scm.common.service.MembershipFindRequest;
-import ir.daneshrefah.scm.common.service.MembershipLocalFindRequest;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.membership.MembershipFindRequest;
+import ir.daneshrefah.scm.common.dto.membership.MembershipLocalFindRequest;
 
 import java.util.List;
 

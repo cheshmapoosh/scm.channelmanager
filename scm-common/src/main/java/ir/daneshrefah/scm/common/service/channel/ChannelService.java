@@ -1,6 +1,10 @@
 package ir.daneshrefah.scm.common.service.channel;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.channel.ChannelCreateRequest;
+import ir.daneshrefah.scm.common.dto.channel.ChannelDeleteRequest;
+import ir.daneshrefah.scm.common.dto.channel.ChannelEditRequest;
+import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 
 import java.util.List;

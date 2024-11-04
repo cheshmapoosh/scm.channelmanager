@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.process.service.util.processInstance;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
 import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceResponse;
 import org.camunda.bpm.engine.runtime.ProcessInstance;

@@ -6,7 +6,7 @@ import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.entity.TaskCompleteLog;
 import ir.daneshrefah.scm.process.exception.schema.JsonSchemaException;

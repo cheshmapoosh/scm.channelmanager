@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
-import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.core.config.ApplicationProperties;
 import ir.daneshrefah.scm.plugin.api.inbound.InboundChannelGenerator;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;

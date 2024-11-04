@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.controller.role;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.service.role.RoleDTO;
 import ir.daneshrefah.scm.uaa.service.person.RoleFindRequest;

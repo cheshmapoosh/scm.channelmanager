@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.gateway.controller;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.service.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

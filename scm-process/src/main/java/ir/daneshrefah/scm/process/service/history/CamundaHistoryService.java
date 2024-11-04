@@ -2,10 +2,9 @@ package ir.daneshrefah.scm.process.service.history;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.process.model.process.ProcessInstanceInfo;

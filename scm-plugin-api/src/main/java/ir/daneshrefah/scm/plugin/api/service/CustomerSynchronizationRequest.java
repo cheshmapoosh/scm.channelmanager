@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
-import ir.daneshrefah.scm.common.dto.RequestData;
+import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import lombok.Data;
 
 /**

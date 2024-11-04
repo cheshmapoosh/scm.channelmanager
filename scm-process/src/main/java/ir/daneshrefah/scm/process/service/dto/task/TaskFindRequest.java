@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.process.service.dto.task;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import lombok.Data;
 
 /**

@@ -3,10 +3,12 @@ package ir.daneshrefah.scm.core.entity.service.composition;
 import ir.daneshrefah.scm.core.converter.ServiceCompositionTypeConverter;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,18 +19,15 @@ import jakarta.persistence.Entity;
  */
 @Entity
 @DiscriminatorValue("3")
+@Getter
+@Setter
 public class CompositionServiceEntity extends ServiceEntity {
 
     @Column(name = "IMPL_COMPOSITION_TYPE_CODE", insertable = false, updatable = false)
     @Convert(converter = ServiceCompositionTypeConverter.class)
     private ServiceCompositionType compositionType;
-
-    public ServiceCompositionType getCompositionType() {
-        return compositionType;
-    }
-
-    public void setCompositionType(ServiceCompositionType compositionType) {
-        this.compositionType = compositionType;
-    }
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "SERVICE_ID")
+    private List<ResponseEntity> responseList;
 
 }

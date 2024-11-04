@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.task.model;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
 import lombok.Getter;
