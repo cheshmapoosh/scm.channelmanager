@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.person;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import lombok.Data;
 
 /**

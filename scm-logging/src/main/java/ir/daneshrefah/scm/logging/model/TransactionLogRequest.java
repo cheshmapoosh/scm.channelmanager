@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.logging.model;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.rest.*;
+import ir.daneshrefah.scm.common.dto.spec.AutoComplete;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.service.rest.*;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
@@ -10,7 +12,6 @@ import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class ParameterManagementService extends AbstractJavaService {

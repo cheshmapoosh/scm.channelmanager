@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.controller.user;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
 import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;

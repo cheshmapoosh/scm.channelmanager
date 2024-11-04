@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.notification.client.config;
 
 
 
-import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.mq.jms.JakarataConnectionFactory;
 import ir.daneshrefah.scm.notification.client.config.prop.ClientConfigProperties;
 import ir.daneshrefah.scm.notification.client.service.DisabledNotificationServiceImpl;

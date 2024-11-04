@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.user;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Data;
 

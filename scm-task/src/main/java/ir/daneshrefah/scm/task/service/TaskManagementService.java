@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.task.service;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.task.model.TaskFilterRequest;
 import ir.daneshrefah.scm.task.model.TaskRequest;
 import ir.daneshrefah.scm.task.model.TaskResponse;

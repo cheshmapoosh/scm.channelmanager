@@ -1,13 +1,11 @@
 package ir.daneshrefah.scm.process.service.util.processDefinition;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
-import ir.daneshrefah.scm.process.exception.definition.ProcessDefinitionExistsException;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundWithKeyException;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDeployRequest;
 import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessDefinitionDeleteRequest;
-import ir.daneshrefah.scm.process.service.dto.processInstance.ProcessInstanceRequest;
 import lombok.AllArgsConstructor;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;

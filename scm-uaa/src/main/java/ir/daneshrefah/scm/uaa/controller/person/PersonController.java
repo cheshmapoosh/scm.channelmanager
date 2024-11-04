@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.controller.person;
 
-import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.domain.role.Role;

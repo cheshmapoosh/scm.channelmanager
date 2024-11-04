@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.person;
 
-import ir.daneshrefah.scm.common.data.service.person.PersonFindRequest;
+import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;

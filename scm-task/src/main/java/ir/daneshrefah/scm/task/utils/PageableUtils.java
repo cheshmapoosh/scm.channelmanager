@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.task.utils;
 
-import ir.daneshrefah.scm.common.dto.PagedRequestData;
+import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 

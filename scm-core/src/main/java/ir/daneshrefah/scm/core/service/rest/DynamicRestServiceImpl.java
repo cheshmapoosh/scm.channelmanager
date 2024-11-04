@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.core.service.rest;
 
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.rest.*;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
@@ -11,9 +12,10 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.parameter.DatasourceConditionOperation;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
-import ir.daneshrefah.scm.common.service.rest.*;
+import ir.daneshrefah.scm.common.service.rest.DynamicRestService;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterDatasourceConditionEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ParameterDatasourceEntity;
 import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
@@ -73,7 +75,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         return EXTERNAL_PROVIDER_NAME_CACHE;
     }
 
-    private void evictEffectCache(){
+    private void evictEffectCache() {
         parameterParser.clearCache();
         serviceServiceImpl.cacheEvict();
     }
@@ -103,7 +105,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     public PagedResponseData<Response> findResponse(ResponseFindRequest request) {
         String providerId = request.getServiceProviderId();
         String serviceId = request.getServiceId();
-        if (Objects.isNull(providerId) && Objects.isNull(serviceId)){
+        if (Objects.isNull(providerId) && Objects.isNull(serviceId)) {
             throw new MissingRequiredInputException("serviceId or serviceProviderId is empty");
         }
         List<Response> responseConditions = new ArrayList<>();
@@ -146,7 +148,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getValue(), datasource::setValue);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getLength(), datasource::setLength);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getProperty(), datasource::setProperty);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value)-> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value) -> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
         entity.setLastEditor(getCurrentUser());
         datasourceConditionRepository.save(entity);
         evictEffectCache();
@@ -169,7 +171,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), entity::setTitle);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorCode(), entity::setResponseExceptionErrorCodeProperty);
         DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorMessage(), entity::setResponseExceptionErrorMessageProperty);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getResponseBodyType(),responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)) );
+        DynamicUpdateUtils.applyChangesIfNotBlank(request.getResponseBodyType(), responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)));
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
         responseConditionRepository.save(entity);
@@ -227,36 +229,55 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         String serviceId = request.getServiceId();
         String serviceProviderId = request.getServiceProviderId();
         if (Objects.nonNull(serviceProviderId) && !serviceProviderId.isBlank()) {
-            AbstractExternalServiceProviderEntity provider = serviceProviderRepository.findById(serviceProviderId).orElseThrow(() -> new NoMatchRecordFoundException("serviceProviderId"));
-            List<ResponseEntity> responseConditions = provider.getResponseConditions();
-            if (Objects.isNull(responseConditions)) {
-                responseConditions = new ArrayList<>();
-            }
-            responseConditions.add(entity);
-            serviceProviderRepository.save(provider);
+            addResponseToProvider(serviceProviderId,entity);
         } else {
-            ServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("serviceId"));
-            if (serviceEntity instanceof RestExternalServiceEntity restService) {
-                List<ResponseEntity> responseConditions = restService.getResponseList();
-                if (Objects.isNull(responseConditions)) {
-                    responseConditions = new ArrayList<>();
-                }
-                responseConditions.add(entity);
-                serviceRepository.save(restService);
-            } else {
-                throw new InvalidInputException("serviceId");
-            }
+            addResponseToService(serviceId,entity);
         }
         evictEffectCache();
     }
+
+    private void addResponseToService(String serviceId, ResponseEntity entity) {
+        ServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("serviceId"));
+        List<ResponseEntity> responseConditions = null;
+        boolean validService = false;
+        if (serviceEntity instanceof RestExternalServiceEntity restService) {
+            responseConditions = restService.getResponseList();
+            restService.setResponseList(responseConditions);
+            validService = true;
+        } else if (serviceEntity instanceof CompositionServiceEntity compositionService) {
+            responseConditions = compositionService.getResponseList();
+            if (Objects.isNull(responseConditions)) {
+                responseConditions = new ArrayList<>();
+                compositionService.setResponseList(responseConditions);
+            }
+            validService = true;
+        }
+        if (validService) {
+            responseConditions.add(entity);
+            serviceRepository.save(serviceEntity);
+        } else {
+            throw new InvalidInputException("serviceId");
+        }
+    }
+
+    private void addResponseToProvider(String serviceProviderId, ResponseEntity entity) {
+        AbstractExternalServiceProviderEntity provider = serviceProviderRepository.findById(serviceProviderId).orElseThrow(() -> new NoMatchRecordFoundException("serviceProviderId"));
+        List<ResponseEntity> responseConditions = provider.getResponseConditions();
+        if (Objects.isNull(responseConditions)) {
+            responseConditions = new ArrayList<>();
+        }
+        responseConditions.add(entity);
+        serviceProviderRepository.save(provider);
+    }
+
 
     private void validateResponseConditionRequest(ResponseCreateRequest request) {
         ValidationUtils.checkBlankStringIfNotNull(request.getTransformerId(), () -> new InvalidInputException("transformerId"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorCode(), () -> new InvalidInputException("errorCode"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorMessage(), () -> new InvalidInputException("errorMessage"));
-        ValidationUtils.checkBlankStringIfNotNull(request.getTitle(),()->new InvalidInputException("title"));
-        ValidationUtils.checkBlankString(String.valueOf(request.getHttpResponseStatusCode()),()->new InvalidInputException("httpResponseStatusCode"));
-        ValidationUtils.checkBlankString(String.valueOf(request.getStatus()),()->new InvalidInputException("status"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getTitle(), () -> new InvalidInputException("title"));
+        ValidationUtils.checkBlankString(String.valueOf(request.getHttpResponseStatusCode()), () -> new InvalidInputException("httpResponseStatusCode"));
+        ValidationUtils.checkBlankString(String.valueOf(request.getStatus()), () -> new InvalidInputException("status"));
         if (StringUtils.isBlank(request.getServiceId()) && StringUtils.isBlank(request.getServiceProviderId())) {
             throw new MissingRequiredInputException("targetId(serviceId or serviceProviderId)");
         }
@@ -304,7 +325,6 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     private String getCurrentUser() {
         return AuthenticationUtils.getLoggedInGlobalUsername();
     }
-
 
 
 }

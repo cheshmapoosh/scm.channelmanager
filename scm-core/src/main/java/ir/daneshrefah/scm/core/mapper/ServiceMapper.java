@@ -55,6 +55,7 @@ public interface ServiceMapper {
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
+    @Mapping(source = "responseList", target = "responseList", qualifiedByName = "toResponseConditionModel")
     CompositionService toModel(CompositionServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
@@ -95,6 +96,7 @@ public interface ServiceMapper {
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersEntities")
+    @Mapping(source = "responseList", target = "responseList", qualifiedByName = "toResponseConditionEntity")
     CompositionServiceEntity toEntity(CompositionService model);
 
 

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.process.service.util.processDefinition;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.process.exception.processInstance.ProcessInstanceNotFoundWithKeyException;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionRequest;
 import ir.daneshrefah.scm.process.service.dto.processDefinition.ProcessDefinitionResponse;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.process.service.process;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.process.service.dto.process.ProcessCancelRequest;
 import ir.daneshrefah.scm.process.service.dto.process.ProcessStartRequest;
 import ir.daneshrefah.scm.process.service.dto.process.ProcessStartResponse;

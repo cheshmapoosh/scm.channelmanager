@@ -212,7 +212,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('bd0fe44f-68f2-4952-8749-fb15b05f0760', 'SVC_TERMINAL_LIST', 'لیست ترمینال', '/list', 1, 1, 1, 2, 1,
-        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalFindRequest)',
+        'bean:terminalManagementService.listTerminal(ir.daneshrefah.scm.common.dto.terminal.TerminalFindRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
@@ -225,33 +225,33 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('d42c6df9-e27d-4894-b86c-a48dd2a11412', 'SVC_TERMINAL_CREATE', 'ایجاد ترمینال', '', 1, 1, 5, 2, 1,
-        'bean:terminalManagementService.createTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalCreateRequest)',
+        'bean:terminalManagementService.createTerminal(ir.daneshrefah.scm.common.dto.terminal.TerminalCreateRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('3AB12C3E-1CFA-412B-A23C-12FA3C2BEDA', 'SVC_TERMINAL_EDIT', 'ویرایش ترمینال', '', 1, 1, 6, 2, 1,
-        'bean:terminalManagementService.editTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalEditRequest)',
+        'bean:terminalManagementService.editTerminal(ir.daneshrefah.scm.common.dto.terminal.TerminalEditRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('2BFA1C2E-A31D-412A-B23F-23EFABC1DEC', 'SVC_TERMINAL_DELETE', 'حذف ترمینال', '', 1, 1, 7, 2, 1,
-        'bean:terminalManagementService.deleteTerminal(ir.daneshrefah.scm.common.service.terminal.TerminalDeleteRequest)',
+        'bean:terminalManagementService.deleteTerminal(ir.daneshrefah.scm.common.dto.terminal.TerminalDeleteRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('44fddd2a-5df4-4a8a-a4c2-5381ef673e02', 'SVC_TERMINAL_ADD_SERVICE', 'تخصیص سرویس به ترمینال', '/add-service', 1,
         1, 5, 2, 1,
-        'bean:terminalManagementService.addServiceAssignment(ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest)',
+        'bean:terminalManagementService.addServiceAssignment(ir.daneshrefah.scm.common.dto.terminal.TerminalServiceAssignmentRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('7D2C1AEF-A23A-4B2E-A1FE-32EF2ABC1DEA', 'SVC_TERMINAL_DELETE_SERVICE', 'عدم تخصیص سرویس به ترمینال',
         '/delete-service', 1, 1, 7, 2, 1,
-        'bean:terminalManagementService.deleteServiceAssignment(ir.daneshrefah.scm.common.service.terminal.TerminalServiceAssignmentRequest)',
+        'bean:terminalManagementService.deleteServiceAssignment(ir.daneshrefah.scm.common.dto.terminal.TerminalServiceAssignmentRequest)',
         '23a5aaff-a92e-4896-a873-39e4ff75a419', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
                                  RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
@@ -277,7 +277,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('7B1A2C3E-21FA-421C-B23D-12FA3C1BEDA', 'SVC_CHANNEL_LIST', 'لیست کانال', '/list', 1, 1, 1, 2, 1,
-        'bean:channelManagementService.listChannel(ir.daneshrefah.scm.common.service.channel.ChannelFindRequest)',
+        'bean:channelManagementService.listChannel(ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest)',
         '0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
@@ -290,19 +290,19 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('DB1A2C3E-2BFA-421C-B12E-12FA3C1BEDA', 'SVC_CHANNEL_CREATE', 'ایجاد کانال', '', 1, 1, 5, 2, 1,
-        'bean:channelManagementService.createChannel(ir.daneshrefah.scm.common.service.channel.ChannelCreateRequest)',
+        'bean:channelManagementService.createChannel(ir.daneshrefah.scm.common.dto.channel.ChannelCreateRequest)',
         '0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('0C2E3FEA-A12C-432F-A21F-12EFABC1DEC', 'SVC_CHANNEL_EDIT', 'ویرایش کانال', '', 1, 1, 6, 2, 1,
-        'bean:channelManagementService.editChannel(ir.daneshrefah.scm.common.service.channel.ChannelEditRequest)',
+        'bean:channelManagementService.editChannel(ir.daneshrefah.scm.common.dto.channel.ChannelEditRequest)',
         '0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('AB3F2C3E-A12D-421A-B23B-23FA3C2BEAD', 'SVC_CHANNEL_DELETE', 'حذف کانال', '', 1, 1, 7, 2, 1,
-        'bean:channelManagementService.deleteChannel(ir.daneshrefah.scm.common.service.channel.ChannelDeleteRequest)',
+        'bean:channelManagementService.deleteChannel(ir.daneshrefah.scm.common.dto.channel.ChannelDeleteRequest)',
         '0D2E3FEA-A32C-4B2F-A12F-12EFABC1DEC', 'Reza Jamshidi', 'Reza Jamshidi');
 
 --------------------------------------------- SERVICE_MANAGEMENT_SERVICES ----------------------------------------------
@@ -314,7 +314,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('790f7095-0102-44a7-9802-8d2530f09033', 'SVC_SERVICE_LIST', 'لیست سرویس', '/list', 1, 1, 1, 2, 1,
-        'bean:serviceManagementService.serviceList(ir.daneshrefah.scm.common.service.ServiceFindRequest)',
+        'bean:serviceManagementService.serviceList(ir.daneshrefah.scm.common.dto.ServiceFindRequest)',
         '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
@@ -327,7 +327,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('ee6380f7-3f2d-4751-8211-74a67370635e', 'SVC_SERVICE_CREATE', 'ایجاد سرویس', '', 1, 1, 5, 2, 1,
-        'bean:serviceManagementService.createService(ir.daneshrefah.scm.common.service.ServiceInfoRequest)',
+        'bean:serviceManagementService.createService(ir.daneshrefah.scm.common.dto.ServiceInfoRequest)',
         '616d1811-0ad6-4f3c-80c0-47a003522d08', 'Reza Jamshidi', 'Reza Jamshidi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
                                  RESPONSE_JSON_SCHEMA, PARENT_SERVICE_ID, SERVICE_TYPE_CODE,
@@ -339,7 +339,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('819da0df-a024-4c3a-93b1-120a79084c27', 'SCV_SERVICE_DELETE', 'حذف سرویس', '', 1, 1, 1, null, null,
         '616d1811-0ad6-4f3c-80c0-47a003522d08', 7, 2,
-        'bean:serviceManagementService.deleteService(ir.daneshrefah.scm.common.service.ServiceDeleteRequest)', null,
+        'bean:serviceManagementService.deleteService(ir.daneshrefah.scm.common.dto.ServiceDeleteRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
@@ -352,7 +352,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('455d9247-e05c-49e6-b504-ad9bf2b9241c', 'SVC_SERVICE_EDIT', 'ویرایش سرویس', '/edit', 1, 1, 1, null, null,
         '616d1811-0ad6-4f3c-80c0-47a003522d08', 6, 2,
-        'bean:serviceManagementService.updateService(ir.daneshrefah.scm.common.service.ServiceInfoEditRequest)', null,
+        'bean:serviceManagementService.updateService(ir.daneshrefah.scm.common.dto.ServiceInfoEditRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
@@ -366,7 +366,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
 VALUES ('33f6f9aa-d651-447a-a5e5-8a80d2941f57', 'SVC_SERVICE_ACCESS_SERVICE_LIST',
         'دریافت لیست سرویس های در دسترس ترمینال', '/access-service-list', 1, 1, 1, null, null,
         '616d1811-0ad6-4f3c-80c0-47a003522d08', 3, 5,
-        'bean:serviceManagementService.findAllServiceAccessOnTerminal(ir.daneshrefah.scm.common.service.ServiceAccessFindRequest)',
+        'bean:serviceManagementService.findAllServiceAccessOnTerminal(ir.daneshrefah.scm.common.dto.ServiceAccessFindRequest)',
         null, null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-22 15:10:01.000000',
         '2024-04-22 15:10:03.000000', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -404,7 +404,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('F12A3BED-A32B-432E-A21F-31EF1ABC2DEA', 'SVC_USER_LOCAL_ACCOUNT_LIST', 'لیست حسابهای یک کاربر', '/local', 1, 1,
         1, 2, 1,
-        'bean:customerManagementService.findLocalMembershipTerminalAccesses(ir.daneshrefah.scm.common.service.MembershipFindRequest)',
+        'bean:customerManagementService.findLocalMembershipTerminalAccesses(ir.daneshrefah.scm.common.dto.membership.MembershipFindRequest)',
         'c0a707a8-7330-43b1-bda2-d6e5bf0ee691', 'Reza Jamshidi', 'Reza Jamshidi');
 
 --------------------------------------------- FUND_TRANSFER_SERVICES ----------------------------------------------
@@ -570,7 +570,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('bd0fe44f-68f2-4952-8850-fb15b05f0761', 'SVC_BUNDLE_LIST', 'لیست باندل', '/list', 1, 1, 1, 2, 1,
-        'bean:bundleManagementService.bundleList(ir.daneshrefah.scm.common.service.bundle.BundleFindRequest)',
+        'bean:bundleManagementService.bundleList(ir.daneshrefah.scm.common.dto.bundle.BundleFindRequest)',
         '24a5aaaf-a92e-4896-a873-39e4ff75a420', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -591,7 +591,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('e4f895a9-41c9-47db-9ea0-c46362f8dfa2', 'SVC_BUNDLE_EDIT', 'ویرایش باندل', '/edit', 1, 1, 1, null, null,
         '24a5aaaf-a92e-4896-a873-39e4ff75a420', 6, 2,
-        'bean:bundleManagementService.edit(ir.daneshrefah.scm.common.service.bundle.BundleEditRequest)', null,
+        'bean:bundleManagementService.edit(ir.daneshrefah.scm.common.dto.bundle.BundleEditRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -606,7 +606,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('a6e60c29-8a32-4a1d-b355-f8091090a9e8', 'SVC_ERROR_LIST', 'لیست خطاها', '/list', 1, 1, 1, 2, 1,
-        'bean:exceptionManagementService.list(ir.daneshrefah.scm.common.service.error.ErrorMappingFindRequest)',
+        'bean:exceptionManagementService.list(ir.daneshrefah.scm.common.dto.error.ErrorMappingFindRequest)',
         'f0d90091-3673-4f18-a77f-c81463782b3b', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -627,7 +627,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('a637116f-6bc1-47a4-80a1-8cf6f65edf57', 'SVC_ERROR_EDIT', 'ویرایش خطا', '/edit', 1, 1, 1, null, null,
         'f0d90091-3673-4f18-a77f-c81463782b3b', 6, 2,
-        'bean:exceptionManagementService.edit(ir.daneshrefah.scm.common.service.error.ErrorMappingEditRequest)', null,
+        'bean:exceptionManagementService.edit(ir.daneshrefah.scm.common.dto.error.ErrorMappingEditRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-17 10:29:03.460568', '2024-04-17 10:29:03.460568',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -648,14 +648,14 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('f96821fa-ccac-491b-9624-02db31bc9861', 'SVC_PARAMETER_CREATE', 'ایجاد پارامتر', '/parameter', 1, 1, 5, 2, 1,
-        'bean:dynamicRestManagementService.createParameter(ir.daneshrefah.scm.common.service.rest.ParameterCreateRequest)',
+        'bean:dynamicRestManagementService.createParameter(ir.daneshrefah.scm.common.dto.rest.ParameterCreateRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('743f6bce-0306-4dd8-a671-1398b716532f', 'SVC_CONDITION_DATA_SOURCE_CREATE', 'ایجاد دیتاسورس شرط پاسخ دهی سرویس', '/data-source', 1, 1, 5, 2, 1,
-        'bean:dynamicRestManagementService.createResponseConditionDatasource(ir.daneshrefah.scm.common.service.rest.ResponseConditionDatasourceRequest)',
+        'bean:dynamicRestManagementService.createResponseConditionDatasource(ir.daneshrefah.scm.common.dto.rest.ResponseConditionDatasourceRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -670,7 +670,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('5becbcf4-c2a1-45b1-819b-2432dc3c9c12', 'SVC_PARAMETER_CHANGE', 'ویرایش پارامتر', '/parameter', 1, 1, 6, 2, 1,
-        'bean:dynamicRestManagementService.changeParameter(ir.daneshrefah.scm.common.service.rest.ParameterChangeRequest)',
+        'bean:dynamicRestManagementService.changeParameter(ir.daneshrefah.scm.common.dto.rest.ParameterChangeRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -684,7 +684,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('8e10018a-eb27-44a8-9c7d-2cf4ed1e5b93', 'SVC_CONDITION_DATA_SOURCE_CHANGE', 'ویرایش دیتاسورس شرط پاسخ دهی سرویس', '/data-source', 1, 1, 6, 2, 1,
-        'bean:dynamicRestManagementService.changeResponseConditionDatasource(ir.daneshrefah.scm.common.service.rest.ResponseConditionDatasourceChangeRequest)',
+        'bean:dynamicRestManagementService.changeResponseConditionDatasource(ir.daneshrefah.scm.common.dto.rest.ResponseConditionDatasourceChangeRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS, IS_SYSTEMIC, REQUEST_JSON_SCHEMA,
@@ -697,7 +697,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('95d2b762-5ad8-4c3c-bb7b-e1097d3c43be', 'SVC_PARAMETER_DELETE', 'حذف پارامتر', '/parameter', 1, 1, 1, null, null,
         '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
-        'bean:dynamicRestManagementService.removeParameter(ir.daneshrefah.scm.common.service.rest.ParameterDeleteRequest)', null,
+        'bean:dynamicRestManagementService.removeParameter(ir.daneshrefah.scm.common.dto.rest.ParameterDeleteRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -725,7 +725,7 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, VERSION, STATUS
                                  PROPERTY_NAME_CUSTOMER, METADATA, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
 VALUES ('10faa773-0b5a-45f7-812d-ca5602747ba8', 'SVC_CONDITION_DATA_SOURCE_DELETE', 'حذف دیتاسورس شرط پاسخ دهی سرویس', '/data-source', 1, 1, 1, null, null,
         '04dfb077-7539-46a8-a4d5-0548ef986867', 7, 2,
-        'bean:dynamicRestManagementService.removeResponseConditionDatasource(ir.daneshrefah.scm.common.service.rest.ResponseConditionDatasourceRemoveRequest)', null,
+        'bean:dynamicRestManagementService.removeResponseConditionDatasource(ir.daneshrefah.scm.common.dto.rest.ResponseConditionDatasourceRemoveRequest)', null,
         null, null, 1, 0, 0, 0, null, null, null, null, '2024-04-16 13:27:10.000000', '2024-04-16 13:27:12.000000',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 
@@ -741,14 +741,14 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('77646c1b-3d42-43bb-9c94-c258e3db939e', 'SVC_PARAMETER_FIND', 'لیست پارامتر', '/parameter/find', 1, 1, 1, 2, 1,
-        'bean:dynamicRestManagementService.findParameter(ir.daneshrefah.scm.common.service.rest.ParameterFindRequest)',
+        'bean:dynamicRestManagementService.findParameter(ir.daneshrefah.scm.common.dto.rest.ParameterFindRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('193c26ce-5daf-44dc-90eb-d871a0a61fac', 'SVC_PARAMETER_FIND_TREE', 'درخت پارامتر', '/parameter/find-tree', 1, 1, 1, 2, 1,
-        'bean:dynamicRestManagementService.findParameterTree(ir.daneshrefah.scm.common.service.rest.ParameterTreeFindRequest)',
+        'bean:dynamicRestManagementService.findParameterTree(ir.daneshrefah.scm.common.dto.rest.ParameterTreeFindRequest)',
         '04dfb077-7539-46a8-a4d5-0548ef986867', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
@@ -769,14 +769,14 @@ INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYST
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('a1c7053d-9902-4f60-b597-0e6e39273da5', 'SVC_ASSETS_LIST', 'لیست دارایی های یک کاربر', '/list', 1, 1, 1, 2, 1,
-        'bean:customerManagementService.findProviderMembershipList(ir.daneshrefah.scm.common.data.service.person.CustomerProviderFindRequest)',
+        'bean:customerManagementService.findProviderMembershipList(ir.daneshrefah.scm.common.dto.membership.CustomerProviderFindRequest)',
         '1b5ac43d-3f44-4201-bd36-952ee2392bb7', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,
                                  SERVICE_IMPLEMENTATION_TYPE_CODE, CHECK_ACCESS_FIRST_AUTHENTICATION,
                                  IMPLEMENTATION_JAVA_CLASS_NAME, PARENT_SERVICE_ID, CREATOR, LAST_EDITOR)
 VALUES ('e181c6c3-06b5-44eb-a197-c9c38892423d', 'SVC_ASSETS_LIST_LOCAL', 'لیست لوکال دارایی های یک کاربر', '/local-list', 1, 1, 1, 2, 1,
-        'bean:customerManagementService.findLocalMembershipList(ir.daneshrefah.scm.common.service.MembershipFindRequest)',
+        'bean:customerManagementService.findLocalMembershipList(ir.daneshrefah.scm.common.dto.membership.MembershipFindRequest)',
         '1b5ac43d-3f44-4201-bd36-952ee2392bb7', 'Dariush Abdolahi', 'Dariush Abdolahi');
 
 INSERT INTO REF.TBL_SCM_SERVICE (SERVICE_ID, CODE, TITLE, ALIAS, STATUS, IS_SYSTEMIC, SERVICE_TYPE_CODE,

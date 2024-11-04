@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.notification.MessageTemplate;
 import ir.daneshrefah.scm.common.model.notification.NotificationMessage;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.service.terminal.TerminalService;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.notification.client.exception.*;
 import ir.daneshrefah.scm.notification.client.service.provider.NotificationMessageProvider;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;

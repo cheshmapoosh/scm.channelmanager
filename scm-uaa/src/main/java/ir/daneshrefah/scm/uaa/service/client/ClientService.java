@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.client;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
 import ir.daneshrefah.scm.uaa.mapper.ClientMapper;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.logging.service;
 
-import ir.daneshrefah.scm.common.dto.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.logging.model.TransactionLogDetailResponse;
 import ir.daneshrefah.scm.logging.model.TransactionLogRequest;
 import ir.daneshrefah.scm.logging.model.TransactionLogResponse;
