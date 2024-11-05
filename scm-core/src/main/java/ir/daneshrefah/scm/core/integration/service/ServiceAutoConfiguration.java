@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.RouteDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -36,42 +35,42 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     private final JavaServiceExecutor javaServiceExecutor;
     private final CompositionServiceExecutor compositionServiceExecutor;
     private final ProxyServiceExecutor proxyServiceExecutor;
-    private final Map<ServiceImplementationType, ServiceExecutor> executorMap = new HashMap<>();
     private final List<MessageInterceptor> messageInterceptors;
 
     @Override
     public void configure() {
-        initServiceExecutorList();
+        initServiceExecutorList(this);
         List<Service> services = serviceService.findCallableServiceList();
         LOGGER.info("service list load completed. count: {}", services.size());
         services
                 .stream()
                 .filter(this::isPublishableService)
-                .forEach(service -> {
-                    ServiceExecutor serviceExecutor = executorMap.get(service.getImplementationType());
-                    serviceExecutor.initServiceExecution(service, this);
-                });
+                .forEach(service -> serviceExecutor(service).configureServiceExecution(service, this));
     }
 
+    private ServiceExecutor serviceExecutor(Service service) {
+        return switch (service.getImplementationType()) {
+            case CUSTOM_EXTERNAL, REST_EXTERNAL -> externalServiceExecutor;
+            case JAVA -> javaServiceExecutor;
+            case COMPOSITION -> compositionServiceExecutor;
+            case PROXY -> proxyServiceExecutor;
+            default -> null;
+        };
+    }
+
+    private List<ServiceExecutor> serviceExecutors() {
+        return  List.of(externalServiceExecutor, javaServiceExecutor, compositionServiceExecutor, proxyServiceExecutor);
+    }
     private boolean isPublishableService(Service service) {
         return !ServiceImplementationType.PARENT.equals(service.getImplementationType()) &&
-               !ServiceStatus.INACTIVE.equals(service.getStatus());
+                !ServiceStatus.INACTIVE.equals(service.getStatus());
     }
 
 
-    private void initServiceExecutorList() {
+    private void initServiceExecutorList(RouteBuilder routeBuilder) {
         final List<MessageInterceptor> requestInterceptors = getMessageInterceptors(InterceptorConfig.Type.REQUEST);
         final List<MessageInterceptor> responseInterceptors = getMessageInterceptors(InterceptorConfig.Type.RESPONSE);
-        executorMap.put(ServiceImplementationType.CUSTOM_EXTERNAL, externalServiceExecutor);
-        executorMap.put(ServiceImplementationType.REST_EXTERNAL, externalServiceExecutor);
-        executorMap.put(ServiceImplementationType.JAVA, javaServiceExecutor);
-        executorMap.put(ServiceImplementationType.COMPOSITION, compositionServiceExecutor);
-        executorMap.put(ServiceImplementationType.PROXY, proxyServiceExecutor);
-        for (Map.Entry<ServiceImplementationType, ServiceExecutor> entry : executorMap.entrySet()) {
-            ServiceImplementationType key = entry.getKey();
-            ServiceExecutor executor = entry.getValue();
-            executor.init(this, requestInterceptors, responseInterceptors);
-        }
+        serviceExecutors().forEach(serviceExecutor -> serviceExecutor.init(routeBuilder, requestInterceptors, responseInterceptors));
     }
 
     private List<MessageInterceptor> getMessageInterceptors(InterceptorConfig.Type interceptorType) {

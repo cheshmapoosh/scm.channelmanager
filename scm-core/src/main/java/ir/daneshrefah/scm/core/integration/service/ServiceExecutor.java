@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -20,9 +21,12 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.model.*;
+import org.apache.camel.model.ChoiceDefinition;
+import org.apache.camel.model.ProcessorDefinition;
+import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.TryDefinition;
+import org.apache.camel.opentelemetry.OpenTelemetryTracer;
 import org.apache.camel.spi.ErrorHandler;
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,7 +164,7 @@ public abstract class ServiceExecutor {
     }
 
 
-    public final void initServiceExecution(Service service, RouteBuilder routeBuilder) {
+    public final void configureServiceExecution(Service service, RouteBuilder routeBuilder) {
         String serviceCode = service.getCode();
         // For created dynamic proxy service , the route created by $_proxy ... name , but the service code set as same as
         // target service.
@@ -179,7 +183,7 @@ public abstract class ServiceExecutor {
         });
 
 //        Request Interceptors
-        tryDefinition.setProperty("index", () -> 0)
+        tryDefinition.setProperty("index", () -> -1)
                 .loopDoWhile(exchange -> {
                     Message message = exchange.getMessage().getBody(Message.class);
                     Integer index = exchange.getProperty("index", Integer.class);
@@ -201,7 +205,7 @@ public abstract class ServiceExecutor {
         choiceDefinition.endChoice();
 
 //        Response Interceptors
-        tryDefinition.setProperty("index", () -> 0)
+        tryDefinition.setProperty("index", () -> -1)
                 .loopDoWhile(exchange -> {
                     Message message = exchange.getMessage().getBody(Message.class);
                     Integer index = exchange.getProperty("index", Integer.class);
@@ -272,79 +276,5 @@ public abstract class ServiceExecutor {
     }
 
     protected abstract void defineServiceRoute(Service service, ProcessorDefinition<?> processorDefinition);
-
-    public static void main(String[] args) throws Exception {
-        // Setup the main Camel context
-        CamelContext context = new DefaultCamelContext();
-
-        context.addRoutes(new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-
-//                // First global intercept (applies to all routes)
-//                intercept()
-//                        .to("log:firstIntercept")
-//                        .process(exchange -> {
-//                            // Additional processing or logging
-//                            System.out.println("First global intercept executed");
-//                        });
-//
-//                // Second global intercept
-//                intercept()
-//                        .to("log:secondIntercept")
-//                        .process(exchange -> {
-//                            // Additional processing or logging
-//                            System.out.println("Second global intercept executed");
-//                        });
-
-                // Specific endpoint intercept
-
-//                interceptSendToEndpoint("direct:endpointA")
-//                        .to("log:endpointIntercept1")
-//                        .process(exchange -> {
-//                            // Processing logic for first endpoint intercept
-//                            System.out.println("Endpoint intercept 1 executed");
-//                        });
-
-                interceptSendToEndpoint("log:endpointA")
-//                        .to("direct:intercept1")
-                        .skipSendToOriginalEndpoint()
-                        .when(exchange -> true)
-                        .to("log:skip")
-                        .process(exchange -> {
-                            // Custom logic
-                            System.out.println("Intercepted and stopped message for ServiceA");
-                            // You could also set a custom response here if needed
-                            exchange.getMessage().setBody("Intercepted message; stopping further processing.");
-                        }).afterUri("log:afterUri");
-
-                ;
-
-
-                from("direct:intercept1")
-                        .log("intercept1 run endpointA")
-                        .choice().when(exchange -> true).to("direct:intercept2").otherwise().log("Skip direct:intercept2").endChoice();
-
-                from("direct:intercept2")
-                        .log("intercept2 run endpointA");
-
-                // Main route definition
-                from("timer://start?repeatCount=1&delay=1000")
-                        .doTry()
-                        .to("log:endpointA")
-                        .to("log:end")
-                        .doFinally().to("log:finally")
-                        .endDoTry();
-
-//                from("direct:endpointA")
-//                        .log("Successful run endpointA");
-
-            }
-        });
-
-        context.start();
-        Thread.sleep(5000);
-        context.stop();
-    }
 
 }

@@ -55,15 +55,15 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
     private final TransformerService transformerService;
     private final Map<String, ExternalServiceProviderExecutor> serviceProviderMap = new HashMap<>();
 
-    @Override
-    protected void initConfigs(RouteBuilder routeBuilder) {
-        super.initConfigs(routeBuilder);
-        List<AbstractExternalServiceProvider> providers = serviceService.findServiceProviderList();
-        for (Iterator<AbstractExternalServiceProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
-            AbstractExternalServiceProvider provider = iterator.next();
-            registerExternalServiceProvider(provider, routeBuilder);
-        }
-    }
+//    @Override
+//    protected void initConfigs(RouteBuilder routeBuilder) {
+//        super.initConfigs(routeBuilder);
+//        List<AbstractExternalServiceProvider> providers = serviceService.findServiceProviderList();
+//        for (Iterator<AbstractExternalServiceProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
+//            AbstractExternalServiceProvider provider = iterator.next();
+//            registerExternalServiceProvider(provider, routeBuilder);
+//        }
+//    }
 
     @Override
     protected void defineServiceRoute(ir.daneshrefah.scm.common.model.service.Service service, ProcessorDefinition processorDefinition) {
@@ -100,76 +100,76 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
         return responseMessage.getPayload();
     }
 
-    private void registerExternalServiceProvider(AbstractExternalServiceProvider serviceProviderModel, RouteBuilder routeBuilder) {
-        if (null == serviceProviderModel)
-            return;
-        if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
-            return;
-        AbstractBaseExternalServiceProviderExecutor provider = (AbstractBaseExternalServiceProviderExecutor)
-                extractServiceProviderExecutorInstance(serviceProviderModel);
-        if (Objects.isNull(provider)) {
-            return;
-        }
-        configureRouteDefinition(serviceProviderModel, routeBuilder, provider);
-//        provider.configureRouteDefinition(routeDefinition, serviceProviderModel);
-        serviceProviderMap.put(serviceProviderModel.getCode(), provider);
-    }
+//    private void registerExternalServiceProvider(AbstractExternalServiceProvider serviceProviderModel, RouteBuilder routeBuilder) {
+//        if (null == serviceProviderModel)
+//            return;
+//        if (serviceProviderMap.containsKey(serviceProviderModel.getCode()))
+//            return;
+//        AbstractBaseExternalServiceProviderExecutor provider = (AbstractBaseExternalServiceProviderExecutor)
+//                extractServiceProviderExecutorInstance(serviceProviderModel);
+//        if (Objects.isNull(provider)) {
+//            return;
+//        }
+//        configureRouteDefinition(serviceProviderModel, routeBuilder, provider);
+////        provider.configureRouteDefinition(routeDefinition, serviceProviderModel);
+//        serviceProviderMap.put(serviceProviderModel.getCode(), provider);
+//    }
 
-    private void configureRouteDefinition(AbstractExternalServiceProvider provider, RouteBuilder routeBuilder,
-                                          ExternalServiceProviderExecutor providerExecutor) {
-        String fromUri = "ESP_" + provider.getCode();
-        RouteDefinition routeDefinition = routeBuilder.from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
-        List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
-                provider.getId());
-        routeDefinition.process(exchange -> {
-            Message message = exchange.getMessage().getBody(Message.class);
-            exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
-            Object requestBody = transformRequest(
-                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_REQUEST), message);
-            exchange.getMessage().setBody(requestBody);
-        });
-        providerExecutor.endpointCallRouteDefinition(routeDefinition);
-        routeDefinition.process(exchange -> {
-            exchange.setProperty(HEADER_END_TIME, Instant.now());
-            String response = exchange.getMessage().getBody(String.class);
-            exchange.setProperty(HEADER_RESPONSE_BODY, response);
-            JsonNode jsonResponse = null;
-            try {
-                jsonResponse = objectMapper.readTree(response);
-            } catch (JsonProcessingException e) {
-                jsonResponse = objectMapper.valueToTree(response);
-            }
-            if (null != exchange.getException()) {
-                return;
-            }
-            Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-            message.payload(transformResponse(
-                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_RESPONSE), message, jsonResponse));
-            exchange.getMessage().setBody(message);
-        });
-        routeDefinition.end();
-    }
+//    private void configureRouteDefinition(AbstractExternalServiceProvider provider, RouteBuilder routeBuilder,
+//                                          ExternalServiceProviderExecutor providerExecutor) {
+//        String fromUri = "ESP_" + provider.getCode();
+//        RouteDefinition routeDefinition = routeBuilder.from("direct:" + fromUri).routeId("ROUTE_" + fromUri);
+//        List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(
+//                provider.getId());
+//        routeDefinition.process(exchange -> {
+//            Message message = exchange.getMessage().getBody(Message.class);
+//            exchange.setProperty(HEADER_ORIGINAL_MESSAGE, message);
+//            Object requestBody = transformRequest(
+//                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_REQUEST), message);
+//            exchange.getMessage().setBody(requestBody);
+//        });
+//        providerExecutor.endpointCallRouteDefinition(routeDefinition);
+//        routeDefinition.process(exchange -> {
+//            exchange.setProperty(HEADER_END_TIME, Instant.now());
+//            String response = exchange.getMessage().getBody(String.class);
+//            exchange.setProperty(HEADER_RESPONSE_BODY, response);
+//            JsonNode jsonResponse = null;
+//            try {
+//                jsonResponse = objectMapper.readTree(response);
+//            } catch (JsonProcessingException e) {
+//                jsonResponse = objectMapper.valueToTree(response);
+//            }
+//            if (null != exchange.getException()) {
+//                return;
+//            }
+//            Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+//            message.payload(transformResponse(
+//                    prepareTransformerExecutionWrapper(transformerRelations, TransformerRelationType.SERVICE_PROVIDER_RESPONSE), message, jsonResponse));
+//            exchange.getMessage().setBody(message);
+//        });
+//        routeDefinition.end();
+//    }
 
-    private ExternalServiceProviderExecutor extractServiceProviderExecutorInstance(AbstractExternalServiceProvider serviceProviderModel) {
-        try {
-            ExternalServiceProviderExecutor provider = null;
-            if (ServiceProviderProtocol.REST.equals(serviceProviderModel.getProtocol())) {
-                provider = applicationContext.getBean(DefaultRestServiceProviderExecutor.class);
-            } else if (ServiceProviderProtocol.CUSTOM.equals(serviceProviderModel.getProtocol())) {
-                provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
-                        AbstractBaseExternalServiceProviderExecutor.class, serviceProviderModel);
-            }
-            if (null == provider) {
-                log.warn("error on create instance of '{}' provider with className '{}'", serviceProviderModel.getCode(),
-                        serviceProviderModel.getProviderClassName());
-                return null;
-            }
-            provider.init(serviceProviderModel);
-            return provider;
-        } catch (Exception e) {
-            log.error("error register external service provider: " + serviceProviderModel.getCode(), e);
-        }
-        return null;
-    }
+//    private ExternalServiceProviderExecutor extractServiceProviderExecutorInstance(AbstractExternalServiceProvider serviceProviderModel) {
+//        try {
+//            ExternalServiceProviderExecutor provider = null;
+//            if (ServiceProviderProtocol.REST.equals(serviceProviderModel.getProtocol())) {
+//                provider = applicationContext.getBean(DefaultRestServiceProviderExecutor.class);
+//            } else if (ServiceProviderProtocol.CUSTOM.equals(serviceProviderModel.getProtocol())) {
+//                provider = ClassLoader.findBeanOrCreateInstanceOfClass(serviceProviderModel.getProviderClassName(),
+//                        AbstractBaseExternalServiceProviderExecutor.class, serviceProviderModel);
+//            }
+//            if (null == provider) {
+//                log.warn("error on create instance of '{}' provider with className '{}'", serviceProviderModel.getCode(),
+//                        serviceProviderModel.getProviderClassName());
+//                return null;
+//            }
+//            provider.init(serviceProviderModel);
+//            return provider;
+//        } catch (Exception e) {
+//            log.error("error register external service provider: " + serviceProviderModel.getCode(), e);
+//        }
+//        return null;
+//    }
 
 }

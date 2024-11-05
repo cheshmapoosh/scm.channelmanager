@@ -26,6 +26,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-netty-starter'
     api 'org.apache.camel.springboot:camel-netty-http-starter'
     api 'org.apache.camel.springboot:camel-jackson-starter'
+    api 'org.apache.camel.springboot:camel-opentelemetry-starter'
     api 'org.apache.camel:camel-beanstalk:3.16.0'
 //    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
 //    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
