@@ -15,4 +15,5 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.apache.commons:commons-lang3'
     implementation 'org.apache.commons:commons-text'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 }

@@ -11,9 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -24,8 +22,10 @@ public class DataIntegrityViolationExceptionResolver extends ExceptionResolver<D
 
 
     @Override
-    public Error resolve(DataIntegrityViolationException exception, Locale locale) {
-        return createErrorResponse(locale,exception);
+    public List<Error> resolve(DataIntegrityViolationException exception, Locale locale) {
+        List<Error> errors = new ArrayList<>();
+        errors.add(createErrorResponse(locale,exception));
+        return errors;
     }
 
 

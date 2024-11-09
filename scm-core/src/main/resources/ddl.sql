@@ -2068,13 +2068,13 @@ VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', (CURRENT DATE),
         (CURRENT DATE), 'fa-IR',
-        'ex::ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException',
+        'ex::ir.daneshrefah.scm.common.exception.BaseServiceProviderException',
         'فراخوانی سرویس مقصد در حال حاضر امکان پذیر نمی باشد.');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', (CURRENT DATE),
         (CURRENT DATE), 'en-US',
-        'ex::ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException',
+        'ex::ir.daneshrefah.scm.common.exception.BaseServiceProviderException',
         'It is currently not possible to call the destination service.');
 
 
@@ -2536,7 +2536,7 @@ VALUES( 'ir.daneshrefah.scm.process.exception.task.InvalidAssigneeException',
 
 INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
 (EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
-VALUES( 'ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException',
+VALUES( 'ir.daneshrefah.scm.common.exception.BaseServiceProviderException',
         1300, 'sc_eup',
         'Dariush Abdolahi', 'Dariush Abdolahi');
 

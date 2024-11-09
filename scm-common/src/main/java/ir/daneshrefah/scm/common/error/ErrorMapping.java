@@ -18,7 +18,13 @@ public class ErrorMapping extends BaseModel<Long> {
 
     private String providerId;
     private String providerErrorCode;
-    private String exceptionClassName;
+    private String errorMessage;
+    /**
+     * if errorMessage in ${...msg...} pattern,
+     * the errorMess filled by real message without ${}
+     * and just set true value of bundleKey.
+     */
+    private boolean bundleKey;
     private Integer scmErrorCode;
     private String exceptionOverrideName;
     private MessageStatus status;

@@ -14,8 +14,7 @@ public class ResponseChangeRequest implements RequestData {
     private String errorMessage;
     private String responseBodyType;
     private LocalDateTime lastEditDate;
-    private Boolean status;
-    private Integer httpResponseStatusCode;
+    private Boolean enable;
     private String title;
 
 }

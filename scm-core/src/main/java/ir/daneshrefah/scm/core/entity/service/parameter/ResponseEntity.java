@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.core.entity.transformer.TransformerEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import java.util.List;
 @Getter
 @Table(name = "TBL_SCM_SERVICE_RESPONSE_CONDITION")
 @Entity
+@DynamicUpdate
 public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
 
     @Id
@@ -27,9 +29,9 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
     @JoinColumn(name = "RESP_TRANSFORMER_ID")
     private TransformerEntity responseTransformer;
     @Column(name = "RESP_ERROR_CODE")
-    private String responseExceptionErrorCodeProperty;
+    private String responseErrorCodeProperty;
     @Column(name = "RESP_ERROR_MESSAGE")
-    private String responseExceptionErrorMessageProperty;
+    private String responseErrorMessageProperty;
     @OneToMany(fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinTable(name = "TBL_SCM_PARAMETER_RESPONSE_CONDITION_RELATION"
     ,joinColumns = @JoinColumn(name = "RESPONSE_CONDITION_ID")
@@ -39,9 +41,7 @@ public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
     @Column(name = "RESP_BODY_TYPE")
     private ExternalServiceBodyType responseBodyType;
     @Column(name = "STATUS")
-    private Boolean status;
-    @Column(name = "HTTP_RESP_STATUS_CODE")
-    private Integer httpResponseStatusCode;
+    private boolean enable;
     @Column(name = "RESP_TITLE")
     private String title;
 }

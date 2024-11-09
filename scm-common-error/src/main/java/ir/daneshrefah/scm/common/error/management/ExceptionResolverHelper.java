@@ -70,28 +70,34 @@ public class ExceptionResolverHelper {
     }
 
 
-    public Error resolve(Throwable throwable, Locale locale) {
-        return resolve(throwable,null,locale);
+    public List<Error> resolve(Throwable throwable, Locale locale) {
+        return resolve(throwable, null, locale);
     }
 
-    private Error getValidatedError(Error error) {
-        if (Objects.nonNull(error)) {
-            MessageStatus status = error.getStatus();
-            if (Objects.isNull(status)
-                || error.getStatus().equals(MessageStatus.SC_PROCESSING)
-                || error.getStatus().equals(MessageStatus.SC_SUCCESS)) {
-                return new Error
-                        (
-                                error.getSource(),
-                                error.getErrorCode(),
-                                error.getMessage(),
-                                error.getMessageFa(),
-                                MessageStatus.SC_ERROR_SYSTEM,
-                                error.getException()
-                        );
-            }
+    private List<Error> getValidatedError(List<Error> errors) {
+        if (Objects.nonNull(errors)) {
+            return errors
+                    .stream()
+                    .map(error -> {
+                        MessageStatus status = error.getStatus();
+                        if (Objects.isNull(status)
+                            || error.getStatus().equals(MessageStatus.SC_PROCESSING)
+                            || error.getStatus().equals(MessageStatus.SC_SUCCESS)) {
+                            return new Error
+                                    (
+                                            error.getSource(),
+                                            error.getErrorCode(),
+                                            error.getMessage(),
+                                            error.getMessageFa(),
+                                            MessageStatus.SC_ERROR_SYSTEM,
+                                            error.getException()
+                                    );
+                        }
+                        return error;
+                    }).toList();
+
         }
-        return error;
+        return null;
     }
 
     /**
@@ -99,7 +105,7 @@ public class ExceptionResolverHelper {
      */
     private ExceptionResolver<?> getDefaultResolver() {
         int resolverLevel = ExceptionResolverLevel.values().length;
-        for (int i = resolverLevel-1; i >=0 ; i--) {
+        for (int i = resolverLevel - 1; i >= 0; i--) {
             ExceptionResolverLevel level = ExceptionResolverLevel.values()[i];
             Optional<ExceptionResolver<?>> foundDefaultResolver = findResolver(level);
             if (foundDefaultResolver.isPresent()) {
@@ -110,23 +116,23 @@ public class ExceptionResolverHelper {
     }
 
     @SuppressWarnings("unchecked")
-    public Error resolve(Throwable throwable, Message message, Locale locale) {
-        Error error = null;
+    public List<Error> resolve(Throwable throwable, Message message, Locale locale) {
+        List<Error> errors = null;
         for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
             if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
                 try {
                     ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
-                    error = resolver.resolve(message,throwable, locale);
+                    errors = resolver.resolve(message, throwable, locale);
                     break;
                 } catch (Throwable t) {
                     /*If developer resolver throws any un handled exception during resolving the default
                     resolver handled it */
                     ExceptionResolver<Throwable> defaultResolver = (ExceptionResolver<Throwable>) getDefaultResolver();
-                    error = defaultResolver.resolve(message,throwable, locale);
+                    errors = defaultResolver.resolve(message, throwable, locale);
                     break;
                 }
             }
         }
-        return getValidatedError(error);
+        return getValidatedError(errors);
     }
 }

@@ -39,7 +39,7 @@ public class ExceptionManagementService extends AbstractJavaService {
                 .filter(error -> null == request || null == request.getExceptionOverrideName() || error.getExceptionOverrideName().toLowerCase().contains(request.getExceptionOverrideName().toLowerCase()))
                 .filter(error -> null == request || null == request.getScmErrorCode() || request.getScmErrorCode().equals(error.getScmErrorCode()))
                 .filter(error -> null == request || null == request.getProviderErrorCode() || request.getProviderErrorCode().equals(error.getProviderErrorCode()))
-                .filter(error -> null == request || null == request.getExceptionClassName() || error.getExceptionClassName().toLowerCase().contains(request.getExceptionClassName().toLowerCase()))
+                .filter(error -> null == request || null == request.getExceptionClassName() || error.getErrorMessage().toLowerCase().contains(request.getExceptionClassName().toLowerCase()))
                 .map(this::normalizeResponse)
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, result);
@@ -54,7 +54,7 @@ public class ExceptionManagementService extends AbstractJavaService {
                 .stream()
                 .filter(error -> Objects.isNull(request.getSearch()) ||
                              request.getSearch().isBlank() ||
-                             error.getExceptionClassName().toLowerCase().contains(request.getSearch().toLowerCase()) ||
+                             error.getErrorMessage().toLowerCase().contains(request.getSearch().toLowerCase()) ||
                              String.valueOf(error.getScmErrorCode()).contains(request.getSearch().toLowerCase()))
                 .map(this::normalizeResponse)
                 .collect(Collectors.toList());
@@ -80,11 +80,11 @@ public class ExceptionManagementService extends AbstractJavaService {
 
     private ErrorMapping normalizeResponse(ErrorMapping errorMapping) {
         //As front-end need
-        String exceptionClassName = errorMapping.getExceptionClassName();
+        String exceptionClassName = errorMapping.getErrorMessage();
         String providerId = errorMapping.getProviderId();
         String exceptionOverrideName = errorMapping.getExceptionOverrideName();
         String providerErrorCode = errorMapping.getProviderErrorCode();
-        errorMapping.setExceptionClassName(Objects.nonNull(exceptionClassName) ? exceptionClassName : "");
+        errorMapping.setErrorMessage(Objects.nonNull(exceptionClassName) ? exceptionClassName : "");
         errorMapping.setProviderId(Objects.nonNull(providerId) ? providerId : "");
         errorMapping.setExceptionOverrideName(Objects.nonNull(exceptionOverrideName) ? exceptionOverrideName : "");
         errorMapping.setProviderErrorCode(Objects.nonNull(providerErrorCode) ? providerErrorCode : "");

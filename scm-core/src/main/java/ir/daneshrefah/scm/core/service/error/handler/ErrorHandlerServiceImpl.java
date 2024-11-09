@@ -11,10 +11,7 @@ import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -46,8 +43,8 @@ public class ErrorHandlerServiceImpl extends ErrorHandlerService {
             return resolveMessageByException(message, (Exception) exception.getCause());
         }
         Locale locale = findRequestLocale();
-        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception,message, locale);
-        message.addError(resolve);
+        List<Error> resolves = ExceptionResolverHelper.getInstance().resolve(exception,message, locale);
+        resolves.forEach(message::addError);
         return message;
     }
 

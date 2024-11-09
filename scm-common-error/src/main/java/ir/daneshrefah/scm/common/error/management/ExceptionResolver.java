@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Locale;
 
 @Slf4j
@@ -21,9 +22,9 @@ public abstract class ExceptionResolver<E extends Throwable> {
         log.info(">>> Exception Resolver : [{}] loaded",this.getClass().getName());
     }
 
-    public abstract Error resolve(E exception, Locale locale);
+    public abstract List<Error> resolve(E exception, Locale locale);
 
-    public Error resolve(Message message,E exception, Locale locale){
+    public List<Error> resolve(Message message, E exception, Locale locale){
         return resolve(exception,locale);
     }
 

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import jakarta.persistence.Column;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -16,16 +17,16 @@ import java.util.List;
  * @since 2024-07-20
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class Response extends BaseModel<String> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;
-    private String responseExceptionErrorCodeProperty;
-    private String responseExceptionErrorMessageProperty;
+    private String responseErrorCodeProperty;
+    private String responseErrorMessageProperty;
     private List<Parameter> responseParameters;
     private ExternalServiceBodyType responseBodyType;
-    private Boolean status;
-    private Integer httpResponseStatusCode;
+    private boolean enable;
     private String title;
 
 }

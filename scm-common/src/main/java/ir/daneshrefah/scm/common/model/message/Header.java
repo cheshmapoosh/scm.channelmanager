@@ -10,8 +10,10 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Description of the class or purpose of the file.
@@ -25,6 +27,12 @@ import java.util.UUID;
 public class Header implements Serializable {
 
     private final Service service;
+    private final String messageId = UUID.randomUUID().toString();
+    @Getter
+    private final HttpHeader httpHeader = new HttpHeader();
+    private final Instant createTime = Instant.now();
+    @Getter
+    private final Properties properties = new Properties();
     @Setter
     private Map<ConditionKey, Condition> withdrawConditions;
     @Builder.Default
@@ -32,15 +40,29 @@ public class Header implements Serializable {
     private int level = 1;
     @Setter
     private String parentMessageId;
-    private final String messageId = UUID.randomUUID().toString();
-    @Getter
-    private final HttpHeader httpHeader = new HttpHeader();
-    private final Instant createTime = Instant.now();
 
     @Getter
     @Setter
-    public class HttpHeader{
+    public static class HttpHeader {
         private Integer httpStatusCode;
     }
+
+    public static class Properties {
+        private static final Map<String, Object> PROPERTES_MAP = new ConcurrentHashMap<>();
+
+        public void addProperty(String key, Object value) {
+            PROPERTES_MAP.put(key, value);
+        }
+
+        public Object getProperty(String key) {
+            return PROPERTES_MAP.get(key);
+        }
+
+        public List<String> getAllPropertiesName() {
+            return PROPERTES_MAP.keySet().stream().toList();
+        }
+
+    }
+
 
 }

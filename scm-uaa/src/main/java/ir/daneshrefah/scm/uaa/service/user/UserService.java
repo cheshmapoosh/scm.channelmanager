@@ -620,10 +620,10 @@ public class UserService {
     }
 
     private void applyDynamicUpdateChanges(UserEntity userEntity, UserDataChangeRequest request) {
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getNickname(), userEntity::setNickname);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getLoginStaticPassword(), userEntity::setLoginStaticPassword);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTransactionStaticPassword(), userEntity::setTransactionStaticPassword);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getNickname(), userEntity::setNickname);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getLoginStaticPassword(), userEntity::setLoginStaticPassword);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTransactionStaticPassword(), userEntity::setTransactionStaticPassword);
         DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(), accessParameters -> {
             userEntity.setAccessParameters(validateAccessParameter(accessParameters));
         });

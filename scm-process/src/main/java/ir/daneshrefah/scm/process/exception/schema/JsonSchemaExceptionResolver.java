@@ -7,6 +7,8 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 @Component
@@ -15,8 +17,10 @@ public class JsonSchemaExceptionResolver extends ExceptionResolver<JsonSchemaExc
     private final ErrorMappingService errorMappingService;
 
     @Override
-    public Error resolve(JsonSchemaException exception, Locale locale) {
-        ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
-        return new Error(exception.getSource(), errorMapping.getScmErrorCode(), exception.getMessage(), errorMapping.getStatus(), exception);
+    public List<Error> resolve(JsonSchemaException exception, Locale locale) {
+        ErrorMapping errorMapping = errorMappingService.findByExceptionByClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
+        List<Error> errors = new ArrayList<>();
+        errors.add(new Error(exception.getSource(), errorMapping.getScmErrorCode(), exception.getMessage(), errorMapping.getStatus(), exception));
+        return errors;
     }
 }

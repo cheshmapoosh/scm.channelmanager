@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.utils.data;
 
-import ir.daneshrefah.scm.utils.string.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -10,9 +8,14 @@ public class DynamicUpdateUtils {
     private DynamicUpdateUtils() {
     }
 
-    public static void applyChangesIfNotBlank(String input, DynamicChanges<String> dynamicChanges) {
+    /**
+     * if field is null accepted. if field is not null checking for blank string status.
+     */
+    public static void applyChangesIfNotBlankOrNull(String input, DynamicChanges<String> dynamicChanges) {
         if (Objects.nonNull(input) && !input.isBlank()) {
             dynamicChanges.apply(input);
+        }else if (Objects.isNull(input)){
+            dynamicChanges.apply(null);
         }
     }
 

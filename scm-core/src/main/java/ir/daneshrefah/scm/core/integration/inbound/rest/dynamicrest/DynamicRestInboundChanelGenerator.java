@@ -130,7 +130,7 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                         Message message = execute();
                         exchange.getMessage().setBody(message);
                     })
-                    .process(exchange -> { buildResponse(exchange);})
+                    .process(DynamicRestInboundChanelGenerator.this::buildResponse)
                     .end();
         }
 

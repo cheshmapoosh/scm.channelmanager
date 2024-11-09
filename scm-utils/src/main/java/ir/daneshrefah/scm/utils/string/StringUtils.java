@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.utils.string;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.CaseUtils;
@@ -488,6 +489,10 @@ public class StringUtils {
             value = value.substring(0, value.length() - suffix.length()) + replaceSuffix;
         }
         return value;
+    }
+
+    public static List<String> findPropertiesOnJsonNode(String propertyPath, JsonNode payload){
+        return JsonPathFinder.findPropertiesOnJsonNode(propertyPath,payload);
     }
 
 }
