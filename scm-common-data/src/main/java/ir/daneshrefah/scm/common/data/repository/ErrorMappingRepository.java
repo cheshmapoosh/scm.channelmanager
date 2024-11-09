@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface ErrorMappingRepository extends JpaRepository<ErrorMappingEntity, Long> {
 
-    Optional<ErrorMappingEntity> findByExceptionClassName(String exceptionClassName);
+    Optional<ErrorMappingEntity> findByErrorMessage(String errorMessage);
     Optional<ErrorMappingEntity> findByProviderId(String providerId);
 }

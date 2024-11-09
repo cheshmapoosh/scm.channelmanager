@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.DatasourceConditionOper
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.common.service.rest.DynamicRestService;
+import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.AbstractExternalServiceProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
@@ -121,8 +122,12 @@ public class DynamicRestServiceImpl implements DynamicRestService {
             if (Objects.nonNull(providerId)) {
                 throw new InvalidInputException("provider Id must be empty");
             }
-            RestExternalServiceEntity service = (RestExternalServiceEntity) serviceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("serviceId"));
-            responseConditions = service.getResponseList().stream().map(ResponseMapper.INSTANCE::toModel).toList();
+            ServiceEntity service =  serviceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("serviceId"));
+            if (service instanceof AbstractExternalServiceEntity<?> externalServiceEntity) {
+                responseConditions = externalServiceEntity.getResponseList().stream().map(ResponseMapper.INSTANCE::toModel).toList();
+            }else if (service instanceof CompositionServiceEntity compositionService){
+                responseConditions = compositionService.getResponseList().stream().map(ResponseMapper.INSTANCE::toModel).toList();
+            }
         }
         return new PagedResponseData<>(request, responseConditions);
     }
@@ -142,10 +147,10 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     public ParameterDatasourceCondition changeResponseConditionDatasource(ResponseConditionDatasourceChangeRequest request) {
         ParameterDatasourceConditionEntity entity = datasourceConditionRepository.findById(request.getId()).orElseThrow(() -> new InvalidInputException("id"));
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getConditionValue(), entity::setConditionValue);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getConditionValue(), entity::setConditionValue);
         ParameterDatasourceEntity datasource = entity.getParameter();
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getConvertorCode(), datasource::setConvertorCode);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getValue(), datasource::setValue);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getConvertorCode(), datasource::setConvertorCode);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getValue(), datasource::setValue);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getLength(), datasource::setLength);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getProperty(), datasource::setProperty);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getOperation(), (value) -> entity.setOperation(DatasourceConditionOperation.findByValue(request.getOperation())));
@@ -160,18 +165,17 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     public Response changeResponse(ResponseChangeRequest request) {
         ResponseEntity entity = responseConditionRepository.findById(request.getId()).orElseThrow(() -> new InvalidInputException("id"));
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTransformerId(), (transformerId -> {
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getTransformerId(), (transformerId -> {
             TransformerEntity transformer = transformerRepository
                     .findById(transformerId)
                     .orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformer);
         }));
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getStatus(), entity::setStatus);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getHttpResponseStatusCode(), entity::setHttpResponseStatusCode);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), entity::setTitle);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorCode(), entity::setResponseExceptionErrorCodeProperty);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getErrorMessage(), entity::setResponseExceptionErrorMessageProperty);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getResponseBodyType(), responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)));
+        DynamicUpdateUtils.applyChangesIfNotNull(request.getEnable(), entity::setEnable);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorCode(), entity::setResponseErrorCodeProperty);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorMessage(), entity::setResponseErrorMessageProperty);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getResponseBodyType(), responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)));
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
         responseConditionRepository.save(entity);
@@ -189,15 +193,14 @@ public class DynamicRestServiceImpl implements DynamicRestService {
             TransformerEntity transformerEntity = transformerRepository.findById(transformerId).orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformerEntity);
         }
-        entity.setResponseExceptionErrorCodeProperty(request.getErrorCode());
+        entity.setResponseErrorCodeProperty(request.getErrorCode());
         entity.setTitle(request.getTitle());
-        entity.setHttpResponseStatusCode(request.getHttpResponseStatusCode());
-        entity.setStatus(request.getStatus());
+        entity.setEnable(request.getEnable());
         String errorMessage = errorMappingService
                 .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
-                .map(ErrorMapping::getExceptionClassName)
+                .map(ErrorMapping::getErrorMessage)
                 .orElse(request.getErrorMessage());
-        entity.setResponseExceptionErrorMessageProperty(errorMessage);
+        entity.setResponseErrorMessageProperty(errorMessage);
         entity.setResponseBodyType(request.getResponseBodyType());
         responseConditionRepository.save(entity);
         setResponseConditionTargetId(request, entity);
@@ -276,8 +279,7 @@ public class DynamicRestServiceImpl implements DynamicRestService {
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorCode(), () -> new InvalidInputException("errorCode"));
         ValidationUtils.checkBlankStringIfNotNull(request.getErrorMessage(), () -> new InvalidInputException("errorMessage"));
         ValidationUtils.checkBlankStringIfNotNull(request.getTitle(), () -> new InvalidInputException("title"));
-        ValidationUtils.checkBlankString(String.valueOf(request.getHttpResponseStatusCode()), () -> new InvalidInputException("httpResponseStatusCode"));
-        ValidationUtils.checkBlankString(String.valueOf(request.getStatus()), () -> new InvalidInputException("status"));
+        ValidationUtils.checkBlankString(String.valueOf(request.getEnable()), () -> new InvalidInputException("status"));
         if (StringUtils.isBlank(request.getServiceId()) && StringUtils.isBlank(request.getServiceProviderId())) {
             throw new MissingRequiredInputException("targetId(serviceId or serviceProviderId)");
         }

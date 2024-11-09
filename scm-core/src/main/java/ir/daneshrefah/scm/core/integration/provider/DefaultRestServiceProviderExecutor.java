@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.core.integration.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.exception.BaseServiceProviderException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.exception.RestExternalServiceProviderException;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
@@ -30,10 +30,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -137,14 +134,15 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
     }
 
     @Override
+    @SneakyThrows
     protected Object extractServiceParametersResponseBody(Message message, Object body) {
         RestExternalService restService = (RestExternalService) message.getHeader().getService();
         HttpContentType contentType = extractContentType(restService);
         ParameterParser.ServiceParameterCache parametersCache = parameterParser.getParametersCache(restService);
         ParameterParser.ResponseCache responseCache = parametersCache.getResponseCache();
-        Message wrapMessage = Message.builder().payload(convertResponseToJsonNode(body)).build();
-        Response response = findResponse(responseCache, message);
-        checkResponseHasException(restService, response);
+        Message wrapMessage = Message.builder().payload(convertResponseToJsonNode(body)).header(message.getHeader()).build();
+        Response response = findResponse(responseCache, wrapMessage);
+        checkResponseHasException(restService, response,wrapMessage);
         ExternalServiceBodyType responseType = response.getResponseBodyType();
         if (responseType.equals(ExternalServiceBodyType.NONE)) {
             return message;
@@ -161,11 +159,21 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
         }
     }
 
-    private void checkResponseHasException(RestExternalService restService, Response responseCondition) {
-        if (Objects.isNull(responseCondition)
-            || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorMessageProperty())
-            || StringUtils.isNotBlank(responseCondition.getResponseExceptionErrorCodeProperty())) {
-            throw new RestExternalServiceProviderException(responseCondition, restService.getServiceProvider().getCode(), restService.getCode());
+    private void checkResponseHasException(RestExternalService restService, Response response, Message message) {
+        if (Objects.isNull(response)) {
+            throw new BaseServiceProviderException(
+                    restService.getServiceProvider().getCode(),
+                    restService.getCode(), null, null);
+        } else if (StringUtils.isNotBlank(response.getResponseErrorCodeProperty())
+                   || StringUtils.isNotBlank(response.getResponseErrorMessageProperty())) {
+            List<String> errorCodes = StringUtils.findPropertiesOnJsonNode(response.getResponseErrorCodeProperty(), message.getPayload());
+            List<String> errorMessages = StringUtils.findPropertiesOnJsonNode(response.getResponseErrorMessageProperty(), message.getPayload());
+            throw new BaseServiceProviderException(
+                    restService.getServiceProvider().getCode(),
+                    restService.getCode(),
+                    errorCodes,
+                    errorMessages
+            );
         }
     }
 
@@ -181,8 +189,9 @@ public final class DefaultRestServiceProviderExecutor extends AbstractBaseRestEx
         return conditionCache
                 .getConditions()
                 .stream()
-                .filter(responseCondition -> {
-                    for (ParameterDatasourceCondition condition : responseCondition.getConditions()) {
+                .filter(Response::isEnable)
+                .filter(response -> {
+                    for (ParameterDatasourceCondition condition : response.getConditions()) {
                         Parameter wrapper = new Parameter();
                         wrapper.setDatasource(condition.getParameter());
                         if (extractParameterValue(message, wrapper).filter(extractedValue -> DatasourceConditionHelper.getInstance().checkCondition(condition.getOperation(), String.valueOf(extractedValue), String.valueOf(condition.getConditionValue()))).isEmpty()) {

@@ -15,6 +15,8 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -26,15 +28,17 @@ public class DefaultBaseExceptionResolver extends ExceptionResolver<AbstractBase
     private final ErrorMappingService errorMappingService;
 
     @Override
-    public Error resolve(AbstractBaseException exception, Locale locale) {
+    public List<Error> resolve(AbstractBaseException exception, Locale locale) {
         ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
-        return new Error(
+        List<Error> errors = new ArrayList<>();
+        errors.add(new Error(
                 getSource(exception),
                 errorMapping.getScmErrorCode(),
                 getMessage(locale, exception),
                 getMessage(AccessibleLocale.FA_IR.getLocale(), exception),
                 errorMapping.getStatus(),
-                exception);
+                exception));
+        return errors;
     }
 
     @Override

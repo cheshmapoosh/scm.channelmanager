@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 @Component
@@ -21,15 +23,17 @@ public class SQLIntegrityConstraintViolationExceptionResolver extends ExceptionR
     private final ErrorMappingService errorMappingService;
 
     @Override
-    public Error resolve(SQLIntegrityConstraintViolationException exception, Locale locale) {
+    public List<Error> resolve(SQLIntegrityConstraintViolationException exception, Locale locale) {
         ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
-        return new Error(
+        List<Error> errors = new ArrayList<>();
+        errors.add(new Error(
                 "constraint",
                 errorMapping.getScmErrorCode(),
                 getMessage(locale, exception),
                 getMessage(AccessibleLocale.FA_IR.getLocale(), exception),
                 errorMapping.getStatus(),
-                exception);
+                exception));
+        return errors;
     }
 
 

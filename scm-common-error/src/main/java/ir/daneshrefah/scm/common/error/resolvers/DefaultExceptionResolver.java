@@ -14,9 +14,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -27,23 +25,25 @@ public class DefaultExceptionResolver extends ExceptionResolver<Exception> {
     private final int ERROR_CODE_SYSTEM_ERROR = 9999;
 
     @Override
-    public Error resolve(Exception exception, Locale locale) {
+    public List<Error> resolve(Exception exception, Locale locale) {
         ErrorMapping errorMapping = deepFindErrorMapping(exception);
-        String exceptionMessage = messageBundleProvider.getExceptionMessage(locale, errorMapping.getExceptionClassName());
-        String exceptionMessageFa = messageBundleProvider.getExceptionMessage(AccessibleLocale.FA_IR, errorMapping.getExceptionClassName());
+        String exceptionMessage = errorMapping.isBundleKey() ? messageBundleProvider.getExceptionMessage(locale, errorMapping.getErrorMessage()) : StringUtils.EMPTY;
+        String exceptionMessageFa = errorMapping.isBundleKey() ? messageBundleProvider.getExceptionMessage(AccessibleLocale.FA_IR, errorMapping.getErrorMessage()) : StringUtils.EMPTY;
         if (StringUtils.isEmpty(exceptionMessage)) {
             exceptionMessage = messageBundleProvider.getDefaultExceptionMessage(locale);
         }
         if (StringUtils.isEmpty(exceptionMessageFa)) {
             exceptionMessageFa = messageBundleProvider.getDefaultExceptionMessage(AccessibleLocale.FA_IR);
         }
-        return new Error(
+        List<Error> errors = new ArrayList<>();
+        errors.add(new Error(
                 getSource(exception),
                 errorMapping.getScmErrorCode(),
                 exceptionMessage,
                 exceptionMessageFa,
                 errorMapping.getStatus(),
-                exception);
+                exception));
+        return errors;
     }
 
     private ErrorMapping deepFindErrorMapping(Throwable throwable) {

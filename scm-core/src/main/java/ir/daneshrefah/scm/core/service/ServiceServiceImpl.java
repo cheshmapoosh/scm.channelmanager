@@ -722,9 +722,9 @@ public class ServiceServiceImpl implements ServiceService {
         AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
         checkServiceProviderRecordVersion(serviceProvider, request.getLastEditDate());
         //General service provider properties
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getCode(), serviceProvider::setCode);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getTitle(), serviceProvider::setTitle);
-        DynamicUpdateUtils.applyChangesIfNotBlank(request.getProviderClassName(), serviceProvider::setProviderClassName);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getCode(), serviceProvider::setCode);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), serviceProvider::setTitle);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getProviderClassName(), serviceProvider::setProviderClassName);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getStatus(), serviceProvider::setStatus);
         String assetProviderId = request.getAssetProviderId();
         if (StringUtils.isNotBlank(assetProviderId) && StringUtils.isNumeric(assetProviderId)) {

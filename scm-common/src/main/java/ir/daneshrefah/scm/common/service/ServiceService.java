@@ -31,7 +31,7 @@ public interface ServiceService {
 
     AbstractExternalServiceProvider findServiceProviderById(String id);
 
-    AbstractExternalServiceProvider findServiceProviderByCode(String id);
+    AbstractExternalServiceProvider findServiceProviderByCode(String code);
 
     AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value);
 

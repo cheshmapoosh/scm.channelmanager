@@ -28,13 +28,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
-        Error resolve = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
+        List<Error> resolves = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
+
         ResponseResult result = new ResponseResult()
                 .setResult(null)
-                .setStatus(resolve.getStatus())
-                .setErrors(List.of(resolve));
+                .setStatus(resolves.get(0).getStatus())
+                .setErrors(resolves);
 
-        if (resolve.getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
+        if (resolves.get(0).getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
             return ResponseEntity.internalServerError().body(result);
         }
         return ResponseEntity.badRequest().body(result);

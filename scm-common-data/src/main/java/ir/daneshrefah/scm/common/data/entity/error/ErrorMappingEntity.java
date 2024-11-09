@@ -28,7 +28,8 @@ public class ErrorMappingEntity extends AbstractDefaultEntity<Long> {
     @Column(name = "EXT_SRV_PROVIDER_ID")
     private String providerId;
     private String providerErrorCode;
-    private String exceptionClassName;
+    @Column(name = "EXCEPTION_CLASS_NAME") //TODO COLUMN SHOULD CHANGES
+    private String errorMessage;
     @Column(name = "EXCEPTION_OVERRIDE_NAME")
     private String exceptionOverrideName;
     private Integer scmErrorCode;

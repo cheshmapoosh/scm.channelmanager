@@ -26,7 +26,7 @@ public interface BundleDefaults {
     String EXCEPTION_BUNDLE_DEFAULT_PREFIX = "ex::";
     /**
      * @apiNote In some situation we need different exception handling for
-     * a system exception. for example in we need to create two different Exception response
+     * a system exception. for example if we need create two different Exception response
      * for {@link com.ibm.db2.jcc.am.SqlException}.
      * <pre>
      *     <br>
