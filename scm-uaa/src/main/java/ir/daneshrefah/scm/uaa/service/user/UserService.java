@@ -78,6 +78,7 @@ public class UserService {
     @PersistenceContext
     private final EntityManager entityManager;
 
+    @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         validateUserNickNameRequest(request, servletRequest);
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
@@ -116,6 +117,7 @@ public class UserService {
         return terminalService.findTerminalByCode(terminalCode.toUpperCase()).orElseThrow(() -> new InvalidInputException("terminalCode"));
     }
 
+    @Transactional
     public User updateUserLoginStaticPassword(PasswordModificationRequest request) {
         validatePasswordModificationRequest(request);
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
@@ -131,6 +133,7 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
+    @Transactional
     public User updateUserTransactionStaticPass(PasswordModificationRequest request) {
         validatePasswordModificationRequest(request);
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
@@ -320,6 +323,7 @@ public class UserService {
         return user;
     }
 
+    @Transactional
     public User createUser(UserDataRequest request) {
         ValidationUtils.checkBlankString(request.getNickname(), () -> new MissingRequiredInputException("nickname"));
         ValidationUtils.checkBlankString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
@@ -451,6 +455,7 @@ public class UserService {
         return null != activationEntities && !activationEntities.isEmpty();
     }
 
+    @Transactional
     public void deleteUserByUserId(Integer userId, UserDeleteRequest userDeleteRequest) {
         validateUserDeleteRequest(userDeleteRequest);
         userRepository.findById(userId).ifPresentOrElse(userEntity -> {
@@ -468,6 +473,7 @@ public class UserService {
     }
 
 
+    @Transactional
     public User updateLoginPasswordMethod(AuthenticationMethodModificationRequest request) {
         validateAuthenticationMethodModificationRequest(request);
         UserAuthentication loggedInUserAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();

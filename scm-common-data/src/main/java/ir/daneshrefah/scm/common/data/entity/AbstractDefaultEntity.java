@@ -29,10 +29,10 @@ public abstract class AbstractDefaultEntity<T> extends AbstractEntity<T> {
     @Column(name = "LAST_EDITOR")
     @LastModifiedBy
     private String lastEditor;
-    @Column(name = "CREATE_DATE", insertable = false, updatable = false)
+    @Column(name = "CREATE_DATE", updatable = false)
     @CreatedDate
     private LocalDateTime createDate;
-    @Column(name = "LAST_EDIT_DATE", insertable = false)
+    @Column(name = "LAST_EDIT_DATE")
     @LastModifiedDate
     private LocalDateTime lastEditDate;
 

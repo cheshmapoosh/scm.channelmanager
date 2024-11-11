@@ -18,7 +18,7 @@ public class JsonSchemaExceptionResolver extends ExceptionResolver<JsonSchemaExc
 
     @Override
     public List<Error> resolve(JsonSchemaException exception, Locale locale) {
-        ErrorMapping errorMapping = errorMappingService.findByExceptionByClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
+        ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
         List<Error> errors = new ArrayList<>();
         errors.add(new Error(exception.getSource(), errorMapping.getScmErrorCode(), exception.getMessage(), errorMapping.getStatus(), exception));
         return errors;

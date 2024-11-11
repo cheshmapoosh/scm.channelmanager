@@ -4,17 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.InvalidRequestFormatException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.apache.camel.model.ProcessorDefinition;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -45,6 +48,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
         }
 
             Object[] args = prepareMethodArgs(message, service, methodInfo);
+            argsBeanValidation(args);
             Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
             if (response instanceof JsonNode) {
                 return (JsonNode) response;
@@ -53,6 +57,21 @@ public class JavaServiceExecutor extends ServiceExecutor {
             } else {
                 return objectMapper.valueToTree(response);
             }
+    }
+
+    private void argsBeanValidation(Object[] args) {
+       try ( ValidatorFactory factory = Validation.buildDefaultValidatorFactory()){
+           Validator validator = factory.getValidator();
+           for (Object arg : args) {
+               if (Objects.isNull(arg)){
+                   throw new MissingRequiredInputException("payload");
+               }
+               Set<ConstraintViolation<Object>> errors = validator.validate(arg);
+               if (!errors.isEmpty()){
+                   throw new InvalidInputException(errors);
+               }
+           }
+       }
     }
 
     private Object[] prepareMethodArgs(Message message, ir.daneshrefah.scm.common.model.service.Service service,

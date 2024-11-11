@@ -318,9 +318,11 @@ public class SwaggerGenerator {
             Method method = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(beanInstance.getClass()))
                     .filter(m -> m.getName().contains(methodName))
                     .findFirst().orElse(null);
-            assert method != null;
-            Class<?> returnType = method.getReturnType();
-            return generateJavaServiceResponseSchema(returnType.getName());
+            if (Objects.nonNull(method)) {
+                Class<?> returnType = method.getReturnType();
+                return generateJavaServiceResponseSchema(returnType.getName());
+            }
+            return null;
         } catch (Exception ignore) {
             return null;
         }

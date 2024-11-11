@@ -6,14 +6,13 @@ import ir.daneshrefah.scm.common.validaton.bean.NotBlankIfPresent;
 import ir.daneshrefah.scm.common.validaton.bean.Numeric;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
+@Getter
+@Setter
+public class ErrorMappingCreateRequest implements RequestData {
 
-@Data
-public class ErrorMappingEditRequest implements RequestData {
-    @NotBlank
-    private String id;
     @NotBlankIfPresent
     private String providerId;
     @NotBlankIfPresent
@@ -26,8 +25,6 @@ public class ErrorMappingEditRequest implements RequestData {
     private String exceptionOverrideName;
     @NotNull
     private MessageStatus status;
-    @NotNull
-    private LocalDateTime lastEditDate;
     @NotNull
     private Boolean bundleKey;
 }

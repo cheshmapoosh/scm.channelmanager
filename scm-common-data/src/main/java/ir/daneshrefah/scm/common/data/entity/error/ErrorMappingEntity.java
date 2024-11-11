@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.entity.error;
 
 import ir.daneshrefah.scm.common.data.converter.MessageStatusTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 
 import jakarta.persistence.*;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_ERROR_MAPPING")
-public class ErrorMappingEntity extends AbstractDefaultEntity<Long> {
+public class ErrorMappingEntity extends AbstractVersionAbleDefaultEntity<Long> {
 
     @Id
     @Column(name = "ERROR_MAPPING_ID")
