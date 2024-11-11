@@ -16,4 +16,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.apache.commons:commons-lang3'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    api 'jakarta.validation:jakarta.validation-api:3.1.0'
+    api 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
 }

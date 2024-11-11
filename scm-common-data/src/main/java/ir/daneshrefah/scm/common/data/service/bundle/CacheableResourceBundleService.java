@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.common.data.service.bundle;
 
 import ir.daneshrefah.scm.common.constant.BundleParameterPattern;
+import ir.daneshrefah.scm.common.data.entity.bundle.ResourceBundleEntity;
 import ir.daneshrefah.scm.common.data.mapper.ResourceBundleMapper;
 import ir.daneshrefah.scm.common.data.repository.ResourceBundleRepository;
+import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
 import ir.daneshrefah.scm.common.model.bundle.ResourceBundle;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
@@ -10,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,6 +30,10 @@ public class CacheableResourceBundleService implements ResourceBundleService {
     private static CacheableResourceBundleService INSTANCE;
     private final ResourceBundleRepository resourceBundleRepository;
 
+    public static ResourceBundleService getInstance() {
+        return INSTANCE;
+    }
+
     @PostConstruct
     public void init() {
         resourceBundleRepository
@@ -37,7 +44,6 @@ public class CacheableResourceBundleService implements ResourceBundleService {
         log.info(">>> All {} resource bundles cached from database", RESOURCE_BUNDLE_CACHE.size());
         INSTANCE = this;
     }
-
 
     @Override
     public Optional<String> get(Locale locale, String key) {
@@ -106,12 +112,23 @@ public class CacheableResourceBundleService implements ResourceBundleService {
     }
 
     @Override
-    public List<ResourceBundle> getAll() {
-        return RESOURCE_BUNDLE_CACHE;
+    @Transactional
+    public ResourceBundle save(ResourceBundle resourceBundle) {
+        findCache(resourceBundle.getLocale(), resourceBundle.getKey()).ifPresent(found -> {
+            throw new DuplicatedRecordFoundException("key");
+        });
+        ResourceBundleEntity entity = ResourceBundleMapper.INSTANCE.toEntity(resourceBundle);
+        ResourceBundleEntity saved = resourceBundleRepository.save(entity);
+        ResourceBundle model = ResourceBundleMapper.INSTANCE.toModel(saved);
+        synchronized (RESOURCE_BUNDLE_CACHE) {
+            RESOURCE_BUNDLE_CACHE.add(model);
+        }
+        return model;
     }
 
-    public static ResourceBundleService getInstance() {
-        return INSTANCE;
+    @Override
+    public List<ResourceBundle> getAll() {
+        return RESOURCE_BUNDLE_CACHE;
     }
 
     @SuppressWarnings("unchecked")

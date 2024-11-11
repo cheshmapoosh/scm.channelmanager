@@ -26,11 +26,11 @@ public abstract class AbstractDefaultAuditableEntity<T> extends AbstractEntity<T
     @LastModifiedBy
     public abstract <E> E getLastEditor();
 
-    @Column(name = "CREATE_DATE", insertable = false, updatable = false)
+    @Column(name = "CREATE_DATE",  updatable = false)
     @CreatedDate
     public abstract LocalDateTime getCreateDate();
 
-    @Column(name = "LAST_EDIT_DATE", insertable = false)
+    @Column(name = "LAST_EDIT_DATE")
     @LastModifiedDate
     public abstract LocalDateTime getLastEditDate();
 

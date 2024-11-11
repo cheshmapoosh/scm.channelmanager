@@ -2,16 +2,19 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
+import ir.daneshrefah.scm.common.dto.error.ErrorMappingCreateRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingEditRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingFindRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingSearchRequest;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,7 +42,8 @@ public class ExceptionManagementService extends AbstractJavaService {
                 .filter(error -> null == request || null == request.getExceptionOverrideName() || error.getExceptionOverrideName().toLowerCase().contains(request.getExceptionOverrideName().toLowerCase()))
                 .filter(error -> null == request || null == request.getScmErrorCode() || request.getScmErrorCode().equals(error.getScmErrorCode()))
                 .filter(error -> null == request || null == request.getProviderErrorCode() || request.getProviderErrorCode().equals(error.getProviderErrorCode()))
-                .filter(error -> null == request || null == request.getExceptionClassName() || error.getErrorMessage().toLowerCase().contains(request.getExceptionClassName().toLowerCase()))
+                .filter(error -> null == request || null == request.getBundleKey() || request.getBundleKey().equals(error.isBundleKey()))
+                .filter(error -> null == request || null == request.getErrorMessage() || error.getErrorMessage().toLowerCase().contains(request.getErrorMessage().toLowerCase()))
                 .map(this::normalizeResponse)
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, result);
@@ -48,6 +52,7 @@ public class ExceptionManagementService extends AbstractJavaService {
     @JavaService
     @SuppressWarnings("unused")
     public PagedResponseData<ErrorMapping> search(ErrorMappingSearchRequest request){
+        ValidationUtils.checkNull(request,()->new MissingRequiredInputException("payload"));
         assert request != null;
         List<ErrorMapping> errorMappingsList = errorMappingService.getErrorMappingsCache();
         List<ErrorMapping> result = errorMappingsList
@@ -66,15 +71,18 @@ public class ExceptionManagementService extends AbstractJavaService {
     public ErrorMapping findById(String id){
         ValidationUtils.checkNull(id,()-> new InvalidInputException("id"));
         ValidationUtils.checkNumericInput(id,()-> new InvalidInputException("id"));
-        return errorMappingService.findRefreshRecord(Long.parseLong(id));
+        return errorMappingService.findById(Long.parseLong(id));
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public ErrorMapping create(ErrorMappingCreateRequest request){
+        return errorMappingService.create(request);
     }
 
     @JavaService
     @SuppressWarnings("unused")
     public ErrorMapping edit(ErrorMappingEditRequest request){
-        ValidationUtils.checkNull(request.getId(),()-> new InvalidInputException("id"));
-        ValidationUtils.checkNumericInput(request.getId(),()-> new InvalidInputException("id"));
-        ValidationUtils.checkNull(request.getLastEditDate(),()-> new InvalidInputException("lastEditDate"));
         return errorMappingService.dynamicUpdate(request);
     }
 

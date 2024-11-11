@@ -24,7 +24,7 @@ public abstract class AbstractVersionAbleDefaultEntity<T> extends AbstractEntity
     @Column(name = "LAST_EDITOR")
     @LastModifiedBy
     private String lastEditor;
-    @Column(name = "CREATE_DATE", insertable = false, updatable = false)
+    @Column(name = "CREATE_DATE", updatable = false)
     @CreatedDate
     private LocalDateTime createDate;
     @Column(name = "LAST_EDIT_DATE")

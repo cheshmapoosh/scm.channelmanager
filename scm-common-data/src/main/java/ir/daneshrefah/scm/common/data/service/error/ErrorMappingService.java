@@ -3,17 +3,18 @@ package ir.daneshrefah.scm.common.data.service.error;
 import ir.daneshrefah.scm.common.data.entity.error.ErrorMappingEntity;
 import ir.daneshrefah.scm.common.data.mapper.ErrorMappingMapper;
 import ir.daneshrefah.scm.common.data.repository.ErrorMappingRepository;
+import ir.daneshrefah.scm.common.dto.error.ErrorMappingCreateRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingEditRequest;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.RecordVersionException;
-import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +26,6 @@ import java.util.Optional;
 public class ErrorMappingService {
     private static final List<ErrorMapping> ERROR_MAPPINGS_CACHE = new ArrayList<>(100);
     private final ErrorMappingRepository errorMappingRepository;
-
 
 
     @PostConstruct
@@ -97,8 +97,8 @@ public class ErrorMappingService {
     public Optional<ErrorMapping> findByRemoteErrorCodeAndProviderId(String remoteErrorCode, String providerId) {
         return ERROR_MAPPINGS_CACHE
                 .stream()
-                .filter(errorMapping -> Objects.equals(errorMapping.getProviderErrorCode(),remoteErrorCode))
-                .filter(errorMapping -> Objects.equals(errorMapping.getProviderId(),providerId))
+                .filter(errorMapping -> Objects.equals(errorMapping.getProviderErrorCode(), remoteErrorCode))
+                .filter(errorMapping -> Objects.equals(errorMapping.getProviderId(), providerId))
                 .findFirst();
     }
 
@@ -111,6 +111,14 @@ public class ErrorMappingService {
         return ErrorMappingMapper.INSTANCE.toModel(foundEntity);
     }
 
+    public ErrorMapping findById(long id) {
+        return ERROR_MAPPINGS_CACHE
+                .stream()
+                .filter(errorMapping -> Objects.equals(errorMapping.getId(), id))
+                .findFirst()
+                .orElseThrow(()->new NoMatchRecordFoundException("id"));
+    }
+
 
     public ErrorMapping dynamicUpdate(ErrorMappingEditRequest request) {
         ErrorMapping refreshRecord = findRefreshRecord(Long.parseLong(request.getId()));
@@ -118,16 +126,39 @@ public class ErrorMappingService {
             throw new RecordVersionException("lastEditDate");
         }
         prepareDynamicUpdate(refreshRecord, request);
-        errorMappingRepository.save(ErrorMappingMapper.INSTANCE.toEntity(refreshRecord));
+        ErrorMappingEntity entity = errorMappingRepository.save(ErrorMappingMapper.INSTANCE.toEntity(refreshRecord));
         reloadCache();
-        return refreshRecord;
+        return findById(entity.getId());
     }
 
     private void prepareDynamicUpdate(ErrorMapping refreshRecord, ErrorMappingEditRequest request) {
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getStatus(), refreshRecord::setStatus);
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getScmErrorCode(), refreshRecord::setScmErrorCode);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getProviderId(), refreshRecord::setProviderId);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getExceptionOverrideName(), refreshRecord::setExceptionOverrideName);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getProviderErrorCode(), refreshRecord::setProviderErrorCode);
+        refreshRecord.setBundleKey(request.getBundleKey());
+        refreshRecord.setProviderId(request.getProviderId());
+        refreshRecord.setErrorMessage(request.getBundleKey() ? errorMessageAsBundleKey(request.getErrorMessage()) : request.getErrorMessage());
+        refreshRecord.setProviderErrorCode(request.getProviderErrorCode());
+        refreshRecord.setExceptionOverrideName(request.getExceptionOverrideName());
+        refreshRecord.setStatus(request.getStatus());
+        refreshRecord.setScmErrorCode(request.getScmErrorCode());
     }
+
+    public ErrorMapping create(ErrorMappingCreateRequest request) {
+        ErrorMappingEntity mapping = mapToErrorMapping(request);
+        ErrorMappingEntity entity = errorMappingRepository.save(mapping);
+        reloadCache();
+        return ErrorMappingMapper.INSTANCE.toModel(entity);
+    }
+
+    private ErrorMappingEntity mapToErrorMapping(ErrorMappingCreateRequest request) {
+        ErrorMappingEntity entity = new ErrorMappingEntity();
+        entity.setProviderId(request.getProviderId());
+        entity.setProviderErrorCode(request.getProviderErrorCode());
+        entity.setExceptionOverrideName(request.getExceptionOverrideName());
+        entity.setScmErrorCode(request.getScmErrorCode());
+        entity.setStatus(request.getStatus());
+        entity.setErrorMessage(request.getBundleKey() ? errorMessageAsBundleKey(request.getErrorMessage()) : request.getErrorMessage());
+        entity.setCreateDate(LocalDateTime.now());
+        entity.setLastEditDate(LocalDateTime.now());
+        return entity;
+    }
+
 }

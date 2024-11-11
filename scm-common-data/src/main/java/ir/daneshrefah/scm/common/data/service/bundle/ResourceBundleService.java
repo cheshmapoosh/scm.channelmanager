@@ -18,5 +18,6 @@ public interface ResourceBundleService {
     boolean contains(Locale locale,String key);
     boolean contains(String key);
     void update(ResourceBundle resourceBundle);
+    ResourceBundle save(ResourceBundle resourceBundle);
     List<ResourceBundle> getAll();
 }
