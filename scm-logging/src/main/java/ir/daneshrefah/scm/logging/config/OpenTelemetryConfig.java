@@ -5,26 +5,29 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
+import org.apache.camel.opentelemetry.starter.CamelOpenTelemetry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@CamelOpenTelemetry
 public class OpenTelemetryConfig {
 
-    private final Slf4jSpanExporter Slf4jSpanExporter;
+    private final SpanExporter spanExporter;
     private final String applicationName;
 
-    public OpenTelemetryConfig(Slf4jSpanExporter Slf4jSpanExporter,
+    public OpenTelemetryConfig(SpanExporter spanExporter,
                                @Value("${spring.application.name}") String applicationName) {
-        this.Slf4jSpanExporter = Slf4jSpanExporter;
+        this.spanExporter = spanExporter;
         this.applicationName = applicationName;
     }
 
     @Bean
     public OpenTelemetry openTelemetry() {
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                .addSpanProcessor(SimpleSpanProcessor.create(Slf4jSpanExporter))
+                .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
                 .build();
         return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();
     }

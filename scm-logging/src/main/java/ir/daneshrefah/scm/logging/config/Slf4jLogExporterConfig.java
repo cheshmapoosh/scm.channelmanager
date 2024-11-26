@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.logging.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -11,19 +12,28 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 
 @Component
-public class Slf4jSpanExporter implements SpanExporter {
+public class Slf4jLogExporterConfig implements SpanExporter {
+
+    private static final String OPTIONS_METHOD = "OPTIONS";
 
     private final Logger logger;
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    public Slf4jSpanExporter(Logger logger) {
+    public Slf4jLogExporterConfig(Logger logger) {
         this.logger = logger;
     }
 
     @Override
     public CompletableResultCode export(Collection<SpanData> spans) {
         spans.forEach(span -> {
+            if (span != null) {
+                String method = span.getAttributes().get(AttributeKey.stringKey("http.method"));
+                if (OPTIONS_METHOD.equalsIgnoreCase(method)) {
+                    return;
+                }
+            }
             try {
                 String json = objectMapper.writeValueAsString(span);
                 logger.info(json);

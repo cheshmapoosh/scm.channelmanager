@@ -1,6 +1,6 @@
 # Log Server Application
 
-This application listens to IBM MQ and inserts logs into `SCM_TRANSACTION_LOG`.
+This application listens to IBM MQ and inserts logs into `TBL_TRACE_LOG`.
 
 ## Implementing Filebeat
 

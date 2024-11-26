@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
+import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -17,6 +18,9 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
+import org.apache.camel.tracing.ActiveSpanManager;
+import org.apache.camel.tracing.SpanAdapter;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,6 +46,9 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     private static final String DEFAULT_CONTENT_TYPE = "application/json";
     protected String contextPath;
     protected Integer port;
+
+    @Autowired
+    private TraceLogUtils traceLogUtils;
 
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
                                                        ServiceProducerTemplate producerTemplate,
@@ -110,6 +117,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .clientAgent(CamelUtils.getClientAgentFromExchange(input))
                 .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
                 .httpMethod(httpMethod)
+                .spanAdapter(ActiveSpanManager.getSpan(input))
                 .build();
         MessageInputContext.init(result);
 
@@ -126,7 +134,8 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         result.putPOJO("errors", message.getErrors());
         result.set("result", message.getPayload());
         responseMessage.setBody(result);
-
+        SpanAdapter span = ActiveSpanManager.getSpan(input);
+        traceLogUtils.recordMessageTrace(message,span);
         return input;
     }
 

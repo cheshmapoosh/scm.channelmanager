@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.logging.repository;
 
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
-import ir.daneshrefah.scm.logging.model.TransactionLogResponse;
+import ir.daneshrefah.scm.logging.model.LogTraceResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,9 +12,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Date;
 
 @Repository
-public interface TransactionLogRepository extends JpaRepository<LogTraceEntity, Long>{
+public interface LogTraceRepository extends JpaRepository<LogTraceEntity, Long>{
 
-    @Query("SELECT new ir.daneshrefah.scm.logging.model.TransactionLogResponse(" +
+    @Query("SELECT new ir.daneshrefah.scm.logging.model.LogTraceResponse(" +
             "t.id, t.channelCode, t.terminalCode, t.clientId, t.correlationId, t.clientCorrelationId, " +
             "t.messageId, t.statusCode, t.nickname, t.username, t.delegatorUsername, t.endPoint, " +
             "t.amount, t.accountNo, t.cardNo, t.startTime, t.endTime) " +
@@ -35,22 +35,22 @@ public interface TransactionLogRepository extends JpaRepository<LogTraceEntity, 
             "AND (:cardNo IS NULL OR t.cardNo = :cardNo) " +
             "AND (:startTime IS NULL OR t.startTime >= :startTime) " +
             "AND (:endTime IS NULL OR t.endTime <= :endTime)")
-    Page<TransactionLogResponse> findAll(@Param("channelCode") String channelCode,
-                                         @Param("terminalCode") String terminalCode,
-                                         @Param("clientId") String clientId,
-                                         @Param("correlationId") String correlationId,
-                                         @Param("clientCorrelationId") String clientCorrelationId,
-                                         @Param("messageId") String messageId,
-                                         @Param("statusCode") Integer statusCode,
-                                         @Param("nickname") String nickname,
-                                         @Param("username") String username,
-                                         @Param("delegatorUsername") String delegatorUsername,
-                                         @Param("endPoint") String endPoint,
-                                         @Param("amount") String amount,
-                                         @Param("accountNo") String accountNo,
-                                         @Param("cardNo") String cardNo,
-                                         @Param("startTime") Date startTime,
-                                         @Param("endTime") Date endTime,
-                                         Pageable pageable);
+    Page<LogTraceResponse> findAll(@Param("channelCode") String channelCode,
+                                   @Param("terminalCode") String terminalCode,
+                                   @Param("clientId") String clientId,
+                                   @Param("correlationId") String correlationId,
+                                   @Param("clientCorrelationId") String clientCorrelationId,
+                                   @Param("messageId") String messageId,
+                                   @Param("statusCode") Integer statusCode,
+                                   @Param("nickname") String nickname,
+                                   @Param("username") String username,
+                                   @Param("delegatorUsername") String delegatorUsername,
+                                   @Param("endPoint") String endPoint,
+                                   @Param("amount") String amount,
+                                   @Param("accountNo") String accountNo,
+                                   @Param("cardNo") String cardNo,
+                                   @Param("startTime") Date startTime,
+                                   @Param("endTime") Date endTime,
+                                   Pageable pageable);
 
 }

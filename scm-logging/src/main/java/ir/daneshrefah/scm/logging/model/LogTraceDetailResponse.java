@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Getter
 @Setter
-public class TransactionLogDetailResponse {
+public class LogTraceDetailResponse {
     private Long id;
     private String channelCode;
     private String terminalCode;

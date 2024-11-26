@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.logging.constant;
+package ir.daneshrefah.scm.common.constant.log;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,8 +22,6 @@ public enum LogAttribute {
     PARENT_MESSAGE_ID("parentMessageId"),
     PROVIDER_CODE("providerCode"),
     PROVIDER_RESPONSE_CODE("providerResponseCode"),
-    PROVIDER_TARGET_URL("providerTargetUrl"),
-    PROVIDER_PROTOCOL("providerProtocol"),
     REQUEST_BODY_TYPE("requestBodyType"),
     REQUEST_HEADERS("requestHeaders"),
     RESPONSE_BODY_TYPE("responseBodyType"),
@@ -36,6 +34,7 @@ public enum LogAttribute {
     RESPONSE("response"),
     REQUEST("request"),
     EXCEPTION_CLASS_NAME("exceptionClassName"),
+    EXCEPTION_MESSAGE("exceptionMessage"),
     EVENT_TYPE("eventType"),
     RESPONSE_STATUS_CODE("responseStatusCode"),
     VERSION("version"),
@@ -44,6 +43,10 @@ public enum LogAttribute {
     END_TIME("endTime"),
     AMOUNT("amount"),
     ACCOUNT_NO("accountNo"),
-    CARD_NO("cardNo");
+    CARD_NO("cardNo"),
+    URL_PATH("url.path"),
+    LOGGABLE("loggable"),
+    HTTP_STATUS_CODE("http.status_code"),
+    CLIENT_REMOTE_ADDRESS("clientRemoteAddress");
     private final String attributeName;
 }

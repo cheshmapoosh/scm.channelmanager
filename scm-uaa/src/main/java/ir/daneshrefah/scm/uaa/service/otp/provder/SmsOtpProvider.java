@@ -229,6 +229,8 @@ public class SmsOtpProvider extends AbstractOtpProvider {
                 Recipient recipient = createRecipient(mobile, identifier, identifierType, terminalCode, accessParameter);
                 OtpVerifyRequest otpVerifyRequest = createOtpVerifyRequest(request.getOtpType(), recipient, request.getReason(), request.getClaimCode());
                 return verifyOtp(otpVerifyRequest);
+            case OTP:
+                throw new UnsupportedOperationException("Unsupported authentication method: " + userEntity.getLoginAuthenticationMethod());
             default:
                 throw new UnsupportedOperationException("Unsupported authentication method: " + userEntity.getLoginAuthenticationMethod());
         }

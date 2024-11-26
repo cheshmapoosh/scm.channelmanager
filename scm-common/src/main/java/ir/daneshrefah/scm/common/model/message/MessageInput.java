@@ -1,17 +1,17 @@
 package ir.daneshrefah.scm.common.model.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.apache.camel.tracing.SpanAdapter;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Description of the class or purpose of the file.
@@ -22,16 +22,6 @@ import java.util.*;
  */
 @SuperBuilder
 @Getter
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = AbstractExternalMessageInput.class, name = "AbstractExternalMessageInput"),
-        @JsonSubTypes.Type(value = AbstractInternalMessageInput.class, name = "AbstractInternalMessageInput"),
-        @JsonSubTypes.Type(value = HttpMessageInput.class, name = "HttpMessageInput"),
-        @JsonSubTypes.Type(value = JobMessageInput.class, name = "JobMessageInput"),
-        @JsonSubTypes.Type(value = ProcessMessageInput.class, name = "ProcessMessageInput")
-})
 @NoArgsConstructor
 public abstract class MessageInput<T> {
     @Builder.Default
@@ -60,6 +50,7 @@ public abstract class MessageInput<T> {
     private String authenticationValue;
     private TokenType transactionAuthenticationType;
     private String transactionAuthenticationValue;
+    private SpanAdapter spanAdapter;
     public String getHeader(String key) {
         return null != headers ? (String) headers.get(key) : null;
     }
