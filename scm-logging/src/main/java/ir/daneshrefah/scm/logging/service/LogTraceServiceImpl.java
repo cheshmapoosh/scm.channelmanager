@@ -4,12 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
-import ir.daneshrefah.scm.logging.mapper.TransactionLogMapper;
-import ir.daneshrefah.scm.logging.model.LogMessage;
-import ir.daneshrefah.scm.logging.model.TransactionLogDetailResponse;
-import ir.daneshrefah.scm.logging.model.TransactionLogRequest;
-import ir.daneshrefah.scm.logging.model.TransactionLogResponse;
-import ir.daneshrefah.scm.logging.repository.TransactionLogRepository;
+import ir.daneshrefah.scm.logging.mapper.LogTraceMapper;
+import ir.daneshrefah.scm.logging.model.*;
+import ir.daneshrefah.scm.logging.repository.LogTraceRepository;
 import ir.daneshrefah.scm.logging.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,29 +19,24 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TransactionLogServiceImpl implements LogService {
-    private final TransactionLogRepository transactionLogRepository;
+public class LogTraceServiceImpl implements LogService {
+    private final LogTraceRepository logTraceRepository;
     private final ConverterService converterService;
 
     private final ObjectMapper objectMapper;
 
-    public void save(String msg) {
-        LogTraceEntity logTraceEntity;
-        try {
-            LogMessage logMessage = converterService.convertToLogMessage(msg);
-            logTraceEntity = converterService.convertToTransactionLogEntity(logMessage);
-            logTraceEntity.setPayload(objectMapper.writeValueAsString(logMessage));
-            transactionLogRepository.save(logTraceEntity);
-        } catch (Exception e) {
-            log.error("Failed to save message: {} due to error: {}", msg, e.getMessage(), e);
-        }
+    public void save(String msg) throws Exception {
+        LogMessage logMessage = converterService.convertToLogMessage(msg);
+        LogTraceEntity logTraceEntity = converterService.convertToLogTraceEntity(logMessage);
+        logTraceEntity.setPayload(objectMapper.writeValueAsString(logMessage));
+        logTraceRepository.save(logTraceEntity);
     }
 
     @Override
-    public PagedResponseData<TransactionLogResponse> findAll(TransactionLogRequest request) {
-        request = Objects.nonNull(request) ? request : new TransactionLogRequest();
+    public PagedResponseData<LogTraceResponse> findAll(LogTraceRequest request) {
+        request = Objects.nonNull(request) ? request : new LogTraceRequest();
         Pageable pageable = PageableUtils.getPageable(request);
-        Page<TransactionLogResponse> entities = transactionLogRepository.findAll(
+        Page<LogTraceResponse> entities = logTraceRepository.findAll(
                 request.getChannelCode(),
                 request.getTerminalCode(),
                 request.getClientId(),
@@ -66,9 +58,9 @@ public class TransactionLogServiceImpl implements LogService {
     }
 
     @Override
-    public TransactionLogDetailResponse findById(Long id) {
-        TransactionLogMapper instance = TransactionLogMapper.INSTANCE;
-        LogTraceEntity logTraceEntity = transactionLogRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+    public LogTraceDetailResponse findById(Long id) {
+        LogTraceMapper instance = LogTraceMapper.INSTANCE;
+        LogTraceEntity logTraceEntity = logTraceRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
         return instance.toModel(logTraceEntity);
     }
 }

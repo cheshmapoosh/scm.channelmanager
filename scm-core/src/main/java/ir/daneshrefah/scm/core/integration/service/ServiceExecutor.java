@@ -2,10 +2,6 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
@@ -17,16 +13,15 @@ import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import ir.daneshrefah.scm.utils.MessageInputContext;
-import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.model.ChoiceDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.TryDefinition;
-import org.apache.camel.opentelemetry.OpenTelemetryTracer;
 import org.apache.camel.spi.ErrorHandler;
+import org.apache.camel.tracing.ActiveSpanManager;
+import org.apache.camel.tracing.SpanAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,10 +51,10 @@ public abstract class ServiceExecutor {
     protected ErrorHandlerService errorHandlerService;
     @Autowired
     protected ObjectMapper objectMapper;
+
     @Autowired
     protected TraceLogUtils traceLogUtils;
-    @Autowired
-    private Tracer tracer;
+
     private List<MessageInterceptor> requestInterceptors;
     private List<MessageInterceptor> responseInterceptors;
 
@@ -242,6 +237,8 @@ public abstract class ServiceExecutor {
         tryDefinition.doCatch(Exception.class)
                 .process((ErrorHandler) exchange -> {
                     Exception exception = extractException(exchange);
+                    SpanAdapter spanAdapter = ActiveSpanManager.getSpan(exchange);
+                    traceLogUtils.recordExceptionTrace(exception,spanAdapter);
                     Message message = exchange.getMessage().getBody(Message.class);
                     errorHandlerService.resolveMessageByException(message, exception);
                     exchange.getMessage().setBody(message);
@@ -253,13 +250,6 @@ public abstract class ServiceExecutor {
                     Instant startTime = exchange.getProperty(PROPERTY_START_TIME, Instant.class);
                     JsonNode request = exchange.getProperty(PROPERTY_REQUEST_BODY, JsonNode.class);
                     MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
-                    Span span = tracer.spanBuilder(messageInput.getServiceCode()).setSpanKind(SpanKind.SERVER).startSpan();
-                    try {
-                        traceLogUtils.recordMessageTrace(message, request, exception, span);
-                        span.makeCurrent();
-                    } catch (Exception ex) {
-                        span.end();
-                    }
                 })
                 .end();
     }

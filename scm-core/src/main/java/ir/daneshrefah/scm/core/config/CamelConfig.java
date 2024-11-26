@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.config;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Configuration;
 import org.apache.camel.spring.boot.CamelContextConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,6 +14,17 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class CamelConfig implements CamelContextConfiguration {
+
+    private final CamelTracer camelTracer;
+    private final CamelContext camelContext;
+
+    @Autowired
+    public CamelConfig(CamelTracer camelTracer, CamelContext camelContext) {
+        this.camelTracer = camelTracer;
+        this.camelContext = camelContext;
+        this.camelContext.setTracer(this.camelTracer);
+        this.camelContext.setTracing(true);
+    }
 
     @Override
     public void beforeApplicationStart(CamelContext camelContext) {

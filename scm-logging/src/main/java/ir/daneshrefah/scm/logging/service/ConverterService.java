@@ -8,5 +8,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface ConverterService {
     LogMessage convertToLogMessage(String msg) throws JsonProcessingException;
-    LogTraceEntity convertToTransactionLogEntity(LogMessage logMessage);
+    LogTraceEntity convertToLogTraceEntity(LogMessage logMessage);
 }

@@ -1,15 +1,16 @@
 package ir.daneshrefah.scm.logging.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.logging.model.TransactionLogDetailResponse;
-import ir.daneshrefah.scm.logging.model.TransactionLogRequest;
-import ir.daneshrefah.scm.logging.model.TransactionLogResponse;
+import ir.daneshrefah.scm.logging.model.LogTraceDetailResponse;
+import ir.daneshrefah.scm.logging.model.LogTraceRequest;
+import ir.daneshrefah.scm.logging.model.LogTraceResponse;
 
 public interface LogService {
 
-    void save(String msg);
+    void save(String msg) throws Exception;
 
-    PagedResponseData<TransactionLogResponse> findAll(TransactionLogRequest request);
+    PagedResponseData<LogTraceResponse> findAll(LogTraceRequest request);
 
-    TransactionLogDetailResponse findById(Long id);
+    LogTraceDetailResponse findById(Long id);
 }

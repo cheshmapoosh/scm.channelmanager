@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ir.daneshrefah.scm.logging.constant.LogAttribute;
+import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.model.LogMessage;
 import ir.daneshrefah.scm.logging.model.SpanModel;
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class SpanLogConverterService implements ConverterService {
 
     private final ObjectMapper objectMapper;
+
     public LogMessage convertToLogMessage(String msg) throws JsonProcessingException {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -32,10 +33,10 @@ public class SpanLogConverterService implements ConverterService {
     }
 
     @Override
-    public LogTraceEntity convertToTransactionLogEntity(LogMessage logMessage) {
-        LogTraceEntity logTraceEntity = new LogTraceEntity();
+    public LogTraceEntity convertToLogTraceEntity(LogMessage logMessage) {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
+        LogTraceEntity logTraceEntity = new LogTraceEntity();
         logTraceEntity.setChannelCode(attributes.get(LogAttribute.CHANNEL_CODE.getAttributeName()));
         logTraceEntity.setTerminalCode(attributes.get(LogAttribute.TERMINAL_CODE.getAttributeName()));
         logTraceEntity.setClientId(attributes.get(LogAttribute.CLIENT_ID.getAttributeName()));
@@ -44,9 +45,8 @@ public class SpanLogConverterService implements ConverterService {
         logTraceEntity.setFlowId(attributes.get(LogAttribute.FLOW_ID.getAttributeName()));
         logTraceEntity.setMessageId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
         logTraceEntity.setExceptionClassName(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
-        logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()));
-        String statusCodeStr = attributes.get(LogAttribute.RESPONSE_STATUS_CODE.getAttributeName());
-        Integer statusCode = statusCodeStr != null ? Integer.valueOf(statusCodeStr) : null;
+        logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()) != null ? attributes.get(LogAttribute.END_POINT.getAttributeName()) : attributes.get(LogAttribute.URL_PATH.getAttributeName()));
+        Integer statusCode = attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName()) != null ? Integer.valueOf(attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName())) : null;
         logTraceEntity.setStatusCode(statusCode);
         logTraceEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
         if (spanModel.getStartEpochNanos() > 0) {
@@ -67,6 +67,7 @@ public class SpanLogConverterService implements ConverterService {
         logTraceEntity.setAmount(attributes.get(LogAttribute.AMOUNT.getAttributeName()));
         logTraceEntity.setProviderCode(attributes.get(LogAttribute.PROVIDER_CODE.getAttributeName()));
         logTraceEntity.setProviderResponseCode(attributes.get(LogAttribute.PROVIDER_RESPONSE_CODE.getAttributeName()));
+        logTraceEntity.setClientIpAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
         logTraceEntity.setTraceId(spanModel.getTraceId());
         logTraceEntity.setSpanId(spanModel.getSpanId());
         logTraceEntity.setSpanKind(spanModel.getKind());
