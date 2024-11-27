@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
@@ -35,8 +34,8 @@ public class ProxyServiceExecutor extends ServiceExecutor {
         ProxyService proxyService = (ProxyService) message.getHeader().getService();
         Message result = callProxyService(proxyService, message);
         if (Objects.nonNull(result.getErrors()) && !result.getErrors().isEmpty()) {
-            Error error = result.getErrors().get(0);
-            return objectMapper.readTree(objectMapper.writeValueAsBytes(error));
+            result.getErrors().forEach(message::addError);
+            return objectMapper.readTree(objectMapper.writeValueAsBytes(message.getPayload()));
         }
         return result.getPayload();
     }
