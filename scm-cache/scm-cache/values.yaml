@@ -1,8 +1,7 @@
-# Default values for scm-uaa.
+# Default values for scm-cache.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 namespace: scm
-replicaCount: 3
 
 image:
   repository: dockerhub.daneshrefah.ir/drp/scm-app
@@ -10,12 +9,20 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.4"
 
+# Cluster settings
+cluster:
+  # memberCount is the number Hazelcast members
+  memberCount: 3
+
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-serviceAccountName: scm-cache-service-account
-
+serviceAccount:
+  name: scm-cache-service-account
+  create: true
+  automount: true
 
 podAnnotations: {}
 podLabels: {}
@@ -31,9 +38,15 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-service:
+scm_cache_service:
+  clusterIP: None
   type: ClusterIP
-  port: 8000
+  port: 5701
+
+service:
+  clusterIP: None
+  type: ClusterIP
+  port: 8080
 
 ingress:
   enabled: true
@@ -42,14 +55,14 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: scm-uaa.daneshrefah.ir
+    - host: scm-cache.daneshrefah.ir
       paths:
         - path: /
           pathType: Prefix
           backend:
             service:
               port:
-                number: 8000
+                number: 8080
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -70,7 +83,7 @@ resources: {}
 #livenessProbe:
 #  httpGet:
 #    path: /public/token
-#    port: 8000
+#    port: 8080
 #    scheme: HTTP
 #  initialDelaySeconds: 30
 #  timeoutSeconds: 3
@@ -81,7 +94,7 @@ resources: {}
 #readinessProbe:
 #  httpGet:
 #    path: /public/token
-#    port: 8000
+#    port: 8080
 #    scheme: HTTP
 #  initialDelaySeconds: 10
 #  timeoutSeconds: 3
@@ -119,10 +132,13 @@ tolerations: []
 
 affinity: {}
 
+persistence:
+  enabled: false
+
 environments:
-  - name: SPRING_PROFILES_ACTIVE
-    value: "test,k8s"
-  - name: SCM_APP
-    value: "scm-uaa"
-  - name: SERVER_PORT
-    value: "8000"
+- name: SPRING_PROFILES_ACTIVE
+  value: "test,k8s"
+- name: SCM_APP
+  value: "scm-cache"
+- name: SERVER_PORT
+  value: "8080"
