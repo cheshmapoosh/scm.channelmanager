@@ -116,15 +116,20 @@ volumeMounts:
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-nodeSelector: {}
+tolerations:
+  - key: "app.drp.group/name"
+    operator: "Equal"
+    value: "scm-web"
+    effect: "NoSchedule"
 
-tolerations: []
+nodeSelector:
+  app: scm-web
 
 affinity: {}
 
 environments:
   - name: SPRING_PROFILES_ACTIVE
-    value: "ib4test"
+    value: "ib4dev"
   - name: SCM_APP
     value: "scm-web"
   - name: SERVER_PORT

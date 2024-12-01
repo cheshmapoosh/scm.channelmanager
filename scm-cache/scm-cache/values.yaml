@@ -126,9 +126,14 @@ volumeMounts:
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-nodeSelector: {}
+tolerations:
+  - key: "app.drp.group/name"
+    operator: "Equal"
+    value: "scm-cache"
+    effect: "NoSchedule"
 
-tolerations: []
+nodeSelector:
+  app: scm-cache
 
 affinity: {}
 
@@ -137,7 +142,7 @@ persistence:
 
 environments:
 - name: SPRING_PROFILES_ACTIVE
-  value: "test,k8s"
+  value: "dev,k8s"
 - name: SCM_APP
   value: "scm-cache"
 - name: SERVER_PORT
