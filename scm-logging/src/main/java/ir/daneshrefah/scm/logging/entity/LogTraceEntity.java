@@ -15,6 +15,7 @@ import java.util.Date;
 public class LogTraceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ROW_ID")
     private Long id;
     @Column(name = "CHANNEL_CODE")
     private String channelCode;
