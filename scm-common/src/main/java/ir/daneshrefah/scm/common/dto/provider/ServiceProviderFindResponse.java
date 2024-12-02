@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.dto.provider;
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
+import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -23,4 +24,5 @@ public class ServiceProviderFindResponse implements RequestData {
     private String providerClassName;
     private ServiceProviderProtocol protocol;
     private AssetProvider assetProvider;
+    private ServiceProviderStatus status;
 }

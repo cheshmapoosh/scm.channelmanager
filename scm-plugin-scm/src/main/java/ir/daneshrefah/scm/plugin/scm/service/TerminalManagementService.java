@@ -27,18 +27,16 @@ import java.util.Optional;
 public class TerminalManagementService extends AbstractJavaService {
 
     private final TerminalService terminalService;
-//    private final ProcessDefinitionService processDefinitionService;
+
 
     public TerminalManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper,
-                                     TerminalService terminalService/*, ProcessDefinitionService processDefinitionService*/) {
+                                     TerminalService terminalService) {
         super(producerTemplate, objectMapper);
         this.terminalService = terminalService;
-//        this.processDefinitionService = processDefinitionService;
     }
 
     @JavaService
     public PagedResponseData<Terminal> listTerminal(TerminalFindRequest request) {
-//        processDefinitionService.deployProcessDefinition();
         return terminalService.findAllTerminals(request);
     }
 

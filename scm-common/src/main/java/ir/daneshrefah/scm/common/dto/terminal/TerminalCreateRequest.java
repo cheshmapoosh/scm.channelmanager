@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -14,8 +16,11 @@ import lombok.Data;
 @Data
 public class TerminalCreateRequest implements RequestData {
 
+    @NotBlank
     private String code;
+    @NotBlank
     private String title;
+    @NotNull
     private TerminalStatus status;
     private boolean supportCheckAuthentication;
     private boolean supportCheckSecondAuthentication;

@@ -44,7 +44,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class DynamicRestServiceImpl implements DynamicRestService {
-    private static final List<RestExternalProviderResponse> EXTERNAL_PROVIDER_NAME_CACHE = new ArrayList<>();
+
     private final ParameterDatasourceConditionRepository datasourceConditionRepository;
     private final ResponseRepository responseConditionRepository;
     private final ServiceProviderRepository serviceProviderRepository;
@@ -53,28 +53,6 @@ public class DynamicRestServiceImpl implements DynamicRestService {
     private final ServiceRepository serviceRepository;
     private final ServiceServiceImpl serviceServiceImpl;
     private final ParameterParser parameterParser;
-
-
-    @Override
-    public List<RestExternalProviderResponse> getRestExternalProviderNameList() {
-        if (EXTERNAL_PROVIDER_NAME_CACHE.isEmpty()) {
-            synchronized (this) {
-                if (EXTERNAL_PROVIDER_NAME_CACHE.isEmpty()) {
-                    return serviceProviderRepository
-                            .findAllRestProviders()
-                            .stream()
-                            .map(entity -> {
-                                RestExternalProviderResponse response = new RestExternalProviderResponse();
-                                response.setId(entity.getId());
-                                response.setCode(entity.getCode());
-                                response.setTitle(entity.getTitle());
-                                return response;
-                            }).toList();
-                }
-            }
-        }
-        return EXTERNAL_PROVIDER_NAME_CACHE;
-    }
 
     private void evictEffectCache() {
         parameterParser.clearCache();

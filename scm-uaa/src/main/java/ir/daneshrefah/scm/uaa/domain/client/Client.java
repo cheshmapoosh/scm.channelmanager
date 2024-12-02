@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
+import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,7 @@ import java.util.Set;
  */
 @Getter
 @Setter
-public class Client {
+public class Client extends BaseModel<Long> {
 
     private Long id;
     private String title;

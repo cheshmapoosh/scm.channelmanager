@@ -1,11 +1,8 @@
-package ir.daneshrefah.scm.uaa.repository.authentication.client;
+package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
-import ir.daneshrefah.scm.common.data.converter.StringSetConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import ir.daneshrefah.scm.uaa.repository.converter.AuthorizationGrantTypeConverter;
-import ir.daneshrefah.scm.uaa.repository.converter.ClientVersionStatusConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

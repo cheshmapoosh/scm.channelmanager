@@ -132,12 +132,18 @@ public interface ServiceMapper {
 
     @Named("toResponseConditionEntity")
     default List<ResponseEntity> toResponseConditionEntity(List<Response> conditions) {
-        return conditions.stream().map(ResponseMapper.INSTANCE::toEntity).toList();
+        if (Objects.nonNull(conditions)) {
+            return conditions.stream().map(ResponseMapper.INSTANCE::toEntity).toList();
+        }
+        return null;
     }
 
     @Named("toResponseConditionModel")
     default List<Response> toResponseConditionModel(List<ResponseEntity> conditions) {
-        return conditions.stream().map(ResponseMapper.INSTANCE::toModel).toList();
+        if (Objects.nonNull(conditions)) {
+            return conditions.stream().map(ResponseMapper.INSTANCE::toModel).toList();
+        }
+        return null;
     }
 
 

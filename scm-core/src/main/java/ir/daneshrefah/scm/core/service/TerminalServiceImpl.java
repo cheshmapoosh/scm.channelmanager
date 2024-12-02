@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.common.dto.terminal.*;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
@@ -18,11 +17,12 @@ import ir.daneshrefah.scm.core.repository.TransformerRelationRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -59,6 +59,16 @@ public class TerminalServiceImpl extends TerminalService {
     }
 
     @Override
+    public void evictCache() {
+        if (Objects.nonNull(terminals)) {
+            terminals.clear();
+        }
+        if (Objects.nonNull(terminalServiceAccesses)) {
+            terminalServiceAccesses.clear();
+        }
+    }
+
+    @Override
     public Optional<Terminal> findTerminalById(String id) {
         if (StringUtils.isEmpty(id)) {
             return Optional.empty();
@@ -85,6 +95,8 @@ public class TerminalServiceImpl extends TerminalService {
     public PagedResponseData<Terminal> findAllTerminals(TerminalFindRequest request) {
         List<Terminal> terminalList = findAllTerminals().stream()
                 .filter(terminal -> null == request || null == request.getCode() || request.getCode().equals(terminal.getCode()))
+                .filter(terminal -> null == request || null == request.getCreator() || terminal.getCreator().equalsIgnoreCase(request.getCreator()))
+                .filter(terminal -> null == request || null == request.getEditor() || terminal.getLastEditor().equalsIgnoreCase(request.getEditor()))
                 .filter(terminal -> null == request || null == request.getStatus() || request.getStatus().equals(terminal.getStatus()))
                 .filter(terminal -> null == request || null == request.getSupportCheckAuthentication() || request.getSupportCheckAuthentication().equals(terminal.isSupportCheckAuthentication()))
                 .filter(terminal -> null == request || null == request.getSupportCheckSecondAuthentication() || request.getSupportCheckSecondAuthentication().equals(terminal.isSupportCheckSecondAuthentication()))
@@ -107,21 +119,13 @@ public class TerminalServiceImpl extends TerminalService {
     public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode) {
         return findAllTerminalServiceAccesses().stream().filter(serviceAccess ->
                         terminalCode.equalsIgnoreCase(serviceAccess.getTerminal().getCode()) &&
-                                serviceCode.equalsIgnoreCase(serviceAccess.getService().getCode())
+                        serviceCode.equalsIgnoreCase(serviceAccess.getService().getCode())
                 )
                 .findFirst();
     }
 
-    public boolean checkTerminalExistById(String terminalId) {
-        if (StringUtils.isEmpty(terminalId)) {
-            return false;
-        }
-        return findAllTerminals().stream().anyMatch(terminal -> terminalId.equals(terminal.getId()));
-    }
-
     @Override
     public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
-        validateTerminalServiceAssignmentRequest(request);
         TerminalEntity terminalEntity = terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
         ServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
         terminalServiceAccessRepository
@@ -134,7 +138,7 @@ public class TerminalServiceImpl extends TerminalService {
                     entity.setService(serviceEntity);
                     terminalServiceAccessRepository.save(entity);
                 });
-        cleanTerminalServiceAccessesCache();
+        evictCache();
         return findAllTerminalServiceAccesses()
                 .stream()
                 .filter(serviceAccess -> serviceAccess.getTerminal().getId().equals(request.getTerminalId()))
@@ -145,14 +149,13 @@ public class TerminalServiceImpl extends TerminalService {
 
     @Override
     public void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request) {
-        validateTerminalServiceAssignmentRequest(request);
         TerminalEntity terminalEntity = terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
         ServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
         terminalServiceAccessRepository
                 .findByTerminal_IdAndService_Id(terminalEntity.getId(), serviceEntity.getId())
-                .ifPresentOrElse(found->{
+                .ifPresentOrElse(found -> {
                     terminalServiceAccessRepository.delete(found);
-                    cleanTerminalServiceAccessesCache();
+                    evictCache();
                 }, () -> {
                     throw new NoMatchRecordFoundException("terminalServiceAccess");
                 });
@@ -169,14 +172,10 @@ public class TerminalServiceImpl extends TerminalService {
                 .collect(Collectors.toList());
     }
 
-    private void validateTerminalServiceAssignmentRequest(TerminalServiceAssignmentRequest request) {
-        ValidationUtils.checkBlankString(request.getServiceId(), () -> new MissingRequiredInputException("serviceId"));
-        ValidationUtils.checkBlankString(request.getTerminalId(), () -> new MissingRequiredInputException("terminalId()"));
-    }
-
     @Override
     public Terminal craeteTerminal(TerminalCreateRequest request) {
-        validateTerminalCreateRequest(request);
+        //normalize input
+        request.setCode(request.getCode().toUpperCase());
         checkTerminalCodeDuplication(request);
         Long legacyTerminalId = findLegacyTerminal(request.getCode());
         TerminalEntity entity = new TerminalEntity();
@@ -189,98 +188,41 @@ public class TerminalServiceImpl extends TerminalService {
         entity.setSupportCheckAuthentication(request.isSupportCheckAuthentication());
         entity.setSupportCheckServiceAccess(request.isSupportCheckServiceAccess());
         entity.setSupportCustomerInjection(request.isSupportCustomerInjection());
-        //adding base details -> it should be filled by jpa audit
-        entity.setCreateDate(LocalDateTime.now());
-        entity.setLastEditDate(LocalDateTime.now());
         Terminal model = TerminalMapper.INSTANCE.toModel(terminalRepository.save(entity));
-        return addTerminalListCache(model);
+        evictCache();
+        return model;
     }
 
     @Override
     public void deleteTerminal(TerminalDeleteRequest request) {
-        validateTerminalDeleteRequest(request);
         terminalRepository
                 .findById(request.getId())
                 .ifPresentOrElse(found -> {
-                    //if record version passed.
-                    try {
-                        terminalRepository.delete(found);
-                        transformerRelationRepository.deleteAll(transformerRelationRepository.findAllBySourceId(found.getId()));
-                    } catch (ObjectOptimisticLockingFailureException e) {
-                        throw new RecordVersionException("terminal");
-                    }
-                    removeTerminalListCache(TerminalMapper.INSTANCE.toModel(found));
+                    terminalRepository.delete(found);
+                    evictCache();
                 }, () -> {
                     throw new RecordVersionException("terminal");
                 });
     }
 
+
     @Override
     public Terminal editTerminal(TerminalEditRequest request) {
-        validateTerminalEditRequest(request);
-        Terminal found = terminalRepository.findById(request.getId())
-                .map(TerminalMapper.INSTANCE::toModel)
-                .orElseThrow(() -> new NoMatchRecordFoundException(request.getCode()));
-        if (found.getLastEditDate().equals(request.getLastEditDate())) {
-            dynamicUpdateTerminalEntity(found, request);
-            try {
-                terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
-            } catch (ObjectOptimisticLockingFailureException e) {
-                throw new RecordVersionException("terminal");
-            }
-            removeTerminalListCache(found);
-            return addTerminalListCache(found);
-        } else {
-            throw new RecordVersionException("terminal");
-        }
+        Terminal found = findTerminalById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("terminalId"));
+        mapToTerminalEntity(found, request);
+        terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
+        evictCache();
+        return found;
     }
 
-    private void dynamicUpdateTerminalEntity(Terminal terminal, TerminalEditRequest request) {
-        terminalCodeDynamicUpdate(terminal, request);
-        terminal.setTitle(Objects.nonNull(request.getTitle()) ? request.getTitle() : terminal.getTitle());
-        terminal.setStatus(Objects.nonNull(request.getStatus()) ? request.getStatus() : terminal.getStatus());
-        terminal.setSupportCheckAssetAccess(Objects.nonNull(request.getSupportCheckAssetAccess()) ? request.getSupportCheckAssetAccess() : terminal.isSupportCheckAssetAccess());
-        terminal.setSupportCheckServiceAccess(Objects.nonNull(request.getSupportCheckServiceAccess()) ? request.getSupportCheckServiceAccess() : terminal.isSupportCheckServiceAccess());
-        terminal.setSupportCheckAuthentication(Objects.nonNull(request.getSupportCheckAuthentication()) ? request.getSupportCheckAuthentication() : terminal.isSupportCheckAuthentication());
-        terminal.setSupportCheckSecondAuthentication(Objects.nonNull(request.getSupportCheckSecondAuthentication()) ? request.getSupportCheckSecondAuthentication() : terminal.isSupportCheckSecondAuthentication());
-        terminal.setSupportCustomerInjection(Objects.nonNull(request.getSupportCustomerInjection()) ? request.getSupportCustomerInjection() : terminal.isSupportCustomerInjection());
-        terminal.setLastEditDate(LocalDateTime.now());
-    }
-
-    private void terminalCodeDynamicUpdate(Terminal terminal, TerminalEditRequest request) {
-        if (Objects.nonNull(request.getCode()) && !request.getCode().isBlank() && !terminal.getCode().equals(request.getCode())) {
-            request.setCode(request.getCode().toUpperCase());
-            terminals
-                    .stream()
-                    .filter(t -> t.getCode().equals(request.getCode()))
-                    .findFirst()
-                    .ifPresent(t -> {
-                        throw new DuplicatedRecordFoundException(t.getCode());
-                    });
-            terminal.setCode(request.getCode());
-            terminal.setLegacyTerminalId(findLegacyTerminal(request.getCode()));
-        }
-    }
-
-    private void validateTerminalEditRequest(TerminalEditRequest request) {
-        String id = request.getId();
-        LocalDateTime lastEditDate = request.getLastEditDate();
-        //required data
-        if (Objects.isNull(id) || id.isBlank()) {
-            throw new InvalidInputException("id");
-        } else if (Objects.isNull(lastEditDate)) {
-            throw new InvalidInputException("lastEditDate");
-        }
-    }
-
-    private void validateTerminalDeleteRequest(TerminalDeleteRequest request) {
-        LocalDateTime lastEditDate = request.getLastEditDate();
-        String id = request.getId();
-        if (Objects.isNull(lastEditDate)) {
-            throw new InvalidInputException("lastEditDate");
-        } else if (Objects.isNull(id) || id.isBlank()) {
-            throw new InvalidInputException("id");
-        }
+    private void mapToTerminalEntity(Terminal terminal, TerminalEditRequest request) {
+        terminal.setTitle(request.getTitle());
+        terminal.setStatus(request.getStatus());
+        terminal.setSupportCheckAssetAccess(request.isSupportCheckAssetAccess());
+        terminal.setSupportCheckServiceAccess(request.isSupportCheckServiceAccess());
+        terminal.setSupportCheckAuthentication(request.isSupportCheckAuthentication());
+        terminal.setSupportCheckSecondAuthentication(request.isSupportCheckSecondAuthentication());
+        terminal.setSupportCustomerInjection(request.isSupportCustomerInjection());
     }
 
     private void checkTerminalCodeDuplication(TerminalCreateRequest request) {
@@ -305,50 +247,6 @@ public class TerminalServiceImpl extends TerminalService {
                     return legacyTerminalId;
                 });
 
-    }
-
-    private void validateTerminalCreateRequest(TerminalCreateRequest request) {
-        String code = request.getCode();
-        String title = request.getTitle();
-        TerminalStatus status = request.getStatus();
-        if (Objects.isNull(code) || code.isBlank()) {
-            throw new InvalidInputException("code");
-        } else if (Objects.isNull(title) || title.isBlank()) {
-            throw new InvalidInputException("title");
-        } else if (Objects.isNull(status)) {
-            throw new InvalidInputException("status");
-        }
-        //normalize input
-        request.setCode(request.getCode().toUpperCase());
-    }
-
-    private synchronized void removeTerminalListCache(Terminal terminal) {
-        if (Objects.nonNull(terminal)) {
-            Iterator<Terminal> iterator = terminals.iterator();
-            while (iterator.hasNext()) {
-                Terminal cached = iterator.next();
-                if (cached.getId().equals(terminal.getId())) {
-                    iterator.remove();
-                    return;
-                }
-            }
-        }
-    }
-
-    private synchronized void cleanTerminalServiceAccessesCache() {
-        if (Objects.nonNull(this.terminalServiceAccesses)) {
-            this.terminalServiceAccesses.clear();
-        }
-    }
-
-    private synchronized Terminal addTerminalListCache(Terminal terminal) {
-        //adding refresh record to cache list
-        terminal = terminalRepository
-                .findById(terminal.getId())
-                .map(TerminalMapper.INSTANCE::toModel)
-                .orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
-        terminals.add(terminal);
-        return terminal;
     }
 
 }

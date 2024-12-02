@@ -19,5 +19,6 @@ public class ClientVersion extends BaseModel<Long> {
     private boolean isForced;
     private String signature;
     private ClientVersionStatus status;
+    private Long clientId;
 
 }
