@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,7 +17,9 @@ import java.time.LocalDateTime;
 @Data
 public class TerminalDeleteRequest implements RequestData {
 
+    @NotBlank
     private String id;
+    @NotNull
     private LocalDateTime lastEditDate;
 
 }

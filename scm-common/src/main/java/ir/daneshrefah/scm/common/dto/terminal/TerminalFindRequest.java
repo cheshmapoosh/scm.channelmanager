@@ -16,6 +16,8 @@ public class TerminalFindRequest extends PagedRequestData {
 
     private String code;
     private TerminalStatus status;
+    private String creator;
+    private String editor;
     private Boolean supportCheckAuthentication;
     private Boolean supportCheckSecondAuthentication;
     private Boolean supportCheckServiceAccess;

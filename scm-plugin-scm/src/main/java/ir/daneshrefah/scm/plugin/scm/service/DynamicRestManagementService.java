@@ -70,13 +70,6 @@ public class DynamicRestManagementService extends AbstractJavaService {
         return dynamicRestService.removeResponseConditionDatasource(request);
     }
 
-    @JavaService(serviceCode = "SVC_REST_PROVIDER_NAME_LIST")
-    @SuppressWarnings("unused")
-    public List<RestExternalProviderResponse> getRestProviderNameList() {
-        return dynamicRestService.getRestExternalProviderNameList();
-    }
-
-
     @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_LIST")
     @SuppressWarnings("unused")
     public List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request) {

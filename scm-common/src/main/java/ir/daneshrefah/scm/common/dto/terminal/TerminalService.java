@@ -50,4 +50,6 @@ public abstract class TerminalService {
 
     public abstract List<TerminalServiceAccess> findAllTerminalServiceAccesses();
 
+    public abstract void evictCache();
+
 }

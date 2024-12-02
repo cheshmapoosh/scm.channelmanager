@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.common.validaton.bean;
+package ir.daneshrefah.scm.common.validation;
 
+import ir.daneshrefah.scm.common.validation.validator.NotBlankIfPresentValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
