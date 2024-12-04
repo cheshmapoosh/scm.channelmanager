@@ -11,7 +11,7 @@ spring:
     config:
       server:
         git:
-          uri: /home/pwausr/scm/config-repo-server
+          uri: /mnt/config-repo-server
 #            uri: /home/scm/docker/config/config-repo-server   for DOCKER
           search-paths: '{application}'
           clone-on-start: true
