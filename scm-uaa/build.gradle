@@ -17,11 +17,12 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.uaa.UAAServerApplication'
-    archiveClassifier = 'boot'
+    archiveClassifier = ''
 
 }
 bootJar {
     enabled = true
+    version = parent.version
 }
 
 dependencies {
