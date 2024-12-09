@@ -29,6 +29,5 @@ public class AssetProviderEntity extends AbstractEntity<Integer> {
     private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
-    private String providerServiceId;
 
 }

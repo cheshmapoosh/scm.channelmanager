@@ -69,47 +69,52 @@ public class TerminalServiceImpl extends TerminalService {
 
     @Override
     public List<TerminalServiceAccess> findTerminalServiceAccessByTerminalId(String terminalId) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public Optional<TerminalServiceAccess> findTerminalServiceAccessByTerminalCodeAndServiceCode(String terminalCode, String serviceCode) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public Terminal craeteTerminal(TerminalCreateRequest request) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public void deleteTerminal(TerminalDeleteRequest request) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public Terminal editTerminal(TerminalEditRequest request) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public List<Terminal> findAllTerminalAccessOnService(String serviceId) {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
     }
 
     @Override
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
-        throw new RuntimeException("this method is not support.");
+        throw new RuntimeException("this method is not supported.");
+    }
+
+    @Override
+    public void evictCache() {
+        throw new RuntimeException("this method is not supported.");
     }
 
 }

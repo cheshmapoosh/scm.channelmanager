@@ -3,12 +3,13 @@ package ir.daneshrefah.scm.plugin.scm.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.service.*;
+import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Service;
  * @version 1.0
  * @since 2024-01-17
  */
-@Service
+@Component
 public class ServiceManagementService extends AbstractJavaService {
 
     private final ServiceService service;
@@ -28,17 +29,17 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
     @JavaService
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList(ServiceFindRequest request) {
+    public PagedResponseData<Service> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
     @JavaService
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> parentServiceList(ParentServiceFindRequest request) {
+    public PagedResponseData<Service> parentServiceList(ParentServiceFindRequest request) {
         return this.service.findParentServiceList(request);
     }
 
     @JavaService
-    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String serviceCode) {
+    public Service findServiceByCode(String serviceCode) {
 //        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
@@ -47,12 +48,12 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
     @JavaService
-    public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
+    public Service updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
     }
 
     @JavaService
-    public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest request) {
+    public Service createService(ServiceInfoRequest request) {
         return this.service.createService(request);
     }
 

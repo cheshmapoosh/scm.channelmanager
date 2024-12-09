@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.repository.authentication.client;
+package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import jakarta.persistence.*;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SUA_CLIENT_SCOPE")
-public class ClientScopeRelation extends AbstractDefaultEntity<Long> {
+public class ClientScopeRelationEntity extends AbstractDefaultEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

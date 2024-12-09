@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.provider.*;
+import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
+import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
@@ -30,6 +32,13 @@ public class ProviderManagementService extends AbstractJavaService {
     @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_LIST")
     public PagedResponseData<ServiceProviderFindResponse> serviceProviderList(ServiceProviderFindRequest request) {
         return this.service.findServiceProviderList(request);
+    }
+
+
+    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_NAME_LIST")
+    @SuppressWarnings("unused")
+    public List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request) {
+        return this.service.getServiceProviderNameList(request);
     }
 
     @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_BY_ID")

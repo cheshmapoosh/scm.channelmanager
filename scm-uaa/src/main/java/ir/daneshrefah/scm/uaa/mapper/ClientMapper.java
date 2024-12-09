@@ -3,9 +3,8 @@ package ir.daneshrefah.scm.uaa.mapper;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientAuthorizationGrantTypeEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientEntity;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientScopeRelation;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
@@ -13,6 +12,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -31,15 +31,26 @@ public interface ClientMapper {
     @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(entity))")
     Client toModel(ClientEntity entity);
 
+    @Mapping(target = "allowIpAddresses" ,expression = "java(mapAllowIpAddressesString(model))")
+    @Mapping(target = "authorizationGrantTypes" ,source = "authorizationGrantTypes",ignore = true)
+    @Mapping(target = "versions" ,source = "versions",ignore = true)
+    ClientEntity toEntityInternal(Client model);
+
+    default ClientEntity toEntity(Client client){
+        ClientEntity entity = toEntityInternal(client);
+        mapAuthenticationMethodsToClient(client, entity);
+        return entity;
+    }
+
     default List<AuthorizationGrantType> mapAuthorizationGrantTypes(ClientEntity entity) {
         List<AuthorizationGrantType> list = new ArrayList<>();
-        for (Iterator<ClientAuthorizationGrantTypeEntity> iterator = entity.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
-            ClientAuthorizationGrantTypeEntity authorizationGrantTypeEntity = iterator.next();
+        for (ClientAuthorizationGrantTypeEntity authorizationGrantTypeEntity : entity.getAuthorizationGrantTypes()) {
             list.add(authorizationGrantTypeEntity.getAuthorizationGrantType());
         }
 
         return list;
     }
+
 
     default Set<String> mapAllowIpAddresses(ClientEntity entity) {
         String[] elements = StringUtils.split(entity.getAllowIpAddresses(), ",;");
@@ -47,6 +58,10 @@ public interface ClientMapper {
             return Set.of(elements);
         }
         return Collections.emptySet();
+    }
+
+    default String mapAllowIpAddressesString(Client model) {
+        return String.join(",", model.getAllowIpAddresses());
     }
 
     default List<ClientAuthenticationMethod> mapClientAuthenticationMethods(ClientEntity entity) {
@@ -67,6 +82,25 @@ public interface ClientMapper {
             list.add(ClientAuthenticationMethod.NONE);
         }
         return list;
+    }
+
+    default void mapAuthenticationMethodsToClient(Client model,ClientEntity entity) {
+        List<ClientAuthenticationMethod> list = model.getAuthenticationMethods();
+        if (list.contains(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)) {
+            entity.setClientAuthenticationMethodSecretBasic(true);
+        }
+        if (list.contains(ClientAuthenticationMethod.CLIENT_SECRET_POST)) {
+            entity.setClientAuthenticationMethodSecretPost(true);
+        }
+        if (list.contains(ClientAuthenticationMethod.CLIENT_SECRET_JWT)) {
+            entity.setClientAuthenticationMethodSecretJwt(true);
+        }
+        if (list.contains(ClientAuthenticationMethod.PRIVATE_KEY_JWT)) {
+            entity.setClientAuthenticationMethodKeyJwt(true);
+        }
+        if (list.contains(ClientAuthenticationMethod.NONE)) {
+            entity.setClientAuthenticationMethodNone(true);
+        }
     }
 
     /*@Mapping(target = "clientAuthenticationMethodSecretBasic", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_BASIC))")
@@ -100,10 +134,5 @@ public interface ClientMapper {
         return StringUtils.join(model.getAllowIpAddresses(), ',');
     }
 
-
-//    @Mapping(source = "client", target = "client", qualifiedByName = "toClientIdEntity")
-//    ClientScopeRelation toScopeEntity(ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation model);
-
-    List<ClientScopeRelation> toScopeEntities(Iterable<ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation> entities);
 
 }

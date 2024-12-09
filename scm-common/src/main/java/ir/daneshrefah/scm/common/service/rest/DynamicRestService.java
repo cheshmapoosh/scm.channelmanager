@@ -10,8 +10,6 @@ import java.util.List;
 public interface DynamicRestService {
     Response createResponse(ResponseCreateRequest request);
 
-    List<RestExternalProviderResponse> getRestExternalProviderNameList();
-
     ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceRequest request);
 
     Response changeResponse(ResponseChangeRequest request);

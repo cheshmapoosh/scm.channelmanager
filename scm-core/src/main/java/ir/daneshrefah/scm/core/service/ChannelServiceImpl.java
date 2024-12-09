@@ -8,10 +8,12 @@ import ir.daneshrefah.scm.common.dto.channel.ChannelDeleteRequest;
 import ir.daneshrefah.scm.common.dto.channel.ChannelEditRequest;
 import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.exception.*;
+import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.exception.RecordVersionException;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
-import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
-import ir.daneshrefah.scm.common.service.channel.*;
+import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.core.entity.terminal.ChannelEntity;
 import ir.daneshrefah.scm.core.mapper.ChannelMapper;
 import ir.daneshrefah.scm.core.repository.ChannelRepository;
@@ -180,20 +182,7 @@ public class ChannelServiceImpl implements ChannelService {
 
 
     private void validateCreateChannelRequest(ChannelCreateRequest request) {
-        ChannelProtocol protocol = request.getProtocol();
-        String code = request.getCode();
-        String title = request.getTitle();
-        String channelClassName = request.getChannelClassName();
-        String terminalCode = request.getTerminalCode();
-        ValidationUtils.checkNull(protocol, () -> new InvalidInputException("protocol"));
-        ValidationUtils.checkBlankString(code, () -> new InvalidInputException("code"));
-        ValidationUtils.checkBlankString(title, () -> new InvalidInputException("title"));
-        ValidationUtils.checkBlankString(channelClassName, () -> new InvalidInputException("channelClassName"));
-        ValidationUtils.checkBlankString(terminalCode, () -> new InvalidInputException("terminalCode"));
-//        if (Objects.nonNull(request.getMetadata())) {
-//            ValidationUtils.checkBlankString(metadata, () -> new InvalidInputException("metadata"));
-//        }
-        channelRepository.findByCode(code).ifPresent(channelEntity -> {
+        channelRepository.findByCode(request.getCode()).ifPresent(channelEntity -> {
             throw new DuplicatedRecordFoundException("channel");
         });
         request.setTerminalCode(request.getTerminalCode().toUpperCase());

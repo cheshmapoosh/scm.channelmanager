@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.service.client;
+package ir.daneshrefah.scm.uaa.service.client.dto;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import lombok.Getter;
