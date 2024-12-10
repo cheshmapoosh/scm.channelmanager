@@ -50,6 +50,7 @@ public abstract class MessageInput<T> {
     private TokenType transactionAuthenticationType;
     private String transactionAuthenticationValue;
     private SpanAdapter spanAdapter;
+
     public String getHeader(String key) {
         if (Objects.nonNull(key)) {
             key = key.toLowerCase();
