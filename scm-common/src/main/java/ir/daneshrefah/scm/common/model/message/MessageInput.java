@@ -10,8 +10,7 @@ import lombok.experimental.SuperBuilder;
 import org.apache.camel.tracing.SpanAdapter;
 
 import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,7 +25,7 @@ import java.util.UUID;
 public abstract class MessageInput<T> {
     @Builder.Default
     private final String correlationId = UUID.randomUUID().toString();
-    private Map<String, Object> headers;
+    private IgnoreCaseHeader headers;
     private String serviceCode;
     private String terminalCode;
     @JsonIgnore
@@ -51,8 +50,47 @@ public abstract class MessageInput<T> {
     private TokenType transactionAuthenticationType;
     private String transactionAuthenticationValue;
     private SpanAdapter spanAdapter;
+
     public String getHeader(String key) {
+        if (Objects.nonNull(key)) {
+            key = key.toLowerCase();
+        }
         return null != headers ? (String) headers.get(key) : null;
     }
 
+    public static class IgnoreCaseHeader extends HashMap<String,Object> {
+        @Override
+        public Object put(String key, Object value) {
+            if (Objects.nonNull(key)){
+                key = key.toLowerCase();
+            }
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ?> m) {
+            if (Objects.nonNull(m)) {
+                Set<? extends String> keySet = m.keySet();
+                for (String key : keySet) {
+                    this.put(key, m.get(key));
+                }
+            }
+        }
+
+        @Override
+        public Object get(Object key) {
+            if (key instanceof String) {
+                key = ((String) key).toLowerCase();
+            }
+            return super.get(key);
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            if (key instanceof String) {
+                key = ((String) key).toLowerCase();
+            }
+            return super.containsKey(key);
+        }
+    }
 }
