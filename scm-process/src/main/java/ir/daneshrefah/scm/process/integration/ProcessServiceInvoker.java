@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.process.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.ProcessMessageInput;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
@@ -51,7 +52,7 @@ public class ProcessServiceInvoker {
         String authorizationHeader = "Basic " + Base64Utils.encodeWithBase64(properties.getClientId() + COLON + properties.getClientSecret());
         Channel channel = channelService.findChannelByCode(BPMS_CHANNEL_CODE)
                 .orElseThrow(() -> new InvalidInputException("channelCode"));
-        Map<String, Object> headers = new HashMap<>();
+        MessageInput.IgnoreCaseHeader headers = new MessageInput.IgnoreCaseHeader();
         headers.put(SCM_PARAMETER_TERMINAL, null);
         headers.put(SCM_PARAMETER_ACCESS_PARAMETER, "123");//TODO processMessage.getAccessParameter() is null
 //        headers.put(SCM_PARAMETER_AUTHORIZATION, null);
