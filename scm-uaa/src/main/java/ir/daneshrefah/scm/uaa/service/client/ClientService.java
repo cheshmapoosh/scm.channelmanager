@@ -162,11 +162,11 @@ public class ClientService {
         Client client = mapClientCreateRequestToClient(request);
         ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
         ClientEntity saved = clientRepository.save(entity);
-        client
-                .getAuthorizationGrantTypes()
-                .forEach(authGrantType -> {
-                    authorizationGrantTypeService.assignGrantType(authGrantType, saved.getId());
-                });
+//        client
+//                .getAuthorizationGrantTypes()
+//                .forEach(authGrantType -> {
+//                    authorizationGrantTypeService.assignGrantType(authGrantType, saved.getId());
+//                });
         reloadCache();
         return findByClientId(saved.getClientId()).orElseThrow();
     }
@@ -191,7 +191,7 @@ public class ClientService {
         client.setCheckVersion(request.getCheckVersion());
         client.setCheckActivation(request.getCheckActivation());
         client.setSessionTimeToLiveMinute(Long.parseLong(request.getSessionTimeToLiveMinute()));
-        client.setAuthorizationGrantTypes(request.getAuthorizationGrantTypes());
+//        client.setAuthorizationGrantTypes(request.getAuthorizationGrantTypes());
         client.setCheckIpAddress(request.getCheckIpAddress());
         client.setAllowIpAddresses(request.getAllowIpAddresses());
         client.setScopes(null);
