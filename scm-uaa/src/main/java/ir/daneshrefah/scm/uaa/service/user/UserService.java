@@ -68,7 +68,7 @@ public class UserService {
 
     public static final String DELETE_FROM_X_USER = "DELETE FROM REF.XUSER_DETAIL WHERE USERNAME = ? AND CHANNEL_CODE = ?";
 
-    private final UserActivationRepository userActivationRepository;
+//    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
     private final TerminalService terminalService;
@@ -450,8 +450,9 @@ public class UserService {
     }
 
     public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
-                terminalCode, username, accessParameter, activationCode);
+        List<UserActivationEntity> activationEntities = null;
+//                userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+//                terminalCode, username, accessParameter, activationCode);
         return null != activationEntities && !activationEntities.isEmpty();
     }
 

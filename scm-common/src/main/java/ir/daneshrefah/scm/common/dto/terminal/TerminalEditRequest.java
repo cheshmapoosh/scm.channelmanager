@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,14 +17,17 @@ import java.time.LocalDateTime;
  */
 @Data
 public class TerminalEditRequest implements RequestData {
+    @NotBlank
     private String id;
-    private String code;
+    @NotBlank
     private String title;
+    @NotNull
     private TerminalStatus status;
-    private Boolean supportCheckAuthentication;
-    private Boolean supportCheckSecondAuthentication;
-    private Boolean supportCheckServiceAccess;
-    private Boolean supportCheckAssetAccess;
-    private Boolean supportCustomerInjection;
+    private boolean supportCheckAuthentication;
+    private boolean supportCheckSecondAuthentication;
+    private boolean supportCheckServiceAccess;
+    private boolean supportCheckAssetAccess;
+    private boolean supportCustomerInjection;
+    @NotNull
     private LocalDateTime lastEditDate;
 }

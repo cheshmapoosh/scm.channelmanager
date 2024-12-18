@@ -1,5 +1,6 @@
-package ir.daneshrefah.scm.common.validaton.bean;
+package ir.daneshrefah.scm.common.validation.validator;
 
+import ir.daneshrefah.scm.common.validation.Numeric;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;

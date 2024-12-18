@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.ScopeEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ScopeEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 

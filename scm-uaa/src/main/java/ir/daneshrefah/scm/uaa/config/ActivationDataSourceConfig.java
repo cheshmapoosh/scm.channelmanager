@@ -27,13 +27,13 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-01-09
  */
-@Configuration
-@EnableTransactionManagement
-@EnableJpaRepositories(
-        basePackages = "ir.daneshrefah.scm.uaa.repository.activation",
-        entityManagerFactoryRef = "activationEntityManagerFactory",
-        transactionManagerRef = "activationTransactionManager"
-)
+//@Configuration
+//@EnableTransactionManagement
+//@EnableJpaRepositories(
+//        basePackages = "ir.daneshrefah.scm.uaa.repository.activation",
+//        entityManagerFactoryRef = "activationEntityManagerFactory",
+//        transactionManagerRef = "activationTransactionManager"
+//)
 
 public class ActivationDataSourceConfig {
 

@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.provider.*;
+import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
+import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
@@ -19,12 +21,6 @@ import java.util.Optional;
  * @since 2024-01-17
  */
 public interface ServiceService {
-
-    List<AssetProvider> findAssetProviderList();
-
-    AssetProvider findAssetProviderById(Integer id);
-
-    Service findAssetProviderProviderServiceByAssetProviderId(Integer id);
 
     List<AbstractExternalServiceProvider> findServiceProviderList();
     PagedResponseData<ServiceProviderFindResponse> findServiceProviderList(ServiceProviderFindRequest request);
@@ -67,5 +63,6 @@ public interface ServiceService {
     AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
 
     AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
+    List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request);
     void cacheEvict();
 }

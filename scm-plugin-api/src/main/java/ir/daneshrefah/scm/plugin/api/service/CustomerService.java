@@ -29,8 +29,6 @@ public interface CustomerService {
     List<Membership> syncMembershipList(CustomerProviderSyncRequest request);
     List<Membership> findLocalMembershipList(MembershipLocalFindRequest request);
     List<Membership> findMembershipList(MembershipFindRequest request);
-    List<AssetProvider> findAllAssetProvider();
-
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
 

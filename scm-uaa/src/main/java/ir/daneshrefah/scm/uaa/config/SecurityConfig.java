@@ -50,10 +50,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -62,17 +59,17 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-12-13
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
-@Slf4j
 public class SecurityConfig {
 
     private static final String LOGIN_PROCESS_URI = "/login";
 
 //    @Autowired
 //    private UserDetailsService userDetailsService;
-@Autowired
-private CorsConfigurationSource configurationSource;
+    @Autowired
+    private CorsConfigurationSource configurationSource;
 
     @Bean
     @Order(1)
@@ -235,13 +232,7 @@ private CorsConfigurationSource configurationSource;
     }
 
     @Bean
-    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
-        return new SessionCache(cacheTemplate);
-    }
-
-
-    @Bean
-    @Profile({"dev", "default"})
+    @Profile({"dev","default","test","prod"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
@@ -250,8 +241,15 @@ private CorsConfigurationSource configurationSource;
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
-        log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
+        log.info(">>> CORS DEACTIVATED ON ENVIRONMENT");
         return source;
+    }
+
+
+
+    @Bean
+    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
+        return new SessionCache(cacheTemplate);
     }
 
     private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {

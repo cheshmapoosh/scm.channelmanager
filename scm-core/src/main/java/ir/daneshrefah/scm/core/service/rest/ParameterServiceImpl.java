@@ -294,7 +294,7 @@ public class ParameterServiceImpl implements ParameterService {
         });
         checkOptimisticRecordVersion(request.getLastEditDate(), entity.getLastEditDate());
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getParameterName(), entity::setName);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
+//        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getDefaultValue(), entity::setDefaultValue);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTag(), entity::setTag);
         DynamicUpdateUtils.applyChangesIfNotNull(request.getActionType(), entity::setActionType);
@@ -372,7 +372,7 @@ public class ParameterServiceImpl implements ParameterService {
         if (Objects.nonNull(request.getParentId())) {
             entity.setParent(findParameterParent(request.getParentId()));
         }
-        entity.setTitle(request.getTitle());
+//        entity.setTitle(request.getTitle());
         entity.setActionType(request.getActionType());
         entity.setDefaultValue(request.getDefaultValue());
         entity.setCreator(getCurrentUser());

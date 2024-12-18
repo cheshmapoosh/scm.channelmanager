@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: uaa
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: prod
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: uaa
+      enabled: true
+      uri: http://scm-config-server:8088/config

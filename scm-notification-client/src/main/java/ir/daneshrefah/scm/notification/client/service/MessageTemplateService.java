@@ -48,6 +48,7 @@ public class MessageTemplateService {
     }
 
     public MessageTemplate findMessageTemplateByCodeAndLocale(NotificationTemplate templateCode, Locale locale) {
+        log.info("findMessageTemplateByCodeAndLocale() invoked for templateCode {} and locale {}",templateCode,locale);
         return findMessageTemplates()
                 .stream()
                 .filter(messageTemplate -> messageTemplate.getCode().equals(templateCode))
