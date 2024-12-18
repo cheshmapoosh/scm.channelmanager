@@ -51,8 +51,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         User user = authentication.getPrincipal().getUser();
         NotificationData data = new NotificationData()
                 .put(NotificationDataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
-                .put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle())
-                .put(NotificationDataKey.OTP_CODE, "123");
+                .put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
         IssuerInfo issuerInfo = IssuerInfo.builder()
                 .parentCorrelationId(authentication.getSessionId())
 //                            .nickname(user.getNickname())

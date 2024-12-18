@@ -24,7 +24,8 @@ import java.util.Locale;
  * @since 2024-02-12
  */
 @ControllerAdvice
-public class GlobalExceptionHandler {
+public class
+GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {

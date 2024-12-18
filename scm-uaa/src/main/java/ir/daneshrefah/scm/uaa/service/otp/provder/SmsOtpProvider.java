@@ -1,7 +1,11 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
+import ir.daneshrefah.scm.common.constant.otp.OtpReasonDictionary;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
@@ -9,6 +13,8 @@ import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
@@ -16,10 +22,12 @@ import ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException;
 import ir.daneshrefah.scm.uaa.exception.OtpNotFoundException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -36,14 +44,18 @@ import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
 public class SmsOtpProvider extends AbstractOtpProvider {
 
     private final NotificationService notificationService;
+    private final TerminalService terminalService;
 
     public SmsOtpProvider(
             CacheTemplate cacheTemplate,
             OtpProperties otpProperties,
             NotificationService notificationService,
-            ProfileInfo profileInfo) {
-        super(cacheTemplate, otpProperties, profileInfo);
+            ProfileInfo profileInfo,
+            TerminalService terminalService,
+            @Lazy UserService userService) {
+        super(cacheTemplate, otpProperties, profileInfo, userService);
         this.notificationService = notificationService;
+        this.terminalService = terminalService;
     }
 
     @Override
@@ -81,8 +93,12 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     }
 
     private void sendNotification(Otp otp) {
+        Terminal terminal = terminalService.findTerminalByCode(otp.getRecipient().getTerminalCode()).orElseThrow(InvalidOtpCodeException::new);
         NotificationData data = new NotificationData();
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
+        data.put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
+        data.put(NotificationDataKey.LOGIN_TIME, getShamsiLoginTime());
+        data.put(NotificationDataKey.REASON, OtpReasonDictionary.getOtpReasonDictionary(otp.getReason()).getPersian()); //TODO GET FROM LOCALE
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
                 .media(NotificationMedia.SMS)
@@ -137,5 +153,14 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     @Override
     public OtpType getType() {
         return OtpType.SMS;
+    }
+
+    private String getShamsiLoginTime() {
+        return DateUtils
+                .ShamsiCalendarConvertor
+                .convertToShamsiDateString(DateUtils
+                        .DateConverter
+                        .convertToLocalDateTime(DateUtils.DateConverter
+                                .convertToTimestamp(new Timestamp(System.currentTimeMillis()))), "yyyy/MM/dd HH:mm:ss");
     }
 }
