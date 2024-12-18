@@ -1,6 +1,6 @@
 spring:
   application:
-    name: cache
+    name: uaa
   config:
     import: 'optional:configserver:'
     activate:
@@ -9,6 +9,6 @@ spring:
     config:
       username: scm
       password: scm
-      name: cache
+      name: uaa
       enabled: true
       uri: http://scm-config-server:8088/config

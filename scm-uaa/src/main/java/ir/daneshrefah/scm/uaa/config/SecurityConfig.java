@@ -232,7 +232,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile({"dev","default"})
+    @Profile({"dev","default","test","prod"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
@@ -241,7 +241,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
-        log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
+        log.info(">>> CORS DEACTIVATED ON ENVIRONMENT");
         return source;
     }
 

@@ -13,7 +13,7 @@ import java.util.List;
  * @version 1.0
  * @since 2024-02-03
  */
-@Repository
+//@Repository
 public interface UserActivationRepository extends CrudRepository<UserActivationEntity, Integer> {
 
     List<UserActivationEntity> findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(

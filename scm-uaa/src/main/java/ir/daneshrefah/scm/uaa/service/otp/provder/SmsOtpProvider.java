@@ -24,11 +24,13 @@ import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -95,6 +97,8 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     private void sendNotification(Otp otp) {
         NotificationData data = new NotificationData();
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
+        String currentJalaliDate = DateUtils.ShamsiCalendarConvertor.convertToShamsiDateString(new Timestamp(System.currentTimeMillis()), "yyyy/MM/dd-HH:mm:ss");
+        data.put(NotificationDataKey.LOGIN_TIME, currentJalaliDate);
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
                 .media(NotificationMedia.SMS)

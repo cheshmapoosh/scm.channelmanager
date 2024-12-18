@@ -149,8 +149,8 @@ public class DynamicRestServiceImpl implements DynamicRestService {
                     .orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformer);
         }));
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getEnable(), entity::setEnable);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
+//        DynamicUpdateUtils.applyChangesIfNotNull(request.getEnable(), entity::setEnable);
+//        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorCode(), entity::setResponseErrorCodeProperty);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorMessage(), entity::setResponseErrorMessageProperty);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getResponseBodyType(), responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)));
@@ -172,8 +172,8 @@ public class DynamicRestServiceImpl implements DynamicRestService {
             entity.setResponseTransformer(transformerEntity);
         }
         entity.setResponseErrorCodeProperty(request.getErrorCode());
-        entity.setTitle(request.getTitle());
-        entity.setEnable(request.getEnable());
+//        entity.setTitle(request.getTitle());
+//        entity.setEnable(request.getEnable());
         String errorMessage = errorMappingService
                 .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
                 .map(ErrorMapping::getErrorMessage)

@@ -30,16 +30,24 @@ public class MessageTemplateService {
                     .stream()
                     .map(MessageTemplateMapper.INSTANCE::toDto)
                     .forEach(messageTemplates::add);
-            log.info(">> {} message templates loaded ...",messageTemplates.size());
+            log.info(">>> {} message templates loaded ...",messageTemplates.size());
+            logMessageTemplateRecords(messageTemplates);
         }catch (Exception e){
             log.warn(">>> message templates could not loaded ");
         }
     }
+
+    private void logMessageTemplateRecords(List<MessageTemplate> messageTemplates) {
+        messageTemplates.forEach(messageTemplate ->
+                log.info(">> Message Template With id :: {} & Code:: {} loaded",messageTemplate.getId(),messageTemplate.getCode()));
+    }
+
     public List<MessageTemplate> findMessageTemplates() {
         return this.messageTemplates;
     }
 
     public MessageTemplate findMessageTemplateByCodeAndLocale(NotificationTemplate templateCode, Locale locale) {
+        log.info("findMessageTemplateByCodeAndLocale() invoked for templateCode {} and locale {}",templateCode,locale);
         return findMessageTemplates()
                 .stream()
                 .filter(messageTemplate -> messageTemplate.getCode().equals(templateCode))

@@ -1,14 +1,14 @@
 spring:
   application:
-    name: cache
+    name: scm-web
   config:
     import: 'optional:configserver:'
     activate:
-      on-profile: prod
+      on-profile: ib4prod
   cloud:
     config:
       username: scm
       password: scm
-      name: cache
+      name: scm
       enabled: true
       uri: http://scm-config-server:8088/config
