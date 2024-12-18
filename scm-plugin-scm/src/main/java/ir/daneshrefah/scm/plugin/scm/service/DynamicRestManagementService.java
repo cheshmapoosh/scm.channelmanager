@@ -54,7 +54,7 @@ public class DynamicRestManagementService extends AbstractJavaService {
 
     @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_CREATE")
     @SuppressWarnings("unused")
-    public ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceRequest request) {
+    public ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceCreateRequest request) {
         return dynamicRestService.createResponseConditionDatasource(request);
     }
 

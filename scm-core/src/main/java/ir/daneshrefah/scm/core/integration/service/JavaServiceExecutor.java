@@ -48,7 +48,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
         }
 
             Object[] args = prepareMethodArgs(message, service, methodInfo);
-            argsBeanValidation(args);
+             argsBeanValidation(args);
             Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
             if (response instanceof JsonNode) {
                 return (JsonNode) response;

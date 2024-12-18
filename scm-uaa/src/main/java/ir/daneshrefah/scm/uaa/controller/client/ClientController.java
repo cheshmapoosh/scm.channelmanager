@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.controller.client;
 
-import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.validation.Numeric;
@@ -9,6 +8,7 @@ import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.service.client.*;
 import ir.daneshrefah.scm.uaa.service.client.dto.*;
 import jakarta.validation.Valid;
@@ -18,8 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Description of the class or purpose of the file.
@@ -36,9 +36,9 @@ public class ClientController {
 
     private final ClientService clientService;
     private final ClientScopeService clientScopeService;
+    private final ClientVersionService clientVersionService;
     private final ClientScopeRelationService clientScopeRelationService;
     private final ClientAuthorizationGrantTypeService clientAuthorizationGrantTypeService;
-    private final ClientVersionService clientVersionService;
 
     //TODO IMPORTANT : THESE API MUST ASSIGN ON CORRESPONDING ROLES
 
@@ -81,13 +81,6 @@ public class ClientController {
 
 
     // VERSION
-
-
-    @PostMapping("/version/list")
-    public ResponseEntity<PagedResponseData<ClientVersion>> getAllVersionList(@RequestBody @Valid @NotNull VersionFindRequest request) {
-        List<ClientVersion> found = clientVersionService.getList(request);
-        return ResponseEntity.status(HttpStatus.OK).body(new PagedResponseData<>(request, found));
-    }
 
     @PostMapping("/version/create")
     public ResponseEntity<ClientVersion> createVersion(@RequestBody @Valid @NotNull VersionCreateRequest request) {
@@ -146,31 +139,6 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    // CLIENT AUTHORIZATION GRANT TYPE
-
-    @GetMapping("/auth-grant/list")
-    public ResponseEntity<List<AuthorizationGrantType>> getAllAuthGrantList() {
-        List<AuthorizationGrantType> found = clientAuthorizationGrantTypeService.getAll();
-        return ResponseEntity.status(HttpStatus.OK).body(found);
-    }
-
-    @PostMapping("/auth-grant/find-by-client/{clientId}")
-    public ResponseEntity<PagedResponseData<AuthorizationGrantType>> findGrantAuthByClientId(@RequestBody @Valid @NotNull ClientAuthGrantFindRequest request) {
-        List<AuthorizationGrantType> found = clientAuthorizationGrantTypeService.findByClientId(request.getClientId());
-        return ResponseEntity.status(HttpStatus.OK).body(new PagedResponseData<>(request, found));
-    }
-
-    @GetMapping("/auth-grant/assign")
-    public ResponseEntity<PagedResponseData<?>> assignGrantAuth(@RequestBody @Valid @NotNull ClientAuthGrantAssignmentRequest request) {
-         clientAuthorizationGrantTypeService.assignGrantType(request.getGrantType(),request.getClientId());
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @GetMapping("/auth-grant/revoke")
-    public ResponseEntity<PagedResponseData<?>> revokeGrantAuth(@RequestBody @Valid @NotNull ClientAuthGrantAssignmentRequest request) {
-        clientAuthorizationGrantTypeService.revokeGrantType(request.getGrantType(),request.getClientId());
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
 
     // CLIENT
 
@@ -179,9 +147,9 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.findPagedClientList(request));
     }
 
-    @GetMapping("/find-one/{clientId}")
-    public ResponseEntity<Client> getClientById(@PathVariable("clientId") @Valid @NotNull @Numeric Long clientId) {
-        return ResponseEntity.status(HttpStatus.OK).body(clientService.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("clientId")));
+    @GetMapping("/find-one/{id}")
+    public ResponseEntity<Client> getClientById(@PathVariable("id") @Valid @NotNull @Numeric Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(clientService.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("clientId")));
     }
 
     @PostMapping("/remove")
@@ -197,6 +165,22 @@ public class ClientController {
     @PostMapping("/edit")
     public ResponseEntity<Client> editClient(@RequestBody @Valid @NotNull ClientEditRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.updateClient(request));
+    }
+
+    // CLIENT AUTHENTICATION METHOD
+
+    @GetMapping("/auth-method/list")
+    public ResponseEntity<List<ClientAuthenticationMethod>> getAllAuthMethodList() {
+        List<ClientAuthenticationMethod> found = Arrays.stream(ClientAuthenticationMethod.values()).toList();
+        return ResponseEntity.status(HttpStatus.OK).body(found);
+    }
+
+    // CLIENT AUTHENTICATION GRANT TYPES
+
+    @GetMapping("/auth-grant/list")
+    public ResponseEntity<List<AuthorizationGrantType>> getAllAuthGrantList() {
+        List<AuthorizationGrantType> found = clientAuthorizationGrantTypeService.getAll();
+        return ResponseEntity.status(HttpStatus.OK).body(found);
     }
 
 }

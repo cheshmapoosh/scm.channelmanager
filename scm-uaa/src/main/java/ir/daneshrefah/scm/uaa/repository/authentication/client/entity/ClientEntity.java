@@ -70,5 +70,5 @@ public class ClientEntity extends AbstractVersionAbleDefaultEntity<Long> {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ClientVersionEntity> versions;
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes;
+    private Set<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes;
 }

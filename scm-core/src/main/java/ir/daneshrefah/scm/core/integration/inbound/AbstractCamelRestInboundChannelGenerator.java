@@ -78,9 +78,12 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
 
     protected MessageInput extractMessageInput(Exchange input, TerminalServiceAccess serviceAccess) {
         String body = input.getMessage().getBody(String.class);
-        Map<String, Object> headers = input.getMessage().getHeaders().entrySet().stream()
+        MessageInput.IgnoreCaseHeader headers = new MessageInput.IgnoreCaseHeader();
+        input.getMessage().getHeaders().entrySet().stream()
                 .filter(entry -> null != entry.getValue() && entry.getValue().getClass().isAssignableFrom(String.class))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .forEach(entry -> {
+                    headers.put(entry.getKey(),entry.getValue());
+                });
 
         String httpMethod = CamelUtils.getHttpMethodFromExchange(input);
         String inputClientTimestamp = (String) headers.get(SCM_PARAMETER_CLIENT_TIMESTAMP);

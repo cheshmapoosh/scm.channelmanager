@@ -10,7 +10,7 @@ import java.util.List;
 public interface DynamicRestService {
     Response createResponse(ResponseCreateRequest request);
 
-    ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceRequest request);
+    ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceCreateRequest request);
 
     Response changeResponse(ResponseChangeRequest request);
 

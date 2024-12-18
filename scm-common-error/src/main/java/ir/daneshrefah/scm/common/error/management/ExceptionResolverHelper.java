@@ -124,6 +124,8 @@ public class ExceptionResolverHelper {
                     ExceptionResolver<Throwable> resolver = (ExceptionResolver<Throwable>) exceptionResolver;
                     errors = resolver.resolve(message, throwable, locale);
                     break;
+                } catch (ResolverProxyException proxyException) {
+                    return resolve(proxyException.getTargetException(), message, locale);
                 } catch (Throwable t) {
                     /*If developer resolver throws any un handled exception during resolving the default
                     resolver handled it */
