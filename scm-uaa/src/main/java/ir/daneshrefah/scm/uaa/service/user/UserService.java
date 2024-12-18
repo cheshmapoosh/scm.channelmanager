@@ -479,8 +479,9 @@ public class UserService {
     }
 
     public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
-                terminalCode, username, accessParameter, activationCode);
+        List<UserActivationEntity> activationEntities = null;
+//                userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+//                terminalCode, username, accessParameter, activationCode);
         return null != activationEntities && !activationEntities.isEmpty();
     }
 

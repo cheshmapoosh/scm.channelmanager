@@ -64,7 +64,8 @@ public class JakarataConnectionFactory implements ConnectionFactory {
     public Connection createConnection() throws JMSException {
         try {
             if (StringUtils.isNotEmpty(username)) {
-                return new JakarataConnection(connectionFactory.createConnection(username, password));
+                String p = StringUtils.isBlank(password) ? null : password;
+                return new JakarataConnection(connectionFactory.createConnection(username, p));
             }
             return new JakarataConnection(connectionFactory.createConnection());
         } catch (javax.jms.JMSException e) {

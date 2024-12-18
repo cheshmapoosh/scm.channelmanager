@@ -37,7 +37,7 @@ import java.util.Optional;
 @Service
 public class RegisterService {
 
-    private final UserActivationRepository userActivationRepository;
+//    private final UserActivationRepository userActivationRepository;
     private final OtpService otpService;
     private final ClientService clientService;
     private final UserService userService;
@@ -168,7 +168,7 @@ public class RegisterService {
         activationEntity.setClientId(client.getUser().getNickname()); //TODO
         activationEntity.setTokenSetTime(LocalDateTime.now()); //TODO
 //        private LocalDateTime lastUsed;
-        userActivationRepository.save(activationEntity);
+//        userActivationRepository.save(activationEntity);
 
         return ConfirmRegisterResponse.builder()
                 .isSuccessful(otpResponse.isSuccessful())

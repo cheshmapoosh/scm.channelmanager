@@ -42,8 +42,8 @@ public class ParameterEntity extends AbstractVersionAbleDefaultEntity<String> {
     private ParameterActionType actionType;
     @Column(name = "DEFAULT_VALUE")
     private String defaultValue;
-    @Column(name = "PARAMETER_TITLE")
-    private String title;
+//    @Column(name = "PARAMETER_TITLE")
+//    private String title;
 
     @ManyToOne
     @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_RELATION"

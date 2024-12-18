@@ -23,6 +23,9 @@ dependencies {
     compileOnly project(':scm-utils')
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
+    runtimeOnly 'com.ibm.db2:db2jcc'
+    runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
+    runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
 
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
