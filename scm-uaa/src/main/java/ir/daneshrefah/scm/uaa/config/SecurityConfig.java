@@ -263,6 +263,21 @@ public class SecurityConfig {
         return new SessionCache(cacheTemplate);
     }
 
+
+    @Bean
+    @Profile({"dev", "default"})
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
+        return source;
+    }
+
     private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         String redirectUri = request.getParameter("redirect_uri");
         String clientId = request.getParameter("client_id");
