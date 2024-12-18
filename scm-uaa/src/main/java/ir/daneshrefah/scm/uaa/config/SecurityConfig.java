@@ -17,8 +17,11 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -40,9 +43,11 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -59,12 +64,15 @@ import java.util.Map;
  */
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class SecurityConfig {
 
     private static final String LOGIN_PROCESS_URI = "/login";
 
 //    @Autowired
 //    private UserDetailsService userDetailsService;
+@Autowired
+private CorsConfigurationSource configurationSource;
 
     @Bean
     @Order(1)
@@ -169,6 +177,9 @@ public class SecurityConfig {
                         )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/**"))
+                .cors(httpSecurityCorsConfigurer -> {
+                    httpSecurityCorsConfigurer.configurationSource(configurationSource);
+                })
                 .logout(logout -> {
 //                    logout.logoutUrl("/logout");
                     logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
@@ -226,6 +237,21 @@ public class SecurityConfig {
     @Bean
     public SessionCache sessionCache(CacheTemplate cacheTemplate) {
         return new SessionCache(cacheTemplate);
+    }
+
+
+    @Bean
+    @Profile({"dev", "default"})
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
+        return source;
     }
 
     private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {

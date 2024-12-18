@@ -44,6 +44,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -75,8 +76,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final UserCache userCache;
-    @PersistenceContext
-    private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
@@ -563,10 +563,7 @@ public class UserService {
     private void removeXUser(UserEntity userEntity) {
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         assert currentAuthentication != null;
-        entityManager.createNativeQuery(DELETE_FROM_X_USER)
-                .setParameter(1, userEntity.getNickname())
-                .setParameter(2, currentAuthentication.getTerminalCode())
-                .executeUpdate();
+        jdbcTemplate.update(DELETE_FROM_X_USER,userEntity.getNickname(),currentAuthentication.getTerminalCode());
     }
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod

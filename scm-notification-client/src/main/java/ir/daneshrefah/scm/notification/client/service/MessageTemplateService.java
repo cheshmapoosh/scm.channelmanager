@@ -28,13 +28,21 @@ public class MessageTemplateService {
             messageTemplateRepository
                     .findAll()
                     .stream()
-                    .map(MessageTemplateMapper.INSTANCE::toDto)
+                    .map(MessageTemplateMapper.INSTANCE::toModel)
                     .forEach(messageTemplates::add);
             log.info(">> {} message templates loaded ...",messageTemplates.size());
+            logLoadedTemplates(messageTemplates);
         }catch (Exception e){
             log.warn(">>> message templates could not loaded ");
         }
     }
+
+    private void logLoadedTemplates(List<MessageTemplate> messageTemplates) {
+        messageTemplates.forEach(messageTemplate -> {
+            log.info(">> Message Template id {} and code {} has been loaded.",messageTemplate.getId(),messageTemplate.getCode());
+        });
+    }
+
     public List<MessageTemplate> findMessageTemplates() {
         return this.messageTemplates;
     }
