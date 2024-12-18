@@ -141,10 +141,10 @@ public class DynamicRestServiceImpl implements DynamicRestService {
                     .orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformer);
         }));
-        DynamicUpdateUtils.applyChangesIfNotNull(request.getEnable(), entity::setEnable);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getResponseErrorCodeProperty(), entity::setResponseErrorCodeProperty);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getResponseErrorMessageProperty(), entity::setResponseErrorMessageProperty);
+//        DynamicUpdateUtils.applyChangesIfNotNull(request.getEnable(), entity::setEnable);
+//        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTitle(), entity::setTitle);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorCode(), entity::setResponseErrorCodeProperty);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getErrorMessage(), entity::setResponseErrorMessageProperty);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getResponseBodyType(), responseBodyType -> entity.setResponseBodyType(ExternalServiceBodyType.find(responseBodyType)));
         entity.setLastEditDate(LocalDateTime.now());
         entity.setLastEditor(getCurrentUser());
@@ -163,10 +163,14 @@ public class DynamicRestServiceImpl implements DynamicRestService {
             TransformerEntity transformerEntity = transformerRepository.findById(transformerId).orElseThrow(() -> new NoMatchRecordFoundException("transformerId"));
             entity.setResponseTransformer(transformerEntity);
         }
-        entity.setResponseErrorCodeProperty(request.getResponseErrorCodeProperty());
-        entity.setTitle(request.getTitle());
-        entity.setEnable(request.getEnable());
-        entity.setResponseErrorMessageProperty(request.getResponseErrorMessageProperty());
+        entity.setResponseErrorCodeProperty(request.getErrorCode());
+//        entity.setTitle(request.getTitle());
+//        entity.setEnable(request.getEnable());
+        String errorMessage = errorMappingService
+                .findByExceptionClassNameAndErrorCode(request.getErrorMessage(), request.getErrorCode())
+                .map(ErrorMapping::getErrorMessage)
+                .orElse(request.getErrorMessage());
+        entity.setResponseErrorMessageProperty(errorMessage);
         entity.setResponseBodyType(request.getResponseBodyType());
         responseConditionRepository.save(entity);
         setResponseConditionTargetId(request, entity);

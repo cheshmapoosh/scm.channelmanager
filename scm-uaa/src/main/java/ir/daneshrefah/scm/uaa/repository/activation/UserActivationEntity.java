@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "CLIENT_INFO",schema = "MBUAA")
+//@Table(name = "CLIENT_INFO")
 public class UserActivationEntity {
 
     @Id

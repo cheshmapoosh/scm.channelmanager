@@ -16,8 +16,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @DiscriminatorValue(InstanceType.TOPIC)
 public class TopicCacheConfigEntity extends InstanceConfigEntity {
-    @Column(name = "TOPIC_GLOBAL_ORD_ENABLED")
+    @Column(name = "TOPIC_GLOBAL_ORDERING_ENABLED")
     private Boolean topicGlobalOrderingEnabled;
-    @Column(name = "TOPIC_MULTI_THRD_ENABLED")
+    @Column(name = "TOPIC_MULTI_THREADING_ENABLED")
     private Boolean topicMultiThreadingEnabled;
 }
