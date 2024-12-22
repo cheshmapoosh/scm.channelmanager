@@ -47,24 +47,24 @@ public interface ClientMapper {
         return entity;
     }
 
-    default List<ClientAuthorizationGrantType> mapAuthorizationGrantTypesToEntity(ClientEntity entity) {
-        List<ClientAuthorizationGrantType> list = new ArrayList<>();
+    default Set<ClientAuthorizationGrantType> mapAuthorizationGrantTypesToEntity(ClientEntity entity) {
+        Set<ClientAuthorizationGrantType> set = new HashSet<>();
         if (Objects.nonNull(entity.getAuthorizationGrantTypes())) {
             for (ClientAuthorizationGrantTypeEntity authEntity : entity.getAuthorizationGrantTypes()) {
-                list.add(toModel(authEntity));
+                set.add(toModel(authEntity));
             }
         }
-        return list;
+        return set;
     }
 
-    default List<ClientAuthorizationGrantTypeEntity> mapAuthorizationGrantTypesToModel(Client model) {
-        List<ClientAuthorizationGrantTypeEntity> list = new ArrayList<>();
+    default Set<ClientAuthorizationGrantTypeEntity> mapAuthorizationGrantTypesToModel(Client model) {
+        Set<ClientAuthorizationGrantTypeEntity> set = new HashSet<>();
         if (Objects.nonNull(model.getClientAuthorizationGrantTypes())) {
             for (ClientAuthorizationGrantType authModel : model.getClientAuthorizationGrantTypes()) {
-                list.add(toEntity(authModel));
+                set.add(toEntity(authModel));
             }
         }
-        return list;
+        return set;
     }
 
 

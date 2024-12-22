@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
+import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
@@ -32,7 +32,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 @Component
 public class DynamicRegisteredClientRepository implements RegisteredClientRepository {
 
-    private ClientService clientService;
+    private final ClientService clientService;
     private List<Client> clients = null;
 
 
@@ -89,10 +89,14 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();
                 clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
             }
-            for (Iterator<AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
-                AuthorizationGrantType authorizationGrantType = iterator.next();
-                clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));
-            }
+
+            client
+                    .getClientAuthorizationGrantTypes()
+                    .stream()
+                    .map(ClientAuthorizationGrantType::getAuthorizationGrantType)
+                    .map(AuthorizationGrantTypeMapper.INSTANCE::toSpring)
+                    .forEach(clientBuilder::authorizationGrantType);
+
             for (Iterator<String> iterator = client.getRedirectUris().iterator(); iterator.hasNext(); ) {
                 String redirectUri = iterator.next();
                 clientBuilder.redirectUri(redirectUri);
