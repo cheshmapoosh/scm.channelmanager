@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: Logging-server
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: dev
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: uaa
+      enabled: true
+      uri: http://10.10.4.125:8888/config
+
+
+
