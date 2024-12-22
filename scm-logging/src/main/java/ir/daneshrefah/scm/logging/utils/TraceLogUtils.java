@@ -3,14 +3,12 @@ package ir.daneshrefah.scm.logging.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
-import ir.daneshrefah.scm.common.model.message.Header;
-import ir.daneshrefah.scm.common.model.message.HttpMessageInput;
-import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
+import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
+import org.apache.camel.Exchange;
 import org.apache.camel.tracing.SpanAdapter;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +21,25 @@ import java.util.Optional;
 public class TraceLogUtils {
 
     private final ObjectMapper objectMapper;
+    private static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
+    private static final String HEADER_MESSAGE_OUTPUT = "ScmMessageOutput";
+
+    public void recordMessageTrace(Exchange exchange, SpanAdapter spanAdapter) {
+        Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+        recordMessageTrace(message, spanAdapter);
+        recordMessageOutPutTrace(exchange, spanAdapter);
+    }
+
+    private void recordMessageOutPutTrace(Exchange exchange, SpanAdapter spanAdapter) {
+        Object object = exchange.getProperty(HEADER_MESSAGE_OUTPUT);
+        if (object instanceof MessageOutput messageOutput) {
+            try {
+                spanAdapter.setTag(LogAttribute.REQUEST.getAttributeName(), objectMapper.writeValueAsString(messageOutput.getBody()));
+            } catch (JsonProcessingException ex) {
+                spanAdapter.setError(true);
+            }
+        }
+    }
 
     public void recordMessageTrace(Message message, SpanAdapter spanAdapter) {
         populateSpanAttributes(spanAdapter, message);

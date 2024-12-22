@@ -26,7 +26,6 @@ import java.util.Map;
 @Component
 @Slf4j
 public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
-    private static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
     public static final String EXTRACT_PATTERN = "direct";
     private final TracingLogListener logListener = new TracingLogListener();
     private final TracingEventNotifier eventNotifier = new TracingEventNotifier();
@@ -141,8 +140,7 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
                             sd.getInitiatorSpanKind(), parent, ese.getExchange(), injectAdapter);
                     Exchange exchange = ese.getExchange();
                     if (exchange != null) {
-                        Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-                        traceLogUtils.recordMessageTrace(message, span);
+                        traceLogUtils.recordMessageTrace(exchange, span);
                     }
                     sd.pre(span, ese.getExchange(), ese.getEndpoint());
                     inject(span, injectAdapter);
@@ -184,7 +182,7 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
 
         private boolean shouldExclude(SpanDecorator sd, Exchange exchange, Endpoint endpoint) {
             return !sd.newSpan()
-                    || isExcluded(exchange, endpoint);
+                   || isExcluded(exchange, endpoint);
         }
     }
 
