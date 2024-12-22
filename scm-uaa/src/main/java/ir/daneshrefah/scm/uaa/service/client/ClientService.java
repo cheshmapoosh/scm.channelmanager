@@ -3,13 +3,12 @@ package ir.daneshrefah.scm.uaa.service.client;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
 import ir.daneshrefah.scm.uaa.mapper.ClientMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientCreateRequest;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientEditRequest;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientFindRequest;
@@ -20,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -31,12 +33,13 @@ public class ClientService {
 
     private final ClientScopeService scopeService;
     private final ClientScopeRelationService scopeRelationService;
+    private final ClientAuthorizationGrantTypeService authorizationGrantTypeService;
     private final ClientRepository clientRepository;
     private final RoleRepository roleRepository;
 
 
     public Scope findScopeByCode(String code) {
-       return scopeService.findByCode(code).orElse(null);
+        return scopeService.findByCode(code).orElse(null);
     }
 
 
@@ -54,7 +57,8 @@ public class ClientService {
                     .map(ClientMapper.INSTANCE::toModel)
                     .peek(client -> {
                         client.setScopes(scopeRelationService.findClientScopeRelation(client.getId()));
-                    }).forEach(CLIENT_LIST::add);
+                    })
+                    .forEach(CLIENT_LIST::add);
         }
     }
 
@@ -95,11 +99,22 @@ public class ClientService {
     public Client updateClient(ClientEditRequest request) {
         ClientEntity foundEntity = clientRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("id"));
         ClientEntity entity = ClientMapper.INSTANCE.toEntity(mapClientEditRequestToClient(request));
-        dynamicMap(entity,foundEntity);
-        clientRepository.save(foundEntity);
+        dynamicMap(entity, foundEntity);
+        ClientEntity saved = clientRepository.save(foundEntity);
+        updateAuthGrantType(saved, request);
         reloadCache();
         return findByClientId(request.getClientId()).orElseThrow();
     }
+
+    private void updateAuthGrantType(ClientEntity saved, ClientEditRequest request) {
+        saved.getAuthorizationGrantTypes().forEach(dbAuthGrant -> {
+            authorizationGrantTypeService.revokeGrantType(dbAuthGrant.getAuthorizationGrantType(), saved.getId());
+        });
+        request.getAuthorizationGrantTypes().forEach(reqAuthGrant -> {
+            authorizationGrantTypeService.assignGrantType(reqAuthGrant, saved.getId());
+        });
+    }
+
 
     private void dynamicMap(ClientEntity entity, ClientEntity dbEntity) {
         dbEntity.setTitle(entity.getTitle());
@@ -134,8 +149,8 @@ public class ClientService {
     }
 
     @Transactional
-    public Client remove(String clientId, LocalDateTime lastEditDate) {
-        ClientEntity entity = clientRepository.findById(Long.parseLong(clientId)).orElseThrow(() -> new NoMatchRecordFoundException("clientId"));
+    public Client remove(Long clientId, LocalDateTime lastEditDate) {
+        ClientEntity entity = clientRepository.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("clientId"));
         entity.setLastEditDate(lastEditDate);
         clientRepository.delete(entity);
         reloadCache();
@@ -147,6 +162,11 @@ public class ClientService {
         Client client = mapClientCreateRequestToClient(request);
         ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
         ClientEntity saved = clientRepository.save(entity);
+//        client
+//                .getAuthorizationGrantTypes()
+//                .forEach(authGrantType -> {
+//                    authorizationGrantTypeService.assignGrantType(authGrantType, saved.getId());
+//                });
         reloadCache();
         return findByClientId(saved.getClientId()).orElseThrow();
     }
@@ -170,8 +190,8 @@ public class ClientService {
         client.setRequireProofKey(request.getRequireProofKey());
         client.setCheckVersion(request.getCheckVersion());
         client.setCheckActivation(request.getCheckActivation());
-        client.setSessionTimeToLiveMinute(request.getSessionTimeToLiveMinute());
-        client.setAuthorizationGrantTypes(request.getAuthorizationGrantTypes());
+        client.setSessionTimeToLiveMinute(Long.parseLong(request.getSessionTimeToLiveMinute()));
+//        client.setAuthorizationGrantTypes(request.getAuthorizationGrantTypes());
         client.setCheckIpAddress(request.getCheckIpAddress());
         client.setAllowIpAddresses(request.getAllowIpAddresses());
         client.setScopes(null);

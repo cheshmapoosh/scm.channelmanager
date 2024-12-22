@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.service.error.resolvers;
+package ir.daneshrefah.scm.common.error.resolvers;
 
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;

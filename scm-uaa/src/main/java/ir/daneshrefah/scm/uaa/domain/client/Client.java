@@ -25,7 +25,7 @@ public class Client extends BaseModel<Long> {
     private String clientSecret;
     private String terminalCode;
     private List<ClientAuthenticationMethod> authenticationMethods;
-    private List<AuthorizationGrantType> authorizationGrantTypes;
+    private Set<ClientAuthorizationGrantType> clientAuthorizationGrantTypes;
     private List<String> redirectUris;
     private boolean requireAuthorizationConsent;
     private boolean requireProofKey;

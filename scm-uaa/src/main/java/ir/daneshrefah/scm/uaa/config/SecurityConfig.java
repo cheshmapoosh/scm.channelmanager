@@ -50,7 +50,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -66,7 +69,7 @@ public class SecurityConfig {
 
     private static final String LOGIN_PROCESS_URI = "/login";
 
-//    @Autowired
+    //    @Autowired
 //    private UserDetailsService userDetailsService;
     @Autowired
     private CorsConfigurationSource configurationSource;
@@ -87,28 +90,29 @@ public class SecurityConfig {
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint.consentPage("/consent"))
                 .tokenEndpoint(tokenEndpoint ->
-                        tokenEndpoint
-                                .accessTokenRequestConverters(
-                                        converters -> converters.addAll(
-                                            Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
-                                                    new SecondPasswordGrantAuthenticationConverter(),
-                                                    new SmsOtpGrantAuthenticationConverter(),
-                                                    new ShahkarGrantAuthenticationConverter()))
-                                )
+                                tokenEndpoint
+                                        .accessTokenRequestConverters(
+                                                converters -> converters.addAll(
+                                                        Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
+                                                                new SecondPasswordGrantAuthenticationConverter(),
+                                                                new SmsOtpGrantAuthenticationConverter(),
+                                                                new ShahkarGrantAuthenticationConverter()))
+                                        )
 //                                .authenticationProviders(authenticationProviders -> {
 //                                    authenticationProviders.add(oAuth2GeneralAuthenticationProvider);
 //                                    authenticationProviders.add(oAuth2SmsOtpAuthenticationProvider);
 //                                })
-                                .authenticationProvider(oAuth2GeneralAuthenticationProvider)
-                                .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
+                                        .authenticationProvider(oAuth2GeneralAuthenticationProvider)
+                                        .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
                 )
-                .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
+                .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
         http
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/oauth2/token").permitAll()
                         .requestMatchers("/otp/public/**").permitAll()
+                        .requestMatchers("/api/access-token/get-first-password-token").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Redirect to the login page when not authenticated from the
@@ -143,14 +147,15 @@ public class SecurityConfig {
 //                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/otp/public/**").permitAll()
-                        .requestMatchers("/login**").permitAll()
-                        .requestMatchers("/assets/**").permitAll()
+                                .requestMatchers("/error").permitAll()
+                                .requestMatchers("/public/**").permitAll()
+                                .requestMatchers("/otp/public/**").permitAll()
+                                .requestMatchers("/login**").permitAll()
+                                .requestMatchers("/assets/**").permitAll()
+                                .requestMatchers("/api/access-token/get-first-password-token").permitAll()
 
 //                        .requestMatchers("/oauth2/token").permitAll()
-                        .anyRequest().authenticated()
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(captchaVerifyFilter(failureHandler), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(bearerAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class)
@@ -161,7 +166,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(new AccessDeniedHandler() {
                             @Override
                             public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-                                System.out.printf("");
+                                System.out.print("");
                             }
                         })
                         .defaultAuthenticationEntryPointFor(
@@ -191,13 +196,14 @@ public class SecurityConfig {
 //                    login.failureUrl("/login?error");
                     login.authenticationDetailsSource(new TerminalAuthenticationDetailsSource());
 //                    login.setAuthenticationUrl(getLoginProcessingUrl());
-                    });
+                });
         return http.build();
     }
 
     private AuthenticationFailureHandler failureHandler() {
         return new TerminalUrlAuthenticationFailureHandler(LOGIN_PROCESS_URI + "?error");
     }
+
     private CaptchaVerifyFilter captchaVerifyFilter(AuthenticationFailureHandler failureHandler) {
         return new CaptchaVerifyFilter(LOGIN_PROCESS_URI, failureHandler);
     }
@@ -232,7 +238,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile({"dev","default"})
+    @Profile({"dev", "default"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
@@ -244,7 +250,6 @@ public class SecurityConfig {
         log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
         return source;
     }
-
 
 
     @Bean

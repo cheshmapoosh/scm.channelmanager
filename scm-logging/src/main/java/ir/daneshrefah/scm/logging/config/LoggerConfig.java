@@ -26,6 +26,7 @@ import java.io.File;
 @Configuration
 public class LoggerConfig {
 
+    private static final String ROLLING_ARCHIVE_FOLDER_NAME = "archive";
     private final String logFileName;
     private final String fileDirectory;
     private final String logPattern;
@@ -67,7 +68,7 @@ public class LoggerConfig {
         RollingFileAppender<ILoggingEvent> rollingFileAppender = new RollingFileAppender<>();
         rollingFileAppender.setContext(context);
         rollingFileAppender.setName("FileAppender");
-        rollingFileAppender.setFile(logFileName);
+        rollingFileAppender.setFile(fileDirectory+File.separator+logFileName);
 
         // Create and configure the encoder
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
@@ -81,7 +82,7 @@ public class LoggerConfig {
         SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
         rollingPolicy.setContext(context);
         rollingPolicy.setParent(rollingFileAppender);
-        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + logFileName + fileNamePattern); // Filename pattern
+        rollingPolicy.setFileNamePattern(fileDirectory + File.separator+ROLLING_ARCHIVE_FOLDER_NAME+File.separator + logFileName + fileNamePattern); // Filename pattern
         rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
         rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to ? days of log files
         rollingPolicy.start();
@@ -99,7 +100,7 @@ public class LoggerConfig {
 
         // Get the logger and attach the async appender
         Logger logger = LoggerFactory.getLogger(LoggerConfig.class);
-        ((ch.qos.logback.classic.Logger) logger).setLevel(Level.ALL);
+        ((ch.qos.logback.classic.Logger) logger).setLevel(Level.TRACE);
         ((ch.qos.logback.classic.Logger) logger).detachAndStopAllAppenders();
         ((ch.qos.logback.classic.Logger) logger).addAppender(asyncAppender);
         ((ch.qos.logback.classic.Logger) logger).setAdditive(false);
