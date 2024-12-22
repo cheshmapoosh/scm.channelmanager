@@ -172,9 +172,7 @@ public class UserService {
         if (oldPassword.equals(newPassword)) {
             throw new InvalidInputException("newPassword");
         }
-        if (newPassword.length() < 8
-            || StringUtils.isNumeric(newPassword)
-            || !StringUtils.isAlphanumeric(newPassword)) {
+        if (newPassword.length() < 8 || StringUtils.isNumeric(newPassword)) {
             throw new InvalidInputException("security constraints");
         }
     }
