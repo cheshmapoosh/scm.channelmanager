@@ -26,7 +26,6 @@ import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
