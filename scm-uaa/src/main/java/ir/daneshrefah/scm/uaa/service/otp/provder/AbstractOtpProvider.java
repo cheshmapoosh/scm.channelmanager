@@ -75,7 +75,12 @@ public abstract class AbstractOtpProvider {
 
     private OtpSendResponse cleanResponseSecureData(OtpSendResponse otpSendResponse) {
         Otp otp = otpSendResponse.getOtp();
-        Otp cleanOtp = Otp.builder().expireTime(otp.getExpireTime()).build();
+        Recipient recipient = otpSendResponse.getOtp().getRecipient();
+        Recipient cleanRecipient = Recipient.builder().address(StringUtils.maskPhoneNumber(recipient.getAddress())).build();
+        Otp cleanOtp = Otp
+                .builder()
+                .recipient(cleanRecipient)
+                .expireTime(otp.getExpireTime()).build();
         return OtpSendResponse
                 .builder()
                 .otp(cleanOtp)
