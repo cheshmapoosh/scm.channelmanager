@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.repository;
 
+//import ir.daneshrefah.scm.common.model.customer.AssetType;
+import ir.daneshrefah.scm.core.entity.asset.AccountMembershipEntity;
 import ir.daneshrefah.scm.core.entity.asset.MembershipEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
