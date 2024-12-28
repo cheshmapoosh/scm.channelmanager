@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-//import ir.daneshrefah.scm.common.model.customer.AssetType;
-//import ir.daneshrefah.scm.core.converter.AssetTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,8 +15,6 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "MEMBERSHIP")
-//@DiscriminatorColumn(name = "ASSET_TYPE", discriminatorType = DiscriminatorType.INTEGER)
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Getter
 @Setter
 public class MembershipEntity extends AbstractEntity<Long> {
