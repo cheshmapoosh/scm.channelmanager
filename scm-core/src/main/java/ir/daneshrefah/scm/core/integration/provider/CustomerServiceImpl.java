@@ -16,7 +16,7 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.asset.*;
-import ir.daneshrefah.scm.common.model.customer.AssetType;
+//import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -76,15 +76,15 @@ public class CustomerServiceImpl implements CustomerService , TaskAssetService {
     @Override
     public List<Membership> findLocalMembershipList(MembershipLocalFindRequest request) {
         validateAssetsFindRequest(request);
-        AssetType assetType = request.getAssetType();
+//        AssetType assetType = request.getAssetType();
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         String personUsername = person.getUsername();
         List<MembershipEntity> foundAssets;
-        if (Objects.isNull(assetType)) {
+//        if (Objects.isNull(assetType)) {
             foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
-        } else {
-            foundAssets = membershipRepository.findAllByAssetTypeAndPersonUsername(assetType, personUsername);
-        }
+//        } else {
+//            foundAssets = membershipRepository.findAllByAssetTypeAndPersonUsername(assetType, personUsername);
+//        }
         return MembershipMapper.INSTANCE.toModels(foundAssets);
     }
 
@@ -185,7 +185,7 @@ public class CustomerServiceImpl implements CustomerService , TaskAssetService {
                     //create membership
                     AccountMembership membership = new AccountMembership();
                     membership.setCustomerAccount(customerAccount);
-                    membership.setAssetType(AssetType.ACCOUNT);
+//                    membership.setAssetType(AssetType.ACCOUNT);
                     membership.setPerson(person);
                     return membership;
                 }).toList();
@@ -268,7 +268,7 @@ public class CustomerServiceImpl implements CustomerService , TaskAssetService {
         }
         return memberships
                 .stream()
-                .filter(membership -> membership.getAssetType().equals(AssetType.ACCOUNT))
+//                .filter(membership -> membership.getAssetType().equals(AssetType.ACCOUNT))
                 .map(membership -> MembershipMapper.INSTANCE.toModel(membershipRepository.findAccountMembershipById(membership.getId()).orElseThrow(() -> new NoMatchRecordFoundException("membershipId"))))
                 .toList();
     }
@@ -342,7 +342,7 @@ public class CustomerServiceImpl implements CustomerService , TaskAssetService {
             accountMembership = new AccountMembershipEntity();
             accountMembership.setCustomerAccount(customerAccountEntity);
             accountMembership.setPerson(personRepository.findById(person.getId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId")));
-            accountMembership.setAssetType(AssetType.ACCOUNT);
+//            accountMembership.setAssetType(AssetType.ACCOUNT);
             accountMembership.setArchiveNumber(ArchiveUtils.calculateOneMonthArchiveNo().intValue()); //TODO
             membershipRepository.save(accountMembership);
         } else {

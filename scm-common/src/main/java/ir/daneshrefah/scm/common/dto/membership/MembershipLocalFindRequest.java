@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.dto.membership;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
-import ir.daneshrefah.scm.common.model.customer.AssetType;
+//import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +20,6 @@ public class MembershipLocalFindRequest extends PagedRequestData {
     private PersonType personType;
     private String nationalId;
     private String subOrganizationId;
-    private AssetType assetType;
+//    private AssetType assetType;
 
 }
