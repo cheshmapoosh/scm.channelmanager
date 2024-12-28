@@ -20,7 +20,6 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.asset.*;
-//import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -95,7 +94,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         String personUsername = person.getUsername();
         List<MembershipEntity> foundAssets;
 //        if (Objects.isNull(assetType)) {
-            foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
+        foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
 //        } else {
 //            foundAssets = membershipRepository.findAllByAssetTypeAndPersonUsername(assetType, personUsername);
 //        }

@@ -82,7 +82,7 @@ public class UserService {
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         validateUserNickNameRequest(request, servletRequest);
-        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
+         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
         Optional<UserEntity> foundNickNameAndTerminal = loadUserEntityByUsername(request.getNickName(), request.getTerminalCode());
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         ValidationUtils.checkNull(currentAuthentication, AuthenticationRequiredException::new);
