@@ -1,15 +1,13 @@
 package ir.daneshrefah.scm.plugin.api.expose;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
-import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.model.asset.AccountMembership;
-import ir.daneshrefah.scm.common.model.asset.AssetProvider;
-import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
 import ir.daneshrefah.scm.common.dto.membership.MembershipFindRequest;
 import ir.daneshrefah.scm.common.dto.membership.MembershipLocalFindRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -57,8 +55,8 @@ public class CustomerManagementService extends AbstractJavaService {
 
     @JavaService
     @SuppressWarnings("unused")
-    public AccountMembership findAccountMembershipById(String membershipId){
-        return customerService.findLocalAccountMembership(membershipId);
+    public Membership findAccountMembershipById(String membershipId){
+        return customerService.findLocalMembership(membershipId);
     }
 
     @JavaService
