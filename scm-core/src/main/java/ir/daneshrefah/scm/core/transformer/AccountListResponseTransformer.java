@@ -35,6 +35,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
+        log.info(">>> account list transformer loading");
         if (!(payload instanceof ArrayNode sourceArray)) {
             log.warn(">>> account list payload is not an array");
             return null;
@@ -45,6 +46,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
         for (JsonNode sourceNode : sourceArray) {
             if (!sourceNode.isObject() || sourceNode.isEmpty()) {
+                log.info(">>> account list source node :: isObject = [{}] , isEmpty = [{}] ", sourceNode.isObject(), sourceNode.isEmpty());
                 continue;
             }
             ObjectNode resultAccount = convertAccountNode((ObjectNode) sourceNode, profile);
