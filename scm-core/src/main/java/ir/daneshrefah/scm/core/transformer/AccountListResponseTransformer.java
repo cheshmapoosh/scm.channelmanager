@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Optional;
  */
 @RequiredArgsConstructor
 @Component
+@Slf4j
 public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     private final PersonProfileLoader personProfileLoader;
@@ -34,6 +36,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
         if (!(payload instanceof ArrayNode sourceArray)) {
+            log.warn(">>> account list payload is not an array");
             return null;
         }
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -54,6 +57,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     private ObjectNode convertAccountNode(ObjectNode sourceNode, UserProfile profile) {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
+        log.info(">>> {} memberships found ", memberships.size());
         final String accountNumber = "accountNumber";
         if (sourceNode.has(accountNumber)) {
             String accountNo = sourceNode.get(accountNumber).asText();
@@ -62,6 +66,9 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
                     accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
             ).findFirst();
             if (membership.isEmpty() || !membership.get().getActive() ) {
+                membership
+                        .ifPresentOrElse(membershipTerminalAccess -> log.warn(">>>>> membership active status is : [{}]  ", membershipTerminalAccess.getActive())
+                        ,()-> log.warn(">>>>> membership found status : [{}]  ", membership.isEmpty()));
                 sourceNode.put("nickName", StringUtils.EMPTY);
                 sourceNode.put("favorite", StringUtils.EMPTY);
                 return null;
@@ -73,6 +80,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
             }
             return sourceNode;
         }
+        log.warn(">>>>> account not found");
         return null;
     }
 
