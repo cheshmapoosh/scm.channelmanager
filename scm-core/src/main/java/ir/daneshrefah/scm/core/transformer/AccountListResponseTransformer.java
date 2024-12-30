@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Optional;
  */
 @RequiredArgsConstructor
 @Component
+@Slf4j
 public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     private final PersonProfileLoader personProfileLoader;
@@ -55,31 +57,32 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
     private ObjectNode convertAccountNode(ObjectNode sourceNode, UserProfile profile) {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
         final String accountNumber = "accountNumber";
-        if (sourceNode.has(accountNumber)) {
-            String accountNo = sourceNode.get(accountNumber).asText();
+        if (sourceNode.has(accountNumber) && !sourceNode.get(accountNumber).isNull()) {
+            final long accountNo = sourceNode.get(accountNumber).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m ->
-                    accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
-            ).findFirst();
-            if (membership.isEmpty() || !membership.get().getActive() ) {
+                    .filter(m -> StringUtils.equals(
+                            Long.toString(accountNo),
+                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                    ).findFirst();
+            if (membership.isEmpty() || !membership.get().getActive()) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
                 sourceNode.put("favorite", StringUtils.EMPTY);
                 return null;
-            }else {
+            } else {
                 MembershipTerminalAccess membershipTerminalAccess = membership.get();
                 String nickname = membershipTerminalAccess.getMembership().getNickname();
                 sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
-                checkingAccountFavoriteStatus(sourceNode,membershipTerminalAccess);
+                checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
             }
             return sourceNode;
         }
         return null;
     }
 
-    private void checkingAccountFavoriteStatus(ObjectNode sourceNode,MembershipTerminalAccess membershipTerminalAccess) {
+    private void checkingAccountFavoriteStatus(ObjectNode sourceNode, MembershipTerminalAccess membershipTerminalAccess) {
         Boolean favorite = membershipTerminalAccess.getFavorite();
         favorite = !Objects.isNull(favorite) && favorite;
-        sourceNode.put("favorite",favorite);
+        sourceNode.put("favorite", favorite);
     }
 
 }
