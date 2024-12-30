@@ -35,7 +35,9 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     @Override
     public JsonNode internalTransform(Object payload, Message message, JsonNode metadata) {
+        log.info(">>> account list transformer loading");
         if (!(payload instanceof ArrayNode sourceArray)) {
+            log.warn(">>> account list payload is not an array");
             return null;
         }
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -44,6 +46,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
         for (JsonNode sourceNode : sourceArray) {
             if (!sourceNode.isObject() || sourceNode.isEmpty()) {
+                log.info(">>> account list source node :: isObject = [{}] , isEmpty = [{}] ", sourceNode.isObject(), sourceNode.isEmpty());
                 continue;
             }
             ObjectNode resultAccount = convertAccountNode((ObjectNode) sourceNode, profile);
@@ -56,6 +59,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
 
     private ObjectNode convertAccountNode(ObjectNode sourceNode, UserProfile profile) {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
+        log.info(">>> {} memberships found ", memberships.size());
         final String accountNumber = "accountNumber";
         if (sourceNode.has(accountNumber) && !sourceNode.get(accountNumber).isNull()) {
             final long accountNo = sourceNode.get(accountNumber).asLong();
@@ -76,6 +80,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
             }
             return sourceNode;
         }
+        log.warn(">>>>> account not found");
         return null;
     }
 
