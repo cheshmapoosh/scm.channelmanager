@@ -20,6 +20,7 @@ public class ClusterInfo {
     private String instanceName;
     private String clusterId;
     private String masterAddress;
+    private Integer masterPort;
     private String clusterTime;
     private String upTime;
     private int memberCount;
