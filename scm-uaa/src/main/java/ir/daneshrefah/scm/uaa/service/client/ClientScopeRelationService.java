@@ -1,11 +1,14 @@
 package ir.daneshrefah.scm.uaa.service.client;
 
+import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
 import ir.daneshrefah.scm.uaa.mapper.ClientScopeRelationMapper;
 import ir.daneshrefah.scm.uaa.mapper.ScopeMapper;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.*;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientScopeRelationRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.ScopeRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientScopeRelationEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ScopeEntity;
@@ -55,6 +58,9 @@ public class ClientScopeRelationService {
     public void addScope(Long clientId, Long scopeId) {
         ClientEntity clientEntity = clientRepository.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("client"));
         ScopeEntity scopeEntity = scopeRepository.findById(scopeId).orElseThrow(() -> new NoMatchRecordFoundException("scope"));
+        clientScopeRelationRepository.findByClientIdAndScopeId(clientId, scopeId).ifPresent((o) -> {
+            throw new DuplicatedRecordFoundException("scope");
+        });
         ClientScopeRelationEntity clientScopeRelationEntity = new ClientScopeRelationEntity();
         clientScopeRelationEntity.setClient(clientEntity);
         clientScopeRelationEntity.setScope(scopeEntity);

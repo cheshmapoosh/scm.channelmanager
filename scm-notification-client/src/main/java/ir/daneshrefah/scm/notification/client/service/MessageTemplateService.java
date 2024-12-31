@@ -28,7 +28,7 @@ public class MessageTemplateService {
             messageTemplateRepository
                     .findAll()
                     .stream()
-                    .map(MessageTemplateMapper.INSTANCE::toDto)
+                    .map(MessageTemplateMapper.INSTANCE::toModel)
                     .forEach(messageTemplates::add);
             log.info(">> {} message templates loaded ...",messageTemplates.size());
         }catch (Exception e){

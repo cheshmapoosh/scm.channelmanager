@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.PersonStatus;
@@ -18,7 +19,6 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.common.model.user.UserType;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -44,6 +44,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -75,8 +76,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final UserCache userCache;
-    @PersistenceContext
-    private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
@@ -106,7 +106,7 @@ public class UserService {
         String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
+            || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         Terminal terminal = findTerminalByCode(terminalCode);
@@ -172,10 +172,8 @@ public class UserService {
         if (oldPassword.equals(newPassword)) {
             throw new InvalidInputException("newPassword");
         }
-        if (newPassword.length() < 8
-            || StringUtils.isNumeric(newPassword)
-            || !StringUtils.isAlphanumeric(newPassword)) {
-            throw new InvalidInputException("security constraints");
+        if (newPassword.length() < 8 || StringUtils.isNumeric(newPassword)) {
+            throw new PasswordSecurityConstraintsException("newPassword");
         }
     }
 
@@ -563,10 +561,7 @@ public class UserService {
     private void removeXUser(UserEntity userEntity) {
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         assert currentAuthentication != null;
-        entityManager.createNativeQuery(DELETE_FROM_X_USER)
-                .setParameter(1, userEntity.getNickname())
-                .setParameter(2, currentAuthentication.getTerminalCode())
-                .executeUpdate();
+        jdbcTemplate.update(DELETE_FROM_X_USER,userEntity.getNickname(),currentAuthentication.getTerminalCode());
     }
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod

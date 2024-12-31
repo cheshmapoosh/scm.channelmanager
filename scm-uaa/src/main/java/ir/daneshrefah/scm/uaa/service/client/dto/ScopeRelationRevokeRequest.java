@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 public class ScopeRelationRevokeRequest implements RequestData {
     @NotNull
     @Numeric
-    private Long scopeId;
+    private String scopeId;
     @NotNull
     @Numeric
     @Schema(description = "client numeric instance id")
-    private Long clientId;
+    private String clientId;
     @NotNull
     private LocalDateTime lastEditDate;
 }

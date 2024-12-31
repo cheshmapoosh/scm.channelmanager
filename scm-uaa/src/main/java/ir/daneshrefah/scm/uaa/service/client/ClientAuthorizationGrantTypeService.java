@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.mapper.ClientMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientAuthorizationGrantTypeRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +25,12 @@ public class ClientAuthorizationGrantTypeService {
     private final ClientAuthorizationGrantTypeRepository authGrantTypeRepository;
     private final ClientRepository clientRepository;
 
-    public List<AuthorizationGrantType> findByClientId(Long clientId) {
+    public Set<ClientAuthorizationGrantType> findByClientId(Long clientId) {
         return authGrantTypeRepository
                 .findByClientId(clientId)
                 .stream()
-                .map(ClientAuthorizationGrantTypeEntity::getAuthorizationGrantType)
-                .toList();
+                .map(ClientMapper.INSTANCE::toModel)
+                .collect(Collectors.toSet());
     }
 
     public List<AuthorizationGrantType> getAll() {
@@ -34,7 +38,10 @@ public class ClientAuthorizationGrantTypeService {
     }
 
     public void assignGrantType(AuthorizationGrantType authorizationGrantType, Long clientId) {
-        findByClientId(clientId).stream().filter(grantType -> grantType.equals(authorizationGrantType)).findFirst()
+        findByClientId(clientId)
+                .stream()
+                .filter(grantType -> grantType.getAuthorizationGrantType().equals(authorizationGrantType))
+                .findFirst()
                 .ifPresent(grantType -> {
                     throw new DuplicatedRecordFoundException("authorizationGrantType");
                 });
