@@ -14,6 +14,7 @@ public class ClusterMember {
 
     private String id;
     private String address;
+    private Integer port;
     private boolean localMember;
     private boolean liteMember;
     private String version;
