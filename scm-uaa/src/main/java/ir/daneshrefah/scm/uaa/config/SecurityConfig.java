@@ -238,7 +238,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile({"dev", "default"})
+    @Profile({"dev", "default,","test","prod"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));

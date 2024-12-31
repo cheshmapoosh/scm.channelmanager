@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
@@ -10,10 +9,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,12 +27,12 @@ public interface ClientMapper {
     ClientMapper INSTANCE = Mappers.getMapper(ClientMapper.class);
 
     @Mapping(target = "authenticationMethods", expression = "java(mapClientAuthenticationMethods(entity))")
-    @Mapping(target = "clientAuthorizationGrantTypes", expression = "java(mapAuthorizationGrantTypesToEntity(entity))")
+    @Mapping(target = "clientAuthorizationGrantTypes", source = "authorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToModel")
     @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(entity))")
     Client toModel(ClientEntity entity);
 
     @Mapping(target = "allowIpAddresses" ,expression = "java(mapAllowIpAddressesString(model))")
-    @Mapping(target = "authorizationGrantTypes" ,expression = "java(mapAuthorizationGrantTypesToModel(model))" )
+    @Mapping(target = "authorizationGrantTypes" ,source = "clientAuthorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToEntity" )
     @Mapping(target = "versions" ,source = "versions",ignore = true)
     ClientEntity toEntityInternal(Client model);
 
@@ -47,22 +46,24 @@ public interface ClientMapper {
         return entity;
     }
 
-    default Set<ClientAuthorizationGrantType> mapAuthorizationGrantTypesToEntity(ClientEntity entity) {
+    @Named("mapAuthGrantTypesToModel")
+    default Set<ClientAuthorizationGrantType> mapAuthGrantTypesToModel(Set<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes) {
         Set<ClientAuthorizationGrantType> set = new HashSet<>();
-        if (Objects.nonNull(entity.getAuthorizationGrantTypes())) {
-            for (ClientAuthorizationGrantTypeEntity authEntity : entity.getAuthorizationGrantTypes()) {
-                set.add(toModel(authEntity));
-            }
+        if (Objects.nonNull(authorizationGrantTypes)) {
+            authorizationGrantTypes.forEach(authorizationGrantType -> {
+                set.add(toModel(authorizationGrantType));
+            });
         }
         return set;
     }
 
-    default Set<ClientAuthorizationGrantTypeEntity> mapAuthorizationGrantTypesToModel(Client model) {
+    @Named("mapAuthGrantTypesToEntity")
+    default Set<ClientAuthorizationGrantTypeEntity> mapAuthGrantTypesToEntity(Set<ClientAuthorizationGrantType> clientAuthorizationGrantTypes) {
         Set<ClientAuthorizationGrantTypeEntity> set = new HashSet<>();
-        if (Objects.nonNull(model.getClientAuthorizationGrantTypes())) {
-            for (ClientAuthorizationGrantType authModel : model.getClientAuthorizationGrantTypes()) {
-                set.add(toEntity(authModel));
-            }
+        if (Objects.nonNull(clientAuthorizationGrantTypes)) {
+            clientAuthorizationGrantTypes.forEach(clientAuthorizationGrantType -> {
+                set.add(toEntity(clientAuthorizationGrantType));
+            });
         }
         return set;
     }
@@ -122,31 +123,6 @@ public interface ClientMapper {
         if (list.contains(ClientAuthenticationMethod.NONE)) {
             entity.setClientAuthenticationMethodNone(true);
         }
-    }
-
-    /*@Mapping(target = "clientAuthenticationMethodSecretBasic", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_BASIC))")
-    @Mapping(target = "clientAuthenticationMethodSecretPost", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_POST))")
-    @Mapping(target = "clientAuthenticationMethodSecretJwt", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.CLIENT_SECRET_JWT))")
-    @Mapping(target = "clientAuthenticationMethodKeyJwt", expression = "java(isClientAuthenticationMethodExist(model, ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod.PRIVATE_KEY_JWT))")
-    @Mapping(target = "authorizationGrantTypeAuthorizationCode", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.AUTHORIZATION_CODE))")
-    @Mapping(target = "authorizationGrantTypeRefreshToken", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.REFRESH_TOKEN))")
-    @Mapping(target = "authorizationGrantTypeClientCredential", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.CLIENT_CREDENTIALS))")
-    @Mapping(target = "authorizationGrantTypeFirstPassword", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.FIRST_PASSWORD))")
-    @Mapping(target = "authorizationGrantTypeSecondPassword", expression = "java(isAuthorizationGrantTypeExist(model, ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType.SECOND_PASSWORD))")
-    @Mapping(source = "scopes", target = "scopes", qualifiedByName = "toScopeEntities")
-    ClientEntity toEntity(Client model);*/
-
-    default boolean isClientAuthenticationMethodExist(Client model, ClientAuthenticationMethod clientAuthenticationMethod) {
-        return null != model && null != model.getAuthenticationMethods() &&
-                model.getAuthenticationMethods().contains(clientAuthenticationMethod);
-    }
-
-    default boolean isAuthorizationGrantTypeExist(Client model, AuthorizationGrantType grantType) {
-        return null != model && null != model.getAuthenticationMethods() &&
-                model.getClientAuthorizationGrantTypes()
-                        .stream()
-                        .map(ClientAuthorizationGrantType::getAuthorizationGrantType)
-                        .anyMatch(authorizationGrantType -> authorizationGrantType.equals(grantType));
     }
 
     List<Client> toModels(Iterable<ClientEntity> clientEntities);

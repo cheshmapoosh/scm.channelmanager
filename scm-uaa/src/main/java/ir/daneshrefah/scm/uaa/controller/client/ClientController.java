@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.service.client.*;
 import ir.daneshrefah.scm.uaa.service.client.dto.*;
 import jakarta.validation.Valid;
@@ -56,7 +55,7 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientScopeService.save(scope));
     }
 
-    @PostMapping("/scope/edit")
+    @PutMapping("/scope/edit")
     public ResponseEntity<Scope> editScope(@RequestBody @Valid @NotNull ScopeEditRequest request) {
         Scope scope = new Scope(request.getCode(), request.getTitle());
         scope.setId(request.getId());
@@ -64,7 +63,7 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientScopeService.update(scope));
     }
 
-    @PostMapping("/scope/remove")
+    @DeleteMapping("/scope/remove")
     public ResponseEntity<Scope> removeScope(@RequestBody @Valid @NotNull ScopeRemoveRequest request) {
         Scope scope = new Scope();
         scope.setId(request.getId());
@@ -93,18 +92,19 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientVersionService.save(clientVersion));
     }
 
-    @PostMapping("/version/edit")
+    @PutMapping("/version/edit")
     public ResponseEntity<ClientVersion> editSVersion(@RequestBody @Valid @NotNull VersionEditRequest request) {
         ClientVersion clientVersion = new ClientVersion();
         clientVersion.setVersion(request.getVersion());
         clientVersion.setSignature(request.getSignature());
         clientVersion.setStatus(request.getStatus());
         clientVersion.setId(request.getId());
+        clientVersion.setForced(request.isForced());
         clientVersion.setLastEditDate(request.getLastEditDate());
         return ResponseEntity.status(HttpStatus.OK).body(clientVersionService.update(clientVersion));
     }
 
-    @PostMapping("/version/remove")
+    @DeleteMapping("/version/remove")
     public ResponseEntity<ClientVersion> removeVersion(@RequestBody @Valid @NotNull VersionRemoveRequest request) {
         ClientVersion clientVersion = new ClientVersion();
         clientVersion.setId(request.getId());
@@ -113,10 +113,17 @@ public class ClientController {
     }
 
     @GetMapping("/version/find-one/{id}")
-    public ResponseEntity<ClientVersion> findOneClientVersion(@PathVariable(name = "id") @Valid @NotNull @Numeric Long versionId) {
+    public ResponseEntity<ClientVersion> findOneClientVersion(@PathVariable(name = "id") @Valid @NotNull @Numeric String versionId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(clientVersionService.getClientVersionById(versionId).orElseThrow(() -> new NoMatchRecordFoundException("scopeId")));
+                .body(clientVersionService.getClientVersionById(Long.parseLong(versionId)).orElseThrow(() -> new NoMatchRecordFoundException("versionId")));
+    }
+
+    @PostMapping("/version/client-version-list")
+    public ResponseEntity<PagedResponseData<ClientVersion>> findOneClientVersionByClientId(@RequestBody @Valid @NotNull ClientVersionRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new PagedResponseData<>(request, clientVersionService.getClientVersionByClientId(Long.parseLong(request.getClientId()))));
     }
 
     //CLIENT SCOPE RELATION
@@ -135,7 +142,7 @@ public class ClientController {
 
     @PostMapping("/scope-relation/revoke")
     public ResponseEntity<?> revokeScope(@RequestBody @Valid @NotNull ScopeRelationRevokeRequest request) {
-        clientScopeRelationService.removeScope(request.getClientId(), request.getScopeId());
+        clientScopeRelationService.removeScope(Long.parseLong(request.getClientId()), Long.parseLong(request.getScopeId()));
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
@@ -152,9 +159,9 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("clientId")));
     }
 
-    @PostMapping("/remove")
+    @DeleteMapping("/remove")
     public ResponseEntity<Client> removeClient(@RequestBody @Valid @NotNull ClientRemoveRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(clientService.remove(request.getClientId(),request.getLastEditDate()));
+        return ResponseEntity.status(HttpStatus.OK).body(clientService.remove(request.getClientId(), request.getLastEditDate()));
     }
 
     @PostMapping("/create")
@@ -162,7 +169,7 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.create(request));
     }
 
-    @PostMapping("/edit")
+    @PutMapping("/edit")
     public ResponseEntity<Client> editClient(@RequestBody @Valid @NotNull ClientEditRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.updateClient(request));
     }

@@ -35,6 +35,7 @@ public class ClientVersionService {
     private void reloadCache() {
         synchronized (CLIENT_VERSIONS) {
             CLIENT_VERSIONS.clear();
+            clientVersionRepository.flush();
             clientVersionRepository
                     .findAll()
                     .stream()
@@ -80,12 +81,11 @@ public class ClientVersionService {
 
     public ClientVersion remove(ClientVersion clientVersion) {
         ClientVersionEntity clientVersionEntity = clientVersionRepository.findById(clientVersion.getId()).orElseThrow(() -> new InvalidInputException("clientVersionId"));
-        clientVersionEntity.setClient(null);
+        clientVersionEntity.getClient().getVersions().removeIf(versionEntity-> versionEntity.getId().equals(clientVersion.getId()));
         clientVersionEntity.setLastEditDate(clientVersion.getLastEditDate());
-        ClientVersionEntity updated = clientVersionRepository.save(clientVersionEntity);
-        clientVersionRepository.delete(updated);
+        clientVersionRepository.delete(clientVersionEntity);
         reloadCache();
-        return ClientVersionMapper.INSTANCE.toModel(updated);
+        return ClientVersionMapper.INSTANCE.toModel(clientVersionEntity);
     }
 
     public static List<ClientVersion> getClientVersionsList() {

@@ -67,8 +67,8 @@ public class ClientEntity extends AbstractVersionAbleDefaultEntity<Long> {
     private Long sessionTimeToLiveMinute;
 //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER , orphanRemoval = true)
     private Set<ClientVersionEntity> versions;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER , orphanRemoval = true)
     private Set<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes;
 }

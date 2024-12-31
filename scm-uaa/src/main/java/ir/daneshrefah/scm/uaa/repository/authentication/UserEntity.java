@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.uaa.repository.authentication;
 import ir.daneshrefah.scm.common.data.converter.UserStatusConverter;
 import ir.daneshrefah.scm.common.data.converter.UserTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
