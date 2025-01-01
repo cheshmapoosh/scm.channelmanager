@@ -207,4 +207,8 @@ public class AuthenticationUtils {
         assert loggedInUser != null;
         return loggedInUser.getPerson().getId();
     }
+
+    public static void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 }

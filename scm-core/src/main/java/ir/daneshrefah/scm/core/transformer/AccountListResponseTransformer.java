@@ -64,8 +64,12 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         if (sourceNode.has(accountNumber)) {
             String accountNo = sourceNode.get(accountNumber).asText();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m ->
-                    accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo())
+                    .filter(m -> {
+                        log.info(">>> DB ACCOUNT NUMBER : '{}'",m.getMembership().getCustomerAccount().getAccount().getAccountNo());
+                        log.info(">>> API REPO ACCOUNT NUMBER : '{}' ",accountNo);
+                        log.info(">>> EQUALITY : {} ",accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo()));
+                     return   accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo());
+                    }
             ).findFirst();
             if (membership.isEmpty() || !membership.get().getActive() ) {
                 membership
