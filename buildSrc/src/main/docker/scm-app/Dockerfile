@@ -27,9 +27,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apk add --no-cache \
-    ttf-dejavu \
-    fontconfig
 
 # Set environment variables
 ENV JAVA_OPTS="-Xms4096m -Xmx8192m"

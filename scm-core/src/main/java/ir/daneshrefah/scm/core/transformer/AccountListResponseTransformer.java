@@ -61,28 +61,22 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
         log.info(">>> {} memberships found ", memberships.size());
         final String accountNumber = "accountNumber";
-        if (sourceNode.has(accountNumber)) {
-            String accountNo = sourceNode.get(accountNumber).asText();
+        if (sourceNode.has(accountNumber) && !sourceNode.get(accountNumber).isNull()) {
+            final long accountNo = sourceNode.get(accountNumber).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m -> {
-                        log.info(">>> DB ACCOUNT NUMBER : '{}'",m.getMembership().getCustomerAccount().getAccount().getAccountNo());
-                        log.info(">>> API REPO ACCOUNT NUMBER : '{}' ",accountNo);
-                        log.info(">>> EQUALITY : {} ",accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo()));
-                     return   accountNo.equals(m.getMembership().getCustomerAccount().getAccount().getAccountNo());
-                    }
-            ).findFirst();
-            if (membership.isEmpty() || !membership.get().getActive() ) {
-                membership
-                        .ifPresentOrElse(membershipTerminalAccess -> log.warn(">>>>> membership active status is : [{}]  ", membershipTerminalAccess.getActive())
-                        ,()-> log.warn(">>>>> membership found status : [{}]  ", membership.isEmpty()));
+                    .filter(m -> StringUtils.equals(
+                            Long.toString(accountNo),
+                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                    ).findFirst();
+            if (membership.isEmpty() || !membership.get().getActive()) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
                 sourceNode.put("favorite", StringUtils.EMPTY);
                 return null;
-            }else {
+            } else {
                 MembershipTerminalAccess membershipTerminalAccess = membership.get();
                 String nickname = membershipTerminalAccess.getMembership().getNickname();
                 sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
-                checkingAccountFavoriteStatus(sourceNode,membershipTerminalAccess);
+                checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
             }
             return sourceNode;
         }
@@ -90,10 +84,10 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         return null;
     }
 
-    private void checkingAccountFavoriteStatus(ObjectNode sourceNode,MembershipTerminalAccess membershipTerminalAccess) {
+    private void checkingAccountFavoriteStatus(ObjectNode sourceNode, MembershipTerminalAccess membershipTerminalAccess) {
         Boolean favorite = membershipTerminalAccess.getFavorite();
         favorite = !Objects.isNull(favorite) && favorite;
-        sourceNode.put("favorite",favorite);
+        sourceNode.put("favorite", favorite);
     }
 
 }
