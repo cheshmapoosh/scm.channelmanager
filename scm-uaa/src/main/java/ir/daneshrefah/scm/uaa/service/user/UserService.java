@@ -97,6 +97,7 @@ public class UserService {
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -661,6 +662,7 @@ public class UserService {
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
