@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -64,6 +65,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         if (sourceNode.has(accountNumber) && !sourceNode.get(accountNumber).isNull()) {
             final long accountNo = sourceNode.get(accountNumber).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
+                    .filter(m-> LocalDate.now().isBefore(m.getToDate()))
                     .filter(m -> StringUtils.equals(
                             Long.toString(accountNo),
                             StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
