@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.core.integration.service.scanner.impl.JavaServiceMetadata;
+import ir.daneshrefah.scm.core.integration.service.scanner.spec.ClassContextCache;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException;
@@ -13,6 +15,7 @@ import lombok.Getter;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -23,17 +26,19 @@ import java.util.Objects;
  */
 public class JavaServiceFinder {
 
-    public static MethodInfo findJavaServiceMethodInfo(JavaService service) {
-        String classNameOrg = service.getJavaImplementationClassName();
+    public static MethodInfo findJavaServiceMethodInfo(String serviceCode) {
+        JavaServiceMetadata metadata = getJavaServiceMetadata(serviceCode).orElseThrow(()->new RuntimeException("Java Service Metadata Could not found"));
+
+        String classNameOrg = metadata.getJavaImplementationClassName();
 
         if (StringUtils.isEmpty(classNameOrg) || !classNameOrg.contains(".")) {
-            return new MethodInfo(new JavaServiceClassNotDefinedException(service, "invalid class name '" + classNameOrg + "'"));
+            return new MethodInfo(new JavaServiceClassNotDefinedException(metadata.getCode().name(), "invalid class name '" + classNameOrg + "'"));
         }
         if (!classNameOrg.contains("(") && !classNameOrg.contains(")")) {
             classNameOrg = classNameOrg + "()";
         }
         if (!classNameOrg.contains("(") || !classNameOrg.contains(")")) {
-            return new MethodInfo(new JavaServiceClassNotDefinedException(service, "invalid class name '" + classNameOrg + "'"));
+            return new MethodInfo(new JavaServiceClassNotDefinedException(metadata.getCode().name(), "invalid class name '" + classNameOrg + "'"));
         }
 
         classNameOrg = classNameOrg.trim().substring(0, classNameOrg.indexOf(')'));
@@ -48,9 +53,9 @@ public class JavaServiceFinder {
             paramTypes = new Class<?>[0];
         } else {
             try {
-                paramTypes = parseParamTypesFromStr(service, paramTypesString);
+                paramTypes = parseParamTypesFromStr(metadata, paramTypesString);
             } catch (ClassNotFoundException e) {
-                return new MethodInfo(new JavaServiceClassNotDefinedException(service, e));
+                return new MethodInfo(new JavaServiceClassNotDefinedException(metadata.getCode().name(),metadata.getJavaImplementationClassName(), e));
             }
         }
 
@@ -58,38 +63,37 @@ public class JavaServiceFinder {
         try {
             javaServiceInstance = ClassLoader.findBeanOrCreateInstanceOfClass(classNameString, AbstractJavaService.class);
         } catch (Exception e) {
-            return new MethodInfo(new JavaServiceClassNotDefinedException(service, e));
+            return new MethodInfo(new JavaServiceClassNotDefinedException(metadata.getCode().name(),metadata.getJavaImplementationClassName(), e));
         }
         if (null == javaServiceInstance) {
-            return new MethodInfo(new JavaServiceClassNotDefinedException(service, "could not found instance of class '" +
+            return new MethodInfo(new JavaServiceClassNotDefinedException(metadata.getCode().name(), "could not found instance of class '" +
                     classNameString + "'"));
         }
 
         Method method;
         try {
             method = javaServiceInstance.getClass().getMethod(methodNameString, paramTypes);
-            ir.daneshrefah.scm.plugin.api.annotation.JavaService javaServiceAnnotation = method.getAnnotation(ir.daneshrefah.scm.plugin.api.annotation.JavaService.class);
+            ir.daneshrefah.scm.common.annotation.JavaService javaServiceAnnotation = method.getAnnotation(ir.daneshrefah.scm.common.annotation.JavaService.class);
             if (Objects.isNull(javaServiceAnnotation)) {
-                return new MethodInfo(new JavaServiceMethodNotFoundException(service, null));
+                return new MethodInfo(new JavaServiceMethodNotFoundException(metadata.getCode().name(), null));
             }
-            if (StringUtils.isNotEmptyAndNotEquals(javaServiceAnnotation.serviceCode(), service.getCode())) {
-                return new MethodInfo(new JavaServiceMethodNotFoundException(service, null));
+            if (StringUtils.isNotEmptyAndNotEquals(javaServiceAnnotation.serviceCode().name(), metadata.getCode().name())) {
+                return new MethodInfo(new JavaServiceMethodNotFoundException(metadata.getCode().name(), null));
             }
         } catch (NoSuchMethodException e) {
-            return new MethodInfo(new JavaServiceMethodNotFoundException(service, e));
+            return new MethodInfo(new JavaServiceMethodNotFoundException(metadata.getCode().name(), e));
         }
-        MethodInfo result = new MethodInfo(javaServiceInstance, method, paramTypes);
-        return result;
+        return new MethodInfo(javaServiceInstance, method, paramTypes);
     }
 
-    private static Class<?>[] parseParamTypesFromStr(JavaService service, String methodParameters) throws ClassNotFoundException {
+    private static Optional<JavaServiceMetadata> getJavaServiceMetadata(String serviceCode) {
+        return ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA,serviceCode,JavaServiceMetadata.class);
+    }
+
+    private static Class<?>[] parseParamTypesFromStr(JavaServiceMetadata metadata, String methodParameters) throws ClassNotFoundException {
         if (StringUtils.isEmpty(methodParameters)) {
             return new Class[0];
         }
-//        if (!methodParameters.contains("(")) {
-//            return new Class<?>[]{Message.class, Service.class, Object.class};
-//        }
-//        methodParameters = methodParameters.split("\\(")[0];
         methodParameters = methodParameters.trim();
         if (StringUtils.endsWith(methodParameters, ")")) {
             methodParameters = methodParameters.substring(0, methodParameters.indexOf(')'));
@@ -100,27 +104,25 @@ public class JavaServiceFinder {
         String[] paramTypesStr = methodParameters.split(",");
         Class<?>[] paramTypes = new Class<?>[paramTypesStr.length];
         for (int i = 0; i < paramTypesStr.length; i++) {
-            if ("String".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            String paramTypeStr = paramTypesStr[i].trim();
+
+            if ("java.lang.String".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = String.class;
-            } else if ("int".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            } else if (!StringUtils.isBlank(paramTypeStr) && paramTypeStr.toLowerCase().contains("int")) {
                 paramTypes[i] = int.class;
-            } else if ("Integer".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            } else if ("java.lang.Integer".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Integer.class;
-            } else if ("Long".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            } else if ("java.lang.Long".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Long.class;
-            } else if ("Message".equalsIgnoreCase(paramTypesStr[i].trim())) {
-                paramTypes[i] = Message.class;
-            } else if ("Service".equalsIgnoreCase(paramTypesStr[i].trim())) {
-                paramTypes[i] = Service.class;
-            } else if ("boolean".equals(paramTypesStr[i].trim())) {
+            } else if (!StringUtils.isBlank(paramTypeStr) && paramTypeStr.toLowerCase().contains("boolean")) {
                 paramTypes[i] = boolean.class;
-            } else if ("Boolean".equalsIgnoreCase(paramTypesStr[i].trim())) {
+            } else if ("java.lang.Boolean".equalsIgnoreCase(paramTypesStr[i].trim())) {
                 paramTypes[i] = Boolean.class;
             } else {
                 try {
                     paramTypes[i] = Class.forName(paramTypesStr[i].trim());
                 } catch (ClassNotFoundException e) {
-                    throw new JavaServiceParameterClassNotFoundException(service, paramTypesStr[i], e);
+                    throw new JavaServiceParameterClassNotFoundException(metadata.getCode().name(), paramTypesStr[i], e);
                 }
             }
         }

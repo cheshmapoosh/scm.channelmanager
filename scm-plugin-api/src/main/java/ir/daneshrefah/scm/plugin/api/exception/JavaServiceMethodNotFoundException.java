@@ -18,6 +18,10 @@ public class JavaServiceMethodNotFoundException extends AbstractJavaServiceExcep
         super("method not found for java service.", cause, service);
     }
 
+    public JavaServiceMethodNotFoundException(String serviceCode, Throwable cause) {
+        super("method not found for java service.", cause, serviceCode);
+    }
+
 
     @Override
     public ExceptionInformation getExceptionInformation() {

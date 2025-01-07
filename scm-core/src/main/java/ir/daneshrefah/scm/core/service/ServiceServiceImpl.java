@@ -33,6 +33,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -40,16 +41,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class ServiceServiceImpl implements ServiceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceServiceImpl.class);
@@ -67,6 +66,7 @@ public class ServiceServiceImpl implements ServiceService {
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
     private List<AbstractExternalServiceProvider> serviceProviders;
+    private final JavaServiceMetadataProviderService javaSrvService;
 
 
     private static ObjectMapper getObjectMapper() {
@@ -136,6 +136,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (null == services || services.isEmpty()) {
             synchronized (this) {
                 services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+                javaSrvService.javaServiceSynchronization(services);
             }
         }
         return services;
@@ -439,7 +440,6 @@ public class ServiceServiceImpl implements ServiceService {
     private void applyEditServiceTypeProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         if (serviceEntity instanceof JavaServiceEntity javaServiceEntity) {
             String value = request.getJavaImplementationClassName();
-            javaServiceEntity.setJavaImplementationClassName(StringUtils.isEmpty(value) ? javaServiceEntity.getJavaImplementationClassName() : value);
         } else if (serviceEntity instanceof AbstractExternalServiceEntity externalServiceEntity) {
             String reqProviderId = request.getServiceProviderId();
             String serviceProviderId = externalServiceEntity.getServiceProvider().getId();
@@ -512,17 +512,11 @@ public class ServiceServiceImpl implements ServiceService {
                 .collect(Collectors.toList());
         findProxyServiceList().stream().map(service -> (ProxyService) service).map(ProxyService::getTargetService).forEach(serviceList::add);
         return serviceList;
-//        Iterable<ServiceEntity> serviceEntities = serviceRepository.findCallableServiceList();
-//        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
-//        return services;
     }
 
     public List<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList() {
         return findServiceList().stream().filter(service -> ServiceImplementationType.PARENT.equals(service.getImplementationType()))
                 .collect(Collectors.toList());
-//        Iterable<ServiceEntity> serviceEntities = serviceRepository.findServiceListByImplementationType(ServiceImplementationType.PARENT);
-//        List<ir.daneshrefah.scm.common.model.service.Service> services = ServiceMapper.INSTANCE.toServices(serviceEntities);
-//        return services;
     }
 
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId) {
@@ -562,7 +556,7 @@ public class ServiceServiceImpl implements ServiceService {
     private void checkTransformers(ServiceEntity found) {
         transformerRelationRepository
                 .findAllBySourceId(found.getId())
-                .stream().findFirst().ifPresent(db->{
+                .stream().findFirst().ifPresent(db -> {
                     throw new UncheckedRecordChildException("transformerRelation", "service has unhandled transformer relation children");
                 });
     }
@@ -570,7 +564,7 @@ public class ServiceServiceImpl implements ServiceService {
     private void checkServiceRelations(ServiceEntity found) {
         serviceRelationRepository
                 .findAllBySourceServiceId(found.getId())
-                .stream().findFirst().ifPresent(db->{
+                .stream().findFirst().ifPresent(db -> {
                     throw new UncheckedRecordChildException("serviceRelation", "service has unhandled service relation children");
                 });
     }

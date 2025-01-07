@@ -10,16 +10,17 @@ import ir.daneshrefah.scm.common.dto.error.ErrorMappingEditRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingFindRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingSearchRequest;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 @Service
 public class ExceptionManagementService extends AbstractJavaService {
@@ -31,7 +32,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         this.errorMappingService = errorMappingService;
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ERROR_LIST)
     @SuppressWarnings("unused")
     public PagedResponseData<ErrorMapping> list(ErrorMappingFindRequest request){
         List<ErrorMapping> errorMappingsList = errorMappingService.getErrorMappingsCache();
@@ -49,7 +50,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request, result);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ERROR_SEARCH)
     @SuppressWarnings("unused")
     public PagedResponseData<ErrorMapping> search(ErrorMappingSearchRequest request){
         ValidationUtils.checkNull(request,()->new MissingRequiredInputException("payload"));
@@ -66,7 +67,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request, result);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ERROR_FIND_BY_ID)
     @SuppressWarnings("unused")
     public ErrorMapping findById(String id){
         ValidationUtils.checkNull(id,()-> new InvalidInputException("id"));
@@ -74,13 +75,13 @@ public class ExceptionManagementService extends AbstractJavaService {
         return errorMappingService.findById(Long.parseLong(id));
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ERROR_CREATE)
     @SuppressWarnings("unused")
     public ErrorMapping create(ErrorMappingCreateRequest request){
         return errorMappingService.create(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ERROR_EDIT)
     @SuppressWarnings("unused")
     public ErrorMapping edit(ErrorMappingEditRequest request){
         return errorMappingService.dynamicUpdate(request);

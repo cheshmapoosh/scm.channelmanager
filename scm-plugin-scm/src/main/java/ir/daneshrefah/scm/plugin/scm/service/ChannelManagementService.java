@@ -10,11 +10,13 @@ import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.service.channel.*;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Service;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -33,12 +35,12 @@ public class ChannelManagementService extends AbstractJavaService {
         this.channelService = channelService;
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_CHANNEL_LIST)
     public PagedResponseData<Channel> listChannel(ChannelFindRequest request) {
         return channelService.findPagedChannels(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_CHANNEL_FIND_BY_ID)
     public Channel findChannelById(String channelId) {
         if (StringUtils.isEmpty(channelId)) {
             throw new MissingRequiredInputException("channelId");
@@ -48,17 +50,17 @@ public class ChannelManagementService extends AbstractJavaService {
                 .orElseThrow(()->new NoMatchRecordFoundException("channel"));
     }
 
-    @JavaService
+    @JavaService(serviceCode =SVC_CHANNEL_CREATE )
     public Channel createChannel(ChannelCreateRequest request) {
         return channelService.createChannel(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_CHANNEL_EDIT)
     public Channel editChannel(ChannelEditRequest request) {
         return channelService.editChannel(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_CHANNEL_DELETE)
     public void deleteChannel(ChannelDeleteRequest request) {
         channelService.deleteChannel(request);
     }
