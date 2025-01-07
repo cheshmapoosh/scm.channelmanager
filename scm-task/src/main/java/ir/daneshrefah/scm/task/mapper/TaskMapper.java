@@ -2,8 +2,15 @@ package ir.daneshrefah.scm.task.mapper;
 
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
+import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
 import ir.daneshrefah.scm.task.entity.TaskEntity;
+import ir.daneshrefah.scm.task.model.IssuerModel;
+import ir.daneshrefah.scm.task.model.ProcessInstanceResponse;
 import ir.daneshrefah.scm.task.model.TaskResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -23,6 +30,9 @@ public abstract class TaskMapper {
     @Autowired
     private ProcessInstanceMapper processInstanceMapper;
 
+    @Autowired
+    private PersonService personService;
+
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapDateToString")
     @Mapping(source = "taskStatus", target = "statusName", qualifiedByName = "mapTaskStatusName")
     @Mapping(source = "updateAt", target = "updateAt", qualifiedByName = "mapDateToString")
@@ -38,10 +48,27 @@ public abstract class TaskMapper {
         List<TaskResponse> taskResponseList = new ArrayList<>();
         for (TaskEntity task : taskEntities) {
             TaskResponse taskResponse = toTaskResponse(task);
-            taskResponse.setProcessInstance(processInstanceMapper.toProcessInstanceResponse(task.getProcessInstance()));
+            ProcessInstanceResponse processInstanceResponse = processInstanceMapper.toProcessInstanceResponse(task.getProcessInstance());
+            IssuerModel issuerModel = mapToUserModel(task.getProcessInstance());
+            processInstanceResponse.setCreatedBy(issuerModel);
+            taskResponse.setProcessInstance(processInstanceResponse);
             taskResponseList.add(taskResponse);
         }
         return taskResponseList;
+    }
+
+    private IssuerModel mapToUserModel(ProcessInstanceEntity processInstance) {
+        GeneralPerson person = personService.findPersonByPersonId(processInstance.getCreateBy());
+        IssuerModel issuerModel = new IssuerModel();
+        if (person instanceof GeneralRealPerson realPerson) {
+            issuerModel.setNationalId(realPerson.getNationalCode());
+            issuerModel.setFirstName(realPerson.getFirstName());
+            issuerModel.setLastName(realPerson.getLastName());
+        } else if (person instanceof GeneralLegalPerson legalPerson) {
+            issuerModel.setNationalId(legalPerson.getNationalId());
+        }
+        issuerModel.setPersonType(person.getPersonType());
+        return issuerModel;
     }
 
     public TaskResponse toTaskResponseWithProcessInstance(TaskEntity taskEntity) {

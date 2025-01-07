@@ -13,5 +13,4 @@ public class UserModel {
     private PersonType personType;
     private String subOrganization;
     private String customerNo;
-    private boolean signer;
 }
