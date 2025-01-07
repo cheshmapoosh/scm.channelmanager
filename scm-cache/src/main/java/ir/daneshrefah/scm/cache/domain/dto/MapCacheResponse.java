@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.cache.domain.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Date;
+
 @Getter
 @Builder
 public class MapCacheResponse {
@@ -10,7 +12,7 @@ public class MapCacheResponse {
     private int size;
     private long hits;
     private long heapCost;
-    private long creationTime;
-    private long lastUpdateTime;
-    private long lastAccessTime;
+    private Date creationTime;
+    private Date lastUpdateTime;
+    private Date lastAccessTime;
 }

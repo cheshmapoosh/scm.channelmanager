@@ -52,23 +52,8 @@ public class HazelCastManagementServiceImpl implements CacheManagementService {
             clusterInfo.setUpTime(DurationFormatUtils.formatDurationWords(((ClusterService) cluster).getClusterClock().getClusterUpTime(), true, true));
             clusterInfo.setClusterTime(Instant.ofEpochMilli(((ClusterService) cluster).getClusterClock().getClusterTime()).toString());
         }
-
         Collection<Member> members = cluster.getMembers();
-        List<ClusterMember> clusterMembers = new ArrayList<>();
         clusterInfo.setMemberCount(members.size());
-        for (Member member : members) {
-            ClusterMember clusterMember = new ClusterMember();
-            clusterMember.setId(member.getUuid().toString());
-            clusterMember.setAddress(member.getAddress().getHost());
-            clusterMember.setPort(member.getAddress().getPort());
-            clusterMember.setLocalMember(member.localMember());
-            clusterMember.setLiteMember(member.isLiteMember());
-            clusterMember.setVersion(member.getVersion().toString());
-
-            clusterMembers.add(clusterMember);
-        }
-        clusterInfo.setMembers(clusterMembers);
-
         PartitionService partitionService = hazelcastInstance.getPartitionService();
         Set<Partition> memberPartitions = partitionService.getPartitions();
         Map<String, List<CachePartition>> groupedByMemberId = memberPartitions.stream().collect(Collectors.groupingBy(partition -> partition.getOwner().getUuid().toString(), Collectors.mapping(partition -> {
@@ -83,24 +68,48 @@ public class HazelCastManagementServiceImpl implements CacheManagementService {
         return new CacheResponse<>(List.of(clusterInfo));
     }
 
+    @Override
+    public CacheResponse<ClusterMember> getMembers() {
+        Cluster cluster = hazelcastInstance.getCluster();
+        Collection<Member> members = cluster.getMembers();
+        List<ClusterMember> clusterMembers = new ArrayList<>();
+
+        for (Member member : members) {
+            ClusterMember clusterMember = new ClusterMember();
+            clusterMember.setId(member.getUuid().toString());
+            clusterMember.setAddress(member.getAddress().getHost());
+            clusterMember.setPort(member.getAddress().getPort());
+            clusterMember.setLocalMember(member.localMember());
+            clusterMember.setLiteMember(member.isLiteMember());
+            clusterMember.setVersion(member.getVersion().toString());
+            clusterMembers.add(clusterMember);
+        }
+        return new CacheResponse<>(clusterMembers);
+    }
 
     @Override
     public PagedResponseData<MapCacheResponse> getAllMaps(MapCacheFilterRequest request) {
-        List<MapCacheResponse> collect = hazelcastInstance.getDistributedObjects().stream().filter(distributedObject -> distributedObject instanceof IMap<?, ?>).map(distributedObject -> hazelcastInstance.getMap(distributedObject.getName())).map(distributedObject -> {
-            IMap<?, ?> map = hazelcastInstance.getMap(distributedObject.getName());
-            LocalMapStats stats = map.getLocalMapStats();
-            return MapCacheResponse.builder()
-                    .name(distributedObject.getName())
-                    .size(map.size())
-                    .hits(stats.getHits())
-                    .heapCost(stats.getHeapCost())
-                    .creationTime(stats.getCreationTime())
-                    .lastUpdateTime(stats.getLastUpdateTime())
-                    .lastAccessTime(stats.getLastAccessTime())
-                    .build();
-        }).sorted(Comparator.comparing(MapCacheResponse::getName)).toList();
+        List<MapCacheResponse> collect = hazelcastInstance.getDistributedObjects()
+                .stream()
+                .filter(distributedObject -> distributedObject instanceof IMap<?, ?>)
+                .map(distributedObject -> hazelcastInstance.getMap(distributedObject.getName()))
+                .filter(entries -> Objects.isNull(request) || Objects.isNull(request.getName()) || entries.getName().contains(request.getName()))
+                .map(distributedObject -> {
+                    IMap<?, ?> map = hazelcastInstance.getMap(distributedObject.getName());
+                    LocalMapStats stats = map.getLocalMapStats();
+                    return MapCacheResponse.builder()
+                            .name(distributedObject.getName())
+                            .size(map.size())
+                            .hits(stats.getHits())
+                            .heapCost(stats.getHeapCost())
+                            .creationTime(stats.getCreationTime() > 0 ? new Date(stats.getCreationTime()) : null)
+                            .lastUpdateTime(stats.getLastUpdateTime() > 0 ? new Date(stats.getLastUpdateTime()) : null)
+                            .lastAccessTime(stats.getLastAccessTime() > 0 ? new Date(stats.getLastAccessTime()) : null)
+                            .build();
+                }).sorted(Comparator.comparing(MapCacheResponse::getName))
+                .toList();
         List<MapCacheResponse> listByPagination = PaginationUtils.getListByPagination(collect, request.getPageNo(), request.getPageSize());
-        return new PagedResponseData<>(request, listByPagination);
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), (long) collect.size(), listByPagination);
     }
 
     @Override
@@ -112,7 +121,7 @@ public class HazelCastManagementServiceImpl implements CacheManagementService {
         Set<Object> sets = hazelcastInstance.getMap(request.getMapName()).keySet();
         List<Object> lists = new ArrayList<>(sets);
         List<Object> listByPagination = PaginationUtils.getListByPagination(lists, request.getPageNo(), request.getPageSize());
-        return new PagedResponseData<>(request, listByPagination);
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), (long) sets.size(), listByPagination);
     }
 
     @Override

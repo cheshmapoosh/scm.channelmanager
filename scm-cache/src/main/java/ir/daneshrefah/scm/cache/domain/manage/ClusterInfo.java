@@ -24,7 +24,6 @@ public class ClusterInfo {
     private String clusterTime;
     private String upTime;
     private int memberCount;
-    private Collection<ClusterMember> members;
     private int partitionCount;
     private Map<String, List<CachePartition>> memberPartitions;
 

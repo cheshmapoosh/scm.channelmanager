@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.cache.service;
 
 import ir.daneshrefah.scm.cache.domain.dto.*;
 import ir.daneshrefah.scm.cache.domain.manage.ClusterInfo;
+import ir.daneshrefah.scm.cache.domain.manage.ClusterMember;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 
 /**
@@ -15,7 +16,7 @@ public interface CacheManagementService {
 
     CacheResponse<ClusterInfo> getClusterInfo();
 
-    PagedResponseData<MapCacheResponse>  getAllMaps(MapCacheFilterRequest request);
+    PagedResponseData<MapCacheResponse> getAllMaps(MapCacheFilterRequest request);
 
     PagedResponseData<Object> getMapKeys(MapKeysCacheFilterRequest request);
 
@@ -32,5 +33,7 @@ public interface CacheManagementService {
     void removeMapValue(RemoveMapValuesCacheRequest request);
 
     void clear(ClearMapCacheRequest request);
+
+    CacheResponse<ClusterMember> getMembers();
 
 }
