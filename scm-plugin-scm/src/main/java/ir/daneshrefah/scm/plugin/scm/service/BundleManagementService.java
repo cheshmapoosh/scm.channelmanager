@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.bundle.ResourceBundle;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 @Service
 public class BundleManagementService extends AbstractJavaService {
@@ -39,7 +41,7 @@ public class BundleManagementService extends AbstractJavaService {
         this.resourceBundleAccessService = resourceBundleAccessService;
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_BUNDLE_LIST)
     public PagedResponseData<ResourceBundle> bundleList(BundleFindRequest request) {
         List<ResourceBundle> bundleList = resourceBundleService.getAll().stream()
                 .filter(bundle -> null == request || null == request.getKey() || bundle.getKey().toLowerCase().contains(request.getKey().toLowerCase()))
@@ -49,7 +51,7 @@ public class BundleManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request, bundleList);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_BUNDLE_LIST_FIND_BY_ID)
     public ResourceBundle findById(String id) {
         if (Objects.isNull(id) || id.isBlank() || !StringUtils.isNumeric(id)) {
             throw new InvalidInputException("id");
@@ -62,7 +64,7 @@ public class BundleManagementService extends AbstractJavaService {
                 .orElseThrow(() -> new NoMatchRecordFoundException("id"));
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_BUNDLE_EDIT)
     public ResourceBundle edit(BundleEditRequest request) {
         ResourceBundle foundById = findById(request.getId().toString());
         ResourceBundle resourceBundle = new ResourceBundle();
@@ -73,12 +75,12 @@ public class BundleManagementService extends AbstractJavaService {
         return resourceBundleAccessService.dynamicUpdate(resourceBundle);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_BUNDLE_CREATE)
     public ResourceBundle create(BundleCreateRequest request){
         return resourceBundleAccessService.create(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_BUNDLE_LOCALES_LIST)
     public List<String> getAllAvailableLocales(){
         return Arrays.stream(AccessibleLocale.values())
                 .filter(locale -> !locale.equals(AccessibleLocale.DEFAULT_LOCALE))

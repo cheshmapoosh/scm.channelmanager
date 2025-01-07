@@ -11,6 +11,6 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
  */
 public interface RestUrlBuilder {
 
-    public RestUrl build(TerminalServiceAccess serviceAccess);
+     RestUrl build(TerminalServiceAccess serviceAccess);
 
 }

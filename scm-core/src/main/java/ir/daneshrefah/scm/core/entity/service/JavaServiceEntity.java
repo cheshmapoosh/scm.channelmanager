@@ -15,14 +15,4 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("2")
 public class JavaServiceEntity extends ServiceEntity {
 
-    @Column(name = "IMPL_JAVA_CLASS_NAME")
-    private String javaImplementationClassName;
-
-    public String getJavaImplementationClassName() {
-        return javaImplementationClassName;
-    }
-
-    public void setJavaImplementationClassName(String javaImplementationClassName) {
-        this.javaImplementationClassName = javaImplementationClassName;
-    }
 }

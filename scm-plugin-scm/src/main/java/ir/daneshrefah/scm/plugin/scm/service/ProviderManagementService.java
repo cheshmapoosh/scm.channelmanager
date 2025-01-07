@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 @Service
 public class ProviderManagementService extends AbstractJavaService {
@@ -29,19 +31,19 @@ public class ProviderManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_LIST")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_LIST)
     public PagedResponseData<ServiceProviderFindResponse> serviceProviderList(ServiceProviderFindRequest request) {
         return this.service.findServiceProviderList(request);
     }
 
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_NAME_LIST")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_NAME_LIST)
     @SuppressWarnings("unused")
     public List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request) {
         return this.service.getServiceProviderNameList(request);
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_BY_ID")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_BY_ID)
     public AbstractExternalServiceProvider findProviderById(String serviceProviderId) {
         AbstractExternalServiceProvider found = this.service.findServiceProviderById(serviceProviderId);
         if (Objects.nonNull(found)) {
@@ -50,22 +52,22 @@ public class ProviderManagementService extends AbstractJavaService {
         throw new NoMatchRecordFoundException("serviceProviderId");
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_CREATE")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_CREATE)
     public AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
        return service.createServiceProvider(request);
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_CHANGE")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_CHANGE)
     public AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
         return service.changeServiceProvider(request);
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_DELETE")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_DELETE)
     public AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
         return service.deleteServiceProvider(request);
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_PROTOCOL_LIST")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_PROTOCOL_LIST)
     public List<String> findProviderProtocolList() {
         return Arrays.stream(ServiceProviderProtocol
                         .values())
@@ -73,7 +75,7 @@ public class ProviderManagementService extends AbstractJavaService {
                 .toList();
     }
 
-    @JavaService(serviceCode = "SVC_SERVICE_PROVIDER_STATUS_LIST")
+    @JavaService(serviceCode = SVC_SERVICE_PROVIDER_STATUS_LIST)
     public List<String> findProviderStatusList() {
         return Arrays.stream(ServiceProviderStatus
                         .values())

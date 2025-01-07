@@ -1,13 +1,15 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.annotation.JavaService;
+import ir.daneshrefah.scm.common.constant.JavaMethodType;
+import ir.daneshrefah.scm.common.constant.Status;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.*;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,12 +39,24 @@ public class TerminalManagementService extends AbstractJavaService {
         this.terminalService = terminalService;
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_LIST)
     public PagedResponseData<Terminal> listTerminal(TerminalFindRequest request) {
         return terminalService.findAllTerminals(request);
     }
 
-    @JavaService
+    @JavaService(
+            serviceCode = SVC_TERMINAL_LIST_SAMPLE,
+            type = JavaMethodType.INQUIRY,
+            path = "/list2",
+            checkAccessFirstAuthentication = Status.ACTIVE,
+            parentCode = SVC_TERMINAL_PARENT,
+            title = "terminal 2")
+    public PagedResponseData<Terminal> listTerminal2() {
+        TerminalFindRequest request = new TerminalFindRequest();
+        return terminalService.findAllTerminals(request);
+    }
+
+    @JavaService(serviceCode = SVC_TERMINAL_FIND_BY_ID)
     public Terminal findTerminalById(String terminalId) {
         if (StringUtils.isEmpty(terminalId)) {
             throw new MissingRequiredInputException("terminalId");
@@ -52,33 +68,33 @@ public class TerminalManagementService extends AbstractJavaService {
         return terminal.get();
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_CREATE)
     public Terminal createTerminal(TerminalCreateRequest request) {
         return terminalService.craeteTerminal(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_EDIT)
     public Terminal editTerminal(TerminalEditRequest request) {
         return terminalService.editTerminal(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_DELETE)
     public void deleteTerminal(TerminalDeleteRequest request) {
         terminalService.deleteTerminal(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_ADD_SERVICE)
     public TerminalServiceAccess addServiceAssignment(TerminalServiceAssignmentRequest request) {
         return terminalService.assignServiceToTerminal(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_TERMINAL_DELETE_SERVICE)
     public void deleteServiceAssignment(TerminalServiceAssignmentRequest request) {
-         terminalService.revokeServiceFromTerminal(request);
+        terminalService.revokeServiceFromTerminal(request);
     }
 
-    @JavaService
-    public List<Terminal> findAllTerminalAccessOnService(String serviceId){
+    @JavaService(serviceCode = SVC_TERMINAL_ACCESS_TERMINAL_LIST)
+    public List<Terminal> findAllTerminalAccessOnService(String serviceId) {
         return terminalService.findAllTerminalAccessOnService(serviceId);
     }
 

@@ -6,12 +6,14 @@ import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceCondition;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.common.service.rest.*;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 @Service
 public class DynamicRestManagementService extends AbstractJavaService {
@@ -28,49 +30,49 @@ public class DynamicRestManagementService extends AbstractJavaService {
     }
 
 
-    @JavaService(serviceCode = "SVC_RESPONSE_FIND")
+    @JavaService(serviceCode = SVC_RESPONSE_FIND)
     @SuppressWarnings("unused")
     public PagedResponseData<Response> findResponse(ResponseFindRequest request) {
         return dynamicRestService.findResponse(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CREATE")
+    @JavaService(serviceCode = SVC_RESPONSE_CREATE)
     @SuppressWarnings("unused")
     public Response createResponse(ResponseCreateRequest request) {
         return dynamicRestService.createResponse(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CHANGE")
+    @JavaService(serviceCode = SVC_RESPONSE_CHANGE)
     @SuppressWarnings("unused")
     public Response changeResponse(ResponseChangeRequest request) {
         return dynamicRestService.changeResponse(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_DELETE")
+    @JavaService(serviceCode = SVC_RESPONSE_DELETE)
     @SuppressWarnings("unused")
     public Response removeResponse(ResponseDeleteRequest request) {
         return dynamicRestService.removeResponse(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_CREATE")
+    @JavaService(serviceCode = SVC_RESPONSE_CONDITION_DATA_SOURCE_CREATE)
     @SuppressWarnings("unused")
     public ParameterDatasourceCondition createResponseConditionDatasource(ResponseConditionDatasourceCreateRequest request) {
         return dynamicRestService.createResponseConditionDatasource(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_CHANGE")
+    @JavaService(serviceCode = SVC_RESPONSE_CONDITION_DATA_SOURCE_CHANGE)
     @SuppressWarnings("unused")
     public ParameterDatasourceCondition changeResponseConditionDatasource(ResponseConditionDatasourceChangeRequest request) {
         return dynamicRestService.changeResponseConditionDatasource(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_DELETE")
+    @JavaService(serviceCode = SVC_RESPONSE_CONDITION_DATA_SOURCE_DELETE)
     @SuppressWarnings("unused")
     public ParameterDatasourceCondition removeResponseConditionDatasource(ResponseConditionDatasourceRemoveRequest request) {
         return dynamicRestService.removeResponseConditionDatasource(request);
     }
 
-    @JavaService(serviceCode = "SVC_RESPONSE_CONDITION_DATA_SOURCE_LIST")
+    @JavaService(serviceCode = SVC_RESPONSE_CONDITION_DATA_SOURCE_LIST)
     @SuppressWarnings("unused")
     public List<ParameterDatasourceCondition> findResponseConditionDatasourceList(ResponseConditionDatasourceFindRequest request) {
         return dynamicRestService.findResponseConditionDatasourceList(request);
