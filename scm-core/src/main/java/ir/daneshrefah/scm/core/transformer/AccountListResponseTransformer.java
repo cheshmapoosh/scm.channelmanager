@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.constant.AccountStatus;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -31,6 +32,9 @@ import java.util.Optional;
 @Component
 @Slf4j
 public class AccountListResponseTransformer extends AbstractJsonTransformer {
+
+    private static final String ACCOUNT_NUMBER = "accountNumber";
+    private static final String ACCOUNT_STATUS = "accountStatusCode";
 
     private final PersonProfileLoader personProfileLoader;
 
@@ -61,29 +65,43 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
     private ObjectNode convertAccountNode(ObjectNode sourceNode, UserProfile profile) {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
         log.info(">>> {} memberships found ", memberships.size());
-        final String accountNumber = "accountNumber";
-        if (sourceNode.has(accountNumber) && !sourceNode.get(accountNumber).isNull()) {
-            final long accountNo = sourceNode.get(accountNumber).asLong();
-            Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m-> LocalDate.now().isBefore(m.getToDate()))
-                    .filter(m -> StringUtils.equals(
-                            Long.toString(accountNo),
-                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
-                    ).findFirst();
-            if (membership.isEmpty() || !membership.get().getActive()) {
-                sourceNode.put("nickName", StringUtils.EMPTY);
-                sourceNode.put("favorite", StringUtils.EMPTY);
-                return null;
-            } else {
-                MembershipTerminalAccess membershipTerminalAccess = membership.get();
-                String nickname = membershipTerminalAccess.getMembership().getNickname();
-                sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
-                checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
-            }
-            return sourceNode;
+        if (isValidAccount(sourceNode)) {
+                final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
+                Optional<MembershipTerminalAccess> membership = memberships.stream()
+                        .filter(m -> StringUtils.equals(
+                                Long.toString(accountNo),
+                                StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                        ).findFirst();
+                if (membership.isEmpty() || !membership.get().getActive()) {
+                    sourceNode.put("nickName", StringUtils.EMPTY);
+                    sourceNode.put("favorite", StringUtils.EMPTY);
+                    return null;
+                } else {
+                    MembershipTerminalAccess membershipTerminalAccess = membership.get();
+                    String nickname = membershipTerminalAccess.getMembership().getNickname();
+                    sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
+                    checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
+                }
+                return sourceNode;
         }
-        log.warn(">>>>> account not found");
         return null;
+    }
+
+    private boolean isValidAccount(ObjectNode sourceNode) {
+        if (!sourceNode.has(ACCOUNT_NUMBER) || sourceNode.get(ACCOUNT_NUMBER).isNull()){
+            log.error(">>> account number field doses not found");
+            return false;
+        }
+        if (!sourceNode.has(ACCOUNT_STATUS) || sourceNode.get(ACCOUNT_STATUS).isNull()){
+            log.warn(">>> account status code does not exist for account id : {} ", sourceNode.get(ACCOUNT_STATUS).asText());
+            return false;
+        }
+        Optional<AccountStatus> accountStatusOptional = AccountStatus.getAccountStatus(sourceNode.get(ACCOUNT_STATUS).asInt());
+        if (accountStatusOptional.isEmpty() || !accountStatusOptional.get().equals(AccountStatus.ACTIVE)) {
+            log.warn(">>> account status code is not 'ACTIVE' for account id : {} ", sourceNode.get(ACCOUNT_NUMBER).asText());
+            return false;
+        }
+        return true;
     }
 
     private void checkingAccountFavoriteStatus(ObjectNode sourceNode, MembershipTerminalAccess membershipTerminalAccess) {
