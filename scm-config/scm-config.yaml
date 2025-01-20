@@ -1,0 +1,91 @@
+---
+# Source: scm-config/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: scm-config
+  labels:
+    helm.sh/chart: scm-config-0.1.0
+    app.kubernetes.io/name: scm-config
+    app.kubernetes.io/instance: scm-config
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8888
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: scm-config
+    app.kubernetes.io/instance: scm-config
+---
+# Source: scm-config/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scm-config
+  labels:
+    helm.sh/chart: scm-config-0.1.0
+    app.kubernetes.io/name: scm-config
+    app.kubernetes.io/instance: scm-config
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scm-config
+      app.kubernetes.io/instance: scm-config
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: scm-config-0.1.0
+        app.kubernetes.io/name: scm-config
+        app.kubernetes.io/instance: scm-config
+        app.kubernetes.io/version: "8.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: default
+      securityContext:
+        {}
+      containers:
+        - name: scm-config
+          securityContext:
+            {}
+          image: "reg.daneshrefah.ir/modern-banking/scm-config:8.0.0-b1017T1315"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8888
+              protocol: TCP
+
+
+
+
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /mnt/log
+              name: log-volume
+            - mountPath: /mnt/config-repo-server
+              name: config-repo-server-volume
+      volumes:
+        - hostPath:
+            path: /log
+            type: DirectoryOrCreate
+          name: log-volume
+        - hostPath:
+            path: /config-repo-server
+            type: DirectoryOrCreate
+          name: config-repo-server-volume
+      nodeSelector:
+        app: scm-config
+      tolerations:
+        - effect: NoSchedule
+          key: daneshrefah.ir/group
+          operator: Equal
+          value: scm

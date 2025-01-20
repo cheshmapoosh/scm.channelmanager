@@ -1,4 +1,4 @@
-
+SPRING_CLOUD_CONFIG_SERVER_URI: http://10.10.4.125:8888/config
 spring:
   config:
     import: 'optional:configserver:'
@@ -10,7 +10,7 @@ spring:
       password: scm
       name: cache
       enabled: true
-      uri: http://10.10.4.125:8888/config
+      uri: ${SPRING_CLOUD_CONFIG_SERVER_URI}
       retry:
         max-attempts: 10
         max-interval: 3000
