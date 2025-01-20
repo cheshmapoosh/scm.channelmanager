@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.logging.config;
 
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.*;
@@ -159,6 +158,10 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
                     if (span != null) {
                         if (log.isTraceEnabled()) {
                             log.trace("Tracing: stop client span: {}", span);
+                        }
+                        Message message = ese.getExchange().getMessage();
+                        if (message != null) {
+                            span.setTag("response", message.getMandatoryBody(String.class));
                         }
                         sd.post(span, ese.getExchange(), ese.getEndpoint());
                         ActiveSpanManager.deactivate(ese.getExchange());

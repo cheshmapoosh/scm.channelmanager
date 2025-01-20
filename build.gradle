@@ -54,6 +54,7 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-direct-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-timer-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
             dependency "org.apache.camel:camel-netty:${springCamelVersion}"
             dependency "org.apache.camel:camel-bean:${springCamelVersion}"
             dependency "com.ibm.db2:db2jcc_license_cisuz:${ibmDb2Version}"

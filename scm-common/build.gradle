@@ -18,5 +18,5 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     api 'jakarta.validation:jakarta.validation-api:3.1.0'
     api 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
-    compileOnly 'org.apache.camel.springboot:camel-opentelemetry-starter:4.7.0'
+    compileOnly 'org.apache.camel.springboot:camel-opentelemetry-starter'
 }
