@@ -30,6 +30,7 @@ import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
+import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
@@ -77,6 +78,7 @@ public class UserService {
     private final OtpService otpService;
     private final UserCache userCache;
     private final JdbcTemplate jdbcTemplate;
+    private final CredentialGenerator credentialGenerator;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
