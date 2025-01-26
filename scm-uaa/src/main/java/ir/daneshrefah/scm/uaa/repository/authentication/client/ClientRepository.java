@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client;
 
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +13,6 @@ import org.springframework.stereotype.Repository;
  * @since 2024-02-04
  */
 @Repository
-public interface ClientRepository extends CrudRepository<ClientEntity, Long> {
+public interface ClientRepository extends JpaRepository<ClientEntity, Long> {
 
 }

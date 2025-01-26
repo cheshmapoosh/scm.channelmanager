@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.common.dto.error;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.validaton.bean.NotBlankIfPresent;
-import ir.daneshrefah.scm.common.validaton.bean.Numeric;
+import ir.daneshrefah.scm.common.validation.NotBlankIfPresent;
+import ir.daneshrefah.scm.common.validation.Numeric;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

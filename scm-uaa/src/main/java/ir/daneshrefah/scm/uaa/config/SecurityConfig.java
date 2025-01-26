@@ -17,8 +17,11 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -40,15 +43,14 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -57,6 +59,7 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-12-13
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -65,6 +68,8 @@ public class SecurityConfig {
 
 //    @Autowired
 //    private UserDetailsService userDetailsService;
+    @Autowired
+    private CorsConfigurationSource configurationSource;
 
     @Bean
     @Order(1)
@@ -169,6 +174,9 @@ public class SecurityConfig {
                         )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/**"))
+                .cors(httpSecurityCorsConfigurer -> {
+                    httpSecurityCorsConfigurer.configurationSource(configurationSource);
+                })
                 .logout(logout -> {
 //                    logout.logoutUrl("/logout");
                     logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
@@ -222,6 +230,22 @@ public class SecurityConfig {
     public AuthenticationTrustResolver authenticationTrustResolver() {
         return new AuthenticationTrustResolverImpl();
     }
+
+    @Bean
+    @Profile({"dev","default","test","prod"})
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        log.info(">>> CORS DEACTIVATED ON ENVIRONMENT");
+        return source;
+    }
+
+
 
     @Bean
     public SessionCache sessionCache(CacheTemplate cacheTemplate) {

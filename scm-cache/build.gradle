@@ -11,11 +11,12 @@ configurations {
 
 bootJar {
     enabled = true
+    version = parent.version
 }
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.cache.CacheServerApplication'
-    archiveClassifier = 'boot'
+    archiveClassifier = ''
 
 }
 

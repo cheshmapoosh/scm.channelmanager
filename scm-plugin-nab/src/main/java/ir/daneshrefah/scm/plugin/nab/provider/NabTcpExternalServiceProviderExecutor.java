@@ -84,7 +84,8 @@ public abstract class NabTcpExternalServiceProviderExecutor extends AbstractMult
 
 
     public String getTargetUrl() {
-        return TCP_PREFIX + getProviderEndpoint().orElseThrow(() -> new IllegalArgumentException("No target url provided")) +
+//        return TCP_PREFIX + getProviderEndpoint().orElseThrow(() -> new IllegalArgumentException("No target url provided")) +
+        return TCP_PREFIX + getProviderEndpoint().orElse(null) +
                getTcpOptions().build();
     }
 

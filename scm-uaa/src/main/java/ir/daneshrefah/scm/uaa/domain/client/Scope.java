@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.domain.client;
 import ir.daneshrefah.scm.common.BaseModel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -15,6 +16,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class Scope extends BaseModel<Long> {
 
     private String code;

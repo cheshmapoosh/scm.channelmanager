@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -30,4 +33,8 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;
     private Boolean favorite;
+    @Column(name = "TO_DATE")
+    private LocalDate toDate;
+    @Column(name = "FROM_DATE")
+    private LocalDate fromDate;
 }

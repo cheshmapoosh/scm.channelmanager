@@ -5,9 +5,11 @@ import ir.daneshrefah.scm.config.server.service.GitService;
 import ir.daneshrefah.scm.config.server.service.YamlService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
+import org.springframework.cloud.config.server.environment.JGitEnvironmentProperties;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ import java.util.stream.IntStream;
 
 @RestController
 public class ConfigServerController {
+    @Autowired
+    JGitEnvironmentProperties jGitEnv;
     private static final String DEFAULT = "default";
     public static final String ALL = "all";
     public static final String ENC_TAG = "{enc}";
@@ -91,7 +95,7 @@ public class ConfigServerController {
                 .flatMap(environment -> environment.getPropertySources().stream())
                 .collect(Collectors.toMap(propertySource -> {
                            String name = propertySource.getName();
-                           name = StringUtils.removeStart(name, gitService.getGitUri());
+                           name = StringUtils.removeStart(name, jGitEnv.getUri());
                             name = StringUtils.removeStart(name, "/");
                             name = StringUtils.replace(name, "application.yml", DEFAULT);
                             name = StringUtils.replace(name, "application-", StringUtils.EMPTY);
@@ -110,7 +114,7 @@ public class ConfigServerController {
                                  @RequestParam(required = false) String profile,
                                  @RequestParam String key,
                                  @RequestParam String value) throws Exception {
-        Path path = Paths.get(gitService.getGitBaseDir(),
+        Path path = Paths.get(jGitEnv.getBasedir().getAbsolutePath(),
                 applicationName(application),
                 profileName(profile));
         if (StringUtils.startsWith(value, ENC_TAG)){
@@ -126,9 +130,8 @@ public class ConfigServerController {
     @PreAuthorize("hasRole('ADMIN')")
     public String deleteProperty(@RequestParam(required = false) String application,
                                  @RequestParam(required = false) String profile,
-                                 @RequestParam String key,
-                                 @RequestParam String value) throws Exception {
-        Path path = Paths.get(gitService.getGitBaseDir(),
+                                 @RequestParam String key) throws Exception {
+        Path path = Paths.get(jGitEnv.getBasedir().getAbsolutePath(),
                 applicationName(application),
                 profileName(profile));
         yamlService.deleteProperty(path, key);

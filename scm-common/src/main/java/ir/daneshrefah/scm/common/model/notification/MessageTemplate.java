@@ -28,4 +28,5 @@ public class MessageTemplate extends BaseModel<Long> {
     private boolean isSystemic;
     private Locale locale;
 
+
 }

@@ -96,21 +96,21 @@ public class UserProfile implements Serializable {
                 ));
     }
 
-    public MembershipTerminalAccess findAsset(Integer assetProviderId, String assetValue, AssetType assetType) {
+    public MembershipTerminalAccess findAsset(Integer assetProviderId, String assetValue/*, AssetType assetType*/) {
         if (Objects.isNull(assetProviderId) || StringUtils.isEmpty(assetValue) || null == memberships || memberships.size() < 1) {
             return null;
         }
         return memberships.stream().filter(m ->
                         assetProviderId.equals(m.getMembership().getCustomerAccount().getAccount().getAssetProvider().getId()) &&
-                                (null == assetType || assetType.equals(m.getMembership().getAssetType())) &&
+//                                (null == assetType || assetType.equals(m.getMembership().getAssetType())) &&
                                 (m.getMembership().getCustomerAccount().getAccount().getAccountNo().equalsIgnoreCase(assetValue))
 
                 )
                 .findFirst().orElse(null);
     }
 
-    public boolean hasAssetAccess(Integer assetProviderId, String assetValue, AssetType assetType) {
-        return null != findAsset(assetProviderId, assetValue, assetType);
+    public boolean hasAssetAccess(Integer assetProviderId, String assetValue/*, AssetType assetType*/) {
+        return null != findAsset(assetProviderId, assetValue/*, assetType*/);
     }
 
 }

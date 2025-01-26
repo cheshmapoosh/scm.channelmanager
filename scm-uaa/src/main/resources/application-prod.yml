@@ -1,6 +1,6 @@
 spring:
   application:
-    name: uua
+    name: uaa
   config:
     import: 'optional:configserver:'
     activate:
@@ -11,7 +11,4 @@ spring:
       password: scm
       name: uaa
       enabled: true
-      uri: http://scm-config-server.daneshrefah.ir/config
-
-
-
+      uri: http://scm-config-server:8088/config

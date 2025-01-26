@@ -103,7 +103,7 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                 LocalDateTime nowLocalDateTime = LocalDateTime.now();
                 LocalDateTime expirationLocalDateTime = DateUtils.DateConverter.convertToLocalDateTime(DateUtils.DateConverter.convertToTimestamp(expireTimeInstant));
                 expirationDuration = String.valueOf(Duration.between(nowLocalDateTime,expirationLocalDateTime).toSeconds());
-                recipient = StringUtils.maskPhoneNumber(otpSendResponse.getOtp().getRecipient().getAddress());
+                recipient = otpSendResponse.getOtp().getRecipient().getAddress();
                 response.put("expirationDurationSeconds",expirationDuration);
                 response.put("recipient",recipient);
                 //TODO LOG FOR DEV

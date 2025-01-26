@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client;
 
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ScopeEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

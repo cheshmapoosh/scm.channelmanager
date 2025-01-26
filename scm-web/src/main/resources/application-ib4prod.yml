@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: scm-web
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: ib4prod
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: scm
+      enabled: true
+      uri: http://scm-config-server:8088/config

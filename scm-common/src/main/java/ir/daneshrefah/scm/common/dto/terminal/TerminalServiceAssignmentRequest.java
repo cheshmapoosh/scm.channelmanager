@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -13,7 +14,9 @@ import lombok.Data;
 @Data
 public class TerminalServiceAssignmentRequest implements RequestData {
 
+    @NotBlank
     private String terminalId;
+    @NotBlank
     private String serviceId;
 
 }

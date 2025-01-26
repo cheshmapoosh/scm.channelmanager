@@ -14,7 +14,8 @@ public enum NotificationDataKey {
     PERSON_TITLE("person.Title", false),
     LOGIN_TIME("loginTime", true),
     OTP_CODE("otpCode", false),
-    USER_NICKNAME("user.nickname", false);
+    USER_NICKNAME("user.nickname", false),
+    REASON("reason", false);
 
     private final String code;
     private final boolean builtIn;

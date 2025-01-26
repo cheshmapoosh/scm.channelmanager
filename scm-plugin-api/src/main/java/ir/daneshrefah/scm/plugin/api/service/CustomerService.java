@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
-import ir.daneshrefah.scm.common.model.asset.AccountMembership;
-import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
@@ -22,15 +20,13 @@ import java.util.List;
 public interface CustomerService {
 
     List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId);
-    AccountMembership findLocalAccountMembership(String membershipId);
+    Membership findLocalMembership(String membershipId);
 
     List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipLocalFindRequest request);
 
     List<Membership> syncMembershipList(CustomerProviderSyncRequest request);
     List<Membership> findLocalMembershipList(MembershipLocalFindRequest request);
     List<Membership> findMembershipList(MembershipFindRequest request);
-    List<AssetProvider> findAllAssetProvider();
-
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
 

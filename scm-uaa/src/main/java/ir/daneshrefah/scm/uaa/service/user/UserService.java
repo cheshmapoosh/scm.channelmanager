@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.PersonStatus;
@@ -18,7 +19,6 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.common.model.user.UserType;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -26,7 +26,6 @@ import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpAuthenticationType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
@@ -36,14 +35,13 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -67,7 +65,7 @@ public class UserService {
 
     public static final String DELETE_FROM_X_USER = "DELETE FROM REF.XUSER_DETAIL WHERE USERNAME = ? AND CHANNEL_CODE = ?";
 
-    private final UserActivationRepository userActivationRepository;
+//    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
     private final TerminalService terminalService;
@@ -75,13 +73,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final UserCache userCache;
-    @PersistenceContext
-    private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         validateUserNickNameRequest(request, servletRequest);
-        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
+         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
         Optional<UserEntity> foundNickNameAndTerminal = loadUserEntityByUsername(request.getNickName(), request.getTerminalCode());
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         ValidationUtils.checkNull(currentAuthentication, AuthenticationRequiredException::new);
@@ -98,6 +95,7 @@ public class UserService {
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -172,10 +170,8 @@ public class UserService {
         if (oldPassword.equals(newPassword)) {
             throw new InvalidInputException("newPassword");
         }
-        if (newPassword.length() < 8
-            || StringUtils.isNumeric(newPassword)
-            || !StringUtils.isAlphanumeric(newPassword)) {
-            throw new InvalidInputException("security constraints");
+        if (newPassword.length() < 8 || StringUtils.isNumeric(newPassword)) {
+            throw new PasswordSecurityConstraintsException("newPassword");
         }
     }
 
@@ -450,8 +446,9 @@ public class UserService {
     }
 
     public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
-                terminalCode, username, accessParameter, activationCode);
+        List<UserActivationEntity> activationEntities = null;
+//                userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+//                terminalCode, username, accessParameter, activationCode);
         return null != activationEntities && !activationEntities.isEmpty();
     }
 
@@ -563,10 +560,7 @@ public class UserService {
     private void removeXUser(UserEntity userEntity) {
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         assert currentAuthentication != null;
-        entityManager.createNativeQuery(DELETE_FROM_X_USER)
-                .setParameter(1, userEntity.getNickname())
-                .setParameter(2, currentAuthentication.getTerminalCode())
-                .executeUpdate();
+        jdbcTemplate.update(DELETE_FROM_X_USER,userEntity.getNickname(),currentAuthentication.getTerminalCode());
     }
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
@@ -621,6 +615,7 @@ public class UserService {
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
+        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }

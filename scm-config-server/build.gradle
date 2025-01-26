@@ -5,12 +5,13 @@ plugins {
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.config.server.ConfigServerApplication'
-    archiveClassifier = 'boot'
+    archiveClassifier = ''
 
 }
 
 bootJar {
     enabled = true
+    version = parent.version
 }
 
 dependencies {

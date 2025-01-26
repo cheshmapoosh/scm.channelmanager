@@ -1,66 +1,14 @@
-
-
 spring:
-  datasource:
-    url: jdbc:db2://10.15.27.82:446/DSNALOC
-    username: casadm
-    password: a
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
+  application:
+    name: cache
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: prod
   cloud:
     config:
-      enabled: false
-
-  jpa:
-    properties:
-      hibernate:
-        default_schema: REF
-
-hazelcast:
-  config:
-    instance-name: my-instance3
-    clustername: dev3
-    properties:
-      hazelcast:
-        socket:
-          bind:
-            any: true
-        logging:
-          type: slf4j
-        partition:
-          table:
-            send:
-              interval: 15
-          count: 271
-    network-config:
-      port: 5701
-      port-auto-increment: true
-      port-count: 100
-      reuse-address: true
-      join:
-        multicast-config:
-          enabled: false
-        aws-config:
-          enabled: false
-        tcp-ip-config:
-          enabled: true
-          required-member: 127.0.0.1
-          members: 127.0.0.1
-          connection-timeout-seconds: 5
-    flake-id-generator-configs:
-      default:
-        prefetch-count: 10000
-        prefetch-validity-millis: 600000
-        node-id-offset: 0
-        statistics-enabled: true
-
-
-
-springdoc:
-  api-docs:
-    enabled: true
-  packages-to-scan: ir.daneshrefah.scm.cache.rest
-server:
-  port: 8080
-
-
-
+      username: scm
+      password: scm
+      name: cache
+      enabled: true
+      uri: http://scm-config-server:8088/config

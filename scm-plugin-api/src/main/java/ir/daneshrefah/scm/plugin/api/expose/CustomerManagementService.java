@@ -1,0 +1,68 @@
+package ir.daneshrefah.scm.plugin.api.expose;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
+import ir.daneshrefah.scm.common.dto.membership.MembershipFindRequest;
+import ir.daneshrefah.scm.common.dto.membership.MembershipLocalFindRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.asset.Membership;
+import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
+import ir.daneshrefah.scm.plugin.api.service.CustomerService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2024-01-23
+ */
+@Service
+public class CustomerManagementService extends AbstractJavaService {
+
+    private final CustomerService customerService;
+
+    public CustomerManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, CustomerService customerService) {
+        super(producerTemplate, objectMapper);
+        this.customerService = customerService;
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public List<Membership> syncMembershipList(CustomerProviderSyncRequest request){
+        return customerService.syncMembershipList(request);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public PagedResponseData<Membership> findLocalMembershipList(MembershipLocalFindRequest request){
+        List<Membership> result = customerService.findLocalMembershipList(request);
+        return new PagedResponseData<>(request,result);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public PagedResponseData<Membership> findMembershipList(MembershipFindRequest request){
+        List<Membership> result = customerService.findMembershipList(request);
+        return new PagedResponseData<>(request,result);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public Membership findAccountMembershipById(String membershipId){
+        return customerService.findLocalMembership(membershipId);
+    }
+
+    @JavaService
+    @SuppressWarnings("unused")
+    public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
+        return customerService.accountFavoriteActivity(request);
+    }
+
+}

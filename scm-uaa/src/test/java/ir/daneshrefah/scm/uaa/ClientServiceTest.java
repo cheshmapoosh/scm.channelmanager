@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.*;
+import ir.daneshrefah.scm.uaa.service.client.ClientScopeService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 //import ir.daneshrefah.scm.uaa.service.client.ClientVersionService;
 import org.junit.jupiter.api.Test;

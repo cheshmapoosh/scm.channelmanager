@@ -13,6 +13,8 @@ import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.Swag
 import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -89,7 +91,10 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                     .enableCORS(true) // <-- Important
                     .corsAllowCredentials(true) // <-- Important
                     .corsHeaderProperty("Access-Control-Allow-Origin", "*")
-                    .corsHeaderProperty("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization")
+                    .corsHeaderProperty("Access-Control-Allow-Methods", "*")
+                    .corsHeaderProperty("Access-Control-Allow-Headers", "*")
+                    .corsHeaderProperty("Access-Control-Expose-Headers", "*")
+//                    .corsHeaderProperty("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization")
                     .contextPath(contextPath);
         }
 
@@ -138,6 +143,10 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                         traceLogUtils.recordMessageTrace(message,span);
                     })
                     .process(DynamicRestInboundChanelGenerator.this::buildResponse)
+                    .process(exchange -> {
+                        AuthenticationUtils.clearAuthentication();
+                        MessageInputContext.clear();
+                    })
                     .end();
         }
 
