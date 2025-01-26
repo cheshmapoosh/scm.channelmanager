@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.client.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.validation.Numeric;
 import jakarta.validation.constraints.NotNull;
@@ -11,10 +12,11 @@ import java.time.LocalDateTime;
 public class ScopeRelationRevokeRequest implements RequestData {
     @NotNull
     @Numeric
-    private Long scopeId;
+    private String scopeId;
     @NotNull
     @Numeric
-    private Long clientId;
+    @Schema(description = "client numeric instance id")
+    private String clientId;
     @NotNull
     private LocalDateTime lastEditDate;
 }

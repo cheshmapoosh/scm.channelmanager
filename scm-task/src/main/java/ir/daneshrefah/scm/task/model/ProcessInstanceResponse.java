@@ -18,6 +18,7 @@ public class ProcessInstanceResponse {
     private String description;
     private String destination;
     private String createAt;
+    private IssuerModel createdBy;
     private ProcessCodeEnum processCode;
     private JsonNode transactionData;
     private String correlationId;

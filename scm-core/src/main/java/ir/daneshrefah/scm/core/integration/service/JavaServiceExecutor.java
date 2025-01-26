@@ -48,7 +48,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
         }
 
             Object[] args = prepareMethodArgs(message, service, methodInfo);
-            argsBeanValidation(args);
+             argsBeanValidation(args);
             Object response = methodInfo.getMethod().invoke(methodInfo.getInstance(), args);
             if (response instanceof JsonNode) {
                 return (JsonNode) response;
@@ -148,7 +148,7 @@ public class JavaServiceExecutor extends ServiceExecutor {
 
     private JavaServiceFinder.MethodInfo findServiceMethodInfo(JavaService service) {
         if (!serviceCache.containsKey(service.getId())) {
-            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(service);
+            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(service.getCode());
             serviceCache.put(service.getId(), methodInfo);
         }
         return serviceCache.get(service.getId());

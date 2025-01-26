@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.client.dto;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
+import ir.daneshrefah.scm.common.validation.Numeric;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,9 @@ public class ClientCreateRequest implements RequestData {
     private Boolean checkVersion;
     @NotNull
     private Boolean checkActivation;
-    private Long sessionTimeToLiveMinute;
+    @Numeric
+    @NotNull
+    private String sessionTimeToLiveMinute;
     @NotNull
     private Boolean checkIpAddress;
     @NotNull

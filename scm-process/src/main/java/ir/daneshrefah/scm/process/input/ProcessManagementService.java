@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.process.input;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.dto.process.ProcessCancelRequest;
@@ -14,6 +14,8 @@ import ir.daneshrefah.scm.process.service.process.ProcessManagement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+
 @Service
 public class ProcessManagementService extends AbstractJavaService {
 
@@ -24,23 +26,23 @@ public class ProcessManagementService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_PROCESS_START)
     public ProcessStartResponse startProcess(ProcessStartRequest processStartRequest) throws Exception {
         return processManagement.startProcess(processStartRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_PROCESS_CANCEL)
     public boolean cancelProcess(ProcessCancelRequest processCancelRequest) throws Exception {
         return processManagement.cancelProcess(processCancelRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_PROCESS_ACTIVE_LIST)
     public PagedResponseData<ProcessInstanceResponse> getActiveProcess(ProcessInstanceRequest request) {
         return processManagement.getActiveProcess(request);
     }
 
-    @JavaService
-    public Long activeCount(ProcessInstanceRequest request){
+    @JavaService(serviceCode = SVC_PROCESS_ACTIVE_COUNT)
+    public Long activeCount(ProcessInstanceRequest request) {
         return processManagement.activeCount(request);
     }
 }

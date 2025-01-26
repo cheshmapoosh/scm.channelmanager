@@ -26,15 +26,19 @@ import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.domain.otp.OtpAuthenticationType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
+import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
+import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -74,11 +78,12 @@ public class UserService {
     private final OtpService otpService;
     private final UserCache userCache;
     private final JdbcTemplate jdbcTemplate;
+    private final CredentialGenerator credentialGenerator;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         validateUserNickNameRequest(request, servletRequest);
-         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
+        UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getCurrentNickName(), request.getTerminalCode());
         Optional<UserEntity> foundNickNameAndTerminal = loadUserEntityByUsername(request.getNickName(), request.getTerminalCode());
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
         ValidationUtils.checkNull(currentAuthentication, AuthenticationRequiredException::new);
@@ -104,7 +109,7 @@ public class UserService {
         String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
+            || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         Terminal terminal = findTerminalByCode(terminalCode);

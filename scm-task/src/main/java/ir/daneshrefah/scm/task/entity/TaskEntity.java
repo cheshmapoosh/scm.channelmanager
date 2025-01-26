@@ -32,6 +32,8 @@ public class TaskEntity {
     private TaskStatusEnum taskStatus;
     @Column(name = "IS_GLOBAL")
     private boolean global;
+    @Column(name = "IS_SIGNER")
+    private Boolean signer;
     @Column(name = "ARCHIVE_NO", updatable = false)
     private Long archiveNo;
     @Column(name = "CREATE_BY")

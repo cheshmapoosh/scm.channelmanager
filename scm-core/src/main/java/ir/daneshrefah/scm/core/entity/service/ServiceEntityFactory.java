@@ -50,7 +50,8 @@ public class ServiceEntityFactory {
         entity.setAmountProperty(request.getAmountProperty());
         entity.setAssetProperty(request.getAssetProperty());
         if (entity instanceof JavaServiceEntity javaServiceEntity) {
-            javaServiceEntity.setJavaImplementationClassName(request.getJavaImplementationClassName());
+            //tODO
+//            javaServiceEntity.setJavaImplementationClassName(request.getJavaImplementationClassName());
         }
 
         if (entity instanceof CompositionServiceEntity compositionService){

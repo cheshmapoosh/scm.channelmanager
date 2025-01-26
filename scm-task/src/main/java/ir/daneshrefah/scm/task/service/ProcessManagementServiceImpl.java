@@ -96,6 +96,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             }
             globalTask.setTaskStatus(TaskStatusEnum.PENDING);
             globalTask.setGlobal(true);
+            globalTask.setSigner(false);
             globalTask.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
             globalTask.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
             globalTask.setCreateAt(new Date());
@@ -116,6 +117,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
             taskEntity.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
             taskEntity.setCreateAt(new Date());
+            taskEntity.setSigner(true);
             taskEntities.add(taskEntity);
         }
         return taskEntities;
@@ -229,11 +231,9 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     private List<UserModel> getTaskUsers(ProcessInstanceEntity processInstance) {
         return processInstance.getTasks().stream()
-                .map(task -> {
+                .filter(TaskEntity::getSigner).map(task -> {
                     GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
-                    UserModel userModel = createUserModel(person);
-                    userModel.setSigner(true);
-                    return userModel;
+                    return  createUserModel(person);
                 })
                 .toList();
     }
@@ -248,6 +248,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         userModel.setPersonType(person.getPersonType());
         userModel.setCustomerNo(taskAssetService.findCustomerNo(person.getId())
                 .orElseThrow(() -> new NoMatchRecordFoundException("customerNo")));
+
         return userModel;
     }
 

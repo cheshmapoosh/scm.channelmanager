@@ -16,4 +16,8 @@ public abstract class AbstractJavaServiceException extends BaseServiceException 
         super(message, cause, service);
     }
 
+    public AbstractJavaServiceException(String message, Throwable cause, String serviceCode) {
+        super(message, cause, serviceCode);
+    }
+
 }

@@ -1,15 +1,17 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -28,17 +30,20 @@ public class ServiceManagementService extends AbstractJavaService {
         this.service = service;
     }
 
-    @JavaService
+    // PARENT SERVICES
+
+
+    @JavaService(serviceCode = SVC_SERVICE_LIST)
     public PagedResponseData<Service> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_PARENT_SERVICE_LIST)
     public PagedResponseData<Service> parentServiceList(ParentServiceFindRequest request) {
         return this.service.findParentServiceList(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_SERVICE_BY_CODE)
     public Service findServiceByCode(String serviceCode) {
 //        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
@@ -47,23 +52,23 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_SERVICE_EDIT)
     public Service updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_SERVICE_CREATE)
     public Service createService(ServiceInfoRequest request) {
         return this.service.createService(request);
     }
 
-    @JavaService
-    public void deleteService(ServiceDeleteRequest request){
-       this.service.deleteService(request);
+    @JavaService(serviceCode = SCV_SERVICE_DELETE)
+    public void deleteService(ServiceDeleteRequest request) {
+        this.service.deleteService(request);
     }
 
-    @JavaService
-    public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request){
+    @JavaService(serviceCode = SVC_SERVICE_ACCESS_SERVICE_LIST)
+    public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request) {
         return this.service.findAllServiceAccessOnTerminal(request);
     }
 

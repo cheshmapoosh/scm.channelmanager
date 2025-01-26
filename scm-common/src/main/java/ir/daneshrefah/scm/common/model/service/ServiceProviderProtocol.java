@@ -31,4 +31,11 @@ public enum ServiceProviderProtocol {
                 .orElse(null);
     }
 
+    public static ServiceProviderProtocol findByName(String  name) {
+        return Arrays.stream(ServiceProviderProtocol.values())
+                .filter(s -> s.name().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+    }
+
 }

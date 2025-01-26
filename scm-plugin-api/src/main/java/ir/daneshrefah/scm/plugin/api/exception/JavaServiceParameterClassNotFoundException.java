@@ -17,9 +17,9 @@ public class JavaServiceParameterClassNotFoundException extends AbstractJavaServ
 
     private final String serviceCode;
     private final String parameterName;
-    public JavaServiceParameterClassNotFoundException(JavaService service, String parameterName, Throwable cause) {
-        super("service [" + service.getCode() + "] , parameter [" + parameterName + "] class not found.", cause, service);
-        this.serviceCode = service.getCode();
+    public JavaServiceParameterClassNotFoundException(String serviceCode, String parameterName, Throwable cause) {
+        super("service [" + serviceCode + "] , parameter [" + parameterName + "] class not found.", cause, serviceCode);
+        this.serviceCode = serviceCode;
         this.parameterName = parameterName;
     }
 

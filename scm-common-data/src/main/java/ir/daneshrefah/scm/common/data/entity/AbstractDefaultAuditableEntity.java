@@ -18,12 +18,12 @@ import java.time.LocalDateTime;
 @Access(AccessType.FIELD)
 public abstract class AbstractDefaultAuditableEntity<T> extends AbstractEntity<T> {
 
+     //TODO @CreateBy and @ModifyBy can throws exception because all create field on project are String based
+
     @Column(name = "CREATOR", updatable = false)
-    @CreatedBy
     public abstract <E> E getCreator();
 
     @Column(name = "LAST_EDITOR")
-    @LastModifiedBy
     public abstract <E> E getLastEditor();
 
     @Column(name = "CREATE_DATE",  updatable = false)

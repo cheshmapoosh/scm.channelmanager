@@ -2,14 +2,16 @@ package ir.daneshrefah.scm.uaa.service.client;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
 import ir.daneshrefah.scm.uaa.mapper.ClientMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleRepository;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientAuthorizationGrantTypeRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientCreateRequest;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientEditRequest;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientFindRequest;
@@ -21,44 +23,49 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ClientService {
 
+    private static final AtomicBoolean DIRTY_CACHE = new AtomicBoolean(true);
     private final List<Client> CLIENT_LIST = new ArrayList<>();
-
     private final ClientScopeService scopeService;
     private final ClientScopeRelationService scopeRelationService;
+    private final ClientAuthorizationGrantTypeService authorizationGrantTypeService;
+    private final ClientAuthorizationGrantTypeRepository authGrantTypeRepository;
     private final ClientRepository clientRepository;
     private final RoleRepository roleRepository;
 
-
     public Scope findScopeByCode(String code) {
-       return scopeService.findByCode(code).orElse(null);
+        return scopeService.findByCode(code).orElse(null);
     }
-
 
     @PostConstruct
     public void init() {
-        reloadCache();
+        findAll();
     }
 
     public void reloadCache() {
-        synchronized (CLIENT_LIST) {
-            CLIENT_LIST.clear();
-            clientRepository
-                    .findAll()
-                    .stream()
-                    .map(ClientMapper.INSTANCE::toModel)
-                    .peek(client -> {
-                        client.setScopes(scopeRelationService.findClientScopeRelation(client.getId()));
-                    }).forEach(CLIENT_LIST::add);
-        }
+        DIRTY_CACHE.set(true);
     }
 
     public List<Client> findAll() {
+        if (DIRTY_CACHE.getAndSet(false) || CLIENT_LIST.isEmpty()) {
+            synchronized (CLIENT_LIST) {
+                CLIENT_LIST.clear();
+                clientRepository
+                        .findAll()
+                        .stream()
+                        .map(ClientMapper.INSTANCE::toModel)
+                        .peek(client -> {
+                            client.setScopes(scopeRelationService.findClientScopeRelation(client.getId()));
+                        })
+                        .forEach(CLIENT_LIST::add);
+            }
+        }
         return CLIENT_LIST;
     }
 
@@ -95,11 +102,36 @@ public class ClientService {
     public Client updateClient(ClientEditRequest request) {
         ClientEntity foundEntity = clientRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("id"));
         ClientEntity entity = ClientMapper.INSTANCE.toEntity(mapClientEditRequestToClient(request));
-        dynamicMap(entity,foundEntity);
+        updateAuthGrantType(foundEntity, request);
+        dynamicMap(entity, foundEntity);
         clientRepository.save(foundEntity);
         reloadCache();
         return findByClientId(request.getClientId()).orElseThrow();
     }
+
+    private void updateAuthGrantType(ClientEntity entity, ClientEditRequest request) {
+        Set<ClientAuthorizationGrantTypeEntity> combine = new HashSet<>();
+        Set<ClientAuthorizationGrantTypeEntity> grantTypeEntities = entity.getAuthorizationGrantTypes();
+        if (Objects.isNull(grantTypeEntities)) {
+            grantTypeEntities = new HashSet<>();
+        }
+        //comparing
+        for (AuthorizationGrantType authorizationGrantType : request.getAuthorizationGrantTypes()) {
+            combine.add(grantTypeEntities
+                    .stream()
+                    .filter(e -> e.getAuthorizationGrantType().equals(authorizationGrantType))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        ClientAuthorizationGrantTypeEntity grantTypeEntity = new ClientAuthorizationGrantTypeEntity();
+                        grantTypeEntity.setAuthorizationGrantType(authorizationGrantType);
+                        grantTypeEntity.setClient(entity);
+                        return grantTypeEntity;
+                    }));
+        }
+        grantTypeEntities.clear();
+        grantTypeEntities.addAll(combine);
+    }
+
 
     private void dynamicMap(ClientEntity entity, ClientEntity dbEntity) {
         dbEntity.setTitle(entity.getTitle());
@@ -117,7 +149,6 @@ public class ClientService {
         dbEntity.setCheckVersion(entity.isCheckVersion());
         dbEntity.setCheckActivation(entity.isCheckActivation());
         dbEntity.setSessionTimeToLiveMinute(entity.getSessionTimeToLiveMinute());
-        dbEntity.setAuthorizationGrantTypes(entity.getAuthorizationGrantTypes());
         dbEntity.setCheckIpAddress(entity.isCheckIpAddress());
         dbEntity.setAllowIpAddresses(entity.getAllowIpAddresses());
         dbEntity.setLastEditDate(LocalDateTime.now());
@@ -134,8 +165,8 @@ public class ClientService {
     }
 
     @Transactional
-    public Client remove(String clientId, LocalDateTime lastEditDate) {
-        ClientEntity entity = clientRepository.findById(Long.parseLong(clientId)).orElseThrow(() -> new NoMatchRecordFoundException("clientId"));
+    public Client remove(Long clientId, LocalDateTime lastEditDate) {
+        ClientEntity entity = clientRepository.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("clientId"));
         entity.setLastEditDate(lastEditDate);
         clientRepository.delete(entity);
         reloadCache();
@@ -146,6 +177,16 @@ public class ClientService {
     public Client create(ClientCreateRequest request) {
         Client client = mapClientCreateRequestToClient(request);
         ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
+        Set<ClientAuthorizationGrantTypeEntity> grantTypes = new HashSet<>();
+        request
+                .getAuthorizationGrantTypes()
+                .forEach(authGrantType -> {
+                    ClientAuthorizationGrantTypeEntity grantEntity = new ClientAuthorizationGrantTypeEntity();
+                    grantEntity.setClient(entity);
+                    grantEntity.setAuthorizationGrantType(authGrantType);
+                    grantTypes.add(grantEntity);
+                });
+        entity.setAuthorizationGrantTypes(grantTypes);
         ClientEntity saved = clientRepository.save(entity);
         reloadCache();
         return findByClientId(saved.getClientId()).orElseThrow();
@@ -170,8 +211,7 @@ public class ClientService {
         client.setRequireProofKey(request.getRequireProofKey());
         client.setCheckVersion(request.getCheckVersion());
         client.setCheckActivation(request.getCheckActivation());
-        client.setSessionTimeToLiveMinute(request.getSessionTimeToLiveMinute());
-        client.setAuthorizationGrantTypes(request.getAuthorizationGrantTypes());
+        client.setSessionTimeToLiveMinute(Long.parseLong(request.getSessionTimeToLiveMinute()));
         client.setCheckIpAddress(request.getCheckIpAddress());
         client.setAllowIpAddresses(request.getAllowIpAddresses());
         client.setScopes(null);

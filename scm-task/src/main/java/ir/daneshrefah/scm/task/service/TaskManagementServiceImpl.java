@@ -119,6 +119,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             confirmationTask.setCreatedBy(AuthenticationUtils.getLoggedInUserId());
             confirmationTask.setCreateAt(new Date());
             confirmationTask.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
+            confirmationTask.setSigner(false);
             processInstance.addTaskEntity(confirmationTask);
             processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_CONFIRM);
             taskEntity.setTaskStatus(COMPLETE);
@@ -200,7 +201,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
 
     private TaskEntity findTaskByTaskIDAndUserID(TaskRequest taskRequest) {
         return taskRepository.findByIdAndUserId(taskRequest.getTaskId(), AuthenticationUtils.getLoggedInUserId())
-         .orElseThrow(() -> new NoMatchRecordFoundException("taskID"));
+                .orElseThrow(() -> new NoMatchRecordFoundException("taskID"));
     }
 
     public List<TaskResponse> findAllTasksByProcessId(Long processID) {
@@ -210,7 +211,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 .stream()
                 .anyMatch(task -> loggedInUserId.equals(task.getUserId())) || loggedInUserId.equals(processInstance.getConfirmUserId());
         if (hasAccess) {
-            return taskMapper.toTaskResponseList(processInstance.getTasks());
+            List<TaskEntity> tasks = processInstance.getTasks().stream().filter(TaskEntity::getSigner).toList();
+            return taskMapper.toTaskResponseList(tasks);
         }
         throw new AccessDeniedException("processID", ERROR_CODE_ACCESS_DENIED, "User does not have access to tasks.");
     }

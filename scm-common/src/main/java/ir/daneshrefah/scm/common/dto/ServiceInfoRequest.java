@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.dto;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.service.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -14,20 +16,31 @@ import lombok.Data;
 @Data
 public class ServiceInfoRequest implements RequestData {
 
+    @NotNull
+    @NotBlank
     private String code;
+    @NotNull
+    @NotBlank
     private String title;
     private String alias;
     private Integer version;
     private String metadata;
+    @NotNull
     private ServiceType type;
+    @NotNull
     private ServiceStatus status;
     private String parentId;
+    @NotNull
     private ServiceImplementationType implementationType;
     private String requestJsonSchema;
     private String responseJsonSchema;
+    @NotNull
     private Boolean checkAccessFirstAuthentication;
+    @NotNull
     private Boolean checkAccessSecondAuthentication;
+    @NotNull
     private Boolean checkAccessService;
+    @NotNull
     private Boolean checkAccessAsset;
     private String customerProperty;
     private String amountProperty;

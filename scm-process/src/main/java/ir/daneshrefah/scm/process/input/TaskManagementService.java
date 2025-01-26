@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.process.input;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.dto.task.TaskCompleteRequest;
@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_COMPLETE_TASK;
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_TASK_LIST;
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_BPM;
 
 @Service
@@ -29,7 +31,7 @@ public class TaskManagementService extends AbstractJavaService {
     }
 
     //    @PreAuthorize("isFullyAuthenticated()")
-    @JavaService
+    @JavaService(serviceCode = SVC_TASK_LIST)
     public PagedResponseData<TaskInfoResponse> findTaskList(TaskFindRequest taskFindRequest) throws Exception {
         if (Objects.isNull(taskFindRequest)) {
             taskFindRequest = new TaskFindRequest();
@@ -50,7 +52,7 @@ public class TaskManagementService extends AbstractJavaService {
         return taskService.findTaskList(taskFindRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_COMPLETE_TASK)
     public boolean completeTask(TaskCompleteRequest taskRequest) throws JsonProcessingException {
         return taskService.completeTask(taskRequest);
     }

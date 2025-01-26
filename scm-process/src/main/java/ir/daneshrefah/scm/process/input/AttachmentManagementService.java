@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.process.input;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.plugin.api.annotation.JavaService;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.attachment.AttachmentService;
@@ -10,6 +10,8 @@ import ir.daneshrefah.scm.process.service.dto.attachment.ProcessDeleteAttachment
 import ir.daneshrefah.scm.process.service.dto.attachment.TaskAttachmentRequest;
 import ir.daneshrefah.scm.process.service.dto.attachment.TaskDeleteAttachmentRequest;
 import org.springframework.stereotype.Service;
+
+import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
 @Service
 public class AttachmentManagementService extends AbstractJavaService {
@@ -21,22 +23,22 @@ public class AttachmentManagementService extends AbstractJavaService {
         this.attachmentService = attachmentService;
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ATTACHMENT_TASK)
     public void taskAttachment(TaskAttachmentRequest taskAttachmentRequest) throws Exception {
-         attachmentService.taskAttachment(taskAttachmentRequest);
+        attachmentService.taskAttachment(taskAttachmentRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ATTACHMENT_DELETE_TASK)
     public void deleteTaskAttachment(TaskDeleteAttachmentRequest taskDeleteAttachmentRequest) throws Exception {
         attachmentService.deleteTaskAttachment(taskDeleteAttachmentRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ATTACHMENT_PROCESS)
     public void processAttachment(ProcessAttachmentRequest processAttachmentRequest) throws Exception {
-         attachmentService.processAttachment(processAttachmentRequest);
+        attachmentService.processAttachment(processAttachmentRequest);
     }
 
-    @JavaService
+    @JavaService(serviceCode = SVC_ATTACHMENT_DELETE_PROCESS)
     public void deleteProcessAttachment(ProcessDeleteAttachmentRequest processDeleteAttachmentRequest) throws Exception {
         attachmentService.deleteProcessAttachment(processDeleteAttachmentRequest);
     }

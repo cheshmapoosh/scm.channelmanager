@@ -27,7 +27,9 @@ import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
+import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
 import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
@@ -36,6 +38,7 @@ import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -59,11 +62,13 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SwaggerGenerator {
 
     private static final ObjectMapper OBJECT_MAPPER;
     private static final String SWAGGER_VERSION = "1.0.1";
     private static SwaggerGenerator SWAGGER_GENERATOR;
+    private final ServiceService serviceService;
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -77,8 +82,6 @@ public class SwaggerGenerator {
     @Value("${scm.swagger.target-host:#{null}}")
     private String targetHost;
 
-    private SwaggerGenerator() {
-    }
 
     public static SwaggerGenerator getInstance() {
         return SWAGGER_GENERATOR;
@@ -102,6 +105,8 @@ public class SwaggerGenerator {
         openAPI.setComponents(components);
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
             if (exposedAble(serviceAccess)) {
+                Service service = serviceService.findServiceByCode(serviceAccess.getService().getCode());
+                Terminal terminal = serviceAccess.getTerminal();
                 RestUrl restUrl = urlBuilder.build(serviceAccess);
                 //generate tags
                 generateApiTag(openAPI, serviceAccess);
@@ -110,17 +115,17 @@ public class SwaggerGenerator {
                 //path item
                 generatePathItems(openAPI, operation, restUrl);
                 //Extract basic information
-                generateBasicInformation(channel, serviceAccess, operation, restUrl);
+                generateBasicInformation(service,terminal, operation);
                 //path parameter
                 generatePathParameters(restUrl.getUrl(), operation);
                 //request body
-                generateRequestSchema(restUrl, serviceAccess, operation, components);
+                generateRequestSchema(restUrl, service, operation, components);
                 //response body
-                generateResponseSchema(serviceAccess, operation, components);
+                generateResponseSchema(service, operation, components);
                 //request headers
                 generateRequestHeaders(operation);
                 //security headers
-                generateSecurityHeaders(operation, serviceAccess);
+                generateSecurityHeaders(operation, service);
             }
         }
         return openAPI;
@@ -201,9 +206,9 @@ public class SwaggerGenerator {
     }
 
 
-    private void generateSecurityHeaders(Operation operation, TerminalServiceAccess serviceAccess) {
-        Boolean loginAuthentication = serviceAccess.getService().getCheckAccessFirstAuthentication();
-        Boolean transactionAuthentication = serviceAccess.getService().getCheckAccessSecondAuthentication();
+    private void generateSecurityHeaders(Operation operation, Service service) {
+        Boolean loginAuthentication = service.getCheckAccessFirstAuthentication();
+        Boolean transactionAuthentication = service.getCheckAccessSecondAuthentication();
         if (Objects.nonNull(transactionAuthentication) && transactionAuthentication) {
             addHeaderParameter(operation, SCM_PARAMETER_CLAIM_CODE, "Transaction claim", true);
         }
@@ -221,12 +226,12 @@ public class SwaggerGenerator {
         openAPI.setServers(List.of(server));
     }
 
-    private void generateBasicInformation(Channel channel, TerminalServiceAccess serviceAccess, Operation operation, RestUrl restUrl) {
-        String tagName = provideTageName(serviceAccess.getService().getParent());
+    private void generateBasicInformation(Service service, Terminal terminal, Operation operation) {
+        String tagName = provideTageName(service.getParent());
         operation.setTags(List.of(Objects.nonNull(tagName) ? tagName : "UNDEFINED !"));
-        operation.setSummary(serviceAccess.getService().getCode());
-        operation.setDescription(serviceAccess.getService().getTitle());
-        operation.setOperationId(serviceAccess.getTerminal().getCode() + "_" + serviceAccess.getService().getCode());
+        operation.setSummary(service.getCode());
+        operation.setDescription(service.getTitle());
+        operation.setOperationId(terminal.getCode() + "_" + service.getCode());
     }
 
     private void generateRequestHeaders(Operation operation) {
@@ -274,10 +279,10 @@ public class SwaggerGenerator {
         }
     }
 
-    private void generateResponseSchema(TerminalServiceAccess serviceAccess, Operation operation, Components components) {
-        String responseJsonSchema = serviceAccess.getService().getResponseJsonSchema();
+    private void generateResponseSchema(Service service, Operation operation, Components components) {
+        String responseJsonSchema = service.getResponseJsonSchema();
         if (Objects.isNull(responseJsonSchema) || responseJsonSchema.isBlank()) {
-            if (serviceAccess.getService() instanceof JavaService javaService) {
+            if (service instanceof JavaService javaService) {
                 responseJsonSchema = generateJavaServiceResponseJsonSchema(javaService);
             }
         }
@@ -289,7 +294,7 @@ public class SwaggerGenerator {
                 Content respContent = new Content();
                 MediaType respMediaType = new MediaType();
                 Schema<Object> objectSchema = new Schema<>();
-                String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode()) + "RespTO";
+                String schemaName = StringUtils.toCamelCase(service.getCode()) + "RespTO";
                 objectSchema.set$ref(schemaName);
                 respMediaType.schema(objectSchema);
                 respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, respMediaType);
@@ -344,9 +349,8 @@ public class SwaggerGenerator {
         operation.setResponses(apiResponses);
     }
 
-    private void generateRequestSchema(RestUrl restUrl, TerminalServiceAccess serviceAccess, Operation operation, Components components) {
+    private void generateRequestSchema(RestUrl restUrl, Service service, Operation operation, Components components) {
         if (!restUrl.getHttpMethod().equalsIgnoreCase("get")) {
-            Service service = serviceAccess.getService();
             String requestJsonSchema = service.getRequestJsonSchema();
             ServiceImplementationType implementationType = service.getImplementationType();
             if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)) {
@@ -361,7 +365,7 @@ public class SwaggerGenerator {
                     Content reqContent = new Content();
                     MediaType reqMediaType = new MediaType();
                     Schema<Object> objectSchema = new Schema<>();
-                    String schemaName = StringUtils.toCamelCase(serviceAccess.getService().getCode()) + "ReqTO";
+                    String schemaName = StringUtils.toCamelCase(service.getCode()) + "ReqTO";
                     objectSchema.set$ref(schemaName);
                     reqMediaType.schema(objectSchema);
                     reqContent.addMediaType(HTTP_HEADER_CONTENT_TYPE_JSON, reqMediaType);
@@ -398,7 +402,7 @@ public class SwaggerGenerator {
             final String ignoreType = "Message";
             final String basePackage = "ir.daneshrefah";
             JavaService javaService = (JavaService) service;
-            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService);
+            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService.getCode());
             Class<?>[] parameterTypes = methodInfo.getMethod().getParameterTypes();
             for (Class<?> parameterType : parameterTypes) {
                 if (parameterType.toString().contains(basePackage) && !parameterType.toString().contains(ignoreType)) {

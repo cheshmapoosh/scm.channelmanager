@@ -14,6 +14,10 @@ import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
  */
 public class JavaServiceClassNotDefinedException extends AbstractJavaServiceException {
 
+    public JavaServiceClassNotDefinedException(String serviceCode, String message) {
+        this(serviceCode, null, message);
+    }
+
     public JavaServiceClassNotDefinedException(JavaService service, String message) {
         this(service, null, message);
     }
@@ -22,8 +26,16 @@ public class JavaServiceClassNotDefinedException extends AbstractJavaServiceExce
         this(service, cause, "java service class not found: " + service.getJavaImplementationClassName());
     }
 
+    public JavaServiceClassNotDefinedException(String serviceCode, String javaImplementationClassName, Throwable cause) {
+        this(serviceCode, cause, "java service class not found: " + javaImplementationClassName);
+    }
+
     public JavaServiceClassNotDefinedException(JavaService service, Throwable cause, String message) {
         super(message, cause, service);
+    }
+
+    public JavaServiceClassNotDefinedException(String serviceCode, Throwable cause, String message) {
+        super(message, cause, serviceCode);
     }
 
     @Override

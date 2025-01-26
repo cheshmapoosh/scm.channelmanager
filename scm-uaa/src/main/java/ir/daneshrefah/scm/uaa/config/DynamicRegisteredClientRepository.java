@@ -3,10 +3,12 @@ package ir.daneshrefah.scm.uaa.config;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
+import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
@@ -29,10 +30,11 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
  * @version 1.0
  * @since 2023-08-06
  */
+@Slf4j
 @Component
 public class DynamicRegisteredClientRepository implements RegisteredClientRepository {
 
-    private ClientService clientService;
+    private final ClientService clientService;
     private List<Client> clients = null;
 
 
@@ -47,71 +49,95 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
 
     @Override
     public RegisteredClient findById(String id) {
-        return findAll().stream()
-                .filter(registeredClient -> registeredClient.getId().equals(id))
-                .findFirst().orElseThrow();
+        return findAll()
+                .stream()
+                .filter(client -> String.valueOf(client.getId()).equals(id))
+                .map(this::mapToRegisteredClient)
+                .findFirst()
+                .orElseGet(() -> {
+                    log.warn(">>> the client with id : {} dos not found", id);
+                    return null;
+                });
     }
 
     @Override
     public RegisteredClient findByClientId(String clientId) {
-        return findAll().stream()
-                .filter(registeredClient -> registeredClient.getClientId().equalsIgnoreCase(clientId))
-                .findFirst().orElse(null);
+        return findAll()
+                .stream()
+                .filter(client -> client.getClientId().equalsIgnoreCase(clientId))
+                .map(this::mapToRegisteredClient)
+                .findFirst().orElseGet(() -> {
+                    log.warn(">>> the client with clientId : {} dos not found", clientId);
+                    return null;
+                });
     }
 
-    private List<RegisteredClient> findAll() {
+
+    private RegisteredClient mapToRegisteredClient(Client client) {
+        Duration accessTokenTimeToLive = null != client.getSessionTimeToLiveMinute() ?
+                Duration.ofMinutes(client.getSessionTimeToLiveMinute()) : Duration.ofMinutes(5);
+        TokenSettings tokenSettings = TokenSettings.builder()
+                .accessTokenTimeToLive(accessTokenTimeToLive)
+                .refreshTokenTimeToLive(accessTokenTimeToLive)
+                .build();
+        ClientSettings clientSetting = ClientSettings.builder()
+                .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
+                .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
+                .setting(CLIENT_SETTING_KEY_CHECK_VERSION, client.isCheckVersion())
+                .setting(CLIENT_SETTING_KEY_CHECK_ACTIVATION, client.isCheckActivation())
+                .setting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS, client.isCheckIpAddress())
+                .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses())
+                .build();
+        RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
+                .clientId(client.getClientId())
+                .clientSecret(client.getClientSecret())
+//                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
+                .tokenSettings(tokenSettings)
+                .clientSettings(clientSetting);
+        for (Iterator<ClientAuthenticationMethod> iterator = client.getAuthenticationMethods().iterator(); iterator.hasNext(); ) {
+            ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();
+            clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
+        }
+
+        List<AuthorizationGrantType> grantTypes = client
+                .getClientAuthorizationGrantTypes()
+                .stream()
+                .map(ClientAuthorizationGrantType::getAuthorizationGrantType)
+                .toList();
+        if (grantTypes.isEmpty()) {
+            log.warn(">>> important! the client with clientId : {} does not have any authorizationGrantType", client.getClientId());
+        } else {
+            grantTypes
+                    .stream()
+                    .map(AuthorizationGrantTypeMapper.INSTANCE::toSpring)
+                    .forEach(clientBuilder::authorizationGrantType);
+        }
+
+        for (Iterator<String> iterator = client.getRedirectUris().iterator(); iterator.hasNext(); ) {
+            String redirectUri = iterator.next();
+            clientBuilder.redirectUri(redirectUri);
+        }
+        boolean isScopeOpenIdAdded = false;
+        if (null != client.getScopes()) {
+            for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
+                ClientScopeRelation scope = iterator.next();
+                clientBuilder.scope(scope.getScope().getCode());
+                isScopeOpenIdAdded = isScopeOpenIdAdded || OidcScopes.OPENID.equalsIgnoreCase(scope.getScope().getCode());
+            }
+        }
+        if (!isScopeOpenIdAdded) {
+            clientBuilder.scope(OidcScopes.OPENID);
+        }
+        //TODO: Resolve bug for fetch from db
+        clientBuilder.scope("session");
+        return clientBuilder.build();
+    }
+
+    private List<Client> findAll() {
         if (null == clients) {
             clients = clientService.findAll();
         }
-
-        return clients.stream().map(client -> {
-            Duration accessTokenTimeToLive = null != client.getSessionTimeToLiveMinute() ?
-                    Duration.ofMinutes(client.getSessionTimeToLiveMinute()) : Duration.ofMinutes(5);
-            TokenSettings tokenSettings = TokenSettings.builder()
-                    .accessTokenTimeToLive(accessTokenTimeToLive)
-                    .refreshTokenTimeToLive(accessTokenTimeToLive)
-                    .build();
-            ClientSettings clientSetting = ClientSettings.builder()
-                    .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
-                    .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
-                    .setting(CLIENT_SETTING_KEY_CHECK_VERSION, client.isCheckVersion())
-                    .setting(CLIENT_SETTING_KEY_CHECK_ACTIVATION, client.isCheckActivation())
-                    .setting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS, client.isCheckIpAddress())
-                    .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses())
-                    .build();
-            RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
-                    .clientId(client.getClientId())
-                    .clientSecret(client.getClientSecret())
-//                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
-                    .tokenSettings(tokenSettings)
-                    .clientSettings(clientSetting);
-            for (Iterator<ClientAuthenticationMethod> iterator = client.getAuthenticationMethods().iterator(); iterator.hasNext(); ) {
-                ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();
-                clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
-            }
-            for (Iterator<AuthorizationGrantType> iterator = client.getAuthorizationGrantTypes().iterator(); iterator.hasNext(); ) {
-                AuthorizationGrantType authorizationGrantType = iterator.next();
-                clientBuilder.authorizationGrantType(AuthorizationGrantTypeMapper.INSTANCE.toSpring(authorizationGrantType));
-            }
-            for (Iterator<String> iterator = client.getRedirectUris().iterator(); iterator.hasNext(); ) {
-                String redirectUri = iterator.next();
-                clientBuilder.redirectUri(redirectUri);
-            }
-            boolean isScopeOpenIdAdded = false;
-            if (null != client.getScopes()) {
-                for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
-                    ClientScopeRelation scope = iterator.next();
-                    clientBuilder.scope(scope.getScope().getCode());
-                    isScopeOpenIdAdded = isScopeOpenIdAdded || OidcScopes.OPENID.equalsIgnoreCase(scope.getScope().getCode());
-                }
-            }
-            if (!isScopeOpenIdAdded) {
-                clientBuilder.scope(OidcScopes.OPENID);
-            }
-            //TODO: Resolve bug for fetch from db
-            clientBuilder.scope("session");
-            return clientBuilder.build();
-        }).collect(Collectors.toList());
+        return clients;
     }
 
 }

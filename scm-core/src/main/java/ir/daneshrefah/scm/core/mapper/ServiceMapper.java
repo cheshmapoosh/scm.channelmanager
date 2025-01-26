@@ -34,6 +34,7 @@ public interface ServiceMapper {
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
+    @Mapping(target = "javaImplementationClassName" , ignore = true)
     JavaService toModel(JavaServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
