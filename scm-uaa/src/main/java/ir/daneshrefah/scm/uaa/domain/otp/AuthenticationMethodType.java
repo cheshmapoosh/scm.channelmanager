@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.otp;
 
-public enum OtpAuthenticationType {
+public enum AuthenticationMethodType {
     LOGIN,
     TRANSACTION
 }

@@ -4,9 +4,9 @@ scm:
   logging:
     datasource:
 
-      url: jdbc:db2://10.15.27.82:446/DSNALOC
-      username: casadm
-      password: a
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
@@ -17,28 +17,46 @@ scm:
       password: password
       alias: selfsigned
     authenticationDatasource:
-      url: jdbc:db2://10.15.27.82:446/DSNALOC
-      username: casadm
-      password: a
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
     activationDatasource:
-      url: jdbc:db2://10.15.27.82:446/DSNALOC
-      username: casadm
-      password: a
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
-      default-schema: REF
+      default-schema: MBUAA
   cache:
     client:
       config:
         distributed: true
         cluster-name: dev3
-        server-host: 10.10.8.46
+        server-host: 10.10.4.125
         server-port: 5701
   otp:
     time-to-live-minutes: 1
+    jms:
+      avacas:
+        hostName: 10.15.1.185
+        port: 1717
+        channel: SYSTEM.ADMIN.SVRCONN
+        queueManager: CSQ1
+        username: Administrator
+        password:
+        sendQueueName: AVACAS2CM_R
+        receiverQueueName: AVACAS2CM_L
+
+    channel:
+      id: 1
+      channelCode: OTP
+      jcaAlgorithm: RSA
+      storeKey: storeKey-test
+      password: 123456
+
   notification:
     enabled: true
     sms:

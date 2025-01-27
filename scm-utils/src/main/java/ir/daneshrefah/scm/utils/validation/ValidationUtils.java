@@ -120,6 +120,14 @@ public class ValidationUtils {
         }
     }
 
+    public static void validateStringLength(String value,Integer length , Supplier<RuntimeException> throwsException){
+        if (StringUtils.isEmpty(value)){
+            throw throwsException.get();
+        }
+        if (value.length() < length){
+            throw throwsException.get();
+        }
+    }
 
     public static boolean checkIsValidMobileNumber(String code){
         return StringUtils.isNotEmpty(code);

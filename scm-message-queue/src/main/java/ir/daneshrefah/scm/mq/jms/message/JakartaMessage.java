@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.mq.jms.message;
 
+import com.ibm.jms.JMSBytesMessage;
 import jakarta.jms.Message;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,5 +17,9 @@ public class JakartaMessage extends JakartaAbstractMessage implements Message {
 
     @Getter
     private final javax.jms.Message message;
+
+    public JMSBytesMessage getJakartaMessage() {
+        return (JMSBytesMessage) message;
+    }
 
 }
