@@ -6,6 +6,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MapKeysCacheFilterRequest extends PagedRequestData {
-    private String mapName;
+public class CacheFilterRequest extends PagedRequestData {
+    private String name;
 }

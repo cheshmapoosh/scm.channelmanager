@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.cache.domain.dto;
+package ir.daneshrefah.scm.cache.domain.dto.map;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +10,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MapValuesCacheRequest {
-    private String mapName;
+    private String name;
     private String key;
 }
