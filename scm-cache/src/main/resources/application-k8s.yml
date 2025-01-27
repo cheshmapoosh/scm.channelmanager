@@ -1,9 +1,0 @@
-hazelcast:
-  network:
-    join:
-      tcp-ip-config:
-        enabled: false
-      kubernetes:
-        enabled: true
-        namespace: scm
-        service-name: scm-cache

@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: cache
   datasource:
     url: jdbc:db2://10.10.4.104:50001/DBREFSW
     username: db2inst1

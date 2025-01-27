@@ -102,8 +102,6 @@ spec:
               value: 8.0.0
             - name: SERVER_PORT
               value: "8080"
-            - name: SPRING_CLOUD_CONFIG_SERVER_URI
-              value: http://scm-config.scm-app.svc.cluster.local:8888
           ports:
             - name: hazelcast
               containerPort: 5701
