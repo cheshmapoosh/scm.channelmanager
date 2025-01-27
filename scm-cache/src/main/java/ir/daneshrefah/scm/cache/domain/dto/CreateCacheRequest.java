@@ -5,6 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RemoveMapCacheRequest {
-    private String mapName;
+public class CreateCacheRequest {
+    private String name;
 }
