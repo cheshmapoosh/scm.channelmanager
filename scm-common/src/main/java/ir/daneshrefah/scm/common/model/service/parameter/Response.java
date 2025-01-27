@@ -26,7 +26,7 @@ public class Response extends BaseModel<String> {
     private String responseErrorMessageProperty;
     private List<Parameter> responseParameters;
     private ExternalServiceBodyType responseBodyType;
-//    private boolean enable;
-//    private String title;
+    private boolean enable;
+    private String title;
 
 }
