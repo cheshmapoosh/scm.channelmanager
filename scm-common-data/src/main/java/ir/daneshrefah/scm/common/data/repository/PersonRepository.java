@@ -41,7 +41,44 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Lon
     GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalId(@Param("nationalId") String nationalId);
 
     @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId and p.subOrganizationId = :subOrganizationId")
-    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(@Param("nationalId") String nationalId,@Param("subOrganizationId") String subOrganizationId);
+    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
 
 
+    @Query(value = """
+            SELECT u.*
+            FROM REF.USER u
+            WHERE u.NATIONAL_CODE = :nationalCode
+              AND u.USER_ID NOT IN (
+                SELECT utd.user_id
+                FROM REF.USER_TOKEN_DETAILS utd
+                WHERE utd.TOKEN_TYPE IN (:tokenTypes)
+            )""", nativeQuery = true)
+    List<GeneralPersonEntity> findOtpRegistration(
+            @Param("nationalCode") String nationalCode,
+            @Param("tokenTypes") List<String> tokenTypes
+    );
+
+    @Query(value = """ 
+            SELECT u.*
+            FROM REF.USER u
+            INNER JOIN REF.USER_TOKEN_DETAILS utd ON u.USER_ID = utd.USER_ID
+            WHERE utd.TOKEN_TYPE IN (:tokenTypes)
+            AND u.NATIONAL_CODE = :nationalCode""", nativeQuery = true)
+    List<GeneralPersonEntity> findByTokenTypesAndNationalCode(
+            @Param("nationalCode") String nationalCode,
+            @Param("tokenTypes") List<String> tokenTypes
+    );
+
+    @Query(value = """ 
+            SELECT u.*
+            FROM REF.USER u
+            INNER JOIN REF.USER_TOKEN_DETAILS utd ON u.USER_ID = utd.USER_ID
+            WHERE utd.TOKEN_TYPE IN (:tokenTypes)
+            AND u.NATIONAL_CODE = :nationalCode
+            AND utd.SERIAL_NO = :otpSerialNo""", nativeQuery = true)
+    List<GeneralPersonEntity> findByTokenTypesAndNationalCodeAndOtpSerialNo(
+            @Param("nationalCode") String nationalCode,
+            @Param("tokenTypes") List<String> tokenTypes,
+            @Param("otpSerialNo") String otpSerialNo
+    );
 }

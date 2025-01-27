@@ -19,9 +19,9 @@ import java.time.LocalDate;
 @Entity
 public abstract class GeneralLegalPersonEntity extends GeneralPersonEntity {
 
-    @Column(name = "LAST_NAME")
+    @Column(name = "FIRST_NAME")
     private String title;
-    @Column(name = "LAST_NAME_ENGLISH")
+    @Column(name = "FIRST_NAME_ENGLISH")
     private String titleEnglish;
     @Column(name = "NATIONAL_CODE")
     private String nationalId;

@@ -2114,6 +2114,96 @@ VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
         'ex::ir.daneshrefah.scm.task.exception.InvalidProcessStatusException',
         'وضعیت فرآیند نامعتبر است');
 
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.uaa.exception.RegisterNewUserException',
+        'user does not save in avacas due to errorCode = :errorCode');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.uaa.exception.RegisterNewUserException',
+        'کاربر به دلیل کد خطا(:errorCode) ذخیره نشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        'response is incomplete');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        'پاسخ ناقص است');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.uaa.exception.PasswordTypeIsNotOtp',
+        'Password type is not OTP.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.uaa.exception.PasswordTypeIsNotOtp',
+        'پسورد از نوع یکبار مصرف نمی باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpSerialLengthException',
+        'Serial No must contain at least 10 characters');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpSerialLengthException',
+        'شماره سریال باید حداقل 10 رقم باشد');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'en-US',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        'response is incomplete');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('Alireza Rayani', 'Alireza Rayani', CURRENT DATE,
+           CURRENT DATE, 'fa-IR',
+        'ex::ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        'پاسخی از مرکز دریافت نشد ، بعداً تلاش کنید');
+
+
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE
+(CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES
+-- OK
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'ok', 'Operation successful'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'ok', 'عملیات با موفقیت انجام شد'),
+-- WRONG_USERNAME_AND_OR_PASSWORD
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'wrong-username-and-or-password', 'Wrong username or password'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'wrong-username-and-or-password', 'نام کاربری یا رمز عبور اشتباه است'),
+-- USER_BLOCKED
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'user-blocked', 'User is blocked'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'user-blocked', 'کاربر مسدود شده است'),
+-- USER_UNBLOCKED
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'user-unblocked', 'User is unblocked'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'user-unblocked', 'کاربر رفع انسداد شد'),
+-- NATIONAL_CODE_EXISTS
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'national-code-exists', 'National code already exists'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'national-code-exists', 'کد ملی از قبل موجود است'),
+-- USERNAME_NOT_FOUND
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'username-not-found', 'Username not found'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'username-not-found', 'نام کاربری پیدا نشد'),
+-- INTERNAL_ERROR
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'internal-error', 'Internal error occurred'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'internal-error', 'خطای داخلی رخ داده است'),
+-- USER_ALREADY_DISABLED
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'en-US', 'user-already-disabled', 'User is already disabled'),
+('Alireza Rayani', 'Alireza Rayani', CURRENT DATE, CURRENT DATE, 'fa-IR', 'user-already-disabled', 'کاربر از قبل غیرفعال است');
+
 CREATE TABLE REF.TBL_SCM_ERROR_MAPPING
 (
     ERROR_MAPPING_ID             DECIMAL(22) GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -2570,6 +2660,47 @@ VALUES( 'ir.daneshrefah.scm.task.exception.InvalidPasswordException',
         1309, 'sc_evl',
         'Alireza Rayani', 'Alireza Rayani');
 
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.RegisterNewUserException',
+        1312, 'sc_esy',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        1313, 'sc_esy',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.PasswordTypeIsNotOtp',
+        1314, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpSerialLengthException',
+        1315, 'sc_evl',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES( 'ir.daneshrefah.scm.uaa.exception.OtpServiceException',
+        1316, 'sc_esy',
+        'Alireza Rayani', 'Alireza Rayani');
+
+INSERT INTO "REF".TBL_SCM_ERROR_MAPPING
+(EXCEPTION_CLASS_NAME, SCM_ERROR_CODE, STATUS_CODE, CREATOR, LAST_EDITOR)
+VALUES
+    ('ok', 1317, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('wrong-username-and-or-password', 1318, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('user-blocked', 1319, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('user-unblocked', 1320, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('national-code-exists', 1321, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('username-not-found', 1322, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('internal-error', 1323, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani'),
+    ('user-already-disabled', 1324, 'sc_esy', 'Alireza Rayani', 'Alireza Rayani');
 
 -- finalized tables
 -------------------------------------------------------------------

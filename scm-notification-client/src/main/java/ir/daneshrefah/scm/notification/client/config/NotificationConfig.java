@@ -15,6 +15,7 @@ import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,7 +80,7 @@ public class NotificationConfig {
 
     @Bean(name = "smsJmsTemplate")
     @ConditionalOnProperty(name = "scm.notification.sms.enabled", havingValue = "true")
-    public JmsTemplate smsJmsTemplate(ConnectionFactory connectionFactory) {
+    public JmsTemplate smsJmsTemplate(@Qualifier("smsConnectionFactory") ConnectionFactory connectionFactory) {
         JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
         jmsTemplate.setDefaultDestinationName("CM2SMS_R");
         jmsTemplate.setTimeToLive(300000);

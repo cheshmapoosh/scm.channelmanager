@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.uaa.controller.otp;
 
 import ir.daneshrefah.scm.uaa.controller.BaseController;
-import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
+import ir.daneshrefah.scm.uaa.service.otp.verify.UserOtpVerifyService;
+import ir.daneshrefah.scm.uaa.service.user.OtpUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OtpController extends BaseController {
 
-    private final OtpService otpService;
+    private final OtpUserService otpUserService;
+    private final UserOtpVerifyService userOtpVerifyService;
 
     /**
      * Sends an OTP SMS to the currently logged-in user.
@@ -28,7 +30,7 @@ public class OtpController extends BaseController {
     @PostMapping("/sms-by-logged-in-user")
     @CrossOrigin
     public OtpSendResponse sendOtpSms(@RequestBody SmsOtpSendRequest request) {
-        return otpService.sendOtpByLoggedInUser(request);
+        return otpUserService.sendOtpByLoggedInUser(request);
     }
 
     /**
@@ -37,7 +39,7 @@ public class OtpController extends BaseController {
     @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/sms-by-delegated-user")
     public OtpSendResponse sendDelegatedOtpSms(@RequestBody DelegatedSmsOtpSendRequest request) {
-        return otpService.sendOtpByDelegated(request);
+        return otpUserService.sendOtpByDelegated(request);
     }
 
     /**
@@ -46,7 +48,7 @@ public class OtpController extends BaseController {
     @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/sms-by-username")
     public OtpSendResponse sendOtpSmsByUsername(@RequestBody OtpSmsBasedUsernameRequest request) {
-        return otpService.sendOtpByUsername(request);
+        return otpUserService.sendOtpByUsername(request);
     }
 
     /**
@@ -55,7 +57,7 @@ public class OtpController extends BaseController {
     @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/sms-by-nickname")
     public OtpSendResponse sendOtpSmsByNickname(@RequestBody OtpSmsBasedNicknameRequest request) {
-        return otpService.sendOtpByNickname(request);
+        return otpUserService.sendOtpByNickname(request);
     }
 
     /**
@@ -64,26 +66,36 @@ public class OtpController extends BaseController {
     @PreAuthorize("isAnonymous()")
     @GetMapping("/public/sms-authentication/{recipient}")
     public OtpSendResponse sendAuthenticationOtpSms(@PathVariable("recipient") String recipientAddress) {
-        return otpService.sendOtpByAddress(recipientAddress);
+        return otpUserService.sendOtpByAddress(recipientAddress);
     }
 
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/verify-by-logged-in-user")
     public OtpVerifyResponse verifyOtpByLoggedInUser(@RequestBody VerifyOtpByLoggedInUserRequest request) {
-        return otpService.verifyOtpByLoggedInUser(request);
+        return userOtpVerifyService.verifyOtpByLoggedInUser(request);
     }
 
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/verify-by-delegated")
     public OtpVerifyResponse verifyOtpByDelegatedUser(@RequestBody VerifyOtpByDelegatedUserRequest request) {
-        return otpService.verifyOtpByDelegatedUser(request);
+        return userOtpVerifyService.verifyOtpByDelegatedUser(request);
     }
 
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/verify-by-username")
     public OtpVerifyResponse verifyOtpByUsername(@RequestBody VerifyOtpByUsernameRequest request) {
-        return otpService.verifyOtpByUsername(request);
+        return userOtpVerifyService.verifyOtpByUsername(request);
     }
 
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
     @PostMapping("/verify-by-nickname")
     public OtpVerifyResponse verifyOtpNickname(@RequestBody VerifyOtpByNicknameRequest request) {
-        return otpService.verifyOtpByNickname(request);
+        return userOtpVerifyService.verifyOtpByNickname(request);
+    }
+
+    @PreAuthorize("hasAuthority(ROLE_CSP)")
+    @PostMapping("/verify-by-national-code")
+    public OtpVerifyResponse verifyOtpNationalCode(@RequestBody VerifyOtpByNationalCodeRequest request) {
+        return userOtpVerifyService.verifyOtpByNationalCode(request);
     }
 }
