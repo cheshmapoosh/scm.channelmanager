@@ -1,5 +1,6 @@
-
-
+SPRING_CLOUD_CONFIG_URI: http://scm-config.scm.svc.cluster.local:8888
+SPRING_CLOUD_CONFIG_USERNAME: scm
+SPRING_CLOUD_CONFIG_PASSWORD: scm
 spring:
 #  datasource:
 #    url: jdbc:db2://10.15.27.82:446/DSNALOC
@@ -12,12 +13,14 @@ spring:
       on-profile: test
   cloud:
     config:
-      username: scm
-      password: scm
+      username: ${SPRING_CLOUD_CONFIG_USERNAME}
+      password: ${SPRING_CLOUD_CONFIG_PASSWORD}
       name: cache
       enabled: true
-      uri: http://10.15.1.245:8888/config
-
+      uri: ${SPRING_CLOUD_CONFIG_URI}
+      retry:
+        max-attempts: 10
+        max-interval: 3000
 #  jpa:
 #    properties:
 #      hibernate:

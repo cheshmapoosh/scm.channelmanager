@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: reg.daneshrefah.ir/modern-banking/scm-cache
+  repository: reg.daneshrefah.ir/modern-banking/scm-app
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -120,12 +120,11 @@ persistence:
   enabled: false
 
 env:
-- name: SPRING_PROFILES_ACTIVE
-  value: "dev"
-- name: SPRING_APPLICATION_NAME
-  value: "scm-cache"
-- name: SERVER_PORT
-  value: "8080"
-- name: SPRING_CLOUD_CONFIG_SERVER_URI
-  value: "http://scm-config.scm-app.svc.cluster.local:8888"
-
+  - name: SPRING_PROFILES_ACTIVE
+    value: dev
+  - name: SPRING_APPLICATION_NAME
+    value: scm-cache
+  - name: VERSION
+    value: 8.0.0
+  - name: SERVER_PORT
+    value: "8080"

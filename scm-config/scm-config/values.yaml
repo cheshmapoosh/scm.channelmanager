@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: reg.daneshrefah.ir/modern-banking/scm-config
+  repository: reg.daneshrefah.ir/modern-banking/scm-app
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -17,14 +17,14 @@ fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Automatically mount a ServiceAccount's API credentials?
   automount: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "scm-config"
 
 podAnnotations: {}
 podLabels: {}
@@ -119,8 +119,10 @@ affinity: {}
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: "dev"
+    value: dev
   - name: SPRING_APPLICATION_NAME
-    value: "scm-config"
+    value: scm-config
+  - name: VERSION
+    value: 8.0.0
   - name: SERVER_PORT
     value: "8888"
