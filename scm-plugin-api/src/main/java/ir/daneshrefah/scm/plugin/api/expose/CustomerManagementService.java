@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.plugin.api.expose;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.membership.CustomerProviderSyncRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.model.asset.AccountMembership;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
@@ -56,11 +55,6 @@ public class CustomerManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request,result);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_FIND_ACCOUNT_MEMBERSHIP)
-    @SuppressWarnings("unused")
-    public AccountMembership findAccountMembershipById(String membershipId){
-        return customerService.findLocalAccountMembership(membershipId);
-    }
 
     @JavaService(serviceCode = SVC_ASSETS_FAVOURITE)
     @SuppressWarnings("unused")

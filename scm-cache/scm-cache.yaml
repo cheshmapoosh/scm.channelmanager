@@ -1,0 +1,126 @@
+---
+# Source: scm-cache/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scm-cache
+  labels:
+    helm.sh/chart: scm-cache-0.1.0
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: scm-cache/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: scm-cache
+  labels:
+    helm.sh/chart: scm-cache-0.1.0
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5701
+      targetPort: 5701
+      protocol: TCP
+      name: hazelcast
+  selector:
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+---
+# Source: scm-cache/templates/serviceapi.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: scm-cache-api
+  labels:
+    helm.sh/chart: scm-cache-0.1.0
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+---
+# Source: scm-cache/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scm-cache
+  labels:
+    helm.sh/chart: scm-cache-0.1.0
+    app.kubernetes.io/name: scm-cache
+    app.kubernetes.io/instance: scm-cache
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scm-cache
+      app.kubernetes.io/instance: scm-cache
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: scm-cache-0.1.0
+        app.kubernetes.io/name: scm-cache
+        app.kubernetes.io/instance: scm-cache
+        app.kubernetes.io/version: "8.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: scm-cache
+      securityContext:
+        {}
+      containers:
+        - name: scm-cache
+          securityContext:
+            {}
+          image: "reg.daneshrefah.ir/modern-banking/scm-cache:8.0.0-b1017T1540"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev
+            - name: SPRING_APPLICATION_NAME
+              value: scm-cache
+            - name: VERSION
+              value: 8.0.0
+            - name: SERVER_PORT
+              value: "8080"
+            - name: SPRING_CLOUD_CONFIG_SERVER_URI
+              value: http://scm-config.scm-app.svc.cluster.local:8888
+          ports:
+            - name: hazelcast
+              containerPort: 5701
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+
+
+
+          resources:
+            {}
+      nodeSelector:
+        app: scm-cache
+      tolerations:
+        - effect: NoSchedule
+          key: daneshrefah.ir/group
+          operator: Equal
+          value: scm
