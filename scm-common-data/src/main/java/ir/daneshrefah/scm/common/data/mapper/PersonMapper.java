@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.common.data.mapper;
 import ir.daneshrefah.scm.common.data.entity.person.*;
 import ir.daneshrefah.scm.common.model.person.*;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
@@ -58,11 +59,40 @@ public interface PersonMapper {
         return null;
     }
 
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     CorporatePerson toModel(CorporatePersonEntity entity);
+
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     GovernancePerson toModel(GovernancePersonEntity entity);
+
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     BankPerson toModel(BankPersonEntity entity);
+
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     TaminPerson toModel(TaminPersonEntity entity);
+
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     IndividualPerson toModel(IndividualPersonEntity entity);
+
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "lastEditor", ignore = true)
+    @Mapping(target = "lastEditDate", ignore = true)
     EmployeePerson toModel(EmployeePersonEntity entity);
 
     default List<GeneralPerson> toModels(Iterable<GeneralPersonEntity> entities) {
@@ -78,10 +108,15 @@ public interface PersonMapper {
     }
 
     CorporatePersonEntity toEntity(CorporatePerson person);
+
     GovernancePersonEntity toEntity(GovernancePerson person);
+
     BankPersonEntity toEntity(BankPerson person);
+
     TaminPersonEntity toEntity(TaminPerson person);
+
     IndividualPersonEntity toEntity(IndividualPerson person);
+
     EmployeePersonEntity toEntity(EmployeePerson person);
 
 }

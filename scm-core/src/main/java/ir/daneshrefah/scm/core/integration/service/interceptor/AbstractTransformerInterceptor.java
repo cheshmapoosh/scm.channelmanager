@@ -3,17 +3,14 @@ package ir.daneshrefah.scm.core.integration.service.interceptor;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
-import ir.daneshrefah.scm.core.service.ProxyServiceManager;
-import ir.daneshrefah.scm.core.service.TransformerService;
+import ir.daneshrefah.scm.core.services.TransformerService;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.transformer.TransformerExecutionWrapper;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

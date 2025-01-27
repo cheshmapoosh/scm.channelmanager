@@ -3,9 +3,10 @@ scm:
     url: http://scm-core.daneshrefah.ir/Service/
   logging:
     datasource:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
+
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
@@ -16,16 +17,16 @@ scm:
       password: password
       alias: selfsigned
     authenticationDatasource:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
     activationDatasource:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
@@ -34,7 +35,7 @@ scm:
       config:
         distributed: true
         cluster-name: dev3
-        server-host: 10.10.4.125
+        server-host: 10.10.8.46
         server-port: 5701
   otp:
     time-to-live-minutes: 1

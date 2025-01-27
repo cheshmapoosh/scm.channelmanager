@@ -4,5 +4,5 @@ import java.util.Optional;
 
 public interface TaskAssetService {
 
-    Optional<String> findCustomerNo(Integer userId);
+    Optional<String> findCustomerNo(Long userId);
 }

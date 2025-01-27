@@ -255,7 +255,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
                 .build();
     }
 
-    private UserEntity findUserByPersonAndTerminal(Integer personId, String terminalCode) {
+    private UserEntity findUserByPersonAndTerminal(Long personId, String terminalCode) {
         return userService.findByPersonIdAndLegacyTerminalCode(personId, terminalCode).stream()
                 .findFirst().orElseThrow(() -> new NoMatchRecordFoundException("userId"));
     }

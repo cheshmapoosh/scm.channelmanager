@@ -23,25 +23,25 @@ public @interface JavaService {
     ServiceCode serviceCode();
 
     /**
-     * @return Default as serviceCode
+     * Setting any value , ignored database state
      */
     String title() default "";
+    /**
+     * Setting any value , ignored database state
+     */
 
     String path() default "";
 
-    /**
-     * @return Default INQUIRY (GET) , PARENT DOES NOT SUPPORTED
-     */
     JavaMethodType type() default JavaMethodType.NULL;
 
     ServiceCode parentCode() default ServiceCode.NULL;
 
-    Status checkAccessFirstAuthentication() default Status.DE_ACTIVE;
+    Status checkAccessFirstAuthentication() default Status.DEFAULT;
 
-    Status checkAccessSecondAuthentication() default Status.DE_ACTIVE;
+    Status checkAccessSecondAuthentication() default Status.DEFAULT;
 
-    Status checkAccessService() default Status.DE_ACTIVE;
+    Status checkAccessService() default Status.DEFAULT;
 
-    Status checkAccessAsset() default Status.DE_ACTIVE;
+    Status checkAccessAsset() default Status.DEFAULT;
 
 }

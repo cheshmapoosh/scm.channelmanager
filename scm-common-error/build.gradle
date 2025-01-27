@@ -18,5 +18,6 @@ dependencies {
     compileOnly project(':scm-utils')
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.springframework:spring-orm'
 
 }

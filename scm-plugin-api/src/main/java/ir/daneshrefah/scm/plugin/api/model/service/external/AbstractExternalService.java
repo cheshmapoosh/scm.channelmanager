@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.common.model.service.parameter.ParameterDatasourceProp
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
@@ -21,7 +23,8 @@ import java.util.Optional;
  * @version 1.0
  * @since 2023-08-06
  */
-@Data
+@Getter
+@Setter
 public abstract class AbstractExternalService<T extends AbstractExternalServiceProvider> extends Service {
 
     private T serviceProvider;
@@ -34,7 +37,7 @@ public abstract class AbstractExternalService<T extends AbstractExternalServiceP
 
     private Optional<String> getParameterStaticValue(List<Parameter> parameters, String parameterName) {
         if (StringUtils.isBlank(parameterName) || CollectionUtils.isEmpty(parameters)) {
-            Optional.empty();
+            return Optional.empty();
         }
         return parameters.stream()
                 .filter(parameter -> ParameterDatasourceProperty.STATIC.equals(parameter.getDatasource().getProperty()))

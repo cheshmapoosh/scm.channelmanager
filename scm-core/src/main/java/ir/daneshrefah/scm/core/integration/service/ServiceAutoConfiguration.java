@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.integration.service;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
-import ir.daneshrefah.scm.core.service.ServiceServiceImpl;
+import ir.daneshrefah.scm.core.services.service.ServiceServiceImpl;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import lombok.RequiredArgsConstructor;

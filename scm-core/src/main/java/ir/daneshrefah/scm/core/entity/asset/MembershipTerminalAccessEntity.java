@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -17,10 +20,17 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "MEMBERSHIP_CHANNEL_ACCESS")
+@SequenceGenerator(
+        name = "membershipChannelAccessSeq",
+        sequenceName = "SQMEMBERSHIPEBACCESS",
+        allocationSize = 1,
+        schema = "REF"
+)
 public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
 
     @Id
     @Column(name = "MEMBERSHIP_CHANNEL_ACCESS_ID")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "membershipChannelAccessSeq")
     private Long id;
     private Boolean active;
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,4 +40,8 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;
     private Boolean favorite;
+    private BigDecimal maxWithdrawalPerDay;
+    private BigDecimal maxWithdrawalPerMonth;
+    private LocalDate fromDate;
+    private LocalDate toDate;
 }

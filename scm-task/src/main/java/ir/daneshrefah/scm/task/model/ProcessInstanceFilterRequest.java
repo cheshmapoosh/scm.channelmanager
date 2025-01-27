@@ -14,8 +14,8 @@ public class ProcessInstanceFilterRequest extends PagedRequestData {
     private String accountNo;
     private Long fromDate;
     private Long toDate;
-    private Integer confirmUserId;
+    private Long confirmUserId;
     private ProcessCodeEnum processCode;
     private boolean report;
-    private Integer userId;
+    private Long userId;
 }

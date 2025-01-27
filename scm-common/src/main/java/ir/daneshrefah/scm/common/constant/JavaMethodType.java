@@ -6,9 +6,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum JavaMethodType {
-
+    /**
+     * Set NULL status for accept database status, by selecting another status
+     * system automatically ignore database status
+     */
     NULL(0),
-    REPORT(1),
+    REPORT(1), // LIKE GET METHOD ON HTTP
     FINANCE(2),
     INQUIRY(3),
     PARENT(4),

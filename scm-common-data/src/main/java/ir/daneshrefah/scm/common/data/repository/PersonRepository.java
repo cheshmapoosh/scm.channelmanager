@@ -18,7 +18,7 @@ import java.util.Optional;
  * @since 2024-01-24
  */
 @Repository
-public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Integer>, JpaSpecificationExecutor<GeneralPersonEntity> {
+public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Long>, JpaSpecificationExecutor<GeneralPersonEntity> {
 
     @Query("SELECT p FROM GeneralRealPersonEntity p WHERE p.nationalCode = :nationalCode")
     GeneralRealPersonEntity findRealPersonByNationalCode(@Param("nationalCode") String nationalCode);

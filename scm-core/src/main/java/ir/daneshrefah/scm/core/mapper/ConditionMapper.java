@@ -24,6 +24,7 @@ public interface ConditionMapper {
 
     ConditionMapper INSTANCE = Mappers.getMapper(ConditionMapper.class);
 
+    @Mapping(target = "bypassIgnorable" , ignore = true)
     Condition toCondition(ConditionEntity conditionEntity);
 
     @Mapping(source = "service", target = "service", qualifiedByName = "mapService")

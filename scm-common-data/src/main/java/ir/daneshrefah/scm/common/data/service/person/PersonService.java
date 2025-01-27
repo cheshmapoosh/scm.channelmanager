@@ -21,7 +21,7 @@ public interface PersonService {
 
     boolean checkPersonExist(PersonFindRequest request);
 
-    GeneralPerson findPersonByPersonId(Integer id);
+    GeneralPerson findPersonByPersonId(Long id);
 
     Optional<GeneralPerson> findPersonByPersonUsername(String username);
 

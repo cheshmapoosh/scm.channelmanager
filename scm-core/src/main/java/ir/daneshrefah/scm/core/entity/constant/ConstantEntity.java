@@ -2,7 +2,8 @@ package ir.daneshrefah.scm.core.entity.constant;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,7 +12,8 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-04-06
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "CONSTANT_TABLE")
 public class ConstantEntity extends AbstractEntity<Long> {

@@ -17,8 +17,6 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "MEMBERSHIP")
-@DiscriminatorColumn(name = "ASSET_TYPE",discriminatorType =  DiscriminatorType.INTEGER)
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Getter
 @Setter
 public class MembershipEntity extends AbstractEntity<Long> {
@@ -35,15 +33,17 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
 
-    @Convert(converter = AssetTypeConverter.class)
-    @Column(name = "ASSET_TYPE",insertable = false,updatable = false)
-    private AssetType assetType;
-
     @Column(name = "ARCHIVE_NO")
     private Integer archiveNumber;
 
     @OneToOne
     @JoinColumn(name = "CUSTOMER_ACCOUNT_ID")
     private CustomerAccountEntity customerAccount;
+
+    @Column(name = "DEFAULT_ACCOUNT")
+    private Boolean defaultAccount;
+
+    @Column(name = "CLOSE")
+    private Boolean close;
 
 }

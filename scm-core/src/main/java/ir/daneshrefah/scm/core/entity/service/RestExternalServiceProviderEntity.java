@@ -8,6 +8,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,19 +18,10 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-07-12
  */
-@Data
+@Getter
+@Setter
 @Entity
 @DiscriminatorValue("1") // ServiceProviderProtocol.REST
 public class RestExternalServiceProviderEntity extends AbstractExternalServiceProviderEntity {
-
-
-//    @Convert(converter = RestExternalServiceProviderMetadataConverter.class)
-//    @Column(name = "SRV_PROVIDER_METADATA")
-//    private RestExternalServiceProviderMetadata metadata;
-//
-//    @Override
-//    public void setMetadata(AbstractExternalServiceProviderMetadata metadata) {
-//        this.metadata = (RestExternalServiceProviderMetadata) metadata;
-//    }
 
 }

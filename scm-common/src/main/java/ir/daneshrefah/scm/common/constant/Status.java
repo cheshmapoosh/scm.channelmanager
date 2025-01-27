@@ -7,7 +7,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Status {
     ACTIVE(true),
-    DE_ACTIVE(false);
+    DE_ACTIVE(false),
+    /**
+     * Use this value for getting status from database, by using another status
+     * system automatically ignored database status.
+     */
+    DEFAULT(null);
 
     private final Boolean booleanValue;
 

@@ -55,11 +55,7 @@ public final class SayadServiceProvider extends AbstractBaseRestExternalServiceP
     @Override
     @SneakyThrows
     protected String extractTargetUrl(Message message) {
-        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
-        String providerEndpoint = getProviderEndpoint().orElse(null);
-        JsonNode componentMetadata = service.getMetadata();
-        String target = providerEndpoint + StringUtils.removeStart(componentMetadata.get("serviceName").asText(), "/");
-        return target;
+        return getProviderEndpoint().orElse(null);
     }
 
     @Override

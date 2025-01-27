@@ -4,6 +4,8 @@ import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -14,7 +16,8 @@ import java.util.List;
  * @version 1.0
  * @since 2023-08-08
  */
-@Data
+@Getter
+@Setter
 public class ServiceRelation extends BaseModel<String> {
 
     private Service sourceService;

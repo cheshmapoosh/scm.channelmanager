@@ -113,7 +113,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
         if (Objects.nonNull(person)) {
             person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_PROFILE_IDENTIFIER));
             if (jwt.hasClaim(Constants.CLAIM_KEY_PERSON_IDENTIFIER)) {
-                person.setId(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER)));
+                person.setId(Long.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_IDENTIFIER)));
             }
             person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
         }

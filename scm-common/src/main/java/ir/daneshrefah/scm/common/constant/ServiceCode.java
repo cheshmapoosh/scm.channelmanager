@@ -11,6 +11,9 @@ public enum ServiceCode {
 
     /**
      * Use this type as NULL
+     * Set NULL status for accept database status, by selecting another status
+     * system automatically ignore database status
+     *
      */
     NULL(null),
     /* JAVA SERVICE CODE */
@@ -120,6 +123,20 @@ public enum ServiceCode {
     SVC_CONVERTERS_LIST(ServiceImplementationType.JAVA),
     SVC_BUNDLE_CREATE(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_NAME_LIST(ServiceImplementationType.JAVA),
+    SVC_SERVICE_CREATE_PARENT(ServiceImplementationType.JAVA),
+    SVC_SERVICE_EDIT_PARENT(ServiceImplementationType.JAVA),
+    SVC_SERVICE_FIND_PARENT(ServiceImplementationType.JAVA),
+    SVC_SERVICE_CREATE_JAVA(ServiceImplementationType.JAVA),
+    SVC_SERVICE_EDIT_JAVA(ServiceImplementationType.JAVA),
+    SVC_SERVICE_FIND_JAVA(ServiceImplementationType.JAVA),
+    SVC_SERVICE_CREATE_COMPOSITION(ServiceImplementationType.JAVA),
+    SVC_SERVICE_EDIT_COMPOSITION(ServiceImplementationType.JAVA),
+    SVC_SERVICE_FIND_COMPOSITION(ServiceImplementationType.JAVA),
+    SVC_ASSETS_ASSIGN_MEMBERSHIP_CHANNEL(ServiceImplementationType.JAVA),
+    SVC_ASSETS_REVOKE_MEMBERSHIP_CHANNEL(ServiceImplementationType.JAVA),
+    SVC_ASSETS_MEMBERSHIP_CHL_WDR_LIMIT(ServiceImplementationType.JAVA),
+
+
     /* PARENT SERVICE */
     SVC_TERMINAL_PARENT(ServiceImplementationType.PARENT),
     SVC_CHANNEL_PARENT(ServiceImplementationType.PARENT),
@@ -157,7 +174,6 @@ public enum ServiceCode {
     SVC_CONFIG_PARENT(ServiceImplementationType.PARENT),
     SVC_PARAMETER_PARENT(ServiceImplementationType.PARENT),
     SVC_LOG_PARENT(ServiceImplementationType.PARENT);
-
 
     private final ServiceImplementationType type;
 }

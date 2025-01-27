@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.repository;
 
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ServiceRepository extends CrudRepository<ServiceEntity, String> {
+public interface ServiceRepository extends JpaRepository<ServiceEntity, String> {
 
     @Query("SELECT s FROM ServiceEntity s WHERE " +
             "s.implementationType <> ir.daneshrefah.scm.common.model.service.ServiceImplementationType.PARENT")

@@ -24,7 +24,6 @@ public class ServiceInfoRequest implements RequestData {
     private String title;
     private String alias;
     private Integer version;
-    private String metadata;
     @NotNull
     private ServiceType type;
     @NotNull
@@ -42,13 +41,8 @@ public class ServiceInfoRequest implements RequestData {
     private Boolean checkAccessService;
     @NotNull
     private Boolean checkAccessAsset;
-    private String customerProperty;
     private String amountProperty;
     private String assetProperty;
-    /**
-     * this property used when implementationType is java
-     * */
-    private String javaImplementationClassName;
     /**
      * this property used when implementationType is rest external
      * */

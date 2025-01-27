@@ -80,7 +80,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     @Override
     public GeneralPerson syncPersonInfoFromCIF(String personId) {
         ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(Integer.parseInt(personId));
+        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
         ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
         PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
         return syncPersonInfoFromCIF(request);
@@ -89,7 +89,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     @Override
     public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId) {
         ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(Integer.parseInt(personId));
+        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
         ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
         PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
         List<GeneralPerson> cifPersonInfoList = findCIFPersonInfo(request);
@@ -198,7 +198,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         if (roleEntity.isEmpty()) {
             throw new InvalidInputException("roleId");
         }
-        Optional<GeneralPersonEntity> personEntity = personRepository.findById(personId.intValue());
+        Optional<GeneralPersonEntity> personEntity = personRepository.findById(personId);
         if (personEntity.isEmpty()) {
             throw new InvalidInputException("personId");
         }
