@@ -26,12 +26,12 @@ import java.time.LocalDate;
 @Table(name = "USER")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "USER_TYPE", discriminatorType = DiscriminatorType.INTEGER)
-public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
+public abstract class GeneralPersonEntity extends AbstractEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "USER_ID")
-    private Integer id;
+    private Long id;
     @Column(name = "USERNAME", nullable = false)
     private String username;
     @Column(name = "USER_TYPE", insertable = false, updatable = false)

@@ -152,7 +152,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     @Override
     public PagedResponseData<ProcessInstanceResponse> findAll(ProcessInstanceFilterRequest request) {
         request = Objects.nonNull(request) ? request : new ProcessInstanceFilterRequest();
-        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         if (request.isReport()) {
             request.setUserId(loggedInUserId);
         } else {
@@ -188,8 +188,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     public boolean hasUserAccess(ProcessInstanceEntity processInstanceEntity) {
-        Integer confirmUserId = processInstanceEntity.getConfirmUserId();
-        Integer loggedInUser = AuthenticationUtils.getLoggedInUserId();
+        Long confirmUserId = processInstanceEntity.getConfirmUserId();
+        Long loggedInUser = AuthenticationUtils.getLoggedInUserId();
         if (Objects.equals(confirmUserId, loggedInUser)) {
             return true;
         }
@@ -200,7 +200,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
         validateApproveRequest(request);
         ProcessInstanceEntity processInstance = findByID(request.getId());
-        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
         validateUserAccess(processInstance, loggedInUserId);
@@ -282,7 +282,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         validateProcessStatus(request.getStatus(), EnumSet.of(ProcessStatusEnum.COMPLETE, ProcessStatusEnum.FAIL));
 
         ProcessInstanceEntity processInstance = findByID(request.getId());
-        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         validateUserAccess(processInstance, loggedInUserId);
@@ -313,7 +313,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
-    private void validateUserAccess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
+    private void validateUserAccess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
         if (processInstance.getConfirmUserId() != null) {
             boolean hasAccess = processInstance.getConfirmUserId().equals(loggedInUserId) || processInstance.getTasks().stream().anyMatch(task -> task.getUserId().equals(loggedInUserId));
             if (!hasAccess) {
@@ -322,7 +322,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
-    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Integer loggedInUserId, MessageInput context, ProcessStatusEnum processStatusEnum) {
+    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Long loggedInUserId, MessageInput context, ProcessStatusEnum processStatusEnum) {
         processInstance.setUpdateAt(new Date());
         processInstance.setUpdateBy(loggedInUserId);
         processInstance.setProcessStatus(processStatusEnum);

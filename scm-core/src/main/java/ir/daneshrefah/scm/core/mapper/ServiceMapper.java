@@ -24,7 +24,6 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,39 +33,61 @@ public interface ServiceMapper {
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
-    @Mapping(target = "javaImplementationClassName" , ignore = true)
+    @Mapping(target = "javaImplementationClassName", ignore = true)
+    @Mapping(target = "noneEditableProperties" , ignore = true)
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "implemented" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     JavaService toModel(JavaServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "responseList", target = "responseList", qualifiedByName = "toResponseConditionModel")
     @Mapping(source = "serviceProvider", target = "serviceProvider", qualifiedByName = "toServiceProvider")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     CustomExternalService toModel(CustomExternalServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "responseList", target = "responseList", qualifiedByName = "toResponseConditionModel")
     @Mapping(source = "serviceProvider", target = "serviceProvider", qualifiedByName = "toServiceProvider")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     RestExternalService toModel(RestExternalServiceEntity entity);
 
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(target = "targetService", ignore = true)
+    @Mapping(target = "proxyServiceCode" , ignore = true)
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     ProxyService toModel(ProxyServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
     @Mapping(source = "responseList", target = "responseList", qualifiedByName = "toResponseConditionModel")
+    @Mapping(target = "relations", ignore = true)
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     CompositionService toModel(CompositionServiceEntity entity);
 
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toService")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersModel")
+    @Mapping(target = "targetProxyCode" ,ignore = true)
+    @Mapping(target = "proxy",ignore = true)
     ParentService toModel(ParentServiceEntity entity);
 
     @Mapping(source = "sourceService", target = "sourceService", qualifiedByName = "toService")
     @Mapping(source = "targetService", target = "targetService", qualifiedByName = "toService")
     @Mapping(source = "targetServiceCommit", target = "targetServiceCommit", qualifiedByName = "toService")
     @Mapping(source = "targetServiceReverse", target = "targetServiceReverse", qualifiedByName = "toService")
+    @Mapping(target = "targetServiceRequestTransformers" , ignore = true)
+    @Mapping(target = "targetServiceResponseTransformers" , ignore = true)
+    @Mapping(target = "targetServiceCommitRequestTransformers" , ignore = true)
+    @Mapping(target = "targetServiceCommitResponseTransformers" , ignore = true)
+    @Mapping(target = "targetServiceReverseRequestTransformers" , ignore = true)
+    @Mapping(target = "targetServiceReverseResponseTransformers" , ignore = true)
     ServiceRelation toModel(ServiceRelationEntity entity);
 
 
@@ -101,11 +122,9 @@ public interface ServiceMapper {
     CompositionServiceEntity toEntity(CompositionService model);
 
 
-
     @Mapping(source = "parent", target = "parent", qualifiedByName = "toServiceEntity")
     @Mapping(source = "parameters", target = "parameters", qualifiedByName = "toParametersEntities")
     ParentServiceEntity toEntity(ParentService model);
-
 
 
     List<ServiceRelation> relationEntitiesToModels(Iterable<ServiceRelationEntity> entities);
@@ -195,14 +214,12 @@ public interface ServiceMapper {
         if (null == serviceEntities)
             return null;
         List<Service> result = new ArrayList<>();
-        for (Iterator<ServiceEntity> iterator = serviceEntities.iterator(); iterator.hasNext(); ) {
-            ServiceEntity serviceEntity = iterator.next();
+        for (ServiceEntity serviceEntity : serviceEntities) {
             Service service = toService(serviceEntity);
             result.add(service);
         }
         return result;
     }
-
 
 
     @Named("toServiceProvider")

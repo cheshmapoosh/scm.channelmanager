@@ -1,12 +1,13 @@
 package ir.daneshrefah.scm.core.entity.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
-import ir.daneshrefah.scm.core.converter.TransformerRelationTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
+import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
+import ir.daneshrefah.scm.core.converter.TransformerRelationTypeConverter;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -15,7 +16,8 @@ import lombok.Data;
  * @version 1.0
  * @since 2023-08-08
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "TBL_SCM_TRANSFORMER_RELATION")
 public class TransformerRelationEntity extends AbstractDefaultEntity<Long> {

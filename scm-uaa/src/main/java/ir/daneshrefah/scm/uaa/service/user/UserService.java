@@ -314,7 +314,7 @@ public class UserService {
         User user = UserMapper.INSTANCE.toModel(entity);
 
         GeneralPerson person = new UnknownPerson();
-        person.setId(new Random().nextInt());
+        person.setId(new Random().nextLong());
         person.setUsername(StringUtils.generateGuid());
         person.setStatus(PersonStatus.ACTIVE);
         person.setMobile1(mobileNo);
@@ -342,7 +342,7 @@ public class UserService {
             StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
-        GeneralPersonEntity personEntity = findPersonById(request.getPersonId().intValue());
+        GeneralPersonEntity personEntity = findPersonById(request.getPersonId());
         ValidationUtils.checkNull(personEntity, () -> new InvalidInputException("personId"));
         GeneralPersonEntity creatorEntity = findPersonByUsername(AuthenticationUtils.getLoggedInGlobalUsername());
         ValidationUtils.checkNull(creatorEntity, () -> new NoMatchRecordFoundException("creator person does not login"));
@@ -435,7 +435,7 @@ public class UserService {
         return null != persons && !persons.isEmpty() ? persons.get(0) : null;
     }
 
-    public GeneralPersonEntity findPersonById(Integer id) {
+    public GeneralPersonEntity findPersonById(Long id) {
         Optional<GeneralPersonEntity> person = personRepository.findById(id);
         return person.orElse(null);
     }
@@ -649,7 +649,7 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
     }
 
-    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Integer userId, String terminalCode) {
+    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Long userId, String terminalCode) {
         Terminal terminal = findTerminalByCode(terminalCode);
         return userRepository.findByPersonIdAndLegacyTerminalId(userId, terminal.getLegacyTerminalId().intValue());
     }

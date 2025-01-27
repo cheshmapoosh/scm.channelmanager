@@ -26,7 +26,6 @@ public abstract class Service extends BaseModel<String> {
     private String alias;
     private Integer version;
     private Boolean isSystemic;
-    private JsonNode metadata;
     private ServiceType type;
     private ServiceStatus status;
     private Service parent;

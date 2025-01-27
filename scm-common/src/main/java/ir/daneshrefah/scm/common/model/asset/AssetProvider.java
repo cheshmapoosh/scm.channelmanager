@@ -3,7 +3,8 @@ package ir.daneshrefah.scm.common.model.asset;
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
 import ir.daneshrefah.scm.common.model.service.Service;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,12 +13,14 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-06-22
  */
-@Data
+@Getter
+@Setter
 public class AssetProvider extends BaseModel<Integer> {
 
     private String name;
     private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
+    private Service service;
 
 }

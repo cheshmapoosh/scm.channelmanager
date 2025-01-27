@@ -495,4 +495,8 @@ public class StringUtils {
         return JsonPathFinder.findPropertiesOnJsonNode(propertyPath,payload);
     }
 
+    public static CharSequence trim(String str) {
+        return org.apache.commons.lang3.StringUtils.trim(str);
+    }
+
 }

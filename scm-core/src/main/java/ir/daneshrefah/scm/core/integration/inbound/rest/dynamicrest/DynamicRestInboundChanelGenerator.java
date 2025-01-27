@@ -94,15 +94,13 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
         }
 
         public void registerServiceDocumentation(List<TerminalServiceAccess> serviceAccesses) {
-            OpenAPI openAPI = SwaggerGenerator.getInstance().generateOpenAPI(getChannel(), serviceAccesses, urlBuilder,
-                    contextPath, port);
-
             String swaggerUrl = "/api-docs/swagger.json";
             LOGGER.info("swagger url: " + "http://localhost:" + port + contextPath + swaggerUrl);
             from("netty-http:http://0.0.0.0:" + port + contextPath + swaggerUrl)
                     .routeId("swagger_generator_" + getChannel().getCode())
                     .process(CamelCORSManager::configure)
                     .process(exchange -> {
+                        OpenAPI openAPI = SwaggerGenerator.getInstance().generateOpenAPI(getChannel(), serviceAccesses, urlBuilder, contextPath, port);
                         exchange.getMessage().setBody(SwaggerGenerator.getInstance().cleanupSwaggerJson(objectMapper.writeValueAsString(openAPI)));
                         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, HTTP_HEADER_CONTENT_TYPE_JSON);
                     })

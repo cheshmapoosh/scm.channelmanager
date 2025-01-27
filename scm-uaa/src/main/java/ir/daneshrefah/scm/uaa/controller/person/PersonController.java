@@ -41,7 +41,7 @@ public class PersonController {
 
     @GetMapping("/find/{personId}")
     public ResponseEntity<GeneralPerson> findGeneralPersonById(@PathVariable("personId") String personId){
-        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Integer.parseInt(personId)));
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Long.parseLong(personId)));
     }
 
     @GetMapping("/find-nickname/{nickname}/{terminalCode}")

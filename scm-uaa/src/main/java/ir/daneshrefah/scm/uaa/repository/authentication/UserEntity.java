@@ -64,9 +64,9 @@ public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
     @Column(name = "BRANCH_CODE")
     private String creatorBranch;
     @Column(name = "CREATED_BY")
-    private Integer creator;
+    private Long creator;
     @Column(name = "MODIFIED_BY")
-    private Integer lastEditor;
+    private Long lastEditor;
     @Column(name = "CREATION_DATE", insertable = false, updatable = false)
     private LocalDateTime createDate;
     @Column(name = "MODIFICATION_DATE", insertable = false)
