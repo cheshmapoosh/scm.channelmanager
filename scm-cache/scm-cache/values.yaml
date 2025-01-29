@@ -24,7 +24,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "scm-cache-service-account"
 
 podAnnotations: {}
 podLabels: {}
@@ -45,8 +45,10 @@ service:
   port: 5701
 
 serviceApi:
-  type: ClusterIP
+  type: LoadBalancer
   port: 8080
+  externalIPs:
+    - 10.10.4.122
 
 ingress:
   enabled: false
@@ -121,10 +123,15 @@ persistence:
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: dev
+    value: test
   - name: SPRING_APPLICATION_NAME
     value: scm-cache
   - name: VERSION
     value: 8.0.0
   - name: SERVER_PORT
     value: "8080"
+  - name: SPRING_CLOUD_CONFIG_URI
+    valueFrom:
+      configMapKeyRef:
+        name: scm-config-configmap
+        key: SPRING_CLOUD_CONFIG_URI

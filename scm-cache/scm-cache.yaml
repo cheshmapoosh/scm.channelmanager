@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: scm-cache
+  name: scm-cache-service-account
   labels:
     helm.sh/chart: scm-cache-0.1.0
     app.kubernetes.io/name: scm-cache
@@ -11,6 +11,33 @@ metadata:
     app.kubernetes.io/version: "8.0.0"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
+---
+# Source: scm-cache/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scm-cache-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "endpoints", "nodes", "services", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list"]
+---
+# Source: scm-cache/templates/role-binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scm-cache-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: scm-cache-service-account
+roleRef:
+  kind: Role
+  name: scm-cache-role
+  apiGroup: rbac.authorization.k8s.io
 ---
 # Source: scm-cache/templates/service.yaml
 apiVersion: v1
@@ -46,12 +73,15 @@ metadata:
     app.kubernetes.io/version: "8.0.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 8080
       targetPort: http
       protocol: TCP
       name: http
+  externalIPs:
+    - 10.10.4.122
+
   selector:
     app.kubernetes.io/name: scm-cache
     app.kubernetes.io/instance: scm-cache
@@ -68,7 +98,7 @@ metadata:
     app.kubernetes.io/version: "8.0.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: scm-cache
@@ -84,24 +114,31 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
-      serviceAccountName: scm-cache
+      serviceAccountName: scm-cache-service-account
       securityContext:
         {}
       containers:
         - name: scm-cache
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-cache:8.0.0-b1017T1540"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1108T1830"
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: dev
+              value: test
             - name: SPRING_APPLICATION_NAME
               value: scm-cache
             - name: VERSION
               value: 8.0.0
             - name: SERVER_PORT
               value: "8080"
+            - name: ARTIFACT
+              value: "scm-cache-8.0.0.jar"
+            - name: SPRING_CLOUD_CONFIG_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_CLOUD_CONFIG_URI
+                  name: scm-config-configmap
           ports:
             - name: hazelcast
               containerPort: 5701

@@ -16,10 +16,10 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: scm-config
+  name: scm-config-configmap
 data:
   # Key-value pairs for your configuration
-  SPRING_CLOUD_CONFIG_SERVER_URI: "http://scm-config.scm.svc.cluster.local:8888"
+  SPRING_CLOUD_CONFIG_URI: "http://scm-config.scm.svc.cluster.local:8888/config"
 ---
 # Source: scm-config/templates/service.yaml
 apiVersion: v1
@@ -33,7 +33,9 @@ metadata:
     app.kubernetes.io/version: "8.0.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  type: ClusterIP
+  type: LoadBalancer
+  externalIPs:
+    - 10.10.4.121
   ports:
     - port: 8888
       targetPort: http
@@ -81,6 +83,8 @@ spec:
           image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1108T1030"
           imagePullPolicy: IfNotPresent
           env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev
             - name: SPRING_APPLICATION_NAME
               value: scm-config
             - name: VERSION
@@ -104,11 +108,11 @@ spec:
               name: config-repo-server-volume
       volumes:
         - hostPath:
-            path: /home/drp/log
+            path: /log
             type: DirectoryOrCreate
           name: log-volume
         - hostPath:
-            path: /home/drp/config-repo-server
+            path: /config-repo-server
             type: DirectoryOrCreate
           name: config-repo-server-volume
       nodeSelector:

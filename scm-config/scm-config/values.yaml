@@ -41,8 +41,10 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 8888
+  externalIPs:
+    - 10.10.4.121
 
 ingress:
   enabled: false
