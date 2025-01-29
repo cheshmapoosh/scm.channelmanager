@@ -9,8 +9,8 @@ import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
+//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
+//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
@@ -156,17 +156,17 @@ public class RegisterService {
         }
 
         String activationCode = StringUtils.generateGuid();
-        UserActivationEntity activationEntity = new UserActivationEntity();
-        activationEntity.setUsername(username);
-        activationEntity.setAccessParameter(null); //TODO
-        activationEntity.setTerminalCode(client.getTerminalCode());
-        activationEntity.setActivationCode(activationCode);
-        activationEntity.setActivated(true);
-        activationEntity.setAgent(null);
-        activationEntity.setDeviceModel(null);
-        activationEntity.setOsVersion(null);
-        activationEntity.setClientId(client.getUser().getNickname()); //TODO
-        activationEntity.setTokenSetTime(LocalDateTime.now()); //TODO
+//        UserActivationEntity activationEntity = new UserActivationEntity();
+//        activationEntity.setUsername(username);
+//        activationEntity.setAccessParameter(null); //TODO
+//        activationEntity.setTerminalCode(client.getTerminalCode());
+//        activationEntity.setActivationCode(activationCode);
+//        activationEntity.setActivated(true);
+//        activationEntity.setAgent(null);
+//        activationEntity.setDeviceModel(null);
+//        activationEntity.setOsVersion(null);
+//        activationEntity.setClientId(client.getClientId()); //TODO
+//        activationEntity.setTokenSetTime(LocalDateTime.now()); //TODO
 //        private LocalDateTime lastUsed;
 //        userActivationRepository.save(activationEntity);
 

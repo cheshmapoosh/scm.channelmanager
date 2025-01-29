@@ -2,10 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 3
+replicaCount: 1
 
 image:
-  repository: reg.daneshrefah.ir/modern-banking/scm-uaa
+  repository: reg.daneshrefah.ir/modern-banking/scm-app:8.0.0
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -24,7 +24,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "scm-uaa-service-account"
 
 podAnnotations: {}
 podLabels: {}
@@ -41,12 +41,15 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 8000
+  externalIPs:
+    - 10.10.4.124
+
 
 ingress:
-  enabled: true
-  className: "nginx"
+  enabled: false
+  className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -105,7 +108,7 @@ autoscaling:
 
 # Additional volumes on the output Deployment definition.
 volumes:
-  - name: log-hostpath-volume
+  - name: log-volume
     hostPath:
       path: /log
       type: DirectoryOrCreate
@@ -116,16 +119,17 @@ volumes:
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
-  - name: log-hostpath-volume
+  - name: log-volume
     mountPath: "/mnt/log"
+
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
 tolerations:
-  - key: "app.drp.group/name"
+  - key: "daneshrefah.ir/group"
     operator: "Equal"
-    value: "scm-uaa"
+    value: "scm"
     effect: "NoSchedule"
 
 nodeSelector:
@@ -133,10 +137,17 @@ nodeSelector:
 
 affinity: {}
 
-environments:
+env:
   - name: SPRING_PROFILES_ACTIVE
-    value: "dev,k8s"
-  - name: SCM_APP
-    value: "scm-uaa"
+    value: dev
+  - name: SPRING_APPLICATION_NAME
+    value: scm-uaa
+  - name: VERSION
+    value: 8.0.0
   - name: SERVER_PORT
     value: "8000"
+  - name: SPRING_CLOUD_CONFIG_URI
+    valueFrom:
+      configMapKeyRef:
+        name: scm-config-configmap
+        key: SPRING_CLOUD_CONFIG_URI

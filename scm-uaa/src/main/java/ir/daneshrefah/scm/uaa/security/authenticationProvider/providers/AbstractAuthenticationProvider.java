@@ -59,26 +59,26 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
             return createFailAuthentication(authentication, ex);
         }
         this.postAuthenticationChecks.check(user);
-        checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
+//        checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
         return createSuccessAuthentication((GeneralAuthenticationToken) authentication);
     }
 
-    private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
-        ClientSettings clientSettings = authentication.getDetails().getRegisteredClient().getClientSettings();
-        boolean isClientSupportCheckActivation = clientSettings.getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
-        boolean isGrantTypeSupportCheckActivation = authentication.getDetails().getGrantType().isSupportActivationCheck();
-        if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
-            return;
-        }
-        String terminalCode = clientSettings.getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
-        String username = authentication.getDetails().getName();
-        String accessParameter = authentication.getDetails().getAccessParameter();
-        String activationCode = authentication.getDetails().getActivationCode();
-        boolean isActivated = userService.checkUserActivationCode(terminalCode, username, accessParameter, activationCode);
-        if (!isActivated) {
-            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
-        }
-    }
+//    private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
+//        ClientSettings clientSettings = authentication.getDetails().getRegisteredClient().getClientSettings();
+//        boolean isClientSupportCheckActivation = clientSettings.getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
+//        boolean isGrantTypeSupportCheckActivation = authentication.getDetails().getGrantType().isSupportActivationCheck();
+//        if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
+//            return;
+//        }
+//        String terminalCode = clientSettings.getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
+//        String username = authentication.getDetails().getName();
+//        String accessParameter = authentication.getDetails().getAccessParameter();
+//        String activationCode = authentication.getDetails().getActivationCode();
+//        boolean isActivated = userService.checkUserActivationCode(terminalCode, username, accessParameter, activationCode);
+//        if (!isActivated) {
+//            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
+//        }
+//    }
 
     protected Authentication createFailAuthentication(Authentication authentication, Exception exception) {
         // Ensure we return the original credentials the user supplied,

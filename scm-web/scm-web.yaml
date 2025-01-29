@@ -1,0 +1,120 @@
+---
+# Source: scm-web/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scm-web-service-account
+  labels:
+    helm.sh/chart: scm-web-0.1.0
+    app.kubernetes.io/name: scm-web
+    app.kubernetes.io/instance: scm-web
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: scm-web/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: scm-web
+  labels:
+    helm.sh/chart: scm-web-0.1.0
+    app.kubernetes.io/name: scm-web
+    app.kubernetes.io/instance: scm-web
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8082
+      targetPort: http
+      protocol: TCP
+      name: http
+  externalIPs:
+    - 10.10.4.127
+
+  selector:
+    app.kubernetes.io/name: scm-web
+    app.kubernetes.io/instance: scm-web
+---
+# Source: scm-web/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scm-web
+  labels:
+    helm.sh/chart: scm-web-0.1.0
+    app.kubernetes.io/name: scm-web
+    app.kubernetes.io/instance: scm-web
+    app.kubernetes.io/version: "8.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scm-web
+      app.kubernetes.io/instance: scm-web
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: scm-web-0.1.0
+        app.kubernetes.io/name: scm-web
+        app.kubernetes.io/instance: scm-web
+        app.kubernetes.io/version: "8.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: scm-web-service-account
+      securityContext:
+        {}
+      containers:
+        - name: scm-web
+          securityContext:
+            {}
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1110T2000"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: ib4test
+            - name: SPRING_APPLICATION_NAME
+              value: scm-web
+            - name: VERSION
+              value: 8.0.0
+            - name: SERVER_PORT
+              value: "8082"
+            - name: SPRING_CLOUD_CONFIG_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_CLOUD_CONFIG_URI
+                  name: scm-config-configmap
+            - name: SPRING_SECURITY_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_SECURITY_ISSUER_URI
+                  name: scm-uaa-configmap
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+
+
+
+
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /mnt/log
+              name: log-volume
+      volumes:
+        - hostPath:
+            path: /log
+            type: DirectoryOrCreate
+          name: log-volume
+      nodeSelector:
+        app: scm-web
+      tolerations:
+        - effect: NoSchedule
+          key: daneshrefah.ir/group
+          operator: Equal
+          value: scm

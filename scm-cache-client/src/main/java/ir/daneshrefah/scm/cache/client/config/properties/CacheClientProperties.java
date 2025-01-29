@@ -15,9 +15,9 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-11-22
  */
-@ConfigurationProperties("scm.cache.client.config")
-@Setter
-@Getter
+//@ConfigurationProperties("scm.cache.client.config")
+//@Setter
+//@Getter
 public class CacheClientProperties {
     /*
        set properties on target module
