@@ -32,11 +32,12 @@ scm:
       default-schema: MBUAA
   cache:
     client:
+      distributed: true
       config:
-        distributed: true
         cluster-name: dev3
-        server-host: 10.10.4.125
-        server-port: 5701
+        network-config:
+          addresses:
+            - 10.10.4.125:5701
   otp:
     time-to-live-minutes: 1
     jms:

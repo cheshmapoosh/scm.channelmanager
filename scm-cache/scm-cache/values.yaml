@@ -123,7 +123,7 @@ persistence:
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: test
+    value: dev
   - name: SPRING_APPLICATION_NAME
     value: scm-cache
   - name: VERSION

@@ -3,7 +3,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "scm-uaa.fullname" . }}
-  namespace: {{ .Values.namespace }}
   labels:
     {{- include "scm-uaa.labels" . | nindent 4 }}
 spec:

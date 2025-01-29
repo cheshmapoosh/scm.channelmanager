@@ -11,9 +11,10 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    - port: {{ .Values.swagger.port }}
-      targetPort: swagger
-      protocol: TCP
-      name: swagger
+  {{- with .Values.service.externalIPs }}
+  externalIPs:
+    {{- toYaml . | nindent 4}}
+  {{- end }}
+
   selector:
     {{- include "scm-web.selectorLabels" . | nindent 4 }}

@@ -121,7 +121,7 @@ spec:
         - name: scm-cache
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1108T1830"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1110T1845"
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
@@ -132,8 +132,6 @@ spec:
               value: 8.0.0
             - name: SERVER_PORT
               value: "8080"
-            - name: ARTIFACT
-              value: "scm-cache-8.0.0.jar"
             - name: SPRING_CLOUD_CONFIG_URI
               valueFrom:
                 configMapKeyRef:

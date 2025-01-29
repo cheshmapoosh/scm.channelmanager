@@ -24,8 +24,8 @@ import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
-import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
+//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
+//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
@@ -65,7 +65,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
 @Service
 public class UserService {
 
-    private final UserActivationRepository userActivationRepository;
+//    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
     private final TerminalService terminalService;
@@ -472,11 +472,11 @@ public class UserService {
                 .collect(Collectors.toList()));
     }
 
-    public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
-                terminalCode, username, accessParameter, activationCode);
-        return null != activationEntities && !activationEntities.isEmpty();
-    }
+//    public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
+//        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+//                terminalCode, username, accessParameter, activationCode);
+//        return null != activationEntities && !activationEntities.isEmpty();
+//    }
 
     @Transactional
     public void deleteUserByUserId(Integer userId, UserDeleteRequest userDeleteRequest) {
