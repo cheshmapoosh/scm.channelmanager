@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -14,4 +15,5 @@ import lombok.experimental.SuperBuilder;
 @Getter
 public class OtpVerifyRequest extends OtpBaseRequest {
     private String claimCode;
+    private UserEntity userEntity;
 }

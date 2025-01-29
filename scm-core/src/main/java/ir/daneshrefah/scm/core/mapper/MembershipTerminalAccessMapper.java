@@ -31,6 +31,10 @@ public interface MembershipTerminalAccessMapper {
 
     @Mapping(source = "terminal", target = "terminal", qualifiedByName = "toTerminal")
     @Mapping(source = "membership", target = "membership", qualifiedByName = "toMembership")
+    @Mapping(target = "creator" ,ignore = true)
+    @Mapping(target = "createDate" ,ignore = true)
+    @Mapping(target = "lastEditor" ,ignore = true)
+    @Mapping(target = "lastEditDate" ,ignore = true)
     MembershipTerminalAccess toMembershipTerminalAccess(MembershipTerminalAccessEntity entity);
 
     List<MembershipTerminalAccess> toMembershipTerminalAccessList(Iterable<MembershipTerminalAccessEntity> entity);

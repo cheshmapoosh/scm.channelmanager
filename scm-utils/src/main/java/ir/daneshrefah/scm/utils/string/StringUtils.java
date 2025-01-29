@@ -498,4 +498,5 @@ public class StringUtils {
     public static CharSequence trim(String str) {
         return org.apache.commons.lang3.StringUtils.trim(str);
     }
+
 }

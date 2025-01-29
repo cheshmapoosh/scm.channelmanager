@@ -11,13 +11,16 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
-
 @Mapper
 public interface MembershipMapper {
 
     MembershipMapper INSTANCE = Mappers.getMapper(MembershipMapper.class);
 
     @Mapping(source = "person", target = "person", qualifiedByName = "toPersonModel")
+    @Mapping(target = "creator" ,ignore = true)
+    @Mapping(target = "createDate" ,ignore = true)
+    @Mapping(target = "lastEditor" ,ignore = true)
+    @Mapping(target = "lastEditDate" ,ignore = true)
     Membership toModel(MembershipEntity entity);
 
     @Mapping(source = "person", target = "person", qualifiedByName = "toPersonEntity")

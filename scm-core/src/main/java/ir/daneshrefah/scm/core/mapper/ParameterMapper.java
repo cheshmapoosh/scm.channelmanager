@@ -24,6 +24,9 @@ public interface ParameterMapper {
     @Mapping(target = "serviceProvider", ignore = true)
     @Mapping(target = "service", ignore = true)
     @Mapping(target = "responseCondition", ignore = true)
+    @Mapping(target = "parent.serviceProvider", ignore = true)
+    @Mapping(target = "parent.service", ignore = true)
+    @Mapping(target = "parent.responseCondition", ignore = true)
     ParameterEntity toEntity(Parameter entity);
 
     @Named("toDatasourceModel")

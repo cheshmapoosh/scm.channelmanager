@@ -32,7 +32,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
     @Override
     protected int vote(UserProfile profile, Service service, String asset) {
         AbstractExternalServiceProvider provider = service instanceof AbstractExternalService ?
-                ((AbstractExternalService) service).getServiceProvider() : null;
+                ((AbstractExternalService<?>) service).getServiceProvider() : null;
         if (Objects.isNull(provider) || Objects.isNull(provider.getAssetProvider())) {
             return ACCESS_ABSTAIN;
         }
@@ -41,7 +41,7 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
         }
         Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         profile = personProfileLoader.preparePersonProfileMemberships(profile, terminal.getCode());
-        boolean isAssetAssigned = profile.hasAssetAccess(provider.getAssetProvider().getId(), asset/*, null*/);
+        boolean isAssetAssigned = profile.hasAssetAccess(provider.getAssetProvider().getId(), asset);
         if (!isAssetAssigned) {
             throw new AccessDeniedException(SCM_PARAMETER_ASSET, ERROR_CODE_ASSET_NOT_ASSIGNED, "asset not assigned.");
         }

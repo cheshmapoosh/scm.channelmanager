@@ -183,9 +183,11 @@ public class SecurityConfig {
                     httpSecurityCorsConfigurer.configurationSource(configurationSource);
                 })
                 .logout(logout -> {
-//                    logout.logoutUrl("/logout");
                     logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
                     logout.logoutSuccessHandler(this::logoutSuccessHandlerConfiguration);
+                    logout.invalidateHttpSession(true);
+                    logout.deleteCookies("JSESSIONID");
+                    logout.clearAuthentication(true);
                 })
                 .formLogin(login -> {
 //                    login.setFormLoginEnabled(true);

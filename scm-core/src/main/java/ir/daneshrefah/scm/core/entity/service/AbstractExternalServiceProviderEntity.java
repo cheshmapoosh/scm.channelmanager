@@ -53,7 +53,4 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractVers
             , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
     private List<ParameterEntity> parameters;
 
-//    public abstract AbstractExternalServiceProviderMetadata getMetadata();
-//    public abstract void setMetadata(AbstractExternalServiceProviderMetadata metadata);
-
 }

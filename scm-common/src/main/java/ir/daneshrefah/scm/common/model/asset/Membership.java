@@ -19,4 +19,7 @@ public class Membership extends BaseModel<Long> {
     private GeneralPerson person;
     private CustomerAccount customerAccount;
     private Boolean defaultAccount;
+    private Integer archiveNumber;
+    private Boolean close;
+
 }

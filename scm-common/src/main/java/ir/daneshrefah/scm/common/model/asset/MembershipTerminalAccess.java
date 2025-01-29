@@ -2,9 +2,11 @@ package ir.daneshrefah.scm.common.model.asset;
 
 import ir.daneshrefah.scm.common.BaseModel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -22,6 +24,8 @@ public class MembershipTerminalAccess extends BaseModel<Long> {
     private Terminal terminal;
     private Membership membership;
     private Boolean favorite;
-    private LocalDate toDate;
+    private BigDecimal maxWithdrawalPerDay;
+    private BigDecimal maxWithdrawalPerMonth;
     private LocalDate fromDate;
+    private LocalDate toDate;
 }

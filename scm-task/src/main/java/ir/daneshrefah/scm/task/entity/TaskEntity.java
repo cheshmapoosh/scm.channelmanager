@@ -19,7 +19,7 @@ public class TaskEntity {
     @Column(name = "TASK_ID")
     private Long id;
     @Column(name = "USER_ID")
-    private Integer userId;
+    private Long userId;
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "PROCESS_ID")
     private ProcessInstanceEntity processInstance;
@@ -37,7 +37,7 @@ public class TaskEntity {
     @Column(name = "ARCHIVE_NO", updatable = false)
     private Long archiveNo;
     @Column(name = "CREATE_BY")
-    private Integer createdBy;
+    private Long createdBy;
     @Column(name = "CREATE_AT")
     private Date createAt;
     @Column(name = "UPDATE_AT")

@@ -3,8 +3,6 @@ package ir.daneshrefah.scm.uaa.repository.authentication;
 import ir.daneshrefah.scm.common.data.converter.UserStatusConverter;
 import ir.daneshrefah.scm.common.data.converter.UserTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultAuditableEntity;
-import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
@@ -14,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -64,15 +63,19 @@ public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
     @Column(name = "BRANCH_CODE")
     private String creatorBranch;
     @Column(name = "CREATED_BY")
-    private Integer creator;
+    private Long creator;
     @Column(name = "MODIFIED_BY")
-    private Integer lastEditor;
+    private Long lastEditor;
     @Column(name = "CREATION_DATE", insertable = false, updatable = false)
     private LocalDateTime createDate;
     @Column(name = "MODIFICATION_DATE", insertable = false)
     private LocalDateTime lastEditDate;
-
-
+    @Column(name = "PRINT_COUNT")
+    private Integer printCount;
+    @Column(name = "LAST_DATE_OF_PASSWORD_CHANGE")
+    private Date lastDateOfFirstPasswordChange;
+    @Column(name = "LAST_REACTION_DATE_TO_PASSWORD")
+    private Date lastReactionDateToFirstPasswordChange;
 //ARCHIVE_NO smallint NOT NULL DEFAULT '8',
 //FROM_DATE datetime(6) DEFAULT NULL,
 //TO_DATE datetime(6) DEFAULT NULL,

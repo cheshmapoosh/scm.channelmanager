@@ -39,6 +39,7 @@ public interface ServiceProviderMapper {
     @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
     @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
     @Mapping(source = "parameters", target = "configParameter",qualifiedByName = "toConfigParameter")
+    @Mapping(target = "metadata" ,ignore = true)
     RestExternalServiceProvider toModel(RestExternalServiceProviderEntity entity);
 
     @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsModel")
@@ -46,6 +47,7 @@ public interface ServiceProviderMapper {
     @Mapping(source = "parameters", target = "requestBody",qualifiedByName = "toRequestBodyModel")
     @Mapping(source = "parameters", target = "responseHeaders",qualifiedByName = "toResponseHeadersModel")
     @Mapping(source = "parameters", target = "configParameter",qualifiedByName = "toConfigParameter")
+    @Mapping(target = "metadata" ,ignore = true)
     CustomExternalServiceProvider toModel(CustomExternalServiceProviderEntity entity);
 
     @Mapping(source = "responseConditions",target = "responseConditions",qualifiedByName = "toResponseConditionsEntity")

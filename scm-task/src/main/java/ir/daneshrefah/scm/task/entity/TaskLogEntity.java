@@ -33,7 +33,7 @@ public class TaskLogEntity {
     private Long archiveNo;
 
     @Column(name = "CREATE_BY")
-    private Integer createdBy;
+    private Long createdBy;
 
     @Column(name = "CREATE_AT")
     private Date createAt;

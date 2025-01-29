@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.core.entity.asset;
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.core.converter.AssetProviderCodeConverter;
-import ir.daneshrefah.scm.core.converter.CustomerRelationTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,5 +28,7 @@ public class AssetProviderEntity extends AbstractEntity<Integer> {
     private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
+    @Column(name = "PROVIDER_SERVICE_ID")
+    private String serviceId;
 
 }

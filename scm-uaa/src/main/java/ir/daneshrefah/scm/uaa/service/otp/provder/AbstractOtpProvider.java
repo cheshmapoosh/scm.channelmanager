@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
 import ir.daneshrefah.scm.uaa.exception.OtpCodeGenerationException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
-import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -40,7 +39,6 @@ public abstract class AbstractOtpProvider {
     protected final CacheTemplate cacheTemplate;
     private final OtpProperties otpProperties;
     private final ProfileInfo profileInfo;
-    protected final UserService userService;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -140,7 +138,7 @@ public abstract class AbstractOtpProvider {
         return otp;
     }
 
-    private String generateOtpCode(OtpPattern pattern, int count) {
+    public String generateOtpCode(OtpPattern pattern, int count) {
         if (Objects.isNull(pattern) || count < 1) {
             return null;
         }
@@ -156,10 +154,6 @@ public abstract class AbstractOtpProvider {
     }
 
     public abstract OtpVerifyResponse verifyOtp(OtpVerifyRequest request);
-    public abstract OtpVerifyResponse verifyOtpByDelegatedUser(VerifyOtpByDelegatedUserRequest request);
-    public abstract OtpVerifyResponse verifyOtpByLoggedInUser(VerifyOtpByLoggedInUserRequest request);
-    public abstract OtpVerifyResponse verifyOtpByUsername(VerifyOtpByUsernameRequest request);
-    public abstract OtpVerifyResponse verifyOtpByNickname(VerifyOtpByNicknameRequest request);
-    public abstract OtpType getType();
 
+    public abstract OtpType getType();
 }

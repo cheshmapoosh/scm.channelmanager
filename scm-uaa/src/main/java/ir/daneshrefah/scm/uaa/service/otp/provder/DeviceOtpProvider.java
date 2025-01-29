@@ -2,12 +2,13 @@ package ir.daneshrefah.scm.uaa.service.otp.provder;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
-import ir.daneshrefah.scm.uaa.service.otp.dto.*;
-import ir.daneshrefah.scm.uaa.service.user.UserService;
+import ir.daneshrefah.scm.uaa.service.otp.OtpDeviceService;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
+import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
-import org.springframework.context.annotation.Lazy;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,36 +18,20 @@ import org.springframework.stereotype.Component;
  * @version 1.0
  * @since 2023-12-30
  */
+@Slf4j
 @Component
 public class DeviceOtpProvider extends AbstractOtpProvider {
 
-    public DeviceOtpProvider(CacheTemplate cacheTemplate, OtpProperties otpProperties, ProfileInfo profileInfo, @Lazy UserService userService) {
-        super(cacheTemplate, otpProperties, profileInfo, userService);
+    @Autowired
+    private OtpDeviceService otpDeviceService;
+
+    public DeviceOtpProvider(CacheTemplate cacheTemplate, OtpProperties otpProperties, ProfileInfo profileInfo) {
+        super(cacheTemplate, otpProperties, profileInfo);
     }
 
     @Override
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
-        return null;
-    }
-
-    @Override
-    public OtpVerifyResponse verifyOtpByDelegatedUser(VerifyOtpByDelegatedUserRequest request) {
-        return null;
-    }
-
-    @Override
-    public OtpVerifyResponse verifyOtpByLoggedInUser(VerifyOtpByLoggedInUserRequest request) {
-        return null;
-    }
-
-    @Override
-    public OtpVerifyResponse verifyOtpByUsername(VerifyOtpByUsernameRequest request) {
-        return null;
-    }
-
-    @Override
-    public OtpVerifyResponse verifyOtpByNickname(VerifyOtpByNicknameRequest request) {
-        return null;
+        return otpDeviceService.verifyOtp(request);
     }
 
     @Override

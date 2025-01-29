@@ -184,17 +184,29 @@ public class JakartaSession implements Session {
 
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException {
-        return null;
+        try {
+            return new JakartaMessageConsumer(session.createConsumer(DestinationHelper.mapJakartaDestinationToJms(destination)));
+        } catch (javax.jms.JMSException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
-        return null;
+        try {
+            return new JakartaMessageConsumer(session.createConsumer(DestinationHelper.mapJakartaDestinationToJms(destination), messageSelector));
+        } catch (javax.jms.JMSException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
-        return null;
+        try {
+            return new JakartaMessageConsumer(session.createConsumer(DestinationHelper.mapJakartaDestinationToJms(destination), messageSelector, noLocal));
+        } catch (javax.jms.JMSException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

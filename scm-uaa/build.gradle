@@ -51,7 +51,8 @@ dependencies {
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     implementation 'org.apache.commons:commons-collections4'
-
+    api 'com.ibm.mq:com.ibm.mq.allclient:9.4.1.0'
+    api 'com.ibm.mq:com.ibm.mq.jakarta.client:9.4.1.0'
 }
 
 test{

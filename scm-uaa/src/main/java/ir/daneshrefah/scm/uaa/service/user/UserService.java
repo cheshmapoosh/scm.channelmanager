@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.service.user;
 import ir.daneshrefah.scm.common.constant.SecurityConstants;
 import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
@@ -10,10 +11,7 @@ import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.PersonStatus;
-import ir.daneshrefah.scm.common.model.person.UnknownPerson;
-import ir.daneshrefah.scm.common.model.person.UserStatus;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
@@ -23,11 +21,13 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.controller.user.*;
-import ir.daneshrefah.scm.uaa.domain.otp.OtpAuthenticationType;
+import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
+import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
 import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
@@ -37,15 +37,13 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -67,9 +65,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
 @Service
 public class UserService {
 
-    public static final String DELETE_FROM_X_USER = "DELETE FROM REF.XUSER_DETAIL WHERE USERNAME = ? AND CHANNEL_CODE = ?";
-
-//    private final UserActivationRepository userActivationRepository;
+    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
     private final TerminalService terminalService;
@@ -77,7 +73,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final UserCache userCache;
-    private final JdbcTemplate jdbcTemplate;
+    private final XUserDetailService xUserDetailService;
     private final CredentialGenerator credentialGenerator;
 
     @Transactional
@@ -100,7 +96,6 @@ public class UserService {
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
-        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -131,7 +126,10 @@ public class UserService {
         userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
-        removeXUser(userEntity);
+        UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        assert currentAuthentication != null;
+        String terminalCode = currentAuthentication.getTerminalCode();
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -149,7 +147,10 @@ public class UserService {
         userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
-        removeXUser(userEntity);
+        UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
+        assert currentAuthentication != null;
+        String terminalCode = currentAuthentication.getTerminalCode();
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -217,6 +218,23 @@ public class UserService {
         return true;
     }
 
+    public Boolean activateOrDeactivateStatusUser(UpdateUserStatusRequest request) {
+        ValidationUtils.checkNull(request.getStatus(), () -> new MissingRequiredInputException("status"));
+        Optional<UserEntity> findUserEntity = findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(
+                request.getPersonType(),
+                request.getNationalId(),
+                request.getSubOrganizationId(),
+                request.getTerminalCode());
+        UserEntity user = findUserEntity.orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        if (request.getStatus()) {
+            user.setStatus(UserStatus.ACTIVE);
+        } else {
+            user.setStatus(UserStatus.INACTIVE);
+        }
+        userRepository.save(user);
+        return true;
+    }
+
     public User createShahkarVerifiedUserAndDeleteOld(String nationalCode, String mobileNo, String terminalCode) {
         ValidationUtils.checkBlankString(nationalCode, () -> new MissingRequiredInputException("nationalCode"));
         ValidationUtils.checkInvalidMobileNumber(mobileNo, () -> new InvalidInputException("mobileNo"));
@@ -226,7 +244,7 @@ public class UserService {
 
         //TODO verify shahkar
 
-        GeneralRealPersonEntity personEntity = personRepository.findRealPersonByNationalCode(nationalCode);
+        GeneralRealPersonEntity personEntity = findRealPersonByNationalCode(nationalCode);
         if (Objects.isNull(personEntity)) {
             personEntity = new IndividualPersonEntity();
             personEntity.setUsername(nationalCode);
@@ -278,6 +296,10 @@ public class UserService {
         return null;
     }
 
+    public GeneralRealPersonEntity findRealPersonByNationalCode(String nationalCode) {
+        return personRepository.findRealPersonByNationalCode(nationalCode);
+    }
+
     public User createSmsVerifiedUserAndDeleteOld(String mobileNo, String terminalCode) {
         ValidationUtils.checkBlankString(terminalCode, () -> new MissingRequiredInputException("terminalCode"));
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
@@ -315,7 +337,7 @@ public class UserService {
         User user = UserMapper.INSTANCE.toModel(entity);
 
         GeneralPerson person = new UnknownPerson();
-        person.setId(new Random().nextInt());
+        person.setId(new Random().nextLong());
         person.setUsername(StringUtils.generateGuid());
         person.setStatus(PersonStatus.ACTIVE);
         person.setMobile1(mobileNo);
@@ -343,7 +365,7 @@ public class UserService {
             StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
-        GeneralPersonEntity personEntity = findPersonById(request.getPersonId().intValue());
+        GeneralPersonEntity personEntity = findPersonById(request.getPersonId());
         ValidationUtils.checkNull(personEntity, () -> new InvalidInputException("personId"));
         GeneralPersonEntity creatorEntity = findPersonByUsername(AuthenticationUtils.getLoggedInGlobalUsername());
         ValidationUtils.checkNull(creatorEntity, () -> new NoMatchRecordFoundException("creator person does not login"));
@@ -436,7 +458,7 @@ public class UserService {
         return null != persons && !persons.isEmpty() ? persons.get(0) : null;
     }
 
-    public GeneralPersonEntity findPersonById(Integer id) {
+    public GeneralPersonEntity findPersonById(Long id) {
         Optional<GeneralPersonEntity> person = personRepository.findById(id);
         return person.orElse(null);
     }
@@ -451,9 +473,8 @@ public class UserService {
     }
 
     public boolean checkUserActivationCode(String terminalCode, String username, String accessParameter, String activationCode) {
-        List<UserActivationEntity> activationEntities = null;
-//                userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
-//                terminalCode, username, accessParameter, activationCode);
+        List<UserActivationEntity> activationEntities = userActivationRepository.findAllByTerminalCodeAndUsernameAndAccessParameterAndActivationCodeAndActivatedTrue(
+                terminalCode, username, accessParameter, activationCode);
         return null != activationEntities && !activationEntities.isEmpty();
     }
 
@@ -491,7 +512,7 @@ public class UserService {
         userEntity.setLastEditDate(LocalDateTime.now());
         userEntity.setLoginAuthenticationMethod(requestMethod);
         userRepository.save(userEntity);
-        removeXUser(userEntity);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(nickname + "::" + terminalCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -556,17 +577,31 @@ public class UserService {
         userEntity.setTransactionAuthenticationMethod(requestMethod);
         String terminalCode = currentUserAuthentication.getTerminalCode();
         String nickname = currentUserAuthentication.getName();
-        userCache.removeUserFromCache(nickname + "::" + terminalCode);
-        removeXUser(userEntity);
         userRepository.save(userEntity);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
+        userCache.removeUserFromCache(nickname + "::" + terminalCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-    private void removeXUser(UserEntity userEntity) {
-        UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
-        assert currentAuthentication != null;
-        jdbcTemplate.update(DELETE_FROM_X_USER,userEntity.getNickname(),currentAuthentication.getTerminalCode());
+    @Transactional
+    public User changeAuthenticationMethodByNationalCodeAndTerminalId(ChangeAuthenticationMethodRequest request) {
+        ValidationUtils.checkNull(request.getAuthenticationMethod(), () -> new InvalidInputException("authenticationMethod"));
+        ValidationUtils.checkNull(request.getAuthenticationMethodType(), () -> new InvalidInputException("authenticationMethodType"));
+        ValidationUtils.checkBlankString(request.getNationalCode(), () -> new InvalidInputException("nationalCode"));
+        ValidationUtils.checkBlankString(request.getTerminalCode(), () -> new InvalidInputException("terminalCode"));
+        UserEntity userEntity = findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganization(), request.getTerminalCode())
+                .orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        switch (request.getAuthenticationMethodType()) {
+            case TRANSACTION -> userEntity.setTransactionAuthenticationMethod(request.getAuthenticationMethod());
+            case LOGIN -> userEntity.setLoginAuthenticationMethod(request.getAuthenticationMethod());
+            default -> throw new UnsupportedOperationException("Unsupported authentication method: " + request.getAuthenticationMethodType());
+        }
+        userRepository.save(userEntity);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
+        userCache.removeUserFromCache(userEntity.getNickname() + "::" + request.getTerminalCode());
+        return UserMapper.INSTANCE.toModel(userEntity);
     }
+
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
             , UserEntity userEntity
@@ -588,11 +623,11 @@ public class UserService {
         }
     }
 
-    public boolean validateStaticPassword(UserEntity userEntity, String credential, OtpAuthenticationType otpAuthenticationType) {
-        if (StringUtils.isBlank(userEntity.getTransactionStaticPassword()) || otpAuthenticationType == null) {
+    public boolean validateStaticPassword(UserEntity userEntity, String credential, AuthenticationMethodType authenticationMethodType) {
+        if (StringUtils.isBlank(userEntity.getTransactionStaticPassword()) || authenticationMethodType == null) {
             return false;
         }
-        if (otpAuthenticationType.equals(OtpAuthenticationType.TRANSACTION)) {
+        if (authenticationMethodType.equals(AuthenticationMethodType.TRANSACTION)) {
             return userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
         } else {
             return userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
@@ -620,7 +655,6 @@ public class UserService {
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
-        removeXUser(userEntity);
         userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -652,7 +686,7 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
     }
 
-    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Integer userId, String terminalCode) {
+    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Long userId, String terminalCode) {
         Terminal terminal = findTerminalByCode(terminalCode);
         return userRepository.findByPersonIdAndLegacyTerminalId(userId, terminal.getLegacyTerminalId().intValue());
     }
@@ -674,5 +708,153 @@ public class UserService {
     public List<UserEntity> findByNicknameAndLegacyTerminalCode(String nickname, String terminalCode) {
         Terminal terminal = findTerminalByCode(terminalCode);
         return userRepository.findByNicknameAndLegacyTerminalId(nickname, terminal.getLegacyTerminalId().intValue());
+    }
+
+    public Optional<UserEntity> findByNationalCodeAndTerminalIDAndSubOrganizationId(String nationalCode, String subOrganization, String terminalCode) {
+        Terminal terminal = findTerminalByCode(terminalCode);
+        ValidationUtils.checkBlankString(nationalCode, () -> new MissingRequiredInputException("nationalCode"));
+        ValidationUtils.checkNull(terminalCode, () -> new NoMatchRecordFoundException("terminalCode"));
+        Specification<UserEntity> spec = FindUserByNationalCodeSpecs.toSpecification(null, nationalCode, subOrganization, terminal.getLegacyTerminalId());
+        return userRepository.findOne(spec);
+    }
+
+    public Optional<UserEntity> findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(PersonType personType, String nationalCode, String subOrganization, String terminalCode) {
+        Terminal terminal = findTerminalByCode(terminalCode);
+        ValidationUtils.checkNull(personType, () -> new MissingRequiredInputException("personType"));
+        ValidationUtils.checkBlankString(nationalCode, () -> new MissingRequiredInputException("nationalCode"));
+        ValidationUtils.checkNull(terminalCode, () -> new NoMatchRecordFoundException("terminalCode"));
+        Specification<UserEntity> spec = FindUserByNationalCodeSpecs.toSpecification(personType, nationalCode, subOrganization, terminal.getLegacyTerminalId());
+        return userRepository.findOne(spec);
+    }
+
+    public List<GeneralPersonEntity> findOtpRegistration(String nationalCode, List<String> tokenTypes) {
+        return personRepository.findOtpRegistration(nationalCode, tokenTypes);
+    } //TODO move to personService
+
+    public List<GeneralPersonEntity> findByTokenTypesAndNationalCode(String nationalCode, List<String> tokenTypes) {
+        return personRepository.findByTokenTypesAndNationalCode(nationalCode, tokenTypes);
+    }//TODO move to personService
+
+    public List<GeneralPersonEntity> findByTokenTypesAndNationalCodeAndOtpSerialNo(String nationalCode, List<String> tokenTypes, String otpSerialNo) {
+        return personRepository.findByTokenTypesAndNationalCodeAndOtpSerialNo(nationalCode, tokenTypes, otpSerialNo);
+    }//TODO move to personService
+
+    public User assignTerminalToPerson(UserAssignTerminalRequest request) {
+        findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
+            throw new DuplicatedRecordFoundException(request.getNationalId());
+        });
+        String nickName = StringUtils.isBlank(request.getNickName()) ? request.getPhoneNumber() : request.getNickName();
+        User user = findByNicknameAndTerminalCode(nickName, request.getTerminalCode());
+        if (user != null) {
+            throw new DuplicatedRecordFoundException(request.getNationalId());
+        }
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId())
+                .orElseThrow(() -> new NoMatchRecordFoundException("person"));
+
+        UserEntity userEntity = createUserEntity(request, generalPerson);
+        userRepository.save(userEntity);
+        return UserMapper.INSTANCE.toModel(userEntity);
+    }
+
+    private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {
+        return personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrganizationId);
+    }
+
+    private GeneralPersonEntity findLegalPerson(String nationalId) {
+        return personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
+    }
+
+    private Optional<GeneralPersonEntity> findPerson(PersonType personType, String nationalId, String subOrganizationId) {
+        switch (personType) {
+            case REAL, EMPLOYEE -> {
+                return Optional.ofNullable(findRealPersonByNationalCode(nationalId));
+            }
+            case CORPORATE, BANK, TAMIN, GOVERNANCE -> {
+                if (Objects.nonNull(subOrganizationId) && !subOrganizationId.isBlank()) {
+                    return Optional.ofNullable(findLegalPerson(nationalId, subOrganizationId));
+                } else {
+                    return Optional.ofNullable(findLegalPerson(nationalId));
+                }
+            }
+            default -> throw new InvalidInputException("personType");
+        }
+    }
+
+    private UserEntity createUserEntity(UserAssignTerminalRequest request, GeneralPersonEntity generalPerson) {
+        ValidationUtils.checkEmptyString(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
+        ValidationUtils.checkEmptyString(request.getLoginStaticPassword(), () -> new MissingRequiredInputException("loginStaticPassword"));
+        ValidationUtils.checkEmptyString(request.getTransactionStaticPassword(), () -> new MissingRequiredInputException("transactionStaticPassword"));
+        ValidationUtils.checkEmptyString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
+        ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
+        ValidationUtils.checkNull(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
+        ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
+        ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
+        ValidationUtils.checkNull(request.getPersonType(), () -> new MissingRequiredInputException("personType"));
+        Terminal terminal = findTerminalByCode(request.getTerminalCode());
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        UserEntity user = new UserEntity();
+        if (terminal.getCode().equals("MB")) {
+            String nickName = StringUtils.isBlank(request.getNickName()) ? request.getPhoneNumber() : request.getNickName();
+            user.setNickname(nickName);
+            user.setAccessParameters(Set.of(request.getPhoneNumber()));
+        } else {
+            ValidationUtils.checkNull(request.getNickName(), () -> new MissingRequiredInputException("nickName"));
+            user.setNickname(request.getNickName());
+            user.setAccessParameters(Set.of(""));//TODO How fill it?
+        }
+        user.setTerminalId(terminal.getLegacyTerminalId().intValue());
+        user.setLoginAuthenticationMethod(request.getLoginAuthenticationMethod());
+        user.setTransactionAuthenticationMethod(request.getLoginAuthenticationMethod());
+        user.setStatus(UserStatus.ACTIVE);
+        user.setPrintCount(0);
+        user.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), generalPerson.getUsername()));
+        user.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), generalPerson.getUsername()));
+        user.setPerson(generalPerson);
+        user.setType(UserType.CM_REGULAR);
+        user.setCreatorBranch(getLoggedInBranchCode());
+        user.setCreator(loggedInUserId);
+        user.setCreateDate(LocalDateTime.now());
+        return user;
+    }
+
+    private String getLoggedInBranchCode() {
+        User loggedInUser = AuthenticationUtils.getLoggedInUser();
+        assert loggedInUser != null;
+        GeneralPerson loggedInPerson = loggedInUser.getPerson();
+        String branchCode = loggedInPerson.getBranchCode();
+        if (!loggedInPerson.getPersonType().equals(PersonType.EMPLOYEE)) {//TODO uncommented
+            throw new RuntimeException();
+        }
+        if (StringUtils.isBlank(branchCode)) {
+            GeneralPersonEntity generalPersonEntity = personRepository.findById(AuthenticationUtils.getLoggedInUserId())
+                    .orElseThrow(() -> new NoMatchRecordFoundException("user"));
+            branchCode = generalPersonEntity.getBranchCode();
+        }
+        ValidationUtils.checkBlankString(branchCode, () -> new MissingRequiredInputException("branchCode"));
+        return branchCode;
+    }
+
+    public Boolean UpdatePasswordRequest(UpdatePasswordRequest request) {
+        ValidationUtils.checkEmptyString(request.getNewPassword(), () -> new MissingRequiredInputException("newPassword"));
+        ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
+        ValidationUtils.checkEmptyString(request.getNationalCode(), () -> new MissingRequiredInputException("nationalCOde"));
+        ValidationUtils.checkNull(request.getAuthenticationMethodType(), () -> new MissingRequiredInputException("authenticationMethodType"));
+        UserEntity userEntity = findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganizationId(), request.getTerminalCode()).orElseThrow(() -> {
+            throw new NoMatchRecordFoundException("user");
+        });
+        GeneralPersonEntity person = userEntity.getPerson();
+        if (request.getAuthenticationMethodType().equals(AuthenticationMethodType.LOGIN)) {
+            if (!userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+                throw new UnsupportedOperationException();
+            }
+            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(),person.getUsername()));
+        }else {
+            if (!userEntity.getTransactionAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+                throw new UnsupportedOperationException();
+            }
+            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(),person.getUsername()));
+        }
+        userRepository.save(userEntity);
+        return true;
     }
 }

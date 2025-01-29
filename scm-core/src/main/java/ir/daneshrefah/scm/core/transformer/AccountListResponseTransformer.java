@@ -66,23 +66,23 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         List<MembershipTerminalAccess> memberships = profile.getMemberships();
         log.info(">>> {} memberships found ", memberships.size());
         if (isValidAccount(sourceNode)) {
-                final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
-                Optional<MembershipTerminalAccess> membership = memberships.stream()
-                        .filter(m -> StringUtils.equals(
-                                Long.toString(accountNo),
-                                StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
-                        ).findFirst();
-                if (membership.isEmpty() || !membership.get().getActive()) {
-                    sourceNode.put("nickName", StringUtils.EMPTY);
-                    sourceNode.put("favorite", StringUtils.EMPTY);
-                    return null;
-                } else {
-                    MembershipTerminalAccess membershipTerminalAccess = membership.get();
-                    String nickname = membershipTerminalAccess.getMembership().getNickname();
-                    sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
-                    checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
-                }
-                return sourceNode;
+            final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
+            Optional<MembershipTerminalAccess> membership = memberships.stream()
+                    .filter(m -> StringUtils.equals(
+                            Long.toString(accountNo),
+                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                    ).findFirst();
+            if (membership.isEmpty() || !membership.get().getActive()) {
+                sourceNode.put("nickName", StringUtils.EMPTY);
+                sourceNode.put("favorite", StringUtils.EMPTY);
+                return null;
+            } else {
+                MembershipTerminalAccess membershipTerminalAccess = membership.get();
+                String nickname = membershipTerminalAccess.getMembership().getNickname();
+                sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
+                checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
+            }
+            return sourceNode;
         }
         return null;
     }

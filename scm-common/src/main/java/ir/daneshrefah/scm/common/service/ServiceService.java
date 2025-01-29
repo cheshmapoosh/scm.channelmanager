@@ -4,6 +4,12 @@ import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.provider.*;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
+import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceCreateRequest;
+import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceEditRequest;
+import ir.daneshrefah.scm.common.dto.service.java.JavaServiceCreateRequest;
+import ir.daneshrefah.scm.common.dto.service.java.JavaServiceEditRequest;
+import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceCreateRequest;
+import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceEditRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
@@ -19,16 +25,11 @@ import java.util.Optional;
  * @version 1.0
  * @since 2024-01-17
  */
-public interface ServiceService {
-
-    List<AbstractExternalServiceProvider> findServiceProviderList();
-    PagedResponseData<ServiceProviderFindResponse> findServiceProviderList(ServiceProviderFindRequest request);
-
-    AbstractExternalServiceProvider findServiceProviderById(String id);
-
-    AbstractExternalServiceProvider findServiceProviderByCode(String code);
-
-    AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value);
+public interface ServiceService extends
+        ServiceProviderService,
+        JavaServicesService,
+        PatentServicesService,
+        CompositionServicesService {
 
     List<Service> findServiceList();
     List<Service> findProxyServiceList();
@@ -47,15 +48,11 @@ public interface ServiceService {
 
     boolean checkServiceExistById(String serviceId);
 
-    boolean checkServiceProviderExistById(String serviceProviderId);
-
     void deleteService(ServiceDeleteRequest request);
 
     PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request);
 
     Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode);
-
-    PagedResponseData<Service> findParentServiceList(ParentServiceFindRequest request);
 
     AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request);
 
@@ -63,5 +60,7 @@ public interface ServiceService {
 
     AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
     List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request);
+
     void cacheEvict();
+
 }

@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.core.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.model.customer.AssetType;
+import ir.daneshrefah.scm.core.converter.AssetTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,14 +33,17 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @JoinColumn(name = "USER_ID")
     private GeneralPersonEntity person;
 
-    @Column(name = "DEFAULT_ACCOUNT")
-    private Boolean defaultAccount;
-
     @Column(name = "ARCHIVE_NO")
     private Integer archiveNumber;
 
     @OneToOne
     @JoinColumn(name = "CUSTOMER_ACCOUNT_ID")
     private CustomerAccountEntity customerAccount;
+
+    @Column(name = "DEFAULT_ACCOUNT")
+    private Boolean defaultAccount;
+
+    @Column(name = "CLOSE")
+    private Boolean close;
 
 }

@@ -3,8 +3,7 @@ package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -24,7 +23,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -32,20 +30,15 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrl;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.RestUrlBuilder;
-import ir.daneshrefah.scm.core.integration.service.JavaServiceFinder;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
-import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
-import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
 import ir.daneshrefah.scm.utils.network.NetworkUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.PostConstruct;
-import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.*;
@@ -68,7 +61,6 @@ public class SwaggerGenerator {
     private static final ObjectMapper OBJECT_MAPPER;
     private static final String SWAGGER_VERSION = "1.0.1";
     private static SwaggerGenerator SWAGGER_GENERATOR;
-    private final ServiceService serviceService;
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -76,12 +68,15 @@ public class SwaggerGenerator {
         OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
         OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        OBJECT_MAPPER.registerModule(javaTimeModule);
     }
 
+    private final ServiceJsonSchemaGenerator serviceJsonSchemaGenerator;
+    private final ServiceService serviceService;
     private final Set<String> TAGS = new HashSet<>();
     @Value("${scm.swagger.target-host:#{null}}")
     private String targetHost;
-
 
     public static SwaggerGenerator getInstance() {
         return SWAGGER_GENERATOR;
@@ -104,8 +99,8 @@ public class SwaggerGenerator {
         generateSecurityComponent(components);
         openAPI.setComponents(components);
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
-            if (exposedAble(serviceAccess)) {
-                Service service = serviceService.findServiceByCode(serviceAccess.getService().getCode());
+            Service service = serviceService.findServiceByCode(serviceAccess.getService().getCode());
+            if (exposedAble(service)) {
                 Terminal terminal = serviceAccess.getTerminal();
                 RestUrl restUrl = urlBuilder.build(serviceAccess);
                 //generate tags
@@ -115,7 +110,7 @@ public class SwaggerGenerator {
                 //path item
                 generatePathItems(openAPI, operation, restUrl);
                 //Extract basic information
-                generateBasicInformation(service,terminal, operation);
+                generateBasicInformation(service, terminal, operation);
                 //path parameter
                 generatePathParameters(restUrl.getUrl(), operation);
                 //request body
@@ -164,11 +159,13 @@ public class SwaggerGenerator {
         return null;
     }
 
-
-    private boolean exposedAble(TerminalServiceAccess serviceAccess) {
-        Service service = serviceAccess.getService();
+    private boolean exposedAble(Service service) {
         ServiceStatus status = service.getStatus();
-        return Objects.nonNull(status) && !status.equals(ServiceStatus.INTERNAL);
+        boolean implanted = true;
+        if (service instanceof JavaService javaService) {
+            implanted = javaService.isImplemented();
+        }
+        return Objects.nonNull(status) && !status.equals(ServiceStatus.INTERNAL) && implanted;
     }
 
     private void generatePathItems(OpenAPI openAPI, Operation operation, RestUrl restUrl) {
@@ -204,7 +201,6 @@ public class SwaggerGenerator {
             });
         }
     }
-
 
     private void generateSecurityHeaders(Operation operation, Service service) {
         Boolean loginAuthentication = service.getCheckAccessFirstAuthentication();
@@ -280,32 +276,26 @@ public class SwaggerGenerator {
     }
 
     private void generateResponseSchema(Service service, Operation operation, Components components) {
-        String responseJsonSchema = service.getResponseJsonSchema();
-        if (Objects.isNull(responseJsonSchema) || responseJsonSchema.isBlank()) {
-            if (service instanceof JavaService javaService) {
-                responseJsonSchema = generateJavaServiceResponseJsonSchema(javaService);
-            }
-        }
+        String responseJsonSchema = serviceJsonSchemaGenerator.generateResponseSchema(service);
+        responseJsonSchema = applyResponseJsonSchemaTemplate(responseJsonSchema);
         if (Objects.nonNull(responseJsonSchema) && !responseJsonSchema.isBlank()) {
             try {
                 //parse json
                 ApiResponses apiResponses = new ApiResponses();
-                ApiResponse apiResponse = new ApiResponse();
-                Content respContent = new Content();
-                MediaType respMediaType = new MediaType();
-                Schema<Object> objectSchema = new Schema<>();
-                String schemaName = StringUtils.toCamelCase(service.getCode()) + "RespTO";
-                objectSchema.set$ref(schemaName);
-                respMediaType.schema(objectSchema);
-                respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, respMediaType);
-                apiResponse.setContent(respContent);
-                apiResponse.setDescription("successful");
-                apiResponses.addApiResponse("200", apiResponse);
+                String successSchemaName = StringUtils.toCamelCase(service.getCode()) + "RespTO";
+                String errorSchemaName = "Error";
+                ApiResponse successResponse = createSuccessResponse(successSchemaName);
+                ApiResponse errorResponse = createErrorResponse(errorSchemaName);
+                apiResponses.addApiResponse("200", successResponse);
+                apiResponses.addApiResponse("400", errorResponse);
                 operation.setResponses(apiResponses);
                 //create schema
                 Schema<?> schemaItem = OBJECT_MAPPER.readValue(StringUtils.cleanUpJsonCharacters(responseJsonSchema), Schema.class);
-                schemaItem.$ref(schemaName);
-                components.addSchemas(schemaName, schemaItem);
+                Schema<?> errorSchemaItem = OBJECT_MAPPER.readValue(StringUtils.cleanUpJsonCharacters(getDefaultErrorSchema()), Schema.class);
+                schemaItem.$ref(successSchemaName);
+                errorSchemaItem.$ref(errorSchemaName);
+                components.addSchemas(successSchemaName, schemaItem);
+                components.addSchemas(errorSchemaName, errorSchemaItem);
             } catch (Exception ignore) {
             }
         } else {
@@ -313,24 +303,108 @@ public class SwaggerGenerator {
         }
     }
 
-    private String generateJavaServiceResponseJsonSchema(JavaService javaService) {
-        try {
-            String implPath = javaService.getJavaImplementationClassName();
-            String[] split = org.apache.commons.lang3.StringUtils.split(implPath, ".");
-            String bean = split[0];
-            String methodName = split[1].substring(0, split[1].indexOf("("));
-            AbstractJavaService beanInstance = ClassLoader.findBeanOrCreateInstanceOfClass(bean, AbstractJavaService.class);
-            Method method = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(beanInstance.getClass()))
-                    .filter(m -> m.getName().contains(methodName))
-                    .findFirst().orElse(null);
-            if (Objects.nonNull(method)) {
-                Class<?> returnType = method.getReturnType();
-                return generateJavaServiceResponseSchema(returnType.getName());
-            }
-            return null;
-        } catch (Exception ignore) {
-            return null;
+    private ApiResponse createErrorResponse(String schemaName) {
+        ApiResponse apiResponse = new ApiResponse();
+        Content respContent = new Content();
+        MediaType respMediaType = new MediaType();
+        Schema<Object> objectSchema = new Schema<>();
+        objectSchema.set$ref(schemaName);
+        respMediaType.schema(objectSchema);
+        respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, respMediaType);
+        apiResponse.setContent(respContent);
+        apiResponse.setDescription("BAD REQUEST");
+        return apiResponse;
+    }
+
+    private ApiResponse createSuccessResponse(String schemaName) {
+        ApiResponse apiResponse = new ApiResponse();
+        Content respContent = new Content();
+        MediaType respMediaType = new MediaType();
+        Schema<Object> objectSchema = new Schema<>();
+        objectSchema.set$ref(schemaName);
+        respMediaType.schema(objectSchema);
+        respContent.put(HTTP_HEADER_CONTENT_TYPE_JSON, respMediaType);
+        apiResponse.setContent(respContent);
+        apiResponse.setDescription("SUCCESSFUL");
+        return apiResponse;
+    }
+
+    private String getDefaultErrorSchema() {
+        //language=json
+        return """
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "SC_ERROR_VALIDATION",
+                        "SC_UNAUTHORIZED",
+                        "SC_ACCESS_DENIED",
+                        "SC_ERROR_SYSTEM",
+                        "SC_ERROR_BUSINESS",
+                        "SC_NOT_FOUND",
+                        "SC_ERROR_UNREACHABLE_PROVIDER",
+                        "SC_ERROR_DATA_INTEGRITY_VIOLATION"
+                      ]
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string"
+                          },
+                          "errorCode": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "messageFa": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "SC_ERROR_VALIDATION",
+                              "SC_UNAUTHORIZED",
+                              "SC_ACCESS_DENIED",
+                              "SC_ERROR_SYSTEM",
+                              "SC_ERROR_BUSINESS",
+                              "SC_NOT_FOUND",
+                              "SC_ERROR_UNREACHABLE_PROVIDER",
+                              "SC_ERROR_DATA_INTEGRITY_VIOLATION"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """;
+    }
+
+    private String applyResponseJsonSchemaTemplate(String responseJsonSchema) {
+        if (StringUtils.isBlank(responseJsonSchema)) {
+            return responseJsonSchema;
         }
+        String template = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["SC_SUCCESS"]
+                    },
+                    "result": ${x-generated-schema}
+                  }
+                }
+                
+                """;
+        return template
+                .replace("${x-generated-schema}", responseJsonSchema);
     }
 
     private void generateDefaultResponseSchema(Operation operation) {
@@ -351,13 +425,7 @@ public class SwaggerGenerator {
 
     private void generateRequestSchema(RestUrl restUrl, Service service, Operation operation, Components components) {
         if (!restUrl.getHttpMethod().equalsIgnoreCase("get")) {
-            String requestJsonSchema = service.getRequestJsonSchema();
-            ServiceImplementationType implementationType = service.getImplementationType();
-            if (Objects.nonNull(implementationType) && ServiceImplementationType.JAVA.equals(implementationType)) {
-                requestJsonSchema = generateJavaServiceRequestSchema(service);
-            } else if (StringUtils.isNotEmpty(requestJsonSchema) && StringUtils.containsNone(requestJsonSchema, "{}")) {
-                requestJsonSchema = generateJavaClassSchema(requestJsonSchema);
-            }
+            String requestJsonSchema = serviceJsonSchemaGenerator.generateRequestSchema(service);
             if (Objects.nonNull(requestJsonSchema) && !requestJsonSchema.isBlank()) {
                 try {
                     //parse json
@@ -382,51 +450,6 @@ public class SwaggerGenerator {
         }
     }
 
-    private String generateJavaClassSchema(String javaClassName) {
-        if (StringUtils.isEmpty(javaClassName)) {
-            return null;
-        }
-        try {
-            Class<?> modelClass = Class.forName(javaClassName);
-            JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
-            JsonSchema schema = schemaGen.generateSchema(modelClass);
-            return OBJECT_MAPPER.writeValueAsString(schema);
-        } catch (Exception e) {
-            log.error("error generate schema for class '" + javaClassName + "'", e);
-        }
-        return null;
-    }
-
-    private String generateJavaServiceRequestSchema(Service service) {
-        try {
-            final String ignoreType = "Message";
-            final String basePackage = "ir.daneshrefah";
-            JavaService javaService = (JavaService) service;
-            JavaServiceFinder.MethodInfo methodInfo = JavaServiceFinder.findJavaServiceMethodInfo(javaService.getCode());
-            Class<?>[] parameterTypes = methodInfo.getMethod().getParameterTypes();
-            for (Class<?> parameterType : parameterTypes) {
-                if (parameterType.toString().contains(basePackage) && !parameterType.toString().contains(ignoreType)) {
-                    Class<?> modelClass = Class.forName(parameterType.getName());
-                    JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
-                    JsonSchema schema = schemaGen.generateSchema(modelClass);
-                    return OBJECT_MAPPER.writeValueAsString(schema);
-                }
-            }
-        } catch (Exception ignore) {
-        }
-        return null;
-    }
-
-    private String generateJavaServiceResponseSchema(String instanceClassPath) {
-        try {
-            Class<?> modelClass = Class.forName(instanceClassPath);
-            JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
-            JsonSchema schema = schemaGen.generateSchema(modelClass);
-            return OBJECT_MAPPER.writeValueAsString(schema);
-        } catch (Exception ignore) {
-        }
-        return null;
-    }
 
     private void generateDefaultRequestSchema(Operation operation) {
         RequestBody requestBody = new RequestBody();

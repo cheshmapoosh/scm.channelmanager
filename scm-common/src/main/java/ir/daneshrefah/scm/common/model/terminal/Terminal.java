@@ -1,8 +1,11 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
 import ir.daneshrefah.scm.common.BaseModel;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 /**
  * Description of the class or purpose of the file.
@@ -24,5 +27,8 @@ public class Terminal extends BaseModel<String> {
     private boolean supportCheckServiceAccess;
     private boolean supportCheckAssetAccess;
     private boolean supportCustomerInjection;
+    private BigDecimal legacyMaxWithdrawalPerMonth;
+    private BigDecimal legacyMaxWithdrawalPerDay;
+
 
 }

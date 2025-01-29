@@ -53,6 +53,16 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateTransactionPasswordMethod(request,servletRequest));
     }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<Boolean> updatePasswordMethod(@RequestBody UpdatePasswordRequest request) { //TODO this method for figital,validate before change it
+        return ResponseEntity.status(HttpStatus.OK).body(userService.UpdatePasswordRequest(request));
+    }
+
+    @PutMapping("/change-authentication-method")
+    public ResponseEntity<User> changeAuthenticationMethod(@RequestBody ChangeAuthenticationMethodRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changeAuthenticationMethodByNationalCodeAndTerminalId(request));
+    }
+
     @PostMapping("/list")
     public ResponseEntity<PagedResponseData<User>> findPagedUserList(@RequestBody(required = false) UserFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findPagedUserList(request));
@@ -79,6 +89,12 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.activateUser(userId, false));
     }
 
+    @PostMapping("/change-user-status")
+    public ResponseEntity<Boolean> activateOrDeactivateStatusUser(@RequestBody UpdateUserStatusRequest request) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(userService.activateOrDeactivateStatusUser(request));
+    }
+
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUserById(@PathVariable("userId") Integer userId, @RequestBody UserDeleteRequest userDeleteRequest) {
         userService.deleteUserByUserId(userId,userDeleteRequest);
@@ -90,4 +106,9 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findUserById(userId));
     }
 
+    @PostMapping("/assgin-terminal")
+    public ResponseEntity<User> assignTerminalToPerson(@RequestBody UserAssignTerminalRequest request) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(userService.assignTerminalToPerson(request));
+    }
 }
