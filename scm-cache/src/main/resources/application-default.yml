@@ -40,7 +40,7 @@ hazelcast:
         aws-config:
           enabled: false
         tcp-ip-config:
-          enabled: true
+          enabled: false
           required-member: 10.10.4.125
           members: 10.10.4.125
           connection-timeout-seconds: 5

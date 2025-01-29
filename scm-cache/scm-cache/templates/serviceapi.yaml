@@ -11,5 +11,10 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+  {{- with .Values.serviceApi.externalIPs }}
+  externalIPs:
+    {{- toYaml . | nindent 4}}
+  {{- end }}
+
   selector:
     {{- include "scm-cache.selectorLabels" . | nindent 4 }}
