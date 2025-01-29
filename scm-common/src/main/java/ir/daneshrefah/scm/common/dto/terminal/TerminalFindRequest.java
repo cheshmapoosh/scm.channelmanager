@@ -2,7 +2,8 @@ package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,7 +12,8 @@ import lombok.Data;
  * @version 1.0
  * @since 2024-01-30
  */
-@Data
+@Getter
+@Setter
 public class TerminalFindRequest extends PagedRequestData {
 
     private String code;

@@ -18,7 +18,6 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.asset.*;
-import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -86,15 +85,9 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Override
     public List<Membership> findLocalMembershipList(MembershipLocalFindRequest request) {
         validateAssetsFindRequest(request);
-        AssetType assetType = request.getAssetType();
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         String personUsername = person.getUsername();
-        List<MembershipEntity> foundAssets;
-        if (Objects.isNull(assetType)) {
-            foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
-        } else {
-            foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
-        }
+        List<MembershipEntity> foundAssets = membershipRepository.findAllByPersonUsername(personUsername);
         return MembershipMapper.INSTANCE.toModels(foundAssets);
     }
 

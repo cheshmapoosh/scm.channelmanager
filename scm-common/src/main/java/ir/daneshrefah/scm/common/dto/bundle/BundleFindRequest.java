@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.common.dto.bundle;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class BundleFindRequest extends PagedRequestData {
     private String locale;
     private String key;
