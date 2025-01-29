@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.core.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.model.customer.AssetType;
-import ir.daneshrefah.scm.core.converter.AssetTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

@@ -20,9 +20,6 @@ public class MembershipTerminalAccessSpecs {
     public static Specification<MembershipTerminalAccessEntity> toSpecification(MembershipLocalFindRequest request) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            if (null != request.getAssetType()) {
-                predicates.add(builder.equal(root.get("membership").get("assetType"), request.getAssetType()));
-            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }
