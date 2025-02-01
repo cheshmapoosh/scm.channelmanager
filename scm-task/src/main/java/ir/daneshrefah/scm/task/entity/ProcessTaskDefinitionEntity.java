@@ -36,7 +36,7 @@ public class ProcessTaskDefinitionEntity implements Serializable {
     @Column(name = "USER_ACCESS_SECOND_AUTH", nullable = false)
     private boolean userAccessSecondAuth;
 
-    @Column(name = "CONFIRM_USER_ACCESS_SECOND_AUTH", nullable = false)
+    @Column(name = "CONFIRM_USER_ACCSS_SECOND_AUTH", nullable = false)
     private int confirmUserAccessSecondAuth;
 
     @Column(name = "USER_ALLOWED_CANCEL", nullable = false)

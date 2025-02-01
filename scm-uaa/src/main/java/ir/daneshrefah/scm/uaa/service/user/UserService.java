@@ -20,8 +20,8 @@ import ir.daneshrefah.scm.common.model.user.UserType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
-import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
+import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
@@ -104,7 +104,7 @@ public class UserService {
         String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-            || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
+                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         Terminal terminal = findTerminalByCode(terminalCode);
@@ -358,11 +358,11 @@ public class UserService {
         ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
 
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
-            StringUtils.isEmpty(request.getLoginStaticPassword())) {
+                StringUtils.isEmpty(request.getLoginStaticPassword())) {
             throw new MissingRequiredInputException("loginStaticPassword");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getTransactionAuthenticationMethod()) &&
-            StringUtils.isEmpty(request.getTransactionStaticPassword())) {
+                StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
         GeneralPersonEntity personEntity = findPersonById(request.getPersonId());
@@ -594,7 +594,8 @@ public class UserService {
         switch (request.getAuthenticationMethodType()) {
             case TRANSACTION -> userEntity.setTransactionAuthenticationMethod(request.getAuthenticationMethod());
             case LOGIN -> userEntity.setLoginAuthenticationMethod(request.getAuthenticationMethod());
-            default -> throw new UnsupportedOperationException("Unsupported authentication method: " + request.getAuthenticationMethodType());
+            default ->
+                    throw new UnsupportedOperationException("Unsupported authentication method: " + request.getAuthenticationMethodType());
         }
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
@@ -650,7 +651,7 @@ public class UserService {
         applyDynamicUpdateChanges(userEntity, request);
         userEntity.setLastEditDate(LocalDateTime.now());
         if (Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication())
-            && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
+                && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
             userEntity.setLastEditor(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal().getId());
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
@@ -847,13 +848,15 @@ public class UserService {
             if (!userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
                 throw new UnsupportedOperationException();
             }
-            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(),person.getUsername()));
-        }else {
+            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
+        } else {
             if (!userEntity.getTransactionAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
                 throw new UnsupportedOperationException();
             }
-            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(),person.getUsername()));
+            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
         }
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
+        userCache.removeUserFromCache(userEntity.getNickname() + "::" + request.getTerminalCode());
         userRepository.save(userEntity);
         return true;
     }
