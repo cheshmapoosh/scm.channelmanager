@@ -48,15 +48,17 @@ scm:
     issuer-uri: http://10.10.4.125:8000
   cache:
     client:
+      distributed: true
       config:
-        distributed: true
-        cluster-name: dev3
-        server-host: 10.10.4.125
-        server-port: 5701
-        near-cache-config:
+        clusterName: dev3
+        network-config:
+          addresses:
+            - '10.10.4.125:5701'
+        nearCacheConfigMap:
           myMap:
             in-memory-format: object
             time-to-live-seconds: 10
+
   process:
     enabled: true
     client-id: BPM
