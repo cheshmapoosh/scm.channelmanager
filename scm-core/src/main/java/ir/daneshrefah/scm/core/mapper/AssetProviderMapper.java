@@ -29,7 +29,7 @@ public interface AssetProviderMapper {
     @Mapping(target = "lastEditDate" ,ignore = true)
     AssetProvider toModel(AssetProviderEntity entity);
 
-    @Mapping(source = "service.id", target = "serviceId")
+//    @Mapping(source = "service.id", target = "serviceId") //TODO UNCOMMIT NEXT REALISES
     AssetProviderEntity toEntity(AssetProvider model);
 
 }
