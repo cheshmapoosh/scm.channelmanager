@@ -28,7 +28,7 @@ public class AssetProviderEntity extends AbstractEntity<Integer> {
     private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
-    @Column(name = "PROVIDER_SERVICE_ID")
-    private String serviceId;
+//    @Column(name = "PROVIDER_SERVICE_ID") //TODO NEXT REALISES
+//    private String serviceId;
 
 }

@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.repository.AssetProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
+import ir.daneshrefah.scm.plugin.api.config.AssetProviderConfigProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class AssetProviderServiceImp implements AssetProviderService {
 
     private final AssetProviderRepository assetProviderRepository;
     private final ServiceRepository serviceRepository;
+    private final AssetProviderConfigProperties providerConfigProperties;
     private List<AssetProvider> assetProviders = new ArrayList<>();
 
     public void evictCache() {
@@ -39,8 +41,13 @@ public class AssetProviderServiceImp implements AssetProviderService {
                             .stream()
                             .map(assetProviderEntity -> {
                                 AssetProvider assetProvider = AssetProviderMapper.INSTANCE.toModel(assetProviderEntity);
-                                if (Objects.nonNull(assetProviderEntity.getServiceId())) {
-                                    assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findById(assetProviderEntity.getServiceId()).orElse(null)));
+                                //TODO ROLLBACK THIS COMMENT AFTER ADD COLUMN 'NEXT RELEASE'
+//                                if (Objects.nonNull(assetProviderEntity.getServiceId())) {
+//                                    assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findById(assetProviderEntity.getServiceId()).orElse(null)));
+//                                } else
+                                if (providerConfigProperties.getConfigs().containsKey(assetProvider.getCode().getValue())) {
+                                    AssetProviderConfigProperties.AssetProviderConfig assetProviderConfig = providerConfigProperties.getConfigs().get(assetProvider.getCode().getValue());
+                                    assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findByCode(assetProviderConfig.getProviderServiceCode()).orElse(null)));
                                 }
                                 return assetProvider;
                             })
