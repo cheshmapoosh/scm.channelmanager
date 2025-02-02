@@ -91,6 +91,11 @@ scm:
     default-services:
       - TAccListInq
       - AcctInq
+  asset-provider:
+    configs:
+      NAB:
+        provider-service-code: SVC_NAB_ACCOUNT_LIST_PROXY
+
 server:
   servlet:
     context-path: /scm
