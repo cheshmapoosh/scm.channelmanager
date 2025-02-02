@@ -1,20 +1,16 @@
 package ir.daneshrefah.scm.plugin.api.expose;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.constant.JavaMethodType;
-import ir.daneshrefah.scm.common.constant.Status;
+import ir.daneshrefah.scm.common.annotation.JavaService;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
+import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.Membership;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
-import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
