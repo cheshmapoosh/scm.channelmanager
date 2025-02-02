@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.config;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
 /**
@@ -10,7 +11,8 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
  * @version 1.0
  * @since 2024-06-10
  */
-@Data
+@Getter
+@Setter
 public class DatasourceProperties extends DataSourceProperties {
 
     private int maxConnection;

@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.core.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
+import ir.daneshrefah.scm.common.error.management.CamelErrorWrapperException;
 import ir.daneshrefah.scm.common.exception.ServiceNotFoundException;
 import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
 import ir.daneshrefah.scm.common.model.error.Error;
@@ -10,7 +12,6 @@ import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -56,12 +57,12 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     @Override
     public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
-        return callService(service.getCode(),message);
+        return callService(service.getCode(), message);
     }
 
     @Override
     public Message callService(String serviceCode, Message message) {
-        String serviceUrl = "direct:SVI_" +serviceCode;
+        String serviceUrl = "direct:SVI_" + serviceCode;
         Exchange exchangeResult = producerTemplate.send(serviceUrl, exchange -> {
             exchange.getIn().setBody(message);
         });
@@ -98,6 +99,24 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
             return responseType.cast(message.getPayload().toString());
         } else {
             return objectMapper.readValue(message.getPayload().toString(), responseType);
+        }
+    }
+
+    @Override
+    public <T> T callServiceWithException(String serviceCode, Object request, Class<T> responseType) {
+        JsonNode payload = objectMapper.convertValue(request, JsonNode.class);
+        Message message = callService(serviceCode, payload);
+        if (Objects.nonNull(message.getErrors()) && !message.getErrors().isEmpty()) {
+            throw new CamelErrorWrapperException(message.getErrors());
+        }
+        if (responseType == String.class) {
+            return responseType.cast(message.getPayload().toString());
+        } else {
+            try {
+                return objectMapper.readValue(message.getPayload().toString(), responseType);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

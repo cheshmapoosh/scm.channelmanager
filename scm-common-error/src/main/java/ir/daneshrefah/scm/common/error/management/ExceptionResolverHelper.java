@@ -118,6 +118,9 @@ public class ExceptionResolverHelper {
     @SuppressWarnings("unchecked")
     public List<Error> resolve(Throwable throwable, Message message, Locale locale) {
         List<Error> errors = null;
+        if (throwable instanceof CamelErrorWrapperException exception) {
+            return getValidatedError(exception.getErrors());
+        }
         for (ExceptionResolver<?> exceptionResolver : ORDERED_RESOLVER_CACHE) {
             if (isInstance(throwable, getClassFromType(exceptionResolver.getExceptionType()))) {
                 try {
