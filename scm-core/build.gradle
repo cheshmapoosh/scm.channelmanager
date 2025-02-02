@@ -60,7 +60,7 @@ dependencies {
     api project(':scm-common-error')
     api project(':scm-task')
     api project(':scm-otp-client')
-    api project(':scm-logging')
+    api project(':scm-logging-client')
     implementation 'org.apache.commons:commons-collections4'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema'

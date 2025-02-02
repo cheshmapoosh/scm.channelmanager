@@ -47,7 +47,7 @@ dependencies {
     api project(':scm-notification-client')
     api project(':scm-common-error')
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
-    implementation project(':scm-logging')
+    implementation project(':scm-logging-client')
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     implementation 'org.apache.commons:commons-collections4'

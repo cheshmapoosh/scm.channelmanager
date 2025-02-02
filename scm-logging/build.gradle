@@ -33,7 +33,7 @@ dependencies {
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'jakarta.servlet:jakarta.servlet-api'
-    api project(':scm-logging')
+    api project(':scm-logging-client')
 }
 
 
