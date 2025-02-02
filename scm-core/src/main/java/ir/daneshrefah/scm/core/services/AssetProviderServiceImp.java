@@ -41,9 +41,11 @@ public class AssetProviderServiceImp implements AssetProviderService {
                             .stream()
                             .map(assetProviderEntity -> {
                                 AssetProvider assetProvider = AssetProviderMapper.INSTANCE.toModel(assetProviderEntity);
-                                if (Objects.nonNull(assetProviderEntity.getServiceId())) {
-                                    assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findById(assetProviderEntity.getServiceId()).orElse(null)));
-                                } else if (providerConfigProperties.getConfigs().containsKey(assetProvider.getCode().getValue())) {
+                                //TODO ROLLBACK THIS COMMENT AFTER ADD COLUMN 'NEXT RELEASE'
+//                                if (Objects.nonNull(assetProviderEntity.getServiceId())) {
+//                                    assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findById(assetProviderEntity.getServiceId()).orElse(null)));
+//                                } else
+                                if (providerConfigProperties.getConfigs().containsKey(assetProvider.getCode().getValue())) {
                                     AssetProviderConfigProperties.AssetProviderConfig assetProviderConfig = providerConfigProperties.getConfigs().get(assetProvider.getCode().getValue());
                                     assetProvider.setService(ServiceMapper.INSTANCE.toService(serviceRepository.findByCode(assetProviderConfig.getProviderServiceCode()).orElse(null)));
                                 }
