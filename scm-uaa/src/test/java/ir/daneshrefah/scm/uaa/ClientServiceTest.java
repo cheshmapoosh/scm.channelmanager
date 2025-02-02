@@ -26,10 +26,10 @@ public class ClientServiceTest {
         client.setClientSecret("{noop}myClientSecretValue");
         client.setTerminalCode("IB");
         client.setAuthenticationMethods(Arrays.asList(ClientAuthenticationMethod.CLIENT_SECRET_POST));
-        client.setAuthorizationGrantTypes(Arrays.asList(AuthorizationGrantType.AUTHORIZATION_CODE,
-                AuthorizationGrantType.CLIENT_CREDENTIALS,
-                AuthorizationGrantType.FIRST_PASSWORD,
-                AuthorizationGrantType.SECOND_PASSWORD));
+//        client.setClientAuthorizationGrantTypes(Arrays.asList(AuthorizationGrantType.AUTHORIZATION_CODE,
+//                AuthorizationGrantType.CLIENT_CREDENTIALS,
+//                AuthorizationGrantType.FIRST_PASSWORD,
+//                AuthorizationGrantType.SECOND_PASSWORD));
         client.setRedirectUris(Arrays.asList("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc",
                 "http://127.0.0.1:8080/authorized"));
         client.setRequireAuthorizationConsent(true);

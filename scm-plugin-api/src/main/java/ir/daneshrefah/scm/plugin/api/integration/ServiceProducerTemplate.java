@@ -22,6 +22,7 @@ public interface ServiceProducerTemplate {
     Message callService(String serviceCode, JsonNode payload);
 
     <T> T callService(String serviceCode, @Nullable Object request, Class<T> responseType);
+    <T> T callServiceWithException(String serviceCode, @Nullable Object request, Class<T> responseType);
 
     Message callServiceWithException(String serviceCode, JsonNode payload);
 
