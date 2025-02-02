@@ -78,29 +78,37 @@ public class JavaServiceMetadataProviderService {
     }
 
     private void createNewJavaService(List<ir.daneshrefah.scm.common.model.service.Service> services, JavaServiceMetadata metadata) {
-        ParentService parentService = provideJavaServiceParent(services, null, metadata);
-        JavaService javaService = new JavaService();
-        javaService.setTitle(metadata.getTitle());
-        javaService.setCode(metadata.getCode().name());
-        javaService.setAlias(metadata.getAlias());
-        javaService.setType(metadata.getType());
-        javaService.setCheckAccessFirstAuthentication(getFalseBooleanIfNull(metadata.getCheckAccessFirstAuthentication()));
-        javaService.setCheckAccessSecondAuthentication(getFalseBooleanIfNull(metadata.getCheckAccessSecondAuthentication()));
-        javaService.setCheckAccessService(getFalseBooleanIfNull(metadata.getCheckAccessService()));
-        javaService.setCheckAccessAsset(getFalseBooleanIfNull(metadata.getCheckAccessAsset()));
-        javaService.setImplementationType(ServiceImplementationType.JAVA);
-        javaService.setStatus(ServiceStatus.ACTIVE);
-        javaService.setVersion(1);
-        javaService.setJavaImplementationClassName(metadata.getJavaImplementationClassName());
-        javaService.setParent(parentService);
-        javaService.setCreator(SYSTEM_NAME);
-        javaService.setLastEditor(SYSTEM_NAME);
-        JavaServiceEntity saved = serviceRepository.save(ServiceMapper.INSTANCE.toEntity(javaService));
-        JavaService model = ServiceMapper.INSTANCE.toModel(saved);
-        model.setImplemented(true);
-        model.setNoneEditableProperties(getNonEditablePropertiesList(metadata));
-        services.add(model);
-        log.info(">>> NEW JAVA SERVICE HAS BEEN REGISTERED WITH CODE [{}] ", saved.getCode());
+        if (isCreatable(metadata)) {
+            ParentService parentService = provideJavaServiceParent(services, null, metadata);
+            JavaService javaService = new JavaService();
+            javaService.setTitle(metadata.getTitle());
+            javaService.setCode(metadata.getCode().name());
+            javaService.setAlias(metadata.getAlias());
+            javaService.setType(metadata.getType());
+            javaService.setCheckAccessFirstAuthentication(getFalseBooleanIfNull(metadata.getCheckAccessFirstAuthentication()));
+            javaService.setCheckAccessSecondAuthentication(getFalseBooleanIfNull(metadata.getCheckAccessSecondAuthentication()));
+            javaService.setCheckAccessService(getFalseBooleanIfNull(metadata.getCheckAccessService()));
+            javaService.setCheckAccessAsset(getFalseBooleanIfNull(metadata.getCheckAccessAsset()));
+            javaService.setImplementationType(ServiceImplementationType.JAVA);
+            javaService.setStatus(ServiceStatus.ACTIVE);
+            javaService.setVersion(1);
+            javaService.setJavaImplementationClassName(metadata.getJavaImplementationClassName());
+            javaService.setParent(parentService);
+            javaService.setCreator(SYSTEM_NAME);
+            javaService.setLastEditor(SYSTEM_NAME);
+            JavaServiceEntity saved = serviceRepository.save(ServiceMapper.INSTANCE.toEntity(javaService));
+            JavaService model = ServiceMapper.INSTANCE.toModel(saved);
+            model.setImplemented(true);
+            model.setNoneEditableProperties(getNonEditablePropertiesList(metadata));
+            services.add(model);
+            log.info(">>> NEW JAVA SERVICE HAS BEEN REGISTERED WITH CODE [{}] ", saved.getCode());
+        }else {
+            log.warn(">>>  JAVA SERVICE DOSE NOT HAVE REQUIRED DATA FOR AUTO CREATION [{}] ", metadata.getCode());
+        }
+    }
+
+    private boolean isCreatable(JavaServiceMetadata metadata) {
+        return !StringUtils.isBlank(metadata.getAlias()) && !Objects.isNull(metadata.getMethod());
     }
 
     private List<String> getNonEditablePropertiesList(JavaServiceMetadata metadata) {
