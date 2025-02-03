@@ -593,8 +593,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Accessors(chain = true)
     private static class LegacyTerminalDetail {
         private BigDecimal maxWithdrawalPerDay;
-        private BigDecimal maxWithdrawalPerMonth;
-
     }
 
     /*private final PersonService personService;
