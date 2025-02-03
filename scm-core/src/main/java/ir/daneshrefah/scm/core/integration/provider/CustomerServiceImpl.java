@@ -581,8 +581,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private LegacyTerminalDetail findLegacyTerminalDetail(long legacyTerminalId) {
         return jdbcTemplate.query("select * from REF.CHANNEL where CHANNEL_ID = ?",
                         (rs, rowNum) -> new LegacyTerminalDetail()
-                                .setMaxWithdrawalPerDay(rs.getBigDecimal("MAX_WITHDRAWAL_PER_DAY"))
-                                .setMaxWithdrawalPerMonth(rs.getBigDecimal("MAX_WITHDRAWAL_PER_MONTH")),
+                                .setMaxWithdrawalPerDay(rs.getBigDecimal("MAX_WITHDRAWAL_PER_DAY")),
                         legacyTerminalId)
                 .stream()
                 .findFirst()
