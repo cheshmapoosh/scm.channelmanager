@@ -19,7 +19,8 @@ public enum NotificationTemplate {
     AUTHENTICATION("authentication"),
     AUTHENTICATION_OTP("authentication_otp"),
     ACTIVATION("activation"),
-    GENERAL("general");
+    GENERAL("general"),
+    RESET_PASSWORD("reset_password");
 
     private final String value;
 
