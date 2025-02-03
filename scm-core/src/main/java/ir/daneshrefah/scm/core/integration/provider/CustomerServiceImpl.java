@@ -265,7 +265,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                                 entity.setMembership(MembershipMapper.INSTANCE.toEntity(membership));
                                 entity.setFavorite(false);
                                 entity.setMaxWithdrawalPerDay(legacyTerminalDetail.getMaxWithdrawalPerDay());
-                                entity.setMaxWithdrawalPerMonth(legacyTerminalDetail.getMaxWithdrawalPerMonth());
                                 entity.setFromDate(LocalDate.now());
                                 entity.setToDate(LocalDate.now().plusYears(10));
                                 membershipTerminalAccessRepository.save(entity);
@@ -302,7 +301,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         MembershipEntity membership = membershipRepository.findAccountMembershipByAccountNoAndUsername(request.getAccountNumber(), person.getUsername()).orElseThrow(() -> new NoMatchRecordFoundException("accountNumber"));
         MembershipTerminalAccessEntity mtaEntity = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_IdAndTerminal_Code(membership.getId(), terminal.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("membershipCode"));
         mtaEntity.setMaxWithdrawalPerDay(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerDay())));
-        mtaEntity.setMaxWithdrawalPerMonth(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerMonth())));
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(mtaEntity);
         return MembershipMapper.INSTANCE.toModel(saved.getMembership());
     }
