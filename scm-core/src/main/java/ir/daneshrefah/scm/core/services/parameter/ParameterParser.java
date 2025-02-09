@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.services.parameter;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
-import ir.daneshrefah.scm.common.data.converter.PersonTypeConverter;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -10,9 +9,9 @@ import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
+import ir.daneshrefah.scm.core.services.parameter.converter.ParameterConverter;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import jakarta.persistence.AttributeConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class ParameterParser {
 
     private static final Map<String, ServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
 
-    private final static Map<String, AttributeConverter<?, ?>> converters = Map.of("PersonTypeConverter", new PersonTypeConverter());
+    private final List<ParameterConverter> parameterConverters;
 
     public void clearCache() {
         PARAMETER_TREE_CACHE.clear();
@@ -320,20 +319,22 @@ public class ParameterParser {
     @SuppressWarnings("unchecked")
     private Object convert(String convertorCode, Object value) {
         if (StringUtils.isNotEmpty(convertorCode)) {
-            if (!converters.containsKey(convertorCode)) {
-                throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
-            }
-            AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
-            Object converted = attributeConverter.convertToEntityAttribute(value);
-            if (converted instanceof String text) {
-                return text;
-            } else if (converted instanceof Number number) {
-                return number;
-            } else if (converted instanceof Boolean bool) {
-                return bool;
-            } else {
-                return String.valueOf(converted);
-            }
+            parameterConverters
+                    .stream()
+                    .filter(parameterConverter -> parameterConverter.getConverterCode().getCode().equals(convertorCode))
+                    .findFirst()
+                    .map(parameterConverter -> {
+                        Object converted = parameterConverter.convert(value);
+                        if (converted instanceof String text) {
+                            return text;
+                        } else if (converted instanceof Number number) {
+                            return number;
+                        } else if (converted instanceof Boolean bool) {
+                            return bool;
+                        } else {
+                            return String.valueOf(converted);
+                        }
+                    }).orElseThrow(() -> new IllegalArgumentException("Unknown convertor code: " + convertorCode));
         }
         return value;
     }
