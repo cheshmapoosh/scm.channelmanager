@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.services.parameter;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import ir.daneshrefah.scm.common.data.converter.PersonTypeConverter;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -11,6 +12,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.persistence.AttributeConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,8 @@ public class ParameterParser {
 
     private static final Map<String, ServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
     private final ServiceRepository serviceRepository;
+    private final static Map<String, AttributeConverter<?, ?>> converters = Map.of("PersonTypeConverter", new PersonTypeConverter());
+
 
     public void clearCache() {
         PARAMETER_TREE_CACHE.clear();
@@ -160,7 +164,8 @@ public class ParameterParser {
 
     private Object extractTextValue(ParameterHandler parameterHandler, Message message, ParameterNode childNode) {
         Object textValue = parameterHandler.apply(message, childNode.getValue()).orElse(childNode.getValue().getDefaultValue());
-        return (Objects.isNull(textValue)) ? null : StringUtils.cleanUpJsonCharacters(String.valueOf(textValue), false);
+        Object returnValue = (Objects.isNull(textValue)) ? null : StringUtils.cleanUpJsonCharacters(String.valueOf(textValue), false);
+        return convert(childNode.getValue().getDatasource().getConvertorCode(), returnValue);
     }
 
     private Object extractBooleanValue(ParameterHandler parameterHandler, Message message, ParameterNode childNode) {
@@ -175,14 +180,23 @@ public class ParameterParser {
     }
 
     private Object extractNumberValue(ParameterHandler parameterHandler, Message message, ParameterNode childNode) {
-        String numberValue = String.valueOf(parameterHandler.apply(message, childNode.getValue()).map(String::valueOf).orElse(childNode.getValue().getDefaultValue()));
+
+        Optional<Object> value = parameterHandler.apply(message, childNode.getValue());
+        if (value.isEmpty()) {
+            return null;
+        }
+
+
+        String numberValue = String.valueOf(value.map(String::valueOf).orElse(childNode.getValue().getDefaultValue()));
         if (Objects.isNull(numberValue) || "null".equalsIgnoreCase(numberValue)) {
             return null;
         }
         if (numberValue.contains(".")) {
-            return Double.parseDouble(numberValue);
+            double returnValue = Double.parseDouble(numberValue);
+            return convert(childNode.getValue().getDatasource().getConvertorCode(), returnValue);
         }
-        return Long.parseLong(numberValue);
+        long returnValue = Long.parseLong(numberValue);
+        return convert(childNode.getValue().getDatasource().getConvertorCode(), returnValue);
     }
 
     @SuppressWarnings("unchecked")
@@ -338,4 +352,15 @@ public class ParameterParser {
         }
     }
 
+    private Object convert(String convertorCode, Object value) {
+        if (StringUtils.isNotEmpty(convertorCode)) {
+            if (!converters.containsKey(convertorCode)) {
+                throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
+            }
+            AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
+            attributeConverter.convertToEntityAttribute(value);
+            return Optional.of(attributeConverter.convertToEntityAttribute(value));
+        }
+        return value;
+    }
 }
