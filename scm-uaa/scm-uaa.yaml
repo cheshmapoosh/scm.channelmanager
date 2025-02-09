@@ -80,9 +80,11 @@ spec:
         - name: scm-uaa
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1110T1845"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.0.0-b1116T2000"
           imagePullPolicy: IfNotPresent
           env:
+            - name: JDWP_OPTS
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
               value: test
             - name: SPRING_APPLICATION_NAME

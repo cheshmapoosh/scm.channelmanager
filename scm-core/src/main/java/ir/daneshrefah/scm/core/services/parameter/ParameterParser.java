@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import ir.daneshrefah.scm.core.services.parameter.converter.ParameterConverter;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.persistence.AttributeConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

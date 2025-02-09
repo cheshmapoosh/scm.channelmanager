@@ -51,12 +51,16 @@ metadata:
     app.kubernetes.io/version: "8.0.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 5701
       targetPort: 5701
       protocol: TCP
       name: hazelcast
+  externalIPs:
+    - 10.10.4.122
+    - 10.10.4.123
+
   selector:
     app.kubernetes.io/name: scm-cache
     app.kubernetes.io/instance: scm-cache
