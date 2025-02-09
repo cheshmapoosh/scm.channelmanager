@@ -7,6 +7,7 @@ ext {
     set('springCamelVersion', "4.8.0")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.5.3.Final")
+    set('lombokMapstructBindingVersion', "0.2.0")
 }
 subprojects {
     apply plugin: 'java'
@@ -71,5 +72,6 @@ subprojects {
 
     dependencies {
         implementation "org.springframework.boot:spring-boot-starter"
+        annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
     }
 }
