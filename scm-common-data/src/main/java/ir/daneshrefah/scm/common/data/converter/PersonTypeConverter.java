@@ -21,8 +21,12 @@ public class PersonTypeConverter implements AttributeConverter<PersonType, Integ
 
     @Override
     public PersonType convertToEntityAttribute(Integer dbData) {
-        if (null == dbData)
+        if (null == dbData) {
             return null;
+        }
+        if (dbData.equals(0) || dbData.equals(-1)){
+            return PersonType.UNKNOWN;
+        }
         return PersonType.findByCode(dbData);
     }
 }
