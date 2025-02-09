@@ -77,14 +77,10 @@ scm:
       auth-prefix: "Bearer "
       base-url: "http://localhost:8000/api"
       verify-logged-in-url: "/otp/verify-by-logged-in-user"
-  asset-provider:
-    configs:
-      NAB:
-        provider-service-code: SVC_NAB_ACCOUNT_LIST_PROXY
-
-
-
-
+  membership-access:
+    default-services:
+      - TAccListInq
+      - AcctInq
 server:
   servlet:
     context-path: /scm

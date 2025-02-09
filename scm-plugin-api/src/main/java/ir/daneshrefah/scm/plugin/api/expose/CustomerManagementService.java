@@ -7,11 +7,13 @@ import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.asset.Membership;
+import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 
 import static ir.daneshrefah.scm.common.constant.ServiceCode.*;

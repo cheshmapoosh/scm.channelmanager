@@ -31,6 +31,7 @@ import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.core.services.provider.ServiceProviderMetadataResolver;
+import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
@@ -541,7 +542,6 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
 
-
     private ServiceProviderFindResponse map(AbstractExternalServiceProvider provider) {
         return new ServiceProviderFindResponse()
                 .setCode(provider.getCode())
@@ -849,17 +849,56 @@ public class ServiceServiceImpl implements ServiceService {
 
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service getCompositionService(String compositionServiceId) {
-        return null; //TODO
+    public CompositionService getCompositionService(String compositionServiceId) {
+        return findServiceList()
+                .stream()
+                .filter(s -> ServiceImplementationType.COMPOSITION.equals(s.getImplementationType()))
+                .map(CompositionService.class::cast)
+                .filter(s -> s.getId().equals(compositionServiceId))
+                .findFirst()
+                .orElseThrow(() -> new NoMatchRecordFoundException(compositionServiceId));
     }
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service editCompositionService(CompositionServiceEditRequest request) {
-        return null; //TODO
+    @Transactional
+    public CompositionService editCompositionService(CompositionServiceEditRequest request) {
+        CompositionService foundCache = (CompositionService) findServiceList()
+                .stream()
+                .filter(s -> ServiceImplementationType.COMPOSITION.equals(s.getImplementationType()))
+                .filter(s -> s.getId().equals(request.getId()))
+                .findFirst().orElseThrow(() -> new NoMatchRecordFoundException(request.getId()));
+        CompositionServiceEntity entity = ServiceMapper.INSTANCE.toEntity(foundCache);
+        if (Objects.nonNull(request.getParentId())) {
+            entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getId())));
+        }
+        entity.setCompositionType(request.getCompositionType());
+        entity.setAmountProperty(request.getAmountProperty());
+        entity.setAssetProperty(request.getAssetProperty());
+        entity.setVersion(request.getVersion());
+        entity.setTitle(request.getTitle());
+        entity.setAlias(request.getAlias());
+        entity.setType(request.getType());
+        entity.setStatus(request.getStatus());
+        entity.setCheckAccessFirstAuthentication(request.getCheckAccessFirstAuthentication());
+        entity.setCheckAccessSecondAuthentication(request.getCheckAccessSecondAuthentication());
+        entity.setCheckAccessService(request.getCheckAccessService());
+        entity.setCheckAccessAsset(request.getCheckAccessAsset());
+        CompositionServiceEntity saved = serviceRepository.save(entity);
+        cacheEvict();
+        return ServiceMapper.INSTANCE.toModel(saved);
     }
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service createCompositionService(CompositionServiceCreateRequest request) {
-        return null; //TODO
+    @Transactional
+    public CompositionService createCompositionService(CompositionServiceCreateRequest request) {
+        checkServiceCodeDuplicated(request.getCode());
+        CompositionServiceEntity entity = ServiceEntityFactory.createServiceEntity(request);
+        if (Objects.nonNull(request.getParentId())) {
+            entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getCode())));
+        }
+        CompositionServiceEntity savedEntity = serviceRepository.save(entity);
+        CompositionService result = (CompositionService) ServiceMapper.INSTANCE.toService(savedEntity);
+        cacheEvict();
+        return result;
     }
 }

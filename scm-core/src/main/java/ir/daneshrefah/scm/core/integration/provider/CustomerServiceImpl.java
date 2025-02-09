@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.core.integration.provider;
 
+import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.constant.AccountStatus;
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
 import ir.daneshrefah.scm.common.constant.CustomerRelationType;
 import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
-import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
@@ -30,6 +30,7 @@ import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.MembershipMapper;
 import ir.daneshrefah.scm.core.mapper.MembershipTerminalAccessMapper;
 import ir.daneshrefah.scm.core.repository.*;
+import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import ir.daneshrefah.scm.task.service.TaskAssetService;
@@ -39,12 +40,12 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import lombok.Getter;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_CUSTOMER;
 import static ir.daneshrefah.scm.common.dto.asset.MembershipSync.MembershipSyncStatus.DELETED;
@@ -67,8 +69,11 @@ import static ir.daneshrefah.scm.common.dto.asset.MembershipSync.MembershipSyncS
 @Service
 @Slf4j
 public class CustomerServiceImpl implements CustomerService, TaskAssetService {
+    private static final List<Integer> DEFAULT_EB_SERVICES_ID_LIST_CACHE = new ArrayList<>();
+    private static final Map<String, List<LegacyChannelServiceAccess>> TERMINAL_CODE_CSA_CACHE = new ConcurrentHashMap<>();
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
     private final CustomerAccountRepository customerAccountRepository;
+    private final MembershipConfigProperty membershipConfigProperty;
     private final AssetProviderRepository assetProviderRepository;
     private final ServiceProducerTemplate serviceProducerTemplate;
     private final AccountTypeRepository accountTypeRepository;
@@ -79,7 +84,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final PersonRepository personRepository;
     private final TerminalService terminalService;
     private final PersonService personService;
-    private final TerminalRepository terminalRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -105,6 +109,66 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         return new ArrayList<>(Objects.requireNonNull(provideAccountTypeAssetsData(request)));
     }
 
+    @LegacyChannelManger
+    private List<Integer> getDefaultMembershipEbServicesId() {
+        if (DEFAULT_EB_SERVICES_ID_LIST_CACHE.isEmpty()) {
+            synchronized (DEFAULT_EB_SERVICES_ID_LIST_CACHE) {
+                if (DEFAULT_EB_SERVICES_ID_LIST_CACHE.isEmpty()) {
+                    membershipConfigProperty.getDefaultServices()
+                            .stream()
+                            .map(serviceCode -> jdbcTemplate
+                                    .query("select * from REF.EB_SERVICE where code = ?",
+                                            (rs, rowNum) -> rs.getInt("EB_SERVICE_ID"), serviceCode)
+                                    .stream()
+                                    .findFirst()
+                                    .orElseThrow(() -> new NoMatchRecordFoundException(serviceCode)))
+                            .forEach(DEFAULT_EB_SERVICES_ID_LIST_CACHE::add);
+                }
+            }
+        }
+        return DEFAULT_EB_SERVICES_ID_LIST_CACHE;
+    }
+
+    @LegacyChannelManger
+    private List<LegacyChannelServiceAccess> getDefaultLegacyChannelServiceAccess(String terminalCode) {
+        Terminal terminal = terminalService.findTerminalByCode(terminalCode).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
+        return TERMINAL_CODE_CSA_CACHE.computeIfAbsent(terminalCode, key -> {
+            List<LegacyChannelServiceAccess> legacyChannelServiceAccessList = new ArrayList<>();
+            getDefaultMembershipEbServicesId()
+                    .stream()
+                    .flatMap(ebServiceId -> jdbcTemplate
+                            .query("select * from REF.CHANNEL_SERVICE_ACCESS where ACTIVE = '1' and EB_SERVICE_ID = ? and CHANNEL_ID = ?",
+                                    (rs, rowNum) -> new LegacyChannelServiceAccess()
+                                            .setChannelServiceAccessId(rs.getLong("CHANNEL_SERVICE_ACCESS_ID"))
+                                            .setWithdrawalAmount(rs.getBigDecimal("WITHDRAWAL_AMOUNT")), ebServiceId, terminal.getLegacyTerminalId())
+                            .stream())
+                    .forEach(legacyChannelServiceAccessList::add);
+            return legacyChannelServiceAccessList;
+        });
+    }
+
+    @LegacyChannelManger
+    public void createLegacyMembershipChannelAccess(Long membershipChannelAccessId , LegacyChannelServiceAccess legacyChannelServiceAccess){
+        Long id = generateSequenceId();
+        int archiveNo = ArchiveUtils.calculateOneMonthArchiveNo().intValue();
+        BigDecimal maxWithdrawalPerTx = legacyChannelServiceAccess.getWithdrawalAmount();
+        Long channelEbAccessId = legacyChannelServiceAccess.getChannelServiceAccessId();
+        String query = "INSERT INTO REF.MEMBERSHIP_CHANNEL_SERVICE_ACCESS (ARCHIVE_NO, MCSAS_ID, MCS_ID, MAX_WITHDRAWAL_PER_TRANSACTION, CHANNEL_EB_ACCESS_ID) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.execute(query, (PreparedStatementCallback<Object>) ps -> {
+            ps.setInt(1, archiveNo);
+            ps.setLong(2, id);
+            ps.setLong(3, membershipChannelAccessId);
+            ps.setBigDecimal(4, maxWithdrawalPerTx);
+            ps.setLong(5, channelEbAccessId);
+            return ps.executeUpdate();
+        });
+    }
+
+    @LegacyChannelManger
+    private Long generateSequenceId() {
+        return jdbcTemplate.query("SELECT NEXTVAL FOR REF.SQMCSAS AS ID FROM SYSIBM.SYSDUMMY1",
+                (rs, rowNum) -> rs.getLong("ID")).stream().findFirst().orElseThrow(() -> new NoMatchRecordFoundException("id"));
+    }
 
     private List<Membership> provideAccountTypeAssetsData(MembershipFindRequest request) {
         String assetProviderId = request.getAssetProviderId();
@@ -142,7 +206,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 requestMap.put("start", start.toString());
                 requestMap.put("end", Integer.toString(end));
             }
-            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callService(serviceCode, requestMap, ExternalAccountResponseData[].class);
+            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callServiceWithException(serviceCode, requestMap, ExternalAccountResponseData[].class);
             return filterActiveAccountResponseDateList(Arrays.stream(nabAccountListResponseData).toList());
         }
         throw new InvalidInputException("assetProviderId");
@@ -267,7 +331,9 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                                 entity.setMaxWithdrawalPerDay(legacyTerminalDetail.getMaxWithdrawalPerDay());
                                 entity.setFromDate(LocalDate.now());
                                 entity.setToDate(LocalDate.now().plusYears(10));
-                                membershipTerminalAccessRepository.save(entity);
+                                MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.saveAndFlush(entity);
+                                getDefaultLegacyChannelServiceAccess(terminal.getCode())
+                                        .forEach(csa-> createLegacyMembershipChannelAccess(saved.getId(),csa));
                             });
                     return membership.getCustomerAccount().getAccount().getAccountNo();
                 })
@@ -578,6 +644,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 .findFirst();
     }
 
+    @LegacyChannelManger
     private LegacyTerminalDetail findLegacyTerminalDetail(long legacyTerminalId) {
         return jdbcTemplate.query("select * from REF.CHANNEL where CHANNEL_ID = ?",
                         (rs, rowNum) -> new LegacyTerminalDetail()
@@ -588,11 +655,20 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 .orElseThrow(() -> new NoMatchRecordFoundException("legacyTerminalId"));
     }
 
-    @Getter
-    @Setter
+    @Data
     @Accessors(chain = true)
+    @LegacyChannelManger
     private static class LegacyTerminalDetail {
         private BigDecimal maxWithdrawalPerDay;
+
+    }
+
+    @Data
+    @Accessors(chain = true)
+    @LegacyChannelManger
+    public static class LegacyChannelServiceAccess {
+        private Long channelServiceAccessId;
+        private BigDecimal withdrawalAmount;
     }
 
     /*private final PersonService personService;

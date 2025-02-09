@@ -119,38 +119,20 @@ public class ServiceManagementService extends AbstractJavaService {
 
     // COMPOSITE SERVICE
 
-//    @JavaService(
-//            serviceCode = SVC_SERVICE_CREATE_COMPOSITION,
-//            path = "/composition/create",
-//            parentCode = SVC_SERVICE_PARENT,
-//            checkAccessFirstAuthentication = Status.ACTIVE,
-//            type = JavaMethodType.ENTITY_CREATE
-//    )
-//    public CompositionService createCompositionService(CompositionServiceCreateRequest request) {
-//        return (CompositionService) this.service.createCompositionService(request);
-//    }
-//
-//    @JavaService(
-//            serviceCode = SVC_SERVICE_EDIT_COMPOSITION,
-//            path = "/composition/edit",
-//            parentCode = SVC_SERVICE_PARENT,
-//            checkAccessFirstAuthentication = Status.ACTIVE,
-//            type = JavaMethodType.ENTITY_UPDATE
-//    )
-//    public CompositionService editCompositionService(CompositionServiceEditRequest request) {
-//        return (CompositionService) this.service.editCompositionService(request);
-//    }
-//
-//    @JavaService(
-//            serviceCode = SVC_SERVICE_FIND_COMPOSITION,
-//            path = "/composition/get",
-//            parentCode = SVC_SERVICE_PARENT,
-//            checkAccessFirstAuthentication = Status.ACTIVE,
-//            type = JavaMethodType.INQUIRY
-//    )
-//    public CompositionService getCompositionService(String compositionServiceId) {
-//        return (CompositionService) this.service.getCompositionService(compositionServiceId);
-//    }
+    @JavaService(serviceCode = SVC_SERVICE_CREATE_COMPOSITION)
+    public CompositionService createCompositionService(CompositionServiceCreateRequest request) {
+        return (CompositionService) this.service.createCompositionService(request);
+    }
+
+    @JavaService(serviceCode = SVC_SERVICE_EDIT_COMPOSITION)
+    public CompositionService editCompositionService(CompositionServiceEditRequest request) {
+        return (CompositionService) this.service.editCompositionService(request);
+    }
+
+    @JavaService(serviceCode = SVC_SERVICE_FIND_COMPOSITION)
+    public CompositionService getCompositionService(String compositionServiceId) {
+        return (CompositionService) this.service.getCompositionService(compositionServiceId);
+    }
 
 
 

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.services.parameter;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NumericNode;
 import ir.daneshrefah.scm.common.data.converter.PersonTypeConverter;
 import ir.daneshrefah.scm.common.model.dynamic.rest.ParameterNode;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -9,7 +10,6 @@ import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
-import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.AttributeConverter;
@@ -31,9 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ParameterParser {
 
     private static final Map<String, ServiceParameterCache> PARAMETER_TREE_CACHE = new ConcurrentHashMap<>();
-    private final ServiceRepository serviceRepository;
-    private final static Map<String, AttributeConverter<?, ?>> converters = Map.of("PersonTypeConverter", new PersonTypeConverter());
 
+    private final static Map<String, AttributeConverter<?, ?>> converters = Map.of("PersonTypeConverter", new PersonTypeConverter());
 
     public void clearCache() {
         PARAMETER_TREE_CACHE.clear();
@@ -180,23 +179,24 @@ public class ParameterParser {
     }
 
     private Object extractNumberValue(ParameterHandler parameterHandler, Message message, ParameterNode childNode) {
+        return parameterHandler.apply(message, childNode.getValue())
+                .map(value -> {
+                    if (value instanceof NumericNode numericNode) {
+                        return numericNode.numberValue();
+                    } else {
+                        String numberValue = Optional.ofNullable(String.valueOf(value)).orElse(childNode.getValue().getDefaultValue());
+                        if (Objects.isNull(numberValue) || "null".equalsIgnoreCase(numberValue)) {
+                            return null;
+                        }
+                        if (numberValue.contains(".")) {
+                            return Double.parseDouble(numberValue);
+                        }
+                        return Long.parseLong(numberValue);
+                    }
+                })
+                .map(number -> convert(childNode.getValue().getDatasource().getConvertorCode(), number))
+                .orElse(null);
 
-        Optional<Object> value = parameterHandler.apply(message, childNode.getValue());
-        if (value.isEmpty()) {
-            return null;
-        }
-
-
-        String numberValue = String.valueOf(value.map(String::valueOf).orElse(childNode.getValue().getDefaultValue()));
-        if (Objects.isNull(numberValue) || "null".equalsIgnoreCase(numberValue)) {
-            return null;
-        }
-        if (numberValue.contains(".")) {
-            double returnValue = Double.parseDouble(numberValue);
-            return convert(childNode.getValue().getDatasource().getConvertorCode(), returnValue);
-        }
-        long returnValue = Long.parseLong(numberValue);
-        return convert(childNode.getValue().getDatasource().getConvertorCode(), returnValue);
     }
 
     @SuppressWarnings("unchecked")
@@ -317,6 +317,18 @@ public class ParameterParser {
 
     }
 
+    private Object convert(String convertorCode, Object value) {
+        if (StringUtils.isNotEmpty(convertorCode)) {
+            if (!converters.containsKey(convertorCode)) {
+                throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
+            }
+            AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
+            attributeConverter.convertToEntityAttribute(value);
+            return Optional.of(attributeConverter.convertToEntityAttribute(value));
+        }
+        return value;
+    }
+
     @FunctionalInterface
     public interface ParameterHandler {
         Optional<Object> apply(Message message, Parameter parameter);
@@ -352,15 +364,4 @@ public class ParameterParser {
         }
     }
 
-    private Object convert(String convertorCode, Object value) {
-        if (StringUtils.isNotEmpty(convertorCode)) {
-            if (!converters.containsKey(convertorCode)) {
-                throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
-            }
-            AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
-            attributeConverter.convertToEntityAttribute(value);
-            return Optional.of(attributeConverter.convertToEntityAttribute(value));
-        }
-        return value;
-    }
 }

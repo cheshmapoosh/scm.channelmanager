@@ -1,18 +1,16 @@
 package ir.daneshrefah.scm.core.entity.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.dto.ServiceInfoRequest;
+import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.java.JavaServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceCreateRequest;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
-import ir.daneshrefah.scm.common.dto.ServiceInfoRequest;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -70,6 +68,26 @@ public class ServiceEntityFactory {
         entity.setCheckAccessSecondAuthentication(false);
         entity.setCheckAccessAsset(false);
         entity.setCheckAccessService(false);
+        return entity;
+    }
+
+    public static CompositionServiceEntity createServiceEntity(CompositionServiceCreateRequest request){
+        CompositionServiceEntity entity = new CompositionServiceEntity();
+        entity.setCompositionType(request.getCompositionType());
+        entity.setCode(request.getCode());
+        entity.setTitle(request.getTitle());
+        entity.setAlias(request.getAlias());
+        entity.setVersion(null != request.getVersion() ? request.getVersion() : 1);
+        entity.setIsSystemic(false);
+        entity.setType(request.getType());
+        entity.setStatus(request.getStatus());
+        entity.setImplementationType(ServiceImplementationType.COMPOSITION);
+        entity.setCheckAccessSecondAuthentication(null != request.getCheckAccessSecondAuthentication() ? request.getCheckAccessSecondAuthentication() : false);
+        entity.setCheckAccessFirstAuthentication(null != request.getCheckAccessFirstAuthentication() ? request.getCheckAccessFirstAuthentication() : false);
+        entity.setCheckAccessAsset(null != request.getCheckAccessAsset() ? request.getCheckAccessAsset() : false);
+        entity.setCheckAccessService(null != request.getCheckAccessService() ? request.getCheckAccessService() : false);
+        entity.setAmountProperty(request.getAmountProperty());
+        entity.setAssetProperty(request.getAssetProperty());
         return entity;
     }
 
