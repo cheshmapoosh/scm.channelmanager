@@ -317,14 +317,14 @@ public class ParameterParser {
 
     }
 
+    @SuppressWarnings("unchecked")
     private Object convert(String convertorCode, Object value) {
         if (StringUtils.isNotEmpty(convertorCode)) {
             if (!converters.containsKey(convertorCode)) {
                 throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
             }
             AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
-            attributeConverter.convertToEntityAttribute(value);
-            return Optional.of(attributeConverter.convertToEntityAttribute(value));
+            return attributeConverter.convertToEntityAttribute(value);
         }
         return value;
     }
