@@ -324,7 +324,16 @@ public class ParameterParser {
                 throw new IllegalArgumentException("Unknown convertor code: " + convertorCode);
             }
             AttributeConverter<Object, Object> attributeConverter = (AttributeConverter<Object, Object>) converters.get(convertorCode);
-            return attributeConverter.convertToEntityAttribute(value);
+            Object converted = attributeConverter.convertToEntityAttribute(value);
+            if (converted instanceof String text) {
+                return text;
+            } else if (converted instanceof Number number) {
+                return number;
+            } else if (converted instanceof Boolean bool) {
+                return bool;
+            } else {
+                return String.valueOf(converted);
+            }
         }
         return value;
     }
