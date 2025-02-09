@@ -15,8 +15,6 @@ public class MembershipTerminalAccessWithdrawalLimitUpdateRequest extends Custom
 
     @NotBlankIfPresent
     private String maxWithdrawalPerDay;
-    @NotBlankIfPresent
-    private String maxWithdrawalPerMonth;
     @NotNull
     @NotBlank
     private String terminalCode;

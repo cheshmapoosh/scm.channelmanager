@@ -41,7 +41,6 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     private MembershipEntity membership;
     private Boolean favorite;
     private BigDecimal maxWithdrawalPerDay;
-    private BigDecimal maxWithdrawalPerMonth;
     private LocalDate fromDate;
     private LocalDate toDate;
 }

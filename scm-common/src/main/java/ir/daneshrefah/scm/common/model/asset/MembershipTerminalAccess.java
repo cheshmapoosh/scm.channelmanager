@@ -25,7 +25,6 @@ public class MembershipTerminalAccess extends BaseModel<Long> {
     private Membership membership;
     private Boolean favorite;
     private BigDecimal maxWithdrawalPerDay;
-    private BigDecimal maxWithdrawalPerMonth;
     private LocalDate fromDate;
     private LocalDate toDate;
 }

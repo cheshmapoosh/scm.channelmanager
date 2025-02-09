@@ -44,17 +44,12 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -119,8 +114,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         if (DEFAULT_EB_SERVICES_ID_LIST_CACHE.isEmpty()) {
             synchronized (DEFAULT_EB_SERVICES_ID_LIST_CACHE) {
                 if (DEFAULT_EB_SERVICES_ID_LIST_CACHE.isEmpty()) {
-                    membershipConfigProperty
-                            .getDefaultServices()
+                    membershipConfigProperty.getDefaultServices()
                             .stream()
                             .map(serviceCode -> jdbcTemplate
                                     .query("select * from REF.EB_SERVICE where code = ?",
@@ -156,7 +150,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @LegacyChannelManger
     public void createLegacyMembershipChannelAccess(Long membershipChannelAccessId , LegacyChannelServiceAccess legacyChannelServiceAccess){
         Long id = generateSequenceId();
-        int archiveNo = ArchiveUtils.calculateTenYearsArchiveNo().intValue();
+        int archiveNo = ArchiveUtils.calculateOneMonthArchiveNo().intValue();
         BigDecimal maxWithdrawalPerTx = legacyChannelServiceAccess.getWithdrawalAmount();
         Long channelEbAccessId = legacyChannelServiceAccess.getChannelServiceAccessId();
         String query = "INSERT INTO REF.MEMBERSHIP_CHANNEL_SERVICE_ACCESS (ARCHIVE_NO, MCSAS_ID, MCS_ID, MAX_WITHDRAWAL_PER_TRANSACTION, CHANNEL_EB_ACCESS_ID) VALUES (?, ?, ?, ?, ?)";
@@ -335,7 +329,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                                 entity.setMembership(MembershipMapper.INSTANCE.toEntity(membership));
                                 entity.setFavorite(false);
                                 entity.setMaxWithdrawalPerDay(legacyTerminalDetail.getMaxWithdrawalPerDay());
-                                entity.setMaxWithdrawalPerMonth(legacyTerminalDetail.getMaxWithdrawalPerMonth());
                                 entity.setFromDate(LocalDate.now());
                                 entity.setToDate(LocalDate.now().plusYears(10));
                                 MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.saveAndFlush(entity);
@@ -374,7 +367,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         MembershipEntity membership = membershipRepository.findAccountMembershipByAccountNoAndUsername(request.getAccountNumber(), person.getUsername()).orElseThrow(() -> new NoMatchRecordFoundException("accountNumber"));
         MembershipTerminalAccessEntity mtaEntity = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_IdAndTerminal_Code(membership.getId(), terminal.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("membershipCode"));
         mtaEntity.setMaxWithdrawalPerDay(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerDay())));
-        mtaEntity.setMaxWithdrawalPerMonth(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerMonth())));
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(mtaEntity);
         return MembershipMapper.INSTANCE.toModel(saved.getMembership());
     }
@@ -656,8 +648,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private LegacyTerminalDetail findLegacyTerminalDetail(long legacyTerminalId) {
         return jdbcTemplate.query("select * from REF.CHANNEL where CHANNEL_ID = ?",
                         (rs, rowNum) -> new LegacyTerminalDetail()
-                                .setMaxWithdrawalPerDay(rs.getBigDecimal("MAX_WITHDRAWAL_PER_DAY"))
-                                .setMaxWithdrawalPerMonth(rs.getBigDecimal("MAX_WITHDRAWAL_PER_MONTH")),
+                                .setMaxWithdrawalPerDay(rs.getBigDecimal("MAX_WITHDRAWAL_PER_DAY")),
                         legacyTerminalId)
                 .stream()
                 .findFirst()
@@ -669,7 +660,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @LegacyChannelManger
     private static class LegacyTerminalDetail {
         private BigDecimal maxWithdrawalPerDay;
-        private BigDecimal maxWithdrawalPerMonth;
 
     }
 

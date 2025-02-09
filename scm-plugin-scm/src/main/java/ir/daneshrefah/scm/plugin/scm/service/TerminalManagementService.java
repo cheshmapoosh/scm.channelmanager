@@ -44,18 +44,6 @@ public class TerminalManagementService extends AbstractJavaService {
         return terminalService.findAllTerminals(request);
     }
 
-    @JavaService(
-            serviceCode = SVC_TERMINAL_LIST_SAMPLE,
-            type = JavaMethodType.INQUIRY,
-            path = "/list2",
-            checkAccessFirstAuthentication = Status.ACTIVE,
-            parentCode = SVC_TERMINAL_PARENT,
-            title = "terminal 2")
-    public PagedResponseData<Terminal> listTerminal2() {
-        TerminalFindRequest request = new TerminalFindRequest();
-        return terminalService.findAllTerminals(request);
-    }
-
     @JavaService(serviceCode = SVC_TERMINAL_FIND_BY_ID)
     public Terminal findTerminalById(String terminalId) {
         if (StringUtils.isEmpty(terminalId)) {
