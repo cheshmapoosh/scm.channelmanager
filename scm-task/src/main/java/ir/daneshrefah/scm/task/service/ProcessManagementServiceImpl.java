@@ -93,6 +93,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             globalTask.setUserId(processInstance.getConfirmUserId());
             if (person instanceof GeneralRealPerson realPerson) {
                 globalTask.setFullName(realPerson.getFirstName() + " " + realPerson.getLastName());
+            } else if (person instanceof GeneralLegalPerson legalPerson) {
+                globalTask.setFullName(legalPerson.getTitle());
             }
             globalTask.setTaskStatus(TaskStatusEnum.PENDING);
             globalTask.setGlobal(true);
@@ -112,6 +114,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskEntity.setUserId(findUser.getId());
             if (findUser instanceof GeneralRealPerson person) {
                 taskEntity.setFullName(person.getFirstName() + " " + person.getLastName());
+            }  else if (findUser instanceof GeneralLegalPerson legalPerson) {
+                taskEntity.setFullName(legalPerson.getTitle());
             }
             taskEntity.setTaskStatus(TaskStatusEnum.PENDING);
             taskEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
