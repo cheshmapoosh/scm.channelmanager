@@ -320,7 +320,7 @@ public class ParameterParser {
     @SuppressWarnings("unchecked")
     private Object convert(String convertorCode, Object value) {
         if (StringUtils.isNotEmpty(convertorCode)) {
-            parameterConverters
+           return parameterConverters
                     .stream()
                     .filter(parameterConverter -> parameterConverter.getConverterCode().getCode().equals(convertorCode))
                     .findFirst()

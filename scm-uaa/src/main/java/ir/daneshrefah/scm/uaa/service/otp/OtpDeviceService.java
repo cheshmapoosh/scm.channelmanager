@@ -88,19 +88,17 @@ public class OtpDeviceService {
     }
 
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
-        UserEntity userEntity = request.getUserEntity();
-        GeneralPersonEntity generalPersonEntity = userEntity.getPerson();
-        User loggedInUser = AuthenticationUtils.getLoggedInUser();
-        assert loggedInUser != null;
-        String terminalCode = loggedInUser.getTerminalCode();
+        User user = request.getUser();
+        GeneralPerson person = user.getPerson();
+        String terminalCode = request.getTerminalCode();
         TerminalEntity terminalEntity = terminalRepository.findByCode(terminalCode)
                 .orElseThrow(() -> new InvalidInputException("terminalCode"));
-        boolean hasOTPAssignment = hasOTPAssignment(generalPersonEntity.getId(), terminalEntity.getLegacyTerminalId());
+        boolean hasOTPAssignment = hasOTPAssignment(person.getId(), terminalEntity.getLegacyTerminalId());
         if (!hasOTPAssignment) {
-            throw new ImpossibleOTPException("impossible otp for username: " + request.getUserEntity().getPerson().getUsername() + ", nickName: " + request.getUserEntity().getNickname());
+            throw new ImpossibleOTPException("impossible otp for username: " + person.getUsername() + ", nickName: " + user.getNickname());
         }
-        SecondPasswordAuthenticationToken authentication = new SecondPasswordAuthenticationToken(generalPersonEntity.getUsername(), request.getClaimCode());
-        ResponseMessageDetails responseBody = sendAndReceiveOTPRequest(authentication, "", userEntity.getNickname(), userEntity.getCreatorBranch());
+        SecondPasswordAuthenticationToken authentication = new SecondPasswordAuthenticationToken(person.getUsername(), request.getClaimCode());
+        ResponseMessageDetails responseBody = sendAndReceiveOTPRequest(authentication, "", user.getNickname(), user.getCreatorBranch());
         String resultCode = responseBody.getResultCode();
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
             return OtpVerifyResponse.builder().isSuccessful(true).build();
