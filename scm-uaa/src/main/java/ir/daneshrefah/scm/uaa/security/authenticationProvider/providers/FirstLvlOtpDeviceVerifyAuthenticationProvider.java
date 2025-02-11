@@ -19,8 +19,8 @@ public class FirstLvlOtpDeviceVerifyAuthenticationProvider extends AbstractOtpDe
     }
 
     @Override
-    protected void throwError(GeneralAuthenticationToken authentication, Exception exception) {
-
+    protected void throwError(GeneralAuthenticationToken authentication, RuntimeException exception) {
+        throw exception;
     }
 
 }

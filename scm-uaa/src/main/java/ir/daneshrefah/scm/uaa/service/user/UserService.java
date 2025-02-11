@@ -624,14 +624,14 @@ public class UserService {
         }
     }
 
-    public boolean validateStaticPassword(UserEntity userEntity, String credential, AuthenticationMethodType authenticationMethodType) {
-        if (StringUtils.isBlank(userEntity.getTransactionStaticPassword()) || authenticationMethodType == null) {
+    public boolean validateStaticPassword(User user, String credential, AuthenticationMethodType authenticationMethodType) {
+        if (StringUtils.isBlank(user.getTransactionStaticPassword()) || authenticationMethodType == null) {
             return false;
         }
         if (authenticationMethodType.equals(AuthenticationMethodType.TRANSACTION)) {
-            return userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
+            return user.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, user.getPerson().getUsername()));
         } else {
-            return userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()));
+            return user.getLoginStaticPassword().equals(passwordEncoder.encodePassword(credential, user.getPerson().getUsername()));
         }
     }
 

@@ -5,11 +5,14 @@ import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
+import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
@@ -43,13 +46,14 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         ValidationUtils.checkBlankString(request.getClaimCode(), () -> new MissingRequiredInputException("claimCode"));
         ValidationUtils.checkNull(request.getReason(), () -> new MissingRequiredInputException("reason"));
         UserEntity userEntity = userService.findUser(Objects.requireNonNull(AuthenticationUtils.getLoggedInUserAuthentication()));
-        GeneralPersonEntity personEntity = userEntity.getPerson();
+        User user = UserMapper.INSTANCE.toModel(userEntity);
+        GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,
-                personEntity.getMobile1(),
+                person.getMobile1(),
                 userEntity.getNickname(),
                 UserIdentifierType.USER_NICKNAME,
-                userEntity,
+                user,
                 request.getAuthenticationMethodType());
     }
 
@@ -70,12 +74,13 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         validateOtpRequest(request.getOtpType(), request.getUsername(), request.getClaimCode(), request.getReason(), "Username");
         GeneralPersonEntity generalPerson = userService.findPersonByUsername(request.getUsername());
         UserEntity userEntity = findUserByPersonAndTerminal(generalPerson.getId(), extractRequestTerminalCode());
+        User user = UserMapper.INSTANCE.toModel(userEntity);
         return verifyOtpForUser(
                 request,
                 generalPerson.getMobile1(),
                 generalPerson.getUsername(),
                 UserIdentifierType.PERSON_USERNAME,
-                userEntity,
+                user,
                 request.getAuthenticationMethodType());
     }
 
@@ -83,13 +88,14 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
     public OtpVerifyResponse verifyOtpByNickname(VerifyOtpByNicknameRequest request) {
         validateOtpRequest(request.getOtpType(), request.getNickname(), request.getClaimCode(), request.getReason(), "nickname");
         UserEntity userEntity = findUserByNicknameAndTerminal(request.getNickname(), extractRequestTerminalCode());
-        GeneralPersonEntity generalPerson = userEntity.getPerson();
+        User user = UserMapper.INSTANCE.toModel(userEntity);
+        GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,
-                generalPerson.getMobile1(),
+                person.getMobile1(),
                 userEntity.getNickname(),
                 UserIdentifierType.USER_NICKNAME,
-                userEntity,
+                user,
                 request.getAuthenticationMethodType());
     }
 
@@ -98,13 +104,14 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         validateOtpRequest(request.getOtpType(), request.getNationalCode(), request.getClaimCode(), request.getReason(), "nationalCode");
         UserEntity userEntity = userService.findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganizationId(), extractRequestTerminalCode()).orElseThrow(() -> {
             throw new NoMatchRecordFoundException("user");});
-        GeneralPersonEntity generalPerson = userEntity.getPerson();
+        User user = UserMapper.INSTANCE.toModel(userEntity);
+        GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,
-                generalPerson.getMobile1(),
+                person.getMobile1(),
                 userEntity.getNickname(),
                 UserIdentifierType.PERSON_USERNAME,
-                userEntity,
+                user,
                 request.getAuthenticationMethodType());
     }
 
@@ -122,8 +129,8 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         return extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
     }
 
-    private OtpVerifyResponse handleStaticPasswordAuthentication(String claimCode, UserEntity userEntity, AuthenticationMethodType authenticationMethodType) {
-        boolean isValid = userService.validateStaticPassword(userEntity, claimCode, authenticationMethodType);
+    private OtpVerifyResponse handleStaticPasswordAuthentication(String claimCode, User user, AuthenticationMethodType authenticationMethodType) {
+        boolean isValid = userService.validateStaticPassword(user, claimCode, authenticationMethodType);
         return OtpVerifyResponse.builder()
                 .isSuccessful(isValid)
                 .build();
@@ -133,25 +140,25 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
                                                String mobile,
                                                String identifier,
                                                UserIdentifierType identifierType,
-                                               UserEntity userEntity,
+                                               User user,
                                                AuthenticationMethodType authenticationMethodType) {
         String terminalCode = extractRequestTerminalCode();
         String accessParameter = extractAccessParameterOrThrow();
         AuthenticationMethod authenticationMethod = null;
         if (authenticationMethodType.equals(AuthenticationMethodType.TRANSACTION)) {
-            authenticationMethod = userEntity.getTransactionAuthenticationMethod();
+            authenticationMethod = user.getTransactionAuthenticationMethod();
         } else if (authenticationMethodType.equals(AuthenticationMethodType.LOGIN)) {
-            authenticationMethod = userEntity.getLoginAuthenticationMethod();
+            authenticationMethod = user.getLoginAuthenticationMethod();
         }
         switch (authenticationMethod) {
             case STATIC_PASSWORD:
-                return handleStaticPasswordAuthentication(request.getClaimCode(), userEntity, authenticationMethodType);
+                return handleStaticPasswordAuthentication(request.getClaimCode(), user, authenticationMethodType);
             case SMS, OTP:
                 Recipient recipient = createRecipient(mobile, identifier, identifierType, terminalCode, accessParameter);
-                OtpVerifyRequest otpVerifyRequest = createOtpVerifyRequest(request.getOtpType(), recipient, request.getReason(), request.getClaimCode(), userEntity);
+                OtpVerifyRequest otpVerifyRequest = createOtpVerifyRequest(request.getOtpType(), recipient, request.getReason(), request.getClaimCode(), user);
                 return otpService.verifyOtp(otpVerifyRequest);
             default:
-                throw new UnsupportedOperationException("Unsupported authentication method: " + userEntity.getLoginAuthenticationMethod());
+                throw new UnsupportedOperationException("Unsupported authentication method: " + user.getLoginAuthenticationMethod());
         }
     }
 
@@ -165,12 +172,12 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
                 .build();
     }
 
-    private OtpVerifyRequest createOtpVerifyRequest(OtpType otpType, Recipient recipient, OtpReason reason, String claimCode, UserEntity userEntity) {
+    private OtpVerifyRequest createOtpVerifyRequest(OtpType otpType, Recipient recipient, OtpReason reason, String claimCode, User user) {
         return OtpVerifyRequest.builder()
                 .otpType(otpType)
                 .recipient(recipient)
                 .reason(reason)
-                .userEntity(userEntity)
+                .user(user)
                 .claimCode(claimCode)
                 .build();
     }

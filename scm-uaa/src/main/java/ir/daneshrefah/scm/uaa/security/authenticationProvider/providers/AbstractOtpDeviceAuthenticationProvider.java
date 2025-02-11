@@ -12,6 +12,8 @@ import ir.daneshrefah.scm.uaa.service.user.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 
+import java.util.Objects;
+
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_INVALID_CLAIM;
 
 
@@ -27,13 +29,14 @@ public abstract class AbstractOtpDeviceAuthenticationProvider extends AbstractAu
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
         OtpVerifyRequest request = OtpVerifyRequest.builder()
-//                .terminalCode(userDetails.getUser().getTerminalCode())
+                .terminalCode(userDetails.getUser().getTerminalCode())
+                .user(userDetails.getUser())
 //                .accessParameter(authentication.getDetails().getAccessParameter())
 //                .recipientUser(userDetails.getUser().getPerson())
 //                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
                 .otpType(OtpType.DEVICE)
                 .reason(OtpReason.AUTHENTICATION)
-                .claimCode(authentication.getDetails().getClaimCode())
+                .claimCode(Objects.toString(authentication.getCredentials(), null))
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(request);
         if (!otpVerifyResponse.isSuccessful()) {
@@ -41,6 +44,6 @@ public abstract class AbstractOtpDeviceAuthenticationProvider extends AbstractAu
         }
     }
 
-    protected abstract void throwError(GeneralAuthenticationToken authentication, Exception exception);
+    protected abstract void throwError(GeneralAuthenticationToken authentication, RuntimeException exception);
 
 }
