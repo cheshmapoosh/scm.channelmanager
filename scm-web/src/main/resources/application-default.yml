@@ -75,8 +75,8 @@ scm:
       enabled: true
       auth-header-name: "authorization"
       auth-prefix: "Bearer "
-      base-url: "http://localhost:8000/api"
-      verify-logged-in-url: "/otp/verify-by-logged-in-user"
+      base-url: "http://localhost:8000"
+      verify-logged-in-url: "/api/otp/verify-by-logged-in-user"
   membership-access:
     default-services:
       - TAccListInq

@@ -16,3 +16,9 @@ spring:
         max-attempts: 10
         max-interval: 3000
       fail-fast: true
+
+scm:
+  otp:
+    rest-client:
+      base-url: ${SPRING_SECURITY_ISSUER_URI}
+      verify-logged-in-url: "/api/otp/verify-by-logged-in-user"

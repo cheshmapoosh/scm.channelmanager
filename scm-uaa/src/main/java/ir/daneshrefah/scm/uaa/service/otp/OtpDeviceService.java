@@ -90,7 +90,7 @@ public class OtpDeviceService {
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
         User user = request.getUser();
         GeneralPerson person = user.getPerson();
-        String terminalCode = request.getTerminalCode();
+        String terminalCode = request.getRecipient().getTerminalCode();
         TerminalEntity terminalEntity = terminalRepository.findByCode(terminalCode)
                 .orElseThrow(() -> new InvalidInputException("terminalCode"));
         boolean hasOTPAssignment = hasOTPAssignment(person.getId(), terminalEntity.getLegacyTerminalId());
