@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
+import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 
@@ -29,13 +30,13 @@ public abstract class AbstractOtpDeviceAuthenticationProvider extends AbstractAu
     @Override
     protected void additionalAuthenticationChecks(TerminalUserDetails userDetails, GeneralAuthenticationToken authentication) throws AuthenticationException {
         OtpVerifyRequest request = OtpVerifyRequest.builder()
-                .terminalCode(userDetails.getUser().getTerminalCode())
                 .user(userDetails.getUser())
 //                .accessParameter(authentication.getDetails().getAccessParameter())
 //                .recipientUser(userDetails.getUser().getPerson())
 //                .recipient(authentication.getPrincipal().getUser().getPerson().getMobile1())
                 .otpType(OtpType.DEVICE)
                 .reason(OtpReason.AUTHENTICATION)
+                .recipient(Recipient.builder().terminalCode(userDetails.getUser().getTerminalCode()).build())
                 .claimCode(Objects.toString(authentication.getCredentials(), null))
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(request);
