@@ -129,7 +129,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         boolean isRealPerson = personType.equals(PersonType.REAL) || ValidationUtils.checkIsValidNationalCode(nationalId);
         if (isRealPerson) {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
-        } else if (Objects.nonNull(subOrg) && !subOrg.isBlank()) {
+        } else if (Objects.nonNull(subOrg) && !subOrg.isBlank() && StringUtils.notEquals("0", subOrg)) {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
         } else {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalId(nationalId)));
