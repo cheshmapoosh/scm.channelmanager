@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.config.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import ir.daneshrefah.scm.config.server.config.ConfigConfiguration;
 import ir.daneshrefah.scm.config.server.service.GitService;
 import ir.daneshrefah.scm.config.server.service.YamlService;
@@ -11,6 +14,7 @@ import org.springframework.cloud.config.server.environment.SearchPathCompositeEn
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,13 +97,13 @@ public class ConfigServerController {
         return environments.stream()
                 .flatMap(environment -> environment.getPropertySources().stream())
                 .collect(Collectors.toMap(propertySource -> {
-                           String name = propertySource.getName();
-                           name = StringUtils.removeStart(name, jGitEnvironmentProperties.getUri());
+                            String name = propertySource.getName();
+                            name = StringUtils.removeStart(name, jGitEnvironmentProperties.getUri());
                             name = StringUtils.removeStart(name, "/");
                             name = StringUtils.replace(name, "application.yml", DEFAULT);
                             name = StringUtils.replace(name, "application-", StringUtils.EMPTY);
                             name = StringUtils.replace(name, ".yml", StringUtils.EMPTY);
-                           return name;
+                            return name;
                         },
                         p -> p.getSource(),
                         (k, v) -> v,
@@ -116,13 +120,34 @@ public class ConfigServerController {
         Path path = Paths.get(jGitEnvironmentProperties.getBasedir().getAbsolutePath(),
                 applicationName(application),
                 profileName(profile));
-        if (StringUtils.startsWith(value, ENC_TAG)){
+        if (StringUtils.startsWith(value, ENC_TAG)) {
             value = textEncryptor.encrypt(StringUtils.removeStart(value, ENC_TAG));
             value = StringUtils.join(CIPHER_TAG, value);
         }
         yamlService.updateProperty(path, key, value);
         gitService.commitAndPush("Updated config property " + key);
         return "Configuration updated and pushed to Git repository.";
+    }
+
+    @Operation(summary = "Upload a file", description = "Uploads a file to the server.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "File uploaded successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid file upload request")
+    })
+    @PostMapping(path = "/properties", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String upload(@RequestParam(required = false) String application,
+                         @RequestParam(required = false) String profile,
+                         @RequestParam("file") MultipartFile file
+
+    ) throws Exception {
+        Path path = Paths.get(jGitEnvironmentProperties.getBasedir().getAbsolutePath(),
+                applicationName(application),
+                profileName(profile));
+        Map<String, Object> properties = yamlService.loadYaml(file.getInputStream());
+        yamlService.saveYaml(path, properties);
+        gitService.commitAndPush("Upload config properties " + path.toAbsolutePath());
+        return "Configuration upload " + path.toAbsolutePath() + " and pushed to Git repository.";
     }
 
     @DeleteMapping("/property")
