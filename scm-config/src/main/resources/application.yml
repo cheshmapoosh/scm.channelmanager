@@ -16,12 +16,12 @@ spring:
     config:
       server:
         git:
-          uri: /home/cheshmapoush.a@drp.local/Projects/mnt/config-repo-server
+          uri: /mnt/config-repo-server
 #            uri: /home/scm/docker/config/config-repo-server   for DOCKER
           search-paths: '{application}'
           clone-on-start: true
           default-label: master
-          basedir: /home/cheshmapoush.a@drp.local/Projects/mnt/config-repo
+          basedir: /app/config-repo
         encrypt:
           enabled: true
         prefix: /config
