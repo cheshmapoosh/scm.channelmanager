@@ -8,10 +8,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,14 +30,16 @@ public class YamlService {
         saveYaml(path, yamlData);
     }
 
-    private Map<String, Object> touchAndLoadYaml(Path path) throws IOException {
+    public Map<String, Object> touchAndLoadYaml(Path path) throws IOException {
         File file = path.toFile();
         FileUtils.touch(file);
-        try (FileInputStream fis = new FileInputStream(file)) {
+        return loadYaml(new FileInputStream(file));
+    }
+
+    public Map<String, Object> loadYaml(InputStream inputStream) throws IOException {
             Yaml yaml = new Yaml(new Constructor(Map.class, new LoaderOptions()));
-            Map<String, Object> load = yaml.load(fis);
+            Map<String, Object> load = yaml.load(inputStream);
             return Objects.nonNull(load) ? load : new HashMap<>();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -54,11 +53,13 @@ public class YamlService {
 
         currentMap.put(keys[keys.length - 1], value);
     }
-    private void saveYaml(Path path, Map<String, Object> data) throws IOException {
+    public void saveYaml(Path path, Map<String, Object> data) throws IOException {
+        File file = path.toFile();
+        FileUtils.touch(file);
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(new Representer(new DumperOptions()), options);
-        try (FileWriter writer = new FileWriter(path.toFile())) {
+        try (FileWriter writer = new FileWriter(file)) {
             yaml.dump(data, writer);
         }
     }
