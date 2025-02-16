@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
@@ -87,7 +88,9 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private void createGlobalTaskIfNeeded(ProcessInstanceEntity processInstance, GeneralPerson person) {
-        boolean shouldCreateGlobalTask = processInstance.getConfirmUserId() != null && processInstance.getTasks().stream().noneMatch(task -> task.getUserId().equals(processInstance.getConfirmUserId()));
+        boolean shouldCreateGlobalTask = processInstance.getConfirmUserId() != null && processInstance.getTasks()
+                .stream()
+                .noneMatch(task -> task.getUserId().equals(processInstance.getConfirmUserId()));
         if (shouldCreateGlobalTask) {
             TaskEntity globalTask = new TaskEntity();
             globalTask.setUserId(processInstance.getConfirmUserId());
@@ -114,7 +117,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskEntity.setUserId(findUser.getId());
             if (findUser instanceof GeneralRealPerson person) {
                 taskEntity.setFullName(person.getFirstName() + " " + person.getLastName());
-            }  else if (findUser instanceof GeneralLegalPerson legalPerson) {
+            } else if (findUser instanceof GeneralLegalPerson legalPerson) {
                 taskEntity.setFullName(legalPerson.getTitle());
             }
             taskEntity.setTaskStatus(TaskStatusEnum.PENDING);
@@ -149,8 +152,19 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskResponse.setStatusName(bundle.get(AccessibleLocale.FA_IR.getLocale(), task.getTaskStatus().name()).orElse(task.getTaskStatus().name()));
             taskResponseList.add(taskResponse);
         }
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        if (allowCancelProcess(processInstance, loggedInUserId)) {
+            processInstanceResponse.setCanCancel(true);
+        }
         processInstanceResponse.setTasks(taskResponseList);
         return processInstanceResponse;
+    }
+
+    private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+        if (processInstance.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstance.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
+            return false;
+        }
+        return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
 
     @Override
@@ -237,7 +251,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstance.getTasks().stream()
                 .filter(TaskEntity::getSigner).map(task -> {
                     GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
-                    return  createUserModel(person);
+                    return createUserModel(person);
                 })
                 .toList();
     }
@@ -252,7 +266,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         userModel.setPersonType(person.getPersonType());
         userModel.setCustomerNo(taskAssetService.findCustomerNo(person.getId())
                 .orElseThrow(() -> new NoMatchRecordFoundException("customerNo")));
-
         return userModel;
     }
 
@@ -303,6 +316,22 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
+    @Override
+    public void cancelProcess(ProcessInstanceCancelRequest request) {
+        ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("processId"));
+        ProcessInstanceEntity processInstanceEntity = findByID(request.getId());
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        if (!allowCancelProcess(processInstanceEntity, loggedInUserId)) {
+            throw new ProcessAuthorityException("Cancel Process", "have not permission");
+        }
+        processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);
+        processInstanceEntity.getTasks()
+                .stream()
+                .filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING)
+                ).forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
+        processInstanceRepository.save(processInstanceEntity);
+    }
+
     private void validateProcessStatus(ProcessStatusEnum processStatusEnum, EnumSet<ProcessStatusEnum> enumSet) {
         if (!enumSet.contains(processStatusEnum)) {
             throw new InvalidProcessStatusException("status", "Invalid process status.");
@@ -310,8 +339,10 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private void validateTaskStates(ProcessInstanceEntity processInstance, TaskStatusEnum taskStatusEnum) {
-        //all task status must be complete or taskStatusEnum except throws exception
-        boolean isStateInvalid = processInstance.getTasks().stream().anyMatch(task -> !EnumSet.of(TaskStatusEnum.COMPLETE, taskStatusEnum).contains(task.getTaskStatus()));
+        boolean isStateInvalid = processInstance
+                .getTasks()
+                .stream()
+                .anyMatch(task -> !EnumSet.of(TaskStatusEnum.COMPLETE, taskStatusEnum).contains(task.getTaskStatus()));
         if (isStateInvalid) {
             throw new InvalidTaskStatusException("status", "Invalid task status.");
         }
