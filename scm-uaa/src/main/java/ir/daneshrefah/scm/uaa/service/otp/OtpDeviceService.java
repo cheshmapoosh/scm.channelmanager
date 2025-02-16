@@ -52,8 +52,6 @@ public class OtpDeviceService {
 
     private final OtpDeviceProperties otpDeviceProperties;
 
-    private final UserTokenDetailsRepository tokenDetailsRepository;
-
     private final MessageGeneratorFactory requestGeneratorFactory;
 
     private final OtpChannel otpChannel;
@@ -69,6 +67,7 @@ public class OtpDeviceService {
     private final PersonService personService;
 
     private final ResourceBundleService resourceBundleService;
+
     private final UserTokenDetailsRepository userTokenDetailsRepository;
 
     @Transactional
