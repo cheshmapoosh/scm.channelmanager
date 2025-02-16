@@ -16,4 +16,6 @@ public interface ProcessManagementService {
     ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request);
 
     void complete(ProcessInstanceCompleteRequest request);
+
+    void cancelProcess(ProcessInstanceCancelRequest request);
 }

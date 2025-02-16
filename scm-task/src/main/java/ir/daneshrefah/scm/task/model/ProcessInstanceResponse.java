@@ -23,6 +23,7 @@ public class ProcessInstanceResponse {
     private JsonNode transactionData;
     private String correlationId;
     private List<TaskResponse> tasks;
+    private boolean canCancel;
 
     @Override
     public boolean equals(Object o) {
