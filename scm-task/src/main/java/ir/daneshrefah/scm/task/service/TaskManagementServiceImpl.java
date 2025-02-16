@@ -24,6 +24,7 @@ import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -46,7 +47,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     public PagedResponseData<TaskResponse> findAllTaskByUserIDAndFilter(TaskFilterRequest request) {
         request = Objects.nonNull(request) ? request : new TaskFilterRequest();
         request.setUserId(AuthenticationUtils.getLoggedInUserId());
-        Pageable pageable = PageableUtils.getPageable(request);
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        Pageable pageable = PageableUtils.getPageable(request, sort);
         Page<TaskEntity> entities = taskRepository.findAll(TaskSpecs.toSpecification(request), pageable);
         List<TaskResponse> taskResponseList = taskMapper.toTaskResponseListWithProcessInstance(entities.stream().toList());
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), taskResponseList);
