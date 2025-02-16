@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_CARTABLE_GET_ALL_TASK;
 
 @Service
 public class TaskInstanceService extends AbstractJavaService {
@@ -25,7 +26,7 @@ public class TaskInstanceService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    @JavaService(serviceCode = SVC_GET_ALL_TASK)
+    @JavaService(serviceCode = SVC_CARTABLE_GET_ALL_TASK)
     @SuppressWarnings("unused")
     public PagedResponseData<TaskResponse> findAllTask(TaskFilterRequest request) {
         return taskManagementService.findAllTaskByUserIDAndFilter(request);
