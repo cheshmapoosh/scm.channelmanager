@@ -96,7 +96,7 @@ public class UserService {
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
-        userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(request.getCurrentNickName(), request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -130,7 +130,7 @@ public class UserService {
         assert currentAuthentication != null;
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -151,7 +151,7 @@ public class UserService {
         assert currentAuthentication != null;
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(request.getUsername() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -513,7 +513,7 @@ public class UserService {
         userEntity.setLoginAuthenticationMethod(requestMethod);
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(nickname + "::" + terminalCode);
+        userCache.removeUserFromCache(nickname, terminalCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -579,7 +579,7 @@ public class UserService {
         String nickname = currentUserAuthentication.getName();
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(nickname + "::" + terminalCode);
+        userCache.removeUserFromCache(nickname, terminalCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -599,7 +599,7 @@ public class UserService {
         }
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
-        userCache.removeUserFromCache(userEntity.getNickname() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(userEntity.getNickname(), request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -656,7 +656,7 @@ public class UserService {
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
-        userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
+        userCache.removeUserFromCache(request.getNickname(), terminal.getCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -845,18 +845,18 @@ public class UserService {
         });
         GeneralPersonEntity person = userEntity.getPerson();
         if (request.getAuthenticationMethodType().equals(AuthenticationMethodType.LOGIN)) {
-            if (!userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
             }
             userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
         } else {
-            if (!userEntity.getTransactionAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
             }
             userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
         }
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
-        userCache.removeUserFromCache(userEntity.getNickname() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(userEntity.getNickname(), request.getTerminalCode());
         userRepository.save(userEntity);
         return true;
     }
