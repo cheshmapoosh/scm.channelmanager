@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserCache implements org.springframework.security.core.userdetails.UserCache {
 
+    public static final String DOUBLE_COLON = "::";
     private final CacheTemplate cacheTemplate;
     private static final String USER_CACHE_NAME = "user_cache";
 
@@ -24,6 +25,14 @@ public class UserCache implements org.springframework.security.core.userdetails.
         this.cacheTemplate = cacheTemplate;
     }
 
+    /**
+     * Get a user from the cache based on username
+     * <p>
+     * Note: The username corresponds to the 'nickName' field in the USER_CHANNEL_AUTHENTICATION table.
+     * </p>
+     *
+     * @param username     The nickname of the user in the USER_CHANNEL_AUTHENTICATION table.
+     */
     @Override
     public UserDetails getUserFromCache(String username) {
         return (UserDetails) cacheTemplate.getFromCache(USER_CACHE_NAME, username);
@@ -36,9 +45,22 @@ public class UserCache implements org.springframework.security.core.userdetails.
         cacheTemplate.putInCache(USER_CACHE_NAME, userKey, user);
     }
 
+    /**
+     * Removes a user from the cache based on their username and terminal code.
+     * <p>
+     * Note: The username corresponds to the 'nickName' field in the USER_CHANNEL_AUTHENTICATION table.
+     * </p>
+     *
+     * @param username     The nickname of the user in the USER_CHANNEL_AUTHENTICATION table.
+     * @param terminalCode The terminal code associated with the user.
+     */
+    public void removeUserFromCache(String username, String terminalCode) {
+        String key = username + DOUBLE_COLON + terminalCode.toUpperCase();
+        removeUserFromCache(key);
+    }
+
     @Override
     public void removeUserFromCache(String username) {
         cacheTemplate.removeFromCache(USER_CACHE_NAME,username);
     }
-
 }

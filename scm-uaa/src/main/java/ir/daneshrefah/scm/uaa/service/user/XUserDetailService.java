@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.user;
 
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
-import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -18,26 +15,31 @@ public class XUserDetailService {
     private final JdbcTemplate jdbcTemplate;
 
     public void removeXUserByUsernameAndChannelCode(UserEntity userEntity, String channelCode) {
-        String username = getUsername(userEntity);
-        removeXUserByUsernameAndChannelCode(username, channelCode);
+        removeXUserByUsernameAndChannelCode(userEntity.getNickname(), channelCode);
     }
 
+    /**
+     * Removes a user from the cache based on their username and channel code.
+     * <p>
+     * Note: The username corresponds to the 'nickName' field in the USER_CHANNEL_AUTHENTICATION table.
+     * </p>
+     *
+     * @param username     The nickname of the user in the USER_CHANNEL_AUTHENTICATION table.
+     * @param channelCode
+     */
     public void removeXUserByUsernameAndChannelCode(String username, String channelCode) {
         jdbcTemplate.update(DELETE_FROM_X_USER_BY_USERNAME_AND_CHANNEL_CODE_QUERY, username, channelCode);
     }
 
-    public void removeXUserByUsername(UserEntity userEntity) {
-        String username = getUsername(userEntity);
-        removeXUserByUsername(username);
-    }
-
+    /**
+     * Removes a user from the XUSER_DETAIL table based on their username.
+     * <p>
+     * Note: The username corresponds to the 'nickName' field in the USER_CHANNEL_AUTHENTICATION table.
+     * </p>
+     *
+     * @param username     The nickname of the user in the USER_CHANNEL_AUTHENTICATION table.
+     */
     public void removeXUserByUsername(String username) {
         jdbcTemplate.update(DELETE_FROM_X_USER_BY_USERNAME_QUERY, username);
-    }
-
-    private String getUsername(UserEntity userEntity) {
-        ValidationUtils.checkNull(userEntity,() -> new MissingRequiredInputException("user"));
-        GeneralPersonEntity person = userEntity.getPerson();
-        return person.getUsername();
     }
 }
