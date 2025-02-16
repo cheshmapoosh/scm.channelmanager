@@ -35,6 +35,7 @@ import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -153,7 +154,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskResponseList.add(taskResponse);
         }
         Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
-        if (allowCancelProcess(processInstance, loggedInUserId)) {
+        if (!(processInstance.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstance.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) && allowCancelProcess(processInstance, loggedInUserId)) {
             processInstanceResponse.setCanCancel(true);
         }
         processInstanceResponse.setTasks(taskResponseList);
@@ -161,9 +162,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
-        if (processInstance.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstance.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
-            return false;
-        }
         return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
 
@@ -176,7 +174,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         } else {
             request.setConfirmUserId(loggedInUserId);
         }
-        Pageable pageable = PageableUtils.getPageable(request);
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        Pageable pageable = PageableUtils.getPageable(request, sort);
         Page<ProcessInstanceEntity> entities = processInstanceRepository.findAll(ProcessInstanceSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList());
     }
@@ -321,15 +320,19 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("processId"));
         ProcessInstanceEntity processInstanceEntity = findByID(request.getId());
         Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
-        if (!allowCancelProcess(processInstanceEntity, loggedInUserId)) {
+        if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)
+                || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
+            throw new InvalidProcessStatusException("status", "Invalid process status.");
+        } else if (allowCancelProcess(processInstanceEntity, loggedInUserId)) {
+            processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);
+            processInstanceEntity.getTasks()
+                    .stream()
+                    .filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING))
+                    .forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
+            processInstanceRepository.save(processInstanceEntity);
+        } else {
             throw new ProcessAuthorityException("Cancel Process", "have not permission");
         }
-        processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);
-        processInstanceEntity.getTasks()
-                .stream()
-                .filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING)
-                ).forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
-        processInstanceRepository.save(processInstanceEntity);
     }
 
     private void validateProcessStatus(ProcessStatusEnum processStatusEnum, EnumSet<ProcessStatusEnum> enumSet) {
