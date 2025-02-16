@@ -46,7 +46,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class OtpDeviceService {
     public static final String MULE_CORRELATION_ID = "MULE_CORRELATION_ID";
-    public static final String DOUBLE_COLON = "::";
+
 
     private final JmsTemplate avacasJmsTemplate;
 
@@ -100,8 +100,8 @@ public class OtpDeviceService {
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
             return OtpVerifyResponse.builder().isSuccessful(true).build();
         }
-        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(),AvaCasResponseCode.getStatus(resultCode));
-        return OtpVerifyResponse.builder().isSuccessful(false)//TODO read local from request header
+        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read local from request header
+        return OtpVerifyResponse.builder().isSuccessful(false)
                 .errorMessage(errorMessage.orElse("Internal Error")).
                 build();
     }
@@ -138,25 +138,23 @@ public class OtpDeviceService {
 
     public void updateUser(UserEntity userEntity, String channelCode) {
         if (!StringUtils.isBlank(channelCode)) {
-            GeneralPersonEntity person = userEntity.getPerson();
-            updateUserCache(person.getUsername(), channelCode);
-            removeUserDetails(person.getUsername(), channelCode);
+            updateUserCache(userEntity.getNickname(), channelCode);
+            removeUserDetails(userEntity, channelCode);
         } else {
             List<UserEntity> userEntities = userRepository.findAllById(userEntity.getId());
             if (!userEntities.isEmpty()) {
                 for (UserEntity entity : userEntities) {
-                    GeneralPersonEntity person = entity.getPerson();
-                    updateUserCache(person.getUsername());
-                    removeUserDetails(person.getUsername());
+                    updateUserCache(entity.getNickname());
+                    removeUserDetails(entity.getNickname());
                 }
             }
         }
     }
 
-    private void removeUserDetails(String username, String channelCode) {
-        ValidationUtils.checkBlankString(username, () -> new InvalidInputException("username"));
+    private void removeUserDetails(UserEntity userEntity, String channelCode) {
+        ValidationUtils.checkBlankString(userEntity.getNickname(), () -> new InvalidInputException("username"));
         ValidationUtils.checkBlankString(channelCode, () -> new InvalidInputException("channelCode"));
-        xUserDetailService.removeXUserByUsernameAndChannelCode(username, channelCode);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, channelCode);
     }
 
     private void removeUserDetails(String username) {
@@ -165,7 +163,7 @@ public class OtpDeviceService {
     }
 
     private void updateUserCache(String username, String channelCode) {
-        userCache.removeUserFromCache(username + DOUBLE_COLON + channelCode);
+        userCache.removeUserFromCache(username, channelCode);
     }
 
     private void updateUserCache(String username) {
