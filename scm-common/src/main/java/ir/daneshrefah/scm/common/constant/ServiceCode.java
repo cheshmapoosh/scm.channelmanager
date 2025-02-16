@@ -40,6 +40,8 @@ public enum ServiceCode {
     SVC_CARTABLE_GET_ALL_PROCESS(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_CREATE(ServiceImplementationType.JAVA),
     SVC_CARTABLE_COMPLETE_PROCESS(ServiceImplementationType.JAVA),
+    SVC_CARTABLE_CANCEL_PROCESS(ServiceImplementationType.JAVA),
+    SVC_CARTABLE_GET_ALL_TASK(ServiceImplementationType.JAVA),
     SVC_JOB_CLASS_NAME(ServiceImplementationType.JAVA),
     SVC_ASSETS_SYNC(ServiceImplementationType.JAVA),
     SVC_ASSET_PROVIDER_LIST(ServiceImplementationType.JAVA),

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_CARTABLE_GET_ALL_TASK;
 
 @Service
 public class TaskInstanceService extends AbstractJavaService {

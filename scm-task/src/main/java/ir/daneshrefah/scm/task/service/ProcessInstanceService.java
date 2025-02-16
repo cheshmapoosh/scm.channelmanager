@@ -38,6 +38,12 @@ public class ProcessInstanceService extends AbstractJavaService {
         return processManagementService.updateDescription(request);
     }
 
+    @JavaService(serviceCode = SVC_CARTABLE_CANCEL_PROCESS)
+    @SuppressWarnings("unused")
+    public void cancelProcess(ProcessInstanceCancelRequest request) {
+        processManagementService.cancelProcess(request);
+    }
+
     @JavaService(serviceCode = SVC_CARTABLE_COMPLETE_PROCESS)
     @SuppressWarnings("unused")
     public void complete(ProcessInstanceCompleteRequest request) {
