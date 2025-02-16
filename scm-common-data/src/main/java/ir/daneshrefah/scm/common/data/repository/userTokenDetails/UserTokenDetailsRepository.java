@@ -9,12 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface UserTokenDetailsRepository extends JpaRepository<UserTokenDetails, Long> {
-
-    Optional<UserTokenDetails> findByPersonIdAndTerminalLegacyTerminalId(Long personId, Long TerminalLegacyTerminalId);
-
-    List<UserTokenDetails> findByPersonId(Long personId);
-
-    Optional<UserTokenDetails> findByPersonUsernameAndTerminalLegacyTerminalId(String username, Long TerminalLegacyTerminalId);
-
-    long countByPersonUsernameAndTerminalLegacyTerminalId(String username, Long TerminalLegacyTerminalId);
+    long countByPersonId(Long personId);
 }

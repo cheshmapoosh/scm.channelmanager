@@ -3,6 +3,11 @@ server:
 spring:
   application:
     name: scm-config
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 30MB
+      max-request-size: 40MB
   security:
     user:
       name: admin

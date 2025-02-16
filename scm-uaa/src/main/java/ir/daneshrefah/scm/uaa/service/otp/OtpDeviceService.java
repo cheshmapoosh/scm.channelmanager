@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.data.entity.UserTokenDetails;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
+import ir.daneshrefah.scm.common.data.repository.userTokenDetails.UserTokenDetailsRepository;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
@@ -26,14 +27,12 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.service.otp.generator.MessageGeneratorFactory;
 import ir.daneshrefah.scm.uaa.service.otp.generator.OtpMessageGenerator;
-import ir.daneshrefah.scm.uaa.service.user.UserTokenDetailsService;
 import ir.daneshrefah.scm.uaa.service.user.XUserDetailService;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.jms.*;
-
 import jakarta.jms.Message;
+import jakarta.jms.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
@@ -53,8 +52,6 @@ public class OtpDeviceService {
 
     private final OtpDeviceProperties otpDeviceProperties;
 
-    private final UserTokenDetailsService userTokenDetailsService;
-
     private final MessageGeneratorFactory requestGeneratorFactory;
 
     private final OtpChannel otpChannel;
@@ -71,6 +68,8 @@ public class OtpDeviceService {
 
     private final ResourceBundleService resourceBundleService;
 
+    private final UserTokenDetailsRepository userTokenDetailsRepository;
+
     @Transactional
     public RegisterDeviceResponse registerOtpDevice(OtpRegisterDeviceRequest request, GeneralPersonEntity generalPersonEntity, UserEntity userEntity) {
         User loggedInUser = AuthenticationUtils.getLoggedInUser();
@@ -81,7 +80,7 @@ public class OtpDeviceService {
         ResponseMessageDetails responseBody = sendAndReceiveOTPRequest(userEntity, request.getOtpDeviceType().getValue(), generalPersonEntity.getUsername(), employeeBranchCode);
         validateAfterRegistration(responseBody);
         UserTokenDetails userTokenDetailEntity = createUserTokenDetailEntity(request, responseBody, userEntity);
-        userTokenDetailsService.persist(userTokenDetailEntity);
+        userTokenDetailsRepository.save(userTokenDetailEntity);
         String terminalCode = RequestUtils.extractRequestTerminalCode();
         updateUser(userEntity, terminalCode);
         return RegisterDeviceResponse.builder().success(true).resultCode(responseBody.getResultCode()).serialNo(responseBody.getMessageNO()).build();
@@ -90,10 +89,7 @@ public class OtpDeviceService {
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
         User user = request.getUser();
         GeneralPerson person = user.getPerson();
-        String terminalCode = request.getRecipient().getTerminalCode();
-        TerminalEntity terminalEntity = terminalRepository.findByCode(terminalCode)
-                .orElseThrow(() -> new InvalidInputException("terminalCode"));
-        boolean hasOTPAssignment = hasOTPAssignment(person.getId(), terminalEntity.getLegacyTerminalId());
+        boolean hasOTPAssignment = hasOTPAssignment(person.getId());
         if (!hasOTPAssignment) {
             throw new ImpossibleOTPException("impossible otp for username: " + person.getUsername() + ", nickName: " + user.getNickname());
         }
@@ -135,12 +131,8 @@ public class OtpDeviceService {
         }
     }
 
-    public boolean hasOTPAssignment(Long personId, Long channelId) {
-        return findUserTokenDetailsByPersonIdAndTerminalLegacyTerminalId(personId, channelId).isPresent();
-    }
-
-    private Optional<UserTokenDetails> findUserTokenDetailsByPersonIdAndTerminalLegacyTerminalId(Long personId, Long channelId) {
-        return userTokenDetailsService.findByPersonIdAndTerminalLegacyTerminalId(personId, channelId);
+    public boolean hasOTPAssignment(Long personId) {
+        return userTokenDetailsRepository.countByPersonId(personId) > 0;
     }
 
     public void updateUser(UserEntity userEntity, String channelCode) {
