@@ -6,12 +6,14 @@ import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
+import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
 import ir.daneshrefah.scm.task.entity.TaskEntity;
 import ir.daneshrefah.scm.task.model.IssuerModel;
 import ir.daneshrefah.scm.task.model.ProcessInstanceResponse;
 import ir.daneshrefah.scm.task.model.TaskResponse;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -33,6 +35,7 @@ public abstract class TaskMapper {
     @Autowired
     private PersonService personService;
 
+
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapDateToString")
     @Mapping(source = "taskStatus", target = "statusName", qualifiedByName = "mapTaskStatusName")
     @Mapping(source = "updateAt", target = "updateAt", qualifiedByName = "mapDateToString")
@@ -46,9 +49,13 @@ public abstract class TaskMapper {
 
     public List<TaskResponse> toTaskResponseListWithProcessInstance(List<TaskEntity> taskEntities) {
         List<TaskResponse> taskResponseList = new ArrayList<>();
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         for (TaskEntity task : taskEntities) {
             TaskResponse taskResponse = toTaskResponse(task);
             ProcessInstanceResponse processInstanceResponse = processInstanceMapper.toProcessInstanceResponse(task.getProcessInstance());
+            if (!(processInstanceResponse.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstanceResponse.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) && allowCancelProcess(task.getProcessInstance(), loggedInUserId)) {
+                processInstanceResponse.setCanCancel(true);
+            }
             IssuerModel issuerModel = mapToUserModel(task.getProcessInstance());
             processInstanceResponse.setCreatedBy(issuerModel);
             taskResponse.setProcessInstance(processInstanceResponse);
@@ -66,6 +73,8 @@ public abstract class TaskMapper {
             issuerModel.setLastName(realPerson.getLastName());
         } else if (person instanceof GeneralLegalPerson legalPerson) {
             issuerModel.setNationalId(legalPerson.getNationalId());
+            issuerModel.setFirstName(legalPerson.getTitle());
+            issuerModel.setLastName(legalPerson.getTitleEnglish());
         }
         issuerModel.setPersonType(person.getPersonType());
         return issuerModel;
@@ -85,5 +94,9 @@ public abstract class TaskMapper {
     @Named("mapTaskStatusName")
     String mapStatusName(TaskStatusEnum taskStatusEnum) {
         return bundle.get(AccessibleLocale.FA_IR.getLocale(), taskStatusEnum.name()).orElse(taskStatusEnum.name());
+    }
+
+    boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+        return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
 }
