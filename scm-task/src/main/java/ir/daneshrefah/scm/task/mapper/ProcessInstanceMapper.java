@@ -48,4 +48,6 @@ public abstract class ProcessInstanceMapper {
     String mapStatusName(ProcessStatusEnum processStatusEnum) {
         return bundle.get(AccessibleLocale.FA_IR.getLocale(), processStatusEnum.name()).orElse(processStatusEnum.name());
     }
+
+
 }
