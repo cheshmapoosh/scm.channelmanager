@@ -34,6 +34,7 @@ import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.jms.Message;
 import jakarta.jms.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OtpDeviceService {
     public static final String MULE_CORRELATION_ID = "MULE_CORRELATION_ID";
 
@@ -91,10 +93,18 @@ public class OtpDeviceService {
         GeneralPerson person = user.getPerson();
         boolean hasOTPAssignment = hasOTPAssignment(person.getId());
         if (!hasOTPAssignment) {
-            throw new ImpossibleOTPException("impossible otp for username: " + person.getUsername() + ", nickName: " + user.getNickname());
+            String errorMessage = "Impossible OTP request for username: " + person.getUsername() + ", nickname: " + user.getNickname();
+            log.error(errorMessage);
+            throw new ImpossibleOTPException(errorMessage);
         }
         SecondPasswordAuthenticationToken authentication = new SecondPasswordAuthenticationToken(person.getUsername(), request.getClaimCode());
-        ResponseMessageDetails responseBody = sendAndReceiveOTPRequest(authentication, "", user.getNickname(), user.getCreatorBranch());
+        ResponseMessageDetails responseBody;
+        try {
+            responseBody = sendAndReceiveOTPRequest(authentication, "", user.getNickname(), user.getCreatorBranch());
+        } catch (Throwable ex) {
+            log.error("Failed to send or receive OTP request for user: {} ,with exception: {} " , user.getNickname(), ex.getMessage());
+            throw ex;
+        }
         String resultCode = responseBody.getResultCode();
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
             return OtpVerifyResponse.builder().isSuccessful(true).build();
@@ -202,7 +212,7 @@ public class OtpDeviceService {
                 try {
                     return ((TextMessage) jakartareceivedMessage).getText();
                 } catch (JMSException e) {
-                    throw new RuntimeException("JMSException occured");
+                    throw new RuntimeException("JMSException occurred");
                 }
             } else if (jakartareceivedMessage != null) {
                 try {
@@ -210,7 +220,7 @@ public class OtpDeviceService {
                     jakartareceivedMessage.readBytes(receivedData);
                     return receivedData;
                 } catch (javax.jms.JMSException e) {
-                    throw new RuntimeException("JMSException occured");
+                    throw new RuntimeException("JMSException occurred");
                 }
             } else {
                 throw new IllegalStateException("Expected " + ObjectMessage.class + "but received " + receivedMessage);
