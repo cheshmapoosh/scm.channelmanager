@@ -206,6 +206,16 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         return RoleMapper.INSTANCE.toModel(roleEntity.get());
     }
 
+    @Override
+    public Role addPersonRole(Long personId, String roleCode) {
+        ValidationUtils.checkNull(personId, () -> new MissingRequiredInputException("personId"));
+        ValidationUtils.checkEmptyString(roleCode, () -> new MissingRequiredInputException("roleCode"));
+        RoleEntity roleEntity = roleRepository.findByCode(roleCode).orElseThrow(() -> new NoMatchRecordFoundException("roleCode"));
+        GeneralPersonEntity personEntity = personRepository.findById(personId).orElseThrow(() -> new NoMatchRecordFoundException("personId"));
+        roleRepository.insertPersonRole(personEntity.getId(), roleEntity.getId());
+        return RoleMapper.INSTANCE.toModel(roleEntity);
+    }
+
 //    @Override
 //    public GeneralPerson findPersonInfo(PersonFindRequest request) {
 //        GeneralPersonEntity entity = null;
