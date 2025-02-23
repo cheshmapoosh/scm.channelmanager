@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.model.TerminalType;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
@@ -24,8 +25,6 @@ import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
 import ir.daneshrefah.scm.uaa.controller.user.*;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
-//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationEntity;
-//import ir.daneshrefah.scm.uaa.repository.activation.UserActivationRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
@@ -34,6 +33,7 @@ import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
+import ir.daneshrefah.scm.uaa.service.person.UPersonService;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
@@ -64,8 +64,8 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
 @RequiredArgsConstructor
 @Service
 public class UserService {
-
-//    private final UserActivationRepository userActivationRepository;
+    private final static String EMPLOYEE_ROLE_CODE = "ROLE_EMPLOYEE";
+    //    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
     private final TerminalService terminalService;
@@ -75,6 +75,7 @@ public class UserService {
     private final UserCache userCache;
     private final XUserDetailService xUserDetailService;
     private final CredentialGenerator credentialGenerator;
+    private final UPersonService uPersonService;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
@@ -693,10 +694,10 @@ public class UserService {
     }
 
     public User findByNicknameAndTerminalCode(String nickname, String terminalCode) {
-        Integer terminalId = Integer.valueOf(terminalService.findTerminalByCode(terminalCode)
-                .orElseThrow(() -> new InvalidInputException("terminalCode")).getId());
-        List<UserEntity> userEntities = findByNicknameAndLegacyTerminalId(nickname, terminalId);
-        if (Objects.nonNull(userEntities) && userEntities.size() > 0) {
+        Terminal terminal = terminalService.findTerminalByCode(terminalCode)
+                .orElseThrow(() -> new InvalidInputException("terminalCode"));
+        List<UserEntity> userEntities = findByNicknameAndLegacyTerminalId(nickname, terminal.getLegacyTerminalId().intValue());
+        if (Objects.nonNull(userEntities) && !userEntities.isEmpty()) {
             return UserMapper.INSTANCE.toModel(userEntities.get(0));
         }
         return null;
@@ -740,10 +741,17 @@ public class UserService {
         return personRepository.findByTokenTypesAndNationalCodeAndOtpSerialNo(nationalCode, tokenTypes, otpSerialNo);
     }//TODO move to personService
 
+    @Transactional
     public User assignTerminalToPerson(UserAssignTerminalRequest request) {
         findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
             throw new DuplicatedRecordFoundException(request.getNationalId());
         });
+        String roleCode;
+        if (request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode()) || request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
+            roleCode = EMPLOYEE_ROLE_CODE;
+        } else {
+            throw new InvalidInputException("TerminalCode");
+        }
         String nickName = StringUtils.isBlank(request.getNickName()) ? request.getPhoneNumber() : request.getNickName();
         User user = findByNicknameAndTerminalCode(nickName, request.getTerminalCode());
         if (user != null) {
@@ -751,9 +759,10 @@ public class UserService {
         }
         GeneralPersonEntity generalPerson = findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId())
                 .orElseThrow(() -> new NoMatchRecordFoundException("person"));
-
         UserEntity userEntity = createUserEntity(request, generalPerson);
         userRepository.save(userEntity);
+        userRepository.flush();
+        uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
@@ -811,7 +820,7 @@ public class UserService {
         user.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), generalPerson.getUsername()));
         user.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), generalPerson.getUsername()));
         user.setPerson(generalPerson);
-        user.setType(UserType.CM_REGULAR);
+        user.setType(UserType.CM_REGULAR); //TODO Is the type set correctly?
         user.setCreatorBranch(getLoggedInBranchCode());
         user.setCreator(loggedInUserId);
         user.setCreateDate(LocalDateTime.now());
@@ -823,9 +832,6 @@ public class UserService {
         assert loggedInUser != null;
         GeneralPerson loggedInPerson = loggedInUser.getPerson();
         String branchCode = loggedInPerson.getBranchCode();
-        if (!loggedInPerson.getPersonType().equals(PersonType.EMPLOYEE)) {//TODO uncommented
-            throw new RuntimeException();
-        }
         if (StringUtils.isBlank(branchCode)) {
             GeneralPersonEntity generalPersonEntity = personRepository.findById(AuthenticationUtils.getLoggedInUserId())
                     .orElseThrow(() -> new NoMatchRecordFoundException("user"));

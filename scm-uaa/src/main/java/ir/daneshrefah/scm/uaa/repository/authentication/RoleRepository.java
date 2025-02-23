@@ -33,7 +33,7 @@ public interface RoleRepository extends CrudRepository<RoleEntity, Integer>, Jpa
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "INSERT INTO userrole (USER_ID, ROLE_ID) VALUES (:personId, :roleId)")
+    @Query(nativeQuery = true, value = "INSERT INTO REF.USERROLE (USER_ID, ROLE_ID) VALUES (:personId, :roleId)")
     void insertPersonRole(@Param("personId") Long personId, @Param("roleId") Integer roleId);
 
     Optional<RoleEntity> findByCode(String code);
