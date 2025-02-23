@@ -23,6 +23,8 @@ public interface UPersonService extends PersonService {
 
     Role addPersonRole(Long personId, Integer roleId);
 
+    Role addPersonRole(Long personId, String roleCode);
+
     GeneralPerson syncPersonInfoFromCIF(PersonFindRequest request);
     GeneralPerson syncPersonInfoFromCIF(String personId);
 

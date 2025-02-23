@@ -109,7 +109,7 @@ public class OtpDeviceService {
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
             return OtpVerifyResponse.builder().isSuccessful(true).build();
         }
-        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read local from request header
+        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
         return OtpVerifyResponse.builder().isSuccessful(false)
                 .errorMessage(errorMessage.orElse("Internal Error")).
                 build();
