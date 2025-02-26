@@ -46,19 +46,19 @@ public class MapCacheManagementController {
         return mapCacheManagementService.updateCache(request);
     }
 
-    @DeleteMapping("/remove")
+    @PostMapping("/remove")
     public ResponseEntity<RemoveCacheRequest> remove(@RequestBody RemoveCacheRequest request) {
         mapCacheManagementService.removeMap(request);
         return ResponseEntity.ok(request);
     }
 
-    @DeleteMapping("/remove-value")
+    @PostMapping("/remove-value")
     public ResponseEntity<RemoveValueCacheRequest> removeMapValue(@RequestBody RemoveValueCacheRequest request) {
         mapCacheManagementService.removeMapValue(request);
         return ResponseEntity.ok(request);
     }
 
-    @DeleteMapping("/clear")
+    @PostMapping("/clear")
     public void clear(@RequestBody ClearCacheRequest request) {
         mapCacheManagementService.clear(request);
     }
