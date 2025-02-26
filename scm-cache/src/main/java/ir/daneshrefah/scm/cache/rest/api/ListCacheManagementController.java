@@ -38,19 +38,19 @@ public class ListCacheManagementController {
         return ResponseEntity.ok(request);
     }
 
-    @DeleteMapping("/remove")
+    @PostMapping("/remove")
     public ResponseEntity<RemoveCacheRequest> remove(@RequestBody RemoveCacheRequest request) {
         listCatchManagementService.remove(request);
         return ResponseEntity.ok(request);
     }
 
-    @DeleteMapping("/remove-value")
+    @PostMapping("/remove-value")
     public ResponseEntity<RemoveValueCacheRequest> removeValue(@RequestBody RemoveValueCacheRequest request) {
         listCatchManagementService.removeValue(request);
         return ResponseEntity.ok(request);
     }
 
-    @DeleteMapping("/clear")
+    @PostMapping("/clear")
     public void clear(@RequestBody ClearCacheRequest request) {
         listCatchManagementService.clear(request);
     }
