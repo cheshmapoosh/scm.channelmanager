@@ -64,7 +64,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
 @RequiredArgsConstructor
 @Service
 public class UserService {
-    private final static String EMPLOYEE_ROLE_CODE = "ROLE_EMPLOYEE";
+    private final static String CUSTOMER_ROLE_CODE = "ROLE_CUSTOMER";
     //    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
     private final CustomMD5Encoder passwordEncoder;
@@ -748,7 +748,7 @@ public class UserService {
         });
         String roleCode;
         if (request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode()) || request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
-            roleCode = EMPLOYEE_ROLE_CODE;
+            roleCode = CUSTOMER_ROLE_CODE;
         } else {
             throw new InvalidInputException("TerminalCode");
         }
