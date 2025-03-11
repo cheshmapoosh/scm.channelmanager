@@ -15,7 +15,7 @@ import java.util.Date;
 public class LogTraceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ROW_ID")
+    @Column(name = "ID")
     private Long id;
     @Column(name = "CHANNEL_CODE")
     private String channelCode;
@@ -23,9 +23,9 @@ public class LogTraceEntity {
     private String terminalCode;
     @Column(name = "CLIENT_ID")
     private String clientId;
-    @Column(name = "CORRELATION_ID")
+    @Column(name = "CORROLATION_ID")
     private String correlationId;
-    @Column(name = "CLIENT_CORRELATION_ID")
+    @Column(name = "CLIENT_CORROLATION_ID")
     private String clientCorrelationId;
     @Column(name = "FLOW_ID")
     private String flowId;
@@ -87,4 +87,6 @@ public class LogTraceEntity {
     private String payload;
     @Column(name = "ARCHIVE_NO", updatable = false)
     private Long archiveNo;
+    @Column(name = "ROW_NO")
+    private Integer rowNo;
 }
