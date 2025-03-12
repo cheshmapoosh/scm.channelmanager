@@ -39,7 +39,7 @@ public interface ClientScopeRelationMapper {
     @Named("toClientEntity")
     default ClientEntity toClientModel(Client model) {
         if (Objects.nonNull(model)) {
-            return ClientMapper.INSTANCE.toClientIdEntity(model);
+            return ClientMapper.INSTANCE.toEntity(model);
         }
         return null;
     }

@@ -4,11 +4,9 @@ import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.validation.Numeric;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
-import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
-import ir.daneshrefah.scm.uaa.domain.client.Scope;
-import ir.daneshrefah.scm.uaa.service.client.*;
+import ir.daneshrefah.scm.uaa.service.client.ClientAuthorizationGrantTypeService;
+import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.uaa.service.client.dto.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -34,143 +32,32 @@ import java.util.List;
 public class ClientController {
 
     private final ClientService clientService;
-    private final ClientScopeService clientScopeService;
-    private final ClientVersionService clientVersionService;
-    private final ClientScopeRelationService clientScopeRelationService;
     private final ClientAuthorizationGrantTypeService clientAuthorizationGrantTypeService;
 
     //TODO IMPORTANT : THESE API MUST ASSIGN ON CORRESPONDING ROLES
 
-    //SCOPE
-
-    @PostMapping("/scope/list")
-    public ResponseEntity<PagedResponseData<Scope>> getAllScopesList(@RequestBody @Valid @NotNull ScopeFindRequest request) {
-        List<Scope> found = clientScopeService.getList(request);
-        return ResponseEntity.status(HttpStatus.OK).body(new PagedResponseData<>(request, found));
-    }
-
-    @PostMapping("/scope/create")
-    public ResponseEntity<Scope> createScope(@RequestBody @Valid @NotNull ScopeCreateRequest request) {
-        Scope scope = new Scope(request.getCode(), request.getTitle());
-        return ResponseEntity.status(HttpStatus.OK).body(clientScopeService.save(scope));
-    }
-
-    @PutMapping("/scope/edit")
-    public ResponseEntity<Scope> editScope(@RequestBody @Valid @NotNull ScopeEditRequest request) {
-        Scope scope = new Scope(request.getCode(), request.getTitle());
-        scope.setId(request.getId());
-        scope.setLastEditDate(request.getLastEditDate());
-        return ResponseEntity.status(HttpStatus.OK).body(clientScopeService.update(scope));
-    }
-
-    @DeleteMapping("/scope/remove")
-    public ResponseEntity<Scope> removeScope(@RequestBody @Valid @NotNull ScopeRemoveRequest request) {
-        Scope scope = new Scope();
-        scope.setId(request.getId());
-        scope.setLastEditDate(request.getLastEditDate());
-        return ResponseEntity.status(HttpStatus.OK).body(clientScopeService.remove(scope));
-    }
-
-    @GetMapping("/scope/find-one/{id}")
-    public ResponseEntity<Scope> findOneScopeVersion(@PathVariable(name = "id") @Valid @NotNull @Numeric Long scopeId) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(clientScopeService.get(scopeId).orElseThrow(() -> new NoMatchRecordFoundException("scopeId")));
-    }
-
-
-    // VERSION
-
-    @PostMapping("/version/create")
-    public ResponseEntity<ClientVersion> createVersion(@RequestBody @Valid @NotNull VersionCreateRequest request) {
-        ClientVersion clientVersion = new ClientVersion();
-        clientVersion.setClientId(request.getClientId());
-        clientVersion.setVersion(request.getVersion());
-        clientVersion.setSignature(request.getSignature());
-        clientVersion.setStatus(request.getStatus());
-        clientVersion.setForced(request.isForced());
-        return ResponseEntity.status(HttpStatus.OK).body(clientVersionService.save(clientVersion));
-    }
-
-    @PutMapping("/version/edit")
-    public ResponseEntity<ClientVersion> editSVersion(@RequestBody @Valid @NotNull VersionEditRequest request) {
-        ClientVersion clientVersion = new ClientVersion();
-        clientVersion.setVersion(request.getVersion());
-        clientVersion.setSignature(request.getSignature());
-        clientVersion.setStatus(request.getStatus());
-        clientVersion.setId(request.getId());
-        clientVersion.setForced(request.isForced());
-        clientVersion.setLastEditDate(request.getLastEditDate());
-        return ResponseEntity.status(HttpStatus.OK).body(clientVersionService.update(clientVersion));
-    }
-
-    @DeleteMapping("/version/remove")
-    public ResponseEntity<ClientVersion> removeVersion(@RequestBody @Valid @NotNull VersionRemoveRequest request) {
-        ClientVersion clientVersion = new ClientVersion();
-        clientVersion.setId(request.getId());
-        clientVersion.setLastEditDate(request.getLastEditDate());
-        return ResponseEntity.status(HttpStatus.OK).body(clientVersionService.remove(clientVersion));
-    }
-
-    @GetMapping("/version/find-one/{id}")
-    public ResponseEntity<ClientVersion> findOneClientVersion(@PathVariable(name = "id") @Valid @NotNull @Numeric String versionId) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(clientVersionService.getClientVersionById(Long.parseLong(versionId)).orElseThrow(() -> new NoMatchRecordFoundException("versionId")));
-    }
-
-    @PostMapping("/version/client-version-list")
-    public ResponseEntity<PagedResponseData<ClientVersion>> findOneClientVersionByClientId(@RequestBody @Valid @NotNull ClientVersionRequest request) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(new PagedResponseData<>(request, clientVersionService.getClientVersionByClientId(Long.parseLong(request.getClientId()))));
-    }
-
-    //CLIENT SCOPE RELATION
-
-    @PostMapping("/scope-relation/find-by-client")
-    public ResponseEntity<PagedResponseData<Scope>> findClientScopeRelation(@RequestBody @Valid @NotNull ScopeRelationFindRequest request) {
-        List<Scope> found = clientScopeRelationService.findClientScopes(request.getClientId());
-        return ResponseEntity.status(HttpStatus.OK).body(new PagedResponseData<>(request, found));
-    }
-
-    @PostMapping("/scope-relation/assign")
-    public ResponseEntity<?> assignScope(@RequestBody @Valid @NotNull ScopeRelationCreateRequest request) {
-        clientScopeRelationService.addScope(request.getClientId(), request.getScopeId());
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @PostMapping("/scope-relation/revoke")
-    public ResponseEntity<?> revokeScope(@RequestBody @Valid @NotNull ScopeRelationRevokeRequest request) {
-        clientScopeRelationService.removeScope(Long.parseLong(request.getClientId()), Long.parseLong(request.getScopeId()));
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-
-    // CLIENT
-
     @PostMapping("/list")
-    public ResponseEntity<PagedResponseData<Client>> findPagedClientList(@RequestBody @Valid @NotNull ClientFindRequest request) {
+    public ResponseEntity<PagedResponseData<ClientResponse>> findPagedClientList(@RequestBody @Valid @NotNull ClientFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.findPagedClientList(request));
     }
 
     @GetMapping("/find-one/{id}")
-    public ResponseEntity<Client> getClientById(@PathVariable("id") @Valid @NotNull @Numeric Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(clientService.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("clientId")));
+    public ResponseEntity<ClientResponse> getClientById(@PathVariable("id") @Valid @NotNull @Numeric Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(clientService.getClientResponseById(id).orElseThrow(() -> new NoMatchRecordFoundException("clientId")));
     }
 
     @DeleteMapping("/remove")
-    public ResponseEntity<Client> removeClient(@RequestBody @Valid @NotNull ClientRemoveRequest request) {
+    public ResponseEntity<ClientResponse> removeClient(@RequestBody @Valid @NotNull ClientRemoveRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.remove(request.getClientId(), request.getLastEditDate()));
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Client> createClient(@RequestBody @Valid @NotNull ClientCreateRequest request) {
+    public ResponseEntity<ClientResponse> createClient(@RequestBody @Valid @NotNull ClientCreateRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.create(request));
     }
 
     @PutMapping("/edit")
-    public ResponseEntity<Client> editClient(@RequestBody @Valid @NotNull ClientEditRequest request) {
+    public ResponseEntity<ClientResponse> editClient(@RequestBody @Valid @NotNull ClientEditRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(clientService.updateClient(request));
     }
 

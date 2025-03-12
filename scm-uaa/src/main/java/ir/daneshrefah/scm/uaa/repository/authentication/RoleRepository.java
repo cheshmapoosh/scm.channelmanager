@@ -37,5 +37,6 @@ public interface RoleRepository extends CrudRepository<RoleEntity, Integer>, Jpa
     void insertPersonRole(@Param("personId") Long personId, @Param("roleId") Integer roleId);
 
     Optional<RoleEntity> findByCode(String code);
+
     void deleteRoleEntityByCode(String code);
 }

@@ -28,7 +28,4 @@ public class RoleEntity extends AbstractEntity<Integer> {
     private String code;
     private String abbreviation;
     private Boolean systemRole;
-//    APPLICATION_ID
-//    PARENT_ROLE_ID
-
 }

@@ -12,6 +12,8 @@ scm:
       default-schema: REF
       enabled: true
   security:
+    client:
+      default-role: ROLE_CLIENT
     key-store:
       name: config/keystore.p12
       password: password

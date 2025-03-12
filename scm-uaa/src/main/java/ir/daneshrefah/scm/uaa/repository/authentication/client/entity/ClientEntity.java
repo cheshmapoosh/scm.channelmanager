@@ -1,13 +1,13 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
 import ir.daneshrefah.scm.common.data.converter.StringSetConverter;
-import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -27,11 +27,6 @@ public class ClientEntity extends AbstractVersionAbleDefaultEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CLIENT_ID")
     private Long id;
-    private String title;
-    @Column(name = "CLIENT_IDENTIFIER")
-    private String clientId;
-    @Column(name = "CLIENT_SECRET")
-    private String clientSecret;
     private String terminalCode;
     @Column(name = "CLIENT_AUTH_METHOD_BASIC")
     private boolean clientAuthenticationMethodSecretBasic;
@@ -43,7 +38,7 @@ public class ClientEntity extends AbstractVersionAbleDefaultEntity<Long> {
     private boolean clientAuthenticationMethodKeyJwt;
     @Column(name = "CLIENT_AUTH_METHOD_NONE")
     private boolean clientAuthenticationMethodNone;
-//    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
+    //    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
 //    private boolean authorizationGrantTypeAuthorizationCode;
 //    @Column(name = "AUTH_GRANT_REFRESH_TOKEN")
 //    private boolean authorizationGrantTypeRefreshToken;
@@ -65,10 +60,23 @@ public class ClientEntity extends AbstractVersionAbleDefaultEntity<Long> {
     private String allowIpAddresses;
     @Column(name = "SESSION_TTL_MINUTE")
     private Long sessionTimeToLiveMinute;
-//    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    //    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
 //    private Set<ClientScopeRelation> scopes;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER , orphanRemoval = true)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<ClientVersionEntity> versions;
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER , orphanRemoval = true)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<ClientAuthorizationGrantTypeEntity> authorizationGrantTypes;
+    /**
+     * The client correspond user,the target person type of this user is CLIENT.
+     */
+    @OneToOne
+    @JoinColumn(name = "USER_CHANNEL_AUTHENTICATION_ID")
+    private UserEntity user;
+    /**
+     * Main legal user that can contains (CORPORAT,EGOVERNANCE,BANK,TAMIN) person types.
+     */
+    @OneToOne
+    @JoinColumn(name = "LEGAL_USER_ID")
+    private GeneralLegalPersonEntity legalPerson;
+    private Boolean status;
 }

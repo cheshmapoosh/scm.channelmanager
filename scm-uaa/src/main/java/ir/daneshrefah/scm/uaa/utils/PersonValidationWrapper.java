@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.uaa.utils;
 
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 

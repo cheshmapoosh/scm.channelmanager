@@ -29,7 +29,8 @@ import java.time.LocalDate;
 public abstract class GeneralPersonEntity extends AbstractEntity<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "userSeq")
+    @SequenceGenerator(name = "userSeq",sequenceName = "SQUSER",allocationSize = 1)
     @Column(name = "USER_ID")
     private Long id;
     @Column(name = "USERNAME", nullable = false)
@@ -42,6 +43,8 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Long> {
     private Nationality nationality;
     @Column(name = "ISSUE_DATE")
     private LocalDate registerIssueDate;
+    @Column(name = "ISSUE_PLACE")
+    private String issuePlace;
     @Column(name = "ACTIVE")
     @Convert(converter = PersonStatusConverter.class)
     private PersonStatus status;
