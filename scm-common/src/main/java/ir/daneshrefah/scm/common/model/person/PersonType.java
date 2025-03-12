@@ -16,17 +16,17 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum PersonType {
 
-    UNKNOWN(20,-1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
-    REAL(1,50),
-    EMPLOYEE(2,-1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
-    CORPORATE(3,4),
-    GOVERNANCE(4,1),
-    BANK(5,2),
-    TAMIN(6,3),
+    UNKNOWN(20, -1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
+    REAL(1, 50),
+    EMPLOYEE(2, -1), //TODO 'NAB' DOES NOT HAVE TYPE CODE
+    CORPORATE(3, 4),
+    GOVERNANCE(4, 1),
+    BANK(5, 2),
+    TAMIN(6, 3),
     /**
      * this person type is used for clients that defined in {@link ClientPerson}
-     * */
-    CLIENT(7,-1); //TODO 'NAB' DOES NOT HAVE TYPE CODE
+     */
+    CLIENT(7, -1);
 
     private final int code;
     /**

@@ -1,10 +1,16 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
+import ir.daneshrefah.scm.uaa.service.client.dto.ClientCreateRequest;
+import ir.daneshrefah.scm.uaa.service.client.dto.ClientEditRequest;
+import ir.daneshrefah.scm.uaa.service.client.dto.ClientResponse;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
@@ -29,18 +35,22 @@ public interface ClientMapper {
     @Mapping(target = "authenticationMethods", expression = "java(mapClientAuthenticationMethods(entity))")
     @Mapping(target = "clientAuthorizationGrantTypes", source = "authorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToModel")
     @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(entity))")
+    @Mapping(target = "user", source = "user", qualifiedByName = "toUserModel")
+    @Mapping(target = "status", source = "status", qualifiedByName = "toClientModelStatus")
     Client toModel(ClientEntity entity);
 
-    @Mapping(target = "allowIpAddresses" ,expression = "java(mapAllowIpAddressesString(model))")
-    @Mapping(target = "authorizationGrantTypes" ,source = "clientAuthorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToEntity" )
-    @Mapping(target = "versions" ,source = "versions",ignore = true)
+    @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddressesString(model))")
+    @Mapping(target = "authorizationGrantTypes", source = "clientAuthorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToEntity")
+    @Mapping(target = "versions", source = "versions", ignore = true)
+    @Mapping(target = "user", source = "user", qualifiedByName = "toUserEntity")
     ClientEntity toEntityInternal(Client model);
 
-    @Mapping(target = "client" , ignore = true)
+    @Mapping(target = "client", ignore = true)
     ClientAuthorizationGrantTypeEntity toEntity(ClientAuthorizationGrantType model);
+
     ClientAuthorizationGrantType toModel(ClientAuthorizationGrantTypeEntity entity);
 
-    default ClientEntity toEntity(Client client){
+    default ClientEntity toEntity(Client client) {
         ClientEntity entity = toEntityInternal(client);
         mapAuthenticationMethodsToClient(client, entity);
         return entity;
@@ -66,6 +76,22 @@ public interface ClientMapper {
             });
         }
         return set;
+    }
+
+    @Named("toUserModel")
+    default User toModel(UserEntity entity) {
+        if (Objects.nonNull(entity)) {
+            return UserMapper.INSTANCE.toModel(entity);
+        }
+        return null;
+    }
+
+    @Named("toUserEntity")
+    default UserEntity toEntity(User model) {
+        if (Objects.nonNull(model)) {
+            return UserMapper.INSTANCE.toEntity(model);
+        }
+        return null;
     }
 
 
@@ -106,7 +132,7 @@ public interface ClientMapper {
         return list;
     }
 
-    default void mapAuthenticationMethodsToClient(Client model,ClientEntity entity) {
+    default void mapAuthenticationMethodsToClient(Client model, ClientEntity entity) {
         List<ClientAuthenticationMethod> list = model.getAuthenticationMethods();
         if (list.contains(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)) {
             entity.setClientAuthenticationMethodSecretBasic(true);
@@ -127,12 +153,66 @@ public interface ClientMapper {
 
     List<Client> toModels(Iterable<ClientEntity> clientEntities);
 
-    @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(model))")
-    ClientEntity toClientIdEntity(Client model);
-
     default String mapAllowIpAddresses(Client model) {
         return StringUtils.join(model.getAllowIpAddresses(), ',');
     }
 
 
+    ClientResponse toResponseInternal(Client entity);
+
+    default ClientResponse toResponse(Client entity) {
+        ClientResponse responseInternal = toResponseInternal(entity);
+        User user = entity.getUser();
+        if (Objects.nonNull(user)) {
+            GeneralLegalPerson person = (GeneralLegalPerson) user.getPerson();
+            responseInternal.setNickname(user.getNickname());
+            if (Objects.nonNull(person)) {
+                responseInternal.setTitleFa(person.getTitle());
+                responseInternal.setTitle(person.getTitleEnglish());
+            }
+        }
+        return responseInternal;
+    }
+
+    @Named("toClientModelStatus")
+    default boolean toClientModelStatus(Boolean status) {
+        if (Objects.isNull(status)) {
+            return false;
+        }
+        return status;
+    }
+
+    default Client toModel(ClientCreateRequest request){
+        Client client = new Client();
+        client.setTerminalCode(request.getTerminalCode());
+        client.setAuthenticationMethods(request.getAuthenticationMethods());
+        client.setRedirectUris(request.getRedirectUris());
+        client.setRequireAuthorizationConsent(request.getRequireAuthorizationConsent());
+        client.setRequireProofKey(request.getRequireProofKey());
+        client.setCheckVersion(request.getCheckVersion());
+        client.setCheckActivation(request.getCheckActivation());
+        client.setSessionTimeToLiveMinute(Long.parseLong(request.getSessionTimeToLiveMinute()));
+        client.setCheckIpAddress(request.getCheckIpAddress());
+        client.setAllowIpAddresses(request.getAllowIpAddresses());
+        client.setScopes(null);
+        client.setVersions(null);
+        return client;
+    }
+
+    default Client toModel(ClientEditRequest request){
+        Client model = new Client();
+        model.setTerminalCode(request.getTerminalCode());
+        model.setAuthenticationMethods(request.getAuthenticationMethods());
+        model.setRedirectUris(request.getRedirectUris());
+        model.setRequireAuthorizationConsent(request.getRequireAuthorizationConsent());
+        model.setRequireProofKey(request.getRequireProofKey());
+        model.setCheckVersion(request.getCheckVersion());
+        model.setCheckActivation(request.getCheckActivation());
+        model.setSessionTimeToLiveMinute(Long.parseLong(request.getSessionTimeToLiveMinute()));
+        model.setCheckIpAddress(request.getCheckIpAddress());
+        model.setAllowIpAddresses(request.getAllowIpAddresses());
+        model.setScopes(null);
+        model.setVersions(null);
+        return model;
+    }
 }

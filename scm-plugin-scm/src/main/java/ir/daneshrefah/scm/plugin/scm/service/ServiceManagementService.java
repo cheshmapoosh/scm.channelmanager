@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.constant.JavaMethodType;
-import ir.daneshrefah.scm.common.constant.Status;
 import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceEditRequest;
@@ -13,7 +11,6 @@ import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceEditRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.service.JavaServicesService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
@@ -51,11 +48,18 @@ public class ServiceManagementService extends AbstractJavaService {
 
     @JavaService(serviceCode = SVC_SERVICE_BY_CODE)
     public Service findServiceByCode(String serviceCode) {
-//        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
         }
         return this.service.findServiceByCode(serviceCode);
+    }
+
+    @JavaService(serviceCode = SVC_SERVICE_BY_ID)
+    public Service findServiceById(String serviceId) {
+        if (StringUtils.isEmpty(serviceId)) {
+            return null;
+        }
+        return this.service.findServiceById(serviceId);
     }
 
     @JavaService(serviceCode = SVC_SERVICE_EDIT)

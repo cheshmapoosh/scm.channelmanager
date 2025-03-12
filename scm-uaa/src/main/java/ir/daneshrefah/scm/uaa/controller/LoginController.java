@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.uaa.controller;
 
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.uaa.common.exception.CaptchaVerifyException;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
@@ -86,8 +88,8 @@ public class LoginController {
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
 
         model.addAttribute(ATTRIBUTE_OPERATION, OPERATION_LOGIN);
-        model.addAttribute(ATTRIBUTE_CLIENT_ID, client.isPresent() ? client.get().getClientId() : null);
-        model.addAttribute(ATTRIBUTE_CLIENT_TITLE, client.isPresent() ? client.get().getTitle() : "invalid_client");
+        model.addAttribute(ATTRIBUTE_CLIENT_ID, client.map(Client::getUser).map(User::getNickname).orElse(null));
+        model.addAttribute(ATTRIBUTE_CLIENT_TITLE, client.map(Client::getUser).map(User::getPerson).map(GeneralLegalPerson.class::cast).map(GeneralLegalPerson::getTitle).orElse("invalid_client"));
         model.addAttribute(ATTRIBUTE_CSRF_NAME, null != token ? token.getParameterName() : null);
         model.addAttribute(ATTRIBUTE_CSRF_VALUE, null != token ? token.getToken() : null);
         model.addAttribute(ATTRIBUTE_IS_ERROR, isError);
@@ -114,7 +116,7 @@ public class LoginController {
             return Optional.empty();
         }
         String clientId = savedRequest.getParameterMap().get(PARAMETER_KEY_CLIENT_ID)[0];
-        return clientService.findByClientId(clientId);
+        return clientService.findByNickname(clientId);
     }
 
     @PostMapping("/login-cancel")
@@ -122,10 +124,11 @@ public class LoginController {
                         @RequestParam(name = "client_id", required = false) String clientId,
                         @RequestParam(name = "error", required = false) String error) {
 
-        Client client = clientService.findByClientId(clientId).orElseThrow(() -> new InvalidInvocationException("client_id"));
+        Client client = clientService.findByNickname(clientId).orElseThrow(() -> new InvalidInvocationException("client_id"));
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         request.getSession().invalidate();
-        model.addAttribute("client_title", client.getTitle());
+        GeneralLegalPerson person = (GeneralLegalPerson) client.getUser().getPerson();
+        model.addAttribute("client_title", person.getTitleEnglish());
         model.addAttribute("client_id", clientId);
         model.addAttribute("csrf_name", token.getParameterName());
         model.addAttribute("csrf_value", token.getToken());

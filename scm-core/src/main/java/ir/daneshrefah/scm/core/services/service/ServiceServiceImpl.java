@@ -113,7 +113,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request) {
-        return serviceProviders
+        return findServiceProviderList()
                 .stream()
                 .filter(serviceProvider -> "ALL".equalsIgnoreCase(request.getProtocol()) || ServiceProviderProtocol.findByName(request.getProtocol()).equals(serviceProvider.getProtocol()))
                 .map(provider -> new ExternalProviderResponse()

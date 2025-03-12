@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientScopeRelation;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
 import ir.daneshrefah.scm.uaa.mapper.ClientAuthenticationMethodMapper;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
@@ -61,13 +63,13 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
     }
 
     @Override
-    public RegisteredClient findByClientId(String clientId) {
+    public RegisteredClient findByClientId(String nickname) {
         return findAll()
                 .stream()
-                .filter(client -> client.getClientId().equalsIgnoreCase(clientId))
+                .filter(client -> client.getUser().getNickname().equalsIgnoreCase(nickname))
                 .map(this::mapToRegisteredClient)
                 .findFirst().orElseGet(() -> {
-                    log.warn(">>> the client with clientId : {} dos not found", clientId);
+                    log.warn(">>> the client with clientId : {} dos not found", nickname);
                     return null;
                 });
     }
@@ -89,8 +91,8 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses())
                 .build();
         RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
-                .clientId(client.getClientId())
-                .clientSecret(client.getClientSecret())
+                .clientId(client.getUser().getNickname())
+                .clientSecret(Objects.nonNull(client.getUser()) && StringUtils.isNotBlank(client.getUser().getLoginStaticPassword()) ? client.getUser().getLoginStaticPassword() : "{noop}myClientSecretValue")
 //                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSetting);
@@ -105,7 +107,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .map(ClientAuthorizationGrantType::getAuthorizationGrantType)
                 .toList();
         if (grantTypes.isEmpty()) {
-            log.warn(">>> important! the client with clientId : {} does not have any authorizationGrantType", client.getClientId());
+            log.warn(">>> important! the client with nickname : {} does not have any authorizationGrantType", client.getUser().getNickname());
         } else {
             grantTypes
                     .stream()

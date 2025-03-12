@@ -3,12 +3,10 @@ package ir.daneshrefah.scm.common.data.mapper;
 import ir.daneshrefah.scm.common.data.entity.person.*;
 import ir.daneshrefah.scm.common.model.person.*;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -25,82 +23,63 @@ public interface PersonMapper {
 
     @Named("toPerson")
     default GeneralPerson toPerson(GeneralPersonEntity entity) {
-        if (entity instanceof CorporatePersonEntity) {
-            return toModel((CorporatePersonEntity) entity);
-        } else if (entity instanceof GovernancePersonEntity) {
-            return toModel((GovernancePersonEntity) entity);
-        } else if (entity instanceof BankPersonEntity) {
-            return toModel((BankPersonEntity) entity);
-        } else if (entity instanceof TaminPersonEntity) {
-            return toModel((TaminPersonEntity) entity);
-        } else if (entity instanceof IndividualPersonEntity) {
-            return toModel((IndividualPersonEntity) entity);
-        } else if (entity instanceof EmployeePersonEntity) {
-            return toModel((EmployeePersonEntity) entity);
+        if (entity instanceof CorporatePersonEntity corporatePersonEntity) {
+            return toModel(corporatePersonEntity);
+        } else if (entity instanceof GovernancePersonEntity governancePersonEntity) {
+            return toModel(governancePersonEntity);
+        } else if (entity instanceof BankPersonEntity bankPersonEntity) {
+            return toModel(bankPersonEntity);
+        } else if (entity instanceof TaminPersonEntity taminPersonEntity) {
+            return toModel(taminPersonEntity);
+        } else if (entity instanceof IndividualPersonEntity individualPersonEntity) {
+            return toModel(individualPersonEntity);
+        } else if (entity instanceof EmployeePersonEntity employeePersonEntity) {
+            return toModel(employeePersonEntity);
+        } else if (entity instanceof ClientPersonEntity clientPersonEntity) {
+            return toModel(clientPersonEntity);
         }
         return null;
     }
 
     @Named("toPersonEntity")
     default GeneralPersonEntity toPersonEntity(GeneralPerson person) {
-        if (person instanceof CorporatePerson) {
-            return toEntity((CorporatePerson) person);
-        } else if (person instanceof GovernancePerson) {
-            return toEntity((GovernancePerson) person);
-        } else if (person instanceof BankPerson) {
-            return toEntity((BankPerson) person);
-        } else if (person instanceof TaminPerson) {
-            return toEntity((TaminPerson) person);
-        } else if (person instanceof IndividualPerson) {
-            return toEntity((IndividualPerson) person);
-        } else if (person instanceof EmployeePerson) {
-            return toEntity((EmployeePerson) person);
+        if (person instanceof CorporatePerson corporatePerson) {
+            return toEntity(corporatePerson);
+        } else if (person instanceof GovernancePerson governancePerson) {
+            return toEntity(governancePerson);
+        } else if (person instanceof BankPerson bankPerson) {
+            return toEntity(bankPerson);
+        } else if (person instanceof TaminPerson taminPerson) {
+            return toEntity(taminPerson);
+        } else if (person instanceof IndividualPerson individualPerson) {
+            return toEntity(individualPerson);
+        } else if (person instanceof EmployeePerson employeePerson) {
+            return toEntity(employeePerson);
+        }else if (person instanceof ClientPerson clientPerson) {
+            return toEntity(clientPerson);
         }
         return null;
     }
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     CorporatePerson toModel(CorporatePersonEntity entity);
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     GovernancePerson toModel(GovernancePersonEntity entity);
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     BankPerson toModel(BankPersonEntity entity);
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     TaminPerson toModel(TaminPersonEntity entity);
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     IndividualPerson toModel(IndividualPersonEntity entity);
 
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
     EmployeePerson toModel(EmployeePersonEntity entity);
+
+    ClientPerson toModel(ClientPersonEntity entity);
 
     default List<GeneralPerson> toModels(Iterable<GeneralPersonEntity> entities) {
         if (null == entities)
             return null;
         List<GeneralPerson> result = new ArrayList<>();
-        for (Iterator<GeneralPersonEntity> iterator = entities.iterator(); iterator.hasNext(); ) {
-            GeneralPersonEntity entity = iterator.next();
+        for (GeneralPersonEntity entity : entities) {
             GeneralPerson service = toPerson(entity);
             result.add(service);
         }
@@ -118,5 +97,7 @@ public interface PersonMapper {
     IndividualPersonEntity toEntity(IndividualPerson person);
 
     EmployeePersonEntity toEntity(EmployeePerson person);
+
+    ClientPersonEntity toEntity(ClientPerson person);
 
 }

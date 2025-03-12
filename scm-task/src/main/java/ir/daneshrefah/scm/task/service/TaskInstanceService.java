@@ -25,7 +25,7 @@ public class TaskInstanceService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    @JavaService(serviceCode = SVC_GET_ALL_TASK)
+    @JavaService(serviceCode = SVC_CARTABLE_GET_ALL_TASK)
     @SuppressWarnings("unused")
     public PagedResponseData<TaskResponse> findAllTask(TaskFilterRequest request) {
         return taskManagementService.findAllTaskByUserIDAndFilter(request);

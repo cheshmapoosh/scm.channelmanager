@@ -37,6 +37,7 @@ public abstract class GeneralPerson extends BaseModel<Long> {
     private String postalCode1;
     private String postalCode2;
     private String shahabCode;
+    private String issuePlace;
 
     public abstract String getTitle();
 

@@ -1,6 +1,9 @@
 package ir.daneshrefah.scm.common.data.entity.person;
 
+import ir.daneshrefah.scm.common.data.converter.GenderConverter;
+import ir.daneshrefah.scm.common.model.person.Gender;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +30,20 @@ public abstract class GeneralLegalPersonEntity extends GeneralPersonEntity {
     private String nationalId;
     @Column(name = "SUB_ORGANIZATION_ID")
     private String subOrganizationId;
+
+    /* Mandatory fields for persistence */
+
+    @Column(name = "LAST_NAME")
+    private String lastName;
     @Column(name = "BIRTH_DATE")
     private LocalDate registerDate;
-
+    @Column(name = "IDENTIFICATION_NO")
+    private String identificationNo;
+    @Column(name = "FATHER_NAME")
+    private String fatherName;
+    @Column(name = "IDENTIFICATION_SERIAL_NO")
+    private String identificationSerial;
+    @Column(name = "GENDER_ID")
+    @Convert(converter = GenderConverter.class)
+    private Gender gender;
 }

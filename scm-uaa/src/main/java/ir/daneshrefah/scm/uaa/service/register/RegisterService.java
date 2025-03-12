@@ -55,7 +55,7 @@ public class RegisterService {
         if (StringUtils.isEmpty(request.getRecipient())) {
             throw new MissingRequiredInputException("recipient");
         }
-        Client client = clientService.findByClientId(request.getClientId()).orElseThrow(() -> new InvalidInputException("clientId"));
+        Client client = clientService.findByNickname(request.getClientId()).orElseThrow(() -> new InvalidInputException("clientId"));
         if (!client.isCheckActivation()) {
             throw new MethodNotSupportDataException("checkActivation");
         }
@@ -116,7 +116,7 @@ public class RegisterService {
         if (StringUtils.isEmpty(request.getClaimCode())) {
             throw new MissingRequiredInputException("claimCode");
         }
-        Client client = clientService.findByClientId(request.getClientId()).orElseThrow(() -> new InvalidInputException("clientId"));
+        Client client = clientService.findByNickname(request.getClientId()).orElseThrow(() -> new InvalidInputException("clientId"));
         if (!client.isCheckActivation()) {
             throw new MethodNotSupportDataException("checkActivation");
         }
@@ -165,7 +165,7 @@ public class RegisterService {
         activationEntity.setAgent(null);
         activationEntity.setDeviceModel(null);
         activationEntity.setOsVersion(null);
-        activationEntity.setClientId(client.getClientId()); //TODO
+        activationEntity.setClientId(client.getUser().getNickname()); //TODO
         activationEntity.setTokenSetTime(LocalDateTime.now()); //TODO
 //        private LocalDateTime lastUsed;
         userActivationRepository.save(activationEntity);
