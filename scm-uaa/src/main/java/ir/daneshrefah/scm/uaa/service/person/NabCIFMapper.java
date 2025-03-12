@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -85,6 +86,8 @@ public class NabCIFMapper {
         result.setShahabCode(extractStringValue(personNode, "SHAHABCODE"));
         result.setBranchCode(extractStringValue(personNode, "BRANCHCODE"));
         result.setRegisterIssueDate(extractDateValue(personNode, "REGISSUDATE"));
+        String issuesPlaceCode = extractStringValue(personNode, "SODORCITYCODE");
+        result.setIssuePlace(Objects.isNull(issuesPlaceCode) ? StringUtils.EMPTY : issuesPlaceCode);
         return result;
 
     }

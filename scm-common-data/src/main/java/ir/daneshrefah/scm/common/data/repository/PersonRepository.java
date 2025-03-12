@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.data.repository;
 
 import ir.daneshrefah.scm.common.data.entity.person.*;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -40,9 +41,19 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Lon
     @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId")
     GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalId(@Param("nationalId") String nationalId);
 
+    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId AND p.personType = :personType")
+    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndPersonType(
+            @Param("nationalId") String nationalId,
+            @Param("personType") PersonType personType);
+
     @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId and p.subOrganizationId = :subOrganizationId")
     GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(@Param("nationalId") String nationalId, @Param("subOrganizationId") String subOrganizationId);
 
+    @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId and p.subOrganizationId = :subOrganizationId AND p.personType = :personType")
+    GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndSubOrganizationIdAndPersonType(
+            @Param("nationalId") String nationalId,
+            @Param("subOrganizationId") String subOrganizationId,
+            @Param("personType") PersonType personType);
 
     @Query(value = """
             SELECT u.*
@@ -81,4 +92,9 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Lon
             @Param("tokenTypes") List<String> tokenTypes,
             @Param("otpSerialNo") String otpSerialNo
     );
+
+    @Query("SELECT c FROM ClientPersonEntity c WHERE c.nationalId = :nationalId AND c.personType = :personType")
+    List<ClientPersonEntity> findAllClientPersonEntityByNationalIdAndPersonType(
+            @Param("nationalId") String nationalId,
+            @Param("personType") PersonType personType);
 }

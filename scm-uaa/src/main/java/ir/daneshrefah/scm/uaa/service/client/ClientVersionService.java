@@ -47,7 +47,7 @@ public class ClientVersionService {
     public List<ClientVersion> getClientVersionByClientId(Long clientId) {
         return CLIENT_VERSIONS
                 .stream()
-                .filter(clientVersion -> clientVersion.getClientId().equals(clientId))
+                .filter(clientVersion -> Objects.equals(clientVersion.getClientId(),clientId))
                 .toList();
     }
 

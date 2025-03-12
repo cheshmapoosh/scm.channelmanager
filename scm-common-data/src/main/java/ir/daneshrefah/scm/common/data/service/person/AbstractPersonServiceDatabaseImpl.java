@@ -6,15 +6,16 @@ import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.PersonSpecs;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
+import ir.daneshrefah.scm.common.model.person.ClientPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -76,15 +77,15 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     public GeneralPerson findPersonByPersonId(Long id) {
         ValidationUtils.checkNumericInput(String.valueOf(id), () -> new InvalidInputException("id"));
         Optional<GeneralPersonEntity> personEntity = personRepository.findById(id);
-        ValidationUtils.checkEmptyOptional(personEntity,()->new PersonNotFoundException("person with id '" + id + "' not found."
-        ,new ExceptionDynamicMessage()
+        ValidationUtils.checkEmptyOptional(personEntity, () -> new PersonNotFoundException("person with id '" + id + "' not found."
+                , new ExceptionDynamicMessage()
                 .setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION_ID)
-                .addParameter("id",String.valueOf(id))));
-        return PersonMapper.INSTANCE.toPerson(personEntity.orElseThrow(()->new InvalidInputException("id")));
+                .addParameter("id", String.valueOf(id))));
+        return PersonMapper.INSTANCE.toPerson(personEntity.orElseThrow(() -> new InvalidInputException("id")));
     }
 
     @Override
-    public Optional<GeneralPerson> findPersonByPersonUsername(String username) {
+    public Optional<GeneralPerson> findPersonByUsername(String username) {
         ValidationUtils.checkBlankString(username, () -> new MissingRequiredInputException("username"));
         List<GeneralPersonEntity> personEntity = personRepository.findPersonByUsername(username);
         if (Objects.isNull(personEntity) || personEntity.size() < 1) {
@@ -125,17 +126,26 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     @Override
-    public Optional<GeneralPerson> findPerson(PersonType personType,String nationalId, String subOrg) {
-        boolean isRealPerson = personType.equals(PersonType.REAL) || ValidationUtils.checkIsValidNationalCode(nationalId);
+    public Optional<GeneralPerson> findPerson(PersonType personType, String nationalId, String subOrg) {
+        boolean isRealPerson = (Objects.nonNull(personType) && personType.equals(PersonType.REAL)) || ValidationUtils.checkIsValidNationalCode(nationalId);
         if (isRealPerson) {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
         } else if (Objects.nonNull(subOrg) && !subOrg.isBlank()) {
-            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
+            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationIdAndPersonType(nationalId, subOrg, personType)));
         } else {
-            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalId(nationalId)));
+            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndPersonType(nationalId, personType)));
         }
     }
 
+    @Override
+    public List<ClientPerson> findAllClientPerson(String nationalId) {
+        return personRepository
+                .findAllClientPersonEntityByNationalIdAndPersonType(nationalId, PersonType.CLIENT)
+                .stream()
+                .map(PersonMapper.INSTANCE::toPerson)
+                .map(ClientPerson.class::cast)
+                .toList();
+    }
 
     /*private final ServiceProducerTemplate serviceProducerTemplate;
     private final ErrorHandlerService errorHandlerService;

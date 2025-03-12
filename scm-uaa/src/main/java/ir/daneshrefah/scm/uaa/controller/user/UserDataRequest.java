@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.controller.user;
 
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.common.model.user.UserType;
 import lombok.Data;
 
 import java.util.Set;
@@ -27,5 +28,6 @@ public class UserDataRequest implements RequestData {
     private String otpSerialNumber;
     private Long personId;
     private String creatorBranch;
+    private UserType userType;
 
 }
