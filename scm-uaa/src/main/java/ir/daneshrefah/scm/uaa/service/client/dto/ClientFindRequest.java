@@ -19,7 +19,7 @@ public class ClientFindRequest extends PagedRequestData {
     @Schema(description = "client numeric instance id")
     private Long id;
     private String title;
-    private String clientId;
+    private String nickname;
     private String terminalCode;
 
 }

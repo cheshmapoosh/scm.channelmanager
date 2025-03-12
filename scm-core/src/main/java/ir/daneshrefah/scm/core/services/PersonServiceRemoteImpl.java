@@ -3,12 +3,14 @@ package ir.daneshrefah.scm.core.services;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.person.ClientPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -60,5 +62,10 @@ public class PersonServiceRemoteImpl implements PersonService {
     @Override
     public Optional<GeneralPerson> findPerson(PersonType personType,String nationalId, String subOrg) {
         return Optional.empty();
+    }
+
+    @Override
+    public List<ClientPerson> findAllClientPerson(String nationalId) {
+        return List.of();
     }
 }

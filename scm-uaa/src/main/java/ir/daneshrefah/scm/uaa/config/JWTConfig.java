@@ -132,14 +132,15 @@ public class JWTConfig {
                 addTokenLifeTimeClaims(principal,claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
-                long id = Long.valueOf(principal.getRegisteredClient().getId());
-                Optional<Client> client = clientService.findById(id);
+                long id = Long.parseLong(principal.getRegisteredClient().getId());
+                Client client = clientService.findById(id).orElseThrow(()-> new NoMatchRecordFoundException("client"));
+                User user = client.getUser();
                 claims.claim(CLAIM_KEY_TERMINAL, principal.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
                 claims.claim(CLAIM_KEY_GRANT, AuthorizationGrantType.CLIENT_CREDENTIALS);
-                claims.claim(CLAIM_KEY_PERSON_TYPE, PersonType.CLIENT.getCode());
+                claims.claim(CLAIM_KEY_PERSON_TYPE,  user.getType());
                 claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, id);
                 claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, principal.getRegisteredClient().getClientId());
-                claims.claim(CLAIM_KEY_PERSON_TITLE, client.get().getTitle());
+                claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson)user.getPerson()).getTitleEnglish());
                 List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());

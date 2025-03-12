@@ -21,9 +21,9 @@ public class ClientServiceTest {
     @Test
     public void testClientSave(){
         Client client = new Client();
-        client.setTitle("Internet Bank");
-        client.setClientId("IB");
-        client.setClientSecret("{noop}myClientSecretValue");
+//        client.setTitle("Internet Bank");
+//        client.setClientId("IB");
+//        client.setClientSecret("{noop}myClientSecretValue");
         client.setTerminalCode("IB");
         client.setAuthenticationMethods(Arrays.asList(ClientAuthenticationMethod.CLIENT_SECRET_POST));
 //        client.setClientAuthorizationGrantTypes(Arrays.asList(AuthorizationGrantType.AUTHORIZATION_CODE,

@@ -35,7 +35,7 @@ public class UserController extends BaseController {
 
     @PutMapping("/change-login-password")
     public ResponseEntity<User> updateUserLoginStaticPassword(@RequestBody PasswordModificationRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginStaticPassword(request));
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginStaticPassword(request,false));
     }
 
     @PutMapping("/change-transaction-password")
@@ -73,7 +73,7 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.createUser(request));
     }
 
-    @PutMapping("/change")
+    @PutMapping("/change") //TODO NEEDS ROLE ACCESS PERMISSION
     public ResponseEntity<User> changeUser(@RequestBody UserDataChangeRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.changeUser(request));
     }

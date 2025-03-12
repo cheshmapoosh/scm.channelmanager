@@ -11,5 +11,5 @@ plugins {
 dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     api project(":scm-plugin-api")
-//    api project(':scm-process')
+    api project(':scm-process')
 }

@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.process.input;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.annotation.JavaService;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.dto.task.TaskCompleteRequest;
@@ -16,9 +16,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_COMPLETE_TASK;
-import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_TASK_LIST;
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_BPM;
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_CARTABLE_GET_ALL_TASK;
+import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_COMPLETE_TASK;
 
 @Service
 public class TaskManagementService extends AbstractJavaService {
@@ -31,7 +31,7 @@ public class TaskManagementService extends AbstractJavaService {
     }
 
     //    @PreAuthorize("isFullyAuthenticated()")
-    @JavaService(serviceCode = SVC_TASK_LIST)
+    @JavaService(serviceCode = SVC_CARTABLE_GET_ALL_TASK)
     public PagedResponseData<TaskInfoResponse> findTaskList(TaskFindRequest taskFindRequest) throws Exception {
         if (Objects.isNull(taskFindRequest)) {
             taskFindRequest = new TaskFindRequest();

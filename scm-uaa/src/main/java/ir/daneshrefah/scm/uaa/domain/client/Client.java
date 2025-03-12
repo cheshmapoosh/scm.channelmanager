@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.BaseModel;
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,9 +21,6 @@ import java.util.Set;
 public class Client extends BaseModel<Long> {
 
     private Long id;
-    private String title;
-    private String clientId;
-    private String clientSecret;
     private String terminalCode;
     private List<ClientAuthenticationMethod> authenticationMethods;
     private Set<ClientAuthorizationGrantType> clientAuthorizationGrantTypes;
@@ -36,4 +34,7 @@ public class Client extends BaseModel<Long> {
     private List<ClientScopeRelation> scopes;
     private boolean checkIpAddress;
     private Set<String> allowIpAddresses;
+    @JsonIgnore
+    private User user;
+    private boolean status;
 }
