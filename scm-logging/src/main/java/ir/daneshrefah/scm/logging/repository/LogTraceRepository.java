@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.logging.repository;
 
+import ir.daneshrefah.scm.logging.entity.LogPrimaryKey;
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.model.LogTraceResponse;
 import org.springframework.data.domain.Page;
@@ -12,10 +13,10 @@ import org.springframework.stereotype.Repository;
 import java.util.Date;
 
 @Repository
-public interface LogTraceRepository extends JpaRepository<LogTraceEntity, Long>{
+public interface LogTraceRepository extends JpaRepository<LogTraceEntity, LogPrimaryKey>{
 
     @Query("SELECT new ir.daneshrefah.scm.logging.model.LogTraceResponse(" +
-            "t.id, t.channelCode, t.terminalCode, t.clientId, t.correlationId, t.clientCorrelationId, " +
+            "t.logPrimaryKey.spanId,t.logPrimaryKey.traceId, t.channelCode, t.terminalCode, t.clientId, t.correlationId, t.clientCorrelationId, " +
             "t.messageId, t.statusCode, t.nickname, t.username, t.delegatorUsername, t.endPoint, " +
             "t.amount, t.accountNo, t.cardNo, t.startTime, t.endTime) " +
             "FROM LogTraceEntity t " +

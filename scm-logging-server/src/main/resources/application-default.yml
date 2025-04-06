@@ -47,6 +47,7 @@ scm:
     enabled: true
   log:
     file-directory: log
+    rolling-archive-directory: archive
     file-name: ${spring.application.name}.log
     log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
     file-name-pattern: "%d{yyyy-MM-dd}.%i.log"

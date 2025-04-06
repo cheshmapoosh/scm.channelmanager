@@ -12,7 +12,8 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LogTraceResponse {
-    private Long id;
+    private String spanId;
+    private String traceId;
     private String channelCode;
     private String terminalCode;
     private String clientId;

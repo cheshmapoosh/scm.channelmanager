@@ -13,10 +13,8 @@ import java.util.Date;
 @Entity
 @Table(name = "TBL_LOG_TRACE", schema = "REF")
 public class LogTraceEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
-    private Long id;
+    @EmbeddedId
+    private LogPrimaryKey logPrimaryKey;
     @Column(name = "CHANNEL_CODE")
     private String channelCode;
     @Column(name = "TERMINAL_CODE")
@@ -75,14 +73,9 @@ public class LogTraceEntity {
     private String accountNo;
     @Column(name = "CARD_NO")
     private String cardNo;
-    @Column(name = "TRACE_ID")
-    private String traceId;
-    @Column(name = "SPAN_ID")
-    private String spanId;
     @Column(name = "PARENT_SPAN_ID")
     private String parentSpanId;
     @Column(name = "PAYLOAD")
-    @Lob
     @Basic(fetch = FetchType.LAZY)
     private String payload;
     @Column(name = "ARCHIVE_NO", updatable = false)
