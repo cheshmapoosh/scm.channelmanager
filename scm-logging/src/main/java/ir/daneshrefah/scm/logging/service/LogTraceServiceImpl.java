@@ -2,12 +2,15 @@ package ir.daneshrefah.scm.logging.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.logging.entity.LogPrimaryKey;
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.mapper.LogTraceMapper;
 import ir.daneshrefah.scm.logging.model.*;
 import ir.daneshrefah.scm.logging.repository.LogTraceRepository;
 import ir.daneshrefah.scm.logging.utils.PageableUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -58,9 +61,12 @@ public class LogTraceServiceImpl implements LogService {
     }
 
     @Override
-    public LogTraceDetailResponse findById(Long id) {
+    public LogTraceDetailResponse findById(LogTraceFindByIdRequest request) {
         LogTraceMapper instance = LogTraceMapper.INSTANCE;
-        LogTraceEntity logTraceEntity = logTraceRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+        ValidationUtils.checkBlankString(request.getSpanId(), () -> new MissingRequiredInputException("spainId"));
+        ValidationUtils.checkBlankString(request.getTraceId(),() -> new MissingRequiredInputException("traceId"));
+        LogPrimaryKey logPrimaryKey = new LogPrimaryKey(request.getSpanId(), request.getTraceId());
+        LogTraceEntity logTraceEntity = logTraceRepository.findById(logPrimaryKey).orElseThrow(() -> new NoMatchRecordFoundException("spanId&TraceID"));
         return instance.toModel(logTraceEntity);
     }
 }

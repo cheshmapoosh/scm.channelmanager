@@ -8,7 +8,8 @@ import java.util.Date;
 @Getter
 @Setter
 public class LogTraceDetailResponse {
-    private Long id;
+    private String spanId;
+    private String traceId;
     private String channelCode;
     private String terminalCode;
     private String clientId;
@@ -37,8 +38,6 @@ public class LogTraceDetailResponse {
     private String amount;
     private String accountNo;
     private String cardNo;
-    private String traceId;
-    private String spanId;
     private String parentSpanId;
     private String payload;
 }

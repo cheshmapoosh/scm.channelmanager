@@ -2,7 +2,9 @@ package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.logging.entity.LogPrimaryKey;
 import ir.daneshrefah.scm.logging.model.LogTraceDetailResponse;
+import ir.daneshrefah.scm.logging.model.LogTraceFindByIdRequest;
 import ir.daneshrefah.scm.logging.model.LogTraceRequest;
 import ir.daneshrefah.scm.logging.model.LogTraceResponse;
 import ir.daneshrefah.scm.logging.service.LogService;
@@ -28,8 +30,8 @@ public class TransactionLogManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SCV_LOG_FIND_BY_ID)
-    public LogTraceDetailResponse findById(Long id) {
-        return logService.findById(id);
+    public LogTraceDetailResponse findById(LogTraceFindByIdRequest key) {
+        return logService.findById(key);
     }
 }
 

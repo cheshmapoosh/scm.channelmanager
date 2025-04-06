@@ -7,10 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.logging.entity.LogPrimaryKey;
 import ir.daneshrefah.scm.logging.entity.LogTraceEntity;
 import ir.daneshrefah.scm.logging.model.LogMessage;
 import ir.daneshrefah.scm.logging.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +40,10 @@ public class SpanLogConverterService implements ConverterService {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
         LogTraceEntity logTraceEntity = new LogTraceEntity();
+        ValidationUtils.checkBlankString(spanModel.getSpanId(), () -> new MissingRequiredInputException("spainId"));
+        ValidationUtils.checkBlankString(spanModel.getTraceId(),() -> new MissingRequiredInputException("traceId"));
+        LogPrimaryKey logPrimaryKey = new LogPrimaryKey(spanModel.getTraceId(), spanModel.getSpanId());
+        logTraceEntity.setLogPrimaryKey(logPrimaryKey);
         logTraceEntity.setChannelCode(attributes.get(LogAttribute.CHANNEL_CODE.getAttributeName()));
         logTraceEntity.setTerminalCode(attributes.get(LogAttribute.TERMINAL_CODE.getAttributeName()));
         logTraceEntity.setClientId(attributes.get(LogAttribute.CLIENT_ID.getAttributeName()));
@@ -68,8 +75,6 @@ public class SpanLogConverterService implements ConverterService {
         logTraceEntity.setProviderCode(attributes.get(LogAttribute.PROVIDER_CODE.getAttributeName()));
         logTraceEntity.setProviderResponseCode(attributes.get(LogAttribute.PROVIDER_RESPONSE_CODE.getAttributeName()));
         logTraceEntity.setClientIpAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
-        logTraceEntity.setTraceId(spanModel.getTraceId());
-        logTraceEntity.setSpanId(spanModel.getSpanId());
         logTraceEntity.setSpanKind(spanModel.getKind());
         logTraceEntity.setSpanStatus(spanModel.getStatus().get("statusCode"));
         logTraceEntity.setParentSpanId(spanModel.getParentSpanId());
