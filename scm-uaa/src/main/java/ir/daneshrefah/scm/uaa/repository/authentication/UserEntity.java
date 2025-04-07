@@ -11,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
@@ -73,19 +74,7 @@ public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
     @Column(name = "PRINT_COUNT")
     private Integer printCount;
     @Column(name = "LAST_DATE_OF_PASSWORD_CHANGE")
-    private Date lastDateOfFirstPasswordChange;
+    private LocalDate lastDateOfFirstPasswordChange;
     @Column(name = "LAST_REACTION_DATE_TO_PASSWORD")
-    private Date lastReactionDateToFirstPasswordChange;
-//ARCHIVE_NO smallint NOT NULL DEFAULT '8',
-//FROM_DATE datetime(6) DEFAULT NULL,
-//TO_DATE datetime(6) DEFAULT NULL,
-//PRINT_COUNT smallint NOT NULL DEFAULT '0',
-//PASSWORD_SET_PRINTED smallint DEFAULT NULL,
-//EFFECTIVE_DATE datetime(6) DEFAULT NULL,
-//STATE smallint NOT NULL DEFAULT '1',
-//PIN_BASED_PASSWORD varchar(128) DEFAULT NULL,
-//PATTERN_BASED_PASSWORD varchar(128) DEFAULT NULL,
-//LAST_DATE_OF_PASSWORD_CHANGE datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-//LAST_REACTION_DATE_TO_PASSWORD datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    private LocalDate lastReactionDateToFirstPasswordChange;
 }
