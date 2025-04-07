@@ -10,9 +10,9 @@ spring:
     config:
       username: ${SPRING_CLOUD_CONFIG_USERNAME}
       password: ${SPRING_CLOUD_CONFIG_PASSWORD}
-      name: cache
       enabled: true
       uri: ${SPRING_CLOUD_CONFIG_URI}
       retry:
-        max-attempts: 10
+        max-attempts: 5
         max-interval: 3000
+      fail-fast: true
