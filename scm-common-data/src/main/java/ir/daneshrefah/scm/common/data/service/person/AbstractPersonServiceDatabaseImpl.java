@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
+import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
@@ -133,7 +134,15 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         } else if (Objects.nonNull(subOrg) && !subOrg.isBlank() && StringUtils.notEquals("0", subOrg)) {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationIdAndPersonType(nationalId, subOrg, personType)));
         } else {
-            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndPersonType(nationalId, personType)));
+            Optional<List<GeneralLegalPersonEntity>> generalLegalPersonEntityByNationalId = personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
+            if (generalLegalPersonEntityByNationalId.isPresent()) {
+                if (generalLegalPersonEntityByNationalId.get().isEmpty()) {
+                    throw new InvalidInputException("person with nationalId '" + nationalId + "' subOrg must not be empty.");
+                }
+                return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(generalLegalPersonEntityByNationalId.get().get(0)));
+            } else {
+                return Optional.empty();
+            }
         }
     }
 
