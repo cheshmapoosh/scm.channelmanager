@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
+import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.model.TerminalType;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
@@ -778,7 +779,15 @@ public class UserService {
     }
 
     private GeneralPersonEntity findLegalPerson(String nationalId) {
-        return personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
+        Optional<List<GeneralLegalPersonEntity>> generalLegalPersonEntityByNationalId = personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
+        if (generalLegalPersonEntityByNationalId.isPresent()) {
+            if (generalLegalPersonEntityByNationalId.get().isEmpty()) {
+                throw new InvalidInputException("person with nationalId '" + nationalId + "' subOrg must not be empty.");
+            }
+            return generalLegalPersonEntityByNationalId.get().get(0);
+        } else {
+            return null;
+        }
     }
 
     private Optional<GeneralPersonEntity> findPerson(PersonType personType, String nationalId, String subOrganizationId) {

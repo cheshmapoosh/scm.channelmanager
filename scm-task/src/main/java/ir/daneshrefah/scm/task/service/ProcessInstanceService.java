@@ -6,10 +6,12 @@ import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.task.model.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
 
+@Slf4j
 @Service
 public class ProcessInstanceService extends AbstractJavaService {
 
@@ -23,36 +25,66 @@ public class ProcessInstanceService extends AbstractJavaService {
     @JavaService(serviceCode = SVC_CARTABLE_START_PROCESS)
     @SuppressWarnings("unused")
     public ProcessInstanceStartResponse start(ProcessInstanceStartRequest processInstanceStartRequest) {
-        return processManagementService.start(processInstanceStartRequest);
+        try {
+            return processManagementService.start(processInstanceStartRequest);
+        } catch (RuntimeException e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 
     @JavaService(serviceCode = SVC_CARTABLE_GET_ALL_PROCESS)
     @SuppressWarnings("unused")
     public PagedResponseData<ProcessInstanceResponse> findAll(ProcessInstanceFilterRequest processInstanceFilterRequest) {
-        return processManagementService.findAll(processInstanceFilterRequest);
+        try {
+            return processManagementService.findAll(processInstanceFilterRequest);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 
     @JavaService(serviceCode = SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION)
     @SuppressWarnings("unused")
     public ProcessInstanceUpdateResponse updateDescription(ProcessInstanceUpdateRequest request) {
-        return processManagementService.updateDescription(request);
+        try {
+            return processManagementService.updateDescription(request);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 
     @JavaService(serviceCode = SVC_CARTABLE_CANCEL_PROCESS)
     @SuppressWarnings("unused")
     public void cancelProcess(ProcessInstanceCancelRequest request) {
-        processManagementService.cancelProcess(request);
+        try {
+            processManagementService.cancelProcess(request);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 
     @JavaService(serviceCode = SVC_CARTABLE_COMPLETE_PROCESS)
     @SuppressWarnings("unused")
     public void complete(ProcessInstanceCompleteRequest request) {
-        processManagementService.complete(request);
+        try {
+            processManagementService.complete(request);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 
     @JavaService(serviceCode = SVC_CARTABLE_APPROVE_PROCESS)
     @SuppressWarnings("unused")
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
-        return processManagementService.approve(request);
+        try {
+            return processManagementService.approve(request);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
     }
 }

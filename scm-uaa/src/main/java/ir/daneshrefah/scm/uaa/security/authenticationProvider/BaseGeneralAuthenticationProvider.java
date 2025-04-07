@@ -100,6 +100,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         try {
             authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         } catch (Exception e) {
+            log.error("authenticate is failed " + token, e);
             throwError(token, e);
         }
         Exception exception = authorization.getClass().isAssignableFrom(PostAuthenticationToken.class) ? ((PostAuthenticationToken) authorization).getException() : null;
