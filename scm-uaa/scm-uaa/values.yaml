@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: reg.daneshrefah.ir/modern-banking/scm-app:8.0.0
+  repository: reg.daneshrefah.ir/modern-banking/scm-app:8.1.0
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -143,7 +143,7 @@ env:
   - name: SPRING_APPLICATION_NAME
     value: scm-uaa
   - name: VERSION
-    value: 8.0.0
+    value: 8.1.0
   - name: SERVER_PORT
     value: "8000"
   - name: SPRING_CLOUD_CONFIG_URI
