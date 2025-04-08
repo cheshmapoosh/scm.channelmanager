@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.core.entity.asset.MembershipEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

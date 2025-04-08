@@ -1,7 +1,7 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
 import ir.daneshrefah.scm.common.dto.membership.MembershipLocalFindRequest;
-import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipTerminalAccessEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 

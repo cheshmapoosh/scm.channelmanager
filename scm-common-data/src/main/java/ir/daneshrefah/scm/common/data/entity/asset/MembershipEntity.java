@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.entity.asset;
+package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
@@ -40,9 +40,6 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @OneToOne
     @JoinColumn(name = "CUSTOMER_ACCOUNT_ID")
     private CustomerAccountEntity customerAccount;
-
-    @Column(name = "DEFAULT_ACCOUNT")
-    private Boolean defaultAccount;
 
     @Column(name = "CLOSE")
     private Boolean close;

@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
-import ir.daneshrefah.scm.core.entity.asset.MembershipTerminalAccessEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipTerminalAccessEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

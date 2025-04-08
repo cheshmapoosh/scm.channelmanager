@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.entity.asset;
+package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import jakarta.persistence.*;

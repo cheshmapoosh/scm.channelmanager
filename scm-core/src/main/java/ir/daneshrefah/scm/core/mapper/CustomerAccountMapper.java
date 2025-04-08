@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.model.asset.CustomerAccount;
-import ir.daneshrefah.scm.core.entity.asset.CustomerAccountEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.CustomerAccountEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

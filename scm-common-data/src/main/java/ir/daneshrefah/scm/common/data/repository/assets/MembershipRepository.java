@@ -1,7 +1,7 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
 
-import ir.daneshrefah.scm.core.entity.asset.MembershipEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;

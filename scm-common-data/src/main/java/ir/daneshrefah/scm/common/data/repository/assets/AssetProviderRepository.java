@@ -1,11 +1,8 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
-import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
