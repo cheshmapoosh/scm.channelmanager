@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.common.constant.otp;
 
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -12,4 +14,12 @@ public enum OtpType {
     DEVICE,
     EMAIL,
     SMS;
+
+    public static OtpType toOtpType(AuthenticationMethod authenticationMethod) {
+        return switch (authenticationMethod) {
+            case OTP -> DEVICE;
+            case SMS -> SMS;
+            default -> null;
+        };
+    }
 }
