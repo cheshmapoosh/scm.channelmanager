@@ -519,8 +519,13 @@ public class UserService {
     }
 
     public void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason) {
+        AuthenticationMethod authenticationMethod = loggedInUserAuthentication.getAuthenticationMethod();
+        OtpType otpType = OtpType.toOtpType(authenticationMethod);
+        if (otpType == null) {
+            throw new InvalidInputException("authenticationMethod");
+        }
         OtpVerifyRequest otpVerifyRequest = OtpVerifyRequest.builder()
-                .otpType(OtpType.SMS)
+                .otpType(otpType)
                 .recipient(getCurrentRecipient(loggedInUserAuthentication))
                 .reason(reason)
                 .claimCode(credential)
