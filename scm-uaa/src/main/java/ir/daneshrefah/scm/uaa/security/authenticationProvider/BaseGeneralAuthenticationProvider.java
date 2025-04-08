@@ -33,7 +33,10 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
@@ -197,7 +200,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             throwError(preAuthenticationToken, new InvalidClientVersionException(userClientVersion));
         }
         if (StringUtils.isNotEmpty(clientVersion.get().getSignature()) &&
-                !clientVersion.get().getSignature().equals(userClientSignature)) {
+            !clientVersion.get().getSignature().equals(userClientSignature)) {
             throwError(preAuthenticationToken, new InvalidClientSignatureException());
         }
     }
