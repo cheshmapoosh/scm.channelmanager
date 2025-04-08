@@ -16,10 +16,12 @@ import ir.daneshrefah.scm.uaa.exception.InvalidOtpCodeException;
 import ir.daneshrefah.scm.uaa.exception.OtpNotFoundException;
 import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -82,7 +84,8 @@ public class SmsOtpProvider extends AbstractOtpProvider {
 
     private void sendNotification(Otp otp) {
         NotificationData data = new NotificationData();
-        data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
+        data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode())
+                .put(NotificationDataKey.LOGIN_TIME, nowShamsiLoginTime());
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
                 .media(NotificationMedia.SMS)
@@ -138,4 +141,14 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     public OtpType getType() {
         return OtpType.SMS;
     }
+
+    private String nowShamsiLoginTime() {
+        return DateUtils
+                .ShamsiCalendarConvertor
+                .convertToShamsiDateString(DateUtils
+                        .DateConverter
+                        .convertToLocalDateTime(DateUtils.DateConverter
+                                .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
+    }
+
 }
