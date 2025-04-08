@@ -27,14 +27,19 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -62,10 +67,10 @@ import java.util.Map;
  * @version 1.0
  * @since 2023-12-13
  */
-@Slf4j
 @Configuration
 @EnableWebSecurity
 @Slf4j
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private static final String LOGIN_PROCESS_URI = "/login";
@@ -86,7 +91,6 @@ public class SecurityConfig {
                 new OAuth2AuthorizationServerConfigurer();
         RequestMatcher endpointsMatcher = authorizationServerConfigurer
                 .getEndpointsMatcher();
-
         authorizationServerConfigurer
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint.consentPage("/consent"))
@@ -106,7 +110,7 @@ public class SecurityConfig {
                                         .authenticationProvider(oAuth2GeneralAuthenticationProvider)
                                         .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
                 )
-                .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
+                .oidc(Customizer.withDefaults());// Enable OpenID Connect 1.0
 
         http
                 .securityMatcher(endpointsMatcher)
@@ -260,21 +264,6 @@ public class SecurityConfig {
         return new SessionCache(cacheTemplate);
     }
 
-
-    @Bean
-    @Profile({"dev", "default"})
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
-        log.info(">>> CORS DEACTIVATED ON DEVELOPMENT ENVIRONMENT");
-        return source;
-    }
-
     private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         String redirectUri = request.getParameter("redirect_uri");
         String clientId = request.getParameter("client_id");
@@ -283,10 +272,11 @@ public class SecurityConfig {
         response.setStatus(HttpServletResponse.SC_OK);
         if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
             String serverHost = request.getRequestURL().toString().split("/logout")[0];
-            String redirection = serverHost + "/oauth2/authorize?response_type="
-                                 + responseType + "&client_id="
-                                 + clientId + "&redirect_uri="
-                                 + redirectUri + "&scope=" + scope;
+            String redirection = serverHost +
+                                 "/oauth2/authorize?response_type=" + responseType +
+                                 "&client_id=" + clientId +
+                                 "&redirect_uri=" + redirectUri +
+                                 "&scope=" + scope;
             response.sendRedirect(redirection);
         }
     }

@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
@@ -37,8 +38,16 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                                          ClientService clientService,
                                          UserDetailsService userDetailsService,
                                          OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
-                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider) {
-        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
+                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider,
+                                         UserActivationAuthenticationService userActivationAuthenticationService) {
+
+        super(clientRepository,
+                clientService,
+                userCache,
+                userDetailsService,
+                authenticationTokenGenerator,
+                delegatorAuthenticationProvider,
+                userActivationAuthenticationService);
     }
 
     @Override
@@ -78,7 +87,7 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
 
     @Override
     protected void throwError(Authentication errorCode, Exception exception) throws AuthenticationException {
-        if (null == exception || !(exception instanceof AuthenticationException)) {
+        if (!(exception instanceof AuthenticationException)) {
             log.error("authentication invalid error.", exception);
             exception = new UnknownAuthenticationException(exception);
         }

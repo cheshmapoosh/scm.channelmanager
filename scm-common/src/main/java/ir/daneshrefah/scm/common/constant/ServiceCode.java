@@ -52,7 +52,6 @@ public enum ServiceCode {
     SVC_SERVICE_ACCESS_SERVICE_LIST(ServiceImplementationType.JAVA),
     SVC_JOB_MANAGEMENT_EXIST(ServiceImplementationType.JAVA),
     SVC_PROCESS_START(ServiceImplementationType.JAVA),
-    SVC_CARTABLE_GET_ALL_TASK(ServiceImplementationType.JAVA),
     SVC_GET_ALL_TASK(ServiceImplementationType.JAVA),
     SVC_COMPLETE_TASK(ServiceImplementationType.JAVA),
     SVC_PROCESS_HISTORY_LIST(ServiceImplementationType.JAVA),

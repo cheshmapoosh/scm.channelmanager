@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.UserActivationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.utils.date.DateUtils;
@@ -48,8 +50,15 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                                                UserDetailsService userDetailsService,
                                                OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                                DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                               AuthenticationResponseTokenGenerator responseTokenGenerator) {
-        super(clientRepository, clientService, userCache, userDetailsService, authenticationTokenGenerator, delegatorAuthenticationProvider);
+                                               AuthenticationResponseTokenGenerator responseTokenGenerator,
+                                               UserActivationAuthenticationService userActivationService) {
+        super(clientRepository,
+                clientService,
+                userCache,
+                userDetailsService,
+                authenticationTokenGenerator,
+                delegatorAuthenticationProvider,
+                userActivationService);
         this.responseTokenGenerator = responseTokenGenerator;
     }
 
