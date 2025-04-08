@@ -1,10 +1,8 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
-import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpReasonDictionary;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
@@ -14,7 +12,6 @@ import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKe
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
@@ -52,9 +49,8 @@ public class SmsOtpProvider extends AbstractOtpProvider {
             OtpProperties otpProperties,
             NotificationService notificationService,
             ProfileInfo profileInfo,
-            TerminalService terminalService,
-            @Lazy UserService userService) {
-        super(cacheTemplate, otpProperties, profileInfo, userService);
+            TerminalService terminalService) {
+        super(cacheTemplate, otpProperties, profileInfo);
         this.notificationService = notificationService;
         this.terminalService = terminalService;
     }
