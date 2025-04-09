@@ -1,16 +1,20 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
+import ir.daneshrefah.scm.common.constant.TerminalCodes;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.exception.*;
+import ir.daneshrefah.scm.uaa.exception.activation.InvalidActivationTerminalCodeException;
+import ir.daneshrefah.scm.uaa.exception.activation.UserActivatedBeforeException;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
+import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +32,11 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
@@ -51,6 +57,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private final UserDetailsService userDetailsService;
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
+    private final UserActivationAuthenticationService userActivationAuthenticationService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -62,29 +69,27 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         checkClientIpAddressMatchIfRequired(preAuthenticationToken);
         checkClientVersionIfRequired(preAuthenticationToken);
         String clientTerminalCode = preAuthenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
-
-        boolean cacheWasUsed = true;
-        String cacheUserKey = extractCacheUserKey(preAuthenticationToken, clientTerminalCode);
-        UserDetails userDetails = this.userCache.getUserFromCache(cacheUserKey);
-        if (userDetails == null) {
-            cacheWasUsed = false;
-            try {
-                userDetails = retrieveUser(preAuthenticationToken.getName(), clientTerminalCode);
-            } catch (UsernameNotFoundException ex) {
-                log.debug("Failed to find user '" + preAuthenticationToken.getName() + "'");
-                throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
+        UserDetails userDetails = null;
+        UserActivationAuthenticationService.CandidateStatus candidateStatus = userActivationAuthenticationService.checkActivationCandidate(preAuthenticationToken);
+/*        if (candidateStatus.equals(UserActivationAuthenticationService.CandidateStatus.ACCEPTED)) {
+            UserActivationAuthenticationService.AuthenticationStatus authenticationStatus = userActivationAuthenticationService
+                    .checkAuthentication(authentication.getName(),
+                            TerminalCodes.fromString(preAuthenticationToken.getActivatorTerminal()).orElse(null),
+                            TerminalCodes.NIB);
+            switch (authenticationStatus) {
+                case USER_NOT_FOUND ->
+                        throwError(authentication, new UsernameNotFoundException("Invalid username or password"));
+                case ACTIVATED_BEFORE -> throwError(authentication, new UserActivatedBeforeException());
+                default -> userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), preAuthenticationToken.getActivatorTerminal(), false);
             }
-        }
-        if (userDetails == null) {
-            throwError(preAuthenticationToken, new UsernameNotFoundException("Failed to find user '" + preAuthenticationToken.getName() + "'"));
-        }
-        if (!cacheWasUsed) {
-            this.userCache.putUserInCache(userDetails);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Retrieved userDetails with username: " + preAuthenticationToken.getName() + ":" + clientTerminalCode);
-        }
-        GeneralAuthenticationToken token = null;
+
+        } else if (candidateStatus.equals(UserActivationAuthenticationService.CandidateStatus.HAS_ERROR)) {
+            throwError(authentication, new InvalidActivationTerminalCodeException());
+        } else {
+            userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), clientTerminalCode, true);
+        }*/
+        userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), clientTerminalCode, true);
+        GeneralAuthenticationToken token;
         try {
             token = authenticationTokenGenerator.generateToken(
                     preAuthenticationToken, (TerminalUserDetails) userDetails);
@@ -100,7 +105,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         try {
             authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         } catch (Exception e) {
-            log.error("authenticate is failed " + token, e);
+            log.error("authenticate is failed {}", token, e);
             throwError(token, e);
         }
         Exception exception = authorization.getClass().isAssignableFrom(PostAuthenticationToken.class) ? ((PostAuthenticationToken) authorization).getException() : null;
@@ -112,6 +117,31 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
 
         return buildResponse(authentication, preAuthenticationToken, authorization);
+    }
+
+    private UserDetails getUserDetails(Authentication authentication, String username, String clientTerminalCode, boolean cacheable) {
+        boolean cacheWasUsed = true;
+        String cacheUserKey = extractCacheUserKey(username, clientTerminalCode);
+        UserDetails userDetails = this.userCache.getUserFromCache(cacheUserKey);
+        if (userDetails == null) {
+            cacheWasUsed = false;
+            try {
+                userDetails = retrieveUser(username, clientTerminalCode);
+            } catch (UsernameNotFoundException ex) {
+                log.debug("Failed to find user '{}'", username);
+                throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
+            }
+        }
+        if (userDetails == null) {
+            throwError(authentication, new UsernameNotFoundException("Failed to find user '" + username + "'"));
+        }
+        if (!cacheWasUsed && cacheable) {
+            this.userCache.putUserInCache(userDetails);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Retrieved userDetails with username: {}:{}", username, clientTerminalCode);
+        }
+        return userDetails;
     }
 
     private void checkClientIpAddressMatchIfRequired(PreAuthenticationToken preAuthenticationToken) {
@@ -171,7 +201,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             throwError(preAuthenticationToken, new InvalidClientVersionException(userClientVersion));
         }
         if (StringUtils.isNotEmpty(clientVersion.get().getSignature()) &&
-                !clientVersion.get().getSignature().equals(userClientSignature)) {
+            !clientVersion.get().getSignature().equals(userClientSignature)) {
             throwError(preAuthenticationToken, new InvalidClientSignatureException());
         }
     }
@@ -225,9 +255,8 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
 
     protected abstract void throwError(Authentication authentication, Exception exception) throws AuthenticationException;
 
-    private String extractCacheUserKey(PreAuthenticationToken authenticationToken, String terminalCode) {
-        return authenticationToken.getName() + StringUtils.DOUBLE_COLON +
-                terminalCode;
+    private String extractCacheUserKey(String username, String terminalCode) {
+        return username + StringUtils.DOUBLE_COLON + terminalCode;
     }
 
     protected abstract PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication);

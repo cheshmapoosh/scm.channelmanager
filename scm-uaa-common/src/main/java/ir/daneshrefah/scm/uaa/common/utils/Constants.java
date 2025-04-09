@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.uaa.common.utils;
 
+
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -37,6 +39,7 @@ public interface Constants {
     String CLAIM_KEY_TIME_TO_LIVE = "ttl";
     String CLAIM_KEY_MAX_IDLE_TIME = "mit";
     String CLAIM_KEY_PERSON_PHONE_NUMBER = "ppn";
+    String CLAIM_KEY_ACTIVATOR_TERMINAL_CODE = "atc";
 
 
     String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
@@ -50,8 +53,11 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE = "activation_code";
     String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
     String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
+    String OAUTH2_PARAM_NAME_ACTIVATOR_TERMINAL = "activator_terminal";
 
     String OAUTH2_SCOPE_NAME_SESSION = "session";
+    String OAUTH2_SCOPE_NAME_ACTIVATION = "activation";
+    String OAUTH2_SCOPE_NAME = "scope";
 
     String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
     String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";

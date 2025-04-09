@@ -84,6 +84,7 @@ public class FirstPasswordGrantAuthenticationConverter implements Authentication
         preAuthenticationToken.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));
         preAuthenticationToken.setClientSignature(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE));
         preAuthenticationToken.setActivationCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_REGISTER_CODE));
+        preAuthenticationToken.setActivatorTerminal(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACTIVATOR_TERMINAL));
         preAuthenticationToken.setClientId(clientId);
         preAuthenticationToken.setRemoteAddress(request.getRemoteAddr());
         return preAuthenticationToken;

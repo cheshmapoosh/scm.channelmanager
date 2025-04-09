@@ -19,7 +19,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.net.URL;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
@@ -56,6 +55,13 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toUnmodifiableList());
         }
+        List<SimpleGrantedAuthority> scopeAuthorities = getScopeAuthorities(jwt);
+
+        Collection<GrantedAuthority> allAuthorities = new ArrayList<>(authorities);
+        allAuthorities.addAll(authorities);
+        allAuthorities.addAll(scopeAuthorities);
+
+
         URL issuer = jwt.getIssuer(); //JwtClaimNames.ISS
         String sessionId = jwt.getClaimAsString(Constants.CLAIM_KEY_SESSION);
         Instant issuedAt = jwt.getIssuedAt();
@@ -75,11 +81,21 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 .build();
 
         String delegatedUsername = USERNAME_NONE_PROVIDED.equalsIgnoreCase(username) ||
-                USERNAME_ANONYMOUS.equals(username) || StringUtils.isBlank(username) ? null : username;
-        UserAuthentication result = new UserAuthentication(detail,
-                user, delegatedUsername, authorities);
+                                   USERNAME_ANONYMOUS.equals(username) || StringUtils.isBlank(username) ? null : username;
 
-        return result;
+        return new UserAuthentication(detail,
+                user, delegatedUsername, Collections.unmodifiableCollection(allAuthorities));
+    }
+
+    private List<SimpleGrantedAuthority> getScopeAuthorities(Jwt jwt) {
+        if (jwt.hasClaim(Constants.OAUTH2_SCOPE_NAME)) {
+            return jwt.getClaimAsStringList(Constants.OAUTH2_SCOPE_NAME)
+                    .stream()
+                    .map(scope -> "SCOPE_" + scope)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+        }
+        return new ArrayList<>();
     }
 
     private User extractUserFromJwt(Jwt jwt) {
@@ -102,6 +118,12 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 break;
             case CORPORATE:
                 person = new CorporatePerson();
+                ((GeneralLegalPerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
+                ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
+                ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
+                break;
+            case CLIENT:
+                person = new ClientPerson();
                 ((GeneralLegalPerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
                 ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
                 ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
@@ -154,10 +176,9 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
             return null;
         }
         Authentication authentication = jwt.getClaim(CLAIM_AUTHENTICATION);
-        if (Objects.isNull(authentication.getDetails()) || !(authentication.getDetails() instanceof TerminalWebAuthenticationDetails)) {
+        if (Objects.isNull(authentication.getDetails()) || !(authentication.getDetails() instanceof TerminalWebAuthenticationDetails details)) {
             return null;
         }
-        TerminalWebAuthenticationDetails details = (TerminalWebAuthenticationDetails) authentication.getDetails();
         return details.getHeader(SCM_PARAMETER_USERNAME);
     }
 

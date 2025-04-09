@@ -7,8 +7,9 @@ package ir.daneshrefah.scm.uaa.utils;
  * @version 1.0
  * @since 2024-05-29
  */
-public class Constants {
+public interface Constants {
 
-    public static final String REQUEST_ATTRIBUTE_CORRELATION_ID = "request_attribute_correlation_id";
+     String REQUEST_ATTRIBUTE_CORRELATION_ID = "request_attribute_correlation_id";
+     String ACTIVATION_PUSH_SUB_QUEUE_NAME = "activation_nib_queue";
 
 }

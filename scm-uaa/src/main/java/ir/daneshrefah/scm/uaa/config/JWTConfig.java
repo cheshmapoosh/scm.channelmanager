@@ -126,6 +126,9 @@ public class JWTConfig {
                         break;
                 }
                 claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
+                if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())){
+                    claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, principal.getDetails().getActivatorTerminal());
+                }
                 addTokenLifeTimeClaims(principal,claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();

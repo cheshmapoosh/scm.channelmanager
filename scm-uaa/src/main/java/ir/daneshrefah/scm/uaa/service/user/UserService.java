@@ -100,7 +100,9 @@ public class UserService {
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
-        removeXUser(userEntity);
+        assert currentAuthentication != null;
+        String terminalCode = currentAuthentication.getTerminalCode();
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity,terminalCode );
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -124,8 +126,11 @@ public class UserService {
     public User updateUserLoginStaticPassword(PasswordModificationRequest request,boolean bypassCheckingOldPassword) {
         validatePasswordModificationRequest(request);
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
-        if (!bypassCheckingOldPassword && !userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), userEntity.getPerson().getUsername()))) {
-            throw new InvalidInputException("oldPassword");
+        if (!bypassCheckingOldPassword) {
+            ValidationUtils.checkBlankString(request.getOldPassword(), () -> new InvalidInputException("oldPassword"));
+            if (!userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), userEntity.getPerson().getUsername()))) {
+                throw new InvalidInputException("oldPassword");
+            }
         }
 //        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
         userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
@@ -670,7 +675,7 @@ public class UserService {
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
-        removeXUser(userEntity);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminal.getCode());
         userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
         return UserMapper.INSTANCE.toModel(userEntity);
     }
@@ -717,8 +722,8 @@ public class UserService {
         return null;
     }
 
-    public List<UserEntity> findByNicknameAndLegacyTerminalId(String nickname, Integer terminalId) {
-        return userRepository.findByNicknameAndLegacyTerminalId(nickname, terminalId);
+    public List<UserEntity> findByNicknameAndLegacyTerminalId(String nickname, Integer legacyTerminalId) {
+        return userRepository.findByNicknameAndLegacyTerminalId(nickname, legacyTerminalId);
     }
 
     public List<UserEntity> findByNicknameAndLegacyTerminalCode(String nickname, String terminalCode) {
