@@ -716,8 +716,8 @@ public class UserService {
         return null;
     }
 
-    public List<UserEntity> findByNicknameAndLegacyTerminalId(String nickname, Integer terminalId) {
-        return userRepository.findByNicknameAndLegacyTerminalId(nickname, terminalId);
+    public List<UserEntity> findByNicknameAndLegacyTerminalId(String nickname, Integer legacyTerminalId) {
+        return userRepository.findByNicknameAndLegacyTerminalId(nickname, legacyTerminalId);
     }
 
     public List<UserEntity> findByNicknameAndLegacyTerminalCode(String nickname, String terminalCode) {

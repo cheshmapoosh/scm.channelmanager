@@ -122,6 +122,12 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
                 ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
                 break;
+            case CLIENT:
+                person = new ClientPerson();
+                ((GeneralLegalPerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
+                ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
+                ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
+                break;
         }
         if (Objects.nonNull(person)) {
             person.setUsername(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_PROFILE_IDENTIFIER));

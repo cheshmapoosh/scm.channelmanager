@@ -39,6 +39,7 @@ public interface Constants {
     String CLAIM_KEY_TIME_TO_LIVE = "ttl";
     String CLAIM_KEY_MAX_IDLE_TIME = "mit";
     String CLAIM_KEY_PERSON_PHONE_NUMBER = "ppn";
+    String CLAIM_KEY_ACTIVATOR_TERMINAL_CODE = "atc";
 
 
     String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
