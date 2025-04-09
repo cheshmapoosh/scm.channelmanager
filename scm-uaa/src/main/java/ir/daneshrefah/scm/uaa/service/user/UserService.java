@@ -528,6 +528,7 @@ public class UserService {
                 .otpType(otpType)
                 .recipient(getCurrentRecipient(loggedInUserAuthentication))
                 .reason(reason)
+                .user(loggedInUserAuthentication.getPrincipal())
                 .claimCode(credential)
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpVerifyRequest);
