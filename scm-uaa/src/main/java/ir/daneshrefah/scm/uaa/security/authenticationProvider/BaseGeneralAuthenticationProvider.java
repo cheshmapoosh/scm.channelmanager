@@ -71,7 +71,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         String clientTerminalCode = preAuthenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
         UserDetails userDetails = null;
         UserActivationAuthenticationService.CandidateStatus candidateStatus = userActivationAuthenticationService.checkActivationCandidate(preAuthenticationToken);
-        if (candidateStatus.equals(UserActivationAuthenticationService.CandidateStatus.ACCEPTED)) {
+/*        if (candidateStatus.equals(UserActivationAuthenticationService.CandidateStatus.ACCEPTED)) {
             UserActivationAuthenticationService.AuthenticationStatus authenticationStatus = userActivationAuthenticationService
                     .checkAuthentication(authentication.getName(),
                             TerminalCodes.fromString(preAuthenticationToken.getActivatorTerminal()).orElse(null),
@@ -87,7 +87,8 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             throwError(authentication, new InvalidActivationTerminalCodeException());
         } else {
             userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), clientTerminalCode, true);
-        }
+        }*/
+        userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), clientTerminalCode, true);
         GeneralAuthenticationToken token;
         try {
             token = authenticationTokenGenerator.generateToken(
