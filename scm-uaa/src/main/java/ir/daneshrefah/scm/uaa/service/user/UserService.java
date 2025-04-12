@@ -23,8 +23,8 @@ import ir.daneshrefah.scm.common.model.user.UserType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
-import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
 import ir.daneshrefah.scm.uaa.controller.user.*;
+import ir.daneshrefah.scm.uaa.controller.user.UpdatePasswordRequest;
 import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
@@ -95,7 +95,8 @@ public class UserService {
         if (currentTxAuthMethod.equals(AuthenticationMethod.STATIC_PASSWORD)) {
             checkStaticPassword(userEntity, claimCodeHeader);
         } else {
-            verifyOtpCode(currentAuthentication, claimCodeHeader, OtpReason.AUTHENTICATION);
+            OtpType otpType = OtpType.toOtpType(currentTxAuthMethod);
+            verifyOtpCode(currentAuthentication, claimCodeHeader, OtpReason.AUTHENTICATION, otpType);
         }
         userEntity.setNickname(request.getNickName());
         userEntity.setLastEditDate(LocalDateTime.now());
@@ -111,7 +112,7 @@ public class UserService {
         String loggedInNickname = AuthenticationUtils.getLoggedInUserAuthentication().getName();
         String loggedInTerminalCode = Objects.requireNonNull(AuthenticationUtils.getLoggedInUser()).getTerminalCode();
         if ((!loggedInTerminalCode.equals(terminalCode) && !hasAdministratorAccess())
-                || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
+            || (!username.equals(loggedInNickname) && !hasAdministratorAccess())) {
             throw new AccessDeniedException(SCM_PARAMETER_AUTHORIZATION, ERROR_CODE_ACCESS_DENIED, "user does not access.");
         }
         Terminal terminal = findTerminalByCode(terminalCode);
@@ -132,7 +133,6 @@ public class UserService {
                 throw new InvalidInputException("oldPassword");
             }
         }
-//        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
         userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
@@ -152,8 +152,6 @@ public class UserService {
                 userEntity.getPerson().getUsername()))) {
             throw new InvalidInputException("oldPassword");
         }
-        //attaching the record
-//        UserEntity userEntity = userRepository.findById(user.getId()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
         userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
@@ -367,11 +365,11 @@ public class UserService {
         Terminal terminal = terminalService.findTerminalByCode(request.getTerminalCode()).orElseThrow(()-> new InvalidInputException("terminalCode"));
 
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getLoginAuthenticationMethod()) &&
-                StringUtils.isEmpty(request.getLoginStaticPassword())) {
+            StringUtils.isEmpty(request.getLoginStaticPassword())) {
             throw new MissingRequiredInputException("loginStaticPassword");
         }
         if (AuthenticationMethod.STATIC_PASSWORD.equals(request.getTransactionAuthenticationMethod()) &&
-                StringUtils.isEmpty(request.getTransactionStaticPassword())) {
+            StringUtils.isEmpty(request.getTransactionStaticPassword())) {
             throw new MissingRequiredInputException("transactionStaticPassword");
         }
         if(!userRepository.findByPersonIdAndLegacyTerminalId(request.getPersonId(), terminal.getLegacyTerminalId().intValue()).isEmpty()){
@@ -517,8 +515,9 @@ public class UserService {
         ValidationUtils.checkNull(loggedInUserAuthentication, AuthenticationRequiredException::new);
         assert loggedInUserAuthentication != null;
         AuthenticationMethod requestMethod = request.getAuthenticationMethod();
-        if (requestMethod.equals(AuthenticationMethod.SMS) || requestMethod.equals(AuthenticationMethod.OTP)) {
-            verifyOtpCode(loggedInUserAuthentication, request.getCredential(), OtpReason.CHANGE_LOGIN_AUTHENTICATION_METHOD);
+        if (!requestMethod.equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            OtpType otpType = OtpType.toOtpType(requestMethod);
+            verifyOtpCode(loggedInUserAuthentication, request.getCredential(), OtpReason.CHANGE_LOGIN_AUTHENTICATION_METHOD,otpType);
         }
         UserEntity userEntity = findUser(loggedInUserAuthentication);
         String terminalCode = loggedInUserAuthentication.getTerminalCode();
@@ -531,12 +530,7 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-    public void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason) {
-        AuthenticationMethod authenticationMethod = loggedInUserAuthentication.getAuthenticationMethod();
-        OtpType otpType = OtpType.toOtpType(authenticationMethod);
-        if (otpType == null) {
-            throw new InvalidInputException("authenticationMethod");
-        }
+    public void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason, OtpType otpType) {
         OtpVerifyRequest otpVerifyRequest = OtpVerifyRequest.builder()
                 .otpType(otpType)
                 .recipient(getCurrentRecipient(loggedInUserAuthentication))
@@ -592,7 +586,7 @@ public class UserService {
         UserEntity userEntity = findUser(currentUserAuthentication);
         AuthenticationMethod currentTxMethod = userEntity.getTransactionAuthenticationMethod();
         AuthenticationMethod requestMethod = request.getAuthenticationMethod();
-        validateTransactionMethodChangeServiceAccess(currentTxMethod, userEntity, headerClaimCode, request, currentUserAuthentication);
+        validateTransactionMethodChangeServiceAccess(currentTxMethod, requestMethod, userEntity, headerClaimCode, request, currentUserAuthentication);
         userEntity.setLastEditDate(LocalDateTime.now());
         userEntity.setTransactionAuthenticationMethod(requestMethod);
         String terminalCode = currentUserAuthentication.getTerminalCode();
@@ -625,15 +619,18 @@ public class UserService {
 
 
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
+            , AuthenticationMethod requestTxMethod
             , UserEntity userEntity
             , String claimCode
             , AuthenticationMethodModificationRequest request
             , UserAuthentication currentUserAuthentication) {
         if (currentTxMethod.equals(AuthenticationMethod.STATIC_PASSWORD)) {
             checkStaticPassword(userEntity, claimCode);
-            verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD);
+            OtpType otpType = OtpType.toOtpType(requestTxMethod);
+            verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD,otpType);
         } else {
-            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD);
+            OtpType otpType = OtpType.toOtpType(currentTxMethod);
+            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD,otpType);
             checkStaticPassword(userEntity, request.getCredential());
         }
     }
@@ -670,7 +667,7 @@ public class UserService {
         applyDynamicUpdateChanges(userEntity, request);
         userEntity.setLastEditDate(LocalDateTime.now());
         if (Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication())
-                && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
+            && Objects.nonNull(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal())) {
             userEntity.setLastEditor(AuthenticationUtils.getLoggedInUserAuthentication().getPrincipal().getId());
         }
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
