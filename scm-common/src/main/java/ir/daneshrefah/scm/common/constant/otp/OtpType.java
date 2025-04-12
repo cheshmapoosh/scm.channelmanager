@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.constant.otp;
 
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 
 /**
@@ -19,7 +20,7 @@ public enum OtpType {
         return switch (authenticationMethod) {
             case OTP -> DEVICE;
             case SMS -> SMS;
-            default -> null;
+            default -> throw new InvalidInputException("authenticationMethod");
         };
     }
 }
