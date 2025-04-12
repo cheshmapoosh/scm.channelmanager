@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.common.exception;
 
 import ir.daneshrefah.scm.common.error.ExceptionInformation;
+import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 
 /**
@@ -25,6 +27,8 @@ public class AccessDeniedException extends AbstractBaseException {
 
     @Override
     public ExceptionInformation getExceptionInformation() {
-        return null;
+        return ExceptionInformationBuilder
+                .createInstance().buildWithStatus(MessageStatus.SC_ACCESS_DENIED);
     }
+
 }
