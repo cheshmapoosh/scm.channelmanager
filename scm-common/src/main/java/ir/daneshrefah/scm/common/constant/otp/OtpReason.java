@@ -18,8 +18,8 @@ import java.util.Arrays;
 public enum OtpReason {
 
     AUTHENTICATION                                  (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,1),
-    CHANGE_LOGIN_AUTHENTICATION_METHOD              (2, 4,OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1,2),
-    CHANGE_TRANSACTION_AUTHENTICATION_METHOD        (2, 4,OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1,3),
+    CHANGE_LOGIN_AUTHENTICATION_METHOD              (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,2),
+    CHANGE_TRANSACTION_AUTHENTICATION_METHOD        (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,3),
     ACTIVATION                                      (2, 4,OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1,4),
     ACH                                             (2, 4,OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1,5),
     PAYMENT_TRANSFER_INTERNAL                       (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,6),
