@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.common.token;
 
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.constants.ScopeAuthority;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -35,6 +36,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME
 @RequiredArgsConstructor
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
+    private static final String SCOPE_PREFIX = "SCOPE_";
     private final String CLAIM_AUTHENTICATION = "claim_authentication";
 //    private final Supplier<Authentication> extractAuthentication;
 
@@ -56,10 +58,17 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                     .collect(Collectors.toUnmodifiableList());
         }
         List<SimpleGrantedAuthority> scopeAuthorities = getScopeAuthorities(jwt);
-
         Collection<GrantedAuthority> allAuthorities = new ArrayList<>(authorities);
-        allAuthorities.addAll(authorities);
+
         allAuthorities.addAll(scopeAuthorities);
+        //PREVENT FROM ADDING ROLES WHEN CONTAINS ACTIVATION SCOPE AUTHORITY
+        if (scopeAuthorities.isEmpty()
+            || scopeAuthorities
+                    .stream()
+                    .map(SimpleGrantedAuthority::getAuthority)
+                    .noneMatch(a -> a.equalsIgnoreCase(ScopeAuthority.ACTIVATION))) {
+            allAuthorities.addAll(authorities);
+        }
 
 
         URL issuer = jwt.getIssuer(); //JwtClaimNames.ISS
@@ -91,7 +100,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
         if (jwt.hasClaim(Constants.OAUTH2_SCOPE_NAME)) {
             return jwt.getClaimAsStringList(Constants.OAUTH2_SCOPE_NAME)
                     .stream()
-                    .map(scope -> "SCOPE_" + scope)
+                    .map(scope -> SCOPE_PREFIX + scope)
                     .map(SimpleGrantedAuthority::new)
                     .toList();
         }
@@ -101,7 +110,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
     private User extractUserFromJwt(Jwt jwt) {
         String clientId = jwt.getAudience().get(0);
         AuthorizationGrantType grantType = AuthorizationGrantType.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_GRANT));
-        PersonType personType = PersonType.findByCode(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
+        PersonType personType = PersonType.findByCode(Integer.parseInt(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
         GeneralPerson person = null;
         switch (personType) {
             case REAL:

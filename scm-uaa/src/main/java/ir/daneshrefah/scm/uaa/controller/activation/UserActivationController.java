@@ -27,7 +27,7 @@ public class UserActivationController {
     private final UserActivationMessagePublisherService userPreActivationService;
 
     @GetMapping("/active")
-    @PreAuthorize("hasAuthority('SCOPE_activation')")
+    @PreAuthorize("hasAuthority(@grant.scopes.ACTIVATION)")
     public ResponseEntity<?> findPagedClientList() {
         Authentication authentication = AuthenticationUtils.getAuthentication();
         UserAuthentication.AuthenticationDetail details = (UserAuthentication.AuthenticationDetail) authentication.getDetails();
