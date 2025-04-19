@@ -20,7 +20,10 @@ public enum NotificationTemplate {
     AUTHENTICATION_OTP("authentication_otp"),
     ACTIVATION("activation"),
     GENERAL("general"),
-    RESET_PASSWORD("reset_password");
+    RESET_PASSWORD("reset_password"),
+    CHANNEL_ACTIVATION_REQUEST("channel_activation_request"),
+    CHANNEL_ACTIVATION_SUCCESS("channel_successful_activation"),
+    CHANNEL_ACTIVATION_FAILED("channel_failed_activation");
 
     private final String value;
 

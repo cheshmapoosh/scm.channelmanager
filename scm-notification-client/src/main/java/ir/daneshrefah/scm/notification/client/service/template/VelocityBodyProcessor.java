@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 @Component
 public class VelocityBodyProcessor extends NotificationBodyProcessor {
 
-    private static final Pattern PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
+    private static final Pattern PATTERN = Pattern.compile("\\$\\{([^}]+)}");
     private static final Map<Long, Template> TEMPLATE_MAP = new HashMap<>();
 
     public VelocityBodyProcessor(NotificationDictionary dictionary) {
@@ -36,18 +36,13 @@ public class VelocityBodyProcessor extends NotificationBodyProcessor {
 
     @Override
     protected String processInternal(MessageTemplate template, NotificationRequest request) {
-//        VelocityEngine velocityEngine = new VelocityEngine();
-//        velocityEngine.init();
         Template velocityTemplate = findTemplate(template);
         if (Objects.isNull(velocityTemplate)) {
             return null;
         }
         List<String> parameters = extractParameterNames(template);
         Map<String, Object> data = new HashMap<>();
-        for (Iterator<String> iterator = parameters.iterator(); iterator.hasNext(); ) {
-            String key = iterator.next();
-            data.put(key, extractRequestValue(request, key));
-        }
+        parameters.forEach(parameter -> data.put(parameter, extractRequestValue(request, parameter)));
         StringWriter writer = new StringWriter();
         VelocityContext context = new VelocityContext(data);
         velocityTemplate.merge(context, writer);
