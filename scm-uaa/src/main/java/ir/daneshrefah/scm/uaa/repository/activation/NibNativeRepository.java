@@ -41,7 +41,7 @@ public class NibNativeRepository {
         try {
             return namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to find parent NIB channel: {}", e.getMessage(),e);
+            log.error("Failed to find parent NIB channel: %s".formatted( e.getMessage()),e);
             return null; // Or throw a custom exception depending on your needs
         }
     }
@@ -184,7 +184,7 @@ public class NibNativeRepository {
 
             return namedParameterJdbcTemplate.update(sql, params);
         } catch (DataAccessException e) {
-            log.error("Failed to insert USER_CHANNEL_AUTHENTICATION: {}", e.getMessage(),e);
+            log.error("Failed to insert USER_CHANNEL_AUTHENTICATION: %s".formatted( e.getMessage()),e);
             if (e.getCause() instanceof SQLException sqlEx && sqlEx.getSQLState().equals("23505")) {
                 log.error("Duplicate key violation: {}", sqlEx.getMessage());
                 throw new DataAccessException("Duplicate entry detected for USER_CHANNEL_AUTHENTICATION", e) {};
@@ -236,7 +236,7 @@ public class NibNativeRepository {
             log.info("Found {} NIB channel mappings", channelMap.size());
             return channelMap;
         } catch (DataAccessException e) {
-            log.error("Failed to find NIB channel: {}", e.getMessage(),e);
+            log.error("Failed to find NIB channel: %s".formatted(e.getMessage()),e);
             return Collections.emptyMap();
         }
     }
@@ -270,7 +270,7 @@ public class NibNativeRepository {
             }
             return results;
         } catch (DataAccessException e) {
-            log.error("Failed to fetch MEMBERSHIP_CHANNEL_ACCESS for userId {}: {}", userId, e.getMessage(),e);
+            log.error("Failed to fetch MEMBERSHIP_CHANNEL_ACCESS for userId %s: %s".formatted(userId, e.getMessage()),e);
             return Collections.emptyList();
         }
     }
@@ -316,7 +316,7 @@ public class NibNativeRepository {
                 throw new IllegalStateException("Expected 1 row to be inserted, but got " + rowsAffected);
             }
         } catch (DataAccessException e) {
-            log.error("Failed to insert MEMBERSHIP_CHANNEL_ACCESS record: {}", e.getMessage(),e);
+            log.error("Failed to insert MEMBERSHIP_CHANNEL_ACCESS record: %s".formatted(e.getMessage()),e);
             throw e;
         }
         return sequenceValue;
@@ -334,7 +334,7 @@ public class NibNativeRepository {
         try {
             mcsasRecords = namedParameterJdbcTemplate.queryForList(sql, params);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch MEMBERSHIP_CHANNEL_SERVICE_ACCESS for MCS_ID {}: {}", oldMcsId, e.getMessage(),e);
+            log.error("Failed to fetch MEMBERSHIP_CHANNEL_SERVICE_ACCESS for MCS_ID %s: %s".formatted(oldMcsId, e.getMessage()),e);
             return null;
         }
         return mcsasRecords;
@@ -360,7 +360,7 @@ public class NibNativeRepository {
         try {
             ebServiceId = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch EB_SERVICE_ID for CHANNEL_EB_ACCESS_ID {}: {}", oldChannelEbAccessId, e.getMessage(),e);
+            log.error("Failed to fetch EB_SERVICE_ID for CHANNEL_EB_ACCESS_ID %s: %s".formatted(oldChannelEbAccessId, e.getMessage()),e);
             return null;
         }
 
@@ -377,8 +377,8 @@ public class NibNativeRepository {
         try {
             return namedParameterJdbcTemplate.queryForObject(sql, params, BigDecimal.class);
         } catch (DataAccessException e) {
-            log.error("No CHANNEL_SERVICE_ACCESS found for CHANNEL_ID {} and EB_SERVICE_ID {}: {}",
-                    newChannelId, ebServiceId, e.getMessage(),e);
+            log.error("No CHANNEL_SERVICE_ACCESS found for CHANNEL_ID %s and EB_SERVICE_ID %s: %s".formatted(
+                    newChannelId, ebServiceId, e.getMessage()),e);
             return null;
         }
     }
@@ -415,7 +415,7 @@ public class NibNativeRepository {
                 return mcsasId;
             }
         } catch (DataAccessException e) {
-            log.error("Failed to insert MEMBERSHIP_CHANNEL_SERVICE_ACCESS: {}", e.getMessage(),e);
+            log.error("Failed to insert MEMBERSHIP_CHANNEL_SERVICE_ACCESS: %s".formatted(e.getMessage()),e);
             throw e;
         }
     }
@@ -430,7 +430,7 @@ public class NibNativeRepository {
         try {
             return jdbcTemplate.queryForObject(sequenceSql, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch sequence value for {}: {}", sequenceName, e.getMessage(),e);
+            log.error("Failed to fetch sequence value for %s: %s".formatted(sequenceName, e.getMessage()),e);
             return null; // Or handle it as per your application's requirements
         }
     }
