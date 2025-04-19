@@ -36,15 +36,12 @@ public class OAuth2AuthenticationRequestTokenGenerator implements Authentication
         PreAuthenticationToken preAuthenticationToken = (PreAuthenticationToken) authentication;
         AuthenticationMethod authenticationMethod = extractAuthenticationMethod(preAuthenticationToken.getGrantType(),
                 userDetails.getUser());
-        List<AuthenticationTokenTypes> filteredTokenType = Arrays.stream(AuthenticationTokenTypes.values()).filter(
+        Optional<AuthenticationTokenTypes> filteredTokenType = Arrays.stream(AuthenticationTokenTypes.values()).filter(
                         authenticationTokenType -> authenticationTokenType.getGrantType().equals(preAuthenticationToken.getGrantType()) &&
                                 authenticationTokenType.isClaimCodeProvided() == StringUtils.isNotEmpty(preAuthenticationToken.getClaimCode()) &&
                                 authenticationTokenType.getAuthenticationMethod().equals(authenticationMethod))
-                .collect(Collectors.toList());
-        if (filteredTokenType.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(filteredTokenType.get(0).getTokenClass());
+                .findFirst();
+        return filteredTokenType.map(AuthenticationTokenTypes::getTokenClass);
     }
 
     public GeneralAuthenticationToken generateToken(PreAuthenticationToken authentication, TerminalUserDetails userDetails) throws Exception {

@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.core.entity.asset;
+package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.constant.CustomerRelationType;
+import ir.daneshrefah.scm.common.data.converter.CustomerRelationTypeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.core.converter.CustomerRelationTypeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

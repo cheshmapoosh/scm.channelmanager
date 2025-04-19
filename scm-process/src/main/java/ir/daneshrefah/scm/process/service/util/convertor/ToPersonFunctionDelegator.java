@@ -83,7 +83,7 @@ public class ToPersonFunctionDelegator implements FunctionDelegator<JsonNode, Js
     }
 
     private JsonNode findRealPersonByUsername(String username) {
-        Optional<GeneralPerson> generalPerson = personService.findPersonByPersonUsername(username);
+        Optional<GeneralPerson> generalPerson = personService.findPersonByUsername(username);
         if (generalPerson.isEmpty()) {
             throw new PersonNotFoundException("customerId", "Person not found with id: " + username, username);
         }

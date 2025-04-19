@@ -21,7 +21,7 @@ import ir.daneshrefah.scm.common.model.service.*;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
-import ir.daneshrefah.scm.core.entity.asset.AssetProviderEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
@@ -113,7 +113,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request) {
-        return serviceProviders
+        return findServiceProviderList()
                 .stream()
                 .filter(serviceProvider -> "ALL".equalsIgnoreCase(request.getProtocol()) || ServiceProviderProtocol.findByName(request.getProtocol()).equals(serviceProvider.getProtocol()))
                 .map(provider -> new ExternalProviderResponse()

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.converter;
+package ir.daneshrefah.scm.common.data.converter;
 
 import ir.daneshrefah.scm.common.constant.CustomerRelationType;
 import jakarta.persistence.AttributeConverter;

@@ -84,7 +84,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     @Override
-    public Optional<GeneralPerson> findPersonByPersonUsername(String username) {
+    public Optional<GeneralPerson> findPersonByUsername(String username) {
         ValidationUtils.checkBlankString(username, () -> new MissingRequiredInputException("username"));
         List<GeneralPersonEntity> personEntity = personRepository.findPersonByUsername(username);
         if (Objects.isNull(personEntity) || personEntity.size() < 1) {

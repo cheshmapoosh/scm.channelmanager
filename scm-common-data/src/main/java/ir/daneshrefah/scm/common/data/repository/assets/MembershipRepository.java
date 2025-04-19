@@ -1,6 +1,7 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
-import ir.daneshrefah.scm.core.entity.asset.MembershipEntity;
+
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,7 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Repository
-public interface MembershipRepository extends JpaRepository<MembershipEntity,Long> {
+public interface MembershipRepository extends JpaRepository<MembershipEntity, Long> {
 
     @Query("SELECT o FROM MembershipEntity o where o.person.username = :username")
     List<MembershipEntity> findAllByPersonUsername(@Param("username") String username);

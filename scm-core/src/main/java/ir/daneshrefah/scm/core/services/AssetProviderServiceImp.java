@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
-import ir.daneshrefah.scm.core.repository.AssetProviderRepository;
+import ir.daneshrefah.scm.common.data.repository.assets.AssetProviderRepository;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.config.AssetProviderConfigProperties;
 import lombok.RequiredArgsConstructor;

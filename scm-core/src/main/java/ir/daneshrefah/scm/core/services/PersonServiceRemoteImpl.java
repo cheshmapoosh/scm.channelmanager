@@ -38,7 +38,7 @@ public class PersonServiceRemoteImpl implements PersonService {
     }
 
     @Override
-    public Optional<GeneralPerson> findPersonByPersonUsername(String username) {
+    public Optional<GeneralPerson> findPersonByUsername(String username) {
         return Optional.empty();
     }
 
