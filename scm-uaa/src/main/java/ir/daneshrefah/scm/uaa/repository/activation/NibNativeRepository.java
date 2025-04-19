@@ -83,9 +83,9 @@ public class NibNativeRepository {
      * @return The maximum ID or null if the table is empty.
      * @throws DataAccessException if a database error occurs.
      */
-    public Long findUserChannelAuthenticationMaxId() {
-        return findMaxId("USER_CHANNEL_AUTHENTICATION_ID", USER_CHANNEL_AUTHENTICATION_TABLE);
-    }
+//    public Long findUserChannelAuthenticationMaxId() {
+//        return findMaxId("USER_CHANNEL_AUTHENTICATION_ID", USER_CHANNEL_AUTHENTICATION_TABLE);
+//    }
     /**
      * Generic method to find the maximum value of an ID column in a table.
      *
@@ -94,19 +94,19 @@ public class NibNativeRepository {
      * @return The maximum ID value, or 0 if the table is empty or no value is found.
      * @throws DataAccessException if a database error occurs that cannot be recovered from.
      */
-    public Long findMaxId(String idColumnName, String tableName) {
-        String sql = "SELECT MAX(" + idColumnName + ") FROM " + tableName;
-        log.debug("Executing query to find max ID: {}", sql);
-
-        try {
-            Long result = jdbcTemplate.queryForObject(sql, Long.class);
-            return result != null ? result : 0L; // Return 0 if table is empty or result is null
-        } catch (DataAccessException e) {
-            log.error("Failed to find max ID for column '{}' in table '{}': {}",
-                    idColumnName, tableName, e.getMessage());
-            throw e; // Re-throw the exception to let the caller handle it
-        }
-    }
+//    public Long findMaxId(String idColumnName, String tableName) {
+//        String sql = "SELECT MAX(" + idColumnName + ") FROM " + tableName;
+//        log.debug("Executing query to find max ID: {}", sql);
+//
+//        try {
+//            Long result = jdbcTemplate.queryForObject(sql, Long.class);
+//            return result != null ? result : 0L; // Return 0 if table is empty or result is null
+//        } catch (DataAccessException e) {
+//            log.error("Failed to find max ID for column '{}' in table '{}': {}",
+//                    idColumnName, tableName, e.getMessage());
+//            throw e; // Re-throw the exception to let the caller handle it
+//        }
+//    }
 
     /**
      * Inserts a new USER_CHANNEL_AUTHENTICATION record.
@@ -284,7 +284,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
      * @param record The record to insert as a Map of column names to values.
      * @throws DataAccessException if insertion fails.
      */
-    public void insertMembershipChannelAccess(Map<String, Object> record) {
+    public Integer insertMembershipChannelAccess(Map<String, Object> record) {
         String sql = """
             INSERT INTO ref.MEMBERSHIP_CHANNEL_ACCESS (
                 MEMBERSHIP_CHANNEL_ACCESS_ID, CHANNEL_ID, MEMBERSHIP_ID, MAX_WITHDRAWAL_PER_DAY, 
@@ -321,6 +321,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
             log.error("Failed to insert MEMBERSHIP_CHANNEL_ACCESS record: {}", e.getMessage());
             throw e;
         }
+        return sequenceValue;
     }
 
     public   List<Map<String, Object>> getMcsasRecords(Integer oldMcsId) {
