@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.common.token;
 
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
+import ir.daneshrefah.scm.uaa.common.constants.ScopeAuthority;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -19,7 +20,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.net.URL;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
@@ -36,6 +36,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME
 @RequiredArgsConstructor
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
+    private static final String SCOPE_PREFIX = "SCOPE_";
     private final String CLAIM_AUTHENTICATION = "claim_authentication";
 //    private final Supplier<Authentication> extractAuthentication;
 
@@ -56,6 +57,20 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toUnmodifiableList());
         }
+        List<SimpleGrantedAuthority> scopeAuthorities = getScopeAuthorities(jwt);
+        Collection<GrantedAuthority> allAuthorities = new ArrayList<>(authorities);
+
+        allAuthorities.addAll(scopeAuthorities);
+        //PREVENT FROM ADDING ROLES WHEN CONTAINS ACTIVATION SCOPE AUTHORITY
+        if (scopeAuthorities.isEmpty()
+            || scopeAuthorities
+                    .stream()
+                    .map(SimpleGrantedAuthority::getAuthority)
+                    .noneMatch(a -> a.equalsIgnoreCase(ScopeAuthority.ACTIVATION))) {
+            allAuthorities.addAll(authorities);
+        }
+
+
         URL issuer = jwt.getIssuer(); //JwtClaimNames.ISS
         String sessionId = jwt.getClaimAsString(Constants.CLAIM_KEY_SESSION);
         Instant issuedAt = jwt.getIssuedAt();
@@ -75,17 +90,27 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 .build();
 
         String delegatedUsername = USERNAME_NONE_PROVIDED.equalsIgnoreCase(username) ||
-                USERNAME_ANONYMOUS.equals(username) || StringUtils.isBlank(username) ? null : username;
-        UserAuthentication result = new UserAuthentication(detail,
-                user, delegatedUsername, authorities);
+                                   USERNAME_ANONYMOUS.equals(username) || StringUtils.isBlank(username) ? null : username;
 
-        return result;
+        return new UserAuthentication(detail,
+                user, delegatedUsername, Collections.unmodifiableCollection(allAuthorities));
+    }
+
+    private List<SimpleGrantedAuthority> getScopeAuthorities(Jwt jwt) {
+        if (jwt.hasClaim(Constants.OAUTH2_SCOPE_NAME)) {
+            return jwt.getClaimAsStringList(Constants.OAUTH2_SCOPE_NAME)
+                    .stream()
+                    .map(scope -> SCOPE_PREFIX + scope)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+        }
+        return new ArrayList<>();
     }
 
     private User extractUserFromJwt(Jwt jwt) {
         String clientId = jwt.getAudience().get(0);
         AuthorizationGrantType grantType = AuthorizationGrantType.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_GRANT));
-        PersonType personType = PersonType.findByCode(Integer.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
+        PersonType personType = PersonType.findByCode(Integer.parseInt(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
         GeneralPerson person = null;
         switch (personType) {
             case REAL:
@@ -108,6 +133,9 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 break;
             case CLIENT:
                 person = new ClientPerson();
+                ((GeneralLegalPerson) person).setNationalId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
+                ((GeneralLegalPerson) person).setSubOrganizationId(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID));
+                ((GeneralLegalPerson) person).setTitle(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TITLE));
                 break;
         }
         if (Objects.nonNull(person)) {
@@ -157,10 +185,9 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
             return null;
         }
         Authentication authentication = jwt.getClaim(CLAIM_AUTHENTICATION);
-        if (Objects.isNull(authentication.getDetails()) || !(authentication.getDetails() instanceof TerminalWebAuthenticationDetails)) {
+        if (Objects.isNull(authentication.getDetails()) || !(authentication.getDetails() instanceof TerminalWebAuthenticationDetails details)) {
             return null;
         }
-        TerminalWebAuthenticationDetails details = (TerminalWebAuthenticationDetails) authentication.getDetails();
         return details.getHeader(SCM_PARAMETER_USERNAME);
     }
 

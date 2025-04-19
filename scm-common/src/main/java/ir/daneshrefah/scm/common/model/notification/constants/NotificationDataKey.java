@@ -10,11 +10,13 @@ public enum NotificationDataKey {
 
     BANK_NAME("bankName", true),
     TERMINAL_TITLE("terminalTitle", true),
+    CHANNEL_TITLE("channelTitle", false),
     PERSON("person", false),
-    PERSON_TITLE("person.Title", false),
+    PERSON_TITLE("personTitle", false),
     LOGIN_TIME("loginTime", true),
+    TIME("time", true),
     OTP_CODE("otpCode", false),
-    USER_NICKNAME("user.nickname", false),
+    USER_NICKNAME("userNickname", false),
     REASON("reason", false);
 
     private final String code;
