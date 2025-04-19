@@ -4,10 +4,8 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -29,6 +27,9 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
     @Setter
     @Getter
     private String remoteAddress;
+    @Getter
+    @Setter
+    private String activatorTerminal;
 
     /**
      * if in user authentication time, client doesn't authenticate. user must send client's id

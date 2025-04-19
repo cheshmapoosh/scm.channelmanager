@@ -23,7 +23,7 @@ public interface PersonService {
 
     GeneralPerson findPersonByPersonId(Long id);
 
-    Optional<GeneralPerson> findPersonByPersonUsername(String username);
+    Optional<GeneralPerson> findPersonByUsername(String username);
 
     GeneralPerson findPersonByNicknameAndTerminalCode(String nickname, String terminalCode);
 

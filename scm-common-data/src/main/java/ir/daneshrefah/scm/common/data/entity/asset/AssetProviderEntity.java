@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.core.entity.asset;
+package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
+import ir.daneshrefah.scm.common.data.converter.AssetProviderCodeConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.core.converter.AssetProviderCodeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

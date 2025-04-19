@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.core.repository;
+package ir.daneshrefah.scm.common.data.repository.assets;
 
-import ir.daneshrefah.scm.core.entity.asset.AccountEntity;
-import ir.daneshrefah.scm.core.entity.asset.CustomerAccountEntity;
-import ir.daneshrefah.scm.core.entity.asset.CustomerEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.AccountEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.CustomerAccountEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.CustomerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
