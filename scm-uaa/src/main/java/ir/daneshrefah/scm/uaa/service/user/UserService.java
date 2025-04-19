@@ -604,7 +604,6 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userEntity);
     }
 
-
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
             , AuthenticationMethod requestTxMethod
             , UserEntity userEntity
@@ -614,11 +613,16 @@ public class UserService {
         if (currentTxMethod.equals(AuthenticationMethod.STATIC_PASSWORD)) {
             checkStaticPassword(userEntity, claimCode);
             OtpType otpType = OtpType.toOtpType(requestTxMethod);
-            verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD,otpType);
+            verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, otpType);
         } else {
-            OtpType otpType = OtpType.toOtpType(currentTxMethod);
-            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD,otpType);
-            checkStaticPassword(userEntity, request.getCredential());
+            OtpType targetOtpType = OtpType.toOtpType(currentTxMethod);
+            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, targetOtpType);
+            if (AuthenticationMethod.STATIC_PASSWORD.equals(requestTxMethod)) {
+                checkStaticPassword(userEntity, request.getCredential());
+            } else {
+                OtpType currentOtpTypeSource = OtpType.toOtpType(requestTxMethod);
+                verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, currentOtpTypeSource);
+            }
         }
     }
 
