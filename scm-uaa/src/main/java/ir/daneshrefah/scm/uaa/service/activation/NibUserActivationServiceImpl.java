@@ -9,11 +9,12 @@ import ir.daneshrefah.scm.common.data.repository.assets.MembershipTerminalAccess
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.repository.activation.NibNativeRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
