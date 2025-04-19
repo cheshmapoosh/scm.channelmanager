@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
@@ -125,6 +126,9 @@ public class JWTConfig {
                         break;
                 }
                 claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
+                if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())){
+                    claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, principal.getDetails().getActivatorTerminal());
+                }
                 addTokenLifeTimeClaims(principal,claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
