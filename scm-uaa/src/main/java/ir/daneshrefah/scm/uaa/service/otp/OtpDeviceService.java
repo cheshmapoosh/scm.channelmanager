@@ -99,6 +99,7 @@ public class OtpDeviceService {
         }
         SecondPasswordAuthenticationToken authentication = new SecondPasswordAuthenticationToken(person.getUsername(), request.getClaimCode());
         ResponseMessageDetails responseBody;
+        log.info("Before send to avacast for user with nickname [{}]",user.getNickname());
         try {
             responseBody = sendAndReceiveOTPRequest(authentication, "", user.getNickname(), user.getCreatorBranch());
         } catch (Throwable ex) {
