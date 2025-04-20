@@ -31,6 +31,7 @@ public class FlyWayConfig {
                 .baselineOnMigrate(baselineOnMigration)
                 .baselineVersion(baselineVersion)
                 .validateOnMigrate(validateOnMigrate)
+                .placeholderReplacement(false)
                 .load();
         flyway.migrate();
         return flyway;
