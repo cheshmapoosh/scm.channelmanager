@@ -527,7 +527,8 @@ public class UserService {
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpVerifyRequest);
         if (!otpVerifyResponse.isSuccessful()) {
-            throw new InvalidInputException("otpCode");
+            String source = otpVerifyResponse.getOtpType() != null && OtpType.DEVICE.equals(otpVerifyResponse.getOtpType()) ? "otpDevice" : "otpCode";
+            throw new InvalidInputException(source);
         }
     }
 

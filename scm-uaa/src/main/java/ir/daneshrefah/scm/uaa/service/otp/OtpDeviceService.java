@@ -107,10 +107,14 @@ public class OtpDeviceService {
         }
         String resultCode = responseBody.getResultCode();
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
-            return OtpVerifyResponse.builder().isSuccessful(true).build();
+            return OtpVerifyResponse.builder()
+                    .otpType(request.getOtpType())
+                    .isSuccessful(true)
+                    .build();
         }
-        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
+        log.info("OTP verification completed with result code [{}] for user with nickname '{}'", resultCode, user.getNickname());        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
         return OtpVerifyResponse.builder().isSuccessful(false)
+                .otpType(request.getOtpType())
                 .errorMessage(errorMessage.orElse("Internal Error")).
                 build();
     }
