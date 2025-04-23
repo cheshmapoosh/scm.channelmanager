@@ -113,7 +113,8 @@ public class OtpDeviceService {
                     .isSuccessful(true)
                     .build();
         }
-        log.info("OTP verification completed with result code [{}] for user with nickname '{}'", resultCode, user.getNickname());        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
+        log.info("OTP verification completed with result code [{}] for user with nickname '{}'", resultCode, user.getNickname());
+        Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
         return OtpVerifyResponse.builder().isSuccessful(false)
                 .otpType(request.getOtpType())
                 .errorMessage(errorMessage.orElse("Internal Error")).
