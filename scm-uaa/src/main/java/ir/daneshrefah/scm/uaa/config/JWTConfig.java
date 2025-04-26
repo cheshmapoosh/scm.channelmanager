@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -40,10 +41,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
@@ -80,16 +78,16 @@ public class JWTConfig {
         return context -> {
             JwtClaimsSet.Builder claims = context.getClaims();
             if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                    PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
+                PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
-                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
-                addTokenLifeTimeClaims(principal,claims);
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
+                addTokenLifeTimeClaims(principal, claims);
             } else if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                    PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
+                       PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
                 String terminalCode = user.getTerminalCode();
@@ -99,7 +97,8 @@ public class JWTConfig {
                 claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
                         Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
                                 .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
-                claims.claim(CLAIM_KEY_AUTHORITIES, principal.getDetails().getAuthorities().toString());
+                Collection<GrantedAuthority> authorities = principal.getDetails().getAuthorities();
+                claims.claim(CLAIM_KEY_AUTHORITIES, !authorities.isEmpty() ? authorities : principal.getAuthorities().toString());
                 String sessionKey = principal.getSessionId();
                 if (StringUtils.isNotEmpty(sessionKey)) {
                     claims.claim(CLAIM_KEY_SESSION, sessionKey);
@@ -122,31 +121,31 @@ public class JWTConfig {
                         if (StringUtils.isNotEmpty(((GeneralLegalPerson) user.getPerson()).getSubOrganizationId())) {
                             claims.claim(CLAIM_KEY_PERSON_SUB_ORGANIZATION_ID, ((GeneralLegalPerson) user.getPerson()).getSubOrganizationId());
                         }
-                        claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitle());
+                        claims.claim(CLAIM_KEY_PERSON_TITLE, user.getPerson().getTitle());
                         break;
                 }
-                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
-                if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())){
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
+                if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())) {
                     claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, principal.getDetails().getActivatorTerminal());
                 }
-                addTokenLifeTimeClaims(principal,claims);
+                addTokenLifeTimeClaims(principal, claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
                 long id = Long.parseLong(principal.getRegisteredClient().getId());
-                Client client = clientService.findById(id).orElseThrow(()-> new NoMatchRecordFoundException("client"));
+                Client client = clientService.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("client"));
                 User user = client.getUser();
                 claims.claim(CLAIM_KEY_TERMINAL, principal.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE));
                 claims.claim(CLAIM_KEY_GRANT, AuthorizationGrantType.CLIENT_CREDENTIALS);
-                claims.claim(CLAIM_KEY_PERSON_TYPE,  user.getType());
+                claims.claim(CLAIM_KEY_PERSON_TYPE, user.getType());
                 claims.claim(CLAIM_KEY_PERSON_IDENTIFIER, id);
                 claims.claim(CLAIM_KEY_PERSON_PROFILE_IDENTIFIER, principal.getRegisteredClient().getClientId());
-                claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson)user.getPerson()).getTitleEnglish());
+                claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitleEnglish());
                 List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
-                addTokenLifeTimeClaims(principal,claims);
+                addTokenLifeTimeClaims(principal, claims);
             } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                    context.getPrincipal().isAuthenticated()) {
+                       context.getPrincipal().isAuthenticated()) {
                 AbstractAuthenticationToken authenticationToken = context.getPrincipal();
                 User user = ((TerminalUserDetails) authenticationToken.getPrincipal()).getUser();
 
@@ -175,7 +174,7 @@ public class JWTConfig {
                 if (authenticationToken.includeChallengeCode()) {
                     claims.claim(CLAIM_KEY_USER_CHALLENGE_CODE, user.getLoginStaticPassword());
                 }
-                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER,getPersonMaskedPhoneNumber(user.getPerson()));
+                claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
@@ -229,26 +228,26 @@ public class JWTConfig {
 
     private void addTokenLifeTimeClaims(PostAuthenticationToken principal, JwtClaimsSet.Builder claims) {
         long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(principal.getIssuedAt(), principal.getExpiresAt());
-        claims.claim(CLAIM_KEY_TIME_TO_LIVE,timeToLiveMinutes);
-        claims.claim(CLAIM_KEY_MAX_IDLE_TIME,timeToLiveMinutes);
+        claims.claim(CLAIM_KEY_TIME_TO_LIVE, timeToLiveMinutes);
+        claims.claim(CLAIM_KEY_MAX_IDLE_TIME, timeToLiveMinutes);
     }
 
     private void addTokenLifeTimeClaims(OAuth2ClientAuthenticationToken principal, JwtClaimsSet.Builder claims) {
         RegisteredClient registeredClient = principal.getRegisteredClient();
-        addTokenByRegisteredClient(registeredClient,claims);
+        addTokenByRegisteredClient(registeredClient, claims);
     }
 
     private void addTokenLifeTimeClaims(AbstractAuthenticationToken principal, JwtClaimsSet.Builder claims) {
         RegisteredClient registeredClient = principal.getRegisteredClient();
-        addTokenByRegisteredClient(registeredClient,claims);
+        addTokenByRegisteredClient(registeredClient, claims);
     }
 
 
     private void addTokenByRegisteredClient(RegisteredClient registeredClient, JwtClaimsSet.Builder claims) {
         if (Objects.nonNull(registeredClient) && Objects.nonNull(registeredClient.getClientIdIssuedAt())) {
             long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(registeredClient.getClientIdIssuedAt(), registeredClient.getClientSecretExpiresAt());
-            claims.claim(CLAIM_KEY_TIME_TO_LIVE,timeToLiveMinutes);
-            claims.claim(CLAIM_KEY_MAX_IDLE_TIME,timeToLiveMinutes);
+            claims.claim(CLAIM_KEY_TIME_TO_LIVE, timeToLiveMinutes);
+            claims.claim(CLAIM_KEY_MAX_IDLE_TIME, timeToLiveMinutes);
         }
     }
 

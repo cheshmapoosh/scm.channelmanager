@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
@@ -17,10 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
-
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
 
     @Transactional
     @Override
-    public void activate(GeneralPerson person, TerminalCodes fromTerminal) {
+    public void activate(GeneralPerson person, TerminalType fromTerminal) {
         validateInput(person, fromTerminal);
         GeneralPersonEntity personEntity = findPersonEntity(person.getUsername());
         duplicateUserChannelAuthentication(fromTerminal, personEntity);
@@ -60,7 +59,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * @param channelIdMap   A Map mapping old CHANNEL_IDs to new CHANNEL_IDs.
      * @throws IllegalStateException if duplication or insertion fails.
      */
-    private void duplicateMembershipChannelAccess(Long userId, Map<Integer, Integer> channelIdMap,TerminalCodes fromTerminal) {
+    private void duplicateMembershipChannelAccess(Long userId, Map<Integer, Integer> channelIdMap,TerminalType fromTerminal) {
         log.debug("Starting duplication of MEMBERSHIP_CHANNEL_ACCESS for userId: {}", userId);
 
         // Fetch existing records
@@ -183,7 +182,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * @param fromTerminal The terminal code to fetch the original authentication record from.
      * @param personEntity The person entity containing the user ID.
      */
-    private void duplicateUserChannelAuthentication(TerminalCodes fromTerminal, GeneralPersonEntity personEntity) {
+    private void duplicateUserChannelAuthentication(TerminalType fromTerminal, GeneralPersonEntity personEntity) {
         log.debug("Starting duplication of USER_CHANNEL_AUTHENTICATION for userId: {} from terminal: {}",
                 personEntity.getId(), fromTerminal);
 
@@ -208,12 +207,12 @@ public class NibUserActivationServiceImpl implements UserActivationService {
             throw e; // Re-throw to let the caller handle it
         } catch (Exception e) {
             log.error("Unexpected error while duplicating USER_CHANNEL_AUTHENTICATION for userId: {} from terminal: {}",
-                    personEntity.getId(), fromTerminal, e.getMessage(), e);
+                    personEntity.getId(), fromTerminal, e);
             throw new IllegalStateException("Unexpected error during user channel authentication duplication", e);
         }
     }
 
-    private void validateInput(GeneralPerson person, TerminalCodes fromTerminal) {
+    private void validateInput(GeneralPerson person, TerminalType fromTerminal) {
         if (person == null || person.getUsername() == null || fromTerminal == null) {
             throw new IllegalArgumentException("Person and fromTerminal must not be null");
         }
@@ -228,7 +227,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
         return entities.get(0); // Assuming the first result is the intended one
     }
 
-    private Map<String, Object> fetchUserChannelAuthentication(Long userId, TerminalCodes fromTerminal) {
+    private Map<String, Object> fetchUserChannelAuthentication(Long userId, TerminalType fromTerminal) {
         List<Map<String, Object>> userChannelAuthList = nibNativeRepository.findUserChannelAuthenticationByUserId(userId, fromTerminal);
 
         if (userChannelAuthList.isEmpty()) {
@@ -257,7 +256,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     }
 
     private Integer getParentNibChannelId() {
-        Integer parentNibChannelId = nibNativeRepository.findParentChannel(TerminalCodes.NIB);
+        Integer parentNibChannelId = nibNativeRepository.findParentChannel(TerminalType.NIB);
         if (parentNibChannelId == null) {
             log.error("Parent NIB channel ID not found");
             throw new IllegalStateException("Parent NIB channel not found");

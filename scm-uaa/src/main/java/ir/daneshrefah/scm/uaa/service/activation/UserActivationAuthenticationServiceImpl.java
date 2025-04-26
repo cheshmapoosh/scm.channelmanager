@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +20,8 @@ public class UserActivationAuthenticationServiceImpl implements UserActivationAu
     private final UserService userService;
 
     @Override
-    public AuthenticationStatus checkAuthentication(String username, TerminalCodes fromTerminal, TerminalCodes toTerminal) {
-        if (userService.loadUserEntityByUsername(username, TerminalCodes.NIB.name()).isPresent()) {
+    public AuthenticationStatus checkAuthentication(String username, TerminalType fromTerminal, TerminalType toTerminal) {
+        if (userService.loadUserEntityByUsername(username, TerminalType.NIB.name()).isPresent()) {
             return AuthenticationStatus.ACTIVATED_BEFORE;
         }
         if (userService.loadUserEntityByUsername(username, fromTerminal.name()).isPresent()) {
@@ -36,7 +36,7 @@ public class UserActivationAuthenticationServiceImpl implements UserActivationAu
         if (Objects.nonNull(scopes) && !scopes.isEmpty()) {
             String activationTerminal = preAuthenticationToken.getActivatorTerminal();
             if (scopes.contains(OAUTH2_SCOPE_NAME_ACTIVATION)){
-                if (TerminalCodes.fromString(activationTerminal).isEmpty()) {
+                if (TerminalType.fromCode(activationTerminal).isEmpty()) {
                     log.debug("Invalid Activation scope for user '{}'", preAuthenticationToken.getName());
                     return CandidateStatus.HAS_ERROR;
                 }
