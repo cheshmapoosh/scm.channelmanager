@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.plugin.pichack.util;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;

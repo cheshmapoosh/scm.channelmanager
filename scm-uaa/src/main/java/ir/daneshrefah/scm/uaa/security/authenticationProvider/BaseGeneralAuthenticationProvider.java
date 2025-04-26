@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -74,8 +74,8 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         if (candidateStatus.equals(UserActivationAuthenticationService.CandidateStatus.ACCEPTED)) {
             UserActivationAuthenticationService.AuthenticationStatus authenticationStatus = userActivationAuthenticationService
                     .checkAuthentication(authentication.getName(),
-                            TerminalCodes.fromString(preAuthenticationToken.getActivatorTerminal()).orElse(null),
-                            TerminalCodes.NIB);
+                            TerminalType.fromCode(preAuthenticationToken.getActivatorTerminal()).orElse(null),
+                            TerminalType.NIB);
             switch (authenticationStatus) {
                 case USER_NOT_FOUND ->
                         throwError(authentication, new UsernameNotFoundException("Invalid username or password"));

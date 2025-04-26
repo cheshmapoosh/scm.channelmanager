@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
@@ -31,21 +31,21 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
     private final TerminalService terminalService;
 
     @Override
-    public void sendSuccessNotification(GeneralPerson person, String sourceNickname, TerminalCodes sourceChannel, TerminalCodes targetChannel) {
+    public void sendSuccessNotification(GeneralPerson person, String sourceNickname, TerminalType sourceChannel, TerminalType targetChannel) {
         sendNotification(person, sourceChannel, targetChannel, sourceNickname, NotificationTemplate.CHANNEL_ACTIVATION_SUCCESS);
     }
 
     @Override
-    public void sendFailedNotification(GeneralPerson person, String sourceNickname, TerminalCodes sourceChannel, TerminalCodes targetChannel) {
+    public void sendFailedNotification(GeneralPerson person, String sourceNickname, TerminalType sourceChannel, TerminalType targetChannel) {
         sendNotification(person, sourceChannel, targetChannel, sourceNickname, NotificationTemplate.CHANNEL_ACTIVATION_FAILED);
     }
 
     @Override
-    public void sendRegisteredRequestNotification(GeneralPerson person, String sourceNickname, TerminalCodes sourceChannel, TerminalCodes targetChannel) {
+    public void sendRegisteredRequestNotification(GeneralPerson person, String sourceNickname, TerminalType sourceChannel, TerminalType targetChannel) {
         sendNotification(person, sourceChannel, targetChannel, sourceNickname, NotificationTemplate.CHANNEL_ACTIVATION_REQUEST);
     }
 
-    private void sendNotification(GeneralPerson person, TerminalCodes sourceChannel, TerminalCodes targetChannel, String nickname, NotificationTemplate notificationTemplate) {
+    private void sendNotification(GeneralPerson person, TerminalType sourceChannel, TerminalType targetChannel, String nickname, NotificationTemplate notificationTemplate) {
         try {
             Terminal sourceTerminal = terminalService.findTerminalByLegacyId(sourceChannel.getLegacyTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
             Terminal targetTerminal = terminalService.findTerminalByLegacyId(targetChannel.getLegacyTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
