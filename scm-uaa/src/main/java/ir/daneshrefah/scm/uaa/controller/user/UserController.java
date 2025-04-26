@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,6 +34,13 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickName(request,servletRequest));
     }
 
+    //TODO IMPORTANT !!! THIS ROLE MUST BE CHANGED !!!!
+
+    @PutMapping("/change-nickName-by-employee")
+    public ResponseEntity<User> changeUserNameByAdmin(@RequestBody UserNickNameModifyRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickNameByAdmin(request));
+    }
+ 
     @PutMapping("/change-login-password")
     public ResponseEntity<User> updateUserLoginStaticPassword(@RequestBody PasswordModificationRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginStaticPassword(request,false));
@@ -106,7 +114,7 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findUserById(userId));
     }
 
-    @PostMapping("/assgin-terminal")
+    @PostMapping("/assign-terminal")
     public ResponseEntity<User> assignTerminalToPerson(@RequestBody UserAssignTerminalRequest request) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(userService.assignTerminalToPerson(request));

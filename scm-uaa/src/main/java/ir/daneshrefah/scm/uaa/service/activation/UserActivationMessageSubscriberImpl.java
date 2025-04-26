@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
 import ir.daneshrefah.scm.cache.client.connector.QueueTemplate;
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
@@ -36,17 +36,17 @@ public class UserActivationMessageSubscriberImpl implements UserActivationMessag
                             log.info("Received activation push message from queue: {}", ACTIVATION_PUSH_SUB_QUEUE_NAME);
                             String username = (String) message.getPayload();
                             String fromTerminal = message.getAttributes().get("fromTerminal");
-                            TerminalCodes terminal = TerminalCodes.fromString(fromTerminal).orElseThrow(() -> new RuntimeException("Invalid terminal code " + fromTerminal));
+                            TerminalType terminal = TerminalType.fromCode(fromTerminal).orElseThrow(() -> new RuntimeException("Invalid terminal code " + fromTerminal));
                             userService
                                     .findByNicknameAndLegacyTerminalId(username, terminal.getLegacyTerminalId())
                                     .stream().findFirst().ifPresent(user -> {
                                         GeneralPerson dbPerson = personService.findPersonByUsername(user.getPerson().getUsername()).orElseThrow(() -> new RuntimeException("User " + username + " not found in activation queue "));
                                         try {
                                             userActivationService.activate(dbPerson, terminal);
-                                            userChannelActivationNotifierService.sendSuccessNotification(dbPerson, username,terminal,TerminalCodes.NIB);
+                                            userChannelActivationNotifierService.sendSuccessNotification(dbPerson, username,terminal,TerminalType.NIB);
                                         } catch (Exception e) {
                                             log.error("user channel activation failed for person.username :: {} ", dbPerson.getUsername(), e);
-                                            userChannelActivationNotifierService.sendFailedNotification(dbPerson,username,terminal,TerminalCodes.NIB);
+                                            userChannelActivationNotifierService.sendFailedNotification(dbPerson,username,terminal, TerminalType.NIB);
                                         }
                                     });
                         });

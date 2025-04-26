@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -35,7 +35,7 @@ public class NibNativeRepository {
      * @return The CHANNEL_ID or null if not found.
      * @throws DataAccessException if a database error occurs.
      */
-    public Integer findParentChannel(TerminalCodes fromTerminal) {
+    public Integer findParentChannel(TerminalType fromTerminal) {
         String sql = "SELECT CHANNEL_ID FROM " + CHANNEL_TABLE + " WHERE CODE = :code AND PARENT_ID IS NULL";
         Map<String, Object> params = Collections.singletonMap("code",fromTerminal.name());
         try {
@@ -56,7 +56,7 @@ public class NibNativeRepository {
      * @return List of records as Maps, empty if none found.
      * @throws DataAccessException if a database error occurs.
      */
-    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Long userId, TerminalCodes fromTerminal) {
+    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Long userId, TerminalType fromTerminal) {
         String sql = """
             SELECT u.*, c.CODE\s
             FROM %s u\s
@@ -67,7 +67,7 @@ public class NibNativeRepository {
 
         Map<String, Object> params = Map.of(
                 "userId", userId,
-                "codes", List.of(TerminalCodes.IB.name(), TerminalCodes.CIB.name())
+                "codes", List.of(TerminalType.IB.name(), TerminalType.CIB.name())
         );
         try {
             return namedParameterJdbcTemplate.queryForList(sql, params);
@@ -249,7 +249,7 @@ public class NibNativeRepository {
      * @return A List of Maps, each containing all columns from MEMBERSHIP_CHANNEL_ACCESS,
      * or an empty List if no records are found or an error occurs.
      */
-    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Long userId, TerminalCodes fromTerminal) {
+    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Long userId, TerminalType fromTerminal) {
         String sql = """
             SELECT mca.*,c.AUTHENTICATION_METHOD_ID\s
             FROM ref.MEMBERSHIP m\s
