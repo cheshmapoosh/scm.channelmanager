@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.uaa.controller.user;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class UpdateUserStatusRequest extends UserByNationalCodeFindRequest {
     private Boolean status;
 }

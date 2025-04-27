@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
@@ -13,9 +13,12 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +33,9 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     private final TerminalRepository terminalRepository;
     private final NibNativeRepository nibNativeRepository;
 
+    @Transactional
     @Override
-    public void activate(GeneralPerson person, TerminalCodes fromTerminal) {
+    public void activate(GeneralPerson person, TerminalType fromTerminal) {
         validateInput(person, fromTerminal);
         GeneralPersonEntity personEntity = findPersonEntity(person.getUsername());
         duplicateUserChannelAuthentication(fromTerminal, personEntity);
@@ -54,7 +58,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * @param channelIdMap   A Map mapping old CHANNEL_IDs to new CHANNEL_IDs.
      * @throws IllegalStateException if duplication or insertion fails.
      */
-    private void duplicateMembershipChannelAccess(Long userId, Map<Integer, Integer> channelIdMap,TerminalCodes fromTerminal) {
+    private void duplicateMembershipChannelAccess(Long userId, Map<Integer, Integer> channelIdMap,TerminalType fromTerminal) {
         log.debug("Starting duplication of MEMBERSHIP_CHANNEL_ACCESS for userId: {}", userId);
 
         // Fetch existing records
@@ -98,18 +102,18 @@ public class NibUserActivationServiceImpl implements UserActivationService {
                 newRecord.put("CHANNEL_ID", newChannelId);
 
                 // Generate new MEMBERSHIP_CHANNEL_ACCESS_ID
-                Long maxId = nibNativeRepository.findMaxId("MEMBERSHIP_CHANNEL_ACCESS_ID", "ref.MEMBERSHIP_CHANNEL_ACCESS");
-                newRecord.put("MEMBERSHIP_CHANNEL_ACCESS_ID", maxId + 1);
+//                Long maxId = nibNativeRepository.findMaxId("MEMBERSHIP_CHANNEL_ACCESS_ID", "ref.MEMBERSHIP_CHANNEL_ACCESS");
+//                newRecord.put("MEMBERSHIP_CHANNEL_ACCESS_ID", maxId + 1);
 
                 // Insert the new record
-                nibNativeRepository.insertMembershipChannelAccess(newRecord);
+                Integer membershipChannelAccessId = nibNativeRepository.insertMembershipChannelAccess(newRecord);
                 log.info("Successfully duplicated MEMBERSHIP_CHANNEL_ACCESS record for userId: {} with new CHANNEL_ID: {} and ID: {}",
                         userId, newChannelId, newRecord.get("MEMBERSHIP_CHANNEL_ACCESS_ID"));
 
                 // Duplicate related MEMBERSHIP_CHANNEL_SERVICE_ACCESS records
                 duplicateMembershipChannelServiceAccess(
                         (Integer) original.get("MEMBERSHIP_CHANNEL_ACCESS_ID"),
-                        maxId.intValue() ,
+                        membershipChannelAccessId ,
                         (Integer) original.get("CHANNEL_ID"),
                         newChannelId
                 );
@@ -159,8 +163,8 @@ public class NibUserActivationServiceImpl implements UserActivationService {
             newMcsasRecord.put("CHANNEL_EB_ACCESS_ID", newChannelEbAccessId);
 
             // Generate new MCSAS_ID
-            Long maxMcsasId = nibNativeRepository.findMaxId("MCSAS_ID", "ref.MEMBERSHIP_CHANNEL_SERVICE_ACCESS");
-            newMcsasRecord.put("MCSAS_ID", maxMcsasId + 1);
+//            Long maxMcsasId = nibNativeRepository.findMaxId("MCSAS_ID", "ref.MEMBERSHIP_CHANNEL_SERVICE_ACCESS");
+//            newMcsasRecord.put("MCSAS_ID", maxMcsasId + 1);
 
             // Insert the new MEMBERSHIP_CHANNEL_SERVICE_ACCESS record
             nibNativeRepository.insertMembershipChannelServiceAccess(newMcsasRecord);
@@ -177,7 +181,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * @param fromTerminal The terminal code to fetch the original authentication record from.
      * @param personEntity The person entity containing the user ID.
      */
-    private void duplicateUserChannelAuthentication(TerminalCodes fromTerminal, GeneralPersonEntity personEntity) {
+    private void duplicateUserChannelAuthentication(TerminalType fromTerminal, GeneralPersonEntity personEntity) {
         log.debug("Starting duplication of USER_CHANNEL_AUTHENTICATION for userId: {} from terminal: {}",
                 personEntity.getId(), fromTerminal);
 
@@ -189,7 +193,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
             Integer parentNibChannelId = getParentNibChannelId();
             log.debug("Retrieved parent NIB channel ID: {}", parentNibChannelId);
 
-            updateUserChannelAuthentication(userChannelAuth, parentNibChannelId);
+            userChannelAuth.put("CHANNEL_ID", parentNibChannelId);
             log.debug("Updated USER_CHANNEL_AUTHENTICATION with new CHANNEL_ID: {}", parentNibChannelId);
 
             insertUpdatedUserChannelAuthentication(userChannelAuth);
@@ -202,12 +206,12 @@ public class NibUserActivationServiceImpl implements UserActivationService {
             throw e; // Re-throw to let the caller handle it
         } catch (Exception e) {
             log.error("Unexpected error while duplicating USER_CHANNEL_AUTHENTICATION for userId: {} from terminal: {}",
-                    personEntity.getId(), fromTerminal, e.getMessage(), e);
+                    personEntity.getId(), fromTerminal, e);
             throw new IllegalStateException("Unexpected error during user channel authentication duplication", e);
         }
     }
 
-    private void validateInput(GeneralPerson person, TerminalCodes fromTerminal) {
+    private void validateInput(GeneralPerson person, TerminalType fromTerminal) {
         if (person == null || person.getUsername() == null || fromTerminal == null) {
             throw new IllegalArgumentException("Person and fromTerminal must not be null");
         }
@@ -222,7 +226,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
         return entities.get(0); // Assuming the first result is the intended one
     }
 
-    private Map<String, Object> fetchUserChannelAuthentication(Long userId, TerminalCodes fromTerminal) {
+    private Map<String, Object> fetchUserChannelAuthentication(Long userId, TerminalType fromTerminal) {
         List<Map<String, Object>> userChannelAuthList = nibNativeRepository.findUserChannelAuthenticationByUserId(userId, fromTerminal);
 
         if (userChannelAuthList.isEmpty()) {
@@ -251,7 +255,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     }
 
     private Integer getParentNibChannelId() {
-        Integer parentNibChannelId = nibNativeRepository.findParentChannel(TerminalCodes.NIB);
+        Integer parentNibChannelId = nibNativeRepository.findParentChannel(TerminalType.NIB);
         if (parentNibChannelId == null) {
             log.error("Parent NIB channel ID not found");
             throw new IllegalStateException("Parent NIB channel not found");
@@ -260,12 +264,12 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     }
 
     private void updateUserChannelAuthentication(Map<String, Object> userChannelAuth, Integer parentNibChannelId) {
-        Long maxId = Optional.ofNullable(nibNativeRepository.findUserChannelAuthenticationMaxId())
-                .orElse(0L); // Default to 0 if null
+//        Long maxId = Optional.ofNullable(nibNativeRepository.findUserChannelAuthenticationMaxId())
+//                .orElse(0L); // Default to 0 if null
         userChannelAuth.put("CHANNEL_ID", parentNibChannelId);
-        userChannelAuth.put("USER_CHANNEL_AUTHENTICATION_ID", maxId + 1); // Increment max ID
-        log.debug("Updated USER_CHANNEL_AUTHENTICATION with CHANNEL_ID: {} and ID: {}",
-                parentNibChannelId, maxId + 1);
+//        userChannelAuth.put("USER_CHANNEL_AUTHENTICATION_ID", maxId + 1); // Increment max ID
+//        log.debug("Updated USER_CHANNEL_AUTHENTICATION with CHANNEL_ID: {} and ID: {}",
+//                parentNibChannelId, maxId + 1);
     }
 
     private void insertUpdatedUserChannelAuthentication(Map<String, Object> userChannelAuth) {

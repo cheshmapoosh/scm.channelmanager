@@ -64,8 +64,8 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
     protected PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication) {
         PreAuthenticationToken preAuthenticationToken = (PreAuthenticationToken) authentication;
         Authentication clientPrincipal = preAuthenticationToken.getClientPrincipal();
-        if (null != clientPrincipal && clientPrincipal instanceof OAuth2ClientAuthenticationToken) {
-            preAuthenticationToken.setRegisteredClient(((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient());
+        if (clientPrincipal instanceof OAuth2ClientAuthenticationToken oAuth2ClientAuthenticationToken) {
+            preAuthenticationToken.setRegisteredClient(oAuth2ClientAuthenticationToken.getRegisteredClient());
         }
         return (PreAuthenticationToken) authentication;
     }

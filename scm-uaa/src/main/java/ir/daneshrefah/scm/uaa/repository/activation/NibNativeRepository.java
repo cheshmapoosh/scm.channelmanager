@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.activation;
 
-import ir.daneshrefah.scm.common.constant.TerminalCodes;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -35,13 +35,13 @@ public class NibNativeRepository {
      * @return The CHANNEL_ID or null if not found.
      * @throws DataAccessException if a database error occurs.
      */
-    public Integer findParentChannel(TerminalCodes fromTerminal) {
+    public Integer findParentChannel(TerminalType fromTerminal) {
         String sql = "SELECT CHANNEL_ID FROM " + CHANNEL_TABLE + " WHERE CODE = :code AND PARENT_ID IS NULL";
         Map<String, Object> params = Collections.singletonMap("code",fromTerminal.name());
         try {
             return namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to find parent NIB channel: {}", e.getMessage());
+            log.error("Failed to find parent NIB channel: %s".formatted( e.getMessage()),e);
             return null; // Or throw a custom exception depending on your needs
         }
     }
@@ -56,23 +56,23 @@ public class NibNativeRepository {
      * @return List of records as Maps, empty if none found.
      * @throws DataAccessException if a database error occurs.
      */
-    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Long userId, TerminalCodes fromTerminal) {
+    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Long userId, TerminalType fromTerminal) {
         String sql = """
-            SELECT u.*, c.CODE 
-            FROM %s u 
-            JOIN %s c ON u.CHANNEL_ID = c.CHANNEL_ID 
+            SELECT u.*, c.CODE\s
+            FROM %s u\s
+            JOIN %s c ON u.CHANNEL_ID = c.CHANNEL_ID\s
             WHERE u.USER_ID = :userId AND c.CODE IN (:codes)
-            """.formatted(USER_CHANNEL_AUTHENTICATION_TABLE, CHANNEL_TABLE);
+           \s""".formatted(USER_CHANNEL_AUTHENTICATION_TABLE, CHANNEL_TABLE);
 
 
         Map<String, Object> params = Map.of(
                 "userId", userId,
-                "codes", List.of(TerminalCodes.IB.name(), TerminalCodes.CIB.name())
+                "codes", List.of(TerminalType.IB.name(), TerminalType.CIB.name())
         );
         try {
             return namedParameterJdbcTemplate.queryForList(sql, params);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch USER_CHANNEL_AUTHENTICATION for userId {}: {}", userId, e.getMessage());
+            log.error("Failed to fetch USER_CHANNEL_AUTHENTICATION for userId %s: %s".formatted(userId,  e.getMessage()), e);
             return Collections.emptyList(); // Safe default return
         }
     }
@@ -83,9 +83,9 @@ public class NibNativeRepository {
      * @return The maximum ID or null if the table is empty.
      * @throws DataAccessException if a database error occurs.
      */
-    public Long findUserChannelAuthenticationMaxId() {
-        return findMaxId("USER_CHANNEL_AUTHENTICATION_ID", USER_CHANNEL_AUTHENTICATION_TABLE);
-    }
+//    public Long findUserChannelAuthenticationMaxId() {
+//        return findMaxId("USER_CHANNEL_AUTHENTICATION_ID", USER_CHANNEL_AUTHENTICATION_TABLE);
+//    }
     /**
      * Generic method to find the maximum value of an ID column in a table.
      *
@@ -94,19 +94,19 @@ public class NibNativeRepository {
      * @return The maximum ID value, or 0 if the table is empty or no value is found.
      * @throws DataAccessException if a database error occurs that cannot be recovered from.
      */
-    public Long findMaxId(String idColumnName, String tableName) {
-        String sql = "SELECT MAX(" + idColumnName + ") FROM " + tableName;
-        log.debug("Executing query to find max ID: {}", sql);
-
-        try {
-            Long result = jdbcTemplate.queryForObject(sql, Long.class);
-            return result != null ? result : 0L; // Return 0 if table is empty or result is null
-        } catch (DataAccessException e) {
-            log.error("Failed to find max ID for column '{}' in table '{}': {}",
-                    idColumnName, tableName, e.getMessage());
-            throw e; // Re-throw the exception to let the caller handle it
-        }
-    }
+//    public Long findMaxId(String idColumnName, String tableName) {
+//        String sql = "SELECT MAX(" + idColumnName + ") FROM " + tableName;
+//        log.debug("Executing query to find max ID: {}", sql);
+//
+//        try {
+//            Long result = jdbcTemplate.queryForObject(sql, Long.class);
+//            return result != null ? result : 0L; // Return 0 if table is empty or result is null
+//        } catch (DataAccessException e) {
+//            log.error("Failed to find max ID for column '{}' in table '{}': {}",
+//                    idColumnName, tableName, e.getMessage());
+//            throw e; // Re-throw the exception to let the caller handle it
+//        }
+//    }
 
     /**
      * Inserts a new USER_CHANNEL_AUTHENTICATION record.
@@ -174,9 +174,7 @@ public class NibNativeRepository {
 
         try {
             // Optional: Check for duplicates before insertion
-            String checkSql = """
-select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :userId and CHANNEL_ID in (select CHANNEL_ID from ref.CHANNEL where CODE in('NIB'))
-""";
+            String checkSql = "select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :userId and CHANNEL_ID in (select CHANNEL_ID from ref.CHANNEL where CODE in('NIB'))";
             int count = namedParameterJdbcTemplate.queryForObject(checkSql, Map.of("userId", userChannelAuth.get("USER_ID")), Integer.class);
             if (count > 0) {
                 log.warn("Duplicate USER_ID and CHANNEL_ID found: {}",
@@ -186,7 +184,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
 
             return namedParameterJdbcTemplate.update(sql, params);
         } catch (DataAccessException e) {
-            log.error("Failed to insert USER_CHANNEL_AUTHENTICATION: {}", e.getMessage());
+            log.error("Failed to insert USER_CHANNEL_AUTHENTICATION: %s".formatted( e.getMessage()),e);
             if (e.getCause() instanceof SQLException sqlEx && sqlEx.getSQLState().equals("23505")) {
                 log.error("Duplicate key violation: {}", sqlEx.getMessage());
                 throw new DataAccessException("Duplicate entry detected for USER_CHANNEL_AUTHENTICATION", e) {};
@@ -204,10 +202,10 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
      */
     public Map<Integer, Integer> findNibChannel() {
         String sql = """
-            SELECT c1.AUTHENTICATION_METHOD_ID, c1.CHANNEL_ID 
-            FROM %s c1 
-            WHERE c1.CODE = :code
-            """.formatted(CHANNEL_TABLE);
+            SELECT c1.AUTHENTICATION_METHOD_ID, c1.CHANNEL_ID \s
+            FROM %s c1\s
+            WHERE c1.CODE = :code \s
+            \s""".formatted(CHANNEL_TABLE);
         Map<String, Object> params = Collections.singletonMap("code", "NIB");
         log.debug("Executing query to find NIB channel: {}", sql);
 
@@ -238,7 +236,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
             log.info("Found {} NIB channel mappings", channelMap.size());
             return channelMap;
         } catch (DataAccessException e) {
-            log.error("Failed to find NIB channel: {}", e.getMessage());
+            log.error("Failed to find NIB channel: %s".formatted(e.getMessage()),e);
             return Collections.emptyMap();
         }
     }
@@ -251,14 +249,14 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
      * @return A List of Maps, each containing all columns from MEMBERSHIP_CHANNEL_ACCESS,
      * or an empty List if no records are found or an error occurs.
      */
-    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Long userId, TerminalCodes fromTerminal) {
+    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Long userId, TerminalType fromTerminal) {
         String sql = """
-            SELECT mca.*,c.AUTHENTICATION_METHOD_ID
-            FROM ref.MEMBERSHIP m
-            JOIN ref.MEMBERSHIP_CHANNEL_ACCESS mca ON m.MEMBERSHIP_ID = mca.MEMBERSHIP_ID
-            JOIN ref.CHANNEL c ON mca.CHANNEL_ID = c.CHANNEL_ID
-            WHERE c.CODE IN ('IB', 'CIB') and  m.USER_ID = :userId order by mca.MEMBERSHIP_ID  ,c.CODE %s
-            """.formatted(fromTerminal == TerminalCodes.IB ? "desc" : "asc");
+            SELECT mca.*,c.AUTHENTICATION_METHOD_ID\s
+            FROM ref.MEMBERSHIP m\s
+            JOIN ref.MEMBERSHIP_CHANNEL_ACCESS mca ON m.MEMBERSHIP_ID = mca.MEMBERSHIP_ID\s
+            JOIN ref.CHANNEL c ON mca.CHANNEL_ID = c.CHANNEL_ID\s
+            WHERE c.CODE IN ('IB', 'CIB') and  m.USER_ID = :userId order by mca.MEMBERSHIP_ID  ,c.CODE %s \s
+            """.formatted(fromTerminal == TerminalType.IB ? "desc" : "asc");
         log.debug("SQL Query: {}", sql);
         Map<String, Object> params = Collections.singletonMap("userId", userId);
         log.debug("Executing query to find MEMBERSHIP_CHANNEL_ACCESS for userId {}: {}", userId, sql);
@@ -272,7 +270,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
             }
             return results;
         } catch (DataAccessException e) {
-            log.error("Failed to fetch MEMBERSHIP_CHANNEL_ACCESS for userId {}: {}", userId, e.getMessage());
+            log.error("Failed to fetch MEMBERSHIP_CHANNEL_ACCESS for userId %s: %s".formatted(userId, e.getMessage()),e);
             return Collections.emptyList();
         }
     }
@@ -284,7 +282,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
      * @param record The record to insert as a Map of column names to values.
      * @throws DataAccessException if insertion fails.
      */
-    public void insertMembershipChannelAccess(Map<String, Object> record) {
+    public Integer insertMembershipChannelAccess(Map<String, Object> record) {
         String sql = """
             INSERT INTO ref.MEMBERSHIP_CHANNEL_ACCESS (
                 MEMBERSHIP_CHANNEL_ACCESS_ID, CHANNEL_ID, MEMBERSHIP_ID, MAX_WITHDRAWAL_PER_DAY, 
@@ -318,24 +316,25 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
                 throw new IllegalStateException("Expected 1 row to be inserted, but got " + rowsAffected);
             }
         } catch (DataAccessException e) {
-            log.error("Failed to insert MEMBERSHIP_CHANNEL_ACCESS record: {}", e.getMessage());
+            log.error("Failed to insert MEMBERSHIP_CHANNEL_ACCESS record: %s".formatted(e.getMessage()),e);
             throw e;
         }
+        return sequenceValue;
     }
 
     public   List<Map<String, Object>> getMcsasRecords(Integer oldMcsId) {
         // Fetch existing MEMBERSHIP_CHANNEL_SERVICE_ACCESS records
         String sql = """
-        SELECT *
-        FROM ref.MEMBERSHIP_CHANNEL_SERVICE_ACCESS
-        WHERE MCS_ID = :mcsId
+        SELECT *\s
+        FROM ref.MEMBERSHIP_CHANNEL_SERVICE_ACCESS\s
+        WHERE MCS_ID = :mcsId \s
         """;
         Map<String, Object> params = Collections.singletonMap("mcsId", oldMcsId);
         List<Map<String, Object>> mcsasRecords;
         try {
             mcsasRecords = namedParameterJdbcTemplate.queryForList(sql, params);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch MEMBERSHIP_CHANNEL_SERVICE_ACCESS for MCS_ID {}: {}", oldMcsId, e.getMessage());
+            log.error("Failed to fetch MEMBERSHIP_CHANNEL_SERVICE_ACCESS for MCS_ID %s: %s".formatted(oldMcsId, e.getMessage()),e);
             return null;
         }
         return mcsasRecords;
@@ -352,8 +351,8 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
     public BigDecimal findNewChannelEbAccessId(BigDecimal oldChannelEbAccessId, Integer oldChannelId, Integer newChannelId) {
         // Fetch the EB_SERVICE_ID for the old CHANNEL_EB_ACCESS_ID
         String sql = """
-        SELECT EB_SERVICE_ID
-        FROM ref.CHANNEL_SERVICE_ACCESS
+        SELECT EB_SERVICE_ID \s
+        FROM ref.CHANNEL_SERVICE_ACCESS \s
         WHERE CHANNEL_SERVICE_ACCESS_ID = :channelServiceAccessId
         """;
         Map<String, Object> params = Collections.singletonMap("channelServiceAccessId", oldChannelEbAccessId);
@@ -361,15 +360,15 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
         try {
             ebServiceId = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch EB_SERVICE_ID for CHANNEL_EB_ACCESS_ID {}: {}", oldChannelEbAccessId, e.getMessage());
+            log.error("Failed to fetch EB_SERVICE_ID for CHANNEL_EB_ACCESS_ID %s: %s".formatted(oldChannelEbAccessId, e.getMessage()),e);
             return null;
         }
 
         // Find a CHANNEL_SERVICE_ACCESS record for the new CHANNEL_ID with the same EB_SERVICE_ID
         sql = """
-        SELECT CHANNEL_SERVICE_ACCESS_ID
-        FROM ref.CHANNEL_SERVICE_ACCESS
-        WHERE CHANNEL_ID = :channelId AND EB_SERVICE_ID = :ebServiceId AND ACTIVE = 1
+        SELECT CHANNEL_SERVICE_ACCESS_ID\s
+        FROM ref.CHANNEL_SERVICE_ACCESS\s
+        WHERE CHANNEL_ID = :channelId AND EB_SERVICE_ID = :ebServiceId
         """;
         params = Map.of(
                 "channelId", newChannelId,
@@ -378,8 +377,8 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
         try {
             return namedParameterJdbcTemplate.queryForObject(sql, params, BigDecimal.class);
         } catch (DataAccessException e) {
-            log.error("No CHANNEL_SERVICE_ACCESS found for CHANNEL_ID {} and EB_SERVICE_ID {}: {}",
-                    newChannelId, ebServiceId, e.getMessage());
+            log.error("No CHANNEL_SERVICE_ACCESS found for CHANNEL_ID %s and EB_SERVICE_ID %s: %s".formatted(
+                    newChannelId, ebServiceId, e.getMessage()),e);
             return null;
         }
     }
@@ -416,7 +415,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
                 return mcsasId;
             }
         } catch (DataAccessException e) {
-            log.error("Failed to insert MEMBERSHIP_CHANNEL_SERVICE_ACCESS: {}", e.getMessage());
+            log.error("Failed to insert MEMBERSHIP_CHANNEL_SERVICE_ACCESS: %s".formatted(e.getMessage()),e);
             throw e;
         }
     }
@@ -431,7 +430,7 @@ select count(USER_ID) from ref.USER_CHANNEL_AUTHENTICATION where USER_ID = :user
         try {
             return jdbcTemplate.queryForObject(sequenceSql, Integer.class);
         } catch (DataAccessException e) {
-            log.error("Failed to fetch sequence value for {}: {}", sequenceName, e.getMessage());
+            log.error("Failed to fetch sequence value for %s: %s".formatted(sequenceName, e.getMessage()),e);
             return null; // Or handle it as per your application's requirements
         }
     }
