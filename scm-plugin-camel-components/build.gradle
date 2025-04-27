@@ -1,0 +1,25 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+group = 'ir.daneshrefah.scm.plugin.camel'
+version = parent.version
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.apache.camel.springboot:camel-spring-boot-starter'
+    implementation 'org.apache.httpcomponents:httpclient'
+    implementation 'org.apache.commons:commons-text'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.apache.camel.springboot:camel-spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

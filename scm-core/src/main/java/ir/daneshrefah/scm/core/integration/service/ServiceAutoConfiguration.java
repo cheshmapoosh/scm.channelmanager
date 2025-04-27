@@ -29,6 +29,7 @@ public class ServiceAutoConfiguration extends RouteBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);
 
     private final ServiceServiceImpl serviceService;
+    private final RestExternalServiceExecutor restExternalServiceExecutor;
     private final ExternalServiceExecutor externalServiceExecutor;
     private final JavaServiceExecutor javaServiceExecutor;
     private final CompositionServiceExecutor compositionServiceExecutor;
@@ -48,7 +49,8 @@ public class ServiceAutoConfiguration extends RouteBuilder {
 
     private ServiceExecutor serviceExecutor(Service service) {
         return switch (service.getImplementationType()) {
-            case CUSTOM_EXTERNAL, REST_EXTERNAL -> externalServiceExecutor;
+            case REST_EXTERNAL -> restExternalServiceExecutor;
+            case CUSTOM_EXTERNAL -> externalServiceExecutor;
             case JAVA -> javaServiceExecutor;
             case COMPOSITION -> compositionServiceExecutor;
             case PROXY -> proxyServiceExecutor;

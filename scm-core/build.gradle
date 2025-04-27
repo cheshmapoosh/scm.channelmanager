@@ -61,9 +61,13 @@ dependencies {
     api project(':scm-task')
     api project(':scm-otp-client')
     api project(':scm-logging-client')
+    api project(':scm-plugin-camel-components')
     implementation 'org.apache.commons:commons-collections4'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema'
     implementation 'io.github.classgraph:classgraph:4.8.179'
     implementation 'com.github.victools:jsonschema-generator:4.37.0'
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.apache.commons:commons-text'
+
 }

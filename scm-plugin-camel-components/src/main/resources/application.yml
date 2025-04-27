@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: scm-plugin-camel-components
+logging:
+  level:
+    root: INFO
+    org.apache.camel: DEBUG

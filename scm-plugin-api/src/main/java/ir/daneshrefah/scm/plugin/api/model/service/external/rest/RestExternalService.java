@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalServ
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.camel.spring.boot.vault.HashicorpVaultConfigurationProperties;
 
 import java.util.List;
 
@@ -24,4 +25,5 @@ public class RestExternalService extends AbstractExternalService<RestExternalSer
     private String path;
     private HttpMethod httpMethod;
     private HttpContentType requestContentType;
+    private RestServiceMetadata serviceMetadata;
 }
