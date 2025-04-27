@@ -7,12 +7,12 @@ import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDatabaseImpl;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.exception.TooManyRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.*;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.mapper.RoleMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
@@ -212,7 +212,15 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         ValidationUtils.checkEmptyString(roleCode, () -> new MissingRequiredInputException("roleCode"));
         RoleEntity roleEntity = roleRepository.findByCode(roleCode).orElseThrow(() -> new NoMatchRecordFoundException("roleCode"));
         GeneralPersonEntity personEntity = personRepository.findById(personId).orElseThrow(() -> new NoMatchRecordFoundException("personId"));
-        roleRepository.insertPersonRole(personEntity.getId(), roleEntity.getId());
+        roleRepository
+                .findByPersonId(personId)
+                .stream()
+                .filter(role -> role.getCode().equals(roleCode))
+                .findFirst()
+                .orElseGet(() -> {
+                    roleRepository.insertPersonRole(personEntity.getId(), roleEntity.getId());
+                    return roleEntity;
+                });
         return RoleMapper.INSTANCE.toModel(roleEntity);
     }
 

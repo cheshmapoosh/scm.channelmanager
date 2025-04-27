@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -34,7 +35,7 @@ public abstract class GeneralAuthenticationToken extends AbstractAuthenticationT
 
     public GeneralAuthenticationToken(TerminalUserDetails user, PreAuthenticationToken preAuthenticationToken,
                                          Collection<? extends GrantedAuthority> authorities) {
-        super(authorities);
+        super(Objects.nonNull(authorities) && !authorities.isEmpty() ? authorities : user.getAuthorities());
         this.setDetails(preAuthenticationToken);
         this.principal = user;
     }
