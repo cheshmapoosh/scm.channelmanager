@@ -59,7 +59,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public ProcessInstanceStartResponse start(ProcessInstanceStartRequest request) {
         processTaskDefinitionService.validateProcessBeforeStart(request);
         ProcessInstanceEntity processInstanceEntity = createProcessInstanceEntity(request);
-        processInstanceEntity.getTasks().forEach(taskEntity -> taskEntity.setProcessInstance(processInstanceEntity));
         ProcessInstanceEntity processInstance = processInstanceRepository.save(processInstanceEntity);
         return processInstanceMapper.toProcessInstanceStartResponse(processInstance);
     }

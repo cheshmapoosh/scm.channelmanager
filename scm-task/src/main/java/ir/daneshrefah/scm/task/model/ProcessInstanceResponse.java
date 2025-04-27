@@ -22,6 +22,7 @@ public class ProcessInstanceResponse {
     private ProcessCodeEnum processCode;
     private JsonNode transactionData;
     private String correlationId;
+    private Long confirmUserId;
     private List<TaskResponse> tasks;
     private boolean canCancel;
 
