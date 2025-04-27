@@ -80,8 +80,10 @@ public class ProcessInstanceEntity {
 
     public void addTaskEntity(TaskEntity task) {
         this.tasks.add(task);
+        task.setProcessInstance(this);
     }
     public void addTaskEntities(List<TaskEntity> tasks) {
         this.tasks.addAll(tasks);
+        this.tasks.forEach(task -> task.setProcessInstance(this));
     }
 }
