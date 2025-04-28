@@ -51,7 +51,7 @@ public class SpanLogConverterService implements ConverterService {
         logTraceEntity.setClientCorrelationId(attributes.get(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName()));
         logTraceEntity.setFlowId(attributes.get(LogAttribute.FLOW_ID.getAttributeName()));
         logTraceEntity.setMessageId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
-        logTraceEntity.setExceptionClassName(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
+        logTraceEntity.setExceptionClassName(getExceptionClassName(attributes));
         logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()) != null ? attributes.get(LogAttribute.END_POINT.getAttributeName()) : attributes.get(LogAttribute.URL_PATH.getAttributeName()));
         Integer statusCode = attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName()) != null ? Integer.valueOf(attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName())) : null;
         logTraceEntity.setStatusCode(statusCode);
@@ -81,5 +81,14 @@ public class SpanLogConverterService implements ConverterService {
         logTraceEntity.setSpanName(spanModel.getName());
         logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         return logTraceEntity;
+    }
+
+    private static String getExceptionClassName(Map<String, String> attributes) {
+        String exceptionClassName = attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName());
+        int maxLength = 255;
+        if (exceptionClassName != null && exceptionClassName.length() > maxLength) {
+            exceptionClassName = exceptionClassName.substring(exceptionClassName.length() - maxLength);
+        }
+        return exceptionClassName;
     }
 }

@@ -10,8 +10,10 @@ import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.tracing.SpanAdapter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,9 +56,12 @@ public class TraceLogUtils {
         }
     }
 
-    public void recordExceptionTrace(Exception exception, SpanAdapter spanAdapter) {
-        spanAdapter.setTag(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), exception.getClass().getName());
-        spanAdapter.setTag(LogAttribute.EXCEPTION_MESSAGE.getAttributeName(), exception.getMessage());
+    public void recordExceptionTrace(Exception ex, SpanAdapter spanAdapter) {
+        StackTraceElement[] stackTraceElements = Arrays.stream(ex.getStackTrace()).limit(3).toArray(StackTraceElement[]::new);
+        ex.setStackTrace(stackTraceElements);
+        String stackTraceString = ExceptionUtils.getStackTrace(ex);
+        spanAdapter.setTag(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), ex.getClass().getName());
+        spanAdapter.setTag(LogAttribute.ERROR_DETAILS.getAttributeName(), stackTraceString);
     }
 
     private void populateSpanAttributes(SpanAdapter span, Message message) {

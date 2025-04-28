@@ -69,31 +69,31 @@ public class OtpController extends BaseController {
         return otpUserService.sendOtpByAddress(recipientAddress);
     }
 
-    @PreAuthorize("hasAuthority(ROLE_CSP)")
+//    @PreAuthorize("hasAuthority(@grant.roles.CM_CSP)")
     @PostMapping("/verify-by-logged-in-user")
     public OtpVerifyResponse verifyOtpByLoggedInUser(@RequestBody VerifyOtpByLoggedInUserRequest request) {
         return userOtpVerifyService.verifyOtpByLoggedInUser(request);
     }
 
-    @PreAuthorize("hasAuthority(ROLE_CSP)")
+//    @PreAuthorize("hasAuthority(@grant.roles.CM_CSP)")
     @PostMapping("/verify-by-delegated")
     public OtpVerifyResponse verifyOtpByDelegatedUser(@RequestBody VerifyOtpByDelegatedUserRequest request) {
         return userOtpVerifyService.verifyOtpByDelegatedUser(request);
     }
 
-    @PreAuthorize("hasAuthority(ROLE_CSP)")
+//    @PreAuthorize("hasAuthority(@grant.roles.CM_CSP)")
     @PostMapping("/verify-by-username")
     public OtpVerifyResponse verifyOtpByUsername(@RequestBody VerifyOtpByUsernameRequest request) {
         return userOtpVerifyService.verifyOtpByUsername(request);
     }
 
-    @PreAuthorize("hasAuthority(ROLE_CSP)")
+//    @PreAuthorize("hasAuthority(@grant.roles.CM_CSP)")
     @PostMapping("/verify-by-nickname")
     public OtpVerifyResponse verifyOtpNickname(@RequestBody VerifyOtpByNicknameRequest request) {
         return userOtpVerifyService.verifyOtpByNickname(request);
     }
 
-    @PreAuthorize("hasAuthority(ROLE_CSP)")
+//    @PreAuthorize("hasAuthority(@grant.roles.CM_CSP)")
     @PostMapping("/verify-by-national-code")
     public OtpVerifyResponse verifyOtpNationalCode(@RequestBody VerifyOtpByNationalCodeRequest request) {
         return userOtpVerifyService.verifyOtpByNationalCode(request);
