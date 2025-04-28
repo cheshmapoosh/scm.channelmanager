@@ -38,6 +38,8 @@ public class GlobalExceptionHandler {
 
     private final Tracer tracer;
 
+    private final Tracer tracer;
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
         List<Error> resolves = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
