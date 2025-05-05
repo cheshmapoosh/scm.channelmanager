@@ -77,7 +77,13 @@ public class SpanUtil {
         String stackTraceString = ExceptionUtils.getStackTrace(ex);
         span.setAttribute(LogAttribute.ERROR_DETAILS.getAttributeName(), stackTraceString);
         span.setStatus(StatusCode.ERROR);
-        log.error("Exception occurred: {}", ex.getMessage(), ex);
+        String spanId = span.getSpanContext().getSpanId();
+        String traceId = span.getSpanContext().getTraceId();
+        String delimiter = "==========".repeat(10);
+        log.error(
+                "\n{}\nSpanId: {}\nTraceId: {}\nException Message: {}",
+                delimiter, spanId, traceId, ex.getMessage(), ex
+        );
 //        ex.setStackTrace(stackTraceElements);
     }
 
