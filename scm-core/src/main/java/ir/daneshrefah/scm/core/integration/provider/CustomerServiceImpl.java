@@ -26,6 +26,7 @@ import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
@@ -88,6 +89,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final PersonService personService;
     private final JdbcTemplate jdbcTemplate;
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
+
+
 
 
     @Override
