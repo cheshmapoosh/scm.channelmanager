@@ -39,7 +39,7 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Lon
     List<GeneralPersonEntity> findPersonByUsername(String username);
 
     @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId")
-    Optional<List<GeneralLegalPersonEntity>> findGeneralLegalPersonEntityByNationalId(@Param("nationalId") String nationalId);
+    List<GeneralLegalPersonEntity> findGeneralLegalPersonEntityByNationalId(@Param("nationalId") String nationalId);
 
     @Query("SELECT p FROM GeneralLegalPersonEntity p WHERE p.nationalId = :nationalId AND p.personType = :personType")
     GeneralLegalPersonEntity findGeneralLegalPersonEntityByNationalIdAndPersonType(

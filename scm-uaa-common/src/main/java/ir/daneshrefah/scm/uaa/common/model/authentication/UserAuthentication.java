@@ -1,17 +1,17 @@
 package ir.daneshrefah.scm.uaa.common.model.authentication;
 
-import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
+import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -30,11 +30,13 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ANONYMOU
 @Getter
 public class UserAuthentication extends AbstractAuthenticationToken implements Authentication {
 
-    private User principal;
     private final UserProfile profile;
+    private final User principal;
     private Boolean isTransactionAuthenticated;
     @Setter
     private String error;
+    @Serial
+    private static final long serialVersionUID = 820L; // 8.2.0 version
 
     /**
      * @param details
@@ -66,7 +68,14 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
         super(authorities);
         setDetails(details);
         this.principal = principal;
-        setAuthenticated(null != authorities);
+        boolean isAuthenticated = false;
+        if (Objects.nonNull(authorities)) {
+            isAuthenticated = authorities
+                    .stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .anyMatch(role -> !role.equalsIgnoreCase(ROLE_ANONYMOUS));
+        }
+        setAuthenticated(Objects.nonNull(authorities));
         if (StringUtils.isNotEmpty(delegatedUsername)) {
             profile = new UserProfile(delegatedUsername);
         } else if (null != principal && isAuthenticated()) {
@@ -93,7 +102,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
     public boolean isDelegated() {
         String delegatedUsername = profile.getNickname();
         return isFullyAuthenticated() && StringUtils.isNotEmpty(delegatedUsername) &&
-                StringUtils.notEquals(getName(), delegatedUsername);
+               StringUtils.notEquals(getName(), delegatedUsername);
     }
 
     @Override

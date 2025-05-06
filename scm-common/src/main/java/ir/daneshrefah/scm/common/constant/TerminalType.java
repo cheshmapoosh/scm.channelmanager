@@ -29,7 +29,7 @@ public enum TerminalType {
                 .findFirst();
     }
 
-    public TerminalType findByLegacyTerminalCode(Integer legacyTerminalId) {
+    public static TerminalType findByLegacyTerminalCode(Integer legacyTerminalId) {
         if (Objects.isNull(legacyTerminalId)) {
             throw new InvalidInputException("legacyTerminalId");
         }
@@ -37,7 +37,7 @@ public enum TerminalType {
                 .findFirst().orElse(null);
     }
 
-    public TerminalType findByTerminalCode(String terminalCode) {
+    public static TerminalType findByTerminalCode(String terminalCode) {
         if (Objects.isNull(terminalCode)) {
             throw new InvalidInputException("terminalCode");
         }

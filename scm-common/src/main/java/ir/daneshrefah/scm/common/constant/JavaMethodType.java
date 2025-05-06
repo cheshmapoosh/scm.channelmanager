@@ -11,9 +11,9 @@ public enum JavaMethodType {
      * system automatically ignore database status
      */
     NULL(0),
-    REPORT(1), // LIKE GET METHOD ON HTTP
+    REPORT(1), // LIKE POST METHOD ON HTTP
     FINANCE(2),
-    INQUIRY(3),
+    INQUIRY(3),// LIKE GET METHOD ON HTTP
     PARENT(4),
     ENTITY_CREATE(5),
     ENTITY_UPDATE(6),

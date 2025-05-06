@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
-import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
@@ -12,10 +11,7 @@ import ir.daneshrefah.scm.common.error.ExceptionDynamicMessage;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.PersonNotFoundException;
-import ir.daneshrefah.scm.common.model.person.ClientPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
@@ -134,15 +130,11 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         } else if (Objects.nonNull(subOrg) && !subOrg.isBlank() && StringUtils.notEquals("0", subOrg)) {
             return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
         } else {
-            Optional<List<GeneralLegalPersonEntity>> generalLegalPersonEntityByNationalId = personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
-            if (generalLegalPersonEntityByNationalId.isPresent()) {
-                if (generalLegalPersonEntityByNationalId.get().isEmpty()) {
-                    throw new InvalidInputException("person with nationalId '" + nationalId + "' subOrg must not be empty.");
-                }
-                return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(generalLegalPersonEntityByNationalId.get().get(0)));
-            } else {
-                return Optional.empty();
-            }
+            return personRepository
+                    .findGeneralLegalPersonEntityByNationalId(nationalId)
+                    .stream()
+                    .map(PersonMapper.INSTANCE::toPerson)
+                    .findFirst();
         }
     }
 
