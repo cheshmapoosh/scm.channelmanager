@@ -16,7 +16,7 @@ public class TimeZoneConfiguration {
 
     @PostConstruct
     public void init() {
-        // Set default time zone to Tehran
+        // Set the default time zone to Tehran
         TimeZone.setDefault(TimeZone.getTimeZone(IRAN_STANDARD_TIME_ZONE));
         log.info(">>> Default time zone set to: {}" , TimeZone.getDefault().getID());
     }

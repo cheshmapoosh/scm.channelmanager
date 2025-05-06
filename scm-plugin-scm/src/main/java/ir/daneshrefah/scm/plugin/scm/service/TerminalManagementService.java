@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.*;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -84,6 +85,11 @@ public class TerminalManagementService extends AbstractJavaService {
     @JavaService(serviceCode = SVC_TERMINAL_ACCESS_TERMINAL_LIST)
     public List<Terminal> findAllTerminalAccessOnService(String serviceId) {
         return terminalService.findAllTerminalAccessOnService(serviceId);
+    }
+
+    @JavaService(serviceCode = SVC_LEGACY_TERMINAL_LIST)
+    public List<LegacyTerminal> findAllLegacyTerminalList() {
+        return terminalService.findAllLegacyTerminal();
     }
 
 }

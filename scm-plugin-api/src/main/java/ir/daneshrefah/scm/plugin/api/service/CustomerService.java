@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.api.service;
 
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
@@ -28,16 +29,29 @@ public interface CustomerService {
 
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
-
     List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId);
 
     Membership findLocalAccountMembership(String membershipId);
 
-    List<MembershipTerminalAccess> findLocalMembershipTerminalAccesses(MembershipLocalFindRequest request);
+    List<MembershipTerminalAccessDto> findLocalMembershipTerminalAccesses(MembershipLocalFindRequest request);
 
     List<Membership> findLocalMembershipList(MembershipLocalFindRequest request);
 
     List<Membership> findMembershipList(MembershipFindRequest request);
+
+    List<ServiceCategory> findAllServiceCategory();
+
+    List<ChannelServiceAccess> findAllChannelServiceAccessList(ChannelServiceAccessFindRequest request);
+
+    /* MCA */
+
+    List<MembershipTerminalServiceAccessDto> findAllMembershipChannelServiceAccessList(MembershipChannelServiceAccessFindRequest request);
+
+    MembershipTerminalAccessDto getMembershipChannelAccess(long l);
+
+    MembershipTerminalAccessDto editMembershipTerminalAccesses(MembershipLocalEditRequest request);
+
+    MembershipTerminalServiceAccessDto membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request);
 
 
 //    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);

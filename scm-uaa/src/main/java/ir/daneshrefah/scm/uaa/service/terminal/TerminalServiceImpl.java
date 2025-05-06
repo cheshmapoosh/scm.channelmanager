@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.*;
+import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -117,4 +118,8 @@ public class TerminalServiceImpl extends TerminalService {
         throw new RuntimeException("this method is not supported.");
     }
 
+    @Override
+    public List<LegacyTerminal> findAllLegacyTerminal() {
+        throw new RuntimeException("this method is not supported.");
+    }
 }

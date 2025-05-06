@@ -798,14 +798,13 @@ public class UserService {
     }
 
     private GeneralPersonEntity findLegalPerson(String nationalId) {
-        Optional<List<GeneralLegalPersonEntity>> generalLegalPersonEntityByNationalId = personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
-        if (generalLegalPersonEntityByNationalId.isPresent()) {
-            if (generalLegalPersonEntityByNationalId.get().isEmpty()) {
-                throw new InvalidInputException("person with nationalId '" + nationalId + "' subOrg must not be empty.");
-            }
-            return generalLegalPersonEntityByNationalId.get().get(0);
+        List<GeneralLegalPersonEntity> resultList = personRepository.findGeneralLegalPersonEntityByNationalId(nationalId);
+        if (resultList.isEmpty()) {
+            throw new InvalidInputException("person with nationalId '" + nationalId + "' subOrg must not be empty.");
+        } else if (resultList.size() > 1) {
+            throw new DuplicatedRecordFoundException("person with nationalId '" + nationalId + "' has more than one record.");
         } else {
-            return null;
+            return resultList.get(0);
         }
     }
 
