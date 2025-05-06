@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.plugin.pichack.util;
 
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -27,7 +28,7 @@ public class PichakUtil {
 
     public static String provideBranchCode(Message message) {
         String terminalCode = MessageInputContext.getCurrentContext().getTerminalCode();
-        if (TerminalCodes.CMC.equals(terminalCode))
+        if (TerminalType.CMC.equals(terminalCode))
             return null; //TODO
         else
             return terminalCode;
@@ -45,7 +46,7 @@ public class PichakUtil {
 
     public static String provideBranchUsername(Message message) {
         String channelCode = MessageInputContext.getCurrentContext().getTerminalCode();
-        if (TerminalCodes.CMC.equals(channelCode))
+        if (TerminalType.CMC.equals(channelCode))
             return null;
         else
             return "";

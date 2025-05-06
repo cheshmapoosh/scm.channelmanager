@@ -96,11 +96,9 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
 //                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSetting);
-        for (Iterator<ClientAuthenticationMethod> iterator = client.getAuthenticationMethods().iterator(); iterator.hasNext(); ) {
-            ClientAuthenticationMethod clientAuthenticationMethod = iterator.next();
+        for (ClientAuthenticationMethod clientAuthenticationMethod : client.getAuthenticationMethods()) {
             clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
         }
-
         List<AuthorizationGrantType> grantTypes = client
                 .getClientAuthorizationGrantTypes()
                 .stream()
@@ -115,14 +113,12 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                     .forEach(clientBuilder::authorizationGrantType);
         }
 
-        for (Iterator<String> iterator = client.getRedirectUris().iterator(); iterator.hasNext(); ) {
-            String redirectUri = iterator.next();
+        for (String redirectUri : client.getRedirectUris()) {
             clientBuilder.redirectUri(redirectUri);
         }
         boolean isScopeOpenIdAdded = false;
         if (null != client.getScopes()) {
-            for (Iterator<ClientScopeRelation> iterator = client.getScopes().iterator(); iterator.hasNext(); ) {
-                ClientScopeRelation scope = iterator.next();
+            for (ClientScopeRelation scope : client.getScopes()) {
                 clientBuilder.scope(scope.getScope().getCode());
                 isScopeOpenIdAdded = isScopeOpenIdAdded || OidcScopes.OPENID.equalsIgnoreCase(scope.getScope().getCode());
             }

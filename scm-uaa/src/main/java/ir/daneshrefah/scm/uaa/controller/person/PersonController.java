@@ -33,7 +33,6 @@ public class PersonController {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPagedPersonList(request));
     }
 
-
     @PostMapping("/local")
     public ResponseEntity<GeneralPerson> findLocalPerson(@RequestBody PersonFindRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findLocalPerson(request));
@@ -76,7 +75,7 @@ public class PersonController {
     }
 
     @GetMapping("/diff/{personId}")
-    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId") String personId ) {
+    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId")  String personId ) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.diffPersonInfoFromCIFAndLocal(personId));
     }
 
