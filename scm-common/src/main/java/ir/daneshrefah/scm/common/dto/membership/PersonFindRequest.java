@@ -27,8 +27,4 @@ public class PersonFindRequest extends PagedRequestData {
     private Boolean active;
     private String branchCode;
 
-
-
-
-
 }

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.dto.terminal;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 
@@ -52,4 +53,5 @@ public abstract class TerminalService {
 
     public abstract void evictCache();
 
+    public abstract List<LegacyTerminal> findAllLegacyTerminal();
 }

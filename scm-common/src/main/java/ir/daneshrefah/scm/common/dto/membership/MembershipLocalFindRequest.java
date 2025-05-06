@@ -3,6 +3,10 @@ package ir.daneshrefah.scm.common.dto.membership;
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 //import ir.daneshrefah.scm.common.model.customer.AssetType;
 import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.validation.NotBlankIfPresent;
+import ir.daneshrefah.scm.common.validation.TerminalCode;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +21,14 @@ import lombok.Setter;
 @Getter
 public class MembershipLocalFindRequest extends PagedRequestData {
 
+    @NotNull
     private PersonType personType;
+    @NotNull
+    @NotBlank
     private String nationalId;
+    @NotBlankIfPresent
     private String subOrganizationId;
-//    private AssetType assetType;
+    @TerminalCode
+    private String terminal;
 
 }
