@@ -16,6 +16,9 @@ public interface MembershipTerminalAccessRepository extends JpaRepository<Member
     @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.terminal.id = :terminalId")
     List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("terminalId") String terminalId);
 
+    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.terminal.legacyTerminalId = :legacyTerminalId")
+    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("legacyTerminalId") Integer legacyTerminalId);
+
     Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_IdAndTerminal_Code(Long membership_Id, String terminalCode);
 
     Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_Id(Long id);

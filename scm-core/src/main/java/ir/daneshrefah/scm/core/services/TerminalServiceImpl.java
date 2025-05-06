@@ -1,11 +1,13 @@
 package ir.daneshrefah.scm.core.services;
 
+import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.*;
 import ir.daneshrefah.scm.common.exception.*;
+import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
@@ -20,14 +22,16 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -35,12 +39,14 @@ import java.util.stream.Collectors;
 public class TerminalServiceImpl extends TerminalService {
 
     private static final Map<String, Long> LEGACY_TERMINAL_CODE_ID_CACHE = new ConcurrentHashMap<>();
+    private static final List<LegacyTerminal> LEGACY_TERMINALS = new CopyOnWriteArrayList<>();
     private final TerminalRepository terminalRepository;
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final TransformerRelationRepository transformerRelationRepository;
     private final ServiceRepository serviceRepository;
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
+    private final JdbcTemplate jdbcTemplate;
 
 
     @Override
@@ -254,6 +260,27 @@ public class TerminalServiceImpl extends TerminalService {
                     return legacyTerminalId;
                 });
 
+    }
+
+    @Override
+    @LegacyChannelManger
+    public List<LegacyTerminal> findAllLegacyTerminal() {
+        if (LEGACY_TERMINALS.isEmpty()){
+            synchronized (LEGACY_TERMINALS){
+                if (LEGACY_TERMINALS.isEmpty()){
+                    //language=sql
+                    String query = "select CHANNEL_ID,CODE,NAME from REF.CHANNEL where ACTIVE = '1' and PUBLISHED = '1' ";
+                    LEGACY_TERMINALS.addAll(jdbcTemplate.query(query, (rs, rowNum) -> {
+                        LegacyTerminal legacyTerminal = new LegacyTerminal();
+                        legacyTerminal.setId(rs.getInt("CHANNEL_ID"));
+                        legacyTerminal.setCode(StringUtils.trim(rs.getString("CODE")).toString());
+                        legacyTerminal.setTitle(StringUtils.trim(rs.getString("NAME")).toString());
+                        return legacyTerminal;
+                    }));
+                }
+            }
+        }
+        return LEGACY_TERMINALS;
     }
 
 }
