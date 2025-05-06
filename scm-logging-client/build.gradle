@@ -26,5 +26,5 @@ dependencies {
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     implementation 'org.apache.camel.springboot:camel-opentelemetry-starter'
-
+    implementation("org.apache.commons:commons-lang3:3.17.0")
 }

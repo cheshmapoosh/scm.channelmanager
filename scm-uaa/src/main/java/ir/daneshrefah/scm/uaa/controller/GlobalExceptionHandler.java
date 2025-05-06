@@ -1,14 +1,22 @@
 package ir.daneshrefah.scm.uaa.controller;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
+import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.logging.utils.SpanUtil;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,8 +32,12 @@ import java.util.Locale;
  * @since 2024-02-12
  */
 @ControllerAdvice
+@RequiredArgsConstructor
+@Slf4j
 public class
 GlobalExceptionHandler {
+
+    private final Tracer tracer;
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
@@ -36,10 +48,31 @@ GlobalExceptionHandler {
                 .setStatus(resolves.get(0).getStatus())
                 .setErrors(resolves);
 
+        handleSpanException(request, exception);
+
         if (resolves.get(0).getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
             return ResponseEntity.internalServerError().body(result);
         }
         return ResponseEntity.badRequest().body(result);
+    }
+
+    private void handleSpanException(HttpServletRequest request, Exception exception) {
+        Span span = null;
+        try {
+            span = (Span) request.getAttribute("otel.span");
+            if (span == null) {
+                span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
+                SpanUtil.setRequestSpanAttributes(request, span);
+                SpanUtil.setException(exception,span);
+                span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), HttpStatus.BAD_REQUEST.value());
+            }
+        } catch (Exception e) {
+            log.error("Exception occurred while handling global exception span", e);
+        } finally {
+            if (span != null) {
+                span.end();
+            }
+        }
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {

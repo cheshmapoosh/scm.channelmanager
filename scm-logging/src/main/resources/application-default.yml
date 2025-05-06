@@ -57,12 +57,9 @@ scm:
       enabled: true
   cache:
     client:
+      distributed: true
       config:
-        distributed: true
         cluster-name: dev3
-        server-host: 10.10.4.125
-        server-port: 5701
-        near-cache-config:
-          myMap:
-            in-memory-format: object
-            time-to-live-seconds: 10
+        network-config:
+          addresses:
+            - 10.10.4.125:5701

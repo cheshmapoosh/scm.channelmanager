@@ -34,9 +34,7 @@ public enum LogAttribute {
     RESPONSE("response"),
     REQUEST("request"),
     EXCEPTION_CLASS_NAME("exceptionClassName"),
-    EXCEPTION_MESSAGE("exceptionMessage"),
     EVENT_TYPE("eventType"),
-    RESPONSE_STATUS_CODE("responseStatusCode"),
     VERSION("version"),
     END_POINT("endpoint"),
     METHOD_TYPE("methodType"),
@@ -47,6 +45,7 @@ public enum LogAttribute {
     URL_PATH("url.path"),
     LOGGABLE("loggable"),
     HTTP_STATUS_CODE("http.status_code"),
-    CLIENT_REMOTE_ADDRESS("clientRemoteAddress");
+    CLIENT_REMOTE_ADDRESS("clientRemoteAddress"),
+    ERROR_DETAILS("errorDetails");
     private final String attributeName;
 }
