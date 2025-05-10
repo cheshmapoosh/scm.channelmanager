@@ -23,7 +23,7 @@ public class SwaggerUIGenerator {
 
     @Value("${server.port}")
     private Integer serverPort;
-    @Value("${server.servlet.context-path}")
+    @Value("${server.servlet.context-path:}")
     private String servletContextPrefix;
     private static SwaggerUIGenerator SWAGGER_UI_HANDLER;
     @Value("${scm.swagger.target-host:#{null}}")

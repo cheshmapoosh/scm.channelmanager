@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.job.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class JobDefinition extends BaseModel<Long> {
+public class JobDefinition extends AuditableModel<Long> {
 
     private Long id;
     private String name;

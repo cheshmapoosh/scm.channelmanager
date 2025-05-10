@@ -1,11 +1,7 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import ir.daneshrefah.scm.common.model.gateway.CmChannel;
-import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +17,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
-public class MembershipTerminalAccess extends BaseModel<Long> {
+public class MembershipTerminalAccess extends AuditableModel<Long> {
 
     private Boolean active;
     private CmChannel channel;

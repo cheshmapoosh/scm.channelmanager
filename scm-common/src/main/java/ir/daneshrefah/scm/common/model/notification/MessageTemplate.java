@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.notification;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import lombok.Getter;
@@ -17,7 +17,7 @@ import java.util.Locale;
  */
 @Setter
 @Getter
-public class MessageTemplate extends BaseModel<Long> {
+public class MessageTemplate extends AuditableModel<Long> {
 
     private NotificationTemplate code;
     private String title;

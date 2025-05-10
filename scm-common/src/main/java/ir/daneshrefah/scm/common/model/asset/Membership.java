@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Membership extends BaseModel<Long> {
+public class Membership extends AuditableModel<Long> {
     private String nickname;
     private GeneralPerson person;
     private CustomerAccount customerAccount;

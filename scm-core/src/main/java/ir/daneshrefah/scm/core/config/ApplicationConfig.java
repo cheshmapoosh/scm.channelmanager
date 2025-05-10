@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.serializer.ScmObjectModule;
 import ir.daneshrefah.scm.plugin.api.utils.ClassLoader;
+import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -57,5 +58,17 @@ public class ApplicationConfig implements ApplicationContextAware {
 
     public static ObjectMapper getObjectMapperInstance() {
         return objectMapper;
+    }
+
+    @Bean("defaultBreaker")
+    public Resilience4jConfigurationDefinition defaultBreaker() {
+        Resilience4jConfigurationDefinition config = new Resilience4jConfigurationDefinition();
+        config.setFailureRateThreshold("50");
+        config.setWaitDurationInOpenState("10");
+        config.setMinimumNumberOfCalls("3");
+        config.setSlidingWindowSize("5");
+        config.setTimeoutEnabled("true");
+        config.setTimeoutDuration("3000");
+        return config;
     }
 }

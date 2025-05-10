@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.template;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import jakarta.transaction.NotSupportedException;
 
 import java.util.Map;
 
@@ -26,6 +26,14 @@ public class ConditionalServiceMetadataTemplate extends AbstractServiceMetadataT
             throw new IllegalStateException("Conditional template does not match");
         }
         return delegateTemplate.render(message);
+    }
+
+    @Override
+    public JsonNode renderAsJson(Message message) {
+        if (!matches(message)) {
+            throw new IllegalStateException("Conditional template does not match");
+        }
+        return delegateTemplate.renderAsJson(message);
     }
 
     @Override

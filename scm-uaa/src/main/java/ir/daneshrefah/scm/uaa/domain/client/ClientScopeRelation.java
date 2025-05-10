@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ClientScopeRelation extends BaseModel<Long> {
+public class ClientScopeRelation extends AuditableModel<Long> {
 
     private Client client;
     private Scope scope;

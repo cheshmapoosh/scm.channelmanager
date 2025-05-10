@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +17,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Scope extends BaseModel<Long> {
+public class Scope extends AuditableModel<Long> {
 
     private String code;
     private String title;

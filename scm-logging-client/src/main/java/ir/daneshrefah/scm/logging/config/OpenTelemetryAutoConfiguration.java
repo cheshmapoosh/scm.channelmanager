@@ -40,11 +40,11 @@ public class OpenTelemetryAutoConfiguration {
     public OpenTelemetryAutoConfiguration() {
     }
 
-    @Bean(
-        initMethod = "",
-        destroyMethod = ""
-    )
-    @ConditionalOnMissingBean({OpenTelemetryTracer.class})
+//    @Bean(
+//        initMethod = "",
+//        destroyMethod = ""
+//    )
+//    @ConditionalOnMissingBean({OpenTelemetryTracer.class})
     OpenTelemetryTracer openTelemetryEventNotifier(CamelContext camelContext, OpenTelemetryConfigurationProperties config) {
         OpenTelemetryTracer ottracer = new OpenTelemetryTracerImpl();
         if (this.tracer != null) {

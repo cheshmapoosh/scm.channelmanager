@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.job.model;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import java.time.Instant;
  */
 @Getter
 @Setter
-public class JobExecution extends BaseModel<Long> {
+public class JobExecution extends AuditableModel<Long> {
 
     private JobDefinition jobDefinition;
     private JobExecutionStatus status;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.role;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import lombok.Data;
 
 /**
@@ -11,7 +11,7 @@ import lombok.Data;
  * @since 2024-02-14
  */
 @Data
-public class Role extends BaseModel<Integer> {
+public class Role extends AuditableModel<Integer> {
 
     private String name;
     private String code;

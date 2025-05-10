@@ -56,6 +56,12 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-timer-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-servlet-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-resilience4j-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-rest-openapi-starter:${springCamelVersion}"
+            dependency "org.apache.camel:camel-openapi-java:${springCamelVersion}"
+            dependency 'com.bucket4j:bucket4j_jdk17-core:8.14.0'
+
             dependency "org.apache.camel:camel-netty:${springCamelVersion}"
             dependency "org.apache.camel:camel-bean:${springCamelVersion}"
             dependency "com.ibm.db2:db2jcc_license_cisuz:${ibmDb2Version}"

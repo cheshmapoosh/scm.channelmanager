@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
@@ -26,7 +26,7 @@ import java.util.List;
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
 @DiscriminatorColumn(name = "PROTOCOL",discriminatorType =  DiscriminatorType.INTEGER)
-public abstract class AbstractExternalServiceProviderEntity extends AbstractVersionAbleDefaultEntity<String> {
+public abstract class AbstractExternalServiceProviderEntity extends AbstractAuditableEntity<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "SERVICE_PROVIDER_ID")

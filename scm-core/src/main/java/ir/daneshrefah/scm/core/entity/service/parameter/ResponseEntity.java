@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.core.converter.ExternalServiceRequestBodyTypeConverter;
 import ir.daneshrefah.scm.core.entity.transformer.TransformerEntity;
@@ -16,7 +16,7 @@ import java.util.List;
 @Table(name = "TBL_SCM_SERVICE_RESPONSE_CONDITION")
 @Entity
 @DynamicUpdate
-public class ResponseEntity extends AbstractVersionAbleDefaultEntity<String> {
+public class ResponseEntity extends AbstractAuditableEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

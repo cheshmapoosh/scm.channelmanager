@@ -120,10 +120,17 @@ spec:
             type: DirectoryOrCreate
           name: log-volume
       nodeSelector:
-#        app: scm-web
-        app: scm-ui # -> for scm-ui
-      tolerations:
-        - effect: NoSchedule
-          key: daneshrefah.ir/group
-          operator: Equal
-          value: scm
+        daneshrefah.ir/app: scm-ui
+
+      dnsPolicy: "ClusterFirst"
+      dnsConfig:
+        nameservers:
+          - 10.15.131.28
+          - 10.96.0.10
+        searches:
+          - scm.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"

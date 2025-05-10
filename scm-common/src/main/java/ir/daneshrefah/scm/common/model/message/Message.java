@@ -32,6 +32,7 @@ public class Message implements Serializable {
     public final static String HTTP_METHOD = "scmHttpMethod";
     public final static String ORIGINAL_BODY = "scmOriginalBody";
     public final static String ORIGINAL_HEADERS = "scmOriginalHeaders";
+    public static final String SERVICE = "scmService";
     private final Header header;
     private MessageStatus status;
     private JsonNode payload;

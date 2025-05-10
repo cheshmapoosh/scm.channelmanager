@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.common.model.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.Model;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import lombok.Getter;
@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public abstract class Service extends BaseModel<String> {
+public abstract class Service extends AuditableModel<String> {
 
     private String code;
     private String title;

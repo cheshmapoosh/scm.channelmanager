@@ -3,14 +3,11 @@ package ir.daneshrefah.scm.common;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class BaseModel<T> implements Serializable {
-
-    private T id;
+public class AuditableModel<T> extends Model<T> {
     private String creator;
     private String lastEditor;
     private LocalDateTime createDate;

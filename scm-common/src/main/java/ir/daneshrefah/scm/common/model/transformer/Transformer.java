@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.common.model.transformer;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 
-public class Transformer extends BaseModel<String> {
+public class Transformer extends AuditableModel<String> {
 
     private String title;
     private String metadata;

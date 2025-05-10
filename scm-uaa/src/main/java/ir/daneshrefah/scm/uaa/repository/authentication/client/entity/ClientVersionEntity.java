@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.uaa.repository.converter.ClientVersionStatusConverter;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import jakarta.persistence.*;
@@ -18,7 +18,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SUA_CLIENT_VERSION")
-public class ClientVersionEntity extends AbstractVersionAbleDefaultEntity<Long> {
+public class ClientVersionEntity extends AbstractAuditableEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

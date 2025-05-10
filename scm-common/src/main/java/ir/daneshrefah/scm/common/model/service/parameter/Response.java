@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.common.model.service.parameter;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AuditableModel;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
-import jakarta.persistence.Column;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,7 +17,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class Response extends BaseModel<String> {
+public class Response extends AuditableModel<String> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;
