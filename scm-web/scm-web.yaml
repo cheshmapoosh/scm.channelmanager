@@ -8,7 +8,7 @@ metadata:
     helm.sh/chart: scm-web-0.1.0
     app.kubernetes.io/name: scm-web
     app.kubernetes.io/instance: scm-web
-    app.kubernetes.io/version: "8.1.0"
+    app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
@@ -16,22 +16,22 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: Service
 metadata:
-  name: scm-web
+  name: scm-ui
   labels:
     helm.sh/chart: scm-web-0.1.0
     app.kubernetes.io/name: scm-web
     app.kubernetes.io/instance: scm-web
-    app.kubernetes.io/version: "8.1.0"
+    app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: LoadBalancer
   ports:
-    - port: 8082
+    - port: 8083
       targetPort: http
       protocol: TCP
       name: http
   externalIPs:
-    - 10.15.131.24
+    - 10.10.4.128
 
   selector:
     app.kubernetes.io/name: scm-web
@@ -41,12 +41,12 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scm-web
+  name: scm-ui
   labels:
     helm.sh/chart: scm-web-0.1.0
     app.kubernetes.io/name: scm-web
     app.kubernetes.io/instance: scm-web
-    app.kubernetes.io/version: "8.1.0"
+    app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -60,7 +60,7 @@ spec:
         helm.sh/chart: scm-web-0.1.0
         app.kubernetes.io/name: scm-web
         app.kubernetes.io/instance: scm-web
-        app.kubernetes.io/version: "8.1.0"
+        app.kubernetes.io/version: "8.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
       imagePullSecrets:
@@ -69,18 +69,20 @@ spec:
       securityContext:
         {}
       containers:
-        - name: scm-web
+        - name: scm-ui
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.1.0-b1130T1030"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0221T1030"
           imagePullPolicy: IfNotPresent
           env:
+            - name: JDWP_OPTS
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
-              value: ib4prod
+              value: scm4test
             - name: SPRING_APPLICATION_NAME
               value: scm-web
             - name: VERSION
-              value: 8.1.0
+              value: 8.2.0
             - name: SERVER_PORT
               value: "8086"
             - name: SPRING_CLOUD_CONFIG_URI
@@ -95,7 +97,7 @@ spec:
                   name: scm-uaa-configmap
           ports:
             - name: http
-              containerPort: 8082
+              containerPort: 8083
               protocol: TCP
 
 
@@ -111,23 +113,10 @@ spec:
             path: /log
             type: DirectoryOrCreate
           name: log-volume
-      tolerations:
-        - key: "daneshrefah.ir/group"
-          operator: "Equal"
-          value: "scm"
-          effect: "NoSchedule"
       nodeSelector:
-        daneshrefah.ir/app: ui
-
-      dnsPolicy: "ClusterFirst"
-      dnsConfig:
-        nameservers:
-          - 10.15.131.28
-          - 10.96.0.10
-        searches:
-          - scm.svc.cluster.local
-          - svc.cluster.local
-          - cluster.local
-        options:
-          - name: ndots
-            value: "5"
+        app: scm-web
+      tolerations:
+        - effect: NoSchedule
+          key: daneshrefah.ir/group
+          operator: Equal
+          value: scm
