@@ -101,8 +101,15 @@ scm:
     keep-log-history: 30 #Keep up to 30 days of log files
     aspect:
       enable: true
-
-
+  jms:
+    logout:
+      host: 10.15.1.185
+      port: 1818
+      channel: SYSTEM.ADMIN.SVRCONN
+      queueManager: CSQ2
+      username:
+      password:
+      topic: SUA/LOGOUT
 #spring:
 #  application:
 #    name: scm-uaa
