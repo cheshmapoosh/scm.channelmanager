@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class MembershipTerminalServiceAccessDto implements ResponseData {
+    private Integer id;
     private String maxWithdrawalPerTransaction;
     private EbService ebService;
 }

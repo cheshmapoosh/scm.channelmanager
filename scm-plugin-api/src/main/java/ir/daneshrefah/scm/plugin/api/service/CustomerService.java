@@ -51,7 +51,7 @@ public interface CustomerService {
 
     MembershipTerminalAccessDto editMembershipTerminalAccesses(MembershipLocalEditRequest request);
 
-    MembershipTerminalServiceAccessDto membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request);
+    List<MembershipTerminalServiceAccessDto> membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request);
 
 
 //    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);

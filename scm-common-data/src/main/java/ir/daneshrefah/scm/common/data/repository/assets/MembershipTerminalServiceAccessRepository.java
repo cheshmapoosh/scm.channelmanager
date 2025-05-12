@@ -7,15 +7,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MembershipTerminalServiceAccessRepository extends JpaRepository<MembershipTerminalServiceAccessEntity, Integer> {
 
     @Query("""
-            select o from MembershipTerminalServiceAccessEntity o
-                where o.membershipTerminalAccess.terminal.legacyTerminalId = :legacyTerminalId
-                    and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
+            select o
+            from MembershipTerminalServiceAccessEntity o
+            where o.membershipTerminalAccess.terminal.legacyTerminalId = :legacyTerminalId
+              and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
+              and o.membershipTerminalAccess.membership.person.id = :personId
             """)
-    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("legacyTerminalId") Integer legacyTerminalId, @Param("accountNo") String accountNo);
+    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("legacyTerminalId") Integer legacyTerminalId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
+
+    @Query("select o from MembershipTerminalServiceAccessEntity o where o.channelServiceAccess.id = :channelServiceAccessId and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo and o.membershipTerminalAccess.membership.person.id = :personId")
+    List<MembershipTerminalServiceAccessEntity> findByChannelServiceAccessIdAndAccountNoAndPersonId(@Param("channelServiceAccessId") Long channelServiceAccessId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
 
 }

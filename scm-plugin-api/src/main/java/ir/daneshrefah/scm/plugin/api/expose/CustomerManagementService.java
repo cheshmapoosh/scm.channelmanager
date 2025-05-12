@@ -143,7 +143,7 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_MCSA_ASSIGNMENT)
-    public MembershipTerminalServiceAccessDto membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request){
+    public List<MembershipTerminalServiceAccessDto> membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request){
         return customerService.membershipChannelAccessServiceAssignment(request);
     }
 
