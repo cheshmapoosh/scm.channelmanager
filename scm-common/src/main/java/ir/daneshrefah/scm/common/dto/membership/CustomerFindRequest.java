@@ -23,7 +23,7 @@ public class CustomerFindRequest implements RequestData {
     @NotNull
     private Nationality nationality;
     @NotNull
-    @NotBlank //TODO Create NationalId Jakarta bean validation annotation
+    @NotBlank
     private String nationalId;
     @NotBlankIfPresent
     private String subOrganizationId;
