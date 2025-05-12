@@ -22,11 +22,8 @@ public class LegacyTerminalEntity extends AbstractEntity<Integer> {
     private Integer parentId;
     private String code;
     private String name;
-    private BigDecimal maxPersWithdrawalPerMonth;
-    private BigDecimal maxWithdrawalPerMonth;
     private BigDecimal maxPersWithdrawalPerDay;
     private BigDecimal maxWithdrawalPerDay;
     private Boolean published;
     private Boolean active;
-
 }
