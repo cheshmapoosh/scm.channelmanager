@@ -92,7 +92,7 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
                 .lastStoredTime(entryView.getLastStoredTime() > 0 ? new Date(entryView.getLastStoredTime()) : null)
                 .lastUpdateTime(entryView.getLastUpdateTime() > 0 ? new Date(entryView.getLastUpdateTime()) : null)
                 .version(entryView.getVersion())
-                .ttl(entryView.getTtl())
+                .timeToLive(entryView.getTtl())
                 .maxIdle(entryView.getMaxIdle())
                 .build();
         return new CacheResponse<>(List.of(mapValuesCacheResponse));

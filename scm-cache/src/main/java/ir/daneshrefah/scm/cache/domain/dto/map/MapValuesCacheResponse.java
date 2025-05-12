@@ -26,6 +26,6 @@ public class MapValuesCacheResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Date lastUpdateTime;
     private long version;
-    private long ttl;
+    private long timeToLive;
     private long maxIdle;
 }

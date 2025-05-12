@@ -89,7 +89,7 @@ public class LoginController {
 
         model.addAttribute(ATTRIBUTE_OPERATION, OPERATION_LOGIN);
         model.addAttribute(ATTRIBUTE_CLIENT_ID, client.map(Client::getUser).map(User::getNickname).orElse(null));
-        model.addAttribute(ATTRIBUTE_CLIENT_TITLE, client.map(Client::getUser).map(User::getPerson).map(GeneralLegalPerson.class::cast).map(GeneralLegalPerson::getTitle).orElse("invalid_client"));
+        model.addAttribute(ATTRIBUTE_CLIENT_TITLE, client.map(Client::getUser).map(User::getPerson).filter(generalPerson -> generalPerson instanceof GeneralLegalPerson).map(GeneralLegalPerson.class::cast).map(GeneralLegalPerson::getTitle).orElse("invalid_client"));
         model.addAttribute(ATTRIBUTE_CSRF_NAME, null != token ? token.getParameterName() : null);
         model.addAttribute(ATTRIBUTE_CSRF_VALUE, null != token ? token.getToken() : null);
         model.addAttribute(ATTRIBUTE_IS_ERROR, isError);

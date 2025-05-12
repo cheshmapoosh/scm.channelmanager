@@ -43,6 +43,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -75,6 +76,8 @@ public class SecurityConfig {
 //    private UserDetailsService userDetailsService;
     @Autowired
     private CorsConfigurationSource configurationSource;
+    @Autowired
+    private LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
 
     @Bean
     @Order(1)
@@ -185,7 +188,7 @@ public class SecurityConfig {
                 })
                 .logout(logout -> {
                     logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
-                    logout.logoutSuccessHandler(this::logoutSuccessHandlerConfiguration);
+                    logout.logoutSuccessHandler(LogoutSuccessHandlerConfiguration);
                     logout.invalidateHttpSession(true);
                     logout.deleteCookies("JSESSIONID");
                     logout.clearAuthentication(true);
@@ -258,23 +261,6 @@ public class SecurityConfig {
     @Bean
     public SessionCache sessionCache(CacheTemplate cacheTemplate) {
         return new SessionCache(cacheTemplate);
-    }
-
-    private void logoutSuccessHandlerConfiguration(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        String redirectUri = request.getParameter("redirect_uri");
-        String clientId = request.getParameter("client_id");
-        String responseType = request.getParameter("response_type");
-        String scope = request.getParameter("scope");
-        response.setStatus(HttpServletResponse.SC_OK);
-        if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
-            String serverHost = request.getRequestURL().toString().split("/logout")[0];
-            String redirection = serverHost +
-                                 "/oauth2/authorize?response_type=" + responseType +
-                                 "&client_id=" + clientId +
-                                 "&redirect_uri=" + redirectUri +
-                                 "&scope=" + scope;
-            response.sendRedirect(redirection);
-        }
     }
 
 }

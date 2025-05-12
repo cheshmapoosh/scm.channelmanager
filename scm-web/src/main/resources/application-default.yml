@@ -126,6 +126,6 @@ spring:
     name: scm-web
 
 flyway:
-  enable: true
+  enable: false
   baseline-on-migrate: true
   validate-on-migrate: true
