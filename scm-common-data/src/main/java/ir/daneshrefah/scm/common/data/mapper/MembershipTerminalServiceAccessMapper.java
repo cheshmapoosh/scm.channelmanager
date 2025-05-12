@@ -21,6 +21,7 @@ public interface MembershipTerminalServiceAccessMapper {
         MembershipTerminalServiceAccessDto result = new MembershipTerminalServiceAccessDto();
         result.setEbService(EbServiceMapper.INSTANCE.toModel(entity.getChannelServiceAccess().getEbService()));
         result.setMaxWithdrawalPerTransaction(entity.getMaxWithdrawalPerTransaction().toPlainString());
+        result.setId(entity.getId());
         return result;
     }
 

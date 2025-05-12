@@ -11,10 +11,12 @@ import java.math.BigDecimal;
 @Setter
 @Entity
 @Table(name = "MEMBERSHIP_CHANNEL_SERVICE_ACCESS")
+@SequenceGenerator(name = "mcsa_seq",sequenceName = "REF.SQMEMBERSHIPEBACCESS", allocationSize = 1)
 public class MembershipTerminalServiceAccessEntity extends AbstractEntity<Integer> {
 
     @Id
     @Column(name = "MCSAS_ID")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "mcsa_seq")
     private Integer id;
     @ManyToOne
     @JoinColumn(name = "CHANNEL_EB_ACCESS_ID")
