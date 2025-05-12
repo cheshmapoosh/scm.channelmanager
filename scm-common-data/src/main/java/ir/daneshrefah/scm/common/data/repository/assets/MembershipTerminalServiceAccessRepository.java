@@ -7,7 +7,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface MembershipTerminalServiceAccessRepository extends JpaRepository<MembershipTerminalServiceAccessEntity, Integer> {
@@ -15,7 +14,8 @@ public interface MembershipTerminalServiceAccessRepository extends JpaRepository
     @Query("""
             select o
             from MembershipTerminalServiceAccessEntity o
-            where o.membershipTerminalAccess.terminal.legacyTerminalId = :legacyTerminalId
+            where o.membershipTerminalAccess.legacyTerminal.id = :legacyTerminalId
+              and o.membershipTerminalAccess.legacyTerminal.parentId is null
               and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
               and o.membershipTerminalAccess.membership.person.id = :personId
             """)
