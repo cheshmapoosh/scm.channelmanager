@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.channel.LegacyTerminalEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -36,6 +37,9 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHANNEL_ID", referencedColumnName = "LEGACY_TERMINAL_ID")
     private TerminalEntity terminal;
+    @ManyToOne
+    @JoinColumn(name = "CHANNEL_ID", referencedColumnName = "CHANNEL_ID",insertable = false, updatable = false)
+    private LegacyTerminalEntity legacyTerminal;
     @ManyToOne
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;
