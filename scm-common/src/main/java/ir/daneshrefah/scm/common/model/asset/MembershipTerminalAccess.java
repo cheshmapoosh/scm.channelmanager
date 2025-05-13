@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.model.gateway.CmChannel;
+import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Data;
 import lombok.Getter;
@@ -22,7 +24,7 @@ import java.time.LocalDate;
 public class MembershipTerminalAccess extends BaseModel<Long> {
 
     private Boolean active;
-    private Terminal terminal;
+    private CmChannel channel;
     private Membership membership;
     private Boolean favorite;
     private BigDecimal maxWithdrawalPerDay;

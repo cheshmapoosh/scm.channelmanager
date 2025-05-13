@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.data.entity.asset.ChannelServiceAccessEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
-@Mapper(uses = {TerminalMapper.class, EbServiceMapper.class})
+@Mapper(uses = {CmChannelMapper.class, EbServiceMapper.class})
 public interface ChannelServiceAccessMapper {
     ChannelServiceAccessMapper INSTANCE = Mappers.getMapper(ChannelServiceAccessMapper.class);
     ChannelServiceAccess toModel(ChannelServiceAccessEntity entity);

@@ -11,6 +11,6 @@ import java.util.List;
 @Repository
 public interface ChannelServiceAccessRepository extends JpaRepository<ChannelServiceAccessEntity, Long> {
 
-    @Query("select o from ChannelServiceAccessEntity o where o.terminal.legacyTerminalId = :legacyTerminalId and o.active = true and o.ebService.publish = true ")
-    List<ChannelServiceAccessEntity> findByLegacyTerminalId(@Param("legacyTerminalId") Long legacyTerminalId);
+    @Query("select o from ChannelServiceAccessEntity o where o.channel.id = :channelId and o.active = true and o.ebService.publish = true ")
+    List<ChannelServiceAccessEntity> findByChannelId(@Param("channelId") Integer channelId);
 }

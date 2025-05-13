@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.entity.channel.LegacyTerminalEntity;
-import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.gateway.CmChannelEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,12 +33,9 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "membershipChannelAccessSeq")
     private Long id;
     private Boolean active;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CHANNEL_ID", referencedColumnName = "LEGACY_TERMINAL_ID")
-    private TerminalEntity terminal;
     @ManyToOne
-    @JoinColumn(name = "CHANNEL_ID", referencedColumnName = "CHANNEL_ID",insertable = false, updatable = false)
-    private LegacyTerminalEntity legacyTerminal;
+    @JoinColumn(name = "CHANNEL_ID")
+    private CmChannelEntity channel;
     @ManyToOne
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;

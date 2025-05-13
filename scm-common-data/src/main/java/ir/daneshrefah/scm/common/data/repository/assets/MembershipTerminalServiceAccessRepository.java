@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.data.repository.assets;
 
 import ir.daneshrefah.scm.common.data.entity.asset.MembershipTerminalServiceAccessEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,12 +15,22 @@ public interface MembershipTerminalServiceAccessRepository extends JpaRepository
     @Query("""
             select o
             from MembershipTerminalServiceAccessEntity o
-            where o.membershipTerminalAccess.legacyTerminal.id = :legacyTerminalId
-              and o.membershipTerminalAccess.legacyTerminal.parentId is null
+            where o.membershipTerminalAccess.channel.id = :channelId
+              and o.membershipTerminalAccess.channel.parentId is null
               and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
               and o.membershipTerminalAccess.membership.person.id = :personId
             """)
-    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("legacyTerminalId") Integer legacyTerminalId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
+    @EntityGraph(attributePaths = {
+            "membershipTerminalAccess",
+            "membershipTerminalAccess.channel",
+            "membershipTerminalAccess.membership",
+            "membershipTerminalAccess.membership.customerAccount",
+            "membershipTerminalAccess.membership.customerAccount.account",
+            "membershipTerminalAccess.membership.person",
+            "channelServiceAccess",
+            "channelServiceAccess.ebService"
+    })
+    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("channelId") Integer channelId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
 
     @Query("select o from MembershipTerminalServiceAccessEntity o where o.channelServiceAccess.id = :channelServiceAccessId and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo and o.membershipTerminalAccess.membership.person.id = :personId")
     List<MembershipTerminalServiceAccessEntity> findByChannelServiceAccessIdAndAccountNoAndPersonId(@Param("channelServiceAccessId") Long channelServiceAccessId, @Param("accountNo") String accountNo,@Param("personId") Long personId);

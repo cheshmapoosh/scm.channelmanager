@@ -29,7 +29,7 @@ public interface CustomerService {
 
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
-    List<MembershipTerminalAccess> findMembershipTerminalAccessList(Long personId, String terminalId);
+    List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId);
 
     Membership findLocalAccountMembership(String membershipId);
 
