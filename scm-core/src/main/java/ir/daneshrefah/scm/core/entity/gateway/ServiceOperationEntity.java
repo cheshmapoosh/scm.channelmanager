@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "TBL_SCM_SERVICE_OPERATION", schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_GTW_OPT_ON_SVC_CNS", columnNames = {"EB_SERVICE_ID", "OPERAITION_CODE"})
+                @UniqueConstraint(name = "UC_GTW_OPT_ON_SVC_OPT", columnNames = {"EB_SERVICE_ID", "OPERATION_CODE"})
         })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class ServiceOperationEntity extends AbstractAuditableEntity<String> {

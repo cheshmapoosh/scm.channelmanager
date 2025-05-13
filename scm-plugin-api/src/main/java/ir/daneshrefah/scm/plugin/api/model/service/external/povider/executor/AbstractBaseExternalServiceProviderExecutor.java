@@ -2,11 +2,11 @@ package ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.CamelInvocationStep;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -30,9 +30,9 @@ public abstract class AbstractBaseExternalServiceProviderExecutor implements Ext
     private final ServiceService serviceService;
 
     @Getter
-    private AbstractExternalServiceProvider serviceProvider;
+    private AbstractAuditableExternalServiceProvider serviceProvider;
 
-    public final void init(AbstractExternalServiceProvider provider) {
+    public final void init(AbstractAuditableExternalServiceProvider provider) {
         this.serviceProvider = provider;
     }
 
@@ -104,7 +104,7 @@ public abstract class AbstractBaseExternalServiceProviderExecutor implements Ext
         return Optional.empty();
     }
 
-    protected final Optional<String> prepareTerminalCode(AbstractExternalService<?> service, String defaultValue) {
+    protected final Optional<String> prepareTerminalCode(AbstractAuditableExternalService<?> service, String defaultValue) {
         String terminalCode = AuthenticationUtils.getLoggedInTerminalCode().orElse(null);
         String clientId = AuthenticationUtils.getLoggedInClientId().orElse(null);
         String providerCode = service.getServiceProvider().getCode();
@@ -113,13 +113,13 @@ public abstract class AbstractBaseExternalServiceProviderExecutor implements Ext
                 .or(() -> Optional.ofNullable(defaultValue));
     }
 
-    public AbstractExternalService<?> getService(Exchange exchange){
+    public AbstractAuditableExternalService<?> getService(Exchange exchange){
         Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-        return (AbstractExternalService<?>) originalMessage.getHeader().getService();
+        return (AbstractAuditableExternalService<?>) originalMessage.getHeader().getService();
     }
 
     @Override
-    public AbstractExternalServiceProvider getProviderModel() {
+    public AbstractAuditableExternalServiceProvider getProviderModel() {
         return this.serviceProvider;
     }
 

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Customer extends AuditableModel<Long> {
+public class Customer extends AbstractAuditableModel<Long> {
 
     private Long id;
     private String customerNo;

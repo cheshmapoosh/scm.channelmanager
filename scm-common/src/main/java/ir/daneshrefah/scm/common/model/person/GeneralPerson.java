@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.person;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
-public abstract class GeneralPerson extends AuditableModel<Long> {
+public abstract class GeneralPerson extends AbstractAuditableModel<Long> {
 
     private String username;
     private Nationality nationality;

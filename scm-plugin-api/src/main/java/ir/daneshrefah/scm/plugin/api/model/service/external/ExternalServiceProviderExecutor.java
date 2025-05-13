@@ -1,9 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
-import org.apache.camel.Exchange;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.TryDefinition;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,10 +17,10 @@ public interface ExternalServiceProviderExecutor {
     String HEADER_MESSAGE_OUTPUT = "ScmMessageOutput";
     String HEADER_RESPONSE_BODY = "ScmResponseBody";
 
-    void init(AbstractExternalServiceProvider provider);
+    void init(AbstractAuditableExternalServiceProvider provider);
 
     void endpointCallRouteDefinition(RouteDefinition routeDefinition);
 
-    AbstractExternalServiceProvider getProviderModel();
+    AbstractAuditableExternalServiceProvider getProviderModel();
 
 }

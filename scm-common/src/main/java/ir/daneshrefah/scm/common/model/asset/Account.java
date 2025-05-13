@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Setter
-public class Account extends AuditableModel<Long> {
+public class Account extends AbstractAuditableModel<Long> {
 
     private String accountNo;
     private AccountType accountType;

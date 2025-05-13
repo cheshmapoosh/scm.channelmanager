@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.HttpMessageOutput;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.TryDefinition;
@@ -66,7 +66,7 @@ public abstract class AbstractBaseRestExternalServiceProviderExecutor extends Ab
     @Override
     protected void afterCallRoute(Exchange exchange) {
         Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-        AbstractExternalService<?> service = (AbstractExternalService<?>) originalMessage.getHeader().getService();
+        AbstractAuditableExternalService<?> service = (AbstractAuditableExternalService<?>) originalMessage.getHeader().getService();
         if (ExternalServiceBodyType.PARAMETERS.equals(service.getRequestBodyType())) {
             Object header = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE);
             header = Objects.isNull(header) ? -1 : header;
@@ -97,7 +97,7 @@ public abstract class AbstractBaseRestExternalServiceProviderExecutor extends Ab
     }
 
     protected final String extractTargetEndpointUrl(Message message) {
-        AbstractExternalServiceProvider provider = ((AbstractExternalService<?>) message.getHeader().getService()).getServiceProvider();
+        AbstractAuditableExternalServiceProvider provider = ((AbstractAuditableExternalService<?>) message.getHeader().getService()).getServiceProvider();
         String targetUrl = extractTargetUrl(message);
         if (null != provider.getMetadata() && null != provider.getMetadata().getConnectTimeout()) {
             StringUtils.appendQueryParam(targetUrl, "connectTimeout", provider.getMetadata().getConnectTimeout());

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
@@ -14,7 +14,6 @@ import ir.daneshrefah.scm.core.entity.service.RestExternalServiceProviderEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
@@ -80,11 +79,11 @@ public interface ServiceProviderMapper {
         return entity;
     }
 
-    default List<AbstractExternalServiceProvider> toModels(Iterable<AbstractExternalServiceProviderEntity> entities) {
+    default List<AbstractAuditableExternalServiceProvider> toModels(Iterable<AbstractExternalServiceProviderEntity> entities) {
         if (Objects.isNull(entities)) {
             return null;
         }
-        List<AbstractExternalServiceProvider> result = new ArrayList<>();
+        List<AbstractAuditableExternalServiceProvider> result = new ArrayList<>();
         for (Iterator<AbstractExternalServiceProviderEntity> iterator = entities.iterator(); iterator.hasNext(); ) {
             AbstractExternalServiceProviderEntity entity = iterator.next();
             result.add(toServiceProvider(entity));
@@ -93,7 +92,7 @@ public interface ServiceProviderMapper {
     }
 
     @Named("toServiceProvider")
-    default AbstractExternalServiceProvider toServiceProvider(AbstractExternalServiceProviderEntity entity) {
+    default AbstractAuditableExternalServiceProvider toServiceProvider(AbstractExternalServiceProviderEntity entity) {
         if (entity instanceof RestExternalServiceProviderEntity restExternalServiceProviderEntity) {
             return toModel(restExternalServiceProviderEntity);
         } else if (entity instanceof CustomExternalServiceProviderEntity customExternalServiceProviderEntity) {
@@ -103,7 +102,7 @@ public interface ServiceProviderMapper {
     }
 
     @Named("toServiceProviderEntity")
-    default AbstractExternalServiceProviderEntity toServiceProviderEntity(AbstractExternalServiceProvider model) {
+    default AbstractExternalServiceProviderEntity toServiceProviderEntity(AbstractAuditableExternalServiceProvider model) {
         if (model instanceof RestExternalServiceProvider restExternalServiceProvider) {
             return toEntity(restExternalServiceProvider);
         } else if (model instanceof CustomExternalServiceProvider customExternalServiceProvider) {

@@ -23,7 +23,7 @@ import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.core.services.parameter.ParameterParser;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
@@ -116,7 +116,7 @@ public class ServiceJsonSchemaGenerator {
         return "{}";
     }
 
-    private String generateExternalServiceRequestSchema(AbstractExternalService<?> externalService) {
+    private String generateExternalServiceRequestSchema(AbstractAuditableExternalService<?> externalService) {
         String requestJsonSchema = externalService.getRequestJsonSchema();
         if (StringUtils.isNotBlank(requestJsonSchema)) {
             return requestJsonSchema;
@@ -167,7 +167,7 @@ public class ServiceJsonSchemaGenerator {
 
     }
 
-    private String generateExternalServiceResponseSchema(AbstractExternalService<?> externalService) {
+    private String generateExternalServiceResponseSchema(AbstractAuditableExternalService<?> externalService) {
         String responseJsonSchema = externalService.getResponseJsonSchema();
         if (StringUtils.isNotBlank(responseJsonSchema)) {
             return responseJsonSchema;

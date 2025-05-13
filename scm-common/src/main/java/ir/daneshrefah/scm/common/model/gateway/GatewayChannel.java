@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class GatewayChannel extends AuditableModel<String> {
+public class GatewayChannel extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
     @Size(max = 100)

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import java.math.BigDecimal;
  */
 @Getter
 @Setter
-public class Terminal extends AuditableModel<String> {
+public class Terminal extends AbstractAuditableModel<String> {
 
     private String code;
     private String title;

@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.MessageOutput;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.ParameterBodyConsumer;
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import org.apache.camel.Exchange;
@@ -23,7 +23,7 @@ public abstract class AbstractPreparedExternalServiceProviderExecutor extends Ab
     public final Object extractBody(Exchange exchange, MessageOutput messageOutput, ParameterBodyConsumer parameterBodyConsumer) {
         Object body = exchange.getMessage().getBody();
         Message originalMessage = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
-        AbstractExternalService<?> service = (AbstractExternalService<?>) originalMessage.getHeader().getService();
+        AbstractAuditableExternalService<?> service = (AbstractAuditableExternalService<?>) originalMessage.getHeader().getService();
         if (Objects.nonNull(service.getRequestBodyType())) {
             return switch (service.getRequestBodyType()) {
                 case NONE -> null;

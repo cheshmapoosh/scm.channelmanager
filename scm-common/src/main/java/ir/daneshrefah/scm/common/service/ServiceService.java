@@ -4,14 +4,8 @@ import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.provider.*;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
-import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceCreateRequest;
-import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceEditRequest;
-import ir.daneshrefah.scm.common.dto.service.java.JavaServiceCreateRequest;
-import ir.daneshrefah.scm.common.dto.service.java.JavaServiceEditRequest;
-import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceCreateRequest;
-import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceEditRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
 import ir.daneshrefah.scm.common.model.service.Service;
 
@@ -54,11 +48,11 @@ public interface ServiceService extends
 
     Optional<ProviderTerminalCoding> findProviderTerminalCoding(String terminalCode, String clientId, String providerCode);
 
-    AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request);
+    AbstractAuditableExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request);
 
-    AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
+    AbstractAuditableExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
 
-    AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
+    AbstractAuditableExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
     List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request);
 
     void cacheEvict();

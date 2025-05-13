@@ -9,6 +9,8 @@ import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {ChannelServiceAccessMapper.class})
 public abstract class ChannelServiceDefinitionMapper {
     @Autowired
@@ -25,14 +27,23 @@ public abstract class ChannelServiceDefinitionMapper {
     public abstract ChannelServiceDefinitionEntity partialUpdate(ChannelServiceDefinition channelServiceDefinition, @MappingTarget ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     @AfterMapping
-    protected void afterMappingRestChannelServiceDefinition(ChannelServiceDefinitionEntity entity, @MappingTarget RestChannelServiceDefinition dto) {
+    protected void afterMapping(ChannelServiceDefinitionEntity entity, @MappingTarget RestChannelServiceDefinition restChannelServiceDefinition) {
         ObjectReader reader = objectMapper.readerFor(RestChannelServiceDefinition.class);
+        RestChannelServiceDefinition dto= null;
         try {
-            RestChannelServiceDefinition dtoFromMetadata= reader.readValue(entity.getMetadata());
-            dto.setHttpMethod(dtoFromMetadata.getHttpMethod());
-            dto.setPath(dtoFromMetadata.getPath());
+            dto = reader.readValue(entity.getMetadata());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+        restChannelServiceDefinition.setHttpMethod(dto.getHttpMethod());
+            restChannelServiceDefinition.setPath(dto.getPath());
+            List<String> pluginChains = dto.getPluginChains();
+//            if (pluginChains != null && CollectionUtils.isNotEmpty(plugins)) {
+//                restChannelServiceDefinition.setPluginChains(pluginChains);
+//                List<Plugin> filteredPluginChain = pluginChains.stream()
+//                        .map(s -> plugins.stream().filter(p -> p.getName().equals(s)).findFirst().orElse(null))
+//                        .filter(Objects::nonNull).toList();
+//                restChannelServiceDefinition.setPlugins(filteredPluginChain);
+//            }
     }
 }

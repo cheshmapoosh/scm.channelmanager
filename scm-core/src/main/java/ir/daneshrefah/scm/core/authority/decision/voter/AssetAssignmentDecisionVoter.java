@@ -2,11 +2,11 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
@@ -31,8 +31,8 @@ public class AssetAssignmentDecisionVoter extends BaseAssignmentVoter {
 
     @Override
     protected int vote(UserProfile profile, Service service, String asset) {
-        AbstractExternalServiceProvider provider = service instanceof AbstractExternalService ?
-                ((AbstractExternalService<?>) service).getServiceProvider() : null;
+        AbstractAuditableExternalServiceProvider provider = service instanceof AbstractAuditableExternalService ?
+                ((AbstractAuditableExternalService<?>) service).getServiceProvider() : null;
         if (Objects.isNull(provider) || Objects.isNull(provider.getAssetProvider())) {
             return ACCESS_ABSTAIN;
         }

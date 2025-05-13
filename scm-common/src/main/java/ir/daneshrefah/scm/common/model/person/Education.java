@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.model.person;
 
 // EDUCATION Table
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 
 /**
  * Description of the class or purpose of the file.
@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.common.AuditableModel;
  * @version 1.0
  * @since 2023-07-19
  */
-public class Education extends AuditableModel {
+public class Education extends AbstractAuditableModel {
 
     private String code;
     private String title;

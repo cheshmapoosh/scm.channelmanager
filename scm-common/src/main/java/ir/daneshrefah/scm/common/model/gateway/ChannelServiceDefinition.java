@@ -1,20 +1,17 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * DTO for {@link ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity}
  */
 @Getter
 @Setter
-public class ChannelServiceDefinition extends AuditableModel<String> {
+public class ChannelServiceDefinition extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
     @NotNull

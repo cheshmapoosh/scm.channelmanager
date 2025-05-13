@@ -33,7 +33,7 @@ import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.core.services.provider.ServiceProviderMetadataResolver;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
@@ -78,7 +78,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final JavaServiceMetadataProviderService javaSrvService;
     private List<ir.daneshrefah.scm.common.model.service.Service> services;
     private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
-    private List<AbstractExternalServiceProvider> serviceProviders;
+    private List<AbstractAuditableExternalServiceProvider> serviceProviders;
 
     private static ObjectMapper getObjectMapper() {
         return ApplicationConfig.getObjectMapperInstance();
@@ -542,7 +542,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
 
-    private ServiceProviderFindResponse map(AbstractExternalServiceProvider provider) {
+    private ServiceProviderFindResponse map(AbstractAuditableExternalServiceProvider provider) {
         return new ServiceProviderFindResponse()
                 .setCode(provider.getCode())
                 .setTitle(provider.getTitle())
@@ -559,23 +559,23 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     @Transactional
-    public AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
+    public AbstractAuditableExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
         validateServiceProviderCreteRequest(request);
         AbstractExternalServiceProviderEntity entity = mapToServiceProviderEntity(request);
         AbstractExternalServiceProviderEntity savedEntity = serviceProviderRepository.save(entity);
-        AbstractExternalServiceProvider serviceProvider = ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
+        AbstractAuditableExternalServiceProvider serviceProvider = ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
         cacheEvict();
         return serviceProvider;
     }
 
     @Override
     @Transactional
-    public AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
+    public AbstractAuditableExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
         AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
         services
                 .stream()
-                .filter(service -> service instanceof AbstractExternalService)
-                .map(service -> (AbstractExternalService<?>) service)
+                .filter(service -> service instanceof AbstractAuditableExternalService)
+                .map(service -> (AbstractAuditableExternalService<?>) service)
                 .filter(service -> service.getServiceProvider().getId().equals(serviceProvider.getId()))
                 .findFirst()
                 .ifPresent(service -> {
@@ -589,7 +589,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     @Transactional
-    public AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
+    public AbstractAuditableExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
         AbstractExternalServiceProviderEntity serviceProvider = serviceProviderRepository.findById(request.getServiceProviderId()).orElseThrow(() -> new InvalidInputException("serviceProviderId"));
         //General service provider properties
         mapServiceProvider(serviceProvider, request);
@@ -656,7 +656,7 @@ public class ServiceServiceImpl implements ServiceService {
     //SERVICE PROVIDER
 
     @Override
-    public List<AbstractExternalServiceProvider> findServiceProviderList() {
+    public List<AbstractAuditableExternalServiceProvider> findServiceProviderList() {
         if (null == serviceProviders || serviceProviders.isEmpty()) {
             synchronized (this) {
                 serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll())
@@ -673,7 +673,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public AbstractExternalServiceProvider findServiceProviderById(String id) {
+    public AbstractAuditableExternalServiceProvider findServiceProviderById(String id) {
         if (StringUtils.isEmpty(id)) {
             return null;
         }
@@ -681,7 +681,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public AbstractExternalServiceProvider findServiceProviderByCode(String code) {
+    public AbstractAuditableExternalServiceProvider findServiceProviderByCode(String code) {
         if (StringUtils.isEmpty(code)) {
             return null;
         }
@@ -689,8 +689,8 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public AbstractExternalServiceProvider findServiceProviderByIdOrCode(String value) {
-        AbstractExternalServiceProvider provider = findServiceProviderById(value);
+    public AbstractAuditableExternalServiceProvider findServiceProviderByIdOrCode(String value) {
+        AbstractAuditableExternalServiceProvider provider = findServiceProviderById(value);
         if (null != provider) {
             return provider;
         }

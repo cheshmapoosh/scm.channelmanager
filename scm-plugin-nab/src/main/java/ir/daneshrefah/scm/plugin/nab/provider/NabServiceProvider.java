@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.plugin.nab.provider;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageOutput;
@@ -8,16 +7,12 @@ import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.AbstractBaseRestExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabRequestTransformer;
 import ir.daneshrefah.scm.plugin.nab.transformer.NabResponseTransformer;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.SneakyThrows;
 import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePropertyKey;
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.support.processor.idempotent.MemoryIdempotentRepository;
@@ -26,8 +21,6 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static javax.swing.text.html.FormSubmitEvent.MethodType.POST;
 
 /**
  * Description of the class or purpose of the file.

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.model.gateway.CmChannel;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,7 +17,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
-public class MembershipTerminalAccess extends AuditableModel<Long> {
+public class MembershipTerminalAccess extends AbstractAuditableModel<Long> {
 
     private Boolean active;
     private CmChannel channel;

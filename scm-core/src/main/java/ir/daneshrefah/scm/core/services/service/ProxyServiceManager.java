@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.mapper.ServiceMapper;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
 import lombok.RequiredArgsConstructor;
@@ -76,13 +76,13 @@ public class ProxyServiceManager {
 
     private void applyProxyServiceChanges(ProxyService proxyService) {
         Service targetService = proxyService.getTargetService();
-        if (targetService instanceof AbstractExternalService<?> externalService) {
+        if (targetService instanceof AbstractAuditableExternalService<?> externalService) {
             applyProxyParameters(proxyService, externalService);
         }
     }
 
 
-    private void applyProxyParameters(ProxyService proxyService, AbstractExternalService<?> targetService) {
+    private void applyProxyParameters(ProxyService proxyService, AbstractAuditableExternalService<?> targetService) {
         List<Parameter> restParameters = targetService.getParameters();
         List<Parameter> proxyParameters = proxyService.getParameters();
         proxyParameters.forEach(proxyParameter -> {

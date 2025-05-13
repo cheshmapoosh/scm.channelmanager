@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.error.ProviderErrorMapping;
 import ir.daneshrefah.scm.common.error.management.ExceptionMessageBundleProvider;
 import ir.daneshrefah.scm.common.exception.BaseServiceProviderException;
 import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +77,7 @@ public class ProviderErrorHandler {
         if (Objects.isNull(providerErrors) || providerErrors.isEmpty()) {
             errors.add(defaultExceptionMessage(locale));
         }else {
-            AbstractExternalServiceProvider provider = serviceService.findServiceProviderByCode(exception.getProviderErrorMapping().getServiceProviderCode());
+            AbstractAuditableExternalServiceProvider provider = serviceService.findServiceProviderByCode(exception.getProviderErrorMapping().getServiceProviderCode());
             providerErrors.forEach(providerError -> errorMappingService
                     .findByRemoteErrorCodeAndProviderId(providerError.getProviderErrorCode(), provider.getId())
                     .ifPresent(errorMapping -> errors.add(createError(exception, errorMapping, locale))));

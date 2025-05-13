@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.Model;
+import ir.daneshrefah.scm.common.AbstractModel;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ChannelServiceAccess extends Model<Long> {
+public class ChannelServiceAccess extends AbstractModel<Long> {
     @NotNull
     private Channel channel;
     @NotNull

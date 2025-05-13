@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
@@ -224,7 +224,7 @@ public interface ServiceMapper {
 
     @Named("toServiceProvider")
     @SuppressWarnings("unchecked")
-    default <E extends AbstractExternalServiceProviderEntity, M extends AbstractExternalServiceProvider> M toServiceProvider(E entity) {
+    default <E extends AbstractExternalServiceProviderEntity, M extends AbstractAuditableExternalServiceProvider> M toServiceProvider(E entity) {
         // Delegate the mapping to the method in ServiceMapper
         return (M) ServiceProviderMapper.INSTANCE.toServiceProvider(entity);
     }
@@ -232,7 +232,7 @@ public interface ServiceMapper {
 
     @Named("toServiceProviderEntity")
     @SuppressWarnings("unchecked")
-    default <E extends AbstractExternalServiceProviderEntity, M extends AbstractExternalServiceProvider> E toServiceProviderEntity(M model) {
+    default <E extends AbstractExternalServiceProviderEntity, M extends AbstractAuditableExternalServiceProvider> E toServiceProviderEntity(M model) {
         // Delegate the mapping to the method in ServiceMapper
         return (E) ServiceProviderMapper.INSTANCE.toServiceProviderEntity(model);
     }

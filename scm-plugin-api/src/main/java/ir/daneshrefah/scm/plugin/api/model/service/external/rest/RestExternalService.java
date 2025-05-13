@@ -2,14 +2,9 @@ package ir.daneshrefah.scm.plugin.api.model.service.external.rest;
 
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
-import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import lombok.Data;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.camel.spring.boot.vault.HashicorpVaultConfigurationProperties;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -20,7 +15,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class RestExternalService extends AbstractExternalService<RestExternalServiceProvider> {
+public class RestExternalService extends AbstractAuditableExternalService<RestExternalServiceProvider> {
 
     private String path;
     private HttpMethod httpMethod;

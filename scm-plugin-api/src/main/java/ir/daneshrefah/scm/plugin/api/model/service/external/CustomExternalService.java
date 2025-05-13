@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.external;
 
 import ir.daneshrefah.scm.common.model.service.CustomExternalServiceProvider;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,5 +13,5 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class CustomExternalService extends AbstractExternalService<CustomExternalServiceProvider> {
+public class CustomExternalService extends AbstractAuditableExternalService<CustomExternalServiceProvider> {
 }

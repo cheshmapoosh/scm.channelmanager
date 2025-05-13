@@ -9,8 +9,7 @@ import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.service.ResourceService;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.CustomExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.NettyOptions;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.Options;
 import ir.daneshrefah.scm.plugin.api.model.service.external.povider.executor.helper.TcpProtocol;
@@ -68,7 +67,7 @@ public final class NabTcpServiceProvider extends NabTcpExternalServiceProviderEx
     }
 
     private String prepareMessageHeaderField(MessageHeaderFields headerField, Message message, Object body, MessageOutput messageOutput) {
-        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
+        AbstractAuditableExternalService service = (AbstractAuditableExternalService) message.getHeader().getService();
         if (Objects.isNull(headerField)) {
             return null;
         }

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.service;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ProviderTerminalCoding extends AuditableModel<Integer> {
+public class ProviderTerminalCoding extends AbstractAuditableModel<Integer> {
 
     private AssetProvider provider;
     private Terminal terminal;

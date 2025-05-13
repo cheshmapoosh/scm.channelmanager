@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.condition;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.common.type.PeriodType;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Condition extends AuditableModel<Long> {
+public class Condition extends AbstractAuditableModel<Long> {
 
     private Long id;
     private String title;

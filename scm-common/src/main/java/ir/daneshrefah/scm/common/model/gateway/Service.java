@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.Model;
+import ir.daneshrefah.scm.common.AbstractModel;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class Service extends Model<Short> {
+public class Service extends AbstractModel<Short> {
     @NotNull
     private Boolean financial = false;
     @NotNull

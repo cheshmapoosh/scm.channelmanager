@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.model.terminal;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Channel extends AuditableModel<String> {
+public class Channel extends AbstractAuditableModel<String> {
 
     private String code;
     private String title;

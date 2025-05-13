@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class TransformerRelation extends AuditableModel<Long> {
+public class TransformerRelation extends AbstractAuditableModel<Long> {
 
     private TransformerRelationType relationType;
     private Transformer transformer;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ClientVersion extends AuditableModel<Long> {
+public class ClientVersion extends AbstractAuditableModel<Long> {
 
     private String version;
     private boolean isForced;

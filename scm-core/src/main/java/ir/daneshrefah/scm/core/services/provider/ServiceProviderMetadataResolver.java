@@ -16,7 +16,7 @@ public class ServiceProviderMetadataResolver {
     public static final String PROVIDER_META_DATA_PREFIX = "metadata";
     private final ParameterDataProvider parameterDataProvider;
 
-    public AbstractExternalServiceProviderMetadata resolve(AbstractExternalServiceProvider serviceProvider) {
+    public AbstractExternalServiceProviderMetadata resolve(AbstractAuditableExternalServiceProvider serviceProvider) {
         List<Parameter> configParameters = serviceProvider.getConfigParameter();
         if (Objects.isNull(configParameters)) {
             return null;

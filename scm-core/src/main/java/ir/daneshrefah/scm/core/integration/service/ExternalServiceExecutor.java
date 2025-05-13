@@ -3,10 +3,10 @@ package ir.daneshrefah.scm.core.integration.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.ServiceProviderActivationStatusException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.common.service.ServiceService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor;
 import ir.daneshrefah.scm.plugin.api.service.TransformerService;
 import lombok.RequiredArgsConstructor;
@@ -67,10 +67,10 @@ public class ExternalServiceExecutor extends ServiceExecutor implements Applicat
 
     public final Exchange executeServiceProvider(Exchange exchange) {
         Message message = exchange.getMessage().getBody(Message.class);
-        AbstractExternalService service = (AbstractExternalService) message.getHeader().getService();
+        AbstractAuditableExternalService service = (AbstractAuditableExternalService) message.getHeader().getService();
 
         Exchange providerExchange = new DefaultExchange(camelContext);
-        AbstractExternalServiceProvider serviceProvider = service.getServiceProvider();
+        AbstractAuditableExternalServiceProvider serviceProvider = service.getServiceProvider();
         if (!serviceProvider.getStatus().equals(ServiceProviderStatus.ACTIVE)){
             throw new ServiceProviderActivationStatusException(serviceProvider.getCode());
         }

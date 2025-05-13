@@ -1,10 +1,8 @@
 package ir.daneshrefah.scm.core.integration.service.interceptor;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.NoAssetFoundException;
 import ir.daneshrefah.scm.common.exception.NoCustomerFoundException;
-import ir.daneshrefah.scm.common.model.asset.Customer;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.Service;
@@ -12,15 +10,13 @@ import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
-import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractExternalService;
+import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Description of the class or purpose of the file.
@@ -39,8 +35,8 @@ public class CustomerEnrichInterceptor extends MessageInterceptor {
     @Override
     protected Message internalIntercept(Message message) {
         Service serviceAccess = message.getHeader().getService();
-        AbstractExternalService service = serviceAccess instanceof AbstractExternalService ?
-                (AbstractExternalService) serviceAccess : null;
+        AbstractAuditableExternalService service = serviceAccess instanceof AbstractAuditableExternalService ?
+                (AbstractAuditableExternalService) serviceAccess : null;
         if (Objects.isNull(service) || Objects.isNull(service.getServiceProvider().getAssetProvider()) ||
                 !AuthenticationUtils.isFullyAuthenticated()) {
             throw new NoCustomerFoundException();

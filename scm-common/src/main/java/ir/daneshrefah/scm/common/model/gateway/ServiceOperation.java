@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ServiceOperation extends AuditableModel<String> {
+public class ServiceOperation extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
     @NotNull

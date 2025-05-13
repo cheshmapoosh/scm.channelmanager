@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
 import ir.daneshrefah.scm.common.model.service.Service;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class AssetProvider extends AuditableModel<Integer> {
+public class AssetProvider extends AbstractAuditableModel<Integer> {
 
     private String name;
     private AssetProviderCode code;

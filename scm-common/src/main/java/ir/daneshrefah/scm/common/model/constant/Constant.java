@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.constant;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Data;
 
 /**
@@ -11,7 +11,7 @@ import lombok.Data;
  * @since 2024-04-06
  */
 @Data
-public class Constant extends AuditableModel<Long> {
+public class Constant extends AbstractAuditableModel<Long> {
 
     private String key;
     private String value;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.customer;
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ServiceAccess extends AuditableModel<Long> {
+public class ServiceAccess extends AbstractAuditableModel<Long> {
 
     private String personProfileId;
     private Service service;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
@@ -44,7 +44,7 @@ public class ExternalServiceProviderRouter extends RouteBuilder {
 
     @Override
     public void configure() {
-        List<AbstractExternalServiceProvider> providers = serviceService.findServiceProviderList();
+        List<AbstractAuditableExternalServiceProvider> providers = serviceService.findServiceProviderList();
         if (CollectionUtils.isEmpty(providers)) {
             LOGGER.warn("No service provider found");
         }
@@ -86,11 +86,11 @@ public class ExternalServiceProviderRouter extends RouteBuilder {
         });
     }
 
-    private String uri(AbstractExternalServiceProvider provider) {
+    private String uri(AbstractAuditableExternalServiceProvider provider) {
         return "ESP_" + provider.getCode();
     }
 
-    private String routeId(AbstractExternalServiceProvider provider) {
+    private String routeId(AbstractAuditableExternalServiceProvider provider) {
         return "ROUTE_" + uri(provider);
     }
 
@@ -131,7 +131,7 @@ public class ExternalServiceProviderRouter extends RouteBuilder {
     }
 
 
-    private ExternalServiceProviderExecutor extractServiceProviderExecutorInstance(AbstractExternalServiceProvider serviceProviderModel) {
+    private ExternalServiceProviderExecutor extractServiceProviderExecutorInstance(AbstractAuditableExternalServiceProvider serviceProviderModel) {
         try {
             ExternalServiceProviderExecutor provider = null;
             if (ServiceProviderProtocol.REST.equals(serviceProviderModel.getProtocol())) {

@@ -1350,7 +1350,7 @@ INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.common.exception.ServiceInvalidMetadataException',
-        'service [:serviceCode] has invalid metadata');
+        'service [:serviceCode] has invalid definition');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1526,7 +1526,7 @@ INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.plugin.api.exception.ServiceEndpointPrepareException',
-        'error on extract endpoint uri with metadata');
+        'error on extract endpoint uri with definition');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
@@ -1822,13 +1822,13 @@ VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
         (CURRENT DATE), 'en-US', 'ex::ir.daneshrefah.scm.process.exception.attachment.AttachmentPermissionException',
-        'You do not have permission to :operation this attachment = :attachment');
+        'You do not have permission to :operationEntity this attachment = :attachment');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),
         (CURRENT DATE), 'fa-IR',
         'ex::ir.daneshrefah.scm.process.exception.attachment.AttachmentPermissionException',
-        'شما اجازه‌ :operation پیوست :attachment را ندارید');
+        'شما اجازه‌ :operationEntity پیوست :attachment را ندارید');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Alireza Rayani', 'Alireza Rayani', (CURRENT DATE),

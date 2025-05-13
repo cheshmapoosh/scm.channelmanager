@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.services.gateway;
 
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
-import ir.daneshrefah.scm.common.model.gateway.ProtocolType;
+import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.entity.gateway.GatewayChannelEntity;
 import ir.daneshrefah.scm.core.mapper.gateway.GatewayMapper;
 import ir.daneshrefah.scm.core.repository.gateway.GatewayChannelRepository;

@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.model.service.AbstractExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -44,8 +44,8 @@ public class ProviderManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_SERVICE_PROVIDER_BY_ID)
-    public AbstractExternalServiceProvider findProviderById(String serviceProviderId) {
-        AbstractExternalServiceProvider found = this.service.findServiceProviderById(serviceProviderId);
+    public AbstractAuditableExternalServiceProvider findProviderById(String serviceProviderId) {
+        AbstractAuditableExternalServiceProvider found = this.service.findServiceProviderById(serviceProviderId);
         if (Objects.nonNull(found)) {
             return found;
         }
@@ -53,17 +53,17 @@ public class ProviderManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_SERVICE_PROVIDER_CREATE)
-    public AbstractExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
+    public AbstractAuditableExternalServiceProvider createServiceProvider(ServiceProviderCreteRequest request) {
        return service.createServiceProvider(request);
     }
 
     @JavaService(serviceCode = SVC_SERVICE_PROVIDER_CHANGE)
-    public AbstractExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
+    public AbstractAuditableExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request) {
         return service.changeServiceProvider(request);
     }
 
     @JavaService(serviceCode = SVC_SERVICE_PROVIDER_DELETE)
-    public AbstractExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
+    public AbstractAuditableExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request) {
         return service.deleteServiceProvider(request);
     }
 

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class AuditableModel<T> extends Model<T> {
+public abstract class AbstractAuditableModel<T> extends AbstractModel<T> {
     private String creator;
     private String lastEditor;
     private LocalDateTime createDate;

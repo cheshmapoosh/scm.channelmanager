@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.model.person;
 
 // MAJOR Table
 
-import ir.daneshrefah.scm.common.AuditableModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 
 /**
  * Description of the class or purpose of the file.
@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.common.AuditableModel;
  * @version 1.0
  * @since 2023-07-19
  */
-public class Major extends AuditableModel {
+public class Major extends AbstractAuditableModel {
 
     private String code;
     private String title;
