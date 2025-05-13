@@ -1,5 +1,5 @@
 scm:
-  channels: IB4DEV
+  channels: SCM4DEV
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     nab-tcp: 10.15.27.12:3080

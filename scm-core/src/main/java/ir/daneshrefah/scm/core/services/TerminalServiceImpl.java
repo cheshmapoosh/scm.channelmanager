@@ -18,18 +18,14 @@ import ir.daneshrefah.scm.core.repository.TerminalServiceAccessRepository;
 import ir.daneshrefah.scm.core.repository.TransformerRelationRepository;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -274,7 +270,7 @@ public class TerminalServiceImpl extends TerminalService {
                         LegacyTerminal legacyTerminal = new LegacyTerminal();
                         legacyTerminal.setId(rs.getInt("CHANNEL_ID"));
                         legacyTerminal.setCode(StringUtils.trim(rs.getString("CODE")).toString());
-                        legacyTerminal.setTitle(StringUtils.trim(rs.getString("NAME")).toString());
+                        legacyTerminal.setName(StringUtils.trim(rs.getString("NAME")).toString());
                         return legacyTerminal;
                     }));
                 }

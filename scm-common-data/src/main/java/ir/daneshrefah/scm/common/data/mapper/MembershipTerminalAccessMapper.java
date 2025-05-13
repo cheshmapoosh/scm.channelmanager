@@ -25,37 +25,21 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-03-25
  */
-@Mapper
+@Mapper(uses = {CmChannelMapper.class,MembershipMapper.class, PersonMapper.class})
 public interface MembershipTerminalAccessMapper {
 
     MembershipTerminalAccessMapper INSTANCE = Mappers.getMapper(MembershipTerminalAccessMapper.class);
 
-    @Mapping(source = "terminal", target = "terminal", qualifiedByName = "toTerminal")
-    @Mapping(source = "membership", target = "membership", qualifiedByName = "toMembership")
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "createDate", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "lastEditDate", ignore = true)
+
     MembershipTerminalAccess toMembershipTerminalAccess(MembershipTerminalAccessEntity entity);
 
     List<MembershipTerminalAccess> toMembershipTerminalAccessList(Iterable<MembershipTerminalAccessEntity> entity);
 
-    @Named("toMembership")
-    @Mapping(source = "person", target = "person", qualifiedByName = "toPerson")
-    default Membership toMembership(MembershipEntity entity) {
-        return MembershipMapper.INSTANCE.toModel(entity);
-    }
 
-    @Named("toPerson")
-    default GeneralPerson toPerson(GeneralPersonEntity entity) {
-        return PersonMapper.INSTANCE.toPerson(entity);
-    }
-
-    @Named("toTerminal")
-    default Terminal toTerminal(TerminalEntity entity) {
-        // Delegate the mapping to the method in ServiceMapper
-        return TerminalMapper.INSTANCE.toModel(entity);
-    }
+//    @Named("toPerson")
+//    default GeneralPerson toPerson(GeneralPersonEntity entity) {
+//        return PersonMapper.INSTANCE.toPerson(entity);
+//    }
 
     default MembershipTerminalAccessDto toDto(MembershipTerminalAccessEntity entity){
         return toDto(toMembershipTerminalAccess(entity));
