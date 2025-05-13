@@ -16,6 +16,7 @@ public interface MembershipTerminalServiceAccessRepository extends JpaRepository
             select o
             from MembershipTerminalServiceAccessEntity o
             where o.membershipTerminalAccess.channel.id = :channelId
+              and o.channelServiceAccess.channel.parentId is null
               and o.membershipTerminalAccess.channel.parentId is null
               and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
               and o.membershipTerminalAccess.membership.person.id = :personId
