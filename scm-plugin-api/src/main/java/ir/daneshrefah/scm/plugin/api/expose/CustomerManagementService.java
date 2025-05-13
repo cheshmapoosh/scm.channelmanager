@@ -126,7 +126,7 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService
                 .findAllChannelServiceAccessList(request)
                 .stream()
-                .peek(model->model.setTerminal(null))
+                .peek(model->model.setChannel(null))
                 .toList();
     }
 

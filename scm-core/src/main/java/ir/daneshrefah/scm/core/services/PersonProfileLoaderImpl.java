@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.core.services;
 
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
+import ir.daneshrefah.scm.common.model.gateway.CmChannel;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -29,7 +31,7 @@ public class PersonProfileLoaderImpl implements PersonProfileLoader {
 
     private final PersonService personService;
     private final CustomerService customerService;
-    private final TerminalService terminalService;
+    private final CmChannelService channelService;
     private final ServiceAccessService serviceAccessService;
 
     @Override
@@ -58,9 +60,9 @@ public class PersonProfileLoaderImpl implements PersonProfileLoader {
         if (profile.isMembershipLoaded()) {
             return profile;
         }
-        Terminal terminal = terminalService.findTerminalByCode(terminalCode).get();
-        List<MembershipTerminalAccess> memberships = customerService.findMembershipTerminalAccessList(
-                profile.getPersonId(), terminal.getId());
+        CmChannel channel = channelService.findChannelByCode(terminalCode).get();
+        List<MembershipTerminalAccess> memberships = customerService.findMembershipChannelAccessList(
+                profile.getPersonId(), channel.getId());
         profile.loadMembership(memberships);
         return profile;
     }

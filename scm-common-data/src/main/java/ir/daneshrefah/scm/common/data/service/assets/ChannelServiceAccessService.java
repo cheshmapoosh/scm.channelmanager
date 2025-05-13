@@ -20,7 +20,7 @@ public class ChannelServiceAccessService {
 
     public List<ChannelServiceAccess> findAllByTerminalType(TerminalType terminalType) {
         return CACHE.computeIfAbsent(terminalType, key -> channelServiceAccessRepository
-                .findByLegacyTerminalId(terminalType.getLegacyTerminalId().longValue())
+                .findByChannelId(terminalType.getLegacyTerminalId())
                 .stream()
                 .map(ChannelServiceAccessMapper.INSTANCE::toModel)
                 .toList());

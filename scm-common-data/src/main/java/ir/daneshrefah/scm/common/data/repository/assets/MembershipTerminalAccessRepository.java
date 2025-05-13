@@ -13,17 +13,13 @@ import java.util.Optional;
 @Repository
 public interface MembershipTerminalAccessRepository extends JpaRepository<MembershipTerminalAccessEntity, Long>, JpaSpecificationExecutor<MembershipTerminalAccessEntity> {
 
-    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.terminal.id = :terminalId")
-    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("terminalId") String terminalId);
+    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.channel.id = :terminalId")
+    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("terminalId") Integer channelId);
 
-    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.terminal.legacyTerminalId = :legacyTerminalId")
-    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("legacyTerminalId") Integer legacyTerminalId);
+    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.channel.id = :channelId and m.membership.customerAccount.account.accountNo = :accountNumber")
+    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonIdAndAccountNo(@Param("personId") Long personId, @Param("channelId") Integer channelId,@Param("accountNumber") String accountNumber);
 
-
-    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.terminal.legacyTerminalId = :legacyTerminalId and m.membership.customerAccount.account.accountNo = :accountNumber")
-    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonIdAndAccountNo(@Param("personId") Long personId, @Param("legacyTerminalId") Integer legacyTerminalId,@Param("accountNumber") String accountNumber);
-
-    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_IdAndTerminal_Code(Long membership_Id, String terminalCode);
+    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_IdAndChannelCode(Long membership_Id, String channelCode);
 
     Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_Id(Long id);
 

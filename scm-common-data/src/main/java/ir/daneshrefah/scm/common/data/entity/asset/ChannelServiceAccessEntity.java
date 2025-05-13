@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
+import ir.daneshrefah.scm.common.data.entity.gateway.CmChannelEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,8 +19,8 @@ public class ChannelServiceAccessEntity extends AbstractEntity<Long> {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "CHANNEL_ID", referencedColumnName = "LEGACY_TERMINAL_ID")
-    private TerminalEntity terminal;
+    @JoinColumn(name = "CHANNEL_ID")
+    private CmChannelEntity channel;
 
     @ManyToOne
     @JoinColumn(name = "EB_SERVICE_ID", nullable = false)

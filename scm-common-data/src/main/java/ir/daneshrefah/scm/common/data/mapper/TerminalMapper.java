@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.data.mapper;
 
+
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import org.mapstruct.Mapper;
