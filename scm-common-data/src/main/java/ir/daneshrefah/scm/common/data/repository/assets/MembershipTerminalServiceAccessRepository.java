@@ -11,13 +11,13 @@ import java.util.List;
 
 @Repository
 public interface MembershipTerminalServiceAccessRepository extends JpaRepository<MembershipTerminalServiceAccessEntity, Integer> {
-
     @Query("""
             select o
             from MembershipTerminalServiceAccessEntity o
             where o.membershipTerminalAccess.channel.id = :channelId
-              and o.channelServiceAccess.channel.parentId is null
               and o.membershipTerminalAccess.channel.parentId is null
+              and o.channelServiceAccess.channel.parentId is null
+              and o.channelServiceAccess.channel.id = :channelId
               and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo
               and o.membershipTerminalAccess.membership.person.id = :personId
             """)
@@ -32,6 +32,7 @@ public interface MembershipTerminalServiceAccessRepository extends JpaRepository
             "channelServiceAccess.ebService"
     })
     List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("channelId") Integer channelId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
+
 
     @Query("select o from MembershipTerminalServiceAccessEntity o where o.channelServiceAccess.id = :channelServiceAccessId and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo and o.membershipTerminalAccess.membership.person.id = :personId")
     List<MembershipTerminalServiceAccessEntity> findByChannelServiceAccessIdAndAccountNoAndPersonId(@Param("channelServiceAccessId") Long channelServiceAccessId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
