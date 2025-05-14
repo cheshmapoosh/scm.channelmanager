@@ -22,7 +22,7 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.log.LoggingServerApplication'
-//    archiveClassifier = 'boot'
+    archiveClassifier = ''
 }
 
 dependencies {

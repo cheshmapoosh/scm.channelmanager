@@ -5,6 +5,8 @@ import ir.daneshrefah.scm.common.model.logging.*;
 
 public interface LogService {
 
+    void save(String msg);
+
     PagedResponseData<LogTraceResponse> findAll(LogTraceRequest request);
 
     LogTracePayloadResponse getPayload(LogTraceFindByIdRequest request);
