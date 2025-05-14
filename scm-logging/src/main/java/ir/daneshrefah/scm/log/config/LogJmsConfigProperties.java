@@ -17,4 +17,5 @@ public class LogJmsConfigProperties {
     private String username;
     private String password;
     private String destination;
+<<<<<<< HEAD
 }
