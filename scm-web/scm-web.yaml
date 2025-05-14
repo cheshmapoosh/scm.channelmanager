@@ -16,7 +16,8 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: Service
 metadata:
-  name: scm-ui
+#  name: scm-web
+  name: scm-ui #-> for scm-ui
   labels:
     helm.sh/chart: scm-web-0.1.0
     app.kubernetes.io/name: scm-web
@@ -26,13 +27,14 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 8083
+#    - port: 8082
+    - port: 8083 #-> for scm-ui
       targetPort: http
       protocol: TCP
       name: http
   externalIPs:
-    - 10.10.4.128
-
+#    - 10.10.4.127
+    - 10.10.4.128 #-> for scm-ui
   selector:
     app.kubernetes.io/name: scm-web
     app.kubernetes.io/instance: scm-web
@@ -41,7 +43,8 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scm-ui
+#  name: scm-web
+  name: scm-ui #-> for scm-ui
   labels:
     helm.sh/chart: scm-web-0.1.0
     app.kubernetes.io/name: scm-web
@@ -69,16 +72,18 @@ spec:
       securityContext:
         {}
       containers:
-        - name: scm-ui
+#        - name: scm-web
+        - name: scm-ui #-> for scm-ui
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0221T1030"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0223T1630"
           imagePullPolicy: IfNotPresent
           env:
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
-              value: scm4test
+#              value: ib4test
+              value: scm4test #-> for scm-ui
             - name: SPRING_APPLICATION_NAME
               value: scm-web
             - name: VERSION
@@ -97,7 +102,8 @@ spec:
                   name: scm-uaa-configmap
           ports:
             - name: http
-              containerPort: 8083
+#              containerPort: 8082
+              containerPort: 8083 #-> for scm-ui
               protocol: TCP
 
 
@@ -114,7 +120,8 @@ spec:
             type: DirectoryOrCreate
           name: log-volume
       nodeSelector:
-        app: scm-web
+#        app: scm-web
+        app: scm-ui # -> for scm-ui
       tolerations:
         - effect: NoSchedule
           key: daneshrefah.ir/group
