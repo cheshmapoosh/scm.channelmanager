@@ -117,12 +117,24 @@ public class AuthenticationUtils {
 
 
     public static boolean isFullyAuthenticated() {
+        /*
+         * Important notice: as the Authentication instance type is customized, the isFullyAuthenticated() method
+         * must invoke from the current authentication instance.
+         * Spring Security creates another authentication type for ['anonymous'] users, and checks that type
+         * for fully authentication method.
+         */
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return isFullyAuthenticated(authentication);
+        if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {
+            return false;
+        }
+        if (!(authentication instanceof ir.daneshrefah.scm.common.model.message.Authentication)) {
+            return false;
+        }
+        return ((ir.daneshrefah.scm.common.model.message.Authentication) authentication).isFullyAuthenticated();
     }
 
     public static boolean isFullyAuthenticated(Authentication authentication) {
-        return authenticationTrustResolver.isFullyAuthenticated(authentication);
+        return authentication.isAuthenticated();
     }
 
     public static Authentication getAuthentication() {
