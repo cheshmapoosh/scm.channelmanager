@@ -12,7 +12,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ProfileInfo {
 
-    private static final String DEVELOPMENT_PROFILE = "dev";
+    private static final String[] DEVELOPMENT_PROFILES = {"dev","default"};
     private static Boolean TRACE_MODE_STATUS = null;
     private final Environment environment;
 
@@ -39,7 +39,7 @@ public class ProfileInfo {
                 if (Objects.isNull(TRACE_MODE_STATUS)) {
                     TRACE_MODE_STATUS = getActiveProfiles()
                             .stream()
-                            .anyMatch(profile -> profile.equals(DEVELOPMENT_PROFILE));
+                            .anyMatch(profile -> Arrays.stream(DEVELOPMENT_PROFILES).toList().contains(profile));
                 }
             }
         }
