@@ -6,7 +6,10 @@ import ir.daneshrefah.scm.cache.service.MapCacheManagementService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/scm-cache-manage/maps")
@@ -26,7 +29,7 @@ public class MapCacheManagementController {
     }
 
     @PostMapping("/get-all-map-values")
-    public CacheResponse<MapValuesCacheResponse> getMapValues(@RequestBody MapValuesCacheRequest request) {
+    public MapValuesCacheResponse getMapValues(@RequestBody MapValuesCacheRequest request) {
         return mapCacheManagementService.getMapData(request);
     }
 
@@ -37,12 +40,12 @@ public class MapCacheManagementController {
     }
 
     @PostMapping("/put")
-    public CacheResponse<MapValuesCacheResponse> put(@RequestBody PutMapCacheRequest request) {
+    public MapValuesCacheResponse put(@RequestBody PutMapCacheRequest request) {
         return mapCacheManagementService.put(request);
     }
 
     @PostMapping("/update")
-    public CacheResponse<MapValuesCacheResponse> update(@RequestBody UpdateMapCacheRequest request) {
+    public MapValuesCacheResponse update(@RequestBody UpdateMapCacheRequest request) {
         return mapCacheManagementService.updateCache(request);
     }
 

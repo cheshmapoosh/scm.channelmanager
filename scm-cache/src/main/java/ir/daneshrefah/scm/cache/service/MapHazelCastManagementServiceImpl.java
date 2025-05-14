@@ -5,7 +5,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
-import ir.daneshrefah.scm.cache.domain.dto.ClearCacheRequest;
 import ir.daneshrefah.scm.cache.domain.dto.*;
 import ir.daneshrefah.scm.cache.domain.dto.map.*;
 import ir.daneshrefah.scm.cache.exception.DefaultCacheException;
@@ -69,7 +68,7 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
     }
 
     @Override
-    public CacheResponse<MapValuesCacheResponse> getMapData(MapValuesCacheRequest request) {
+    public MapValuesCacheResponse getMapData(MapValuesCacheRequest request) {
         ValidationUtils.checkNull(request.getName(), () -> new MissingRequiredInputException("mapName"));
         ValidationUtils.checkNull(request.getKey(), () -> new MissingRequiredInputException("key"));
         if (!isMapExists(request.getName())) {
@@ -77,10 +76,10 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
         }
         IMap<Object, Object> map = hazelcastInstance.getMap(request.getName());
         if (map.isEmpty() || !map.containsKey(request.getKey())) {
-            return new CacheResponse<>(List.of());
+            return null;
         }
         EntryView<Object, Object> entryView = map.getEntryView(request.getKey());
-        MapValuesCacheResponse mapValuesCacheResponse = MapValuesCacheResponse
+        return MapValuesCacheResponse
                 .builder()
                 .key(entryView.getKey())
                 .value(entryView.getValue())
@@ -95,7 +94,6 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
                 .timeToLive(entryView.getTtl())
                 .maxIdle(entryView.getMaxIdle())
                 .build();
-        return new CacheResponse<>(List.of(mapValuesCacheResponse));
     }
 
     @Override
@@ -109,7 +107,7 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
     }
 
     @Override
-    public CacheResponse<MapValuesCacheResponse> updateCache(UpdateMapCacheRequest request) {
+    public MapValuesCacheResponse updateCache(UpdateMapCacheRequest request) {
         if (!isMapExists(request.getName())) {
             throw new DefaultCacheException(String.format("map [%s] exists", request.getName()), "1001");
         }
@@ -123,7 +121,7 @@ public class MapHazelCastManagementServiceImpl implements MapCacheManagementServ
     }
 
     @Override
-    public CacheResponse<MapValuesCacheResponse> put(PutMapCacheRequest request) {
+    public MapValuesCacheResponse put(PutMapCacheRequest request) {
         if (!isMapExists(request.getName())) {
             throw new DefaultCacheException(String.format("map [%s] does not exist", request.getName()), "1000");
         }
