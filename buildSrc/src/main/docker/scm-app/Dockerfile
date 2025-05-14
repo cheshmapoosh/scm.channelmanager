@@ -13,5 +13,6 @@ COPY ../../../../../scm-config/build/libs/scm-config-$VERSION.jar .
 COPY ../../../../../scm-cache/build/libs/scm-cache-$VERSION.jar .
 COPY ../../../../../scm-uaa/build/libs/scm-uaa-$VERSION.jar .
 COPY ../../../../../scm-web/build/libs/scm-web-$VERSION.jar .
+COPY ../../../../../scm-web/build/libs/scm-logging-$VERSION.jar .
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/$ARTIFACT --sever.port=$SERVER_PORT"]

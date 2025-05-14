@@ -23,16 +23,20 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class LogTraceServiceImpl implements LogService {
+
     private final LogTraceRepository logTraceRepository;
     private final ConverterService converterService;
-
     private final ObjectMapper objectMapper;
 
-    public void save(String msg) throws Exception {
-        LogMessage logMessage = converterService.convertToLogMessage(msg);
-        LogTraceEntity logTraceEntity = converterService.convertToLogTraceEntity(logMessage);
-        logTraceEntity.setPayload(objectMapper.writeValueAsString(logMessage));
-        logTraceRepository.save(logTraceEntity);
+    public void save(String msg) {
+        try {
+            LogMessage logMessage = converterService.convertToLogMessage(msg);
+            LogTraceEntity logTraceEntity = converterService.convertToLogTraceEntity(logMessage);
+            logTraceEntity.setPayload(objectMapper.writeValueAsString(logMessage));
+            logTraceRepository.save(logTraceEntity);
+        } catch (Exception e) {
+            log.error("Failed to save message: {} due to error: {}", msg, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -64,7 +68,7 @@ public class LogTraceServiceImpl implements LogService {
     public LogTraceDetailResponse findById(LogTraceFindByIdRequest request) {
         LogTraceMapper instance = LogTraceMapper.INSTANCE;
         ValidationUtils.checkBlankString(request.getSpanId(), () -> new MissingRequiredInputException("spainId"));
-        ValidationUtils.checkBlankString(request.getTraceId(),() -> new MissingRequiredInputException("traceId"));
+        ValidationUtils.checkBlankString(request.getTraceId(), () -> new MissingRequiredInputException("traceId"));
         LogPrimaryKey logPrimaryKey = new LogPrimaryKey(request.getSpanId(), request.getTraceId());
         LogTraceEntity logTraceEntity = logTraceRepository.findById(logPrimaryKey).orElseThrow(() -> new NoMatchRecordFoundException("spanId&TraceID"));
         return instance.toModel(logTraceEntity);

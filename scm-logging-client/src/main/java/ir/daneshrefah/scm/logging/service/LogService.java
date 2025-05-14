@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.logging.model.LogTraceResponse;
 
 public interface LogService {
 
-    void save(String msg) throws Exception;
+    void save(String msg);
 
     PagedResponseData<LogTraceResponse> findAll(LogTraceRequest request);
 
