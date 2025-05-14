@@ -3,10 +3,12 @@ package ir.daneshrefah.scm.uaa.service.user;
 import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
+import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -32,6 +34,7 @@ public class OtpUserService {
 
     private final OtpService otpService;
     private final UserService userService;
+    private final PersonService personService;
 
     public OtpSendResponse sendOtpByUsername(OtpSmsBasedUsernameRequest request) {
         String terminalCode = extractRequestTerminalCode();
@@ -122,6 +125,27 @@ public class OtpUserService {
                 .address(generalPersonEntity.getMobile1())
                 .identifier(userEntity.getNickname())
                 .identifierType(UserIdentifierType.USER_NICKNAME)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        OtpSendRequest otpRequest = OtpSendRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(request.getReason())
+                .recipient(recipient)
+                .build();
+        return otpService.sendOtp(otpRequest);
+    }
+
+    public OtpSendResponse sendOtpSmsByNationalId(OtpSmsBasedNationalCodeRequest request) {
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+        GeneralPerson generalPerson = personService
+                .findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrg())
+                .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        Recipient recipient = Recipient.builder()
+                .address(generalPerson.getMobile1())
+                .identifier(generalPerson.getUsername())
+                .identifierType(UserIdentifierType.PERSON_USERNAME)
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();

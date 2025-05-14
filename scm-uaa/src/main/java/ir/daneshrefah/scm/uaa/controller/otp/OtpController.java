@@ -43,6 +43,15 @@ public class OtpController extends BaseController {
     }
 
     /**
+     * Sends OTP TO User By NationalId
+     */
+//    @PreAuthorize("hasAuthority(ROLE_CSP)")
+    @PostMapping("/sms-by-national-id")
+    public OtpSendResponse sendOtpSmsByNationalId(@RequestBody OtpSmsBasedNationalCodeRequest request) {
+        return otpUserService.sendOtpSmsByNationalId(request);
+    }
+
+    /**
      * Sends OTP TO User By Username
      */
    // @PreAuthorize("hasAuthority(ROLE_CSP)")
