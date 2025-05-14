@@ -40,7 +40,8 @@ public enum OtpReason {
     PAYMENT_TRANSFER_INTERNAL_BATCH                 (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,21),
     PAYMENT_TRANSFER_INSURANCE_BATCH                (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,22),
     PAYMENT_TRANSFER_RECURRING_ADD_ACH              (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,23),
-    PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH        (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,24);
+    PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH        (1,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,24),
+    BANK_CONSOLE_CUSTOMER_VERIFICATION              (2,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,2,1,25);
 
     private final int timeToLiveMinutes;
     private final int length;
