@@ -9,6 +9,9 @@ spring:
     hikari:
       maximum-pool-size: 10
       schema: REF
+  cloud:
+    config:
+      enabled: false
   jpa:
     show-sql: true
     properties:
@@ -24,27 +27,23 @@ spring:
       org.hibernate.type.descriptor.sql: TRACE # Just for development
       org.hibernate.orm.jdbc.bind: TRACE # Just for development
     file:
-      path: /logserver # Specify the directory path for logs
+      path: /log # Specify the directory path for logs
       name: log-server.log
     pattern:
       file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # Define the log pattern
-
-ibm:
-  mq:
-    queue-manager: CSQ1
-    channel: DEV.ADMIN.SVRCONN
-    conn-name: 10.10.4.238(11414)
-    user: admin
-    password: passw0rd
-
 server:
   port: 9090
 
 scm:
-  mq:
-    concurrency: 10
-    destination: SCM2LOG
-    enabled: true
+  jms:
+    log:
+      destination: SCM2LOG
+      queueManager: CSQ1
+      channel: DEV.ADMIN.SVRCONN
+      host: 10.10.4.238
+      port: 11414
+      username: admin
+      password: passw0rd
   log:
     file-directory: log
     rolling-archive-directory: archive

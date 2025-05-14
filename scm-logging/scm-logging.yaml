@@ -1,109 +1,106 @@
 ---
-# Source: scm-web/templates/serviceaccount.yaml
+# Source: scm-logging/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: scm-web-service-account
+  name: scm-logging-service-account
   labels:
-    helm.sh/chart: scm-web-0.1.0
-    app.kubernetes.io/name: scm-web
-    app.kubernetes.io/instance: scm-web
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
     app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
-# Source: scm-web/templates/service.yaml
+# Source: scm-logging/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scm-logging-configmap
+data:
+  # Key-value pairs for your configuration
+  SPRING_SECURITY_ISSUER_URI: "http://scm-logging.scm.svc.cluster.local:8000"
+---
+# Source: scm-logging/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-#  name: scm-web
-  name: scm-ui #-> for scm-ui
+  name: scm-logging
   labels:
-    helm.sh/chart: scm-web-0.1.0
-    app.kubernetes.io/name: scm-web
-    app.kubernetes.io/instance: scm-web
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
     app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: LoadBalancer
   ports:
-#    - port: 8082
-    - port: 8083 #-> for scm-ui
+    - port: 8000
       targetPort: http
       protocol: TCP
       name: http
   externalIPs:
-#    - 10.10.4.127
-    - 10.10.4.128 #-> for scm-ui
+    - 10.10.4.127
   selector:
-    app.kubernetes.io/name: scm-web
-    app.kubernetes.io/instance: scm-web
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
 ---
-# Source: scm-web/templates/deployment.yaml
+# Source: scm-logging/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-#  name: scm-web
-  name: scm-ui #-> for scm-ui
+  name: scm-logging
   labels:
-    helm.sh/chart: scm-web-0.1.0
-    app.kubernetes.io/name: scm-web
-    app.kubernetes.io/instance: scm-web
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
     app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: scm-web
-      app.kubernetes.io/instance: scm-web
+      app.kubernetes.io/name: scm-logging
+      app.kubernetes.io/instance: scm-logging
   template:
     metadata:
       labels:
-        helm.sh/chart: scm-web-0.1.0
-        app.kubernetes.io/name: scm-web
-        app.kubernetes.io/instance: scm-web
+        helm.sh/chart: scm-logging-0.1.0
+        app.kubernetes.io/name: scm-logging
+        app.kubernetes.io/instance: scm-logging
         app.kubernetes.io/version: "8.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
       imagePullSecrets:
         - name: regcred
-      serviceAccountName: scm-web-service-account
+      serviceAccountName: scm-logging-service-account
       securityContext:
         {}
       containers:
-#        - name: scm-web
-        - name: scm-ui #-> for scm-ui
+        - name: scm-logging
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0223T1630"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0224T1130"
           imagePullPolicy: IfNotPresent
           env:
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
-#              value: ib4test
-              value: scm4test #-> for scm-ui
+              value: test
             - name: SPRING_APPLICATION_NAME
-              value: scm-web
+              value: scm-logging
             - name: VERSION
               value: 8.2.0
             - name: SERVER_PORT
-              value: "8086"
+              value: "9090"
             - name: SPRING_CLOUD_CONFIG_URI
               valueFrom:
                 configMapKeyRef:
                   key: SPRING_CLOUD_CONFIG_URI
                   name: scm-config-configmap
-            - name: SPRING_SECURITY_ISSUER_URI
-              valueFrom:
-                configMapKeyRef:
-                  key: SPRING_SECURITY_ISSUER_URI
-                  name: scm-uaa-configmap
           ports:
             - name: http
-#              containerPort: 8082
-              containerPort: 8083 #-> for scm-ui
+              containerPort: 9090
               protocol: TCP
 
 
@@ -120,8 +117,7 @@ spec:
             type: DirectoryOrCreate
           name: log-volume
       nodeSelector:
-#        app: scm-web
-        app: scm-ui # -> for scm-ui
+        app: scm-web
       tolerations:
         - effect: NoSchedule
           key: daneshrefah.ir/group

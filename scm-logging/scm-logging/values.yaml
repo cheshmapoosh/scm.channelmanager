@@ -1,0 +1,158 @@
+# Default values for scm-logging.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: reg.daneshrefah.ir/modern-banking/scm-app
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: regcred
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "scm-logging-service-account"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: LoadBalancer
+  port: 8000
+  externalIPs:
+    - 10.10.4.121
+
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: scm-config.daneshrefah.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              port:
+                number: 9090
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+#livenessProbe:
+#  httpGet:
+#    path: /public/token
+#    port: 8000
+#    scheme: HTTP
+#  initialDelaySeconds: 30
+#  timeoutSeconds: 3
+#  periodSeconds: 30
+#  successThreshold: 1
+#  failureThreshold: 5
+#
+#readinessProbe:
+#  httpGet:
+#    path: /public/token
+#    port: 8000
+#    scheme: HTTP
+#  initialDelaySeconds: 10
+#  timeoutSeconds: 3
+#  periodSeconds: 30
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes:
+  - name: log-volume
+    hostPath:
+      path: /log
+      type: DirectoryOrCreate
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: log-volume
+    mountPath: "/mnt/log"
+
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+tolerations:
+  - key: "daneshrefah.ir/group"
+    operator: "Equal"
+    value: "scm"
+    effect: "NoSchedule"
+
+nodeSelector:
+  app: scm-logging
+
+affinity: {}
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: test
+  - name: SPRING_APPLICATION_NAME
+    value: scm-logging
+  - name: VERSION
+    value: 8.2.0
+  - name: SERVER_PORT
+    value: "9090"
+  - name: SPRING_CLOUD_CONFIG_URI
+    valueFrom:
+      configMapKeyRef:
+        name: scm-config-configmap
+        key: SPRING_CLOUD_CONFIG_URI
+  - name: SPRING_SECURITY_ISSUER_URI
+    valueFrom:
+      configMapKeyRef:
+        name: scm-logging-configmap
+        key: SPRING_SECURITY_ISSUER_URI
