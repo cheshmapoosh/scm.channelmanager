@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

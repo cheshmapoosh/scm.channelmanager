@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.gateway;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.gateway.ChannelEntity;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.core.services.gateway;
 
+import ir.daneshrefah.scm.common.data.entity.asset.ChannelServiceAccessEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.ServiceEntity;
+import ir.daneshrefah.scm.common.data.mapper.ChannelServiceAccessMapper;
+import ir.daneshrefah.scm.common.data.repository.assets.ChannelServiceAccessRepository;
+import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceAccess;
-import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceAccessEntity;
-import ir.daneshrefah.scm.core.entity.gateway.ServiceEntity;
-import ir.daneshrefah.scm.core.mapper.gateway.ChannelServiceAccessMapper;
-import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceAccessRepository;
+import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
+import ir.daneshrefah.scm.core.entity.gateway.ServiceOperationEntity;
+import ir.daneshrefah.scm.core.mapper.gateway.ServiceOperationMapper;
+import ir.daneshrefah.scm.core.repository.gateway.ServiceOperationRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -17,7 +21,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessService {
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
+    private final ServiceOperationRepository serviceOperationRepository;
     private final ChannelServiceAccessMapper channelServiceAccessMapper;
+    private final ServiceOperationMapper serviceOperationMapper;
 
     @Override
     public List<ChannelServiceAccess> findAllByChannel(Channel channel) {
@@ -29,7 +35,16 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
 
         return channelServiceAccessEntities.stream()
                 .filter(ChannelServiceAccessServiceImpl::support)
-                .map(channelServiceAccessMapper::toDto)
+                .map(channelServiceAccessEntity -> {
+                  ChannelServiceAccess channelServiceAccess = channelServiceAccessMapper.toDto(channelServiceAccessEntity);
+                  List<ServiceOperationEntity> serviceOperationEntities = serviceOperationRepository
+                          .findAllByService_Id(channelServiceAccessEntity.getService().getId());
+                  List<ServiceOperation> serviceOperations = serviceOperationEntities.stream()
+                          .map(serviceOperationMapper::toDto)
+                          .toList();
+                  channelServiceAccess.getService().setServiceOperations(serviceOperations);
+                  return channelServiceAccess;
+                })
                 .collect(Collectors.toList());
     }
 

@@ -2,4 +2,4 @@ spring:
   profiles:
     active: default
   application:
-    name: scm-web
+    name: ${SCM_APPLICATION_NAME}

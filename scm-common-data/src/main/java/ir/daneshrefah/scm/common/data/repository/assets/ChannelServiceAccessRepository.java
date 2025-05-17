@@ -7,10 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChannelServiceAccessRepository extends JpaRepository<ChannelServiceAccessEntity, Long> {
 
-    @Query("select o from ChannelServiceAccessEntity o where o.channel.id = :channelId and o.active = true and o.ebService.publish = true ")
-    List<ChannelServiceAccessEntity> findByChannelId(@Param("channelId") Integer channelId);
+    Optional<List<ChannelServiceAccessEntity>> findAllByChannelId(Short channelId);
+
+    @Query("select o from ChannelServiceAccessEntity o where o.channel.id = :channelId and o.active = true and o.service.publish = true ")
+    List<ChannelServiceAccessEntity> findByChannelId(@Param("channelId") Short channelId);
 }

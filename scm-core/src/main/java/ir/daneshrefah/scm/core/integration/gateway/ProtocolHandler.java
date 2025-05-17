@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceAccess;
+import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;

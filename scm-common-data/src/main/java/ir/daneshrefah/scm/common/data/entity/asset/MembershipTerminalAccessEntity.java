@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.entity.gateway.CmChannelEntity;
+import ir.daneshrefah.scm.common.data.entity.gateway.ChannelEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +35,7 @@ public class MembershipTerminalAccessEntity extends AbstractEntity<Long> {
     private Boolean active;
     @ManyToOne
     @JoinColumn(name = "CHANNEL_ID")
-    private CmChannelEntity channel;
+    private ChannelEntity channel;
     @ManyToOne
     @JoinColumn(name = "MEMBERSHIP_ID")
     private MembershipEntity membership;

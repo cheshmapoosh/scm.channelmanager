@@ -1,14 +1,13 @@
-package ir.daneshrefah.scm.core.mapper.gateway;
+package ir.daneshrefah.scm.common.data.mapper;
 
+import ir.daneshrefah.scm.common.data.entity.asset.ServiceEntity;
 import ir.daneshrefah.scm.common.model.gateway.Service;
-import ir.daneshrefah.scm.core.entity.gateway.ServiceEntity;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ServiceMapper {
-    ServiceMapper INSTANCE = Mappers.getMapper(ServiceMapper.class);
-
     ServiceEntity toEntity(Service service);
 
     Service toDto(ServiceEntity serviceEntity);

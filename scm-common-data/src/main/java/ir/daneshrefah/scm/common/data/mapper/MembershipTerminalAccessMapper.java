@@ -1,19 +1,11 @@
 package ir.daneshrefah.scm.common.data.mapper;
 
-import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import ir.daneshrefah.scm.common.data.entity.asset.MembershipTerminalAccessEntity;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
-import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.dto.asset.MembershipTerminalAccessDto;
-import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.MappingConstants;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,11 +17,8 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-03-25
  */
-@Mapper(uses = {CmChannelMapper.class,MembershipMapper.class, PersonMapper.class})
+@Mapper(uses = {ChannelMapper.class,MembershipMapper.class, PersonMapper.class}, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface MembershipTerminalAccessMapper {
-
-    MembershipTerminalAccessMapper INSTANCE = Mappers.getMapper(MembershipTerminalAccessMapper.class);
-
 
     MembershipTerminalAccess toMembershipTerminalAccess(MembershipTerminalAccessEntity entity);
 
@@ -67,7 +56,8 @@ public interface MembershipTerminalAccessMapper {
         dto.setLastEditor(model.getLastEditor());
         dto.setCreateDate(model.getCreateDate());
         dto.setLastEditDate(model.getLastEditDate());
-        dto.setMembership(MembershipMapper.INSTANCE.toDto(model.getMembership()));
+        //TODO SCMNEW-4: Resolve by dariush
+//        dto.setMembership(MembershipMapper.INSTANCE.toDto(model.getMembership()));
         return dto;
     }
 }

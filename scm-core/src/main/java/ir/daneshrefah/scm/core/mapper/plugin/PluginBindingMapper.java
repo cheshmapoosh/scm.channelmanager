@@ -45,7 +45,7 @@ public abstract class PluginBindingMapper {
             throw new RuntimeException(e);
         }
 
-        pluginDefinitions.forEach(pluginDefinition -> pluginDefinition.setPluginAdvice(pluginAdvices.get(pluginDefinition.getName())));
+//        pluginDefinitions.forEach(pluginDefinition -> pluginDefinition.setPluginAdvice(pluginAdvices.get(pluginDefinition.getName())));
         pluginBinding.setAdvisors(pluginDefinitions);
     }
 

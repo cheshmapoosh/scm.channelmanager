@@ -31,7 +31,7 @@ public interface MembershipTerminalServiceAccessRepository extends JpaRepository
             "channelServiceAccess",
             "channelServiceAccess.ebService"
     })
-    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("channelId") Integer channelId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
+    List<MembershipTerminalServiceAccessEntity> findByLegacyTerminalIdAndAccountNo(@Param("channelId") Short channelId, @Param("accountNo") String accountNo,@Param("personId") Long personId);
 
 
     @Query("select o from MembershipTerminalServiceAccessEntity o where o.channelServiceAccess.id = :channelServiceAccessId and o.membershipTerminalAccess.membership.customerAccount.account.accountNo = :accountNo and o.membershipTerminalAccess.membership.person.id = :personId")

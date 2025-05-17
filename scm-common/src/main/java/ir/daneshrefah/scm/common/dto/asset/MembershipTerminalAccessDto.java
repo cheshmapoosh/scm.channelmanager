@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.dto.asset;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class MembershipTerminalAccessDto extends BaseModel<Long> {
+public class MembershipTerminalAccessDto extends AbstractAuditableModel<Long> {
     private Boolean active;
     private MembershipDto membership;
     private Boolean favorite;

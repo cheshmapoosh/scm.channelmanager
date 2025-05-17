@@ -13,11 +13,11 @@ import java.util.Optional;
 @Repository
 public interface MembershipTerminalAccessRepository extends JpaRepository<MembershipTerminalAccessEntity, Long>, JpaSpecificationExecutor<MembershipTerminalAccessEntity> {
 
-    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.channel.id = :terminalId")
-    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("terminalId") Integer channelId);
+    @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.channel.id = :channelId")
+    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonId(@Param("personId") Long personId, @Param("channelId") Short channelId);
 
     @Query("SELECT m FROM MembershipTerminalAccessEntity m WHERE m.membership.person.id = :personId and m.channel.id = :channelId and m.membership.customerAccount.account.accountNo = :accountNumber")
-    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonIdAndAccountNo(@Param("personId") Long personId, @Param("channelId") Integer channelId,@Param("accountNumber") String accountNumber);
+    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByPersonIdAndAccountNo(@Param("personId") Long personId, @Param("channelId") Short channelId,@Param("accountNumber") String accountNumber);
 
     Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_IdAndChannelCode(Long membership_Id, String channelCode);
 

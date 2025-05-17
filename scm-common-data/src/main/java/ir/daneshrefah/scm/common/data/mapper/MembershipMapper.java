@@ -5,18 +5,13 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.dto.asset.MembershipDto;
 import ir.daneshrefah.scm.common.model.asset.Membership;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.*;
 
 import java.util.List;
 import java.util.Objects;
 
-@Mapper
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface MembershipMapper {
-
-    MembershipMapper INSTANCE = Mappers.getMapper(MembershipMapper.class);
 
     @Mapping(source = "person", target = "person", qualifiedByName = "toPersonModel")
     @Mapping(target = "creator", ignore = true)

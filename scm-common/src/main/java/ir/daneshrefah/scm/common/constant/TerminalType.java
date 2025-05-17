@@ -12,16 +12,16 @@ import java.util.Optional;
 @AllArgsConstructor
 public enum TerminalType {
 
-    IB("IB", 210),
-    MB("MB", 211),
-    SCM("SCM", 1304),
-    HTP("HTP", 2009),
-    NIB("NIB", 2012),
-    CMC("CMC", 22),
-    CIB("CIB", 1144);
+    IB("IB", (short) 210),
+    MB("MB", (short) 211),
+    SCM("SCM", (short) 1304),
+    HTP("HTP", (short) 2009),
+    NIB("NIB", (short) 2012),
+    CMC("CMC", (short) 22),
+    CIB("CIB", (short) 1144);
 
     private final String terminalCode;
-    private final Integer legacyTerminalId;
+    private final Short legacyTerminalId;
 
     public static Optional<TerminalType> fromCode(String code) {
         return Arrays.stream(values())

@@ -17,12 +17,13 @@ public class ChannelServiceAccessService {
 
     private static final Map<TerminalType, List<ChannelServiceAccess>> CACHE = new ConcurrentHashMap<>();
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
+    private final ChannelServiceAccessMapper channelServiceAccessMapper;
 
     public List<ChannelServiceAccess> findAllByTerminalType(TerminalType terminalType) {
         return CACHE.computeIfAbsent(terminalType, key -> channelServiceAccessRepository
                 .findByChannelId(terminalType.getLegacyTerminalId())
                 .stream()
-                .map(ChannelServiceAccessMapper.INSTANCE::toModel)
+                .map(channelServiceAccessMapper::toDto)
                 .toList());
     }
 

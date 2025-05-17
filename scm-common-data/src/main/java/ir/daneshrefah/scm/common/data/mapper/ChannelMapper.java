@@ -1,14 +1,13 @@
-package ir.daneshrefah.scm.core.mapper.gateway;
+package ir.daneshrefah.scm.common.data.mapper;
 
+import ir.daneshrefah.scm.common.data.entity.gateway.ChannelEntity;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
-import ir.daneshrefah.scm.core.entity.gateway.ChannelEntity;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {AuthenticationMethodMapper.class})
 public interface ChannelMapper {
-    ChannelMapper INSTANCE = Mappers.getMapper(ChannelMapper.class);
-
     ChannelEntity toEntity(Channel channel);
 
     Channel toDto(ChannelEntity channelEntity);

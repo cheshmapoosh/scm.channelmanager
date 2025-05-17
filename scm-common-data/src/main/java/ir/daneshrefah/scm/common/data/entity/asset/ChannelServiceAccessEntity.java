@@ -1,30 +1,31 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
-import ir.daneshrefah.scm.common.data.entity.gateway.CmChannelEntity;
+import ir.daneshrefah.scm.common.data.entity.gateway.ChannelEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "CHANNEL_SERVICE_ACCESS", schema = "REF")
 public class ChannelServiceAccessEntity extends AbstractEntity<Long> {
-
     @Id
-    @Column(name = "CHANNEL_SERVICE_ACCESS_ID")
+    @SequenceGenerator(name = "CHANNEL_SERVICE_ACCESS_id_gen", sequenceName = "SQCONSTANTS", allocationSize = 1)
+    @Column(name = "CHANNEL_SERVICE_ACCESS_ID", nullable = false, precision = 22)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "CHANNEL_ID")
-    private CmChannelEntity channel;
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "CHANNEL_ID", nullable = false)
+    private ChannelEntity channel;
 
-    @ManyToOne
+    @NotNull
+    @ManyToOne(optional = false)
     @JoinColumn(name = "EB_SERVICE_ID", nullable = false)
-    private EbServiceEntity ebService;
+    private ServiceEntity service;
 
     @Column(name = "FIXED_VALUE")
     private Integer fixedValue;
@@ -32,10 +33,10 @@ public class ChannelServiceAccessEntity extends AbstractEntity<Long> {
     @Column(name = "RATED_VALUE")
     private Integer ratedValue;
 
-    @Column(name = "WITHDRAWAL_AMOUNT", precision = 15)
-    private BigDecimal withdrawalAmount;
+    @Column(name = "WITHDRAWAL_AMOUNT")
+    private Long withdrawalAmount;
 
+    @NotNull
     @Column(name = "ACTIVE", nullable = false)
-    private Boolean active;
-
+    private Boolean active = false;
 }

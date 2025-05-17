@@ -25,5 +25,5 @@ public class MembershipTerminalServiceAccessEntity extends AbstractEntity<Intege
     @JoinColumn(name = "MCS_ID")
     private MembershipTerminalAccessEntity membershipTerminalAccess;
     private Integer archiveNo;
-    private BigDecimal maxWithdrawalPerTransaction;
+    private Long maxWithdrawalPerTransaction;
 }

@@ -3,7 +3,10 @@ package ir.daneshrefah.scm.core.integration.provider;
 import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.constant.*;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
-import ir.daneshrefah.scm.common.data.mapper.*;
+import ir.daneshrefah.scm.common.data.mapper.ChannelMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalAccessMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalServiceAccessMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.*;
 import ir.daneshrefah.scm.common.data.service.assets.ChannelServiceAccessService;
@@ -11,23 +14,21 @@ import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
-import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.dto.membership.*;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.asset.*;
-import ir.daneshrefah.scm.common.model.gateway.CmChannel;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
+import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
+import ir.daneshrefah.scm.core.services.gateway.ChannelService;
 import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
@@ -71,7 +72,10 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private static final Map<Integer, ServiceCategory> DEFAULT_SERVICE_CATEGORY_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, List<LegacyChannelServiceAccess>> TERMINAL_CODE_CSA_CACHE = new ConcurrentHashMap<>();
     private final MembershipTerminalServiceAccessRepository membershipTerminalServiceAccessRepository;
+    private final MembershipTerminalServiceAccessMapper membershipTerminalServiceAccessMapper;
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
+    private final ChannelServiceAccessRepository channelServiceAccessRepository;
+    private final MembershipTerminalAccessMapper membershipTerminalAccessMapper;
     private final ChannelServiceAccessService channelServiceAccessService;
     private final CustomerAccountRepository customerAccountRepository;
     private final MembershipConfigProperty membershipConfigProperty;
@@ -83,11 +87,11 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final PersonRepository personRepository;
-    private final CmChannelService channelService;
+    private final MembershipMapper membershipMapper;
+    private final ChannelService channelService;
     private final PersonService personService;
+    private final ChannelMapper channelMapper;
     private final JdbcTemplate jdbcTemplate;
-    private final ChannelServiceAccessRepository channelServiceAccessRepository;
-
 
     @Override
     public List<Membership> findLocalMembershipList(MembershipLocalFindRequest request) {
@@ -100,14 +104,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                     .findMembershipTerminalAccessEntitiesByPersonId(person.getId(), terminalCode.getLegacyTerminalId())
                     .stream()
                     .map(MembershipTerminalAccessEntity::getMembership)
-                    .map(MembershipMapper.INSTANCE::toModel)
+                    .map(membershipMapper::toModel)
                     .toList();
 
         } else {
             return membershipRepository
                     .findAllByPersonUsername(personUsername)
                     .stream()
-                    .map(MembershipMapper.INSTANCE::toModel)
+                    .map(membershipMapper::toModel)
                     .toList();
         }
     }
@@ -117,7 +121,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         ValidationUtils.checkBlankString(membershipId, () -> new InvalidInputException("membershipId"));
         ValidationUtils.checkNumericInput(membershipId, () -> new InvalidInputException("membershipId"));
         MembershipEntity found = membershipRepository.findAccountMembershipById(Long.parseLong(membershipId)).orElseThrow(() -> new NoMatchRecordFoundException("membershipId"));
-        return MembershipMapper.INSTANCE.toModel(found);
+        return membershipMapper.toModel(found);
     }
 
     @Override
@@ -148,7 +152,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
     @LegacyChannelManger
     private List<LegacyChannelServiceAccess> getDefaultLegacyChannelServiceAccess(String terminalCode) {
-        CmChannel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
+        Channel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
         return TERMINAL_CODE_CSA_CACHE.computeIfAbsent(terminalCode, key -> {
             List<LegacyChannelServiceAccess> legacyChannelServiceAccessList = new ArrayList<>();
             getDefaultMembershipEbServicesId()
@@ -286,7 +290,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         assert scmAuthentication != null;
         String terminalCode = scmAuthentication.getTerminalCode();
         ValidationUtils.checkNull(terminalCode, () -> new MissingRequiredInputException("terminal"));
-        CmChannel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new InvalidInputException("terminal"));
+        Channel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new InvalidInputException("terminal"));
         Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessList = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(currentPerson.getId(), channel.getId());
         Iterator<MembershipTerminalAccessEntity> iterator = membershipTerminalAccessList.iterator();
         final AccountFavoriteActivityResponse response = new AccountFavoriteActivityResponse();
@@ -335,7 +339,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Override
     @Transactional
     public List<String> assignMembershipTerminalAccess(MembershipChannelAccessAssignmentRequest request) {
-        CmChannel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
+        Channel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         LegacyTerminalDetail legacyTerminalDetail = findLegacyTerminalDetail(channel.getId());
         return findLocalMemberships(person, request.getAccountNumbers())
@@ -349,8 +353,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                             }, () -> {
                                 MembershipTerminalAccessEntity entity = new MembershipTerminalAccessEntity();
                                 entity.setActive(true);
-                                entity.setChannel(CmChannelMapper.INSTANCE.toEntity(channel));
-                                entity.setMembership(MembershipMapper.INSTANCE.toEntity(membership));
+                                entity.setChannel(channelMapper.toEntity(channel));
+                                entity.setMembership(membershipMapper.toEntity(membership));
                                 entity.setFavorite(false);
                                 entity.setMaxWithdrawalPerDay(legacyTerminalDetail.getMaxWithdrawalPerDay());
                                 entity.setFromDate(LocalDate.now());
@@ -368,7 +372,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Transactional
     public List<String> revokeMembershipTerminalAccess(MembershipChannelAccessAssignmentRequest request) {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-        CmChannel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
+        Channel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
         List<MembershipTerminalAccessEntity> result = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(person.getId(), channel.getId());
         return result
                 .stream()
@@ -387,12 +391,12 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Override
     public Membership updateMembershipTerminalAccessMaxWithdrawal(MembershipTerminalAccessWithdrawalLimitUpdateRequest request) {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-        CmChannel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
+        Channel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("channelCode"));
         MembershipEntity membership = membershipRepository.findAccountMembershipByAccountNoAndUsername(request.getAccountNumber(), person.getUsername()).orElseThrow(() -> new NoMatchRecordFoundException("accountNumber"));
         MembershipTerminalAccessEntity mtaEntity = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_IdAndChannelCode(membership.getId(), channel.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("membershipCode"));
         mtaEntity.setMaxWithdrawalPerDay(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerDay())));
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(mtaEntity);
-        return MembershipMapper.INSTANCE.toModel(saved.getMembership());
+        return membershipMapper.toModel(saved.getMembership());
     }
 
     @Override
@@ -463,7 +467,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                         Objects.isNull(accountNumberList) ||
                         accountNumberList.isEmpty() ||
                         accountNumberList.contains(membership.getCustomerAccount().getAccount().getAccountNo()))
-                .map(MembershipMapper.INSTANCE::toModel)
+                .map(membershipMapper::toModel)
                 .forEach(memberships::add);
         return memberships;
     }
@@ -509,7 +513,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         CustomerEntity customerEntity = syncCustomer(membershipSync.getRemoteAccount());
         CustomerAccountEntity customerAccountEntity = syncCustomerAccount(customerEntity, accountEntity, membershipSync.getRemoteAccount());
         MembershipEntity accountMembershipEntity = syncMembership(membershipSync.getPerson(), customerAccountEntity);
-        return MembershipMapper.INSTANCE.toModel(accountMembershipEntity);
+        return membershipMapper.toModel(accountMembershipEntity);
     }
 
     private MembershipEntity syncMembership(GeneralPerson person, CustomerAccountEntity customerAccountEntity) {
@@ -637,14 +641,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
 
     @Override
-    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId) {
+    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Short channelId) {
         if (null == personId) {
             return null;
         }
         Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessEntities =
                 membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(personId, channelId);
 
-        return MembershipTerminalAccessMapper.INSTANCE.toMembershipTerminalAccessList(membershipTerminalAccessEntities);
+        return membershipTerminalAccessMapper.toMembershipTerminalAccessList(membershipTerminalAccessEntities);
     }
 
     @Override
@@ -658,8 +662,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             return membershipTerminalAccessRepository
                     .findMembershipTerminalAccessEntitiesByPersonId(person.getId(), terminalCode.getLegacyTerminalId())
                     .stream()
-                    .map(MembershipTerminalAccessMapper.INSTANCE::toMembershipTerminalAccess)
-                    .map(MembershipTerminalAccessMapper.INSTANCE::toDto)
+                    .map(membershipTerminalAccessMapper::toMembershipTerminalAccess)
+                    .map(membershipTerminalAccessMapper::toDto)
                     .toList();
 
         }
@@ -676,7 +680,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         found.setReason(request.getReason());
         found.setUserReason(request.getUserReason());
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(found);
-        return MembershipTerminalAccessMapper.INSTANCE.toDto(saved);
+        return membershipTerminalAccessMapper.toDto(saved);
     }
 
     @Override
@@ -744,14 +748,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         return membershipTerminalServiceAccessRepository
                 .findByLegacyTerminalIdAndAccountNo(terminalCode.getLegacyTerminalId(), request.getAccountNumber(), person.getId())
                 .stream()
-                .map(MembershipTerminalServiceAccessMapper.INSTANCE::toDto)
+                .map(membershipTerminalServiceAccessMapper::toDto)
                 .toList();
     }
 
     @Override
     public MembershipTerminalAccessDto getMembershipChannelAccess(long id) {
         MembershipTerminalAccessEntity found = membershipTerminalAccessRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return MembershipTerminalAccessMapper.INSTANCE.toDto(found);
+        return membershipTerminalAccessMapper.toDto(found);
     }
 
     @Override

@@ -1,14 +1,11 @@
-package ir.daneshrefah.scm.core.entity.gateway;
+package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.util.List;
+import lombok.*;
 
 @Getter
 @Setter
@@ -54,9 +51,6 @@ public class ServiceEntity extends AbstractEntity<Short> {
     @ManyToOne(optional = false)
     @JoinColumn(name = "SERVICE_CATEGORY_ID", nullable = false)
     private ServiceCategoryEntity serviceCategory;
-
-    @OneToMany(mappedBy = "service", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ServiceOperationEntity> serviceOperations;
 
     @Size(max = 20)
     @Enumerated(EnumType.STRING)

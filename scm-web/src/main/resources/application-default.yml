@@ -1,3 +1,4 @@
+SCM_APPLICATION_NAME: ib-rest
 scm:
   channels: SCM4DEV
   provider:
@@ -89,9 +90,12 @@ scm:
 
 server:
   servlet:
-    context-path: /scm
+    context-path: /
   port: 8086
-#spring:
+camel:
+  servlet:
+    mapping:
+      contextPath: /*
 #  datasource:
 #    url: jdbc:db2://10.10.4.104:50001/DBREFSW
 #    username: db2inst1
@@ -113,7 +117,6 @@ logging:
     org.hibernate.SQL: debug #just for develop
     org.hibernate.type.descriptor.sql: trace #just for develop
     org.hibernate.orm.jdbc.bind: trace #just for develop
-    org.springframework: debug
 spring:
   jpa:
     show-sql: true

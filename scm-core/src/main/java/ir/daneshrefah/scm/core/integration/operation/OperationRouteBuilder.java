@@ -87,19 +87,19 @@ public class OperationRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> afterThrowingAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.AFTER_THROWING, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        afterThrowingAdvisors.forEach(afterThrowingAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = afterThrowingAdvisor.getConfig();
-                PluginAdvice pluginAdvice = afterThrowingAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.AFTER_THROWING, config)) {
-                    pluginAdvice.afterThrowing(exchange, config);
-                }
-            });
-        });
+//        List<PluginDefinition> afterThrowingAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.AFTER_THROWING, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        afterThrowingAdvisors.forEach(afterThrowingAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = afterThrowingAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = afterThrowingAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER_THROWING, config)) {
+//                    pluginAdvice.afterThrowing(exchange, config);
+//                }
+//            });
+//        });
     }
 
     private void applyMetrics(RouteDefinition route, Operation operation) {
@@ -123,20 +123,20 @@ public class OperationRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> beforeAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.BEFORE, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        beforeAdvisors.forEach(beforeAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = beforeAdvisor.getConfig();
-                PluginAdvice pluginAdvice = beforeAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.BEFORE, config)) {
-                    pluginAdvice.before(exchange, config);
-                }
-
-            });
-        });
+//        List<PluginDefinition> beforeAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.BEFORE, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        beforeAdvisors.forEach(beforeAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = beforeAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = beforeAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.BEFORE, config)) {
+//                    pluginAdvice.before(exchange, config);
+//                }
+//
+//            });
+//        });
     }
 
     private void buildTarget(RouteDefinition route, Operation operation) {
@@ -206,27 +206,27 @@ public class OperationRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> afterAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.AFTER, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        afterAdvisors.forEach(afterAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = afterAdvisor.getConfig();
-                PluginAdvice pluginAdvice = afterAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.AFTER, config)) {
-                    pluginAdvice.after(exchange, config);
-                }
-                Span span = (Span) exchange.getProperty("otelSpan");
-                Scope scope = (Scope) exchange.getProperty("otelScope");
-                if (span != null) {
-                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                    span.end();
-                }
-                if (scope != null) {
-                    scope.close();
-                }
-            });
-        });
+//        List<PluginDefinition> afterAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.AFTER, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        afterAdvisors.forEach(afterAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = afterAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = afterAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER, config)) {
+//                    pluginAdvice.after(exchange, config);
+//                }
+//                Span span = (Span) exchange.getProperty("otelSpan");
+//                Scope scope = (Scope) exchange.getProperty("otelScope");
+//                if (span != null) {
+//                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+//                    span.end();
+//                }
+//                if (scope != null) {
+//                    scope.close();
+//                }
+//            });
+//        });
     }
 }

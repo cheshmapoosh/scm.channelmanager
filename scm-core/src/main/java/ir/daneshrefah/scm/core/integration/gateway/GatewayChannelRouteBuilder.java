@@ -7,12 +7,13 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
-import ir.daneshrefah.scm.common.model.gateway.*;
+import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
+import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
-import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.plugin.PluginAdvice;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
@@ -22,15 +23,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.*;
+import org.apache.camel.model.MulticastDefinition;
+import org.apache.camel.model.ProcessorDefinition;
+import org.apache.camel.model.Resilience4jConfigurationDefinition;
+import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -243,19 +245,19 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> afterThrowingAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.AFTER_THROWING, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        afterThrowingAdvisors.forEach(afterThrowingAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = afterThrowingAdvisor.getConfig();
-                PluginAdvice pluginAdvice = afterThrowingAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.AFTER_THROWING, config)) {
-                    pluginAdvice.afterThrowing(exchange, config);
-                }
-            });
-        });
+//        List<PluginDefinition> afterThrowingAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.AFTER_THROWING, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        afterThrowingAdvisors.forEach(afterThrowingAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = afterThrowingAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = afterThrowingAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER_THROWING, config)) {
+//                    pluginAdvice.afterThrowing(exchange, config);
+//                }
+//            });
+//        });
     }
 
     private void applyPluginsBefore(RouteDefinition route, PluginBinding pluginBinding) {
@@ -263,20 +265,20 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> beforeAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.BEFORE, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        beforeAdvisors.forEach(beforeAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = beforeAdvisor.getConfig();
-                PluginAdvice pluginAdvice = beforeAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.BEFORE, config)) {
-                    pluginAdvice.before(exchange, config);
-                }
-
-            });
-        });
+//        List<PluginDefinition> beforeAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.BEFORE, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        beforeAdvisors.forEach(beforeAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = beforeAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = beforeAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.BEFORE, config)) {
+//                    pluginAdvice.before(exchange, config);
+//                }
+//
+//            });
+//        });
 
     }
 
@@ -285,28 +287,28 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<PluginDefinition> afterAdvisors = pluginBinding.getAdvisors().stream()
-                .filter(advisor -> Objects.equals(PluginPhase.AFTER, advisor.getPhase()))
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-                .toList();
-        afterAdvisors.forEach(afterAdvisor -> {
-            route.process(exchange -> {
-                Map<String, ?> config = afterAdvisor.getConfig();
-                PluginAdvice pluginAdvice = afterAdvisor.getPluginAdvice();
-                if (pluginAdvice.supports(exchange, PluginPhase.AFTER, config)) {
-                    pluginAdvice.after(exchange, config);
-                }
-                Span span = (Span) exchange.getProperty("otelSpan");
-                Scope scope = (Scope) exchange.getProperty("otelScope");
-                if (span != null) {
-                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                    span.end();
-                }
-                if (scope != null) {
-                    scope.close();
-                }
-            });
-        });
+//        List<PluginDefinition> afterAdvisors = pluginBinding.getAdvisors().stream()
+//                .filter(advisor -> Objects.equals(PluginPhase.AFTER, advisor.getPhase()))
+//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+//                .toList();
+//        afterAdvisors.forEach(afterAdvisor -> {
+//            route.process(exchange -> {
+//                Map<String, ?> config = afterAdvisor.getConfig();
+//                PluginAdvice pluginAdvice = afterAdvisor.getPluginAdvice();
+//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER, config)) {
+//                    pluginAdvice.after(exchange, config);
+//                }
+//                Span span = (Span) exchange.getProperty("otelSpan");
+//                Scope scope = (Scope) exchange.getProperty("otelScope");
+//                if (span != null) {
+//                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+//                    span.end();
+//                }
+//                if (scope != null) {
+//                    scope.close();
+//                }
+//            });
+//        });
     }
 
 }

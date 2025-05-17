@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.asset;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
-import ir.daneshrefah.scm.common.model.gateway.CmChannel;
+import ir.daneshrefah.scm.common.model.gateway.Channel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +20,7 @@ import java.time.LocalDate;
 public class MembershipTerminalAccess extends AbstractAuditableModel<Long> {
 
     private Boolean active;
-    private CmChannel channel;
+    private Channel channel;
     private Membership membership;
     private Boolean favorite;
     private BigDecimal maxWithdrawalPerDay;
