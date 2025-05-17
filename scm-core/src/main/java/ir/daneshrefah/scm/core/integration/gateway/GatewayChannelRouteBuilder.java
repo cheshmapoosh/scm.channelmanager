@@ -13,11 +13,13 @@ import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
+import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.common.plugin.PluginHandler;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
-import ir.daneshrefah.scm.core.services.plugin.PluginBindingService;
+import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -33,6 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -44,7 +47,8 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final ChannelServiceDefinitionService channelServiceDefinitionService;
     private final Resilience4jConfigurationDefinition defaultBreaker;
     private final List<ProtocolHandler> protocolHandlers;
-    private final PluginBindingService pluginBindingService;
+    private final PluginResolverService pluginResolverService;
+    private final Map<String, PluginHandler> pluginHandlers;
 
 
     @Value("${spring.application.name}")
@@ -81,6 +85,8 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                                 " with " + gatewayChannel.getProtocolType() + " protocol"));
         ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
 
+        List<PluginDefinition> channelPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(gatewayChannel.getChannel());
+
         channelServiceAccesses.stream()
                 .filter(channelServiceAccess -> CollectionUtils.isNotEmpty(channelServiceAccess.getService().getServiceOperations()))
                 .forEach(channelServiceAccess -> {
@@ -93,14 +99,25 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     RouteDefinition route = protocolConfigurer.routeDefinition(channelServiceAccess, definitions)
                             .setProperty(Message.SERVICE, constant(service));
 
-                    PluginBinding pluginBinding = pluginBindingService.findByChannel(gatewayChannel.getChannel());
-                    defineExceptionHandler(route, pluginBinding);
+                    List<PluginDefinition> orderedAfterThrowingPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                            channelServiceAccess.getService(),
+                            PluginPhase.AFTER_THROWING);
+                    defineExceptionHandler(route, orderedAfterThrowingPluginDefinitions);
 
                     applyMetrics(route, service);
                     applyTracing(route, service);
-                    applyPluginsBefore(route, pluginBinding);
+
+                    List<PluginDefinition> orderedBeforePluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                            channelServiceAccess.getService(),
+                            PluginPhase.BEFORE);
+                    applyBeforePlugins(route, orderedBeforePluginDefinitions);
+
                     buildTarget(route, service);
-                    applyPluginsAfter(route, pluginBinding);
+
+                    List<PluginDefinition> orderedAfterPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                            channelServiceAccess.getService(),
+                            PluginPhase.AFTER);
+                    applyAfterPlugins(route, orderedAfterPluginDefinitions);
                 });
     }
 
@@ -222,7 +239,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         return "direct:" + operationName;
     }
 
-    private void defineExceptionHandler(RouteDefinition route, PluginBinding pluginBinding) {
+    private void defineExceptionHandler(RouteDefinition route, List<PluginDefinition> orderedAfterThrowingPluginDefinitions) {
         route.onException(Exception.class)
                 .handled(true)
                 .process(exchange -> {
@@ -241,74 +258,55 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     }
                 });
 
-        if (pluginBinding == null) {
+        if (orderedAfterThrowingPluginDefinitions == null) {
             return;
         }
 
-//        List<PluginDefinition> afterThrowingAdvisors = pluginBinding.getAdvisors().stream()
-//                .filter(advisor -> Objects.equals(PluginPhase.AFTER_THROWING, advisor.getPhase()))
-//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-//                .toList();
-//        afterThrowingAdvisors.forEach(afterThrowingAdvisor -> {
-//            route.process(exchange -> {
-//                Map<String, ?> config = afterThrowingAdvisor.getConfig();
-//                PluginAdvice pluginAdvice = afterThrowingAdvisor.getPluginAdvice();
-//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER_THROWING, config)) {
-//                    pluginAdvice.afterThrowing(exchange, config);
-//                }
-//            });
-//        });
+        orderedAfterThrowingPluginDefinitions.forEach(definition -> {
+            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            route.process(exchange -> {
+                pluginHandler.handle(exchange, definition);
+            });
+        });
     }
 
-    private void applyPluginsBefore(RouteDefinition route, PluginBinding pluginBinding) {
-        if (pluginBinding == null) {
+    private void applyBeforePlugins(RouteDefinition route, List<PluginDefinition> orderedBeforePluginDefinitions) {
+        if (orderedBeforePluginDefinitions == null) {
             return;
         }
 
-//        List<PluginDefinition> beforeAdvisors = pluginBinding.getAdvisors().stream()
-//                .filter(advisor -> Objects.equals(PluginPhase.BEFORE, advisor.getPhase()))
-//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-//                .toList();
-//        beforeAdvisors.forEach(beforeAdvisor -> {
-//            route.process(exchange -> {
-//                Map<String, ?> config = beforeAdvisor.getConfig();
-//                PluginAdvice pluginAdvice = beforeAdvisor.getPluginAdvice();
-//                if (pluginAdvice.supports(exchange, PluginPhase.BEFORE, config)) {
-//                    pluginAdvice.before(exchange, config);
-//                }
-//
-//            });
-//        });
+        orderedBeforePluginDefinitions.forEach(definition -> {
+            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            route.process(exchange -> {
+                pluginHandler.handle(exchange, definition);
+            });
+        });
 
     }
 
-    private void applyPluginsAfter(RouteDefinition route, PluginBinding pluginBinding) {
-        if (pluginBinding == null) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDefinition> orderedBeforePluginDefinitions) {
+        route.process(exchange -> {
+            Span span = (Span) exchange.getProperty("otelSpan");
+            Scope scope = (Scope) exchange.getProperty("otelScope");
+            if (span != null) {
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                span.end();
+            }
+            if (scope != null) {
+                scope.close();
+            }
+        });
+
+        if (orderedBeforePluginDefinitions == null) {
             return;
         }
 
-//        List<PluginDefinition> afterAdvisors = pluginBinding.getAdvisors().stream()
-//                .filter(advisor -> Objects.equals(PluginPhase.AFTER, advisor.getPhase()))
-//                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
-//                .toList();
-//        afterAdvisors.forEach(afterAdvisor -> {
-//            route.process(exchange -> {
-//                Map<String, ?> config = afterAdvisor.getConfig();
-//                PluginAdvice pluginAdvice = afterAdvisor.getPluginAdvice();
-//                if (pluginAdvice.supports(exchange, PluginPhase.AFTER, config)) {
-//                    pluginAdvice.after(exchange, config);
-//                }
-//                Span span = (Span) exchange.getProperty("otelSpan");
-//                Scope scope = (Scope) exchange.getProperty("otelScope");
-//                if (span != null) {
-//                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-//                    span.end();
-//                }
-//                if (scope != null) {
-//                    scope.close();
-//                }
-//            });
-//        });
+        orderedBeforePluginDefinitions.forEach(definition -> {
+            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            route.process(exchange -> {
+                pluginHandler.handle(exchange, definition);
+            });
+        });
     }
 
 }

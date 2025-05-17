@@ -9,12 +9,9 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationDefinitionType;
 import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
-import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.plugin.PluginAdvice;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
-import ir.daneshrefah.scm.core.services.plugin.PluginBindingService;
+import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -26,9 +23,7 @@ import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -36,14 +31,14 @@ import java.util.Objects;
 @Slf4j
 public class OperationRouteBuilder extends RouteBuilder {
     private final OperationService operationService;
-    private final PluginBindingService pluginBindingService;
+    private final PluginResolverService pluginResolverService;
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("operation");
 
     @Override
     public void configure() {
         List<Operation> operations = operationService.getAllOperations();
         for (Operation operation : operations) {
-            PluginBinding pluginBindings = pluginBindingService.findByOperation(operation);
+            PluginBinding pluginBindings = pluginResolverService.findByOperation(operation);
             String routeId = "route-" + operation.getName();
             String fromUri = resolveFromUri(operation);
 

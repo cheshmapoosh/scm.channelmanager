@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.plugin;
+package ir.daneshrefah.scm.common.plugin;
 
 import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;

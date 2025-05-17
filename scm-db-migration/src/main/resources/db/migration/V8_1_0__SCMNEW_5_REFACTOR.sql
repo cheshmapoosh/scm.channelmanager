@@ -136,16 +136,16 @@ ALTER TABLE REF.TBL_SCM_GATEWAY_CHANNEL
 ------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_CHN_SVC_DEFINITION
 (
-    CHN_SVC_DEFINITION_ID    VARCHAR(36)  NOT NULL,
-    CHANNEL_SERVICE_ACCESS_ID BIGINT       NOT NULL,
-    GATEWAY_CHANNEL_ID        VARCHAR(36)  NOT NULL,
-    TYPE                      VARCHAR(20)  NOT NULL,
-    DEFINITION_ID             VARCHAR(255) NOT NULL,
-    CREATOR                   INTEGER,
-    LAST_EDITOR               INTEGER,
-    CREATE_DATE               TIMESTAMP,
-    LAST_EDIT_DATE            TIMESTAMP,
-    VERSION                   INTEGER,
+    CHN_SVC_DEFINITION_ID       VARCHAR(36)  NOT NULL,
+    CHANNEL_SERVICE_ACCESS_ID   DECIMAL(22) NOT NULL,
+    GATEWAY_CHANNEL_ID          VARCHAR(36)  NOT NULL,
+    TYPE                        VARCHAR(20)  NOT NULL,
+    DEFINITION_ID               VARCHAR(36) NOT NULL,
+    CREATOR                     INTEGER,
+    LAST_EDITOR                 INTEGER,
+    CREATE_DATE                 TIMESTAMP,
+    LAST_EDIT_DATE              TIMESTAMP,
+    VERSION                     INTEGER,
     CONSTRAINT PK_CHN_SVC_DEFINITION PRIMARY KEY (CHN_SVC_DEFINITION_ID)
 );
 
