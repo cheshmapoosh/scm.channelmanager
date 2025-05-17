@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Table(name = "TBL_SCM_DEFINITION", schema = "REF",
-uniqueConstraints = {@UniqueConstraint(name = "UC_DEF_ON_CODE", columnNames = "CODE")})
+uniqueConstraints = {@UniqueConstraint(name = "UC_DEF_ON_NAME", columnNames = "NAME")})
 @Setter
 @Getter
 @NoArgsConstructor
@@ -21,10 +21,10 @@ public class DefinitionEntity extends AbstractAuditableEntity<String> {
     private String id;
     @Size(max = 100)
     @Column(length = 100, nullable = false)
-    private String name;
+    private String title;
     @Size(max = 50)
     @Column(length = 50, nullable = false)
-    private String code;
+    private String name;
     @Enumerated(EnumType.STRING)
     @Size(max = 20)
     @Column(length = 20)

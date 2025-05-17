@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.entity.gateway;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
+import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,15 +12,15 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "TBL_SCM_CHANNEL_SERVICE_DEF", schema = "REF",
+@Table(name = "TBL_SCM_CHN_SVC_DEFINITION", schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_GTW_ON_PTC_CHN", columnNames = {"CHANNEL_SERVICE_ACCESS_ID", "GATEWAY_CHANNEL_CODE", "TYPE"})
+                @UniqueConstraint(name = "UC_GTW_ON_PTC_CHN", columnNames = {"CHANNEL_SERVICE_ACCESS_ID", "GATEWAY_CHANNEL_ID", "TYPE"})
         })
 public class ChannelServiceDefinitionEntity extends AbstractAuditableEntity<String> {
     @Size(max = 36)
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "CHANNEL_SERVICE_DEF_ID", nullable = false, updatable = false, unique = true, length = 36)
+    @Column(name = "CHN_SVC_DEFINITION_ID", nullable = false, updatable = false, unique = true, length = 36)
     private String id;
 
     @NotNull
@@ -27,19 +28,19 @@ public class ChannelServiceDefinitionEntity extends AbstractAuditableEntity<Stri
     @JoinColumn(name = "CHANNEL_SERVICE_ACCESS_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_CHN_SVC_DEF_ON_CHN_SVC"))
     private ChannelServiceAccessEntity channelServiceAccess;
 
-    @Size(max = 50)
-    @Column(nullable = false, length = 50)
-    private String gatewayChannelCode;
+    @Size(max = 36)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "GATEWAY_CHANNEL_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_CHN_SVC_DEF_ON_GTW_CHN"))
+    private GatewayChannelEntity gatewayChannel;
 
     @Enumerated(EnumType.STRING)
     @Size(max = 20)
     @Column(nullable = false, length = 20)
     private ChannelServiceDefinitionType type;
 
-    @Size(max = 2048)
-    @Column(length = 2048)
-    private String metadata;
-
+    @ManyToOne
+    @JoinColumn(name = "DEFINITION_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_CHN_SVC_DEF_ON_DEF"))
+    private DefinitionEntity definition;
 
 }
 

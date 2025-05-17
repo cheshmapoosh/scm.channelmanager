@@ -22,13 +22,13 @@ import java.util.Map;
 
 @Configurer
 @Primary
-@Component
+//@Component
 @Slf4j
 public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
     public static final String EXTRACT_PATTERN = "direct";
     private final TracingLogListener logListener = new TracingLogListener();
     private final TracingEventNotifier eventNotifier = new TracingEventNotifier();
-    @Autowired
+//    @Autowired
     private TraceLogUtils traceLogUtils;
 
     @Override

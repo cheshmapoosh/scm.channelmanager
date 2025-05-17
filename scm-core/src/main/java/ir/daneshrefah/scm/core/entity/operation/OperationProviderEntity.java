@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "TBL_SCM_OPERATION_PROVIDER", schema = "REF",
-        uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_PVD_ON_CODE", columnNames = "CODE")}
+        uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_PVD_ON_CODE", columnNames = "NAME")}
 )
 @Getter
 @Setter
@@ -30,11 +30,11 @@ public class OperationProviderEntity extends AbstractAuditableEntity<String> {
 
     @Size(max = 100)
     @Column(nullable = false, length = 100)
-    private String name;
+    private String title;
 
     @Size(max = 50)
     @Column(nullable = false, length = 50, unique = true)
-    private String code;
+    private String name;
 
     @Size(max = 100)
     @Column(nullable = false, length = 100)

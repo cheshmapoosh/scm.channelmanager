@@ -1,49 +1,58 @@
 package ir.daneshrefah.scm.core.mapper.gateway;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.RestChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
+import ir.daneshrefah.scm.utils.string.JsonPathFinder;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import javax.annotation.PostConstruct;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {ChannelServiceAccessMapper.class})
 public abstract class ChannelServiceDefinitionMapper {
     @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper mapper;
+    private ObjectReader dtoReader;
+
+    @PostConstruct
+    public void init() {
+        this.dtoReader = mapper.reader();
+    }
+
 
     public abstract ChannelServiceDefinitionEntity toEntity(ChannelServiceDefinition channelServiceDefinition);
 
-    public abstract ChannelServiceDefinition toDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
+    @Named("toDto")
+    public  ChannelServiceDefinition toDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
+        return switch (channelServiceDefinitionEntity.getType()) {
+            case REST -> toRestDto(channelServiceDefinitionEntity);
+            case SWAGGER -> throw new IllegalStateException("Unexpected value: " + channelServiceDefinitionEntity.getType());
+        };
+    }
 
-    @Mapping(target = "metadata", source = "metadata")
-    public abstract RestChannelServiceDefinition toRestTypeDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract ChannelServiceDefinitionEntity partialUpdate(ChannelServiceDefinition channelServiceDefinition, @MappingTarget ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
+    @Named("toRestDto")
+    public abstract RestChannelServiceDefinition toRestDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     @AfterMapping
-    protected void afterMapping(ChannelServiceDefinitionEntity entity, @MappingTarget RestChannelServiceDefinition restChannelServiceDefinition) {
-        ObjectReader reader = objectMapper.readerFor(RestChannelServiceDefinition.class);
-        RestChannelServiceDefinition dto= null;
+    protected void afterMapping(@MappingTarget RestChannelServiceDefinition restChannelServiceDefinition) {
+        JsonNode dtoNode = null;
         try {
-            dto = reader.readValue(entity.getMetadata());
+            dtoNode = dtoReader.readTree(restChannelServiceDefinition.getDefinition().getDetails());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        restChannelServiceDefinition.setHttpMethod(dto.getHttpMethod());
-            restChannelServiceDefinition.setPath(dto.getPath());
-            List<String> pluginChains = dto.getPluginChains();
-//            if (pluginChains != null && CollectionUtils.isNotEmpty(plugins)) {
-//                restChannelServiceDefinition.setPluginChains(pluginChains);
-//                List<Plugin> filteredPluginChain = pluginChains.stream()
-//                        .map(s -> plugins.stream().filter(p -> p.getName().equals(s)).findFirst().orElse(null))
-//                        .filter(Objects::nonNull).toList();
-//                restChannelServiceDefinition.setPlugins(filteredPluginChain);
-//            }
+        String path = JsonPathFinder.defaultAsText(dtoNode, "path");
+        restChannelServiceDefinition.setPath(path);
+
+        String method = JsonPathFinder.defaultAsText(dtoNode, "method");
+        restChannelServiceDefinition.setMethod(HttpMethod.fromValue(method));
+
+
     }
 }

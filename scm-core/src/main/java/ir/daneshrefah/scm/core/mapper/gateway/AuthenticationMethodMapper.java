@@ -9,7 +9,4 @@ public interface AuthenticationMethodMapper {
     AuthenticationMethodEntity toEntity(AuthenticationMethod authenticationMethod);
 
     AuthenticationMethod toDto(AuthenticationMethodEntity authenticationMethodEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    AuthenticationMethodEntity partialUpdate(AuthenticationMethod authenticationMethod, @MappingTarget AuthenticationMethodEntity authenticationMethodEntity);
 }

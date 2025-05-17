@@ -17,7 +17,7 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "TBL_SCM_PLUGIN_BINDING", schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_PLG_BND_ON_PLG_SCP", columnNames = {"PLUGIN_ID", "SCOPE", "SCOPE_ID"})
+                @UniqueConstraint(name = "UC_PLG_BND_ON_PLG_SCP", columnNames = {"SCOPE", "SCOPE_ID"})
         }
 )
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -28,10 +28,6 @@ public class PluginBindingEntity extends AbstractAuditableEntity<String> {
     @Column(name = "PLUGIN_BINDING_ID", nullable = false, updatable = false, unique = true, length = 36)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(nullable = false, name = "PLUGIN_ID", foreignKey = @ForeignKey(name = "FK_PLG_BND_ON_PLG"))
-    private PluginEntity plugin;
-
     @Enumerated(EnumType.STRING)
     @Size(max = 20)
     @Column(nullable = false, length = 20)
@@ -40,14 +36,6 @@ public class PluginBindingEntity extends AbstractAuditableEntity<String> {
     @Size(max = 36)
     @Column(nullable = false, length = 36)
     private String scopeId;
-
-    @Column(nullable = false)
-    private Short order;
-
-    @Enumerated(EnumType.STRING)
-    @Size(max = 20)
-    @Column(nullable = false, length = 20)
-    private PluginPhase phase;
 
     @NotNull
     @Column(nullable = false)

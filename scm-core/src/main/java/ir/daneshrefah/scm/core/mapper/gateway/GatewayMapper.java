@@ -9,7 +9,4 @@ public interface GatewayMapper {
     GatewayChannelEntity toEntity(GatewayChannel gatewayChannel);
 
     GatewayChannel toDto(GatewayChannelEntity gatewayChannelEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    GatewayChannelEntity partialUpdate(GatewayChannel gatewayChannel, @MappingTarget GatewayChannelEntity gatewayChannelEntity);
 }

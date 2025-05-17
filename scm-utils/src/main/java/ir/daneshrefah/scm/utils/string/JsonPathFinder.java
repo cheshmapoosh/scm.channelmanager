@@ -12,6 +12,54 @@ public class JsonPathFinder {
     }
 
 
+    public static String defaultAsText(JsonNode node, String path) {
+        return defaultAsText(node, path, null);
+    }
+
+    public static String defaultAsText(JsonNode node, String path, String defaultValue) {
+        JsonNode pathNode = node.get(path);
+        if (pathNode == null || pathNode.isNull() || pathNode.isMissingNode()) {
+            return defaultValue;
+        }
+        return pathNode.asText();
+    }
+
+    public static Integer defaultAsInteger(JsonNode node, String path) {
+        return defaultAsInteger(node, path, null);
+    }
+
+    public static Integer defaultAsInteger(JsonNode node, String path, Integer defaultValue) {
+        JsonNode pathNode = node.get(path);
+        if (pathNode == null || pathNode.isNull() || pathNode.isMissingNode()) {
+            return defaultValue;
+        }
+        return pathNode.asInt();
+    }
+
+    public static Long defaultAsLong(JsonNode node, String path) {
+        return defaultAsLong(node, path, null);
+    }
+
+    public static Long defaultAsLong(JsonNode node, String path, Long defaultValue) {
+        JsonNode pathNode = node.get(path);
+        if (pathNode == null || pathNode.isNull() || pathNode.isMissingNode()) {
+            return defaultValue;
+        }
+        return pathNode.asLong(defaultValue);
+    }
+
+    public static Boolean defaultAsBoolean(JsonNode node, String path) {
+        return defaultAsBoolean(node, path, null);
+    }
+    public static Boolean defaultAsBoolean(JsonNode node, String path, Boolean defaultValue) {
+        JsonNode pathNode = node.get(path);
+        if (pathNode == null || pathNode.isNull() || pathNode.isMissingNode()) {
+            return defaultValue;
+        }
+        return pathNode.asBoolean();
+    }
+
+
     public static List<String> findPropertiesOnJsonNode(String propertyPath, JsonNode payload) {
         if (payload == null || StringUtils.isBlank(propertyPath)) {
             return Collections.emptyList();

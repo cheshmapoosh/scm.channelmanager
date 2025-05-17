@@ -12,7 +12,4 @@ public interface ChannelMapper {
     ChannelEntity toEntity(Channel channel);
 
     Channel toDto(ChannelEntity channelEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    ChannelEntity partialUpdate(Channel channel, @MappingTarget ChannelEntity channelEntity);
 }

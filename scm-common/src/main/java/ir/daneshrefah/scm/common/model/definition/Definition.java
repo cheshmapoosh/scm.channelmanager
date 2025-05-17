@@ -13,10 +13,8 @@ import lombok.Setter;
 @Setter
 public class Definition extends AbstractAuditableModel<String> {
     private String id;
-    @Size(max = 100)
+    private String title;
     private String name;
-    @Size(max = 50)
-    private String code;
     private TemplateEngine engine;
     @Size(max = 2048)
     private String details;

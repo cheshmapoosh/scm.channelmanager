@@ -113,6 +113,7 @@ logging:
     org.hibernate.SQL: debug #just for develop
     org.hibernate.type.descriptor.sql: trace #just for develop
     org.hibernate.orm.jdbc.bind: trace #just for develop
+    org.springframework: debug
 spring:
   jpa:
     show-sql: true
@@ -122,9 +123,6 @@ spring:
   cloud:
     config:
       enabled: false
-  application:
-    name: scm-web
-
 flyway:
   enable: false
   baseline-on-migrate: true

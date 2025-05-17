@@ -12,7 +12,7 @@ import lombok.Setter;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@Table(name = "TBL_SCM_OPERATION_DEF", schema = "REF",
+@Table(name = "TBL_SCM_OPERATION_DEFINITION", schema = "REF",
 uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_DEF_ON_OPT_DEF_TYP", columnNames = {"OPERATION_ID, DEFINITION_ID, TYPE"})})
 @Setter
 @Getter
@@ -21,7 +21,7 @@ uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_DEF_ON_OPT_DEF_TYP", colum
 public class OperationDefinitionEntity extends AbstractAuditableEntity<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "OPERATION_DEF_ID")
+    @Column(name = "OPERATION_DEFINITION_ID")
     private String id;
 
     @Enumerated(EnumType.STRING)
@@ -30,12 +30,10 @@ public class OperationDefinitionEntity extends AbstractAuditableEntity<String> {
     private OperationDefinitionType type;
 
     @ManyToOne
-    @MapsId("id")
-    @JoinColumn(name = "OPERATION_ID")
+    @JoinColumn(name = "OPERATION_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_OPT_PVD_ON_OPT"))
     private OperationEntity operation;
 
     @ManyToOne
-    @MapsId("id")
-    @JoinColumn(name = "DEFINITION_ID")
+    @JoinColumn(name = "DEFINITION_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_OPT_PVD_ON_DEF"))
     private DefinitionEntity definition;
 }

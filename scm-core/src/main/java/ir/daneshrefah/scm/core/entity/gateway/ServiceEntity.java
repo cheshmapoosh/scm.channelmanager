@@ -63,8 +63,4 @@ public class ServiceEntity extends AbstractEntity<Short> {
     @Column(length = 20)
     private RoutingStrategy routingStrategy;
 
-    @Size(max = 2048)
-    @Column(length = 2048)
-    private String metadata;
-
 }

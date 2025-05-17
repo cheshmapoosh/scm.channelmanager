@@ -4,9 +4,12 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.core.entity.operation.OperationEntity;
 import org.mapstruct.*;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {OperationDefinitionMapper.class})
 public interface OperationMapper {
     OperationEntity toEntity(Operation operation);
 
+    @Mapping(target = "definitions", source = "definitions", qualifiedByName = "toDto")
     Operation toDto(OperationEntity operationEntity);
 }

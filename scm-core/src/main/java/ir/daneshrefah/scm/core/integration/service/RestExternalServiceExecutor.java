@@ -13,12 +13,9 @@ import ir.daneshrefah.scm.plugin.api.model.service.external.rest.RestResponseTem
 import ir.daneshrefah.scm.plugin.api.service.ParameterDataProvider;
 import ir.daneshrefah.scm.plugin.camel.component.webclient.WebClientComponent;
 import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
-import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.main.Main;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ClassUtils;
@@ -28,12 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.message.Message.*;
 import static org.apache.camel.builder.Builder.simple;
 
-@Component
+//@Component
 public class RestExternalServiceExecutor extends ServiceExecutor {
     private final ParameterDataProvider parameterDataProvider;
 
@@ -43,7 +39,6 @@ public class RestExternalServiceExecutor extends ServiceExecutor {
 
     @Override
     protected void defineServiceRoute(Service service, ProcessorDefinition<?> processorDefinition) {
-
         if (!ClassUtils.isAssignable(RestExternalService.class, service.getClass())) {
             //TODO SCMNEW-5: throw scm exception
             throw new IllegalArgumentException("Service implementation type is not RestExternalService");

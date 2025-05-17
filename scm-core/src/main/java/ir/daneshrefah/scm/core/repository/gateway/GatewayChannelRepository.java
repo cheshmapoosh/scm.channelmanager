@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface GatewayChannelRepository extends JpaRepository<GatewayChannelEntity, String> {
 
-    Optional<GatewayChannelEntity> findByCodeAndProtocolType(String code, ProtocolType protocolType);
+    Optional<GatewayChannelEntity> findByName(String name);
 }

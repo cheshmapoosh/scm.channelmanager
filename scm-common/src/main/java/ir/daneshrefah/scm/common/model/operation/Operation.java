@@ -16,18 +16,26 @@ import java.util.List;
 public class Operation extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
+
     @Size(max = 100)
-    private String name;
+    private String title;
+
     @Size(max = 50)
-    private String code;
+    private String name;
+
     @Size(max = 100)
     private String path;
+
     @NotNull
     private Boolean active = false;
+
     @Size(max = 255)
     private String description;
+
     private OperationType type;
+
     private OperationProvider provider;
-    private List<OperationDefinition> operationDefinitions;
+
+    private List<OperationDefinition> definitions;
 
 }

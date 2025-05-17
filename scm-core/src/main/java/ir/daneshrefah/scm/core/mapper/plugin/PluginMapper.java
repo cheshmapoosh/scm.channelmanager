@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.mapper.plugin;
 
-import ir.daneshrefah.scm.common.plugin.Plugin;
+import ir.daneshrefah.scm.common.model.plugin.Plugin;
 import ir.daneshrefah.scm.core.entity.plugin.PluginEntity;
 import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
 import org.mapstruct.*;
@@ -11,6 +11,4 @@ public interface PluginMapper {
 
     Plugin toDto(PluginEntity pluginEntity);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    PluginEntity partialUpdate(Plugin plugin, @MappingTarget PluginEntity pluginEntity);
-}
+ }

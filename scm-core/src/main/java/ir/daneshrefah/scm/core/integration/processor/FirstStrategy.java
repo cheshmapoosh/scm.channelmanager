@@ -16,8 +16,8 @@ public class FirstStrategy implements Processor {
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
         ServiceOperation serviceTargetRoute = service.getServiceOperations().get(0);
         if (!serviceTargetRoute.getActive()) {
-            throw new RuntimeException("Target service" + serviceTargetRoute.getOperationCode() + " is inactive");
+            throw new RuntimeException("Target service" + serviceTargetRoute.getOperationName() + " is inactive");
         }
-        exchange.getIn().setHeader(SERVICE_TARGET_URL, "direct:" + serviceTargetRoute.getOperationCode());
+        exchange.getIn().setHeader(SERVICE_TARGET_URL, "direct:" + serviceTargetRoute.getOperationName());
     }
 }

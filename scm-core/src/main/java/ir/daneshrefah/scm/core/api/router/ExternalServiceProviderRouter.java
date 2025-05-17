@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import static ir.daneshrefah.scm.plugin.api.model.service.external.ExternalServiceProviderExecutor.*;
 
 @RequiredArgsConstructor
-@Component
+//@Component
 public class ExternalServiceProviderRouter extends RouteBuilder {
     private final static Logger LOGGER = LoggerFactory.getLogger(ExternalServiceProviderRouter.class);
 

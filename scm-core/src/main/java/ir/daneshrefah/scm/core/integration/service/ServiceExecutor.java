@@ -52,7 +52,7 @@ public abstract class ServiceExecutor {
     @Autowired
     protected ObjectMapper objectMapper;
 
-    @Autowired
+//    @Autowired
     protected TraceLogUtils traceLogUtils;
 
     private List<MessageInterceptor> requestInterceptors;

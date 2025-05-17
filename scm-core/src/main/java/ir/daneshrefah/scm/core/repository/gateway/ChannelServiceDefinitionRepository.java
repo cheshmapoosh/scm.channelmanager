@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ChannelServiceDefinitionRepository extends JpaRepository<ChannelServiceDefinitionEntity, String> {
-    Optional<ChannelServiceDefinitionEntity> findByChannelServiceAccess_IdAndGatewayChannelCodeAndType(Long id, @Size(max = 50) String code, ChannelServiceDefinitionType channelServiceDefinitionType);
+    Optional<ChannelServiceDefinitionEntity> findByChannelServiceAccess_IdAndGatewayChannel_Id(Long channelServiceAccessId, @Size(max = 36) String gatewayChannelId);
 }

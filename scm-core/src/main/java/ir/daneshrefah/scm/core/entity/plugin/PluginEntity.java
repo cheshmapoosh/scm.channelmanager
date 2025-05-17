@@ -12,7 +12,9 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
-@Table(name = "TBL_SCM_PLUGIN", schema = "REF")
+@Table(name = "TBL_SCM_PLUGIN", schema = "REF",
+        uniqueConstraints = @UniqueConstraint(name = "UC_PLG_ON_NAME", columnNames = "NAME")
+)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class PluginEntity extends AbstractAuditableEntity<String> {
     @Size(max = 36)
@@ -21,16 +23,20 @@ public class PluginEntity extends AbstractAuditableEntity<String> {
     @Column(name = "PLUGIN_ID", nullable = false, updatable = false, unique = true, length = 36)
     private String id;
 
-    @Size(max = 100)
-    @Column(nullable = false, length = 100)
+    @Size(max = 50)
+    @Column(nullable = false, length = 50)
     private String name;
 
+    @Size(max = 100)
+    @Column(length = 100)
+    private String title;
+
     @Enumerated(EnumType.STRING)
-    @Size(max=20)
+    @Size(max = 20)
     @Column(nullable = false, length = 20)
     private PluginType type;
 
-    @Size(max=255)
+    @Size(max = 255)
     @Column(length = 255)
     private String description;
 

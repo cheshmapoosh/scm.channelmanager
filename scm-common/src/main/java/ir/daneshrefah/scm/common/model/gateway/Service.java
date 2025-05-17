@@ -30,8 +30,8 @@ public class Service extends AbstractModel<Short> {
     private List<ServiceOperation> serviceOperations;
     @Size(max = 20)
     private RoutingStrategy routingStrategy;
-    @Size(max = 2048)
-    private String metadata;
 
-
+    public boolean useCircuitBreaker() {
+        return false;
+    }
 }

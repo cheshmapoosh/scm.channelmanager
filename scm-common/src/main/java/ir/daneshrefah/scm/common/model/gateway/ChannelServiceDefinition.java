@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.model.definition.Definition;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -16,9 +17,7 @@ public class ChannelServiceDefinition extends AbstractAuditableModel<String> {
     private String id;
     @NotNull
     private ChannelServiceAccess channelServiceAccess;
-    @Size(max = 50)
-    private String gatewayChannelCode;
+    private GatewayChannel gatewayChannel;
     private ChannelServiceDefinitionType type;
-    @Size(max = 2048)
-    private String metadata;
+    private Definition definition;
 }

@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "TBL_SCM_OPERATION", schema = "REF",
-uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_ON_CODE", columnNames = {"CODE"})})
+uniqueConstraints = {@UniqueConstraint(name = "UC_OPT_ON_NAME", columnNames = {"NAME"})})
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class OperationEntity extends AbstractAuditableEntity<String> {
     @Size(max = 36)
@@ -27,11 +27,11 @@ public class OperationEntity extends AbstractAuditableEntity<String> {
 
     @Size(max = 100)
     @Column(nullable = false, length = 100)
-    private String name;
+    private String title;
 
     @Size(max = 50)
     @Column(nullable = false, length = 50, unique = true)
-    private String code;
+    private String name;
 
     @Size(max = 100)
     @Column(length = 100)
@@ -49,12 +49,12 @@ public class OperationEntity extends AbstractAuditableEntity<String> {
     @Size(max = 20)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OperationType operationType;
+    private OperationType type;
 
     @ManyToOne
     @JoinColumn(name = "OPERATION_PROVIDER_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_OPT_ON_OPT_PVD"))
     private OperationProviderEntity provider;
 
     @OneToMany(mappedBy = "operation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    private List<OperationDefinitionEntity> operationDefinitions;
+    private List<OperationDefinitionEntity> definitions;
 }

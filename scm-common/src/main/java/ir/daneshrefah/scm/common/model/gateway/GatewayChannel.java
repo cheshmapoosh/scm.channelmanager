@@ -16,13 +16,11 @@ public class GatewayChannel extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
     @Size(max = 100)
-    private String name;
+    private String title;
     @Size(max = 50)
-    private String code;
+    private String name;
     @NotNull
     private Boolean active = false;
-    @Size(max = 100)
-    private String title;
     @Size(max = 255)
     private String description;
     private Channel channel;
@@ -32,6 +30,4 @@ public class GatewayChannel extends AbstractAuditableModel<String> {
     private Short port;
     @Size(max = 100)
     private String path;
-    @Size(max = 2048)
-    private String metadata;
 }

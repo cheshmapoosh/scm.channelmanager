@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.model.operation;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,8 +15,16 @@ import lombok.Setter;
 public class OperationProvider extends AbstractAuditableModel<String> {
     @Size(max = 36)
     private String id;
+
+    @Size(max = 100)
+    private String title;
+
+    @Size(max = 50)
+    private String name;
+
     @Size(max = 100)
     private String uri;
+
     private Boolean active;
 
 }

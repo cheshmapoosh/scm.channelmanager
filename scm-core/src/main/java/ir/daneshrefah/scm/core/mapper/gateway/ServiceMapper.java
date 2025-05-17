@@ -12,7 +12,4 @@ public interface ServiceMapper {
     ServiceEntity toEntity(Service service);
 
     Service toDto(ServiceEntity serviceEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    ServiceEntity partialUpdate(Service service, @MappingTarget ServiceEntity serviceEntity);
 }

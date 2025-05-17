@@ -38,7 +38,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  * @version 1.0
  * @since 2024-01-03
  */
-@Component
+//@Component
 @Scope("prototype")
 public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
 

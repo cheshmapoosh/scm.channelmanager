@@ -10,6 +10,4 @@ public interface GatewayOperationMapper {
 
     ServiceOperation toDto(ServiceOperationEntity serviceOperationEntity);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    ServiceOperationEntity partialUpdate(ServiceOperation serviceOperation, @MappingTarget ServiceOperationEntity serviceOperationEntity);
 }

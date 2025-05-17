@@ -5,6 +5,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -99,9 +100,21 @@ public class WebClientProducer extends DefaultProducer {
         HttpMethod httpMethod = HttpMethod.valueOf(method.toUpperCase());
         WebClient.RequestBodySpec requestSpec = client.method(httpMethod).uri(uri);
 
+
         headers
                 .entrySet().stream()
-                .filter(entry -> !entry.getKey().equalsIgnoreCase("camelHttp"))
+                .filter(entry -> {
+                    if (StringUtils.containsIgnoreCase(entry.getKey(), "camelHttp")) {
+                        return false;
+                    }
+                    if (StringUtils.containsIgnoreCase(entry.getKey(), "camelServlet")) {
+                        return false;
+                    }
+                    if (StringUtils.equalsIgnoreCase(entry.getKey(), "host")) {
+                        return false;
+                    }
+                    return entry.getValue() != null;
+                })
                 .forEach(entry -> requestSpec.header(entry.getKey(), Objects.requireNonNull(entry.getValue()).toString()));
 
         Mono<String> response = (Objects.equals(HttpMethod.GET, httpMethod) || Objects.equals(HttpMethod.DELETE, httpMethod))

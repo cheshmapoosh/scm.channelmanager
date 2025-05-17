@@ -33,6 +33,7 @@ public class Message implements Serializable {
     public final static String ORIGINAL_BODY = "scmOriginalBody";
     public final static String ORIGINAL_HEADERS = "scmOriginalHeaders";
     public static final String SERVICE = "scmService";
+    public static final String OPERATION = "scmOperation";
     private final Header header;
     private MessageStatus status;
     private JsonNode payload;

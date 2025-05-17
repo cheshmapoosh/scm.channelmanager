@@ -24,7 +24,7 @@ import java.util.List;
  * @version 1.0
  * @since 2023-08-06
  */
-@Configuration
+//@Configuration
 public class InboundChannelsAutoConfiguration /*implements ApplicationContextAware */{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InboundChannelsAutoConfiguration.class);

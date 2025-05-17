@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Entity
@@ -38,5 +40,4 @@ public class ChannelServiceAccessEntity extends AbstractEntity<Long> {
     @NotNull
     @Column(name = "ACTIVE", nullable = false)
     private Boolean active = false;
-
 }

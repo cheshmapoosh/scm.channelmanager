@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.gateway;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,7 +15,7 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "TBL_SCM_SERVICE_OPERATION", schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_GTW_OPT_ON_SVC_OPT", columnNames = {"EB_SERVICE_ID", "OPERATION_CODE"})
+                @UniqueConstraint(name = "UC_GTW_OPT_ON_SVC_OPT", columnNames = {"EB_SERVICE_ID", "OPERATION_NAME"})
         })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class ServiceOperationEntity extends AbstractAuditableEntity<String> {
@@ -35,11 +36,10 @@ public class ServiceOperationEntity extends AbstractAuditableEntity<String> {
 
     @Size(max = 50)
     @Column(length = 50, nullable = false)
-    private String operationCode;
+    private String operationName;
 
-    @Size(max = 2048)
-    @Column(length = 2048)
-    private String metadata;
-
+    @ManyToOne
+    @JoinColumn(name = "DEFINITION_ID", foreignKey = @ForeignKey(name = "FK_GTW_OPT_ON_DEF"))
+    private DefinitionEntity definition;
 
 }

@@ -9,7 +9,4 @@ public interface DefinitionMapper {
     DefinitionEntity toEntity(Definition definition);
 
     Definition toDto(DefinitionEntity definitionEntity);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    DefinitionEntity partialUpdate(Definition definition, @MappingTarget DefinitionEntity definitionEntity);
 }

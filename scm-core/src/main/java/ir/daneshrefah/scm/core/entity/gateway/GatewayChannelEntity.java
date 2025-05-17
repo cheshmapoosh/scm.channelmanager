@@ -17,7 +17,7 @@ import org.hibernate.type.SqlTypes;
         schema = "REF",
         uniqueConstraints = {
                 @UniqueConstraint(name = "UC_GTW_CHN_ON_PTC_CHN", columnNames = {"CHANNEL_ID", "PROTOCOL_TYPE"}),
-                @UniqueConstraint(name = "UC_GTW_CHN_ON_PTC_CHN", columnNames = {"CODE"})
+                @UniqueConstraint(name = "UC_GTW_CHN_ON_NAME", columnNames = {"NAME"})
         })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class GatewayChannelEntity extends AbstractAuditableEntity<String> {
@@ -29,11 +29,11 @@ public class GatewayChannelEntity extends AbstractAuditableEntity<String> {
 
     @Size(max = 100)
     @Column(nullable = false, length = 100)
-    private String name;
+    private String title;
 
     @Size(max = 50)
     @Column(nullable = false, length = 50, unique = true)
-    private String code;
+    private String name;
 
     @NotNull
     @Column(nullable = false)
@@ -61,9 +61,5 @@ public class GatewayChannelEntity extends AbstractAuditableEntity<String> {
     @Size(max = 100)
     @Column(length = 100)
     private String path;
-
-    @Size(max = 2048)
-    @Column(length = 2048)
-    private String metadata;
 
 }

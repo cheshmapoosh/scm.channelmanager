@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.model.definition.Definition;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -17,7 +18,6 @@ public class ServiceOperation extends AbstractAuditableModel<String> {
     @NotNull
     private Boolean active;
     @Size(max = 50)
-    private String operationCode;
-    @Size(max = 2048)
-    private String metadata;
+    private String operationName;
+    private Definition definition;
 }

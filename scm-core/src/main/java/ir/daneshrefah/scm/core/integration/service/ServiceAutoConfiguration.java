@@ -23,7 +23,7 @@ import java.util.List;
  * @since 2023-07-24
  */
 @RequiredArgsConstructor
-@Component
+//@Component
 public class ServiceAutoConfiguration extends RouteBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceAutoConfiguration.class);

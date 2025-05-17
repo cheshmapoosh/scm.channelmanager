@@ -32,6 +32,6 @@ public class FailoverStrategy implements Processor {
             throw new RuntimeException("Target at index " + index + " is inactive");
         }
 
-        exchange.getIn().setHeader("targetUrl", "direct:" + serviceTargetRoute.getOperationCode());
+        exchange.getIn().setHeader("targetUrl", "direct:" + serviceTargetRoute.getOperationName());
     }
 }
