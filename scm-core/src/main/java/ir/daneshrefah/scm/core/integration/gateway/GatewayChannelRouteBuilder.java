@@ -263,7 +263,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         }
 
         orderedAfterThrowingPluginDefinitions.forEach(definition -> {
-            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
             });
@@ -276,7 +276,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         }
 
         orderedBeforePluginDefinitions.forEach(definition -> {
-            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
             });
@@ -302,7 +302,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         }
 
         orderedBeforePluginDefinitions.forEach(definition -> {
-            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
             });
