@@ -68,7 +68,7 @@ public class AccountListResponseTransformer extends AbstractJsonTransformer {
         if (isValidAccount(sourceNode)) {
             final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m-> LocalDate.now().isBefore(m.getToDate()))
+                    .filter(m -> m.getToDate() == null || LocalDate.now().isBefore(m.getToDate()))
                     .filter(m -> StringUtils.equals(
                             Long.toString(accountNo),
                             StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
