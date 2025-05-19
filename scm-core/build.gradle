@@ -75,6 +75,7 @@ dependencies {
     implementation 'io.github.classgraph:classgraph:4.8.179'
     implementation 'com.github.victools:jsonschema-generator:4.37.0'
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation 'org.apache.commons:commons-text'
 
 }

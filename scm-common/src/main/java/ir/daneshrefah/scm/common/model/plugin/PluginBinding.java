@@ -23,5 +23,5 @@ public class PluginBinding extends AbstractAuditableModel<String> {
     @NotNull
     private Boolean active;
     private Definition definition;
-    List<PluginDefinition> definitions;
+    List<PluginDetail> details;
 }

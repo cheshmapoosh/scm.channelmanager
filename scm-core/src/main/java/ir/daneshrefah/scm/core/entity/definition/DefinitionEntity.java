@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.definition;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
-import ir.daneshrefah.scm.common.model.template.TemplateEngine;
+import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -28,7 +28,7 @@ public class DefinitionEntity extends AbstractAuditableEntity<String> {
     @Enumerated(EnumType.STRING)
     @Size(max = 20)
     @Column(length = 20)
-    private TemplateEngine engine;
+    private TemplateEngineType engine;
     @Size(max = 2048)
     private String details;
 }

@@ -9,7 +9,6 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -34,6 +33,11 @@ public class Message implements Serializable {
     public final static String ORIGINAL_HEADERS = "scmOriginalHeaders";
     public static final String SERVICE = "scmService";
     public static final String OPERATION = "scmOperation";
+    public static final String SERVICE_OPERATION = "scmServiceOperation";
+    public static final String TEMPLATE_VARIABLES = "scmTemplateVariables";
+    public static final String TEMPLATE_ENGINE = "scmTemplateEngine";
+    public static final String OPERATION_PHASE_DEFINITION = "scmOperationPhaseDefinition";
+        public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
     private final Header header;
     private MessageStatus status;
     private JsonNode payload;

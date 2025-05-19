@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.model.template;
 
-public enum TemplateEngine {
+public enum TemplateEngineType {
     FREEMARKER,
+    THYMELEAF,
+    PLACEHOLDER
 
 }

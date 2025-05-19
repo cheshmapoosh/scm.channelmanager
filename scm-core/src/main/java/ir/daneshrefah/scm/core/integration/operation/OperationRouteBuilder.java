@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationDefinitionType;
 import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.plugin.PluginHandler;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
@@ -49,21 +49,21 @@ public class OperationRouteBuilder extends RouteBuilder {
             RouteDefinition route = from(fromUri)
                     .routeId(routeId)
                     .setProperty(Message.OPERATION, constant(operation));
-            ;
 
-            List<PluginDefinition> orderedAfterThrowingPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER_THROWING);
-            defineExceptionHandler(route, orderedAfterThrowingPluginDefinitions);
+
+            List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER_THROWING);
+            defineExceptionHandler(route, orderedAfterThrowingPluginDetails, Map.of(Message.OPERATION, operation));
 
             applyMetrics(route, operation);
             applyTracing(route, operation);
 
-            List<PluginDefinition> orderedBeforePluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.BEFORE);
-            applyBeforePlugins(route, orderedBeforePluginDefinitions);
+            List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.BEFORE);
+            applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
 
             buildTarget(route, operation);
 
-            List<PluginDefinition> orderedAfterPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER);
-            applyAfterPlugins(route, orderedAfterPluginDefinitions);
+            List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER);
+            applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
         }
     }
 
@@ -72,7 +72,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         return "direct:" + operation.getName();
     }
 
-    private void defineExceptionHandler(RouteDefinition route, List<PluginDefinition> orderedAfterThrowingPluginDefinitions) {
+    private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails, Map<String, ?> properties) {
         route.onException(Exception.class)
                 .handled(true)
                 .process(exchange -> {
@@ -91,14 +91,15 @@ public class OperationRouteBuilder extends RouteBuilder {
                     }
                 });
 
-        if (orderedAfterThrowingPluginDefinitions == null) {
+        if (orderedAfterThrowingPluginDetails == null) {
             return;
         }
 
-        orderedAfterThrowingPluginDefinitions.forEach(definition -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
+        orderedAfterThrowingPluginDetails.forEach(detail -> {
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            handler.init(route, detail, properties);
             route.process(exchange -> {
-                handler.handle(exchange, definition);
+                handler.handle(exchange, detail);
             });
         });
     }
@@ -119,15 +120,16 @@ public class OperationRouteBuilder extends RouteBuilder {
         });
     }
 
-    private void applyBeforePlugins(RouteDefinition route, List<PluginDefinition> orderedBeforePluginDefinitions) {
-        if (orderedBeforePluginDefinitions == null) {
+    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Map<String, ?> properties) {
+        if (orderedBeforePluginDetails == null) {
             return;
         }
 
-        orderedBeforePluginDefinitions.forEach(definition -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
+        orderedBeforePluginDetails.forEach(detail -> {
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            handler.init(route, detail, properties);
             route.process(exchange -> {
-                handler.handle(exchange, definition);
+                handler.handle(exchange, detail);
             });
         });
     }
@@ -194,7 +196,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         }
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDefinition> orderedAfterPluginDefinitions) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
         route.process(exchange -> {
             Span span = (Span) exchange.getProperty("otelSpan");
             Scope scope = (Scope) exchange.getProperty("otelScope");
@@ -207,14 +209,15 @@ public class OperationRouteBuilder extends RouteBuilder {
             }
         });
 
-        if (orderedAfterPluginDefinitions == null) {
+        if (orderedAfterPluginDetails == null) {
             return;
         }
 
-        orderedAfterPluginDefinitions.forEach(definition -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
+        orderedAfterPluginDetails.forEach(detail -> {
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            handler.init(route, detail, properties);
             route.process(exchange -> {
-                handler.handle(exchange, definition);
+                handler.handle(exchange, detail);
             });
         });
     }

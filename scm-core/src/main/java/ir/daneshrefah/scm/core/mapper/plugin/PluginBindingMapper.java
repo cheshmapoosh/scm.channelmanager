@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.core.entity.plugin.PluginBindingEntity;
 import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
 import org.mapstruct.*;
@@ -24,7 +24,7 @@ public abstract class PluginBindingMapper {
 
     @PostConstruct
     public void init() {
-        this.pluginAdvisorsReader = mapper.readerFor(new TypeReference<List<PluginDefinition>>() {
+        this.pluginAdvisorsReader = mapper.readerFor(new TypeReference<List<PluginDetail>>() {
         });
     }
 
@@ -34,12 +34,12 @@ public abstract class PluginBindingMapper {
 
     @AfterMapping
     public void afterMapping(@MappingTarget PluginBinding pluginBinding) {
-        List<PluginDefinition> pluginDefinitions;
+        List<PluginDetail> pluginDetails;
         try {
             Definition definition = pluginBinding.getDefinition();
             if (definition != null) {
-                pluginDefinitions = pluginAdvisorsReader.readValue(definition.getDetails());
-                pluginBinding.setDefinitions(pluginDefinitions);
+                pluginDetails = pluginAdvisorsReader.readValue(definition.getDetails());
+                pluginBinding.setDetails(pluginDetails);
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.definition;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
-import ir.daneshrefah.scm.common.model.template.TemplateEngine;
+import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +15,7 @@ public class Definition extends AbstractAuditableModel<String> {
     private String id;
     private String title;
     private String name;
-    private TemplateEngine engine;
+    private TemplateEngineType engine;
     @Size(max = 2048)
     private String details;
 

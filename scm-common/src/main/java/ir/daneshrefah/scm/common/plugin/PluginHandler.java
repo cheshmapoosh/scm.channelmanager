@@ -1,10 +1,16 @@
 package ir.daneshrefah.scm.common.plugin;
 
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
 import org.apache.camel.Exchange;
+import org.apache.camel.model.RouteDefinition;
+
+import java.util.Map;
 
 public interface PluginHandler {
     PluginType getType();
-    void handle(Exchange exchange, PluginDefinition pluginDefinition) throws Exception;
+
+    void init (RouteDefinition routeDefinition, PluginDetail pluginDetail, Map<String, ?> properties);
+
+    void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception;
 }

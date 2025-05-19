@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginScope;
 import ir.daneshrefah.scm.core.entity.plugin.PluginBindingEntity;
@@ -22,63 +22,66 @@ public class PluginResolverServiceImpl implements PluginResolverService {
     private final PluginBindingMapper pluginBindingMapper;
 
     @Override
-    public List<PluginDefinition> resolveOrderedPluignDefinitions(Channel channel) {
-        PluginBindingEntity channelPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeId(PluginScope.CHANNEL, String.valueOf(channel.getId()));
-        List<PluginDefinition> channelPluginDefinitions = List.of();
+    public List<PluginDetail> resolveOrderedPluignDefinitions(Channel channel) {
+        PluginBindingEntity channelPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(
+                PluginScope.CHANNEL,
+                String.valueOf(channel.getId()),
+                true);
+        List<PluginDetail> channelPluginDetails = List.of();
         if (channelPluginBindingEntity != null) {
             PluginBinding channelPluginBinding = pluginBindingMapper.toDto(channelPluginBindingEntity);
-            channelPluginDefinitions = channelPluginBinding.getDefinitions();
+            channelPluginDetails = channelPluginBinding.getDetails();
         }
-        return channelPluginDefinitions.stream()
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+        return channelPluginDetails.stream()
+                .sorted(Comparator.comparingInt(PluginDetail::getOrder))
                 .toList() ;
 
     }
         @Override
-    public List<PluginDefinition> resolveOrderedPluignDefinitions(List<PluginDefinition> channelPluginDefinitions,
-                                                                  Service service,
-                                                                  PluginPhase phase) {
-        Map<String, PluginDefinition> resolved = new LinkedHashMap<>();
+    public List<PluginDetail> resolveOrderedPluignDefinitions(List<PluginDetail> channelPluginDetails,
+                                                              Service service,
+                                                              PluginPhase phase) {
+        Map<String, PluginDetail> resolved = new LinkedHashMap<>();
 
-        List<PluginDefinition> channelPluginDefinitionsByPhase = resolvePluginDefinitions(channelPluginDefinitions, phase);
+        List<PluginDetail> channelPluginDefinitionsByPhase = resolvePluginDefinitions(channelPluginDetails, phase);
 
-        PluginBindingEntity servicePluginBindingEntity = pluginBindingRepository.findByScopeAndScopeId(PluginScope.SERVICE, String.valueOf(service.getId()));
-        List<PluginDefinition> servicePluginDefinitions = List.of();
+        PluginBindingEntity servicePluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.SERVICE, String.valueOf(service.getId()), true);
+        List<PluginDetail> servicePluginDetails = List.of();
         if (servicePluginBindingEntity != null) {
             PluginBinding servicePluginBinding = pluginBindingMapper.toDto(servicePluginBindingEntity);
-            servicePluginDefinitions = resolvePluginDefinitions(servicePluginBinding.getDefinitions(), phase);
+            servicePluginDetails = resolvePluginDefinitions(servicePluginBinding.getDetails(), phase);
         }
 
-        List<PluginDefinition> pluginDefinitions = Stream.of(
+        List<PluginDetail> pluginDetails = Stream.of(
                 channelPluginDefinitionsByPhase,
-                servicePluginDefinitions
+                servicePluginDetails
         ).flatMap(Collection::stream).toList();
 
-        for (PluginDefinition pluginDefinition : pluginDefinitions) {
-            resolved.put(pluginDefinition.getName(), pluginDefinition);
+        for (PluginDetail pluginDetail : pluginDetails) {
+            resolved.put(pluginDetail.getName(), pluginDetail);
         }
         return resolved.values().stream()
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+                .sorted(Comparator.comparingInt(PluginDetail::getOrder))
                 .toList() ;
     }
 
     @Override
-    public List<PluginDefinition> resolveOrderedPluignDefinitions(Operation operation, PluginPhase phase) {
-        PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeId(PluginScope.OPERATION, operation.getId());
-        List<PluginDefinition> operationPluginDefinitions = List.of();
+    public List<PluginDetail> resolveOrderedPluignDefinitions(Operation operation, PluginPhase phase) {
+        PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
+        List<PluginDetail> operationPluginDetails = List.of();
         if (operationPluginBindingEntity != null) {
-            PluginBinding channelPluginBinding = pluginBindingMapper.toDto(operationPluginBindingEntity);
-            operationPluginDefinitions = resolvePluginDefinitions(channelPluginBinding.getDefinitions(), phase);
+            PluginBinding operationPluginBinding = pluginBindingMapper.toDto(operationPluginBindingEntity);
+            operationPluginDetails = resolvePluginDefinitions(operationPluginBinding.getDetails(), phase);
         }
-        return operationPluginDefinitions.stream()
-                .sorted(Comparator.comparingInt(PluginDefinition::getOrder))
+        return operationPluginDetails.stream()
+                .sorted(Comparator.comparingInt(PluginDetail::getOrder))
                 .toList() ;
     }
 
-    private List<PluginDefinition> resolvePluginDefinitions(List<PluginDefinition> pluginDefinitions, PluginPhase phase) {
-        if (pluginDefinitions == null) { return List.of(); }
+    private List<PluginDetail> resolvePluginDefinitions(List<PluginDetail> pluginDetails, PluginPhase phase) {
+        if (pluginDetails == null) { return List.of(); }
 
-        return pluginDefinitions.stream()
+        return pluginDetails.stream()
                 .filter(p -> p.getPhase() == phase)
                 .toList();
     }

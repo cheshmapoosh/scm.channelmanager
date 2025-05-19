@@ -8,12 +8,9 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
-import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.plugin.PluginDefinition;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.plugin.PluginHandler;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
@@ -85,7 +82,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                                 " with " + gatewayChannel.getProtocolType() + " protocol"));
         ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
 
-        List<PluginDefinition> channelPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(gatewayChannel.getChannel());
+        List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(gatewayChannel.getChannel());
 
         channelServiceAccesses.stream()
                 .filter(channelServiceAccess -> CollectionUtils.isNotEmpty(channelServiceAccess.getService().getServiceOperations()))
@@ -98,26 +95,25 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
                     RouteDefinition route = protocolConfigurer.routeDefinition(channelServiceAccess, definitions)
                             .setProperty(Message.SERVICE, constant(service));
-
-                    List<PluginDefinition> orderedAfterThrowingPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                    List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.AFTER_THROWING);
-                    defineExceptionHandler(route, orderedAfterThrowingPluginDefinitions);
+                    defineExceptionHandler(route, orderedAfterThrowingPluginDetails);
 
                     applyMetrics(route, service);
                     applyTracing(route, service);
 
-                    List<PluginDefinition> orderedBeforePluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                    List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.BEFORE);
-                    applyBeforePlugins(route, orderedBeforePluginDefinitions);
+                    applyBeforePlugins(route, orderedBeforePluginDetails);
 
                     buildTarget(route, service);
 
-                    List<PluginDefinition> orderedAfterPluginDefinitions = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDefinitions,
+                    List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.AFTER);
-                    applyAfterPlugins(route, orderedAfterPluginDefinitions);
+                    applyAfterPlugins(route, orderedAfterPluginDetails);
                 });
     }
 
@@ -188,21 +184,25 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
 
     private void buildTarget(RouteDefinition route, Service service) {
-        Resilience4jConfigurationDefinition resilience4jConfigurationDefinition = new Resilience4jConfigurationDefinition();
-        resilience4jConfigurationDefinition.setFailureRateThreshold("50");
+//        Resilience4jConfigurationDefinition resilience4jConfigurationDefinition = new Resilience4jConfigurationDefinition();
+//        resilience4jConfigurationDefinition.setFailureRateThreshold("50");
+
         if (Objects.equals(RoutingStrategy.FIRST, service.getRoutingStrategy())) {
-            String operationName = service.getServiceOperations().get(0).getOperationName();
+            ServiceOperation serviceOperation = service.getServiceOperations().get(0);
+            route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
+            String operationName = serviceOperation.getOperationName();
             String url = resolveOperationUrl(operationName);
-            if (service.useCircuitBreaker()) {
-                route.circuitBreaker()
-                        .resilience4jConfiguration(resilience4jConfigurationDefinition)
-                        .to(url)
-                        .onFallback()
-                        .setBody(constant("{\"error\":\"fallback\"}"))
-                        .end();
-            } else {
+//            if (service.useCircuitBreaker()) {
+//                route
+//                        .circuitBreaker()
+//                        .resilience4jConfiguration(resilience4jConfigurationDefinition)
+//                        .to(url)
+//                        .onFallback()
+//                        .setBody(constant("{\"error\":\"fallback\"}"))
+//                        .end();
+//            } else {
                 route.to(url);
-            }
+//            }
             return;
         }
 
@@ -214,16 +214,17 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
                 String operationName = serviceOperation.getOperationName();
                 String url = resolveOperationUrl(operationName);
-                if (service.useCircuitBreaker()) {
-                    multicast.circuitBreaker()
-                            .resilience4jConfiguration(resilience4jConfigurationDefinition)
-                            .to(url)
-                            .onFallback()
-                            .setBody(constant("{\"error\":\"fallback\"}"))
-                            .end();
-                } else {
+//                if (service.useCircuitBreaker()) {
+//                    multicast
+//                            .circuitBreaker()
+//                            .resilience4jConfiguration(resilience4jConfigurationDefinition)
+//                            .to(url)
+//                            .onFallback()
+//                            .setBody(constant("{\"error\":\"fallback\"}"))
+//                            .end();
+//                } else {
                     multicast.to(url).end();
-                }
+//                }
 
             });
             return;
@@ -239,7 +240,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         return "direct:" + operationName;
     }
 
-    private void defineExceptionHandler(RouteDefinition route, List<PluginDefinition> orderedAfterThrowingPluginDefinitions) {
+    private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails) {
         route.onException(Exception.class)
                 .handled(true)
                 .process(exchange -> {
@@ -258,11 +259,11 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     }
                 });
 
-        if (orderedAfterThrowingPluginDefinitions == null) {
+        if (orderedAfterThrowingPluginDetails == null) {
             return;
         }
 
-        orderedAfterThrowingPluginDefinitions.forEach(definition -> {
+        orderedAfterThrowingPluginDetails.forEach(definition -> {
             PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
@@ -270,12 +271,12 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         });
     }
 
-    private void applyBeforePlugins(RouteDefinition route, List<PluginDefinition> orderedBeforePluginDefinitions) {
-        if (orderedBeforePluginDefinitions == null) {
+    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
+        if (orderedBeforePluginDetails == null) {
             return;
         }
 
-        orderedBeforePluginDefinitions.forEach(definition -> {
+        orderedBeforePluginDetails.forEach(definition -> {
             PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
@@ -284,7 +285,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDefinition> orderedBeforePluginDefinitions) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
         route.process(exchange -> {
             Span span = (Span) exchange.getProperty("otelSpan");
             Scope scope = (Scope) exchange.getProperty("otelScope");
@@ -297,11 +298,11 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
             }
         });
 
-        if (orderedBeforePluginDefinitions == null) {
+        if (orderedBeforePluginDetails == null) {
             return;
         }
 
-        orderedBeforePluginDefinitions.forEach(definition -> {
+        orderedBeforePluginDetails.forEach(definition -> {
             PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
