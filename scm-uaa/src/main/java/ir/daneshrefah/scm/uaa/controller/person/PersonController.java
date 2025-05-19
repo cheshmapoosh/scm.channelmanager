@@ -40,7 +40,7 @@ public class PersonController {
 
     @GetMapping("/find/{personId}")
     public ResponseEntity<GeneralPerson> findGeneralPersonById(@PathVariable("personId") String personId){
-        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Long.parseLong(personId)));
+        return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonByPersonId(Integer.parseInt(personId)));
     }
 
     @GetMapping("/find-nickname/{nickname}/{terminalCode}")
@@ -50,12 +50,12 @@ public class PersonController {
     }
 
     @GetMapping("/{personId}/roles")
-    public ResponseEntity<List<Role>> findUserRoleList(@PathVariable("personId") Long personId) {
+    public ResponseEntity<List<Role>> findUserRoleList(@PathVariable("personId") Integer personId) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.findPersonRoleList(personId));
     }
 
     @PutMapping("/{personId}/roles/{roleId}")
-    public ResponseEntity<Role> addPersonRole(@PathVariable("personId") Long personId, @PathVariable("roleId") Integer roleId) {
+    public ResponseEntity<Role> addPersonRole(@PathVariable("personId") Integer personId, @PathVariable("roleId") Integer roleId) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.addPersonRole(personId, roleId));
     }
 
@@ -70,12 +70,12 @@ public class PersonController {
     }
 
     @GetMapping("/sync/{personId}")
-    public ResponseEntity<GeneralPerson> syncPersonInfoFromCIF(@PathVariable("personId") String personId) {
+    public ResponseEntity<GeneralPerson> syncPersonInfoFromCIF(@PathVariable("personId") Integer personId) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonInfoFromCIF(personId));
     }
 
     @GetMapping("/diff/{personId}")
-    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId")  String personId ) {
+    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId")  Integer personId ) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.diffPersonInfoFromCIFAndLocal(personId));
     }
 

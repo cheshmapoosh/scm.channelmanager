@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpecificationExecutor<TaskEntity> {
-    Optional<TaskEntity> findByIdAndUserId(Long id, Long userID);
+    Optional<TaskEntity> findByIdAndUserId(Long id, Integer userID);
 }

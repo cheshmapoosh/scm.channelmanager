@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.error;
 
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ErrorMapping extends AbstractAuditableModel<Long> {
+public class ErrorMapping extends AbstractStringAuditableModel<Long> {
 
     private String providerId;
     private String providerErrorCode;

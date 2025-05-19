@@ -63,9 +63,9 @@ public class UserEntity extends AbstractAuditLoggableEntity<Integer> {
     @Column(name = "BRANCH_CODE")
     private String creatorBranch;
     @Column(name = "CREATED_BY")
-    private Long creator;
+    private Integer creator;
     @Column(name = "MODIFIED_BY")
-    private Long lastEditor;
+    private Integer lastEditor;
     @Column(name = "CREATION_DATE", insertable = false, updatable = false)
     private LocalDateTime createDate;
     @Column(name = "MODIFICATION_DATE", insertable = false)

@@ -115,7 +115,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
                 request.getAuthenticationMethodType());
     }
 
-    private UserEntity findUserByPersonAndTerminal(Long personId, String terminalCode) {
+    private UserEntity findUserByPersonAndTerminal(Integer personId, String terminalCode) {
         return userService.findByPersonIdAndLegacyTerminalCode(personId, terminalCode).stream()
                 .findFirst().orElseThrow(() -> new NoMatchRecordFoundException("userId"));
     }

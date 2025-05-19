@@ -18,7 +18,7 @@ public class ProcessInstanceWatcherEntity {
     private Long id;
 
     @Column(name = "USER_ID")
-    private Long userId;
+    private Integer userId;
 
     @ManyToOne
     @JoinColumn(name = "PROCESS_ID")
@@ -28,7 +28,7 @@ public class ProcessInstanceWatcherEntity {
     private Long archiveNo;
 
     @Column(name = "CREATE_BY", nullable = false)
-    private Long createBy;
+    private Integer createBy;
 
     @Column(name = "CREATE_AT", nullable = false)
     private Date createAt;

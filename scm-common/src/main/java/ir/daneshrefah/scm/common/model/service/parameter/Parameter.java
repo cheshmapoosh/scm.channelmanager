@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.service.parameter;
 
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Parameter extends AbstractAuditableModel<String> {
+public class Parameter extends AbstractStringAuditableModel<String> {
 
     private String name;
     private ParameterDatasource datasource;

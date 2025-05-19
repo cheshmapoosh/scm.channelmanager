@@ -38,7 +38,7 @@ public class UserActivationMessageSubscriberImpl implements UserActivationMessag
                             String fromTerminal = message.getAttributes().get("fromTerminal");
                             TerminalType terminal = TerminalType.fromCode(fromTerminal).orElseThrow(() -> new RuntimeException("Invalid terminal code " + fromTerminal));
                             userService
-                                    .findByNicknameAndLegacyTerminalId(username, terminal.getLegacyTerminalId())
+                                    .findByNicknameAndLegacyTerminalId(username, terminal.getLegacyTerminalId().intValue())
                                     .stream().findFirst().ifPresent(user -> {
                                         GeneralPerson dbPerson = personService.findPersonByUsername(user.getPerson().getUsername()).orElseThrow(() -> new RuntimeException("User " + username + " not found in activation queue "));
                                         try {

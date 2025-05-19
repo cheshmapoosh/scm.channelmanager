@@ -49,7 +49,7 @@ public abstract class TaskMapper {
 
     public List<TaskResponse> toTaskResponseListWithProcessInstance(List<TaskEntity> taskEntities) {
         List<TaskResponse> taskResponseList = new ArrayList<>();
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         for (TaskEntity task : taskEntities) {
             TaskResponse taskResponse = toTaskResponse(task);
             ProcessInstanceResponse processInstanceResponse = processInstanceMapper.toProcessInstanceResponse(task.getProcessInstance());
@@ -96,7 +96,7 @@ public abstract class TaskMapper {
         return bundle.get(AccessibleLocale.FA_IR.getLocale(), taskStatusEnum.name()).orElse(taskStatusEnum.name());
     }
 
-    boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+    boolean allowCancelProcess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
         return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
 }

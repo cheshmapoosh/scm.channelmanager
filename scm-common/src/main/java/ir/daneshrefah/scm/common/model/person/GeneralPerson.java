@@ -15,7 +15,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
-public abstract class GeneralPerson extends AbstractAuditableModel<Long> {
+public abstract class GeneralPerson extends AbstractAuditableModel<Integer> {
 
     private String username;
     private Nationality nationality;

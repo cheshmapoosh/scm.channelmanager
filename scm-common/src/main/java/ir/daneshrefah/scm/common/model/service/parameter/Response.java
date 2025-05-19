@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.service.parameter;
 
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.common.model.transformer.Transformer;
 import lombok.Data;
@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class Response extends AbstractAuditableModel<String> {
+public class Response extends AbstractStringAuditableModel<String> {
 
     private List<ParameterDatasourceCondition> conditions;
     private Transformer responseTransformer;

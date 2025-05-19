@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.entity.terminal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.data.converter.JsonNodeTypeConverter;
-import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
 import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import ir.daneshrefah.scm.core.converter.ChannelProtocolConverter;
@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_CHANNEL")
-public class ChannelEntity extends AbstractAuditableEntity<String> {
+public class ChannelEntity extends AbstractStringAuditableEntity<String> {
 
     @Id
     @Column(name = "CHANNEL_ID")

@@ -31,13 +31,13 @@ public class UserProfile implements Serializable {
      * */
     private final String nickname;
     private String personUsername;
-    private Long personId;
+    private Integer personId;
     private List<MembershipTerminalAccess> memberships;
 
     @Setter
     private List<ServiceAccess> serviceAccesses;
 
-    public UserProfile(@NonNull String nickname, String personUsername, Long personId) {
+    public UserProfile(@NonNull String nickname, String personUsername, Integer personId) {
         this.nickname = nickname;
         this.personUsername = personUsername;
         this.personId = personId;
@@ -79,7 +79,7 @@ public class UserProfile implements Serializable {
         return StringUtils.isNotEmpty(personUsername);
     }
 
-    public void loadPersonInfo(@NonNull String personUsername, @NonNull Long personId) {
+    public void loadPersonInfo(@NonNull String personUsername, @NonNull Integer personId) {
         this.personUsername = personUsername;
         this.personId = personId;
     }

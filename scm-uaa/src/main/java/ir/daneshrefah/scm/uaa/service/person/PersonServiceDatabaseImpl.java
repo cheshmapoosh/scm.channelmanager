@@ -78,18 +78,18 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     }
 
     @Override
-    public GeneralPerson syncPersonInfoFromCIF(String personId) {
-        ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
+    public GeneralPerson syncPersonInfoFromCIF(Integer personId) {
+        ValidationUtils.checkNonNull(personId, () -> new MissingRequiredInputException("personId"));
+        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
         ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
         PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
         return syncPersonInfoFromCIF(request);
     }
 
     @Override
-    public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId) {
-        ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
+    public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(Integer personId) {
+        ValidationUtils.checkNonNull(personId, () -> new MissingRequiredInputException("personId"));
+        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
         ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
         PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
         List<GeneralPerson> cifPersonInfoList = findCIFPersonInfo(request);
@@ -179,7 +179,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     }
 
     @Override
-    public List<Role> findPersonRoleList(Long personId) {
+    public List<Role> findPersonRoleList(Integer personId) {
         if (null == personId) {
             throw new MissingRequiredInputException("personId");
         }
@@ -187,7 +187,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     }
 
     @Override
-    public Role addPersonRole(Long personId, Integer roleId) {
+    public Role addPersonRole(Integer personId, Integer roleId) {
         if (null == personId) {
             throw new MissingRequiredInputException("personId");
         }
@@ -207,7 +207,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
     }
 
     @Override
-    public Role addPersonRole(Long personId, String roleCode) {
+    public Role addPersonRole(Integer personId, String roleCode) {
         ValidationUtils.checkNull(personId, () -> new MissingRequiredInputException("personId"));
         ValidationUtils.checkEmptyString(roleCode, () -> new MissingRequiredInputException("roleCode"));
         RoleEntity roleEntity = roleRepository.findByCode(roleCode).orElseThrow(() -> new NoMatchRecordFoundException("roleCode"));

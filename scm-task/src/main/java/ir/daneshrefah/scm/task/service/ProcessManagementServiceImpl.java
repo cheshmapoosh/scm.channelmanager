@@ -152,7 +152,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             taskResponse.setStatusName(bundle.get(AccessibleLocale.FA_IR.getLocale(), task.getTaskStatus().name()).orElse(task.getTaskStatus().name()));
             taskResponseList.add(taskResponse);
         }
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         if (!(processInstance.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstance.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) && allowCancelProcess(processInstance, loggedInUserId)) {
             processInstanceResponse.setCanCancel(true);
         }
@@ -160,14 +160,14 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstanceResponse;
     }
 
-    private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+    private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
         return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
 
     @Override
     public PagedResponseData<ProcessInstanceResponse> findAll(ProcessInstanceFilterRequest request) {
         request = Objects.nonNull(request) ? request : new ProcessInstanceFilterRequest();
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         if (request.isReport()) {
             request.setUserId(loggedInUserId);
         } else {
@@ -204,8 +204,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     public boolean hasUserAccess(ProcessInstanceEntity processInstanceEntity) {
-        Long confirmUserId = processInstanceEntity.getConfirmUserId();
-        Long loggedInUser = AuthenticationUtils.getLoggedInUserId();
+        Integer confirmUserId = processInstanceEntity.getConfirmUserId();
+        Integer loggedInUser = AuthenticationUtils.getLoggedInUserId();
         if (Objects.equals(confirmUserId, loggedInUser)) {
             return true;
         }
@@ -216,7 +216,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public ProcessInstanceApproveResponse approve(ProcessInstanceApproveRequest request) {
         validateApproveRequest(request);
         ProcessInstanceEntity processInstance = findByID(request.getId());
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
         validateUserAccess(processInstance, loggedInUserId);
@@ -297,7 +297,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         validateProcessStatus(request.getStatus(), EnumSet.of(ProcessStatusEnum.COMPLETE, ProcessStatusEnum.FAIL));
 
         ProcessInstanceEntity processInstance = findByID(request.getId());
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         validateUserAccess(processInstance, loggedInUserId);
@@ -318,7 +318,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public void cancelProcess(ProcessInstanceCancelRequest request) {
         ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("processId"));
         ProcessInstanceEntity processInstanceEntity = findByID(request.getId());
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)
                 || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
             throw new InvalidProcessStatusException("status", "Invalid process status.");
@@ -350,7 +350,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
-    private void validateUserAccess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+    private void validateUserAccess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
         if (processInstance.getConfirmUserId() != null) {
             boolean hasAccess = processInstance.getConfirmUserId().equals(loggedInUserId) || processInstance.getTasks().stream().anyMatch(task -> task.getUserId().equals(loggedInUserId));
             if (!hasAccess) {
@@ -359,7 +359,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
-    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Long loggedInUserId, MessageInput context, ProcessStatusEnum processStatusEnum) {
+    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Integer loggedInUserId, MessageInput context, ProcessStatusEnum processStatusEnum) {
         processInstance.setUpdateAt(new Date());
         processInstance.setUpdateBy(loggedInUserId);
         processInstance.setProcessStatus(processStatusEnum);

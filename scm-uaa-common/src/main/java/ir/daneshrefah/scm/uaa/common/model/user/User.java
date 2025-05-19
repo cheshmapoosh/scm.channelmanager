@@ -18,7 +18,7 @@ import java.util.Set;
  * @since 2023-07-19
  */
 @Data
-public class User extends BaseModel<Long> {
+public class User extends BaseModel<Integer> {
 
     private String nickname;
 //    private Integer terminalId;

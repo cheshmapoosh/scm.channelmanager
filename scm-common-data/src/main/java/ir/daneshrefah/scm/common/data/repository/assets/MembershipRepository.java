@@ -30,7 +30,7 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
     Optional<MembershipEntity> findMembershipById(@Param("membershipId") Long membershipId);
 
     @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId")
-    List<MembershipEntity> findMembershipListByUserId(@Param("userId") Long userId);
+    List<MembershipEntity> findMembershipListByUserId(@Param("userId") Integer userId);
 
     interface MembershipSpecs {
 

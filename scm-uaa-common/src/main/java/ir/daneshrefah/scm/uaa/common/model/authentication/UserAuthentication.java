@@ -80,7 +80,7 @@ public class UserAuthentication extends AbstractAuthenticationToken implements A
             profile = new UserProfile(delegatedUsername);
         } else if (null != principal && isAuthenticated()) {
             String personUsername = null != principal.getPerson() ? principal.getPerson().getUsername() : null;
-            Long personId = null != principal.getPerson() && null != principal.getPerson().getId() ? principal.getPerson().getId().longValue() : null;
+            Integer personId = null != principal.getPerson() && null != principal.getPerson().getId() ? principal.getPerson().getId() : null;
             profile = new UserProfile(principal.getNickname(), personUsername, personId);
         } else {
             profile = new UserProfile();

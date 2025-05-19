@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.domain.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Getter
 @Setter
-public class Client extends AbstractAuditableModel<Long> {
+public class Client extends AbstractStringAuditableModel<Long> {
 
     private Long id;
     private String terminalCode;

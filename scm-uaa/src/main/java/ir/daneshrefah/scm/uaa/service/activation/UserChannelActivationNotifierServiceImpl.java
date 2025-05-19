@@ -47,8 +47,8 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
 
     private void sendNotification(GeneralPerson person, TerminalType sourceChannel, TerminalType targetChannel, String nickname, NotificationTemplate notificationTemplate) {
         try {
-            Terminal sourceTerminal = terminalService.findTerminalByLegacyId(sourceChannel.getLegacyTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
-            Terminal targetTerminal = terminalService.findTerminalByLegacyId(targetChannel.getLegacyTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
+            Terminal sourceTerminal = terminalService.findTerminalByLegacyId(sourceChannel.getLegacyTerminalId().intValue()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
+            Terminal targetTerminal = terminalService.findTerminalByLegacyId(targetChannel.getLegacyTerminalId().intValue()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
             NotificationData notificationData = createNotificationData(nickname, targetTerminal);
             //CREATE ISSUER INFO
             IssuerInfo issuerInfo = IssuerInfo.builder()

@@ -56,7 +56,7 @@ public class NibNativeRepository {
      * @return List of records as Maps, empty if none found.
      * @throws DataAccessException if a database error occurs.
      */
-    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Long userId, TerminalType fromTerminal) {
+    public List<Map<String, Object>> findUserChannelAuthenticationByUserId(Integer userId, TerminalType fromTerminal) {
         String sql = """
             SELECT u.*, c.CODE\s
             FROM %s u\s
@@ -249,7 +249,7 @@ public class NibNativeRepository {
      * @return A List of Maps, each containing all columns from MEMBERSHIP_CHANNEL_ACCESS,
      * or an empty List if no records are found or an error occurs.
      */
-    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Long userId, TerminalType fromTerminal) {
+    public List<Map<String, Object>> findMembershipChannelAccessByUserId(Integer userId, TerminalType fromTerminal) {
         String sql = """
             SELECT mca.*,c.AUTHENTICATION_METHOD_ID\s
             FROM ref.MEMBERSHIP m\s

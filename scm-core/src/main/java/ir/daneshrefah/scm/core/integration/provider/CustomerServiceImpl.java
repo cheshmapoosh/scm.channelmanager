@@ -641,7 +641,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
 
     @Override
-    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Short channelId) {
+    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Integer personId, Short channelId) {
         if (null == personId) {
             return null;
         }
@@ -729,7 +729,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     }
 
     @Override
-    public Optional<String> findCustomerNo(Long userId) {
+    public Optional<String> findCustomerNo(Integer userId) {
         return membershipRepository.findMembershipListByUserId(userId)
                 .stream().map(MembershipEntity::getCustomerAccount)
                 .filter(Objects::nonNull)

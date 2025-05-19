@@ -356,7 +356,7 @@ public class UserService {
         User user = UserMapper.INSTANCE.toModel(entity);
 
         GeneralPerson person = new UnknownPerson();
-        person.setId(new Random().nextLong());
+        person.setId(new Random().nextInt());
         person.setUsername(StringUtils.generateGuid());
         person.setStatus(PersonStatus.ACTIVE);
         person.setMobile1(mobileNo);
@@ -479,12 +479,12 @@ public class UserService {
         return null != persons && !persons.isEmpty() ? persons.get(0) : null;
     }
 
-    public GeneralPersonEntity findPersonById(Long id) {
+    public GeneralPersonEntity findPersonById(Integer id) {
         Optional<GeneralPersonEntity> person = personRepository.findById(id);
         return person.orElse(null);
     }
 
-    public Optional<List<String>> loadUserAuthorities(Long personId) {
+    public Optional<List<String>> loadUserAuthorities(Integer personId) {
         List<RoleEntity> roles = roleRepository.findByPersonId(personId);
         if (null == roles || roles.isEmpty())
             return Optional.empty();
@@ -713,7 +713,7 @@ public class UserService {
         return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
     }
 
-    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Long userId, String terminalCode) {
+    public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Integer userId, String terminalCode) {
         Terminal terminal = findTerminalByCode(terminalCode);
         return userRepository.findByPersonIdAndLegacyTerminalId(userId, terminal.getLegacyTerminalId().intValue());
     }
@@ -838,7 +838,7 @@ public class UserService {
         ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
         ValidationUtils.checkNull(request.getPersonType(), () -> new MissingRequiredInputException("personType"));
         Terminal terminal = findTerminalByCode(request.getTerminalCode());
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         String nickName = generateUserNickName(request, generalPerson);
         UserEntity user = new UserEntity();
         user.setNickname(nickName);

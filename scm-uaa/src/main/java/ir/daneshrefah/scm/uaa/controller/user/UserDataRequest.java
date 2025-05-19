@@ -26,7 +26,7 @@ public class UserDataRequest implements RequestData {
     private String loginStaticPassword;
     private String transactionStaticPassword;
     private String otpSerialNumber;
-    private Long personId;
+    private Integer personId;
     private String creatorBranch;
     private UserType userType;
 

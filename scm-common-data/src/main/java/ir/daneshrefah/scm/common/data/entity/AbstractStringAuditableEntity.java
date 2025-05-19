@@ -15,14 +15,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class AbstractAuditableEntity<T> extends AbstractEntity<T> {
+public abstract class AbstractStringAuditableEntity<T> extends AbstractEntity<T> {
 
     @Column(name = "CREATOR", updatable = false)
     @CreatedBy
-    private Integer creator;
+    private String creator;
     @Column(name = "LAST_EDITOR")
     @LastModifiedBy
-    private Integer lastEditor;
+    private String lastEditor;
     @Column(name = "CREATE_DATE", updatable = false)
     @CreatedDate
     private LocalDateTime createDate;

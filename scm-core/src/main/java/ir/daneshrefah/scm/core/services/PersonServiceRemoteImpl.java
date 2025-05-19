@@ -35,7 +35,7 @@ public class PersonServiceRemoteImpl implements PersonService {
     }
 
     @Override
-    public GeneralPerson findPersonByPersonId(Long id) {
+    public GeneralPerson findPersonByPersonId(Integer id) {
         return null;
     }
 

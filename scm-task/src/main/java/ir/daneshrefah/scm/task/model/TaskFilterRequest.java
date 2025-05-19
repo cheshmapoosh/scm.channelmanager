@@ -14,6 +14,6 @@ public class TaskFilterRequest extends PagedRequestData {
     private String accountNo;
     private Long fromDate;
     private Long toDate;
-    private Long userId;
+    private Integer userId;
     private ProcessCodeEnum transactionType;
 }

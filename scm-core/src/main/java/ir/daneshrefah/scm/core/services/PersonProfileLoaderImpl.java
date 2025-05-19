@@ -46,7 +46,7 @@ public class PersonProfileLoaderImpl implements PersonProfileLoader {
         if (Objects.isNull(person)) {
             return null;
         }
-        authentication.getProfile().loadPersonInfo(person.getUsername(), Long.valueOf(person.getId()));
+        authentication.getProfile().loadPersonInfo(person.getUsername(), person.getId());
         return authentication.getProfile();
     }
 

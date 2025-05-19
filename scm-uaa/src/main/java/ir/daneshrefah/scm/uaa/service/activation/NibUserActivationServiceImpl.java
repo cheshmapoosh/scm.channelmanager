@@ -58,7 +58,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * @param channelIdMap   A Map mapping old CHANNEL_IDs to new CHANNEL_IDs.
      * @throws IllegalStateException if duplication or insertion fails.
      */
-    private void duplicateMembershipChannelAccess(Long userId, Map<Integer, Integer> channelIdMap,TerminalType fromTerminal) {
+    private void duplicateMembershipChannelAccess(Integer userId, Map<Integer, Integer> channelIdMap,TerminalType fromTerminal) {
         log.debug("Starting duplication of MEMBERSHIP_CHANNEL_ACCESS for userId: {}", userId);
 
         // Fetch existing records
@@ -226,7 +226,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
         return entities.get(0); // Assuming the first result is the intended one
     }
 
-    private Map<String, Object> fetchUserChannelAuthentication(Long userId, TerminalType fromTerminal) {
+    private Map<String, Object> fetchUserChannelAuthentication(Integer userId, TerminalType fromTerminal) {
         List<Map<String, Object>> userChannelAuthList = nibNativeRepository.findUserChannelAuthenticationByUserId(userId, fromTerminal);
 
         if (userChannelAuthList.isEmpty()) {

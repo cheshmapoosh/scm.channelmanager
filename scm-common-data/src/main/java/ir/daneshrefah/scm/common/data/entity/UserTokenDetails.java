@@ -41,7 +41,7 @@ public class UserTokenDetails {
     @Column(name = "ACTIVATION_CODE")
     private String activationCode;
     @Column(name = "CREATED_BY")
-    private Long createdBy;
+    private Integer createdBy;
     @Column(name = "MODIFIED_BY")
     private Integer modifiedBy;
     @Column(name = "CREATION_DATE")

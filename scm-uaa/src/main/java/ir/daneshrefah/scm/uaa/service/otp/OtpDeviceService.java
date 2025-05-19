@@ -117,7 +117,7 @@ public class OtpDeviceService {
 
     private UserTokenDetails createUserTokenDetailEntity(OtpRegisterDeviceRequest request, ResponseMessageDetails responseBody, UserEntity userEntity) {
         User loggedInUser = AuthenticationUtils.getLoggedInUser();
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         UserTokenDetails userTokenDetail = new UserTokenDetails();
         assert loggedInUser != null;
         String terminalCode = loggedInUser.getTerminalCode();
@@ -141,7 +141,7 @@ public class OtpDeviceService {
         }
     }
 
-    public boolean hasOTPAssignment(Long personId) {
+    public boolean hasOTPAssignment(Integer personId) {
         return userTokenDetailsRepository.countByPersonId(personId) > 0;
     }
 

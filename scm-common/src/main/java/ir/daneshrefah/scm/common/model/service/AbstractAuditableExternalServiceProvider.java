@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.service;
 
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
 import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.Response;
@@ -18,7 +18,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public abstract class AbstractAuditableExternalServiceProvider extends AbstractAuditableModel<String> {
+public abstract class AbstractAuditableExternalServiceProvider extends AbstractStringAuditableModel<String> {
 
     private String code;
     private String title;

@@ -1,8 +1,8 @@
 CREATE TABLE REF.TBL_SCM_DEFINITION
 (
-    DEFINITION_ID  VARCHAR(36) NOT NULL,
-    TITLE          VARCHAR(100) NOT NULL ,
-    NAME           VARCHAR(50)  NOT NULL ,
+    DEFINITION_ID  VARCHAR(36)  NOT NULL,
+    TITLE          VARCHAR(100) NOT NULL,
+    NAME           VARCHAR(50)  NOT NULL,
     ENGINE         VARCHAR(20),
     DETAILS        VARCHAR(2048),
     CREATOR        INTEGER,
@@ -14,6 +14,7 @@ CREATE TABLE REF.TBL_SCM_DEFINITION
 );
 ALTER TABLE REF.TBL_SCM_DEFINITION
     ADD CONSTRAINT UC_DEF_ON_NAME UNIQUE (NAME);
+
 ------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_OPERATION_PROVIDER
 (
@@ -32,6 +33,7 @@ CREATE TABLE REF.TBL_SCM_OPERATION_PROVIDER
 
 ALTER TABLE REF.TBL_SCM_OPERATION_PROVIDER
     ADD CONSTRAINT UC_OPT_PVD_ON_NAME UNIQUE (NAME);
+
 ------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_OPERATION
 (
@@ -41,7 +43,7 @@ CREATE TABLE REF.TBL_SCM_OPERATION
     PATH                  VARCHAR(100),
     ACTIVE                SMALLINT     NOT NULL,
     DESCRIPTION           VARCHAR(255),
-    TYPE                  VARCHAR(20) NOT NULL,
+    TYPE                  VARCHAR(20)  NOT NULL,
     OPERATION_PROVIDER_ID VARCHAR(36)  NOT NULL,
     CREATOR               INTEGER,
     LAST_EDITOR           INTEGER,
@@ -61,8 +63,8 @@ ALTER TABLE REF.TBL_SCM_OPERATION
 CREATE TABLE REF.TBL_SCM_OPERATION_DEFINITION
 (
     OPERATION_DEFINITION_ID VARCHAR(36) NOT NULL,
-    TYPE                    VARCHAR(20)  NOT NULL,
-    OPERATION_ID            VARCHAR(36)  NOT NULL,
+    TYPE                    VARCHAR(20) NOT NULL,
+    OPERATION_ID            VARCHAR(36) NOT NULL,
     DEFINITION_ID           VARCHAR(36) NOT NULL,
     CREATOR                 INTEGER,
     LAST_EDITOR             INTEGER,
@@ -136,16 +138,16 @@ ALTER TABLE REF.TBL_SCM_GATEWAY_CHANNEL
 ------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE REF.TBL_SCM_CHN_SVC_DEFINITION
 (
-    CHN_SVC_DEFINITION_ID       VARCHAR(36)  NOT NULL,
-    CHANNEL_SERVICE_ACCESS_ID   DECIMAL(22) NOT NULL,
-    GATEWAY_CHANNEL_ID          VARCHAR(36)  NOT NULL,
-    TYPE                        VARCHAR(20)  NOT NULL,
-    DEFINITION_ID               VARCHAR(36) NOT NULL,
-    CREATOR                     INTEGER,
-    LAST_EDITOR                 INTEGER,
-    CREATE_DATE                 TIMESTAMP,
-    LAST_EDIT_DATE              TIMESTAMP,
-    VERSION                     INTEGER,
+    CHN_SVC_DEFINITION_ID     VARCHAR(36) NOT NULL,
+    CHANNEL_SERVICE_ACCESS_ID DECIMAL(22) NOT NULL,
+    GATEWAY_CHANNEL_ID        VARCHAR(36) NOT NULL,
+    TYPE                      VARCHAR(20) NOT NULL,
+    DEFINITION_ID             VARCHAR(36) NOT NULL,
+    CREATOR                   INTEGER,
+    LAST_EDITOR               INTEGER,
+    CREATE_DATE               TIMESTAMP,
+    LAST_EDIT_DATE            TIMESTAMP,
+    VERSION                   INTEGER,
     CONSTRAINT PK_CHN_SVC_DEFINITION PRIMARY KEY (CHN_SVC_DEFINITION_ID)
 );
 
@@ -186,7 +188,6 @@ ALTER TABLE REF.TBL_SCM_SERVICE_OPERATION
 
 ALTER TABLE REF.TBL_SCM_SERVICE_OPERATION
     ADD CONSTRAINT FK_GTW_OPT_ON_SVC FOREIGN KEY (EB_SERVICE_ID) REFERENCES REF.EB_SERVICE (EB_SERVICE_ID);
-
 
 ------------------------------------------------------------------------------------------------------------------------
 alter table REF.TBL_SCM_ERROR_MAPPING

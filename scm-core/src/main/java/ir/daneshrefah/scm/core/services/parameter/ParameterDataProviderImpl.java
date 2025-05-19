@@ -86,7 +86,7 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
         Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
         assert authentication != null;
         UserProfile profile = authentication.getProfile();
-        Long personId = profile.getPersonId();
+        Integer personId = profile.getPersonId();
         GeneralPerson foundPerson = personService.findPersonByPersonId(personId);
         String subOrganizationId = null;
         if (foundPerson instanceof GeneralLegalPerson legalPerson) {
@@ -111,7 +111,7 @@ public class ParameterDataProviderImpl extends ParameterDataProvider {
         Authentication authentication = AuthenticationUtils.getLoggedInUserAuthentication();
         assert authentication != null;
         UserProfile profile = authentication.getProfile();
-        Long personId = profile.getPersonId();
+        Integer personId = profile.getPersonId();
         GeneralPerson foundPerson = personService.findPersonByPersonId(personId);
         String nationalId = null;
         if (foundPerson instanceof GeneralRealPerson realPerson) {

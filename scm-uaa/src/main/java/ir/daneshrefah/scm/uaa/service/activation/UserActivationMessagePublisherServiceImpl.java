@@ -32,7 +32,7 @@ public class UserActivationMessagePublisherServiceImpl implements UserActivation
         message.setAttributes(attributes);
         queueTemplate.push(message, ACTIVATION_PUSH_SUB_QUEUE_NAME);
         userService
-                .findByNicknameAndLegacyTerminalId(username, terminal.getLegacyTerminalId())
+                .findByNicknameAndLegacyTerminalId(username, terminal.getLegacyTerminalId().intValue())
                 .stream()
                 .findFirst()
                 .flatMap(user -> personService.findPersonByUsername(user.getPerson().getUsername())).ifPresent(person -> {

@@ -46,7 +46,7 @@ public class UserDetailsService {
         TerminalUserDetails user = users.get(0); // contains no GrantedAuthority[]
         Set<GrantedAuthority> dbAuthsSet = new HashSet<>();
         if (this.enableAuthorities) {
-            dbAuthsSet.addAll(loadUserAuthorities(Long.valueOf(user.getUser().getPerson().getId())));
+            dbAuthsSet.addAll(loadUserAuthorities(user.getUser().getPerson().getId()));
         }
         if (this.enableGroups) {
             dbAuthsSet.addAll(loadGroupAuthorities(user.getUsername(), terminalCode));
@@ -68,7 +68,7 @@ public class UserDetailsService {
         return Arrays.asList(new TerminalUserDetails(optionalUser.get()));
     }
 
-    protected List<GrantedAuthority> loadUserAuthorities(Long personId) {
+    protected List<GrantedAuthority> loadUserAuthorities(Integer personId) {
         Optional<List<String>> authorities = userService.loadUserAuthorities(personId);
         if (authorities.isEmpty())
             return Collections.emptyList();

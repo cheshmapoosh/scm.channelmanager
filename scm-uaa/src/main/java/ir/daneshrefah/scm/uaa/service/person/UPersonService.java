@@ -19,14 +19,14 @@ public interface UPersonService extends PersonService {
 
     List<GeneralPerson> findCIFPersonInfo(PersonFindRequest request);
 
-    List<Role> findPersonRoleList(Long personId);
+    List<Role> findPersonRoleList(Integer personId);
 
-    Role addPersonRole(Long personId, Integer roleId);
+    Role addPersonRole(Integer personId, Integer roleId);
 
-    Role addPersonRole(Long personId, String roleCode);
+    Role addPersonRole(Integer personId, String roleCode);
 
     GeneralPerson syncPersonInfoFromCIF(PersonFindRequest request);
-    GeneralPerson syncPersonInfoFromCIF(String personId);
+    GeneralPerson syncPersonInfoFromCIF(Integer personId);
 
-    DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId);
+    DiffGeneralPerson diffPersonInfoFromCIFAndLocal(Integer personId);
 }

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
@@ -20,7 +20,7 @@ import java.util.List;
 @Table(name = "TBL_SCM_SERVICE")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "SERVICE_IMPL_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
-public abstract class ServiceEntity extends AbstractAuditableEntity<String> {
+public abstract class ServiceEntity extends AbstractStringAuditableEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -208,7 +208,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
 
     public List<TaskResponse> findAllTasksByProcessId(Long processID) {
         ProcessInstanceEntity processInstance = processManagementService.findByID(processID);
-        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         boolean hasAccess = processInstance.getTasks()
                 .stream()
                 .anyMatch(task -> loggedInUserId.equals(task.getUserId())) || loggedInUserId.equals(processInstance.getConfirmUserId());

@@ -12,25 +12,25 @@ scm:
   #    sayad: http://10.15.46.20:8080/sayad/services/api
   datasource:
     primary:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
     secondary:
       -
         name: default
-        url: jdbc:db2://10.10.4.104:50001/DBREFSW
-        username: db2inst1
-        password: db2inst1
+        url: jdbc:db2://10.15.27.82:446/DSNALOC
+        username: casadm
+        password: a
         driver-class-name: com.ibm.db2.jcc.DB2Driver
         max-connection: 10
         default-schema: REF
       - name: default2
-        url: jdbc:db2://10.10.4.104:50001/DBREFSW
-        username: db2inst1
-        password: db2inst1
+        url: jdbc:db2://10.15.27.82:446/DSNALOC
+        username: casadm
+        password: a
         driver-class-name: com.ibm.db2.jcc.DB2Driver
         max-connection: 10
         default-schema: REF
@@ -66,9 +66,9 @@ scm:
     client-id: BPM
     client-secret: myClientSecretValue
     datasource:
-      url: jdbc:db2://10.10.4.104:50001/DBREFSW
-      username: db2inst1
-      password: db2inst1
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: db-camunda #change it to REF

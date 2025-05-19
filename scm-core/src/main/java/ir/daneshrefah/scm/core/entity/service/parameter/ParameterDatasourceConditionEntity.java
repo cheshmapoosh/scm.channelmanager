@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.common.model.service.parameter.DatasourceConditionOperation;
 import ir.daneshrefah.scm.core.converter.DatasourceConditionOperationConverter;
 import jakarta.persistence.*;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Table(name = "TBL_SCM_DATASOURCE_CONDITION")
 @Setter
 @Getter
-public class ParameterDatasourceConditionEntity extends AbstractAuditableEntity<Long> {
+public class ParameterDatasourceConditionEntity extends AbstractStringAuditableModel<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "DATASOURCE_CONDITION_ID")

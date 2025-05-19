@@ -71,7 +71,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     @Override
-    public GeneralPerson findPersonByPersonId(Long id) {
+    public GeneralPerson findPersonByPersonId(Integer id) {
         ValidationUtils.checkNumericInput(String.valueOf(id), () -> new InvalidInputException("id"));
         Optional<GeneralPersonEntity> personEntity = personRepository.findById(id);
         ValidationUtils.checkEmptyOptional(personEntity, () -> new PersonNotFoundException("person with id '" + id + "' not found."

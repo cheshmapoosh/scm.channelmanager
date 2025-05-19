@@ -26,13 +26,13 @@ import java.time.LocalDate;
 @Table(name = "USER")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "USER_TYPE", discriminatorType = DiscriminatorType.INTEGER)
-public abstract class GeneralPersonEntity extends AbstractEntity<Long> {
+public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "userSeq")
     @SequenceGenerator(name = "userSeq",sequenceName = "SQUSER",allocationSize = 1)
     @Column(name = "USER_ID")
-    private Long id;
+    private Integer id;
     @Column(name = "USERNAME", nullable = false)
     private String username;
     @Column(name = "USER_TYPE", insertable = false, updatable = false)

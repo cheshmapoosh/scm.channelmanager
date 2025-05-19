@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer>, JpaS
 
     @Query(value = "SELECT u FROM UserEntity u " +
             "WHERE u.person.id = :personId AND u.terminalId = :legacyTerminalId")
-    List<UserEntity> findByPersonIdAndLegacyTerminalId(@Param("personId") Long personId, @Param("legacyTerminalId") Integer legacyTerminalId);
+    List<UserEntity> findByPersonIdAndLegacyTerminalId(@Param("personId") Integer personId, @Param("legacyTerminalId") Integer legacyTerminalId);
 
     List<UserEntity> findAllById(Integer id);
 

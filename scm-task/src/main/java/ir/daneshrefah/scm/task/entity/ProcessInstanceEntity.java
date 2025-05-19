@@ -26,7 +26,7 @@ public class ProcessInstanceEntity {
     private Long id;
 
     @Column(name = "CONFIRM_USER_ID")
-    private Long confirmUserId;
+    private Integer confirmUserId;
 
     @Column(name = "ACCOUNT_NO", nullable = false)
     private String accountNo;
@@ -67,10 +67,10 @@ public class ProcessInstanceEntity {
     private Long archiveNo;
 
     @Column(name = "CREATE_BY", nullable = false)
-    private Long createBy;
+    private Integer createBy;
 
     @Column(name = "UPDATE_BY")
-    private Long updateBy;
+    private Integer updateBy;
 
     @Column(name = "CREATE_AT", nullable = false)
     private Date createAt;

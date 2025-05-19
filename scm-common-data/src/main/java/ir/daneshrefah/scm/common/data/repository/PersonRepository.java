@@ -19,7 +19,7 @@ import java.util.Optional;
  * @since 2024-01-24
  */
 @Repository
-public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Long>, JpaSpecificationExecutor<GeneralPersonEntity> {
+public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Integer>, JpaSpecificationExecutor<GeneralPersonEntity> {
 
     @Query("SELECT p FROM GeneralRealPersonEntity p WHERE p.nationalCode = :nationalCode")
     GeneralRealPersonEntity findRealPersonByNationalCode(@Param("nationalCode") String nationalCode);
@@ -30,8 +30,8 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Lon
     @Query("SELECT p FROM EmployeePersonEntity p WHERE p.nationalCode = :nationalCode")
     EmployeePersonEntity findEmployeePersonByNationalCode(@Param("nationalCode") String nationalCode);
 
-    @Query(value = "SELECT p.* FROM USER p " +
-            "INNER JOIN USER_CHANNEL_AUTHENTICATION uca ON p.USER_ID = uca.USER_ID " +
+    @Query(value = "SELECT p.* FROM REF.USER p " +
+            "INNER JOIN REF.USER_CHANNEL_AUTHENTICATION uca ON p.USER_ID = uca.USER_ID " +
             "WHERE uca.NICK_NAME = :nickname AND uca.CHANNEL_ID = :terminalId",
             nativeQuery = true)
     Optional<GeneralPersonEntity> findByNicknameAndTerminalId(@Param("nickname") String nickname, @Param("terminalId") Integer terminalId);

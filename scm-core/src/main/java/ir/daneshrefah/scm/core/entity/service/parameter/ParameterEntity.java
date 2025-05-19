@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.entity.service.parameter;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterType;
 import ir.daneshrefah.scm.core.converter.ParameterActionTypeConverter;
@@ -21,7 +21,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_PARAMETERS")
-public class ParameterEntity extends AbstractAuditableEntity<String> {
+public class ParameterEntity extends AbstractStringAuditableEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
