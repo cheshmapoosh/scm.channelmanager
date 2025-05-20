@@ -50,7 +50,7 @@ public class ClientVersionEntity extends AbstractEntity<Long> {
     @Column(name = "LAST_EDIT_DATE")
     @LastModifiedDate
     private LocalDateTime lastEditDate;
-    @Version
+//    @Version
     private String version;
 
 }
