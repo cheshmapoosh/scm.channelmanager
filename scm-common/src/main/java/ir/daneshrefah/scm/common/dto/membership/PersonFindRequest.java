@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.dto.membership;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import ir.daneshrefah.scm.common.model.person.Nationality;
+import ir.daneshrefah.scm.common.model.person.PersonStatus;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +25,7 @@ public class PersonFindRequest extends PagedRequestData {
     private String username;
     private String firstName;
     private String lastName;
-    private Boolean active;
+    private PersonStatus active;
     private String branchCode;
 
 }
