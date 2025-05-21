@@ -168,14 +168,32 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         personEntity.setUsername(extractUsername(personEntity));
         personEntity.setStatus(PersonStatus.ACTIVE);
         personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
-        List<GeneralPersonEntity> foundLocal = personRepository.findPersonByUsername(personEntity.getUsername());
-        if (foundLocal.size() > 1) {
+        if (cifPersonInfo.size() > 1) {
             throw new TooManyRecordFoundException("local person", cifPersonInfo.size());
-        } else if (!foundLocal.isEmpty()) {
-            personEntity.setId(foundLocal.get(0).getId());
         }
+        personIdEnricher(personEntity);
         personEntity = personRepository.save(personEntity);
         return PersonMapper.INSTANCE.toPerson(personEntity);
+    }
+
+    private void personIdEnricher(GeneralPersonEntity personEntity) {
+        if (Objects.isNull(personEntity.getId())) {
+            if (personEntity instanceof GeneralRealPersonEntity realPersonEntity) {
+                GeneralRealPersonEntity foundPerson = personRepository.findRealPersonByNationalCode(realPersonEntity.getNationalCode());
+                if (Objects.nonNull(foundPerson)) {
+                    personEntity.setId(foundPerson.getId());
+                }
+            } else if (personEntity instanceof GeneralLegalPersonEntity legalPersonEntity) {
+                personRepository
+                        .findGeneralLegalPersonEntityByNationalId(legalPersonEntity.getSubOrganizationId())
+                        .stream()
+                        .filter(p -> Objects.equals(legalPersonEntity.getSubOrganizationId(), p.getSubOrganizationId()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            personEntity.setId(p.getId());
+                        });
+            }
+        }
     }
 
     @Override

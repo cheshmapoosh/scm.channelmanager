@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.repository;
 
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
+import ir.daneshrefah.scm.common.model.person.PersonStatus;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,7 +37,7 @@ public class PersonSpecs {
                 predicates.add(builder.equal(root.get("subOrganizationId"),request.getSubOrganizationId()));
             }
             if (Objects.nonNull(request.getActive())){
-                predicates.add(builder.equal(root.get("active"),request.getActive()));
+                predicates.add(builder.equal(root.get("status"),request.getActive()));
             }
             if (Objects.nonNull(request.getBranchCode())){
                 predicates.add(builder.like(root.get("branchCode"),getLikeQueryString(request.getBranchCode())));
