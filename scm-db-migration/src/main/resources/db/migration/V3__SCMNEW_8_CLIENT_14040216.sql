@@ -1,28 +1,16 @@
-create table TBL_SUA_CLIENT
-(
-
-    USER_CHANNEL_AUTHENTICATION_ID INTEGER
-        constraint TBL_SUA_CLIENT_UCA_ID_FK references REF.USER_CHANNEL_AUTHENTICATION,
-    STATUS                         SMALLINT,
-    LEGAL_USER_ID                  INTEGER
-        constraint TBL_SUA_CLIENT_USER_USER_ID_FK references REF.USER
-);
-
-
-
-alter table TBL_SUA_CLIENT
+alter table REF.TBL_SUA_CLIENT
     add USER_CHANNEL_AUTHENTICATION_ID INTEGER
-        constraint TBL_SUA_CLIENT_UCA_ID_FK
+        constraint FK_CLIENT_ON_UCA
             references REF.USER_CHANNEL_AUTHENTICATION;
 
 
-alter table TBL_SUA_CLIENT
+alter table REF.TBL_SUA_CLIENT
     add STATUS SMALLINT;
 
 
-alter table TBL_SUA_CLIENT
+alter table REF.TBL_SUA_CLIENT
     add LEGAL_USER_ID INTEGER
-        constraint TBL_SUA_CLIENT_USER_USER_ID_FK
+        constraint FK_CLIENT_ON_USER
             references REF.USER;
 
 alter table REF.TBL_SUA_CLIENT
