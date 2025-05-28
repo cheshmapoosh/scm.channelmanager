@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.plugin.scm.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class FetchCustomerNoFromAuthenticationService extends AbstractJavaServic
     }
 
     @Override
-    protected Object internalExecute(Message message, ir.daneshrefah.scm.common.model.service.Service service, Object payload) {
+    protected Object internalExecute(Message message, ScmService service, Object payload) {
         ObjectNode objPayload = (ObjectNode) payload;
         String cardNo = null;
         if (objPayload.has("cardNo")) {

@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.exception.TerminalNotAssignedServiceException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
@@ -44,7 +45,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     private ProducerTemplate producerTemplate;
 
     @Override
-    public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message, Message parentMessage) {
+    public Message callService(ScmService service, Message message, Message parentMessage) {
         Header header = message.getHeader();// TODO:{RAYANI}test functionality of this method,I doubt that it works properly
         if (Objects.nonNull(parentMessage)) {
             header.setLevel(header.getLevel() + 1);
@@ -56,7 +57,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
     }
 
     @Override
-    public Message callService(ir.daneshrefah.scm.common.model.service.Service service, Message message) {
+    public Message callService(ScmService service, Message message) {
         return callService(service.getCode(), message);
     }
 
@@ -71,7 +72,7 @@ public class CamelServiceProducerTemplate implements ServiceProducerTemplate {
 
     @Override
     public Message callService(String serviceCode, JsonNode payload) {
-        ir.daneshrefah.scm.common.model.service.Service service = serviceService.findServiceByCode(serviceCode);
+        ScmService service = serviceService.findServiceByCode(serviceCode);
         if (null == service) {
             throw new ServiceNotFoundException(serviceCode);
         }

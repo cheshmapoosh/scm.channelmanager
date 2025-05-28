@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.exception.*;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
@@ -26,12 +26,12 @@ import java.io.IOException;
  * @since 2024-01-20
  */
 @RequiredArgsConstructor
-public class ServiceDeserializer extends JsonDeserializer<Service> {
+public class ServiceDeserializer extends JsonDeserializer<ScmService> {
 
     private final ServiceService service;
 
     @Override
-    public Service deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException {
+    public ScmService deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         if (null == node || node.isNull())
             return null;
@@ -41,7 +41,7 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
         else if (node.has("implementationType") && node.get("implementationType").isTextual())
             implementationType = ServiceImplementationType.valueOf(node.get("implementationType").asText());
         if (null == implementationType && node.has("id") && !node.get("id").isNull()) {
-            Service s = service.findServiceById(node.get("id").asText());
+            ScmService s = service.findServiceById(node.get("id").asText());
             if (null != s) {
                 implementationType = s.getImplementationType();
             } else {
@@ -50,7 +50,7 @@ public class ServiceDeserializer extends JsonDeserializer<Service> {
         }
         if (null == implementationType)
             throw new MissingRequiredInputException("implementationType");
-        ir.daneshrefah.scm.common.model.service.Service newService = null;
+        ScmService newService = null;
         try {
             switch (implementationType) {
                 case CUSTOM_EXTERNAL:

@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.model.error.ErrorCodes;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
@@ -70,7 +70,7 @@ public class TransactionAuthenticationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         Terminal terminal = MessageInputContext.getCurrentContext().getTerminal();
         return terminal.isSupportCheckSecondAuthentication() &&
                 service.getCheckAccessSecondAuthentication();

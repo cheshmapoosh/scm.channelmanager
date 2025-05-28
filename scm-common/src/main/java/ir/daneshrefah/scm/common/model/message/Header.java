@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.model.message;
 
 import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.condition.ConditionKey;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Builder
 public class Header implements Serializable {
 
-    private final Service service;
+    private final ScmService service;
     private final String messageId = UUID.randomUUID().toString();
     @Getter
     private final HttpHeader httpHeader = new HttpHeader();

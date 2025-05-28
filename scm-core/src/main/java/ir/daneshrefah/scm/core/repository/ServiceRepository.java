@@ -1,27 +1,23 @@
 package ir.daneshrefah.scm.core.repository;
 
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ScmServiceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ServiceRepository extends JpaRepository<ServiceEntity, String> {
+public interface ServiceRepository extends JpaRepository<ScmServiceEntity, String> {
 
-    @Query("SELECT s FROM ServiceEntity s WHERE " +
+    @Query("SELECT s FROM ScmServiceEntity s WHERE " +
             "s.implementationType <> ir.daneshrefah.scm.common.model.service.ServiceImplementationType.PARENT")
-    List<ServiceEntity> findCallableServiceList();
+    List<ScmServiceEntity> findCallableServiceList();
 
-    List<ServiceEntity> findServiceListByImplementationType(ServiceImplementationType implementationType);
+    List<ScmServiceEntity> findServiceListByImplementationType(ServiceImplementationType implementationType);
 
-    Optional<ServiceEntity> findByCode(String code);
+    Optional<ScmServiceEntity> findByCode(String code);
 
 }

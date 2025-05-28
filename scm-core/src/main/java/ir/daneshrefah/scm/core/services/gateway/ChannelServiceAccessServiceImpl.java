@@ -36,11 +36,11 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
         return channelServiceAccessEntities.stream()
                 .filter(ChannelServiceAccessServiceImpl::support)
                 .map(channelServiceAccessEntity -> {
-                  ChannelServiceAccess channelServiceAccess = channelServiceAccessMapper.toDto(channelServiceAccessEntity);
+                  ChannelServiceAccess channelServiceAccess = channelServiceAccessMapper.toModel(channelServiceAccessEntity);
                   List<ServiceOperationEntity> serviceOperationEntities = serviceOperationRepository
                           .findAllByService_Id(channelServiceAccessEntity.getService().getId());
                   List<ServiceOperation> serviceOperations = serviceOperationEntities.stream()
-                          .map(serviceOperationMapper::toDto)
+                          .map(serviceOperationMapper::toModel)
                           .toList();
                   channelServiceAccess.getService().setServiceOperations(serviceOperations);
                   return channelServiceAccess;

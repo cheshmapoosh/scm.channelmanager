@@ -4,10 +4,12 @@ import ir.daneshrefah.scm.common.data.entity.person.*;
 import ir.daneshrefah.scm.common.model.person.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,10 +18,8 @@ import java.util.List;
  * @version 1.0
  * @since 2024-01-10
  */
-@Mapper
+@Mapper(unmappedTargetPolicy =IGNORE, componentModel = SPRING, uses = {ChannelMapper.class})
 public interface PersonMapper {
-
-    PersonMapper INSTANCE = Mappers.getMapper(PersonMapper.class);
 
     @Named("toPerson")
     default GeneralPerson toPerson(GeneralPersonEntity entity) {

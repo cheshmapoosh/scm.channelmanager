@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.exception;
 
 import ir.daneshrefah.scm.common.error.spec.AbstractBaseException;
 import ir.daneshrefah.scm.common.error.spec.ExceptionSourceAware;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Getter;
 
 /**
@@ -17,7 +17,7 @@ public abstract class BaseServiceException extends AbstractBaseException impleme
     @Getter
     String serviceCode;
 
-    public BaseServiceException(String message, Throwable cause, Service service) {
+    public BaseServiceException(String message, Throwable cause, ScmService service) {
         this(message, cause, service.getCode());
     }
 

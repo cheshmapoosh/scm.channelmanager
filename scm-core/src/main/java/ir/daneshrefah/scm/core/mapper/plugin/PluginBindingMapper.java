@@ -15,7 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.annotation.PostConstruct;
 import java.util.List;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {PluginMapper.class, DefinitionMapper.class})
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING,
+        uses = {PluginMapper.class, DefinitionMapper.class})
 public abstract class PluginBindingMapper {
 
     @Autowired
@@ -30,7 +34,7 @@ public abstract class PluginBindingMapper {
 
     public abstract PluginBindingEntity toEntity(PluginBinding pluginBinding);
 
-    public abstract PluginBinding toDto(PluginBindingEntity pluginBindingEntity);
+    public abstract PluginBinding toModel(PluginBindingEntity pluginBindingEntity);
 
     @AfterMapping
     public void afterMapping(@MappingTarget PluginBinding pluginBinding) {

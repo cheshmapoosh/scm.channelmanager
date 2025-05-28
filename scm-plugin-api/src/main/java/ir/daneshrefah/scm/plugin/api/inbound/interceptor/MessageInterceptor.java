@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.integration.MessageGenerator;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +44,7 @@ public abstract class MessageInterceptor {
 
     protected abstract Message internalIntercept(Message message);
 
-    protected abstract boolean support(Service service);
+    protected abstract boolean support(ScmService service);
 
     public abstract InterceptorConfig interceptorConfig();
 

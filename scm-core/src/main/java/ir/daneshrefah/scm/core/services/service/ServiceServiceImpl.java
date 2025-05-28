@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.services.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.provider.*;
@@ -21,20 +22,18 @@ import ir.daneshrefah.scm.common.model.service.*;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.core.config.ApplicationConfig;
-import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.core.entity.service.*;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
-import ir.daneshrefah.scm.core.mapper.ServiceMapper;
+import ir.daneshrefah.scm.core.mapper.ScmServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
 import ir.daneshrefah.scm.core.repository.*;
 import ir.daneshrefah.scm.core.services.provider.ServiceProviderMetadataResolver;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
 import ir.daneshrefah.scm.utils.data.DynamicUpdateUtils;
@@ -43,8 +42,6 @@ import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,21 +60,20 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
 @Slf4j
 public class ServiceServiceImpl implements ServiceService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceServiceImpl.class);
-
     private final ServiceRepository serviceRepository;
     private final ServiceRelationRepository serviceRelationRepository;
     private final ServiceProviderRepository serviceProviderRepository;
     private final TerminalRepository terminalRepository;
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
-    private final ProxyServiceManager proxyServiceManager;
     private final ServiceProviderMetadataResolver providerMetadataResolver;
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final AssetProviderService assetProviderService;
     private final JavaServiceMetadataProviderService javaSrvService;
-    private List<ir.daneshrefah.scm.common.model.service.Service> services;
-    private List<ir.daneshrefah.scm.common.model.service.Service> proxyServices;
+    private final AssetProviderMapper assetProviderMapper;
+    private final ServiceProviderMapper serviceProviderMapper;
+    private final ScmServiceMapper scmServiceMapper;
+    private List<ScmService> services;
     private List<AbstractAuditableExternalServiceProvider> serviceProviders;
 
     private static ObjectMapper getObjectMapper() {
@@ -93,18 +89,15 @@ public class ServiceServiceImpl implements ServiceService {
             if (Objects.nonNull(services)) {
                 services.clear();
             }
-            if (Objects.nonNull(proxyServices)) {
-                proxyServices.clear();
-            }
         }
     }
 
 
     @Override
-    public List<ir.daneshrefah.scm.common.model.service.Service> findServiceList() {
+    public List<ScmService> findServiceList() {
         if (null == services || services.isEmpty()) {
             synchronized (this) {
-                services = ServiceMapper.INSTANCE.toServices(serviceRepository.findAll());
+                services = scmServiceMapper.toServices(serviceRepository.findAll());
                 javaSrvService.javaServiceSynchronization(services);
             }
         }
@@ -123,42 +116,8 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public List<ir.daneshrefah.scm.common.model.service.Service> findProxyServiceList() {
-        if (null == proxyServices || proxyServices.isEmpty()) {
-            synchronized (this) {
-                proxyServices = new ArrayList<>();
-                ServiceMapper.INSTANCE.toServices(serviceRepository.findAll())
-                        .stream()
-                        .filter(service -> service.getImplementationType().equals(ServiceImplementationType.PROXY))
-                        .map(service -> (ProxyService) service)
-                        .map(proxyServiceManager::initializeProxy)
-                        .forEach(proxyServices::add);
-            }
-        }
-        return proxyServices;
-    }
-
-    @Override
-    public Optional<ir.daneshrefah.scm.common.model.service.Service> findProxyServiceByTatgetCode(String targetProxyCode) {
-        return findProxyServiceList()
-                .stream()
-                .parallel()
-                .filter(proxy -> proxy.getCode().equals(targetProxyCode))
-                .findFirst();
-    }
-
-    @Override
-    public Optional<ir.daneshrefah.scm.common.model.service.Service> findProxyService(String proxyServiceId) {
-        return findProxyServiceList()
-                .stream()
-                .parallel()
-                .filter(proxy -> proxy.getId().equals(proxyServiceId))
-                .findFirst();
-    }
-
-    @Override
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findServiceList(ServiceFindRequest request) {
-        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
+    public PagedResponseData<ScmService> findServiceList(ServiceFindRequest request) {
+        List<ScmService> serviceList = findServiceList().stream()
                 .filter(service -> null == request || null == request.getCode() || service.getCode().trim().toUpperCase().contains(request.getCode().trim().toUpperCase()))
                 .filter(service -> null == request || null == request.getIsSystemic() || request.getIsSystemic().equals(service.getIsSystemic()))
                 .filter(service -> null == request || null == request.getType() || request.getType().equals(service.getType()))
@@ -179,7 +138,7 @@ public class ServiceServiceImpl implements ServiceService {
         return new PagedResponseData<>(request, serviceList);
     }
 
-    private boolean serviceAccessFindFilter(ServiceFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
+    private boolean serviceAccessFindFilter(ServiceFindRequest request, ScmService service) {
         if (request instanceof ServiceAccessFindRequest serviceAccessFindRequest) {
             Boolean hasTerminalAccess = serviceAccessFindRequest.getHasTerminalAccess();
             if (Objects.isNull(hasTerminalAccess)) {
@@ -194,7 +153,7 @@ public class ServiceServiceImpl implements ServiceService {
 
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service findServiceByCode(String code) {
+    public ScmService findServiceByCode(String code) {
         if (StringUtils.isEmpty(code)) {
             return null;
         }
@@ -205,16 +164,16 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service findServiceById(String id) {
+    public ScmService findServiceById(String id) {
         if (StringUtils.isEmpty(id)) {
             return null;
         }
-        return serviceRepository.findById(id).map(ServiceMapper.INSTANCE::toService).orElse(null);
+        return serviceRepository.findById(id).map(scmServiceMapper::toService).orElse(null);
     }
 
     @Override
     @Transactional
-    public ir.daneshrefah.scm.common.model.service.Service createService(ServiceInfoRequest service) {
+    public ScmService createService(ServiceInfoRequest service) {
         if (StringUtils.isEmpty(service.getCode())) {
             throw new MissingRequiredInputException("service code");
         }
@@ -245,16 +204,16 @@ public class ServiceServiceImpl implements ServiceService {
             validateProxyService(service);
         }
 
-        ServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
+        ScmServiceEntity entity = ServiceEntityFactory.createServiceEntity(service);
         setServiceParent(entity, service);
         checkServiceProvider(entity, service);
 
-        ServiceEntity savedEntity = serviceRepository.save(entity);
-        ir.daneshrefah.scm.common.model.service.Service result = ServiceMapper.INSTANCE.toService(savedEntity);
+        ScmServiceEntity savedEntity = serviceRepository.save(entity);
+        ScmService result = scmServiceMapper.toService(savedEntity);
         if (ServiceImplementationType.PROXY.equals(service.getImplementationType())) {
             ServiceRelationEntity serviceRelation = new ServiceRelationEntity();
             serviceRelation.setSourceService(savedEntity);
-            ServiceEntity targetService = serviceRepository.findById(service.getProxyTargetServiceId()).orElseThrow(() -> new InvalidInputException("proxyTargetServiceId"));
+            ScmServiceEntity targetService = serviceRepository.findById(service.getProxyTargetServiceId()).orElseThrow(() -> new InvalidInputException("proxyTargetServiceId"));
             serviceRelation.setTargetService(targetService);
             serviceRelationRepository.save(serviceRelation);
         }
@@ -281,7 +240,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @SuppressWarnings("unchecked")
-    private void checkServiceProvider(ServiceEntity entity, ServiceInfoRequest service) {
+    private void checkServiceProvider(ScmServiceEntity entity, ServiceInfoRequest service) {
         if (entity instanceof AbstractExternalServiceEntity externalServiceEntity) {
             AbstractExternalServiceProviderEntity provider = serviceProviderRepository
                     .findById(service.getServiceProviderId())
@@ -290,7 +249,7 @@ public class ServiceServiceImpl implements ServiceService {
         }
     }
 
-    private void setServiceParent(ServiceEntity entity, ServiceInfoRequest service) {
+    private void setServiceParent(ScmServiceEntity entity, ServiceInfoRequest service) {
         if (service.getImplementationType().equals(ServiceImplementationType.PARENT)) {
             entity.setParent(null);
         } else {
@@ -303,7 +262,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ir.daneshrefah.scm.common.model.service.Service updateService(ServiceInfoEditRequest request) {
+    public ScmService updateService(ServiceInfoEditRequest request) {
         validateServiceInfoEditRequest(request);
         serviceRepository
                 .findByCode(request.getCode())
@@ -332,7 +291,7 @@ public class ServiceServiceImpl implements ServiceService {
                 .orElseThrow(() -> new NoMatchRecordFoundException("service"));
     }
 
-    private void applyChangesDynamically(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+    private void applyChangesDynamically(ScmServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         applyEditServiceTypeProperties(serviceEntity, request);
         applyEditStringBasedProperties(serviceEntity, request);
         applyEditBooleanBasedProperties(serviceEntity, request);
@@ -356,14 +315,14 @@ public class ServiceServiceImpl implements ServiceService {
         }
     }
 
-    private void applyEditBooleanBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+    private void applyEditBooleanBasedProperties(ScmServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessAsset(), serviceEntity.getCheckAccessAsset(), Boolean.class));
         serviceEntity.setCheckAccessService(compareObject(request.getCheckAccessService(), serviceEntity.getCheckAccessService(), Boolean.class));
         serviceEntity.setCheckAccessFirstAuthentication(compareObject(request.getCheckAccessFirstAuthentication(), serviceEntity.getCheckAccessFirstAuthentication(), Boolean.class));
         serviceEntity.setCheckAccessSecondAuthentication(compareObject(request.getCheckAccessSecondAuthentication(), serviceEntity.getCheckAccessSecondAuthentication(), Boolean.class));
     }
 
-    private void applyEditStringBasedProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+    private void applyEditStringBasedProperties(ScmServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         serviceEntity.setAssetProperty(compareObject(request.getAssetProperty(), serviceEntity.getAssetProperty(), String.class));
         serviceEntity.setAmountProperty(compareObject(request.getAmountProperty(), serviceEntity.getAmountProperty(), String.class));
         serviceEntity.setTitle(StringUtils.isNotEmpty(request.getTitle()) ? request.getTitle() : serviceEntity.getTitle());
@@ -371,14 +330,14 @@ public class ServiceServiceImpl implements ServiceService {
         //check service code
         String code = request.getCode();
         if (StringUtils.isNotEmpty(code) && !serviceEntity.getCode().equals(code)) {
-            serviceRepository.findByCode(code).map(ServiceEntity::getCode).ifPresent(s -> {
+            serviceRepository.findByCode(code).map(ScmServiceEntity::getCode).ifPresent(s -> {
                 throw new InvalidInputException("code");
             });
             serviceEntity.setCode(code);
         }
     }
 
-    private void applyEditServiceTypeProperties(ServiceEntity serviceEntity, ServiceInfoEditRequest request) {
+    private void applyEditServiceTypeProperties(ScmServiceEntity serviceEntity, ServiceInfoEditRequest request) {
         if (serviceEntity instanceof JavaServiceEntity javaServiceEntity) {
             String value = request.getJavaImplementationClassName();
         } else if (serviceEntity instanceof AbstractExternalServiceEntity externalServiceEntity) {
@@ -408,7 +367,7 @@ public class ServiceServiceImpl implements ServiceService {
         } else {
             String reqParentId = request.getParentId();
             if (StringUtils.isNotEmpty(reqParentId) && !reqParentId.equals(serviceEntity.getParent().getId())) {
-                ServiceEntity foundParent = serviceRepository.findById(reqParentId)
+                ScmServiceEntity foundParent = serviceRepository.findById(reqParentId)
                         .orElseThrow(() -> new InvalidInputException("parentId"));
                 serviceEntity.setParent(foundParent);
             }
@@ -438,23 +397,22 @@ public class ServiceServiceImpl implements ServiceService {
     /**
      * @apiNote This method remove parent service and add created target proxy services
      */
-    public List<ir.daneshrefah.scm.common.model.service.Service> findCallableServiceList() {
-        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
+    public List<ScmService> findCallableServiceList() {
+        List<ScmService> serviceList = findServiceList().stream()
                 .filter(Objects::nonNull)
                 .filter(service -> !ServiceImplementationType.PARENT.equals(service.getImplementationType()))
                 .collect(Collectors.toList());
-        findProxyServiceList().stream().map(service -> (ProxyService) service).map(ProxyService::getTargetService).forEach(serviceList::add);
         return serviceList;
     }
 
-    public List<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList() {
+    public List<ScmService> findParentServiceList() {
         return findServiceList().stream().filter(service -> ServiceImplementationType.PARENT.equals(service.getImplementationType()))
                 .collect(Collectors.toList());
     }
 
     public List<ServiceRelation> findServiceRelationListBySourceServiceId(String sourceServiceId) {
         List<ServiceRelationEntity> relationEntities = serviceRelationRepository.findAllBySourceServiceId(sourceServiceId);
-        return ServiceMapper.INSTANCE.relationEntitiesToModels(relationEntities);
+        return scmServiceMapper.relationEntitiesToModels(relationEntities);
     }
 
     @Override
@@ -480,7 +438,7 @@ public class ServiceServiceImpl implements ServiceService {
                 });
     }
 
-    private void checkTransformers(ServiceEntity found) {
+    private void checkTransformers(ScmServiceEntity found) {
         transformerRelationRepository
                 .findAllBySourceId(found.getId())
                 .stream().findFirst().ifPresent(db -> {
@@ -488,7 +446,7 @@ public class ServiceServiceImpl implements ServiceService {
                 });
     }
 
-    private void checkServiceRelations(ServiceEntity found) {
+    private void checkServiceRelations(ScmServiceEntity found) {
         serviceRelationRepository
                 .findAllBySourceServiceId(found.getId())
                 .stream().findFirst().ifPresent(db -> {
@@ -496,7 +454,7 @@ public class ServiceServiceImpl implements ServiceService {
                 });
     }
 
-    private void checkTerminalServiceAccess(ServiceEntity found) {
+    private void checkTerminalServiceAccess(ScmServiceEntity found) {
         terminalServiceAccessRepository
                 .findAllByServiceId(found.getId())
                 .stream()
@@ -510,7 +468,7 @@ public class ServiceServiceImpl implements ServiceService {
     public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request) {
         ValidationUtils.checkBlankString(request.getTerminalId(), () -> new MissingRequiredInputException("terminalId"));
         terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
-        PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList(request);
+        PagedResponseData<ScmService> serviceList = findServiceList(request);
         List<TerminalServiceAccessAssignmentResponse> result = serviceList.getData()
                 .stream()
                 .map(service -> {
@@ -530,7 +488,7 @@ public class ServiceServiceImpl implements ServiceService {
         return Optional.empty();
     }
 
-    private Boolean hasTerminalAccess(ServiceAccessFindRequest request, ir.daneshrefah.scm.common.model.service.Service service) {
+    private Boolean hasTerminalAccess(ServiceAccessFindRequest request, ScmService service) {
         return terminalService
                 .findAllTerminalServiceAccesses()
                 .stream()
@@ -563,7 +521,7 @@ public class ServiceServiceImpl implements ServiceService {
         validateServiceProviderCreteRequest(request);
         AbstractExternalServiceProviderEntity entity = mapToServiceProviderEntity(request);
         AbstractExternalServiceProviderEntity savedEntity = serviceProviderRepository.save(entity);
-        AbstractAuditableExternalServiceProvider serviceProvider = ServiceMapper.INSTANCE.toServiceProvider(savedEntity);
+        AbstractAuditableExternalServiceProvider serviceProvider = scmServiceMapper.toServiceProvider(savedEntity);
         cacheEvict();
         return serviceProvider;
     }
@@ -584,7 +542,7 @@ public class ServiceServiceImpl implements ServiceService {
         serviceProvider.setLastEditDate(request.getLastEditDate());
         serviceProviderRepository.delete(serviceProvider);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toServiceProvider(serviceProvider);
+        return scmServiceMapper.toServiceProvider(serviceProvider);
     }
 
     @Override
@@ -597,13 +555,13 @@ public class ServiceServiceImpl implements ServiceService {
         if (StringUtils.isNotBlank(assetProviderId) && StringUtils.isNumeric(assetProviderId)) {
             AssetProvider foundAssetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(assetProviderId))
                     .orElseThrow(() -> new InvalidInputException("assetProviderId"));
-            serviceProvider.setAssetProvider(AssetProviderMapper.INSTANCE.toEntity(foundAssetProvider));
+            serviceProvider.setAssetProvider(assetProviderMapper.toEntity(foundAssetProvider));
         } else {
             serviceProvider.setAssetProvider(null);
         }
         AbstractExternalServiceProviderEntity saved = serviceProviderRepository.save(serviceProvider);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toServiceProvider(saved);
+        return scmServiceMapper.toServiceProvider(saved);
     }
 
     private void mapServiceProvider(AbstractExternalServiceProviderEntity serviceProvider, ServiceProviderChangeRequest request) {
@@ -634,7 +592,7 @@ public class ServiceServiceImpl implements ServiceService {
         String assetProviderId = request.getAssetProviderId();
         if (StringUtils.isNotBlank(assetProviderId)) {
             AssetProvider assetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(assetProviderId)).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId"));
-            AssetProviderEntity assetProviderEntity = AssetProviderMapper.INSTANCE.toEntity(assetProvider);
+            AssetProviderEntity assetProviderEntity = assetProviderMapper.toEntity(assetProvider);
             entity.setAssetProvider(assetProviderEntity);
         }
         return entity;
@@ -659,14 +617,7 @@ public class ServiceServiceImpl implements ServiceService {
     public List<AbstractAuditableExternalServiceProvider> findServiceProviderList() {
         if (null == serviceProviders || serviceProviders.isEmpty()) {
             synchronized (this) {
-                serviceProviders = ServiceProviderMapper.INSTANCE.toModels(serviceProviderRepository.findAll())
-                        .stream()
-                        .peek(provider -> {
-                            AbstractExternalServiceProviderMetadata metadata = providerMetadataResolver.resolve(provider);
-                            if (Objects.nonNull(metadata)) {
-                                provider.setMetadata(metadata);
-                            }
-                        }).collect(Collectors.toCollection(ArrayList::new));
+                serviceProviders = new ArrayList<>(serviceProviderMapper.toModels(serviceProviderRepository.findAll()));
             }
         }
         return serviceProviders;
@@ -727,7 +678,7 @@ public class ServiceServiceImpl implements ServiceService {
         checkServiceCodeDuplicated(request.getCode());
         ParentServiceEntity entity = ServiceEntityFactory.createServiceEntity(request);
         ParentServiceEntity savedEntity = serviceRepository.save(entity);
-        ParentService result = (ParentService) ServiceMapper.INSTANCE.toService(savedEntity);
+        ParentService result = (ParentService) scmServiceMapper.toService(savedEntity);
         cacheEvict();
         return result;
     }
@@ -740,14 +691,14 @@ public class ServiceServiceImpl implements ServiceService {
                 .filter(s -> ServiceType.PARENT.equals(s.getType()))
                 .filter(s -> s.getId().equals(request.getId()))
                 .findFirst().orElseThrow(() -> new NoMatchRecordFoundException(request.getId()));
-        ParentServiceEntity entity = ServiceMapper.INSTANCE.toEntity(foundCache);
+        ParentServiceEntity entity = scmServiceMapper.toEntity(foundCache);
         entity.setTitle(request.getTitle());
         entity.setStatus(request.getStatus());
         entity.setLastEditDate(request.getLastEditDate());
         entity.setVersion((Objects.nonNull(request.getVersion())) ? request.getVersion() : entity.getVersion());
         ParentServiceEntity saved = serviceRepository.save(entity);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toModel(saved);
+        return scmServiceMapper.toModel(saved);
     }
 
     @Override
@@ -756,8 +707,8 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public PagedResponseData<ir.daneshrefah.scm.common.model.service.Service> findParentServiceList(ParentServiceFindRequest request) {
-        List<ir.daneshrefah.scm.common.model.service.Service> serviceList = findServiceList().stream()
+    public PagedResponseData<ScmService> findParentServiceList(ParentServiceFindRequest request) {
+        List<ScmService> serviceList = findServiceList().stream()
                 .filter(service -> !ServiceStatus.INACTIVE.equals(service.getStatus()))
                 .filter(service -> ServiceType.PARENT.equals(service.getType()))
                 .filter(service -> ServiceImplementationType.PARENT.equals(service.getImplementationType()))
@@ -797,7 +748,7 @@ public class ServiceServiceImpl implements ServiceService {
             entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getCode())));
         }
         JavaServiceEntity savedEntity = serviceRepository.save(entity);
-        JavaService result = (JavaService) ServiceMapper.INSTANCE.toService(savedEntity);
+        JavaService result = (JavaService) scmServiceMapper.toService(savedEntity);
         cacheEvict();
         return result;
     }
@@ -810,7 +761,7 @@ public class ServiceServiceImpl implements ServiceService {
                 .filter(s -> ServiceImplementationType.JAVA.equals(s.getImplementationType()))
                 .filter(s -> s.getId().equals(request.getId()))
                 .findFirst().orElseThrow(() -> new NoMatchRecordFoundException(request.getId()));
-        JavaServiceEntity entity = ServiceMapper.INSTANCE.toEntity(foundCache);
+        JavaServiceEntity entity = scmServiceMapper.toEntity(foundCache);
         if (Objects.nonNull(request.getParentId())) {
             entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getId())));
         }
@@ -825,7 +776,7 @@ public class ServiceServiceImpl implements ServiceService {
         entity.setCheckAccessAsset(request.getCheckAccessAsset());
         JavaServiceEntity saved = serviceRepository.save(entity);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toModel(saved);
+        return scmServiceMapper.toModel(saved);
     }
 
     @Override
@@ -867,7 +818,7 @@ public class ServiceServiceImpl implements ServiceService {
                 .filter(s -> ServiceImplementationType.COMPOSITION.equals(s.getImplementationType()))
                 .filter(s -> s.getId().equals(request.getId()))
                 .findFirst().orElseThrow(() -> new NoMatchRecordFoundException(request.getId()));
-        CompositionServiceEntity entity = ServiceMapper.INSTANCE.toEntity(foundCache);
+        CompositionServiceEntity entity = scmServiceMapper.toEntity(foundCache);
         if (Objects.nonNull(request.getParentId())) {
             entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getId())));
         }
@@ -885,7 +836,7 @@ public class ServiceServiceImpl implements ServiceService {
         entity.setCheckAccessAsset(request.getCheckAccessAsset());
         CompositionServiceEntity saved = serviceRepository.save(entity);
         cacheEvict();
-        return ServiceMapper.INSTANCE.toModel(saved);
+        return scmServiceMapper.toModel(saved);
     }
 
     @Override
@@ -897,7 +848,7 @@ public class ServiceServiceImpl implements ServiceService {
             entity.setParent(serviceRepository.findById(request.getParentId()).orElseThrow(() -> new NoMatchRecordFoundException(request.getCode())));
         }
         CompositionServiceEntity savedEntity = serviceRepository.save(entity);
-        CompositionService result = (CompositionService) ServiceMapper.INSTANCE.toService(savedEntity);
+        CompositionService result = (CompositionService) scmServiceMapper.toService(savedEntity);
         cacheEvict();
         return result;
     }

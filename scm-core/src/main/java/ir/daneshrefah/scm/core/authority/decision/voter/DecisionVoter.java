@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 import java.time.Instant;
 
@@ -20,7 +20,7 @@ public abstract class DecisionVoter {
      */
     public static final int ACCESS_DENIED = -1;
 
-    public final int vote(Message message, Service service) {
+    public final int vote(Message message, ScmService service) {
         Instant startTime = Instant.now();
         boolean isSupport = support(service);
         if (!isSupport) {
@@ -41,7 +41,7 @@ public abstract class DecisionVoter {
 
     protected abstract int vote(Message message);
 
-    protected abstract boolean support(Service service);
+    protected abstract boolean support(ScmService service);
 
     private final void logVotingEvent(Message message, int output, Exception error, Instant startTime) {
         Instant endTime = Instant.now();

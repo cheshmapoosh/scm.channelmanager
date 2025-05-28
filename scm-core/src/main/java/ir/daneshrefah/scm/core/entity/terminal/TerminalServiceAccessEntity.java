@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ScmServiceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +26,7 @@ public class TerminalServiceAccessEntity extends AbstractDefaultEntity<Long> {
     private Long id;
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private ServiceEntity service;
+    private ScmServiceEntity service;
     @ManyToOne
     @JoinColumn(name = "terminal_id")
     private TerminalEntity terminal;

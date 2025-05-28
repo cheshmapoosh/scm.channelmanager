@@ -2,8 +2,7 @@ package ir.daneshrefah.scm.plugin.api.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.plugin.api.model.service.external.ProxyService;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import org.springframework.lang.Nullable;
 
 /**
@@ -15,9 +14,9 @@ import org.springframework.lang.Nullable;
  */
 public interface ServiceProducerTemplate {
 
-    Message callService(Service service, Message message, Message parentMessage);
+    Message callService(ScmService service, Message message, Message parentMessage);
 
-    Message callService(Service service, Message message);
+    Message callService(ScmService service, Message message);
 
     Message callService(String serviceCode, JsonNode payload);
 

@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.common.model.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
-import ir.daneshrefah.scm.common.model.service.parameter.Parameter;
 import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +17,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public abstract class Service extends AbstractStringAuditableModel<String> {
+public abstract class ScmService extends AbstractStringAuditableModel<String> {
 
     private String code;
     private String title;
@@ -27,7 +26,7 @@ public abstract class Service extends AbstractStringAuditableModel<String> {
     private Boolean isSystemic;
     private ServiceType type;
     private ServiceStatus status;
-    private Service parent;
+    private ScmService parent;
     private ServiceImplementationType implementationType;
     private String requestJsonSchema;
     private String responseJsonSchema;
@@ -37,16 +36,5 @@ public abstract class Service extends AbstractStringAuditableModel<String> {
     private Boolean checkAccessAsset;
     private String amountProperty;
     private String assetProperty;
-    private transient boolean proxy;
-    private transient String targetProxyCode;
-    @JsonIgnore
-    private List<Parameter> parameters;
-
-    public List<Parameter> getParameters(ParameterActionType actionType){
-        return getParameters()
-                .stream()
-                .filter(parameter -> actionType.equals(parameter.getActionType()))
-                .toList();
-    }
 
 }

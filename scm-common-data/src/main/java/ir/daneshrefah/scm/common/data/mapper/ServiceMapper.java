@@ -10,5 +10,5 @@ import org.mapstruct.ReportingPolicy;
 public interface ServiceMapper {
     ServiceEntity toEntity(Service service);
 
-    Service toDto(ServiceEntity serviceEntity);
+    Service toModel(ServiceEntity serviceEntity);
 }

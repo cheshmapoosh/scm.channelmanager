@@ -3,10 +3,7 @@ package ir.daneshrefah.scm.core.integration.provider;
 import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.constant.*;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
-import ir.daneshrefah.scm.common.data.mapper.ChannelMapper;
-import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
-import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalAccessMapper;
-import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalServiceAccessMapper;
+import ir.daneshrefah.scm.common.data.mapper.*;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.*;
 import ir.daneshrefah.scm.common.data.service.assets.ChannelServiceAccessService;
@@ -20,12 +17,13 @@ import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.asset.*;
+import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
-import ir.daneshrefah.scm.common.model.gateway.Channel;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.services.gateway.ChannelService;
@@ -92,6 +90,9 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final PersonService personService;
     private final ChannelMapper channelMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final ServiceMapper serviceMapper;
+    private final AssetProviderMapper assetProviderMapper;
+
 
     @Override
     public List<Membership> findLocalMembershipList(MembershipLocalFindRequest request) {
@@ -205,7 +206,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             PersonType personType = getRequestCurrentPerson().getPersonType();
             String nationalId = request.getNationalId();
             checkPersonAssetAccess(nationalId);
-            ir.daneshrefah.scm.common.model.service.Service service = assetProvider.getService();
+            ScmService service = assetProvider.getService();
             GeneralPerson person = personService.findPerson(personType, nationalId, request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
             List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, service.getCode(), request.getPageNo(), request.getPageSize());
             return MapToAccountMembership(accountList, request, assetProvider);
@@ -261,7 +262,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                     accountType.setId(accountTypeEntity.getId());
                     account.setAccountType(accountType);
                     account.setClose(accountEntity.getClose());
-                    account.setAssetProvider(AssetProviderMapper.INSTANCE.toModel(accountEntity.getAssetProvider()));
+                    account.setAssetProvider(assetProviderMapper.toModel(accountEntity.getAssetProvider()));
                     account.setCloseDate(accountEntity.getCloseDate());
                     //create customer
                     Customer customer = new Customer();
@@ -662,8 +663,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             return membershipTerminalAccessRepository
                     .findMembershipTerminalAccessEntitiesByPersonId(person.getId(), terminalCode.getLegacyTerminalId())
                     .stream()
-                    .map(membershipTerminalAccessMapper::toMembershipTerminalAccess)
-                    .map(membershipTerminalAccessMapper::toDto)
+                    .map(this::toDto)
                     .toList();
 
         }
@@ -680,7 +680,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         found.setReason(request.getReason());
         found.setUserReason(request.getUserReason());
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(found);
-        return membershipTerminalAccessMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -748,14 +748,64 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         return membershipTerminalServiceAccessRepository
                 .findByLegacyTerminalIdAndAccountNo(terminalCode.getLegacyTerminalId(), request.getAccountNumber(), person.getId())
                 .stream()
-                .map(membershipTerminalServiceAccessMapper::toDto)
+                .map(this::toDto)
                 .toList();
+    }
+
+    private MembershipTerminalServiceAccessDto toDto(MembershipTerminalServiceAccessEntity entity) {
+        if (Objects.isNull(entity)) {
+            return null;
+        }
+        MembershipTerminalServiceAccessDto result = new MembershipTerminalServiceAccessDto();
+        result.setEbService(serviceMapper.toModel(entity.getChannelServiceAccess().getService()));
+        result.setMaxWithdrawalPerTransaction(entity.getMaxWithdrawalPerTransaction().toString());
+        result.setId(entity.getId());
+        return result;
     }
 
     @Override
     public MembershipTerminalAccessDto getMembershipChannelAccess(long id) {
         MembershipTerminalAccessEntity found = membershipTerminalAccessRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return membershipTerminalAccessMapper.toDto(found);
+        return toDto(found);
+    }
+
+
+    private MembershipTerminalAccessDto toDto(MembershipTerminalAccessEntity model) {
+        if (Objects.isNull(model)) return null;
+        MembershipTerminalAccessDto dto = new MembershipTerminalAccessDto();
+        dto.setActive(model.getActive());
+        dto.setFavorite(model.getFavorite());
+        dto.setMaxWithdrawalPerDay(StringUtils.EMPTY);
+        dto.setMaxPersWithdrawalPerDay(StringUtils.EMPTY);
+        if (Objects.nonNull(model.getMaxWithdrawalPerDay())) {
+            dto.setMaxWithdrawalPerDay(model.getMaxWithdrawalPerDay().toPlainString());
+        }
+        if(Objects.nonNull(model.getMaxPersWithdrawalPerDay())) {
+            dto.setMaxPersWithdrawalPerDay(model.getMaxPersWithdrawalPerDay().toPlainString());
+        }
+        dto.setFromDate(model.getFromDate());
+        dto.setToDate(model.getToDate());
+        dto.setId(model.getId());
+        dto.setReason(model.getReason());
+        dto.setUserReason(model.getUserReason());
+        dto.setMembership(toDto(membershipMapper.toModel(model.getMembership())));
+        return dto;
+    }
+
+    private MembershipDto toDto(Membership model) {
+        if (Objects.isNull(model)) return null;
+        MembershipDto membershipDto = new MembershipDto();
+        membershipDto.setNickname(model.getNickname());
+        membershipDto.setCustomerAccount(model.getCustomerAccount());
+        membershipDto.setDefaultAccount(model.getDefaultAccount());
+        membershipDto.setArchiveNumber(model.getArchiveNumber());
+        membershipDto.setClose(model.getClose());
+        membershipDto.setId(model.getId());
+        membershipDto.setCreator(model.getCreator());
+        membershipDto.setLastEditor(model.getLastEditor());
+        membershipDto.setCreateDate(model.getCreateDate());
+        membershipDto.setLastEditDate(model.getLastEditDate());
+        return membershipDto;
     }
 
     @Override

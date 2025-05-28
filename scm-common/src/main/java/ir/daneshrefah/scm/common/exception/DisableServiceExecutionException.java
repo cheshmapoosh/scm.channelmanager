@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.exception;
 import ir.daneshrefah.scm.common.error.ExceptionInformation;
 import ir.daneshrefah.scm.common.error.ExceptionInformationBuilder;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,11 +14,11 @@ import ir.daneshrefah.scm.common.model.service.Service;
  */
 public class DisableServiceExecutionException extends BaseServiceException {
 
-    public DisableServiceExecutionException(Service service) {
+    public DisableServiceExecutionException(ScmService service) {
         this("service is disabled: " + service.getCode(), service);
     }
 
-    public DisableServiceExecutionException(String message, Service service) {
+    public DisableServiceExecutionException(String message, ScmService service) {
         super(message, null, service);
     }
 

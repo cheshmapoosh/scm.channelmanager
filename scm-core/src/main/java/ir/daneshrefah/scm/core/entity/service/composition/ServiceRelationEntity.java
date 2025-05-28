@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.entity.service.composition;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractDefaultEntity;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ScmServiceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,16 +25,16 @@ public class ServiceRelationEntity extends AbstractDefaultEntity<Long> {
     private Long id;
     @ManyToOne
     @JoinColumn(name = "SOURCE_SERVICE_ID")
-    private ServiceEntity sourceService;
+    private ScmServiceEntity sourceService;
     private Integer order;
     @ManyToOne
     @JoinColumn(name = "TARGET_SRV_ID")
-    private ServiceEntity targetService;
+    private ScmServiceEntity targetService;
     @ManyToOne
     @JoinColumn(name = "TARGET_SRV_COMMIT_ID")
-    private ServiceEntity targetServiceCommit;
+    private ScmServiceEntity targetServiceCommit;
     @ManyToOne
     @JoinColumn(name = "TARGET_SRV_REVERSE_ID")
-    private ServiceEntity targetServiceReverse;
+    private ScmServiceEntity targetServiceReverse;
 
 }

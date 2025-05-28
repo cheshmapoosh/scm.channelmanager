@@ -1,13 +1,15 @@
 package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.*;
-import ir.daneshrefah.scm.common.dto.provider.*;
+import ir.daneshrefah.scm.common.dto.provider.ServiceProviderChangeRequest;
+import ir.daneshrefah.scm.common.dto.provider.ServiceProviderCreteRequest;
+import ir.daneshrefah.scm.common.dto.provider.ServiceProviderDeleteRequest;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderRequest;
 import ir.daneshrefah.scm.common.dto.rest.ExternalProviderResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
 import ir.daneshrefah.scm.common.model.service.ProviderTerminalCoding;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,20 +27,17 @@ public interface ServiceService extends
         PatentServicesService,
         CompositionServicesService {
 
-    List<Service> findServiceList();
-    List<Service> findProxyServiceList();
-    Optional<Service> findProxyServiceByTatgetCode(String targetServiceCode);
-    Optional<Service> findProxyService(String proxyServiceId);
+    List<ScmService> findServiceList();
 
-    PagedResponseData<Service> findServiceList(ServiceFindRequest request);
+    PagedResponseData<ScmService> findServiceList(ServiceFindRequest request);
 
-    Service findServiceByCode(String code);
+    ScmService findServiceByCode(String code);
 
-    Service findServiceById(String id);
+    ScmService findServiceById(String id);
 
-    Service createService(ServiceInfoRequest service);
+    ScmService createService(ServiceInfoRequest service);
 
-    Service updateService(ServiceInfoEditRequest request);
+    ScmService updateService(ServiceInfoEditRequest request);
 
     boolean checkServiceExistById(String serviceId);
 
@@ -53,6 +52,7 @@ public interface ServiceService extends
     AbstractAuditableExternalServiceProvider deleteServiceProvider(ServiceProviderDeleteRequest request);
 
     AbstractAuditableExternalServiceProvider changeServiceProvider(ServiceProviderChangeRequest request);
+
     List<ExternalProviderResponse> getServiceProviderNameList(ExternalProviderRequest request);
 
     void cacheEvict();

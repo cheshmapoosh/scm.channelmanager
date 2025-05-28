@@ -2,9 +2,8 @@ package ir.daneshrefah.scm.core.integration.inbound.interceptor;
 
 import ir.daneshrefah.scm.common.exception.DisableServiceExecutionException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,7 @@ public class RequestValidationInterceptor extends MessageInterceptor {
 
     @Override
     protected Message internalIntercept(Message message) {
-        Service service = message.getHeader().getService();
+        ScmService service = message.getHeader().getService();
         if (ServiceStatus.INACTIVE.equals(service.getStatus())) {
             throw new DisableServiceExecutionException(service);
         }
@@ -29,7 +28,7 @@ public class RequestValidationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return true;
     }
 

@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -45,10 +45,10 @@ public abstract class BaseAssignmentVoter extends DecisionVoter {
         return personProfileLoader.fillServiceAccessForProfile(profile, terminalCode);
     }
 
-    protected abstract int vote(UserProfile profile, Service service, String asset);
+    protected abstract int vote(UserProfile profile, ScmService service, String asset);
 
     private boolean isAssetSupport(Message message) {
-        Service service = message.getHeader().getService();
+        ScmService service = message.getHeader().getService();
         return StringUtils.isNotEmpty(service.getAssetProperty()) || service.getCheckAccessAsset();
     }
 

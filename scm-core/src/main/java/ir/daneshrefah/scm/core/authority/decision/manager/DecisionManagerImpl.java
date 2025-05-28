@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.core.authority.decision.voter.*;
@@ -34,7 +34,7 @@ public class DecisionManagerImpl implements DecisionManager {
 
     @Override
     public boolean decide(Message message) throws AuthorityBaseException {
-        Service service = message.getHeader().getService();
+        ScmService service = message.getHeader().getService();
         for (DecisionVoter voter : DECISION_VOTER_LIST) {
             int vote = voter.vote(message, service);
             if (vote == DecisionVoter.ACCESS_GRANTED) {

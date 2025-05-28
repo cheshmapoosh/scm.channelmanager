@@ -12,5 +12,5 @@ import jakarta.persistence.Entity;
  */
 @Entity
 @DiscriminatorValue("5")
-public class ParentServiceEntity extends ServiceEntity {
+public class ParentServiceEntity extends ScmServiceEntity {
 }

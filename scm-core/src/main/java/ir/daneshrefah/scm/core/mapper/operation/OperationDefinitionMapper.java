@@ -17,8 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        componentModel = MappingConstants.ComponentModel.SPRING,
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE,
+        componentModel = SPRING,
         uses = {OperationMapper.class, DefinitionMapper.class})
 public abstract class OperationDefinitionMapper {
     @Autowired
@@ -33,24 +36,24 @@ public abstract class OperationDefinitionMapper {
 
     public abstract OperationDefinitionEntity toEntity(OperationDefinition operationDefinition);
 
-    @Named("toDto")
-    public OperationDefinition toDto(OperationDefinitionEntity operationDefinitionEntity) {
+    @Named("toModel")
+    public OperationDefinition toModel(OperationDefinitionEntity operationDefinitionEntity) {
         return switch (operationDefinitionEntity.getType()) {
-            case REQUEST_TEMPLATE -> toRequestTemplateDto(operationDefinitionEntity);
-            case RESPONSE_TEMPLATE -> toResponseTemplateDto(operationDefinitionEntity);
-            case REST_CONFIG -> toRestConfigDto(operationDefinitionEntity);
+            case REQUEST_TEMPLATE -> toRequestTemplateModel(operationDefinitionEntity);
+            case RESPONSE_TEMPLATE -> toResponseTemplateModel(operationDefinitionEntity);
+            case REST_CONFIG -> toRestConfigModel(operationDefinitionEntity);
             default -> throw new IllegalStateException("Unexpected value: " + operationDefinitionEntity.getType());
         };
     }
 
     @Named("responseTemplate")
-    public abstract ResponseTemplateOperationDefinition toResponseTemplateDto(OperationDefinitionEntity operationDefinitionEntity);
+    public abstract ResponseTemplateOperationDefinition toResponseTemplateModel(OperationDefinitionEntity operationDefinitionEntity);
 
     @Named("requestTemplate")
-    public abstract RequestTemplateOperationDefinition toRequestTemplateDto(OperationDefinitionEntity operationDefinitionEntity);
+    public abstract RequestTemplateOperationDefinition toRequestTemplateModel(OperationDefinitionEntity operationDefinitionEntity);
 
     @Named("restConfig")
-    public abstract RestConfigOperationDefinition toRestConfigDto(OperationDefinitionEntity operationDefinitionEntity);
+    public abstract RestConfigOperationDefinition toRestConfigModel(OperationDefinitionEntity operationDefinitionEntity);
 
     @AfterMapping
     public void afterMapping(@MappingTarget RequestTemplateOperationDefinition requestTemplateOperationDefinition) {

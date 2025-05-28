@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.type.ConditionType;
 import ir.daneshrefah.scm.core.authority.decision.helper.DecisionHelper;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -43,7 +43,7 @@ public abstract class BaseConditionalDecisionVoter extends DecisionVoter {
     protected abstract ConditionType getConditionType();
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return true;
     }
 

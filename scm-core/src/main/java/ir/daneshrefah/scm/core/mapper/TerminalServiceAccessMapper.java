@@ -1,33 +1,25 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
-import ir.daneshrefah.scm.common.model.service.Service;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
+import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING,
+        uses = {ScmServiceMapper.class})
 public interface TerminalServiceAccessMapper {
 
-    TerminalServiceAccessMapper INSTANCE = Mappers.getMapper(TerminalServiceAccessMapper.class);
-
-    @Mapping(source = "service", target = "service", qualifiedByName = "mapService")
+    @Mapping(source = "service", target = "service",qualifiedByName = "toService")
     TerminalServiceAccess toModel(TerminalServiceAccessEntity entity);
 
-    @Mapping(source = "service", target = "service")
-//    @Mapping(source = "terminalEntity", target = "terminal")
     List<TerminalServiceAccess> entitiesToModels(List<TerminalServiceAccessEntity> entities);
 
     List<TerminalServiceAccess> entitiesToModels(Iterable<TerminalServiceAccessEntity> entities);
 
-    @Named("mapService")
-    default Service mapService(ServiceEntity entity) {
-        // Delegate the mapping to the method in ServiceMapper
-        return ServiceMapper.INSTANCE.toService(entity);
-    }
 }

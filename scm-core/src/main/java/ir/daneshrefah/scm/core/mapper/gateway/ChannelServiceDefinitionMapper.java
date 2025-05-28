@@ -15,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {ChannelServiceAccessMapper.class})
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING, uses = {ChannelServiceAccessMapper.class})
 public abstract class ChannelServiceDefinitionMapper {
     @Autowired
     private ObjectMapper mapper;
@@ -29,8 +32,8 @@ public abstract class ChannelServiceDefinitionMapper {
 
     public abstract ChannelServiceDefinitionEntity toEntity(ChannelServiceDefinition channelServiceDefinition);
 
-    @Named("toDto")
-    public  ChannelServiceDefinition toDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
+    @Named("toModel")
+    public  ChannelServiceDefinition toModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
         return switch (channelServiceDefinitionEntity.getType()) {
             case REST -> toRestDto(channelServiceDefinitionEntity);
             case SWAGGER -> throw new IllegalStateException("Unexpected value: " + channelServiceDefinitionEntity.getType());

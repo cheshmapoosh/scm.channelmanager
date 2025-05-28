@@ -23,7 +23,7 @@ public class ChannelServiceAccessService {
         return CACHE.computeIfAbsent(terminalType, key -> channelServiceAccessRepository
                 .findByChannelId(terminalType.getLegacyTerminalId())
                 .stream()
-                .map(channelServiceAccessMapper::toDto)
+                .map(channelServiceAccessMapper::toModel)
                 .toList());
     }
 

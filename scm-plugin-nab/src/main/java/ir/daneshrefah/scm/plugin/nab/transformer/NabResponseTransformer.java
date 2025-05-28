@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.service.AbstractAuditableExternalServiceProvider;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.exception.InvalidProviderResponseException;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
 import ir.daneshrefah.scm.plugin.api.transformer.AbstractJsonTransformer;
@@ -40,7 +41,7 @@ public class NabResponseTransformer extends AbstractJsonTransformer {
             payloadTmp = payload instanceof ObjectNode ? (ObjectNode) payload : (ObjectNode) objectMapper.readTree((String) payload);
         } catch (Exception e) {
             AbstractAuditableExternalServiceProvider provider = null;
-            ir.daneshrefah.scm.common.model.service.Service service = message.getHeader().getService();
+            ScmService service = message.getHeader().getService();
             if (service instanceof AbstractAuditableExternalService) {
                 provider = ((AbstractAuditableExternalService) service).getServiceProvider();
             }

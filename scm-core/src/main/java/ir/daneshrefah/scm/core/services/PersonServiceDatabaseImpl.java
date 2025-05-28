@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.services;
 
+import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDatabaseImpl;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
@@ -17,8 +18,8 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(name = "scm.security.person-service", havingValue = "local", matchIfMissing = true)
 public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl {
 
-    public PersonServiceDatabaseImpl(TerminalService terminalService, PersonRepository personRepository) {
-        super(terminalService, personRepository);
+    public PersonServiceDatabaseImpl(TerminalService terminalService, PersonRepository personRepository, PersonMapper personMapper) {
+        super(terminalService, personRepository,personMapper);
     }
 
 }

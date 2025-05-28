@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.exception.*;
 import ir.daneshrefah.scm.common.model.terminal.LegacyTerminal;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.service.ScmServiceEntity;
 import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import ir.daneshrefah.scm.core.mapper.TerminalServiceAccessMapper;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
@@ -40,16 +40,17 @@ public class TerminalServiceImpl extends TerminalService {
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final TransformerRelationRepository transformerRelationRepository;
     private final ServiceRepository serviceRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final TerminalServiceAccessMapper terminalServiceAccessMapper;
+    private final TerminalMapper terminalMapper;
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
-    private final JdbcTemplate jdbcTemplate;
-
 
     @Override
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
         if (null == terminalServiceAccesses || terminalServiceAccesses.isEmpty()) {
             synchronized (this) {
-                terminalServiceAccesses = TerminalServiceAccessMapper.INSTANCE.entitiesToModels(terminalServiceAccessRepository.findAll());
+                terminalServiceAccesses = terminalServiceAccessMapper.entitiesToModels(terminalServiceAccessRepository.findAll());
             }
         }
         return terminalServiceAccesses;
@@ -59,7 +60,7 @@ public class TerminalServiceImpl extends TerminalService {
         if (Objects.isNull(terminals) || terminals.isEmpty()) {
             synchronized (this) {
                 if (Objects.isNull(terminals) || terminals.isEmpty()) {
-                    terminals = TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll());
+                    terminals = terminalMapper.entitiesToModels(terminalRepository.findAll());
                 }
             }
         }
@@ -82,7 +83,7 @@ public class TerminalServiceImpl extends TerminalService {
         if (StringUtils.isEmpty(id)) {
             return Optional.empty();
         }
-        return terminalRepository.findById(id).map(TerminalMapper.INSTANCE::toModel);
+        return terminalRepository.findById(id).map(terminalMapper::toModel);
     }
 
     @Override
@@ -121,7 +122,7 @@ public class TerminalServiceImpl extends TerminalService {
                 )
                 .collect(Collectors.toList());
 //        List<TerminalServiceAccessEntity> entityList = terminalServiceAccessRepository.findAllByTerminalId(terminalId);
-//        return TerminalServiceAccessMapper.INSTANCE.entitiesToModels(entityList);
+//        return terminalServiceAccessMapper.entitiesToModels(entityList);
     }
 
     @Override
@@ -136,7 +137,7 @@ public class TerminalServiceImpl extends TerminalService {
     @Override
     public TerminalServiceAccess assignServiceToTerminal(TerminalServiceAssignmentRequest request) {
         TerminalEntity terminalEntity = terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
-        ServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
+        ScmServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
         terminalServiceAccessRepository
                 .findByTerminal_IdAndService_Id(terminalEntity.getId(), serviceEntity.getId())
                 .ifPresentOrElse(found -> {
@@ -159,7 +160,7 @@ public class TerminalServiceImpl extends TerminalService {
     @Override
     public void revokeServiceFromTerminal(TerminalServiceAssignmentRequest request) {
         TerminalEntity terminalEntity = terminalRepository.findById(request.getTerminalId()).orElseThrow(() -> new InvalidInputException("terminalId"));
-        ServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
+        ScmServiceEntity serviceEntity = serviceRepository.findById(request.getServiceId()).orElseThrow(() -> new InvalidInputException("serviceId"));
         terminalServiceAccessRepository
                 .findByTerminal_IdAndService_Id(terminalEntity.getId(), serviceEntity.getId())
                 .ifPresentOrElse(found -> {
@@ -173,7 +174,7 @@ public class TerminalServiceImpl extends TerminalService {
     @Override
     public List<Terminal> findAllTerminalAccessOnService(String serviceId) {
         ValidationUtils.checkBlankString(serviceId, () -> new MissingRequiredInputException("serviceId"));
-        ServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new InvalidInputException("serviceId"));
+        ScmServiceEntity serviceEntity = serviceRepository.findById(serviceId).orElseThrow(() -> new InvalidInputException("serviceId"));
         return findAllTerminalServiceAccesses()
                 .stream()
                 .filter(serviceAccess -> serviceAccess.getService().getId().equals(serviceEntity.getId()))
@@ -197,7 +198,7 @@ public class TerminalServiceImpl extends TerminalService {
         entity.setSupportCheckAuthentication(request.isSupportCheckAuthentication());
         entity.setSupportCheckServiceAccess(request.isSupportCheckServiceAccess());
         entity.setSupportCustomerInjection(request.isSupportCustomerInjection());
-        Terminal model = TerminalMapper.INSTANCE.toModel(terminalRepository.save(entity));
+        Terminal model = terminalMapper.toModel(terminalRepository.save(entity));
         evictCache();
         return model;
     }
@@ -219,7 +220,7 @@ public class TerminalServiceImpl extends TerminalService {
     public Terminal editTerminal(TerminalEditRequest request) {
         Terminal found = findTerminalById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("terminalId"));
         mapToTerminalEntity(found, request);
-        terminalRepository.save(TerminalMapper.INSTANCE.toEntity(found));
+        terminalRepository.save(terminalMapper.toEntity(found));
         evictCache();
         return found;
     }
@@ -261,9 +262,9 @@ public class TerminalServiceImpl extends TerminalService {
     @Override
     @LegacyChannelManger
     public List<LegacyTerminal> findAllLegacyTerminal() {
-        if (LEGACY_TERMINALS.isEmpty()){
-            synchronized (LEGACY_TERMINALS){
-                if (LEGACY_TERMINALS.isEmpty()){
+        if (LEGACY_TERMINALS.isEmpty()) {
+            synchronized (LEGACY_TERMINALS) {
+                if (LEGACY_TERMINALS.isEmpty()) {
                     //language=sql
                     String query = "select CHANNEL_ID,CODE,NAME from REF.CHANNEL where ACTIVE = '1' and PUBLISHED = '1' ";
                     LEGACY_TERMINALS.addAll(jdbcTemplate.query(query, (rs, rowNum) -> {

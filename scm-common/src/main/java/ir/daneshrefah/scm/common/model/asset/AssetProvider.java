@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.common.model.asset;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import ir.daneshrefah.scm.common.constant.AssetProviderCode;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +21,6 @@ public class AssetProvider extends AbstractAuditableModel<Integer> {
     private AssetProviderCode code;
     private boolean active;
     private String abbreviation;
-    private Service service;
+    private ScmService service;
 
 }

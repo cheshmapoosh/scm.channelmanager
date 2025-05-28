@@ -25,13 +25,14 @@ public class ConditionService {
     private final ServiceConditionRepository serviceConditionRepository;
     private final TerminalConditionRepository terminalConditionRepository;
     private final TerminalServiceConditionRepository serviceTerminalConditionRepository;
+    private final ConditionMapper conditionMapper;
 
     public List<ServiceCondition> fetchAllServiceConditions(){
         List<ServiceConditionEntity> allServiceConditions = serviceConditionRepository.findAll();
         log.info(">>> all {} [service conditions] successfully fetched",allServiceConditions.size());
         return allServiceConditions
                 .stream()
-                .map(ConditionMapper.INSTANCE::toServiceCondition)
+                .map(conditionMapper::toServiceCondition)
                 .collect(Collectors.toList());
     }
 
@@ -40,7 +41,7 @@ public class ConditionService {
         log.info(">>> all {} [terminal conditions] successfully fetched",allTerminalConditions.size());
         return allTerminalConditions
                 .stream()
-                .map(ConditionMapper.INSTANCE::toTerminalCondition)
+                .map(conditionMapper::toTerminalCondition)
                 .collect(Collectors.toList());
     }
 
@@ -49,7 +50,7 @@ public class ConditionService {
         log.info(">>> all {} [service terminal conditions] successfully fetched",allServiceTerminalConditions.size());
         return allServiceTerminalConditions
                 .stream()
-                .map(ConditionMapper.INSTANCE::toTerminalServiceCondition)
+                .map(conditionMapper::toTerminalServiceCondition)
                 .collect(Collectors.toList());
     }
 

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service.interceptor;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.authority.decision.DecisionManager;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
@@ -37,7 +37,7 @@ public class DecisionManagerInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return true;
     }
 

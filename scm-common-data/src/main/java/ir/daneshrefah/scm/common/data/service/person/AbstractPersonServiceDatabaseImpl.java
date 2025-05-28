@@ -38,6 +38,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
 
     protected final TerminalService terminalService;
     protected final PersonRepository personRepository;
+    protected final PersonMapper personMapper;
 
     @Override
     public PagedResponseData<GeneralPerson> findPagedPersonList(PersonFindRequest request) {
@@ -46,7 +47,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
         Page<GeneralPersonEntity> entities = personRepository.findAll(PersonSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
-                PersonMapper.INSTANCE.toModels(entities.getContent()));
+                personMapper.toModels(entities.getContent()));
     }
 
     private void validateFindPagedPersonList(PersonFindRequest request) {
@@ -78,7 +79,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
                 , new ExceptionDynamicMessage()
                 .setBundleKey(EXP_DYN_MSG_PERSON_NOT_FOUND_EXCEPTION_ID)
                 .addParameter("id", String.valueOf(id))));
-        return PersonMapper.INSTANCE.toPerson(personEntity.orElseThrow(() -> new InvalidInputException("id")));
+        return personMapper.toPerson(personEntity.orElseThrow(() -> new InvalidInputException("id")));
     }
 
     @Override
@@ -88,7 +89,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         if (Objects.isNull(personEntity) || personEntity.size() < 1) {
             return Optional.empty();
         }
-        return Optional.of(PersonMapper.INSTANCE.toPerson(personEntity.get(0)));
+        return Optional.of(personMapper.toPerson(personEntity.get(0)));
     }
 
     @Override
@@ -106,7 +107,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
                     .addParameter("nickname", nickname)
                     .addParameter("terminalCode", terminalCode));
         }
-        return PersonMapper.INSTANCE.toPerson(personEntity.get());
+        return personMapper.toPerson(personEntity.get());
     }
 
     @Override
@@ -119,21 +120,21 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     }
 
     public GeneralRealPerson findPersonByNationalCode(String nationalCode) {
-        return (GeneralRealPerson) PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalCode));
+        return (GeneralRealPerson) personMapper.toPerson(personRepository.findRealPersonByNationalCode(nationalCode));
     }
 
     @Override
     public Optional<GeneralPerson> findPerson(PersonType personType, String nationalId, String subOrg) {
         boolean isRealPerson = (Objects.nonNull(personType) && personType.equals(PersonType.REAL)) || ValidationUtils.checkIsValidNationalCode(nationalId);
         if (isRealPerson) {
-            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
+            return Optional.ofNullable(personMapper.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
         } else if (Objects.nonNull(subOrg) && !subOrg.isBlank() && StringUtils.notEquals("0", subOrg)) {
-            return Optional.ofNullable(PersonMapper.INSTANCE.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
+            return Optional.ofNullable(personMapper.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
         } else {
             return personRepository
                     .findGeneralLegalPersonEntityByNationalId(nationalId)
                     .stream()
-                    .map(PersonMapper.INSTANCE::toPerson)
+                    .map(personMapper::toPerson)
                     .findFirst();
         }
     }
@@ -143,7 +144,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
         return personRepository
                 .findAllClientPersonEntityByNationalIdAndPersonType(nationalId, PersonType.CLIENT)
                 .stream()
-                .map(PersonMapper.INSTANCE::toPerson)
+                .map(personMapper::toPerson)
                 .map(ClientPerson.class::cast)
                 .toList();
     }

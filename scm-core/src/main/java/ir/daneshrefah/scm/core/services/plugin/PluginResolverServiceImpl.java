@@ -29,7 +29,7 @@ public class PluginResolverServiceImpl implements PluginResolverService {
                 true);
         List<PluginDetail> channelPluginDetails = List.of();
         if (channelPluginBindingEntity != null) {
-            PluginBinding channelPluginBinding = pluginBindingMapper.toDto(channelPluginBindingEntity);
+            PluginBinding channelPluginBinding = pluginBindingMapper.toModel(channelPluginBindingEntity);
             channelPluginDetails = channelPluginBinding.getDetails();
         }
         return channelPluginDetails.stream()
@@ -48,7 +48,7 @@ public class PluginResolverServiceImpl implements PluginResolverService {
         PluginBindingEntity servicePluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.SERVICE, String.valueOf(service.getId()), true);
         List<PluginDetail> servicePluginDetails = List.of();
         if (servicePluginBindingEntity != null) {
-            PluginBinding servicePluginBinding = pluginBindingMapper.toDto(servicePluginBindingEntity);
+            PluginBinding servicePluginBinding = pluginBindingMapper.toModel(servicePluginBindingEntity);
             servicePluginDetails = resolvePluginDefinitions(servicePluginBinding.getDetails(), phase);
         }
 
@@ -70,7 +70,7 @@ public class PluginResolverServiceImpl implements PluginResolverService {
         PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
         List<PluginDetail> operationPluginDetails = List.of();
         if (operationPluginBindingEntity != null) {
-            PluginBinding operationPluginBinding = pluginBindingMapper.toDto(operationPluginBindingEntity);
+            PluginBinding operationPluginBinding = pluginBindingMapper.toModel(operationPluginBindingEntity);
             operationPluginDetails = resolvePluginDefinitions(operationPluginBinding.getDetails(), phase);
         }
         return operationPluginDetails.stream()

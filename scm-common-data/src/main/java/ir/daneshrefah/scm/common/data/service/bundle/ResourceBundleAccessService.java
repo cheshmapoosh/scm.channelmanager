@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class ResourceBundleAccessService {
     private final ResourceBundleRepository resourceBundleRepository;
     private final ResourceBundleService resourceBundleService;
+    private final ResourceBundleMapper resourceBundleMapper;
 
     public ResourceBundle dynamicUpdate(ResourceBundle resourceBundle){
         ResourceBundleEntity bundle = resourceBundleRepository
@@ -25,7 +26,7 @@ public class ResourceBundleAccessService {
             throw new RecordVersionException("lastEditDate");
         }
         bundle.setValue(resourceBundle.getValue());
-        ResourceBundle model = ResourceBundleMapper.INSTANCE.toModel(bundle);
+        ResourceBundle model = resourceBundleMapper.toModel(bundle);
         resourceBundleService.update(model);
         return  model;
     }

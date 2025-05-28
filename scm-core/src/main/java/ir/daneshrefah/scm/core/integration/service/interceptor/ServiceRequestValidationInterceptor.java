@@ -7,7 +7,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
@@ -49,7 +49,7 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return true;
     }
 
@@ -62,7 +62,7 @@ public class ServiceRequestValidationInterceptor extends MessageInterceptor {
                 .build();
     }
 
-    private JsonSchema loadJsonSchemaIfRequired(Service service) {
+    private JsonSchema loadJsonSchemaIfRequired(ScmService service) {
         if (!validators.containsKey(service.getCode())) {
             JsonSchema schema = null;
             String requestJsonSchema = service.getRequestJsonSchema();

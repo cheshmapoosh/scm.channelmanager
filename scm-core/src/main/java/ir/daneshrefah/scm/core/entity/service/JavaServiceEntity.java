@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.entity.service;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
@@ -13,6 +12,6 @@ import jakarta.persistence.Entity;
  */
 @Entity
 @DiscriminatorValue("2")
-public class JavaServiceEntity extends ServiceEntity {
+public class JavaServiceEntity extends ScmServiceEntity {
 
 }

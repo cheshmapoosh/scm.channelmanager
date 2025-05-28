@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.serializer;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import ir.daneshrefah.scm.common.model.person.PersonType;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.common.service.ServiceService;
@@ -20,7 +20,7 @@ public class ScmObjectModule extends SimpleModule {
         addSerializer(ServiceImplementationType.class, ServiceImplementationTypeSerializer.INSTANT);
         addSerializer(ServiceType.class, ServiceTypeSerializer.INSTANT);
 
-        addDeserializer(Service.class, new ServiceDeserializer(service));
+        addDeserializer(ScmService.class, new ServiceDeserializer(service));
         addDeserializer(ServiceImplementationType.class, ServiceImplementationTypeDeserializer.INSTANT);
         addDeserializer(ServiceType.class, ServiceTypeDeserializer.INSTANT);
         addDeserializer(PersonType.class, PersonTypeDeserializer.INSTANT);

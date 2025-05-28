@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service.interceptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelationType;
 import ir.daneshrefah.scm.core.services.TransformerService;
@@ -39,11 +39,11 @@ public abstract class AbstractTransformerInterceptor extends MessageInterceptor 
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return true;
     }
 
-    private List<TransformerExecutionWrapper> loadTransformerListIfRequired(Service service) {
+    private List<TransformerExecutionWrapper> loadTransformerListIfRequired(ScmService service) {
         TransformerRelationType relationType = extractTransformerRelationType();
         if (!transformers.containsKey(service.getCode())) {
             List<TransformerRelation> transformerRelations = transformerService.findAllTransformerRelationsBySource(

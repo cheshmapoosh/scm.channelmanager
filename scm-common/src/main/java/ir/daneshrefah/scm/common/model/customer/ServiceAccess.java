@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.customer;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +18,7 @@ import lombok.Setter;
 public class ServiceAccess extends AbstractAuditableModel<Long> {
 
     private String personProfileId;
-    private Service service;
+    private ScmService service;
     private Terminal terminal;
     private Object assetId;
 

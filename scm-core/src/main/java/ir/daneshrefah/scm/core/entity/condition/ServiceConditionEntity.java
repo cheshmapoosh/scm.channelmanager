@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.core.entity.condition;
 
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.ServiceEntity;
+import ir.daneshrefah.scm.core.entity.operation.OperationEntity;
+import ir.daneshrefah.scm.core.entity.service.ScmServiceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +19,6 @@ public class ServiceConditionEntity extends ConditionBaseEntity<Long> {
     private Long id;
     @ManyToOne
     @JoinColumn(name = "SERVICE_ID")
-    private ServiceEntity service;
+    private ScmServiceEntity service;
 
 }

@@ -19,6 +19,6 @@ public class GatewayServiceImpl implements GatewayService {
         Optional<GatewayChannelEntity> routeChannelEntityOptional = gatewayChannelRepository
                 .findByName(name);
 
-        return routeChannelEntityOptional.map(gatewayChannelMapper::toDto).orElse(null);
+        return routeChannelEntityOptional.map(gatewayChannelMapper::toModel).orElse(null);
     }
 }

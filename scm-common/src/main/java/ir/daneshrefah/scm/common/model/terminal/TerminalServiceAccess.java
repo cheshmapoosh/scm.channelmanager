@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.terminal;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +17,6 @@ import lombok.Setter;
 public class TerminalServiceAccess extends AbstractAuditableModel<Long> {
 
     private Terminal terminal;
-    private Service service;
+    private ScmService service;
 
 }

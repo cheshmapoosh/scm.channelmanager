@@ -2,12 +2,12 @@ package ir.daneshrefah.scm.core.entity.service;
 
 import ir.daneshrefah.scm.common.model.service.ExternalServiceBodyType;
 import ir.daneshrefah.scm.core.converter.ExternalServiceRequestBodyTypeConverter;
-import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -19,15 +19,12 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-public abstract class AbstractExternalServiceEntity<T extends AbstractExternalServiceProviderEntity> extends ServiceEntity {
+public abstract class AbstractExternalServiceEntity<T extends AbstractExternalServiceProviderEntity> extends ScmServiceEntity {
 
     @ManyToOne(targetEntity = AbstractExternalServiceProviderEntity.class)
     @JoinColumn(name = "IMPL_SERVICE_PROVIDER_ID")
     private T serviceProvider;
     @Convert(converter = ExternalServiceRequestBodyTypeConverter.class)
     private ExternalServiceBodyType requestBodyType;
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "SERVICE_ID")
-    private List<ResponseEntity> responseList;
 
 }

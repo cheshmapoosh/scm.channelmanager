@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 
@@ -21,7 +21,7 @@ public class TransactionAuthenticationDecisionVoter extends DecisionVoter {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return MessageInputContext.getCurrentContext().getTerminal().isSupportCheckSecondAuthentication() &&
                 service.getCheckAccessSecondAuthentication();
     }

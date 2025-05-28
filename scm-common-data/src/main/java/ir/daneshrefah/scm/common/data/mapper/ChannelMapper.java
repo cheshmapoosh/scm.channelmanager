@@ -6,9 +6,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {AuthenticationMethodMapper.class})
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {AuthenticationMethodMapper.class})
 public interface ChannelMapper {
     ChannelEntity toEntity(Channel channel);
 
-    Channel toDto(ChannelEntity channelEntity);
+    Channel toModel(ChannelEntity channelEntity);
 }

@@ -4,11 +4,14 @@ import ir.daneshrefah.scm.common.data.entity.error.ErrorMappingEntity;
 import ir.daneshrefah.scm.common.error.ErrorMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE,
+        componentModel = SPRING
+        , uses = {PersonMapper.class})
 public interface ErrorMappingMapper {
-    ErrorMappingMapper INSTANCE = Mappers.getMapper(ErrorMappingMapper.class);
 
     @Mapping(target = "bundleKey",ignore = true)
     ErrorMapping toModel(ErrorMappingEntity entity);

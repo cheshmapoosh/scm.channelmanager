@@ -29,6 +29,7 @@ public class CacheableResourceBundleService implements ResourceBundleService {
     private static final Locale DEFAULT_LOCALE = new Locale("en", "US");
     private static CacheableResourceBundleService INSTANCE;
     private final ResourceBundleRepository resourceBundleRepository;
+    private final ResourceBundleMapper resourceBundleMapper;
 
     public static ResourceBundleService getInstance() {
         return INSTANCE;
@@ -39,7 +40,7 @@ public class CacheableResourceBundleService implements ResourceBundleService {
         resourceBundleRepository
                 .findAll()
                 .stream()
-                .map(ResourceBundleMapper.INSTANCE::toModel)
+                .map(resourceBundleMapper::toModel)
                 .forEach(RESOURCE_BUNDLE_CACHE::add);
         log.info(">>> All {} resource bundles cached from database", RESOURCE_BUNDLE_CACHE.size());
         INSTANCE = this;
@@ -117,9 +118,9 @@ public class CacheableResourceBundleService implements ResourceBundleService {
         findCache(resourceBundle.getLocale(), resourceBundle.getKey()).ifPresent(found -> {
             throw new DuplicatedRecordFoundException("key");
         });
-        ResourceBundleEntity entity = ResourceBundleMapper.INSTANCE.toEntity(resourceBundle);
+        ResourceBundleEntity entity = resourceBundleMapper.toEntity(resourceBundle);
         ResourceBundleEntity saved = resourceBundleRepository.save(entity);
-        ResourceBundle model = ResourceBundleMapper.INSTANCE.toModel(saved);
+        ResourceBundle model = resourceBundleMapper.toModel(saved);
         synchronized (RESOURCE_BUNDLE_CACHE) {
             RESOURCE_BUNDLE_CACHE.add(model);
         }

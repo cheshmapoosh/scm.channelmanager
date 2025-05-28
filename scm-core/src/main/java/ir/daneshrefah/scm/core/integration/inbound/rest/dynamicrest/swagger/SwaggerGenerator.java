@@ -22,7 +22,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.terminal.Channel;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
@@ -99,7 +99,7 @@ public class SwaggerGenerator {
         generateSecurityComponent(components);
         openAPI.setComponents(components);
         for (TerminalServiceAccess serviceAccess : serviceAccesses) {
-            Service service = serviceService.findServiceByCode(serviceAccess.getService().getCode());
+            ScmService service = serviceService.findServiceByCode(serviceAccess.getService().getCode());
             if (exposedAble(service)) {
                 Terminal terminal = serviceAccess.getTerminal();
                 RestUrl restUrl = urlBuilder.build(serviceAccess);
@@ -127,7 +127,7 @@ public class SwaggerGenerator {
     }
 
     private void generateApiTag(OpenAPI openAPI, TerminalServiceAccess serviceAccess) {
-        Service parent = serviceAccess.getService().getParent();
+        ScmService parent = serviceAccess.getService().getParent();
         if (Objects.nonNull(parent)) {
             List<Tag> tags = openAPI.getTags();
             if (Objects.isNull(tags)) {
@@ -143,7 +143,7 @@ public class SwaggerGenerator {
         }
     }
 
-    private String provideTageName(Service parent) {
+    private String provideTageName(ScmService parent) {
         if (Objects.nonNull(parent)) {
             String alias = parent.getAlias();
             String code = parent.getCode();
@@ -159,7 +159,7 @@ public class SwaggerGenerator {
         return null;
     }
 
-    private boolean exposedAble(Service service) {
+    private boolean exposedAble(ScmService service) {
         ServiceStatus status = service.getStatus();
         boolean implanted = true;
         if (service instanceof JavaService javaService) {
@@ -202,7 +202,7 @@ public class SwaggerGenerator {
         }
     }
 
-    private void generateSecurityHeaders(Operation operation, Service service) {
+    private void generateSecurityHeaders(Operation operation, ScmService service) {
         Boolean loginAuthentication = service.getCheckAccessFirstAuthentication();
         Boolean transactionAuthentication = service.getCheckAccessSecondAuthentication();
         if (Objects.nonNull(transactionAuthentication) && transactionAuthentication) {
@@ -222,7 +222,7 @@ public class SwaggerGenerator {
         openAPI.setServers(List.of(server));
     }
 
-    private void generateBasicInformation(Service service, Terminal terminal, Operation operation) {
+    private void generateBasicInformation(ScmService service, Terminal terminal, Operation operation) {
         String tagName = provideTageName(service.getParent());
         operation.setTags(List.of(Objects.nonNull(tagName) ? tagName : "UNDEFINED !"));
         operation.setSummary(service.getCode());
@@ -275,7 +275,7 @@ public class SwaggerGenerator {
         }
     }
 
-    private void generateResponseSchema(Service service, Operation operation, Components components) {
+    private void generateResponseSchema(ScmService service, Operation operation, Components components) {
         String responseJsonSchema = serviceJsonSchemaGenerator.generateResponseSchema(service);
         responseJsonSchema = applyResponseJsonSchemaTemplate(responseJsonSchema);
         if (Objects.nonNull(responseJsonSchema) && !responseJsonSchema.isBlank()) {
@@ -423,7 +423,7 @@ public class SwaggerGenerator {
         operation.setResponses(apiResponses);
     }
 
-    private void generateRequestSchema(RestUrl restUrl, Service service, Operation operation, Components components) {
+    private void generateRequestSchema(RestUrl restUrl, ScmService service, Operation operation, Components components) {
         if (!restUrl.getHttpMethod().equalsIgnoreCase("get")) {
             String requestJsonSchema = serviceJsonSchemaGenerator.generateRequestSchema(service);
             if (Objects.nonNull(requestJsonSchema) && !requestJsonSchema.isBlank()) {

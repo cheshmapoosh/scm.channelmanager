@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.transformer.TransformerRelation;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,15 +19,15 @@ import java.util.List;
 @Setter
 public class ServiceRelation extends AbstractAuditableModel<String> {
 
-    private Service sourceService;
+    private ScmService sourceService;
     private Integer order;
-    private Service targetService;
+    private ScmService targetService;
     private List<TransformerRelation> targetServiceRequestTransformers;
     private List<TransformerRelation> targetServiceResponseTransformers;
-    private Service targetServiceCommit;
+    private ScmService targetServiceCommit;
     private List<TransformerRelation> targetServiceCommitRequestTransformers;
     private List<TransformerRelation> targetServiceCommitResponseTransformers;
-    private Service targetServiceReverse;
+    private ScmService targetServiceReverse;
     private List<TransformerRelation> targetServiceReverseRequestTransformers;
     private List<TransformerRelation> targetServiceReverseResponseTransformers;
 

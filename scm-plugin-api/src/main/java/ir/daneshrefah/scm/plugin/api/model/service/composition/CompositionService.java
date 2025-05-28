@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.plugin.api.model.service.composition;
 
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceCompositionType;
-import ir.daneshrefah.scm.common.model.service.parameter.Response;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,10 +16,9 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class CompositionService extends Service {
+public class CompositionService extends ScmService {
 
     private ServiceCompositionType compositionType;
     private List<ServiceRelation> relations;
-    private List<Response> responseList;
 
 }

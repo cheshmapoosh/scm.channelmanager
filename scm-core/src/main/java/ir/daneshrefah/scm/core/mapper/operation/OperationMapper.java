@@ -10,6 +10,6 @@ import org.mapstruct.*;
 public interface OperationMapper {
     OperationEntity toEntity(Operation operation);
 
-    @Mapping(target = "definitions", source = "definitions", qualifiedByName = "toDto")
-    Operation toDto(OperationEntity operationEntity);
+    @Mapping(target = "definitions", source = "definitions", qualifiedByName = "toModel")
+    Operation toModel(OperationEntity operationEntity);
 }

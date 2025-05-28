@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.model.condition.Condition;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.message.Authentication;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
@@ -71,7 +71,7 @@ public class DecisionHelper {
         return Collections.emptyList(); //TODO
     }
 
-    public List<Condition> findTerminalConditions(ConditionType conditionType, Service service,
+    public List<Condition> findTerminalConditions(ConditionType conditionType, ScmService service,
                                                   Authentication authentication) {
         TerminalServiceAccess serviceAccess = terminalService.findTerminalServiceAccessByTerminalCodeAndServiceCode(
                 MessageInputContext.getCurrentContext().getTerminalCode(), service.getCode()).orElse(null);
@@ -125,7 +125,7 @@ public class DecisionHelper {
             }
         }
 
-        Service service = authObject.getService();
+        ScmService service = authObject.getService();
         Terminal terminal = authObject.getTerminal();
 
         if (isLogin && service.getCheckAccessFirstAuthentication() && terminal.isSupportCheckAuthentication()) {
@@ -145,7 +145,7 @@ public class DecisionHelper {
         }
         /* checking terminal & service */
         //getting auth status from message header.
-        Service service = serviceAccess.getService();
+        ScmService service = serviceAccess.getService();
         Terminal terminal = serviceAccess.getTerminal();
         List<Condition> serviceConditions = getInnerRoutingCondition(loginAuth, transactionAuth, service.getId());
         List<Condition> terminalConditions = getInnerRoutingCondition(loginAuth, transactionAuth, terminal.getId());

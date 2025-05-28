@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.model.message.*;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.tracing.SpanAdapter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -113,7 +112,7 @@ public class TraceLogUtils {
         return Optional.ofNullable(message)
                 .map(Message::getHeader)
                 .map(Header::getService)
-                .map(Service::getCode)
+                .map(ScmService::getCode)
                 .orElse(null);
     }
 

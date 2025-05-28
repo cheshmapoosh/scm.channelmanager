@@ -26,12 +26,13 @@ import java.util.Optional;
 public class ErrorMappingService {
     private static final List<ErrorMapping> ERROR_MAPPINGS_CACHE = new ArrayList<>(100);
     private final ErrorMappingRepository errorMappingRepository;
+    private final ErrorMappingMapper errorMappingMapper;
 
 
     @PostConstruct
     public void init() {
         synchronized (ERROR_MAPPINGS_CACHE) {
-            errorMappingRepository.findAll().stream().map(ErrorMappingMapper.INSTANCE::toModel).peek(errorMapping -> {
+            errorMappingRepository.findAll().stream().map(errorMappingMapper::toModel).peek(errorMapping -> {
                 String errorMessage = errorMapping.getErrorMessage();
                 if (errorMessage.startsWith("${") && errorMessage.endsWith("}")) {
                     errorMapping.setBundleKey(true);
@@ -108,7 +109,7 @@ public class ErrorMappingService {
 
     public ErrorMapping findRefreshRecord(long id) {
         ErrorMappingEntity foundEntity = errorMappingRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return ErrorMappingMapper.INSTANCE.toModel(foundEntity);
+        return errorMappingMapper.toModel(foundEntity);
     }
 
     public ErrorMapping findById(long id) {
@@ -126,7 +127,7 @@ public class ErrorMappingService {
             throw new RecordVersionException("lastEditDate");
         }
         prepareDynamicUpdate(refreshRecord, request);
-        ErrorMappingEntity entity = errorMappingRepository.save(ErrorMappingMapper.INSTANCE.toEntity(refreshRecord));
+        ErrorMappingEntity entity = errorMappingRepository.save(errorMappingMapper.toEntity(refreshRecord));
         reloadCache();
         return findById(entity.getId());
     }
@@ -145,7 +146,7 @@ public class ErrorMappingService {
         ErrorMappingEntity mapping = mapToErrorMapping(request);
         ErrorMappingEntity entity = errorMappingRepository.save(mapping);
         reloadCache();
-        return ErrorMappingMapper.INSTANCE.toModel(entity);
+        return errorMappingMapper.toModel(entity);
     }
 
     private ErrorMappingEntity mapToErrorMapping(ErrorMappingCreateRequest request) {

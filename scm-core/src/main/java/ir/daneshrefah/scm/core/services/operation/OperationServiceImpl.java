@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class OperationServiceImpl implements OperationService {
@@ -21,6 +21,6 @@ public class OperationServiceImpl implements OperationService {
         if (operationEntities.isEmpty()) {
             return List.of();
         }
-        return operationEntities.stream().map(operationMapper::toDto).toList();
+        return operationEntities.stream().map(operationMapper::toModel).toList();
     }
 }

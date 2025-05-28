@@ -24,6 +24,6 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
                         channelServiceAccess.getId(),
                         gatewayChannel.getId());
 
-        return channelServiceDefinitionEntityOptional.map(channelServiceDefinitionMapper::toDto).stream().toList();
+        return channelServiceDefinitionEntityOptional.map(channelServiceDefinitionMapper::toModel).stream().toList();
     }
 }

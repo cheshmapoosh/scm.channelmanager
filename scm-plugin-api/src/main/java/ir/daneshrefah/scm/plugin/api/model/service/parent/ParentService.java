@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.parent;
 
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 /**
  * Description of the class or purpose of the file.
@@ -9,6 +9,6 @@ import ir.daneshrefah.scm.common.model.service.Service;
  * @version 1.0
  * @since 2023-08-06
  */
-public class ParentService extends Service {
+public class ParentService extends ScmService {
 
 }

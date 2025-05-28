@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.plugin.api.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Getter;
 
 /**
@@ -25,11 +25,11 @@ public abstract class AbstractJavaService {
         this.objectMapper = objectMapper;
     }
 
-    public Object execute(Message message, Service service, Object payload) {
+    public Object execute(Message message, ScmService service, Object payload) {
         return internalExecute(message, service, payload);
     }
 
-    protected Object internalExecute(Message message, Service service, Object payload) {
+    protected Object internalExecute(Message message, ScmService service, Object payload) {
         throw new RuntimeException("service " + service.getCode() + " not implemented.");
     }
 

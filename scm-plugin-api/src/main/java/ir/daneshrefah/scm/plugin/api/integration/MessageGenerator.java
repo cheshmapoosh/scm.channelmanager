@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.utils.MessageInputContext;
@@ -120,7 +120,7 @@ public class MessageGenerator {
         return result;
     }
 
-    public Message generateInternalMessage(Service service, JsonNode payload) {
+    public Message generateInternalMessage(ScmService service, JsonNode payload) {
         Header header = Header.builder()
                 .service(service)
 //                .level(level)

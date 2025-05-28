@@ -2,12 +2,12 @@ package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.service.java.JavaServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.java.JavaServiceEditRequest;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 public interface JavaServicesService {
-    Service createJavaService(JavaServiceCreateRequest request);
+    ScmService createJavaService(JavaServiceCreateRequest request);
 
-    Service editJavaService(JavaServiceEditRequest request);
+    ScmService editJavaService(JavaServiceEditRequest request);
 
-    Service getJavaService(String javaServiceId);
+    ScmService getJavaService(String javaServiceId);
 }

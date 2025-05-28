@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.job.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.RequiredArgsConstructor;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -17,7 +17,7 @@ import org.quartz.JobExecutionException;
 @RequiredArgsConstructor
 public class JobImplementationService implements Job {
 
-    private final Service service;
+    private final ScmService service;
     private final JsonNode payload;
 
     @Override

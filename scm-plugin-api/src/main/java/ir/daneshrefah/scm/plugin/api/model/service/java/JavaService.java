@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.model.service.java;
 
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class JavaService extends Service {
+public class JavaService extends ScmService {
 
     private String javaImplementationClassName;
     private boolean implemented;

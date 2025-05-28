@@ -5,10 +5,13 @@ import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.core.entity.gateway.ServiceOperationEntity;
 import org.mapstruct.*;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, uses = {ServiceMapper.class})
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING, uses = {ServiceMapper.class})
 public interface ServiceOperationMapper {
     ServiceOperationEntity toEntity(ServiceOperation serviceOperation);
 
-    ServiceOperation toDto(ServiceOperationEntity serviceOperationEntity);
+    ServiceOperation toModel(ServiceOperationEntity serviceOperationEntity);
 
 }

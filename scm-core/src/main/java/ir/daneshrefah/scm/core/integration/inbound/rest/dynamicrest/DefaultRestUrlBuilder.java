@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest;
 
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -34,7 +34,7 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
         return urlBuilder.toString();
     }
 
-    private String extractServiceVersion(Service service) {
+    private String extractServiceVersion(ScmService service) {
         if (null == service) {
             return null;
         }
@@ -42,7 +42,7 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
         return "/v" + result;
     }
 
-    private String extractServiceUrl(Service service) {
+    private String extractServiceUrl(ScmService service) {
         if (null == service) {
             return null;
         }

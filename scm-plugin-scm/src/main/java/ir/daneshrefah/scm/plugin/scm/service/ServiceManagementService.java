@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.dto.service.java.JavaServiceEditRequest;
 import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.parent.ParentServiceEditRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.service.ServiceService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
@@ -42,12 +42,12 @@ public class ServiceManagementService extends AbstractJavaService {
 
 
     @JavaService(serviceCode = SVC_SERVICE_LIST)
-    public PagedResponseData<Service> serviceList(ServiceFindRequest request) {
+    public PagedResponseData<ScmService> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
     @JavaService(serviceCode = SVC_SERVICE_BY_CODE)
-    public Service findServiceByCode(String serviceCode) {
+    public ScmService findServiceByCode(String serviceCode) {
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
         }
@@ -55,7 +55,7 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_SERVICE_BY_ID)
-    public Service findServiceById(String serviceId) {
+    public ScmService findServiceById(String serviceId) {
         if (StringUtils.isEmpty(serviceId)) {
             return null;
         }
@@ -63,12 +63,12 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_SERVICE_EDIT)
-    public Service updateService(ServiceInfoEditRequest request) {
+    public ScmService updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
     }
 
     @JavaService(serviceCode = SVC_SERVICE_CREATE)
-    public Service createService(ServiceInfoRequest request) {
+    public ScmService createService(ServiceInfoRequest request) {
         return this.service.createService(request);
     }
 
@@ -100,7 +100,7 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
     @JavaService(serviceCode = SVC_PARENT_SERVICE_LIST)
-    public PagedResponseData<Service> parentServiceList(ParentServiceFindRequest request) {
+    public PagedResponseData<ScmService> parentServiceList(ParentServiceFindRequest request) {
         return this.service.findParentServiceList(request);
     }
 

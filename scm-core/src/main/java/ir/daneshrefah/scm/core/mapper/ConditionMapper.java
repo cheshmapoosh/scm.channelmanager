@@ -1,58 +1,39 @@
 package ir.daneshrefah.scm.core.mapper;
 
-import ir.daneshrefah.scm.common.data.mapper.TerminalMapper;
-import ir.daneshrefah.scm.core.entity.condition.*;
 import ir.daneshrefah.scm.common.model.condition.Condition;
+import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
+import ir.daneshrefah.scm.core.entity.condition.ServiceConditionEntity;
+import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
+import ir.daneshrefah.scm.core.entity.condition.TerminalServiceConditionEntity;
 import ir.daneshrefah.scm.core.model.condition.ServiceCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalCondition;
 import ir.daneshrefah.scm.core.model.condition.TerminalServiceCondition;
-import ir.daneshrefah.scm.common.model.service.Service;
-import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
-import ir.daneshrefah.scm.core.entity.condition.ConditionEntity;
-import ir.daneshrefah.scm.core.entity.condition.TerminalConditionEntity;
-import ir.daneshrefah.scm.core.entity.service.ServiceEntity;
-import ir.daneshrefah.scm.common.data.entity.terminal.TerminalEntity;
-import ir.daneshrefah.scm.core.entity.terminal.TerminalServiceAccessEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING,
+        uses = {ScmServiceMapper.class,TerminalServiceAccessMapper.class})
 public interface ConditionMapper {
 
-    ConditionMapper INSTANCE = Mappers.getMapper(ConditionMapper.class);
-
-    @Mapping(target = "bypassIgnorable" , ignore = true)
+    @Mapping(target = "bypassIgnorable", ignore = true)
     Condition toCondition(ConditionEntity conditionEntity);
+    @Named("toModel")
+    Condition toModel(ConditionEntity conditionEntity);
 
-    @Mapping(source = "service", target = "service", qualifiedByName = "mapService")
-    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "service", target = "service", qualifiedByName = "toService")
+    @Mapping(source = "condition", target = "condition", qualifiedByName = "toModel")
     ServiceCondition toServiceCondition(ServiceConditionEntity serviceConditionEntity);
 
-    @Mapping(source = "terminal", target = "terminal", qualifiedByName = "mapTerminal")
-    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "terminal", target = "terminal")
+    @Mapping(source = "condition", target = "condition", qualifiedByName = "toModel")
     TerminalCondition toTerminalCondition(TerminalConditionEntity conditionEntity);
 
-    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess", qualifiedByName = "mapTerminalService")
-    @Mapping(source = "condition",target = "condition",qualifiedByName = "mapCondition")
+    @Mapping(source = "terminalServiceAccess", target = "terminalServiceAccess")
+    @Mapping(source = "condition", target = "condition", qualifiedByName = "toModel")
     TerminalServiceCondition toTerminalServiceCondition(TerminalServiceConditionEntity serviceConditionEntity);
 
-    @Named("mapService")
-    default Service mapService(ServiceEntity entity) {
-        return ServiceMapper.INSTANCE.toService(entity);
-    }
-
-    @Named("mapTerminal")
-    default Terminal mapTerminal(TerminalEntity entity) {
-        return TerminalMapper.INSTANCE.toModel(entity);
-    }
-    @Named("mapTerminalService")
-    default TerminalServiceAccess mapTerminalService(TerminalServiceAccessEntity entity) {
-        return TerminalServiceAccessMapper.INSTANCE.toModel(entity);
-    }
-
-    @Named("mapCondition")
-    default Condition mapCondition(ConditionEntity conditionEntity) {return  ConditionMapper.INSTANCE.toCondition(conditionEntity);}
 }

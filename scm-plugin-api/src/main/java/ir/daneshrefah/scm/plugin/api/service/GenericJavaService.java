@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 
 /**
@@ -29,7 +29,7 @@ public abstract class GenericJavaService<S, T> extends AbstractJavaService {
     }
 
     @Override
-    protected Object internalExecute(Message message, Service service, Object payload) {
+    protected Object internalExecute(Message message, ScmService service, Object payload) {
         S input = deserializeJsonNodeToPOJO(message.getPayload());
         T resultPOJO = execute(input, message.getHeader());
         JsonNode result = serializePOJOToJsonNode(resultPOJO);

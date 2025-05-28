@@ -1,13 +1,14 @@
 package ir.daneshrefah.scm.core.services.service;
 
 import ir.daneshrefah.scm.common.constant.ServiceCode;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
 import ir.daneshrefah.scm.common.model.service.ServiceStatus;
 import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.entity.service.JavaServiceEntity;
 import ir.daneshrefah.scm.core.integration.service.scanner.impl.JavaServiceMetadata;
 import ir.daneshrefah.scm.core.integration.service.scanner.spec.ClassContextCache;
-import ir.daneshrefah.scm.core.mapper.ServiceMapper;
+import ir.daneshrefah.scm.core.mapper.ScmServiceMapper;
 import ir.daneshrefah.scm.core.repository.ServiceRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.java.JavaService;
 import ir.daneshrefah.scm.plugin.api.model.service.parent.ParentService;
@@ -30,8 +31,9 @@ public class JavaServiceMetadataProviderService {
 
     public static final String SYSTEM_NAME = "SYSTEM";
     private final ServiceRepository serviceRepository;
+    private final ScmServiceMapper scmServiceMapper;
 
-    public void javaServiceSynchronization(List<ir.daneshrefah.scm.common.model.service.Service> services) {
+    public void javaServiceSynchronization(List<ScmService> services) {
         Map<String, Object> metaDataMap = ClassContextCache.getInstance().getRepository(JAVA_SERVICE_METADATA);
         //SYNC EXISTS SERVICES
         services
@@ -52,11 +54,11 @@ public class JavaServiceMetadataProviderService {
         metaDataMap.values()
                 .stream()
                 .map(JavaServiceMetadata.class::cast)
-                .filter(metaData -> !services.stream().map(ir.daneshrefah.scm.common.model.service.Service::getCode).toList().contains(metaData.getCode().name()))
+                .filter(metaData -> !services.stream().map(ScmService::getCode).toList().contains(metaData.getCode().name()))
                 .forEach(javaServiceMetadata -> createNewJavaService(services, javaServiceMetadata));
     }
 
-    private void syncJavaServiceMethod(JavaService javaService, JavaServiceMetadata metadata, List<ir.daneshrefah.scm.common.model.service.Service> services) {
+    private void syncJavaServiceMethod(JavaService javaService, JavaServiceMetadata metadata, List<ScmService> services) {
         ParentService parentService = provideJavaServiceParent(services, javaService, metadata);
         String title = metadata.getTitle();
         javaService.setTitle(StringUtils.isBlank(title) ? javaService.getTitle() : title);
@@ -77,7 +79,7 @@ public class JavaServiceMetadataProviderService {
         javaService.setNoneEditableProperties(getNonEditablePropertiesList(metadata));
     }
 
-    private void createNewJavaService(List<ir.daneshrefah.scm.common.model.service.Service> services, JavaServiceMetadata metadata) {
+    private void createNewJavaService(List<ScmService> services, JavaServiceMetadata metadata) {
         if (isCreatable(metadata)) {
             ParentService parentService = provideJavaServiceParent(services, null, metadata);
             JavaService javaService = new JavaService();
@@ -96,13 +98,13 @@ public class JavaServiceMetadataProviderService {
             javaService.setParent(parentService);
             javaService.setCreator(SYSTEM_NAME);
             javaService.setLastEditor(SYSTEM_NAME);
-            JavaServiceEntity saved = serviceRepository.save(ServiceMapper.INSTANCE.toEntity(javaService));
-            JavaService model = ServiceMapper.INSTANCE.toModel(saved);
+            JavaServiceEntity saved = serviceRepository.save(scmServiceMapper.toEntity(javaService));
+            JavaService model = scmServiceMapper.toModel(saved);
             model.setImplemented(true);
             model.setNoneEditableProperties(getNonEditablePropertiesList(metadata));
             services.add(model);
             log.info(">>> NEW JAVA SERVICE HAS BEEN REGISTERED WITH CODE [{}] ", saved.getCode());
-        }else {
+        } else {
             log.warn(">>>  JAVA SERVICE DOSE NOT HAVE REQUIRED DATA FOR AUTO CREATION [{}] ", metadata.getCode());
         }
     }
@@ -144,7 +146,7 @@ public class JavaServiceMetadataProviderService {
     }
 
     private ParentService provideJavaServiceParent(
-            List<ir.daneshrefah.scm.common.model.service.Service> services,
+            List<ScmService> services,
             JavaService javaService,
             JavaServiceMetadata metadata) {
         ServiceCode parentCode = metadata.getParentCode();

@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.InterceptorConfig;
 import ir.daneshrefah.scm.plugin.api.inbound.interceptor.MessageInterceptor;
 import ir.daneshrefah.scm.uaa.client.ClientAuthenticationException;
@@ -75,7 +75,7 @@ public class AuthenticationInterceptor extends MessageInterceptor {
     }
 
     @Override
-    protected boolean support(Service service) {
+    protected boolean support(ScmService service) {
         return MessageInputContext.getCurrentContext().getTerminal().isSupportCheckAuthentication() &&
                 service.getCheckAccessFirstAuthentication();
     }

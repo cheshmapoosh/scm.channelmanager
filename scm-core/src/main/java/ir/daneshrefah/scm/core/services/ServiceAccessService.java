@@ -24,10 +24,11 @@ import java.util.List;
 public class ServiceAccessService {
 
     private final ServiceAccessRepository serviceAccessRepository;
+    private final ServiceAccessMapper serviceAccessMapper;
 
     public List<ServiceAccess> findByPersonUsername(String personUsername) {
         List<ServiceAccessEntity> entities = serviceAccessRepository.findByPersonProfileId(personUsername);
-        return ServiceAccessMapper.INSTANCE.entitiesToModels(entities);
+        return serviceAccessMapper.entitiesToModels(entities);
     }
 
 }

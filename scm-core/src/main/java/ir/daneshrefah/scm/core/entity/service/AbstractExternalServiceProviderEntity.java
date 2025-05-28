@@ -6,13 +6,10 @@ import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
 import ir.daneshrefah.scm.core.converter.ServiceProviderStatusConverter;
-import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
-import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.
@@ -25,7 +22,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
-@DiscriminatorColumn(name = "PROTOCOL",discriminatorType =  DiscriminatorType.INTEGER)
+@DiscriminatorColumn(name = "PROTOCOL", discriminatorType = DiscriminatorType.INTEGER)
 public abstract class AbstractExternalServiceProviderEntity extends AbstractStringAuditableEntity<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,13 +39,6 @@ public abstract class AbstractExternalServiceProviderEntity extends AbstractStri
     @ManyToOne
     @JoinColumn(name = "CORE_BANKING_SYSTEM_ID")
     private AssetProviderEntity assetProvider;
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "SRV_PROVIDER_ID")
-    private List<ResponseEntity> responseConditions;
-    @OneToMany(fetch = FetchType.EAGER,orphanRemoval = true)
-    @JoinTable(name = "TBL_SCM_PARAMETER_SERVICE_PROVIDER_RELATION"
-            , joinColumns = @JoinColumn(name = "SERVICE_PROVIDER_ID")
-            , inverseJoinColumns = @JoinColumn(name = "PARAMETER_ID"))
-    private List<ParameterEntity> parameters;
+
 
 }

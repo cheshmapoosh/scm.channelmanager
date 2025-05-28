@@ -12,7 +12,6 @@ import ir.daneshrefah.scm.core.config.ApplicationConfig;
 import ir.daneshrefah.scm.core.entity.service.composition.CompositionServiceEntity;
 import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -24,8 +23,8 @@ import java.util.Objects;
  */
 public class ServiceEntityFactory {
 
-    public static ServiceEntity createServiceEntity(ServiceInfoRequest request) {
-        ServiceEntity entity = createEmptyServiceEntity(request.getImplementationType());
+    public static ScmServiceEntity createServiceEntity(ServiceInfoRequest request) {
+        ScmServiceEntity entity = createEmptyServiceEntity(request.getImplementationType());
         entity.setCode(request.getCode());
         entity.setTitle(request.getTitle());
         entity.setAlias(Objects.nonNull(request.getAlias()) ? request.getAlias() : "");
@@ -41,16 +40,14 @@ public class ServiceEntityFactory {
         entity.setCheckAccessAsset(null != request.getCheckAccessAsset() ? request.getCheckAccessAsset() : false);
         entity.setAmountProperty(request.getAmountProperty());
         entity.setAssetProperty(request.getAssetProperty());
-        if (entity instanceof CompositionServiceEntity compositionService){
+        if (entity instanceof CompositionServiceEntity compositionService) {
             compositionService.setCompositionType(request.getCompositionType());
         }
-        if (entity instanceof RestExternalServiceEntity restExternalService){
+        if (entity instanceof RestExternalServiceEntity restExternalService) {
             restExternalService.setPath(request.getPath());
             restExternalService.setHttpMethod(request.getHttpMethod());
             restExternalService.setRequestBodyType(request.getRequestBodyType());
             restExternalService.setRequestContentType(request.getRequestContentType());
-            restExternalService.setParameters(new ArrayList<>());
-            restExternalService.setResponseList(new ArrayList<>());
         }
         return entity;
     }
@@ -71,7 +68,7 @@ public class ServiceEntityFactory {
         return entity;
     }
 
-    public static CompositionServiceEntity createServiceEntity(CompositionServiceCreateRequest request){
+    public static CompositionServiceEntity createServiceEntity(CompositionServiceCreateRequest request) {
         CompositionServiceEntity entity = new CompositionServiceEntity();
         entity.setCompositionType(request.getCompositionType());
         entity.setCode(request.getCode());
@@ -91,12 +88,12 @@ public class ServiceEntityFactory {
         return entity;
     }
 
-    public static ServiceEntity createEmptyServiceEntity(ServiceImplementationType implementationType) {
+    public static ScmServiceEntity createEmptyServiceEntity(ServiceImplementationType implementationType) {
         return createEmptyServiceEntity(null, implementationType);
     }
 
-    public static ServiceEntity createEmptyServiceEntity(String serviceId, ServiceImplementationType implementationType) {
-        ServiceEntity result = null;
+    public static ScmServiceEntity createEmptyServiceEntity(String serviceId, ServiceImplementationType implementationType) {
+        ScmServiceEntity result = null;
         switch (implementationType) {
             case CUSTOM_EXTERNAL:
                 result = new CustomExternalServiceEntity();
@@ -112,9 +109,6 @@ public class ServiceEntityFactory {
                 break;
             case PARENT:
                 result = new ParentServiceEntity();
-                break;
-            case PROXY:
-                result = new ProxyServiceEntity();
                 break;
             case BPMN:
                 return null;

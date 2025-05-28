@@ -2,13 +2,13 @@ package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceCreateRequest;
 import ir.daneshrefah.scm.common.dto.service.composition.CompositionServiceEditRequest;
-import ir.daneshrefah.scm.common.model.service.Service;
+import ir.daneshrefah.scm.common.model.service.ScmService;
 
 public interface CompositionServicesService {
 
-    Service getCompositionService(String compositionServiceId);
+    ScmService getCompositionService(String compositionServiceId);
 
-    Service editCompositionService(CompositionServiceEditRequest request);
+    ScmService editCompositionService(CompositionServiceEditRequest request);
 
-    Service createCompositionService(CompositionServiceCreateRequest request);
+    ScmService createCompositionService(CompositionServiceCreateRequest request);
 }
