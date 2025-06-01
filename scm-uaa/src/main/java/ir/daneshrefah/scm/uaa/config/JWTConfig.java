@@ -43,6 +43,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
@@ -196,7 +198,10 @@ public class JWTConfig {
         if (scopeClaim instanceof Collection<?> scopes && scopes.contains("openid")) {
             String jtiTokenId = jwtClaims.getClaim(CLAIM_KEY_JWT_IDENTIFIER);
             String cacheKey = String.join(KEY_SEPARATOR, user.getNickname(), user.getTerminalCode());
-            cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId);
+            Instant issuedAt = jwtClaims.getClaim("iat");
+            Instant expiresAt = jwtClaims.getClaim("exp");
+            long ttl = Duration.between(issuedAt, expiresAt).toMinutes();
+            cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId, ttl);
         }
     }
 
