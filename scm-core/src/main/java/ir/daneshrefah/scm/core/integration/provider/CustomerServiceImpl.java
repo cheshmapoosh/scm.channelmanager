@@ -29,6 +29,7 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
+import ir.daneshrefah.scm.otp.service.OtpClientService;
 import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
@@ -338,6 +339,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Override
     @Transactional
     public List<String> assignMembershipTerminalAccess(MembershipChannelAccessAssignmentRequest request) {
+        String otpCode = request.getOtpCode();
+        //validation //TODO
         CmChannel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         LegacyTerminalDetail legacyTerminalDetail = findLegacyTerminalDetail(channel.getId());
