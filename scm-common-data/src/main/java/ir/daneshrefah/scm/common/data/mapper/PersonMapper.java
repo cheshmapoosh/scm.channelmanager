@@ -2,8 +2,7 @@ package ir.daneshrefah.scm.common.data.mapper;
 
 import ir.daneshrefah.scm.common.data.entity.person.*;
 import ir.daneshrefah.scm.common.model.person.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.ArrayList;
@@ -41,6 +40,12 @@ public interface PersonMapper {
         return null;
     }
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void update(GeneralRealPerson model, @MappingTarget GeneralRealPersonEntity entity);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void update(GeneralLegalPerson model, @MappingTarget GeneralLegalPersonEntity entity);
+
     @Named("toPersonEntity")
     default GeneralPersonEntity toPersonEntity(GeneralPerson person) {
         if (person instanceof CorporatePerson corporatePerson) {
@@ -55,7 +60,7 @@ public interface PersonMapper {
             return toEntity(individualPerson);
         } else if (person instanceof EmployeePerson employeePerson) {
             return toEntity(employeePerson);
-        }else if (person instanceof ClientPerson clientPerson) {
+        } else if (person instanceof ClientPerson clientPerson) {
             return toEntity(clientPerson);
         }
         return null;

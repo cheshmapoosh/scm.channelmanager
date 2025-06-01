@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -42,7 +43,7 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Long> {
     @Convert(converter = NationalityConverter.class)
     private Nationality nationality;
     @Column(name = "ISSUE_DATE")
-    private LocalDate registerIssueDate;
+    private LocalDateTime registerIssueDate;
     @Column(name = "ISSUE_PLACE")
     private String issuePlace;
     @Column(name = "ACTIVE")

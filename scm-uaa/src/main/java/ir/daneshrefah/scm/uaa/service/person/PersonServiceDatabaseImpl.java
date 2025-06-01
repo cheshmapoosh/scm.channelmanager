@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.service.person.AbstractPersonServiceDatabaseImpl;
+import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
@@ -68,23 +69,6 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         }
     }
 
-    @Override
-    public GeneralPerson syncPersonInfoFromCIF(PersonFindRequest request) {
-        ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request body"));
-        ValidationUtils.checkBlankString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
-        List<GeneralPerson> cifPersonInfo = findCIFPersonInfo(request);
-        ValidationUtils.checkNullOrEmptyList(cifPersonInfo, () -> new NoMatchRecordFoundException("cif person"));
-        return saveFoundCif(cifPersonInfo);
-    }
-
-    @Override
-    public GeneralPerson syncPersonInfoFromCIF(String personId) {
-        ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
-        ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
-        PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
-        return syncPersonInfoFromCIF(request);
-    }
 
     @Override
     public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId) {
@@ -159,42 +143,62 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         return diffGeneralPerson;
     }
 
-
-    private GeneralPerson saveFoundCif(List<GeneralPerson> cifPersonInfo) {
+    @Override
+    public GeneralPerson syncPersonByCif(PersonFindRequest request) {
+        List<GeneralPerson> cifPersonInfo = findCIFPersonInfo(request);
+        ValidationUtils.checkNullOrEmptyList(cifPersonInfo, () -> new NoMatchRecordFoundException("cif person"));
         if (cifPersonInfo.size() > 1) {
             throw new TooManyRecordFoundException("cif person", cifPersonInfo.size());
         }
-        GeneralPersonEntity personEntity = PersonMapper.INSTANCE.toPersonEntity(cifPersonInfo.get(0));
-        personEntity.setUsername(extractUsername(personEntity));
-        personEntity.setStatus(PersonStatus.ACTIVE);
-        personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
-        if (cifPersonInfo.size() > 1) {
-            throw new TooManyRecordFoundException("local person", cifPersonInfo.size());
-        }
-        personIdEnricher(personEntity);
-        personEntity = personRepository.save(personEntity);
-        return PersonMapper.INSTANCE.toPerson(personEntity);
-    }
-
-    private void personIdEnricher(GeneralPersonEntity personEntity) {
-        if (Objects.isNull(personEntity.getId())) {
-            if (personEntity instanceof GeneralRealPersonEntity realPersonEntity) {
-                GeneralRealPersonEntity foundPerson = personRepository.findRealPersonByNationalCode(realPersonEntity.getNationalCode());
-                if (Objects.nonNull(foundPerson)) {
-                    personEntity.setId(foundPerson.getId());
-                }
-            } else if (personEntity instanceof GeneralLegalPersonEntity legalPersonEntity) {
-                personRepository
-                        .findGeneralLegalPersonEntityByNationalId(legalPersonEntity.getSubOrganizationId())
-                        .stream()
-                        .filter(p -> Objects.equals(legalPersonEntity.getSubOrganizationId(), p.getSubOrganizationId()))
-                        .findFirst()
-                        .ifPresent(p -> {
-                            personEntity.setId(p.getId());
-                        });
+        GeneralPerson cifPerson = cifPersonInfo.get(0);
+        GeneralPerson localPersonInfo = findPagedPersonList(request).getData().stream().findFirst().orElse(null);
+        GeneralPersonEntity toUpdatePerson;
+        if (Objects.isNull(localPersonInfo)) {
+            //CREATING NEW PERSON
+            toUpdatePerson = PersonMapper.INSTANCE.toPersonEntity(cifPerson);
+            toUpdatePerson.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
+        } else {
+            //UPDATE PERSON
+            toUpdatePerson = personRepository.findById(localPersonInfo.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scm person"));
+            if (cifPerson instanceof GeneralLegalPerson legalPerson) {
+                PersonMapper.INSTANCE.update(legalPerson, (GeneralLegalPersonEntity) toUpdatePerson);
+            } else {
+                GeneralRealPerson realPerson = (GeneralRealPerson) cifPerson;
+                PersonMapper.INSTANCE.update(realPerson, (GeneralRealPersonEntity) toUpdatePerson);
             }
         }
+        toUpdatePerson.setUsername(extractUsername(toUpdatePerson));
+        toUpdatePerson.setStatus(PersonStatus.ACTIVE);
+        toUpdatePerson = personRepository.save(toUpdatePerson);
+        return PersonMapper.INSTANCE.toPerson(toUpdatePerson);
     }
+
+
+
+    @Override
+    public GeneralPerson syncPersonByCif(Long personId) {
+        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
+        PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
+        List<GeneralPerson> cifPersonInfo = findCIFPersonInfo(request);
+        ValidationUtils.checkNullOrEmptyList(cifPersonInfo, () -> new NoMatchRecordFoundException("cif person"));
+        if (cifPersonInfo.size() > 1) {
+            throw new TooManyRecordFoundException("cif person", cifPersonInfo.size());
+        }
+        GeneralPerson cifPerson = cifPersonInfo.get(0);
+        //UPDATE PERSON
+        GeneralPersonEntity toUpdatePerson = personRepository.findById(localPersonInfo.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scm person"));
+        if (cifPerson instanceof GeneralLegalPerson legalPerson) {
+            PersonMapper.INSTANCE.update(legalPerson, (GeneralLegalPersonEntity) toUpdatePerson);
+        } else {
+            GeneralRealPerson realPerson = (GeneralRealPerson) cifPerson;
+            PersonMapper.INSTANCE.update(realPerson, (GeneralRealPersonEntity) toUpdatePerson);
+        }
+        toUpdatePerson.setUsername(extractUsername(toUpdatePerson));
+        toUpdatePerson.setStatus(PersonStatus.ACTIVE);
+        toUpdatePerson = personRepository.save(toUpdatePerson);
+        return PersonMapper.INSTANCE.toPerson(toUpdatePerson);
+    }
+
 
     @Override
     public List<Role> findPersonRoleList(Long personId) {
