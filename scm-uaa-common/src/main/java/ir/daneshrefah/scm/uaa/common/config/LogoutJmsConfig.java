@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.config.mq;
+package ir.daneshrefah.scm.uaa.common.config;
 
 import com.ibm.mq.jakarta.jms.MQConnectionFactory;
 import com.ibm.mq.jakarta.jms.MQTopic;
@@ -20,7 +20,6 @@ import org.springframework.jms.core.JmsTemplate;
 @RequiredArgsConstructor
 public class LogoutJmsConfig {
 
-    @Qualifier("logoutJmsConfigProperties")
     private final LogoutJmsConfigProperties properties;
 
     @Bean(name = "logoutConnectionFactory")
@@ -40,9 +39,9 @@ public class LogoutJmsConfig {
         return factory;
     }
 
-    @Bean
-    public JmsTemplate logoutJmsTemplate(ConnectionFactory logoutConnectionFactory) {
-        JmsTemplate jmsTemplate = new JmsTemplate(logoutConnectionFactory);
+    @Bean(name = "logoutJmsTemplate")
+    public JmsTemplate logoutJmsTemplate(@Qualifier("logoutConnectionFactory") ConnectionFactory connectionFactory) {
+        JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
         jmsTemplate.setPubSubDomain(true);
         jmsTemplate.setDefaultDestinationName(properties.getTopic());
         jmsTemplate.setDeliveryMode(DeliveryMode.PERSISTENT);
@@ -51,7 +50,7 @@ public class LogoutJmsConfig {
         return jmsTemplate;
     }
 
-    @Bean
+    @Bean(name = "logoutTopic")
     public Destination logoutTopic() throws JMSException {
         return new MQTopic(properties.getTopic());
     }

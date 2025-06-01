@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.config.mq;
+package ir.daneshrefah.scm.uaa.common.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

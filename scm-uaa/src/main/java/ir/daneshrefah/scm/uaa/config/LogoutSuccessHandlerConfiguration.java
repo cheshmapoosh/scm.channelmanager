@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.uaa.service.logout.LogoutService;
+import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
