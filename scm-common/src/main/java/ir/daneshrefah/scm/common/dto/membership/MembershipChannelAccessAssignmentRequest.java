@@ -16,4 +16,7 @@ public class MembershipChannelAccessAssignmentRequest extends CustomerFindReques
     @NotBlank
     private String terminalCode;
     private List<String> accountNumbers;
+    @NotNull
+    @NotBlank
+    private String otpCode;
 }
