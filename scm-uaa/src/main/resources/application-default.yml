@@ -103,6 +103,7 @@ scm:
       enable: true
   jms:
     logout:
+      enabled: true
       host: 10.15.1.185
       port: 1818
       channel: SYSTEM.ADMIN.SVRCONN

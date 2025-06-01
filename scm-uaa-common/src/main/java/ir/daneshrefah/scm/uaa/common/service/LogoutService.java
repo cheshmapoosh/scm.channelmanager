@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.uaa.service.logout;
+package ir.daneshrefah.scm.uaa.common.service;
 
-import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.config.LogoutJmsConfigProperties;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.config.mq.LogoutJmsConfigProperties;
+import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import jakarta.jms.Destination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class LogoutService {
+
     public static final String DOUBLE_COLON = "::";
     private final JmsTemplate logoutJmsTemplate;
     private final Destination logoutTopic;
@@ -24,8 +25,8 @@ public class LogoutService {
     public void sendLogoutMessage(Authentication authentication) {
         try {
             if (authentication != null && authentication.isAuthenticated() && properties.getEnabled()) {
-                UserAuthentication userAuthentication = (UserAuthentication) authentication;
-                User user = userAuthentication.getPrincipal();
+                TerminalUserDetails terminalUserDetails = (TerminalUserDetails) authentication.getPrincipal();
+                User user = terminalUserDetails.getUser();
                 String value = user.getNickname() + DOUBLE_COLON + user.getTerminalCode();
                 logoutJmsTemplate.send(logoutTopic, session -> session.createTextMessage(value));
             }
