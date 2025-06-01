@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -19,6 +20,7 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +51,10 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 @Configuration
 public class JWTConfig {
+
+    private static final String JWT_ID_CACHE_NAME = "jwt:jti";
+    public static final String KEY_SEPARATOR = "::";
+
     @Value("${scm.security.key-store.name}")
     private String keyStoreFilePath;
     @Value("${scm.security.key-store.password}")
@@ -56,6 +62,8 @@ public class JWTConfig {
     @Value("${scm.security.key-store.alias}")
     private String keyStoreAlias;
 
+    @Autowired
+    private CacheTemplate cacheTemplate;
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
@@ -90,6 +98,7 @@ public class JWTConfig {
                        PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
+                putJtiToCache(user, claims);
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_GRANT, principal.getDetails().getGrantType());
@@ -178,6 +187,17 @@ public class JWTConfig {
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
+    }
+
+    private void putJtiToCache(User user, JwtClaimsSet.Builder claims) {
+        JwtClaimsSet jwtClaims = claims.build();
+        Object scopeClaim = jwtClaims.getClaim("scope");
+        //TODO because of create token two times for login is not good approach
+        if (scopeClaim instanceof Collection<?> scopes && scopes.contains("openid")) {
+            String jtiTokenId = jwtClaims.getClaim(CLAIM_KEY_JWT_IDENTIFIER);
+            String cacheKey = String.join(KEY_SEPARATOR, user.getNickname(), user.getTerminalCode());
+            cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId);
+        }
     }
 
     private Object getPersonMaskedPhoneNumber(GeneralPerson person) {

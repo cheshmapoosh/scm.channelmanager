@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 
@@ -15,8 +16,9 @@ public abstract class AbstractRemoteClientAuthenticationProvider extends Abstrac
     protected final RemoteSecurityServiceProvider remoteSecurityServiceProvider;
 
     protected AbstractRemoteClientAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
-                                                         SessionCache sessionCache) {
-        super(sessionCache);
+                                                         SessionCache sessionCache,
+                                                         CacheTemplate cacheTemplate) {
+        super(sessionCache,cacheTemplate);
         this.remoteSecurityServiceProvider = remoteSecurityServiceProvider;
     }
 

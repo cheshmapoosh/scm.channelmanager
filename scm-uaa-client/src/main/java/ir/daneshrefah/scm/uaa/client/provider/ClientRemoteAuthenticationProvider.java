@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.client.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
@@ -35,8 +36,9 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
     public ClientRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
                                               JwtDecoder jwtDecoder,
                                               ObjectMapper objectMapper,
-                                              SessionCache sessionCache) {
-        super(remoteSecurityServiceProvider, sessionCache);
+                                              SessionCache sessionCache,
+                                              CacheTemplate cacheTemplate) {
+        super(remoteSecurityServiceProvider, sessionCache, cacheTemplate);
         this.jwtDecoder = jwtDecoder;
         this.jwtTokenConverter = new JwtTokenConverter();
         this.objectMapper = objectMapper;
