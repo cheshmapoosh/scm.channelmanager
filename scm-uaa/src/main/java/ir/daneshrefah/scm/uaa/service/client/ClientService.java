@@ -269,7 +269,7 @@ public class ClientService {
         clientPerson.setTitle(request.getTitle());
         clientPerson.setNationality(Nationality.IRANIAN);
         clientPerson.setUsername(request.getNickname());
-        clientPerson.setRegisterIssueDate(LocalDate.now());
+        clientPerson.setRegisterIssueDate(LocalDateTime.now());
         clientPerson.setNationalId(request.getNationalId());
         clientPerson.setStatus(PersonStatus.ACTIVE);
         clientPerson.setPostalCode1(StringUtils.EMPTY);
@@ -339,7 +339,7 @@ public class ClientService {
                     person.setTitleEnglish(request.getTitle());
                     person.setUsername(request.getNickname());
                     person.setNationality(Nationality.IRANIAN);
-                    person.setRegisterIssueDate(LocalDate.now());
+                    person.setRegisterIssueDate(LocalDateTime.now());
                     person.setStatus(PersonStatus.ACTIVE);
                     person.setNationalId(request.getNationalId());
                     person.setArchiveNo(8L); // DATABASE DEFAULT IS 8
