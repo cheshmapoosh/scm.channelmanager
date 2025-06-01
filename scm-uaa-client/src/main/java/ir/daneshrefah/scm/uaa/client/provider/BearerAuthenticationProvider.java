@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.model.person.ClientPerson;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BearerAuthenticationToken;
@@ -75,6 +76,9 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
 //        if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
 //            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
 //        }
+        if (userAuthentication.getPrincipal().getPerson() instanceof ClientPerson){
+            return;
+        }
         if (authentication instanceof BearerAuthenticationToken bearerAuthenticationToken) {
             validateJwtId(jwtDecoder.decode(bearerAuthenticationToken.getToken()), username, authenticationTerminalCode);
         }
