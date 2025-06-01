@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.uaa.service.logout.LogoutService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import java.io.IOException;
 
@@ -21,12 +21,16 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
     private final LogoutService logoutService;
 
     @Override
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         String redirectUri = request.getParameter("redirect_uri");
         String clientId = request.getParameter("client_id");
         String responseType = request.getParameter("response_type");
         String scope = request.getParameter("scope");
         response.setStatus(HttpServletResponse.SC_OK);
+        Authentication cloneAuthentication = null;
+        if (authentication != null) {
+            cloneAuthentication = getAuthenticationClone(authentication);
+        }
         if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
             String serverHost = request.getRequestURL().toString().split("/logout")[0];
             String redirection = serverHost +
@@ -35,7 +39,17 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
                     "&redirect_uri=" + redirectUri +
                     "&scope=" + scope;
             response.sendRedirect(redirection);
+            logoutService.sendLogoutMessage(cloneAuthentication);
         }
-        logoutService.sendLogoutMessage(authentication);
+
+    }
+
+    private static Authentication getAuthenticationClone(Authentication authentication) {
+        try {
+            return SerializationUtils.clone(authentication);
+        } catch (Exception e) {
+            log.error("Failed to serialize object of authentication ", e);
+            return null;
+        }
     }
 }
