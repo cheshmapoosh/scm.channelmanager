@@ -3,10 +3,13 @@ package ir.daneshrefah.scm.otp.service;
 import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.otp.config.RestClientUtils;
 import ir.daneshrefah.scm.otp.dto.VerifyOTORequest;
 import ir.daneshrefah.scm.otp.dto.VerifyOTOResponse;
 import ir.daneshrefah.scm.otp.exception.InvalidPasswordException;
+import ir.daneshrefah.scm.common.constant.otp.OtpReason;
+import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
@@ -20,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.Objects;
+
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CODE;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +47,14 @@ public class RestOtpClientServiceImpl implements OtpClientService {
     @Override
     public boolean verifyOtpOrStaticPasswordLoggedInUser(String authorization, String otpCode, OtpReason reason,String accessParameter) {
         return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason,accessParameter);
+    }
+
+    @Override
+    public boolean verifyByCurrentToken(String otpCode, OtpReason reason){
+        MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
+        String authorization = messageInput.getAuthenticationValue();
+        String accessParameter = messageInput.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
+        return getVerifyOTOResponseResponseEntity(authorization,otpCode,reason,accessParameter);
     }
 
     private boolean getVerifyOTOResponseResponseEntity(String authorization, String otpCode, OtpReason reason,String accessParameter) {
