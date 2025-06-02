@@ -183,7 +183,10 @@ public enum ServiceCode {
     SVC_CONVERTERS_PARENT(ServiceImplementationType.PARENT),
     SVC_CONFIG_PARENT(ServiceImplementationType.PARENT),
     SVC_PARAMETER_PARENT(ServiceImplementationType.PARENT),
-    SVC_LOG_PARENT(ServiceImplementationType.PARENT);
+    SVC_LOG_PARENT(ServiceImplementationType.PARENT),
+
+    /* EXTERNAL SERVICES */
+    SVC_NAB_CUSTOMER_ACCOUNT_LIST(ServiceImplementationType.REST_EXTERNAL);
 
     private final ServiceImplementationType type;
 }
