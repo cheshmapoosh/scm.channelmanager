@@ -51,6 +51,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_AUTHORIZATION;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CODE;
 
@@ -773,6 +775,8 @@ public class UserService {
 
     @Transactional
     public User assignTerminalToPerson(UserAssignTerminalRequest request) {
+        ValidationUtils.checkBlankString(request.getOtpCode(),()-> new InvalidInputException("otpCode"));
+        verifyOtp(request);
         findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
             throw new DuplicatedRecordFoundException(request.getNationalId());
         });
@@ -791,6 +795,30 @@ public class UserService {
         userRepository.flush();
         uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
         return UserMapper.INSTANCE.toModel(userEntity);
+    }
+
+    private void verifyOtp(UserAssignTerminalRequest request) {
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrganizationId())
+                .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        Recipient recipient = Recipient.builder()
+                .address(generalPerson.getMobile1())
+                .identifier(generalPerson.getMobile1())
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        OtpVerifyRequest otpRequest = OtpVerifyRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(OtpReason.BANK_CONSOLE_CUSTOMER_VERIFICATION)
+                .claimCode(request.getOtpCode())
+                .recipient(recipient)
+                .build();
+        OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpRequest);
+        if (!otpVerifyResponse.isSuccessful()){
+            throw new InvalidInputException("otpCode");
+        }
     }
 
     private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {
