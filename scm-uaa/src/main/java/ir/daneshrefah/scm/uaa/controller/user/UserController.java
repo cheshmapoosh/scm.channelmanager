@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

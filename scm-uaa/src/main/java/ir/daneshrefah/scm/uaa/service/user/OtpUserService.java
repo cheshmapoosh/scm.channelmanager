@@ -144,8 +144,8 @@ public class OtpUserService {
                 .orElseThrow(()->new NoMatchRecordFoundException("user"));
         Recipient recipient = Recipient.builder()
                 .address(generalPerson.getMobile1())
-                .identifier(generalPerson.getUsername())
-                .identifierType(UserIdentifierType.PERSON_USERNAME)
+                .identifier(generalPerson.getMobile1())
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
                 .terminalCode(terminalCode)
                 .accessParameter(accessParameter)
                 .build();
