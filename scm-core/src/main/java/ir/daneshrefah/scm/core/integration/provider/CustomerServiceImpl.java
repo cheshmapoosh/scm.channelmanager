@@ -406,12 +406,13 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
         List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, null, null);
         // Analyzing memberships
-        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, person, assetProvider);
+        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList,request.getAccountNumberList(), person, assetProvider);
         return syncMemberships(membershipSyncList);
     }
 
     private List<MembershipSync> createMembershipSyncList(List<Membership> localMemberships,
                                                           List<ExternalAccountResponseData> remoteAccountList,
+                                                          List<String> requestedAcoountList,
                                                           GeneralPerson person, AssetProvider assetProvider) {
         List<MembershipSync> membershipSyncList = new ArrayList<>();
         // Add all remote account with create status
@@ -420,15 +421,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         // If remote account does not any match for any local membership , remote account stay as create status
         // If local membership does not any match for any remote account , local membership added with delete status
         compareLocalMembershipWithMembershipSync(membershipSyncList, localMemberships, assetProvider, person);
-        return filterRequestedAccountList(membershipSyncList,localMemberships);
+        return filterRequestedAccountList(membershipSyncList,requestedAcoountList);
     }
 
-    private List<MembershipSync>  filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<Membership> localMemberships) {
-        if (Objects.nonNull(localMemberships) && !localMemberships.isEmpty()) {
-            List<String> localAccountNumbers = localMemberships.stream().map(Membership::getCustomerAccount).map(CustomerAccount::getAccount).map(Account::getAccountNo).toList();
+    private List<MembershipSync>  filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<String> requestedAcoountList) {
+        if (Objects.nonNull(requestedAcoountList) && !requestedAcoountList.isEmpty()) {
             return membershipSyncList
                     .stream()
-                    .filter(membershipSync -> localAccountNumbers.contains(membershipSync.getAccountNumber().toString()))
+                    .filter(membershipSync -> requestedAcoountList.contains(membershipSync.getAccountNumber().toString()))
                     .toList();
         }
         return membershipSyncList;
@@ -500,7 +500,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         MembershipEntity entity = membershipRepository.findById(localMembership.getId()).orElseThrow(() -> new NoMatchRecordFoundException("localMembership"));
         // Deactivate membership channel access list
         membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_Id(entity.getId())
-                .ifPresent(mca -> {
+                .forEach(mca -> {
                     mca.getMembership().setClose(true);
                     membershipTerminalAccessRepository.save(mca);
                 });
