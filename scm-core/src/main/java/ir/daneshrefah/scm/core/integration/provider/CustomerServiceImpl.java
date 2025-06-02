@@ -13,7 +13,6 @@ import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.dto.membership.*;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
@@ -29,7 +28,6 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
-import ir.daneshrefah.scm.otp.service.OtpClientService;
 import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
@@ -205,15 +203,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             PersonType personType = getRequestCurrentPerson().getPersonType();
             String nationalId = request.getNationalId();
             checkPersonAssetAccess(nationalId);
-            ir.daneshrefah.scm.common.model.service.Service service = assetProvider.getService();
             GeneralPerson person = personService.findPerson(personType, nationalId, request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, service.getCode(), request.getPageNo(), request.getPageSize());
+            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, request.getPageNo(), request.getPageSize());
             return MapToAccountMembership(accountList, request, assetProvider);
         }
         return Collections.emptyList();
     }
 
-    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, String serviceCode, Integer pageNo, Integer pageSize) {
+    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, ServiceCode serviceCode, Integer pageNo, Integer pageSize) {
         if (assetProvider.getCode().equals(AssetProviderCode.NAB)) { // TODO IMPL ANOTHER ASSET PROVIDER
             String nationalId = null;
             Map<String, String> requestMap = new HashMap<>();
@@ -233,7 +230,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 requestMap.put("start", start.toString());
                 requestMap.put("end", Integer.toString(end));
             }
-            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callServiceWithException(serviceCode, requestMap, ExternalAccountResponseData[].class);
+            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callServiceWithException(serviceCode.name(), requestMap, ExternalAccountResponseData[].class);
             return filterActiveAccountResponseDateList(Arrays.stream(nabAccountListResponseData).toList());
         }
         throw new InvalidInputException("assetProviderId");
@@ -407,7 +404,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         AssetProvider assetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(request.getAssetProviderId())).orElseThrow(() -> new InvalidInputException("assetProviderId"));
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
-        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, assetProvider.getService().getCode(), null, null);
+        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, null, null);
         // Analyzing memberships
         List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, person, assetProvider);
         return syncMemberships(membershipSyncList);
@@ -423,6 +420,17 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         // If remote account does not any match for any local membership , remote account stay as create status
         // If local membership does not any match for any remote account , local membership added with delete status
         compareLocalMembershipWithMembershipSync(membershipSyncList, localMemberships, assetProvider, person);
+        return filterRequestedAccountList(membershipSyncList,localMemberships);
+    }
+
+    private List<MembershipSync>  filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<Membership> localMemberships) {
+        if (Objects.nonNull(localMemberships) && !localMemberships.isEmpty()) {
+            List<String> localAccountNumbers = localMemberships.stream().map(Membership::getCustomerAccount).map(CustomerAccount::getAccount).map(Account::getAccountNo).toList();
+            return membershipSyncList
+                    .stream()
+                    .filter(membershipSync -> localAccountNumbers.contains(membershipSync.getAccountNumber().toString()))
+                    .toList();
+        }
         return membershipSyncList;
     }
 
