@@ -12,13 +12,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
 
-    private final LogoutService logoutService;
+    private final Optional<LogoutService> logoutService;
 
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -27,9 +28,11 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
         String responseType = request.getParameter("response_type");
         String scope = request.getParameter("scope");
         response.setStatus(HttpServletResponse.SC_OK);
-        Authentication cloneAuthentication = null;
+        Authentication cloneAuthentication;
         if (authentication != null) {
             cloneAuthentication = getAuthenticationClone(authentication);
+        } else {
+            cloneAuthentication = null;
         }
         if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
             String serverHost = request.getRequestURL().toString().split("/logout")[0];
@@ -39,9 +42,10 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
                     "&redirect_uri=" + redirectUri +
                     "&scope=" + scope;
             response.sendRedirect(redirection);
-            logoutService.sendLogoutMessage(cloneAuthentication);
+            logoutService.ifPresent(service -> {
+                service.sendLogoutMessage(cloneAuthentication);
+            });
         }
-
     }
 
     private static Authentication getAuthenticationClone(Authentication authentication) {

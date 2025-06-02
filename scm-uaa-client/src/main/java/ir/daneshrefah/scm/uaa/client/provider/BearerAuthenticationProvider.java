@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
@@ -35,7 +37,7 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
     private final JwtTokenConverter jwtTokenConverter;
     private static final String JWT_ID_CACHE_NAME = "jwt:jti";
     @Autowired
-    private LogoutService logoutService;
+    private Optional<LogoutService> logoutService;
 
     public BearerAuthenticationProvider(JwtDecoder jwtDecoder,
                                         SessionCache sessionCache,
@@ -93,7 +95,9 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
         String cacheKey = String.format("%s%s%s", username, "::", terminalCode);
         String cachedTokenId = (String) cacheTemplate().getFromCache(JWT_ID_CACHE_NAME, cacheKey);
         if (StringUtils.isBlank(jwtTokenId) || !jwtTokenId.equals(cachedTokenId)) {
-            logoutService.sendLogoutMessage(authentication);
+            logoutService.ifPresent(service -> {
+                service.sendLogoutMessage(authentication);
+            });
             throw new AccessDeniedException("Token mismatch");
         }
     }

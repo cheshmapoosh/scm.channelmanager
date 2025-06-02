@@ -1,19 +1,21 @@
 package ir.daneshrefah.scm.uaa.common.service;
 
+import ir.daneshrefah.scm.uaa.common.config.LogoutJmsConfig;
 import ir.daneshrefah.scm.uaa.common.config.LogoutJmsConfigProperties;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import jakarta.jms.Destination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
 
-@Service
+
 @Slf4j
 @RequiredArgsConstructor
+@ConditionalOnBean(LogoutJmsConfig.class)
 public class LogoutService {
 
     public static final String DOUBLE_COLON = "::";
