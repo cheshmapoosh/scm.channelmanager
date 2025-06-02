@@ -21,7 +21,7 @@ public interface MembershipTerminalAccessRepository extends JpaRepository<Member
 
     Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_IdAndChannelCode(Long membership_Id, String channelCode);
 
-    Optional<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_Id(Long id);
+    List<MembershipTerminalAccessEntity> findMembershipTerminalAccessEntitiesByMembership_Id(Long id);
 
 
 }
