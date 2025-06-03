@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.plugin.api.expose;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.constant.JavaMethodType;
-import ir.daneshrefah.scm.common.constant.Status;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusRequest;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
@@ -70,6 +70,12 @@ public class CustomerManagementService extends AbstractJavaService {
     @SuppressWarnings("unused")
     public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
         return customerService.accountFavoriteActivity(request);
+    }
+
+    @JavaService(serviceCode = SVC_ASSETS_DEFAULT_ACCOUNT)
+    @SuppressWarnings("unused")
+    public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request){
+        return customerService.setDefaultAccount(request);
     }
 
 

@@ -3,13 +3,18 @@ package ir.daneshrefah.scm.core.integration.provider;
 import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.constant.*;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
-import ir.daneshrefah.scm.common.data.mapper.*;
+import ir.daneshrefah.scm.common.data.mapper.CmChannelMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalAccessMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalServiceAccessMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.*;
 import ir.daneshrefah.scm.common.data.service.assets.ChannelServiceAccessService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusRequest;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.dto.membership.*;
@@ -89,8 +94,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final JdbcTemplate jdbcTemplate;
     private final OtpClientService otpClientService;
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
-
-
 
 
     @Override
@@ -301,6 +304,31 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         throw new InvalidInputException("accountNoList");
     }
 
+    @Override
+    @Transactional
+    public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        List<MembershipEntity> memberships = membershipRepository.findAllByPersonUsername(person.getUsername());
+        //SET FALSE STATUS FOR CURRENT DEFAULT ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> Boolean.TRUE.equals(m.getDefaultAccount()))
+                .peek(m -> m.setDefaultAccount(false))
+                .forEach(membershipRepository::save);
+        //SET TRUE STATUS FOR REQUESTED ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> request.getAccountNo().equals(m.getCustomerAccount().getAccount().getAccountNo()))
+                .findFirst()
+                .ifPresentOrElse((membership) -> {
+                    membership.setDefaultAccount(true);
+                    membershipRepository.save(membership);
+                }, () -> {
+                    throw new NoMatchRecordFoundException("accountNo");
+                });
+        return new ChangeDefaultAccountStatusResponse().setDefaultAccountNumber(request.getAccountNo());
+    }
+
     private void applyAccountsFavouriteStatus(Authentication authentication, Iterator<MembershipTerminalAccessEntity> iterator, AccountFavoriteActivityRequest request, AccountFavoriteActivityResponse response) {
         while (iterator.hasNext()) {
             MembershipTerminalAccessEntity entity = iterator.next();
@@ -406,7 +434,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
         List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, null, null);
         // Analyzing memberships
-        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList,request.getAccountNumberList(), person, assetProvider);
+        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, request.getAccountNumberList(), person, assetProvider);
         return syncMemberships(membershipSyncList);
     }
 
@@ -421,10 +449,10 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         // If remote account does not any match for any local membership , remote account stay as create status
         // If local membership does not any match for any remote account , local membership added with delete status
         compareLocalMembershipWithMembershipSync(membershipSyncList, localMemberships, assetProvider, person);
-        return filterRequestedAccountList(membershipSyncList,requestedAcoountList);
+        return filterRequestedAccountList(membershipSyncList, requestedAcoountList);
     }
 
-    private List<MembershipSync>  filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<String> requestedAcoountList) {
+    private List<MembershipSync> filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<String> requestedAcoountList) {
         if (Objects.nonNull(requestedAcoountList) && !requestedAcoountList.isEmpty()) {
             return membershipSyncList
                     .stream()
@@ -717,7 +745,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         if (assignmentType.equals(AssignmentType.REVOKE)) {
             csaList
                     .stream()
-                    .map(csa -> membershipTerminalServiceAccessRepository.findByChannelServiceAccessIdAndAccountNoAndPersonId(csa.getId(), request.getAccountNumber(),person.getId()))
+                    .map(csa -> membershipTerminalServiceAccessRepository.findByChannelServiceAccessIdAndAccountNoAndPersonId(csa.getId(), request.getAccountNumber(), person.getId()))
                     .flatMap(Collection::stream)
                     .forEach(membershipTerminalServiceAccessRepository::delete);
         } else {
