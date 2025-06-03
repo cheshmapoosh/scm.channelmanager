@@ -14,6 +14,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -27,10 +28,11 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "USER_CHANNEL_AUTHENTICATION")
+@SequenceGenerator(name = "ucaGenerator",allocationSize = 1,schema = "REF",sequenceName = "SQUSERCHANNELAUTHENTICATION")
 public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "ucaGenerator")
     @Column(name = "USER_CHANNEL_AUTHENTICATION_ID")
     private Integer id;
     @Column(name = "NICK_NAME")
@@ -77,4 +79,14 @@ public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
     private LocalDate lastDateOfFirstPasswordChange;
     @Column(name = "LAST_REACTION_DATE_TO_PASSWORD")
     private LocalDate lastReactionDateToFirstPasswordChange;
+
+    @PrePersist
+    public void prePersist() {
+        if (Objects.isNull(lastDateOfFirstPasswordChange)) {
+            lastDateOfFirstPasswordChange = LocalDate.now();
+        }
+        if (Objects.isNull(lastReactionDateToFirstPasswordChange)) {
+            lastReactionDateToFirstPasswordChange = LocalDate.now();
+        }
+    }
 }
