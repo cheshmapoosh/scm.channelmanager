@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.plugin.api.service;
 
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusRequest;
+import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.model.asset.Membership;
@@ -28,6 +30,8 @@ public interface CustomerService {
     Membership updateMembershipTerminalAccessMaxWithdrawal(MembershipTerminalAccessWithdrawalLimitUpdateRequest request);
 
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
+
+     ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request);
 
     List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId);
 
