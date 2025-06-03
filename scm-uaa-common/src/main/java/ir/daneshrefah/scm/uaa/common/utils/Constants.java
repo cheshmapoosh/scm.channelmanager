@@ -47,6 +47,7 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
     String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
     String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
+    String OAUTH2_PARAM_AUTHORIZATION = "authorization";
     String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
     String OAUTH2_PARAM_NAME_MOBILE_NUMBER = "mobileNumber";
     String OAUTH2_PARAM_NAME_USER_CLAIM = "claim_code";
@@ -70,6 +71,7 @@ public interface Constants {
     String OAUTH2_ERROR_CODE_IS_DISABLED = "disabled_user";
     String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";
     String OAUTH2_ERROR_CODE_INVALID_CAPTCHA = "invalid_captcha";
+    String OAUTH2_ERROR_CODE_INVALID_TOKEN = "invalid_token";
 
     //     String CHANNEL_HEADER ="Channel";
 //     String AGENT_HEADER ="Agent";

@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.config;
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
+import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
@@ -13,6 +14,7 @@ import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticati
 import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,10 +52,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -76,6 +75,15 @@ public class SecurityConfig {
     private CorsConfigurationSource configurationSource;
     @Autowired
     private LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
+
+    @Autowired
+    private LogoutService logoutService;
+
+    @Autowired
+    private CacheTemplate cacheTemplate;
+
+    @Autowired
+    private UserService userService;
 
     @Bean
     @Order(1)
@@ -144,7 +152,7 @@ public class SecurityConfig {
                                                           GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheTemplate, userService);
         http
 //                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))

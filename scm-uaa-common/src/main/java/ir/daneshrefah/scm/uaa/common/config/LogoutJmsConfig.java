@@ -11,7 +11,6 @@ import jakarta.jms.JMSException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.core.JmsTemplate;
@@ -19,7 +18,6 @@ import org.springframework.jms.core.JmsTemplate;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "scm.jms.logout", name = "enabled", havingValue = "true")
 public class LogoutJmsConfig {
 
     private final LogoutJmsConfigProperties properties;
