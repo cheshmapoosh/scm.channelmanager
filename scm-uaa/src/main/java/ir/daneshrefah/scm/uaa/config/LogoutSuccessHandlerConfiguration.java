@@ -7,19 +7,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
 
-    private final Optional<LogoutService> logoutService;
+    private final LogoutService logoutService;
+
+    private final JwtDecoder jwtDecoder;
 
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -29,10 +32,14 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
         String scope = request.getParameter("scope");
         response.setStatus(HttpServletResponse.SC_OK);
         Authentication cloneAuthentication;
-        if (authentication != null) {
-            cloneAuthentication = getAuthenticationClone(authentication);
-        } else {
-            cloneAuthentication = null;
+        String jwtStr = request.getHeader("authorization");
+        if (StringUtils.isNotBlank(jwtStr)) {
+            Jwt decode =jwtDecoder.decode(jwtStr.replace("Bearer ",""));
+            String username = decode.getClaim("sub");
+            String terminal = decode.getClaim("trm");
+            logoutService.sendLogoutMessage(username, terminal);
+        } else if (authentication != null) {
+            logoutService.sendLogoutMessage(authentication);
         }
         if (!(StringUtils.isEmpty(responseType) || StringUtils.isEmpty(redirectUri) || StringUtils.isEmpty(clientId) || StringUtils.isEmpty(scope))) {
             String serverHost = request.getRequestURL().toString().split("/logout")[0];
@@ -42,9 +49,6 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
                     "&redirect_uri=" + redirectUri +
                     "&scope=" + scope;
             response.sendRedirect(redirection);
-            logoutService.ifPresent(service -> {
-                service.sendLogoutMessage(cloneAuthentication);
-            });
         }
     }
 

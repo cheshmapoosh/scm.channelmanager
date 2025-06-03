@@ -195,14 +195,14 @@ public class JWTConfig {
         JwtClaimsSet jwtClaims = claims.build();
         Object scopeClaim = jwtClaims.getClaim("scope");
         //TODO because of create token two times for login is not good approach
-        if (scopeClaim instanceof Collection<?> scopes && scopes.contains("openid")) {
+//        if (scopeClaim instanceof Collection<?> scopes && scopes.contains("openid")) {
             String jtiTokenId = jwtClaims.getClaim(CLAIM_KEY_JWT_IDENTIFIER);
             String cacheKey = String.join(KEY_SEPARATOR, user.getNickname(), user.getTerminalCode());
             Instant issuedAt = jwtClaims.getClaim("iat");
             Instant expiresAt = jwtClaims.getClaim("exp");
             long ttl = Duration.between(issuedAt, expiresAt).toMinutes();
             cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId, ttl);
-        }
+//        }
     }
 
     private Object getPersonMaskedPhoneNumber(GeneralPerson person) {
