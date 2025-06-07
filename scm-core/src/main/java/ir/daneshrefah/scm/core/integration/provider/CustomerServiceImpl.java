@@ -630,6 +630,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         account.setClose(AccountStatus.CLOSED.getCode() == nabAccount.getAccountStatusCode() ? 1 : 0);
         account.setAssetProvider(assetProviderRepository.findById(assetProvider.getId()).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId")));
         account.setCloseDate((nabAccount.getAccountStatusCode().equals(1)) ? LocalDateTime.now() : null);
+        account.setReasonClose(0);
         return account;
     }
 
