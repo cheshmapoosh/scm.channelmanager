@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
 import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
-import ir.daneshrefah.scm.common.plugin.PluginHandler;
+import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.core.integration.template.context.TemplateContextBuilder;
 import ir.daneshrefah.scm.core.integration.template.engine.TemplateEngine;
 import ir.daneshrefah.scm.core.integration.template.extractor.TemplateVariableExtractor;

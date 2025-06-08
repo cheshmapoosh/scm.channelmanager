@@ -67,7 +67,8 @@ public class PluginResolverServiceImpl implements PluginResolverService {
 
     @Override
     public List<PluginDetail> resolveOrderedPluignDefinitions(Operation operation, PluginPhase phase) {
-        PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
+        PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository
+                .findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
         List<PluginDetail> operationPluginDetails = List.of();
         if (operationPluginBindingEntity != null) {
             PluginBinding operationPluginBinding = pluginBindingMapper.toModel(operationPluginBindingEntity);
