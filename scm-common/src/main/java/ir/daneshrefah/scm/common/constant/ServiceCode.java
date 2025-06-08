@@ -100,6 +100,8 @@ public enum ServiceCode {
     SVC_RESPONSE_CONDITION_DATA_SOURCE_LIST(ServiceImplementationType.JAVA),
     SVC_ASSETS_FAVOURITE(ServiceImplementationType.JAVA),
     SVC_ASSETS_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
+    SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
+    SVC_ASSETS_SHOW_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
     SVC_ASSETS_PROVIDER_FIND_ONE(ServiceImplementationType.JAVA),
     SVC_PARAMETER_CREATE(ServiceImplementationType.JAVA),
     SVC_RESPONSE_CONDITION_DATA_SOURCE_CREATE(ServiceImplementationType.JAVA),

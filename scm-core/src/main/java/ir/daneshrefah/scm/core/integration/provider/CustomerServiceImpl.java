@@ -11,10 +11,7 @@ import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.*;
 import ir.daneshrefah.scm.common.data.service.assets.ChannelServiceAccessService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
-import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusRequest;
-import ir.daneshrefah.scm.common.dto.ChangeDefaultAccountStatusResponse;
+import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.dto.membership.*;
@@ -329,6 +326,36 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         return new ChangeDefaultAccountStatusResponse().setDefaultAccountNumber(request.getAccountNo());
     }
 
+    @Override
+    public List<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        return membershipRepository
+                .findAllByPersonUsername(person.getUsername())
+                .stream()
+                .map(membership -> {
+                    DefaultAccountStatusListResponse model = new DefaultAccountStatusListResponse();
+                    Boolean defaultAccount = membership.getDefaultAccount();
+                    model.setDefaultAccount(Objects.nonNull(defaultAccount) && defaultAccount);
+                    model.setAccountNumber(membership.getCustomerAccount().getAccount().getAccountNo());
+                    return model;
+                }).toList();
+
+    }
+
+    @Override
+    public ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        List<MembershipEntity> memberships = membershipRepository.findAllByPersonUsername(person.getUsername());
+        //SET FALSE STATUS FOR CURRENT DEFAULT ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> m.getCustomerAccount().getAccount().getAccountNo().equals(request.getAccountNo()))
+                .filter(m -> Boolean.TRUE.equals(m.getDefaultAccount()))
+                .peek(m -> m.setDefaultAccount(false))
+                .forEach(membershipRepository::save);
+        return new ChangeDefaultAccountStatusResponse().setDefaultAccountNumber(request.getAccountNo());
+    }
+
     private void applyAccountsFavouriteStatus(Authentication authentication, Iterator<MembershipTerminalAccessEntity> iterator, AccountFavoriteActivityRequest request, AccountFavoriteActivityResponse response) {
         while (iterator.hasNext()) {
             MembershipTerminalAccessEntity entity = iterator.next();
@@ -432,7 +459,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         AssetProvider assetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(request.getAssetProviderId())).orElseThrow(() -> new InvalidInputException("assetProviderId"));
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
-        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, null, null);
+        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, 1, 1000);
         // Analyzing memberships
         List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, request.getAccountNumberList(), person, assetProvider);
         return syncMemberships(membershipSyncList);
