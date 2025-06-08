@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.plugin.PluginHandler;
-import ir.daneshrefah.scm.core.integration.operation.handlers.java.JavaOperationExecutor;
+import ir.daneshrefah.scm.core.integration.operation.handlers.java.JavaOperationProcessor;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("operation");
     private final Map<String, PluginHandler> pluginHandlers;
-    private final JavaOperationExecutor javaOperationExecutor;
+    private final JavaOperationProcessor javaOperationProcessor;
 
 
     @Override
@@ -134,7 +134,7 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     private void buildTarget(RouteDefinition route, Operation operation) {
         switch (operation.getType()) {
-            case EXTERNAL_REST -> {
+            case REST -> {
                 RestConfigOperationDefinition restConfigOperationDefinition = operation.getDefinitions().stream()
                         .filter(operationDefinition -> Objects.equals(operationDefinition.getType(), OperationDefinitionType.REST_CONFIG))
                         .findFirst()
@@ -142,7 +142,7 @@ public class OperationRouteBuilder extends RouteBuilder {
                         .orElseThrow(() -> new RuntimeException("Operation definition not found"));
 
                 StringBuilder targetUrl = new StringBuilder("webclient:" + restConfigOperationDefinition.getUrl() +
-                        "?method=" + restConfigOperationDefinition.getHttpMethod().getValue());
+                                                            "?method=" + restConfigOperationDefinition.getHttpMethod().getValue());
                 Integer responseTimeout = restConfigOperationDefinition.getResponseTimeout();
                 if (responseTimeout != null) {
                     targetUrl.append("&responseTimeout=").append(responseTimeout);
@@ -174,7 +174,7 @@ public class OperationRouteBuilder extends RouteBuilder {
                 route.to(targetUrl.toString());
             }
             case BEAN -> route.to("bean:" + operation.getPath());
-            case JAVA ->  route.process((exchange -> javaOperationExecutor.process(operation)));
+            case JAVA -> route.process(javaOperationProcessor);
             default -> throw new IllegalStateException("Unexpected operation type: " + operation.getType());
         }
     }
