@@ -15,7 +15,7 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import jakarta.validation.Valid;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
  * @version 1.0
  * @since 2024-01-23
  */
-@Service
+@Controller("/")
 public class CustomerManagementService extends AbstractJavaService {
 
     private final CustomerService customerService;
@@ -66,7 +66,10 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService.updateMembershipTerminalAccessMaxWithdrawal(request);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_FAVOURITE)
+    @JavaService(serviceCode = SVC_ASSETS_FAVOURITE,
+    path = "/assets/account/favorite-modification",
+    type = JavaMethodType.REPORT,
+    checkAccessFirstAuthentication = Status.ACTIVE)
     @SuppressWarnings("unused")
     public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
         return customerService.accountFavoriteActivity(request);

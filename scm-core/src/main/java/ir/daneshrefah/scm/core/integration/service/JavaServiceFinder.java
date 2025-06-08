@@ -83,7 +83,7 @@ public class JavaServiceFinder {
         return new MethodInfo(javaServiceInstance, method, paramTypes);
     }
 
-    private static Optional<JavaServiceMetadata> getJavaServiceMetadata(String serviceCode) {
+    public static Optional<JavaServiceMetadata> getJavaServiceMetadata(String serviceCode) {
         return ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA,serviceCode,JavaServiceMetadata.class);
     }
 

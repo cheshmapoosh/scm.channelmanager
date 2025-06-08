@@ -1,12 +1,8 @@
 package ir.daneshrefah.scm.common.model.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
-import ir.daneshrefah.scm.common.model.service.parameter.ParameterActionType;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * Description of the class or purpose of the file.

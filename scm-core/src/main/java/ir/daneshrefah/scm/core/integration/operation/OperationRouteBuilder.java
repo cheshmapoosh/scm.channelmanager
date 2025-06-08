@@ -12,19 +12,16 @@ import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.plugin.PluginHandler;
+import ir.daneshrefah.scm.core.integration.operation.handlers.java.JavaOperationExecutor;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +34,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("operation");
     private final Map<String, PluginHandler> pluginHandlers;
+    private final JavaOperationExecutor javaOperationExecutor;
 
 
     @Override
@@ -175,23 +173,8 @@ public class OperationRouteBuilder extends RouteBuilder {
                 }
                 route.to(targetUrl.toString());
             }
-            case BEAN -> {
-                route.to("bean:" + operation.getPath());
-            }
-            case JAVA -> {
-                try {
-                    Class<?> processorType = ClassUtils.getClass(operation.getPath());
-                    if (processorType.isAssignableFrom(Processor.class)) {
-                        throw new RuntimeException("The type %s not instance of %s".formatted(operation.getPath(), Processor.class.getName()));
-                    }
-                    Processor processor = (Processor) ConstructorUtils.invokeConstructor(processorType);
-                    route.process(processor);
-                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                         InvocationTargetException | InstantiationException e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
+            case BEAN -> route.to("bean:" + operation.getPath());
+            case JAVA ->  route.process((exchange -> javaOperationExecutor.process(operation)));
             default -> throw new IllegalStateException("Unexpected operation type: " + operation.getType());
         }
     }
