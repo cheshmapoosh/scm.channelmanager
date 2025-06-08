@@ -11,7 +11,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
 
 import java.io.IOException;
 
@@ -31,7 +30,6 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
         String responseType = request.getParameter("response_type");
         String scope = request.getParameter("scope");
         response.setStatus(HttpServletResponse.SC_OK);
-        Authentication cloneAuthentication;
         String jwtStr = request.getHeader("authorization");
         if (StringUtils.isNotBlank(jwtStr)) {
             Jwt decode =jwtDecoder.decode(jwtStr.replace("Bearer ",""));
@@ -49,15 +47,6 @@ public class LogoutSuccessHandlerConfiguration implements LogoutSuccessHandler {
                     "&redirect_uri=" + redirectUri +
                     "&scope=" + scope;
             response.sendRedirect(redirection);
-        }
-    }
-
-    private static Authentication getAuthenticationClone(Authentication authentication) {
-        try {
-            return SerializationUtils.clone(authentication);
-        } catch (Exception e) {
-            log.error("Failed to serialize object of authentication ", e);
-            return null;
         }
     }
 }

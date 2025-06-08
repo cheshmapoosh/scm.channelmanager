@@ -29,6 +29,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -100,7 +101,7 @@ public class JWTConfig {
                        PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
-                putJtiToCache(user, claims);
+                putJtiToCache(user, claims, context);
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_GRANT, principal.getDetails().getGrantType());
@@ -156,7 +157,7 @@ public class JWTConfig {
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
                 addTokenLifeTimeClaims(principal, claims);
             } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                       context.getPrincipal().isAuthenticated()) {
+                    context.getPrincipal().isAuthenticated()) {
                 AbstractAuthenticationToken authenticationToken = context.getPrincipal();
                 User user = ((TerminalUserDetails) authenticationToken.getPrincipal()).getUser();
 
@@ -191,18 +192,17 @@ public class JWTConfig {
         };
     }
 
-    private void putJtiToCache(User user, JwtClaimsSet.Builder claims) {
+    private void putJtiToCache(User user, JwtClaimsSet.Builder claims,JwtEncodingContext context) {
         JwtClaimsSet jwtClaims = claims.build();
-        Object scopeClaim = jwtClaims.getClaim("scope");
-        //TODO because of create token two times for login is not good approach
-//        if (scopeClaim instanceof Collection<?> scopes && scopes.contains("openid")) {
+        OAuth2TokenType tokenType = context.getTokenType();
+        if (Objects.nonNull(tokenType) && "access_token".equals(tokenType.getValue())) {
             String jtiTokenId = jwtClaims.getClaim(CLAIM_KEY_JWT_IDENTIFIER);
             String cacheKey = String.join(KEY_SEPARATOR, user.getNickname(), user.getTerminalCode());
             Instant issuedAt = jwtClaims.getClaim("iat");
             Instant expiresAt = jwtClaims.getClaim("exp");
             long ttl = Duration.between(issuedAt, expiresAt).toMinutes();
             cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId, ttl);
-//        }
+        }
     }
 
     private Object getPersonMaskedPhoneNumber(GeneralPerson person) {

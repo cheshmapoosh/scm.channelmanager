@@ -18,7 +18,6 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
