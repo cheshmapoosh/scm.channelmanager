@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.ClientAuthorizationGrantType;
-import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientAuthorizationGrantTypeEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.service.client.dto.ClientCreateRequest;
@@ -16,9 +15,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
 import java.util.*;
+
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
 /**
  * Description of the class or purpose of the file.
@@ -27,22 +28,18 @@ import java.util.*;
  * @version 1.0
  * @since 2023-12-18
  */
-@Mapper
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING, uses = {UserMapper.class})
 public interface ClientMapper {
-
-    ClientMapper INSTANCE = Mappers.getMapper(ClientMapper.class);
 
     @Mapping(target = "authenticationMethods", expression = "java(mapClientAuthenticationMethods(entity))")
     @Mapping(target = "clientAuthorizationGrantTypes", source = "authorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToModel")
     @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddresses(entity))")
-    @Mapping(target = "user", source = "user", qualifiedByName = "toUserModel")
     @Mapping(target = "status", source = "status", qualifiedByName = "toClientModelStatus")
     Client toModel(ClientEntity entity);
 
     @Mapping(target = "allowIpAddresses", expression = "java(mapAllowIpAddressesString(model))")
     @Mapping(target = "authorizationGrantTypes", source = "clientAuthorizationGrantTypes", qualifiedByName = "mapAuthGrantTypesToEntity")
     @Mapping(target = "versions", source = "versions", ignore = true)
-    @Mapping(target = "user", source = "user", qualifiedByName = "toUserEntity")
     ClientEntity toEntityInternal(Client model);
 
     @Mapping(target = "client", ignore = true)
@@ -50,6 +47,7 @@ public interface ClientMapper {
 
     ClientAuthorizationGrantType toModel(ClientAuthorizationGrantTypeEntity entity);
 
+    @Named("toClientEntity")
     default ClientEntity toEntity(Client client) {
         ClientEntity entity = toEntityInternal(client);
         mapAuthenticationMethodsToClient(client, entity);
@@ -77,23 +75,6 @@ public interface ClientMapper {
         }
         return set;
     }
-
-    @Named("toUserModel")
-    default User toModel(UserEntity entity) {
-        if (Objects.nonNull(entity)) {
-            return UserMapper.INSTANCE.toModel(entity);
-        }
-        return null;
-    }
-
-    @Named("toUserEntity")
-    default UserEntity toEntity(User model) {
-        if (Objects.nonNull(model)) {
-            return UserMapper.INSTANCE.toEntity(model);
-        }
-        return null;
-    }
-
 
     default Set<String> mapAllowIpAddresses(ClientEntity entity) {
         if (Objects.nonNull(entity.getAllowIpAddresses())) {
@@ -182,7 +163,7 @@ public interface ClientMapper {
         return status;
     }
 
-    default Client toModel(ClientCreateRequest request){
+    default Client toModel(ClientCreateRequest request) {
         Client client = new Client();
         client.setTerminalCode(request.getTerminalCode());
         client.setAuthenticationMethods(request.getAuthenticationMethods());
@@ -199,7 +180,7 @@ public interface ClientMapper {
         return client;
     }
 
-    default Client toModel(ClientEditRequest request){
+    default Client toModel(ClientEditRequest request) {
         Client model = new Client();
         model.setTerminalCode(request.getTerminalCode());
         model.setAuthenticationMethods(request.getAuthenticationMethods());

@@ -23,6 +23,7 @@ public class ClientScopeService {
 
     private static final List<Scope> SCOPE_LIST = new ArrayList<>();
     private final ScopeRepository scopeRepository;
+    private final ScopeMapper scopeMapper;
 
     public static List<Scope> getScopeList() {
         return SCOPE_LIST;
@@ -36,7 +37,7 @@ public class ClientScopeService {
     public void reloadCache() {
         synchronized (SCOPE_LIST) {
             SCOPE_LIST.clear();
-            SCOPE_LIST.addAll(ScopeMapper.INSTANCE.toModels(scopeRepository.findAll()));
+            SCOPE_LIST.addAll(scopeMapper.toModels(scopeRepository.findAll()));
         }
     }
 
@@ -45,9 +46,9 @@ public class ClientScopeService {
         findByCode(scope.getCode()).ifPresent(found -> {
             throw new DuplicatedRecordFoundException("code");
         });
-        ScopeEntity entity = ScopeMapper.INSTANCE.toEntity(scope);
+        ScopeEntity entity = scopeMapper.toEntity(scope);
         ScopeEntity saved = scopeRepository.save(entity);
-        Scope model = ScopeMapper.INSTANCE.toModel(saved);
+        Scope model = scopeMapper.toModel(saved);
         reloadCache();
         return model;
     }
@@ -74,7 +75,7 @@ public class ClientScopeService {
         entity.setLastEditDate(scope.getLastEditDate());
         ScopeEntity updated = scopeRepository.save(entity);
         reloadCache();
-        return ScopeMapper.INSTANCE.toModel(updated);
+        return scopeMapper.toModel(updated);
     }
 
     @Transactional
@@ -83,7 +84,7 @@ public class ClientScopeService {
         entity.setLastEditDate(scope.getLastEditDate());
         scopeRepository.delete(entity);
         reloadCache();
-        return ScopeMapper.INSTANCE.toModel(entity);
+        return scopeMapper.toModel(entity);
     }
 
 

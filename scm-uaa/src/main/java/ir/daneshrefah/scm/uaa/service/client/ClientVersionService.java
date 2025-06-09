@@ -3,14 +3,12 @@ package ir.daneshrefah.scm.uaa.service.client;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.mapper.ClientVersionMapper;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
-import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientVersionEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientVersionRepository;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
+import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientVersionEntity;
 import ir.daneshrefah.scm.uaa.service.client.dto.VersionFindRequest;
 import jakarta.annotation.PostConstruct;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +24,7 @@ public class ClientVersionService {
     private final ClientVersionRepository clientVersionRepository;
     private final ClientRepository clientRepository;
     private static final List<ClientVersion> CLIENT_VERSIONS = new ArrayList<>();
+    private final ClientVersionMapper clientVersionMapper;
 
     @PostConstruct
     public void init() {
@@ -39,7 +38,7 @@ public class ClientVersionService {
             clientVersionRepository
                     .findAll()
                     .stream()
-                    .map(ClientVersionMapper.INSTANCE::toModel)
+                    .map(clientVersionMapper::toModel)
                     .forEach(CLIENT_VERSIONS::add);
         }
     }
@@ -60,11 +59,11 @@ public class ClientVersionService {
 
     public ClientVersion save(ClientVersion clientVersion) {
         ClientEntity clientEntity = clientRepository.findById(clientVersion.getClientId()).orElseThrow(() -> new InvalidInputException("clientId"));
-        ClientVersionEntity entity = ClientVersionMapper.INSTANCE.toEntity(clientVersion);
+        ClientVersionEntity entity = clientVersionMapper.toEntity(clientVersion);
         entity.setClient(clientEntity);
         ClientVersionEntity saved = clientVersionRepository.save(entity);
         reloadCache();
-        return ClientVersionMapper.INSTANCE.toModel(saved);
+        return clientVersionMapper.toModel(saved);
     }
 
     public ClientVersion update(ClientVersion clientVersion) {
@@ -76,7 +75,7 @@ public class ClientVersionService {
         clientVersionEntity.setLastEditDate(clientVersion.getLastEditDate());
         ClientVersionEntity updated = clientVersionRepository.save(clientVersionEntity);
         reloadCache();
-        return ClientVersionMapper.INSTANCE.toModel(updated);
+        return clientVersionMapper.toModel(updated);
     }
 
     public ClientVersion remove(ClientVersion clientVersion) {
@@ -85,7 +84,7 @@ public class ClientVersionService {
         clientVersionEntity.setLastEditDate(clientVersion.getLastEditDate());
         clientVersionRepository.delete(clientVersionEntity);
         reloadCache();
-        return ClientVersionMapper.INSTANCE.toModel(clientVersionEntity);
+        return clientVersionMapper.toModel(clientVersionEntity);
     }
 
     public static List<ClientVersion> getClientVersionsList() {

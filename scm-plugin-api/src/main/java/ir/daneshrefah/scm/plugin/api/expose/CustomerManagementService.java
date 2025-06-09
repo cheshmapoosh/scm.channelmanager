@@ -2,8 +2,6 @@ package ir.daneshrefah.scm.plugin.api.expose;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.constant.JavaMethodType;
-import ir.daneshrefah.scm.common.constant.Status;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
 import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
 import ir.daneshrefah.scm.common.dto.asset.*;
@@ -66,10 +64,7 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService.updateMembershipTerminalAccessMaxWithdrawal(request);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_FAVOURITE,
-    path = "/assets/account/favorite-modification",
-    type = JavaMethodType.REPORT,
-    checkAccessFirstAuthentication = Status.ACTIVE)
+    @JavaService(serviceCode = SVC_ASSETS_FAVOURITE)
     @SuppressWarnings("unused")
     public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
         return customerService.accountFavoriteActivity(request);

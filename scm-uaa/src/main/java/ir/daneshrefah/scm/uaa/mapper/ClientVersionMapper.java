@@ -4,13 +4,15 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientVersionEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 import java.util.Objects;
 
-@Mapper(componentModel = "spring")
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(unmappedTargetPolicy =IGNORE, componentModel = SPRING)
 public interface ClientVersionMapper {
-    ClientVersionMapper INSTANCE= Mappers.getMapper(ClientVersionMapper.class);
+
 
     @Mapping(target = "clientId",expression = "java(getClientId(entity))")
     ClientVersion toModel(ClientVersionEntity entity);

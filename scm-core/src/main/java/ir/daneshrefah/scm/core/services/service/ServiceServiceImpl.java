@@ -30,7 +30,6 @@ import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.mapper.ScmServiceMapper;
 import ir.daneshrefah.scm.core.mapper.ServiceProviderMapper;
 import ir.daneshrefah.scm.core.repository.*;
-import ir.daneshrefah.scm.core.services.provider.ServiceProviderMetadataResolver;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.ServiceRelation;
 import ir.daneshrefah.scm.plugin.api.model.service.external.AbstractAuditableExternalService;
@@ -66,10 +65,8 @@ public class ServiceServiceImpl implements ServiceService {
     private final TerminalRepository terminalRepository;
     private final TerminalService terminalService;
     private final TransformerRelationRepository transformerRelationRepository;
-    private final ServiceProviderMetadataResolver providerMetadataResolver;
     private final TerminalServiceAccessRepository terminalServiceAccessRepository;
     private final AssetProviderService assetProviderService;
-    private final JavaServiceMetadataProviderService javaSrvService;
     private final AssetProviderMapper assetProviderMapper;
     private final ServiceProviderMapper serviceProviderMapper;
     private final ScmServiceMapper scmServiceMapper;
@@ -98,7 +95,6 @@ public class ServiceServiceImpl implements ServiceService {
         if (null == services || services.isEmpty()) {
             synchronized (this) {
                 services = scmServiceMapper.toServices(serviceRepository.findAll());
-                javaSrvService.javaServiceSynchronization(services);
             }
         }
         return services;

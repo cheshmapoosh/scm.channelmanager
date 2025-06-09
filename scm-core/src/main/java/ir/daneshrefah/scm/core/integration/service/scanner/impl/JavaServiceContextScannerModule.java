@@ -2,10 +2,7 @@ package ir.daneshrefah.scm.core.integration.service.scanner.impl;
 
 import io.github.classgraph.*;
 import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.constant.JavaMethodType;
-import ir.daneshrefah.scm.common.constant.ServiceCode;
 import ir.daneshrefah.scm.common.model.service.ServiceImplementationType;
-import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.core.integration.service.scanner.spec.ClassContextCache;
 import ir.daneshrefah.scm.core.integration.service.scanner.spec.ContextScannerModule;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -63,17 +60,10 @@ public class JavaServiceContextScannerModule implements ContextScannerModule {
                 throw new RuntimeException("MUST HAVE JAVA IMPL TYPE");
             }
             metadata.setCode(javaServiceAnnotation.serviceCode());
-            metadata.setTitle(javaServiceAnnotation.title());
-            metadata.setAlias(javaServiceAnnotation.path());
-            JavaMethodType type = javaServiceAnnotation.type();
-            metadata.setType(!type.equals(JavaMethodType.NULL) ? ServiceType.findByCode(type.getCode()) : null);
             metadata.setImplementationClassName(aClass.getName());
             metadata.setMethod(method);
             metadata.setMethodParameterTypes(getMethodInputParameterTypes(method));
-            fillParentInformation(metadata, javaServiceAnnotation);
-            fillSecurityProperties(metadata, javaServiceAnnotation);
-            String javaImplementationClassName = generateJavaImplementationClassName(metadata);
-            metadata.setJavaImplementationClassName(javaImplementationClassName);
+            metadata.setJavaImplementationClassName(generateJavaImplementationClassName(metadata));
             return metadata;
         } catch (Exception ignore) {
             return null;
@@ -102,26 +92,6 @@ public class JavaServiceContextScannerModule implements ContextScannerModule {
         return javaImplClassName.replace(paramSign, parameterDefinition);
     }
 
-    private void fillParentInformation(JavaServiceMetadata metadata, JavaService javaServiceAnnotation) {
-        try {
-            if (!javaServiceAnnotation.parentCode().equals(ServiceCode.NULL)) {
-                ServiceCode serviceCode = javaServiceAnnotation.parentCode();
-                if (!serviceCode.getType().equals(ServiceImplementationType.PARENT)){
-                    log.error(">>> PARENT SERVICE CODE [{}] DOES NOT HAVE 'PARENT' IMPL TYPE ",metadata.getCode().name());
-                    throw new RuntimeException(">>> PARENT SERVICE CODE TYPE IS INVALID");
-                }
-                metadata.setParentCode(javaServiceAnnotation.parentCode());
-            }
-        } catch (Exception ignore) {
-        }
-    }
-
-    private void fillSecurityProperties(JavaServiceMetadata metadata, JavaService javaServiceAnnotation) {
-        metadata.setCheckAccessService(javaServiceAnnotation.checkAccessService().getBooleanValue());
-        metadata.setCheckAccessAsset(javaServiceAnnotation.checkAccessAsset().getBooleanValue());
-        metadata.setCheckAccessFirstAuthentication(javaServiceAnnotation.checkAccessFirstAuthentication().getBooleanValue());
-        metadata.setCheckAccessSecondAuthentication(javaServiceAnnotation.checkAccessSecondAuthentication().getBooleanValue());
-    }
 
     private List<Class<?>> getMethodInputParameterTypes(Method method) {
         return new ArrayList<>(Arrays.asList(method.getParameterTypes()));

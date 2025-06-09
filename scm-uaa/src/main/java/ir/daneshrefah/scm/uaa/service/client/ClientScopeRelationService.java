@@ -25,6 +25,8 @@ public class ClientScopeRelationService {
     private final ClientScopeRelationRepository clientScopeRelationRepository;
     private final ClientRepository clientRepository;
     private final ScopeRepository scopeRepository;
+    private final ScopeMapper scopeMapper;
+    private final ClientScopeRelationMapper clientScopeRelationMapper;
 
     public List<Scope> findClientScopes(Long clientId) {
         ClientEntity clientEntity = clientRepository.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("client"));
@@ -32,7 +34,7 @@ public class ClientScopeRelationService {
                 .findByClientId(clientEntity.getId())
                 .stream()
                 .map(ClientScopeRelationEntity::getScope)
-                .map(ScopeMapper.INSTANCE::toModel)
+                .map(scopeMapper::toModel)
                 .toList();
     }
 
@@ -41,7 +43,7 @@ public class ClientScopeRelationService {
         return clientScopeRelationRepository
                 .findByClientId(clientEntity.getId())
                 .stream()
-                .map(ClientScopeRelationMapper.INSTANCE::toModel)
+                .map(clientScopeRelationMapper::toModel)
                 .toList();
     }
 

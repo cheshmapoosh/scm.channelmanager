@@ -42,12 +42,16 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 
     private final CIFService cifService;
     private final RoleRepository roleRepository;
+    private final PersonMapper personMapper;
+    private final RoleMapper roleMapper;
 
     public PersonServiceDatabaseImpl(PersonRepository personRepository, TerminalService terminalService, RoleRepository roleRepository,
-                                     CIFService cifService) {
-        super(terminalService, personRepository);
+                                     CIFService cifService, PersonMapper personMapper, RoleMapper roleMapper) {
+        super(terminalService, personRepository, personMapper);
         this.roleRepository = roleRepository;
         this.cifService = cifService;
+        this.personMapper = personMapper;
+        this.roleMapper = roleMapper;
     }
 
     @Override
@@ -164,7 +168,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         if (cifPersonInfo.size() > 1) {
             throw new TooManyRecordFoundException("cif person", cifPersonInfo.size());
         }
-        GeneralPersonEntity personEntity = PersonMapper.INSTANCE.toPersonEntity(cifPersonInfo.get(0));
+        GeneralPersonEntity personEntity = personMapper.toPersonEntity(cifPersonInfo.get(0));
         personEntity.setUsername(extractUsername(personEntity));
         personEntity.setStatus(PersonStatus.ACTIVE);
         personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
@@ -175,7 +179,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
             personEntity.setId(foundLocal.get(0).getId());
         }
         personEntity = personRepository.save(personEntity);
-        return PersonMapper.INSTANCE.toPerson(personEntity);
+        return personMapper.toPerson(personEntity);
     }
 
     @Override
@@ -183,7 +187,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         if (null == personId) {
             throw new MissingRequiredInputException("personId");
         }
-        return RoleMapper.INSTANCE.toModels(roleRepository.findByPersonId(personId));
+        return roleMapper.toModels(roleRepository.findByPersonId(personId));
     }
 
     @Override
@@ -203,7 +207,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
             throw new InvalidInputException("personId");
         }
         roleRepository.insertPersonRole(personId, roleId);
-        return RoleMapper.INSTANCE.toModel(roleEntity.get());
+        return roleMapper.toModel(roleEntity.get());
     }
 
     @Override
@@ -221,7 +225,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
                     roleRepository.insertPersonRole(personEntity.getId(), roleEntity.getId());
                     return roleEntity;
                 });
-        return RoleMapper.INSTANCE.toModel(roleEntity);
+        return roleMapper.toModel(roleEntity);
     }
 
 //    @Override
@@ -241,7 +245,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //        if (null == entity) {
 //            return null;
 //        }
-//        return PersonMapper.INSTANCE.toPerson(entity);
+//        return personMapper.toPerson(entity);
 //    }
 //
 //    @Override
@@ -253,7 +257,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //        if (personEntity.isEmpty()) {
 //            return null;
 //        }
-//        return PersonMapper.INSTANCE.toPerson(personEntity.get());
+//        return personMapper.toPerson(personEntity.get());
 //    }
 //
 //    @Override
@@ -263,14 +267,14 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //
 //    @Override
 //    public GeneralPerson updatePerson(GeneralPerson person) {
-//        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
-//        return PersonMapper.INSTANCE.toPerson(entity);
+//        GeneralPersonEntity entity = personMapper.toPersonEntity(person);
+//        return personMapper.toPerson(entity);
 //    }
 //
 //    @Override
 //    public GeneralPerson savePerson(GeneralPerson person) {
-//        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
-//        return PersonMapper.INSTANCE.toPerson(entity);
+//        GeneralPersonEntity entity = personMapper.toPersonEntity(person);
+//        return personMapper.toPerson(entity);
 //    }
 
 }

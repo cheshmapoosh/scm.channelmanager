@@ -3,9 +3,11 @@ package ir.daneshrefah.scm.uaa.mapper;
 import ir.daneshrefah.scm.uaa.domain.client.Scope;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ScopeEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
+
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,10 +16,8 @@ import java.util.List;
  * @version 1.0
  * @since 2024-02-04
  */
-@Mapper
+@Mapper(unmappedTargetPolicy =IGNORE, componentModel = SPRING)
 public interface ScopeMapper {
-
-    ScopeMapper INSTANCE = Mappers.getMapper(ScopeMapper.class);
 
     Scope toModel(ScopeEntity entity);
 

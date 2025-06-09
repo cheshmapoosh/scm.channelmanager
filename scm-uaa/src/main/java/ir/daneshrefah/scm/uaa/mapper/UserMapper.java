@@ -1,15 +1,16 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
+
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
 /**
  * Description of the class or purpose of the file.
@@ -18,25 +19,13 @@ import java.util.List;
  * @version 1.0
  * @since 2024-01-09
  */
-//@Mapper(uses = IntegrationService.class, injectionStrategy = InjectionStrategy.FIELD, componentModel = "spring")
-@Mapper
+@Mapper(unmappedTargetPolicy = IGNORE, componentModel = SPRING, uses = {PersonMapper.class})
 public interface UserMapper {
 
-    UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
     @Mapping(target = "terminalCode", expression = "java(mapTerminalCode(entity))")
-    @Mapping(source = "person", target = "person", qualifiedByName = "toPerson")
+    @Mapping(source = "person",target = "person",qualifiedByName = "toPerson")
     User toModel(UserEntity entity);
-
-    @Named("toPerson")
-    default GeneralPerson toPerson(GeneralPersonEntity entity) {
-        return PersonMapper.INSTANCE.toPerson(entity);
-    }
-
-    @Named("toPersonEntity")
-    default GeneralPersonEntity toPersonEntity(GeneralPerson person) {
-        return PersonMapper.INSTANCE.toPersonEntity(person);
-    }
 
     List<User> toModels(Iterable<UserEntity> entities);
 
@@ -58,7 +47,7 @@ public interface UserMapper {
     }
 
     @Mapping(target = "terminalId", expression = "java(mapTerminalId(user))")
-    @Mapping(source = "person", target = "person", qualifiedByName = "toPersonEntity")
+    @Mapping(source = "person",target = "person", qualifiedByName = "toPersonEntity")
     UserEntity toEntity(User user);
 
 }

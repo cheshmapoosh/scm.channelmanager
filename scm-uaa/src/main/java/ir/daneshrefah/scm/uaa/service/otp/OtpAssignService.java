@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 public class OtpAssignService {
 
     private final UserService userService;
+    private final PersonMapper personMapper;
 
     public List<GeneralPerson> findOtpRegistration(OtpAssignRequest otpAssignRequest) {
         List<String> otpDeviceTypeValues = Stream.of(OtpDeviceType.values())
@@ -34,6 +35,6 @@ public class OtpAssignService {
                 generalPersonEntities = userService.findByTokenTypesAndNationalCodeAndOtpSerialNo(otpAssignRequest.getNationalCode(), otpDeviceTypeValues, otpAssignRequest.getOtpSerialNo());
             }
         }
-        return generalPersonEntities.stream().map(PersonMapper.INSTANCE::toPerson).toList();
+        return generalPersonEntities.stream().map(personMapper::toPerson).toList();
     }
 }
