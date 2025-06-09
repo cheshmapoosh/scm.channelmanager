@@ -9,8 +9,6 @@ import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.core.entity.service.composition.ServiceRelationEntity;
 import ir.daneshrefah.scm.core.entity.service.rest.RestExternalServiceEntity;
-import ir.daneshrefah.scm.core.integration.service.scanner.impl.JavaServiceMetadata;
-import ir.daneshrefah.scm.core.integration.service.scanner.spec.ClassContextCache;
 import ir.daneshrefah.scm.core.mapper.ScmServiceMapper;
 import ir.daneshrefah.scm.core.repository.ServiceRelationRepository;
 import ir.daneshrefah.scm.plugin.api.model.service.composition.CompositionService;
@@ -138,17 +136,17 @@ public class ServiceJsonSchemaGenerator {
     }
 
     private String generateJavaServiceRequestSchema(ScmService service) {
-        try {
-            JavaServiceMetadata javaServiceMetadata = ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA, service.getCode(), JavaServiceMetadata.class).orElseThrow();
-            Class<?>[] parameterTypes = javaServiceMetadata.getMethod().getParameterTypes();
-            for (Class<?> parameterType : parameterTypes) {
-                Class<?> modelClass = Class.forName(parameterType.getName());
-                JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
-                JsonSchema schema = schemaGen.generateSchema(modelClass);
-                return OBJECT_MAPPER.writeValueAsString(schema);
-            }
-        } catch (Exception ignore) {
-        }
+//        try {
+//            JavaServiceMetadata javaServiceMetadata = ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA, service.getCode(), JavaServiceMetadata.class).orElseThrow();
+//            Class<?>[] parameterTypes = javaServiceMetadata.getMethod().getParameterTypes();
+//            for (Class<?> parameterType : parameterTypes) {
+//                Class<?> modelClass = Class.forName(parameterType.getName());
+//                JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(OBJECT_MAPPER);
+//                JsonSchema schema = schemaGen.generateSchema(modelClass);
+//                return OBJECT_MAPPER.writeValueAsString(schema);
+//            }
+//        } catch (Exception ignore) {
+//        }
         return null;
     }
 

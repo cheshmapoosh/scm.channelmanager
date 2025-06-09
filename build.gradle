@@ -59,6 +59,7 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-servlet-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-resilience4j-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-rest-openapi-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-bean-validator-starter:${springCamelVersion}"
             dependency "org.apache.camel:camel-openapi-java:${springCamelVersion}"
             dependency 'com.bucket4j:bucket4j_jdk17-core:8.14.0'
 

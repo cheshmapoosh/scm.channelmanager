@@ -11,7 +11,7 @@ import ir.daneshrefah.scm.process.service.dto.attachment.TaskAttachmentRequest;
 import ir.daneshrefah.scm.process.service.dto.attachment.TaskDeleteAttachmentRequest;
 import org.springframework.stereotype.Service;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 @Service
 public class AttachmentManagementService extends AbstractJavaService {
@@ -23,22 +23,22 @@ public class AttachmentManagementService extends AbstractJavaService {
         this.attachmentService = attachmentService;
     }
 
-    @JavaService(serviceCode = SVC_ATTACHMENT_TASK)
+    @JavaService(operationCode = SVC_ATTACHMENT_TASK)
     public void taskAttachment(TaskAttachmentRequest taskAttachmentRequest) throws Exception {
         attachmentService.taskAttachment(taskAttachmentRequest);
     }
 
-    @JavaService(serviceCode = SVC_ATTACHMENT_DELETE_TASK)
+    @JavaService(operationCode = SVC_ATTACHMENT_DELETE_TASK)
     public void deleteTaskAttachment(TaskDeleteAttachmentRequest taskDeleteAttachmentRequest) throws Exception {
         attachmentService.deleteTaskAttachment(taskDeleteAttachmentRequest);
     }
 
-    @JavaService(serviceCode = SVC_ATTACHMENT_PROCESS)
+    @JavaService(operationCode = SVC_ATTACHMENT_PROCESS)
     public void processAttachment(ProcessAttachmentRequest processAttachmentRequest) throws Exception {
         attachmentService.processAttachment(processAttachmentRequest);
     }
 
-    @JavaService(serviceCode = SVC_ATTACHMENT_DELETE_PROCESS)
+    @JavaService(operationCode = SVC_ATTACHMENT_DELETE_PROCESS)
     public void deleteProcessAttachment(ProcessDeleteAttachmentRequest processDeleteAttachmentRequest) throws Exception {
         attachmentService.deleteProcessAttachment(processDeleteAttachmentRequest);
     }

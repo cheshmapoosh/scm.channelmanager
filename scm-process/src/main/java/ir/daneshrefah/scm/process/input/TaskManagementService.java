@@ -16,9 +16,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+import static ir.daneshrefah.scm.common.constant.OperationCode.SVC_CARTABLE_GET_ALL_TASK;
+import static ir.daneshrefah.scm.common.constant.OperationCode.SVC_COMPLETE_TASK;
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_ADMIN_BPM;
-import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_CARTABLE_GET_ALL_TASK;
-import static ir.daneshrefah.scm.common.constant.ServiceCode.SVC_COMPLETE_TASK;
 
 @Service
 public class TaskManagementService extends AbstractJavaService {
@@ -31,7 +31,7 @@ public class TaskManagementService extends AbstractJavaService {
     }
 
     //    @PreAuthorize("isFullyAuthenticated()")
-    @JavaService(serviceCode = SVC_CARTABLE_GET_ALL_TASK)
+    @JavaService(operationCode = SVC_CARTABLE_GET_ALL_TASK)
     public PagedResponseData<TaskInfoResponse> findTaskList(TaskFindRequest taskFindRequest) throws Exception {
         if (Objects.isNull(taskFindRequest)) {
             taskFindRequest = new TaskFindRequest();
@@ -52,7 +52,7 @@ public class TaskManagementService extends AbstractJavaService {
         return taskService.findTaskList(taskFindRequest);
     }
 
-    @JavaService(serviceCode = SVC_COMPLETE_TASK)
+    @JavaService(operationCode = SVC_COMPLETE_TASK)
     public boolean completeTask(TaskCompleteRequest taskRequest) throws JsonProcessingException {
         return taskService.completeTask(taskRequest);
     }

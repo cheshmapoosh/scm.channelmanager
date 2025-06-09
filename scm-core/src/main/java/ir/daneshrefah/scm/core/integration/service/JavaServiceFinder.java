@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.core.integration.service.scanner.impl.JavaServiceMetadata;
-import ir.daneshrefah.scm.core.integration.service.scanner.spec.ClassContextCache;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException;
@@ -74,7 +73,7 @@ public class JavaServiceFinder {
             if (Objects.isNull(javaServiceAnnotation)) {
                 return new MethodInfo(new JavaServiceMethodNotFoundException(metadata.getCode().name(), null));
             }
-            if (StringUtils.isNotEmptyAndNotEquals(javaServiceAnnotation.serviceCode().name(), metadata.getCode().name())) {
+            if (StringUtils.isNotEmptyAndNotEquals(javaServiceAnnotation.operationCode().name(), metadata.getCode().name())) {
                 return new MethodInfo(new JavaServiceMethodNotFoundException(metadata.getCode().name(), null));
             }
         } catch (NoSuchMethodException e) {
@@ -84,7 +83,8 @@ public class JavaServiceFinder {
     }
 
     private static Optional<JavaServiceMetadata> getJavaServiceMetadata(String serviceCode) {
-        return ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA,serviceCode,JavaServiceMetadata.class);
+//        return ClassContextCache.getInstance().get(ClassContextCache.Repository.JAVA_SERVICE_METADATA,serviceCode,JavaServiceMetadata.class);
+        return null;
     }
 
     private static Class<?>[] parseParamTypesFromStr(JavaServiceMetadata metadata, String methodParameters) throws ClassNotFoundException {

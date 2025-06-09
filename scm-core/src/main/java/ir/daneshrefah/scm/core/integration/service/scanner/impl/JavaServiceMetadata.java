@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service.scanner.impl;
 
-import ir.daneshrefah.scm.common.constant.ServiceCode;
+import ir.daneshrefah.scm.common.constant.OperationCode;
 import lombok.Data;
 
 import java.lang.reflect.Method;
@@ -10,7 +10,7 @@ import java.util.List;
 public class JavaServiceMetadata {
     private boolean springBean;
     /* BASIC INFORMATION */
-    private ServiceCode code;
+    private OperationCode code;
     private String javaImplementationClassName;
     /* SPRING BASED CONTEXT */
     private String implementationBean;

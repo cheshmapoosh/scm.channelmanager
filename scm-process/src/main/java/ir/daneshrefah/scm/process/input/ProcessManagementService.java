@@ -14,7 +14,7 @@ import ir.daneshrefah.scm.process.service.process.ProcessManagement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 @Service
 public class ProcessManagementService extends AbstractJavaService {
@@ -26,22 +26,22 @@ public class ProcessManagementService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_START)
+    @JavaService(operationCode = SVC_PROCESS_START)
     public ProcessStartResponse startProcess(ProcessStartRequest processStartRequest) throws Exception {
         return processManagement.startProcess(processStartRequest);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_CANCEL)
+    @JavaService(operationCode = SVC_PROCESS_CANCEL)
     public boolean cancelProcess(ProcessCancelRequest processCancelRequest) throws Exception {
         return processManagement.cancelProcess(processCancelRequest);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_ACTIVE_LIST)
+    @JavaService(operationCode = SVC_PROCESS_ACTIVE_LIST)
     public PagedResponseData<ProcessInstanceResponse> getActiveProcess(ProcessInstanceRequest request) {
         return processManagement.getActiveProcess(request);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_ACTIVE_COUNT)
+    @JavaService(operationCode = SVC_PROCESS_ACTIVE_COUNT)
     public Long activeCount(ProcessInstanceRequest request) {
         return processManagement.activeCount(request);
     }

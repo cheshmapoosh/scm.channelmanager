@@ -19,7 +19,7 @@ import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 /**
  * Description of the class or purpose of the file.
@@ -41,12 +41,12 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
 
-    @JavaService(serviceCode = SVC_SERVICE_LIST)
+    @JavaService(operationCode = SVC_SERVICE_LIST)
     public PagedResponseData<ScmService> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_BY_CODE)
+    @JavaService(operationCode = SVC_SERVICE_BY_CODE)
     public ScmService findServiceByCode(String serviceCode) {
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
@@ -54,7 +54,7 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_BY_ID)
+    @JavaService(operationCode = SVC_SERVICE_BY_ID)
     public ScmService findServiceById(String serviceId) {
         if (StringUtils.isEmpty(serviceId)) {
             return null;
@@ -62,78 +62,78 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceById(serviceId);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_EDIT)
+    @JavaService(operationCode = SVC_SERVICE_EDIT)
     public ScmService updateService(ServiceInfoEditRequest request) {
         return this.service.updateService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_CREATE)
+    @JavaService(operationCode = SVC_SERVICE_CREATE)
     public ScmService createService(ServiceInfoRequest request) {
         return this.service.createService(request);
     }
 
-    @JavaService(serviceCode = SCV_SERVICE_DELETE)
+    @JavaService(operationCode = SCV_SERVICE_DELETE)
     public void deleteService(ServiceDeleteRequest request) {
         this.service.deleteService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_ACCESS_SERVICE_LIST)
+    @JavaService(operationCode = SVC_SERVICE_ACCESS_SERVICE_LIST)
     public PagedResponseData<TerminalServiceAccessAssignmentResponse> findAllServiceAccessOnTerminal(ServiceAccessFindRequest request) {
         return this.service.findAllServiceAccessOnTerminal(request);
     }
 
     // PARENT SERVICE
 
-    @JavaService(serviceCode = SVC_SERVICE_CREATE_PARENT)
+    @JavaService(operationCode = SVC_SERVICE_CREATE_PARENT)
     public ParentService createParentService(ParentServiceCreateRequest request) {
         return (ParentService) this.service.createParentService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_EDIT_PARENT)
+    @JavaService(operationCode = SVC_SERVICE_EDIT_PARENT)
     public ParentService editParentService(ParentServiceEditRequest request) {
         return (ParentService) this.service.editParentService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_FIND_PARENT)
+    @JavaService(operationCode = SVC_SERVICE_FIND_PARENT)
     public ParentService getParentService(String parentServiceId) {
         return (ParentService) this.service.getParentService(parentServiceId);
     }
 
-    @JavaService(serviceCode = SVC_PARENT_SERVICE_LIST)
+    @JavaService(operationCode = SVC_PARENT_SERVICE_LIST)
     public PagedResponseData<ScmService> parentServiceList(ParentServiceFindRequest request) {
         return this.service.findParentServiceList(request);
     }
 
     // JAVA SERVICE
 
-    @JavaService(serviceCode = SVC_SERVICE_CREATE_JAVA)
+    @JavaService(operationCode = SVC_SERVICE_CREATE_JAVA)
     public ir.daneshrefah.scm.plugin.api.model.service.java.JavaService createJavaService(JavaServiceCreateRequest request) {
         return (ir.daneshrefah.scm.plugin.api.model.service.java.JavaService) this.service.createJavaService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_EDIT_JAVA)
+    @JavaService(operationCode = SVC_SERVICE_EDIT_JAVA)
     public ir.daneshrefah.scm.plugin.api.model.service.java.JavaService editJavaService(JavaServiceEditRequest request) {
         return (ir.daneshrefah.scm.plugin.api.model.service.java.JavaService) this.service.editJavaService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_FIND_JAVA)
+    @JavaService(operationCode = SVC_SERVICE_FIND_JAVA)
     public ir.daneshrefah.scm.plugin.api.model.service.java.JavaService getJavaService(String javaServiceId) {
         return (ir.daneshrefah.scm.plugin.api.model.service.java.JavaService) this.service.getJavaService(javaServiceId);
     }
 
     // COMPOSITE SERVICE
 
-    @JavaService(serviceCode = SVC_SERVICE_CREATE_COMPOSITION)
+    @JavaService(operationCode = SVC_SERVICE_CREATE_COMPOSITION)
     public CompositionService createCompositionService(CompositionServiceCreateRequest request) {
         return (CompositionService) this.service.createCompositionService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_EDIT_COMPOSITION)
+    @JavaService(operationCode = SVC_SERVICE_EDIT_COMPOSITION)
     public CompositionService editCompositionService(CompositionServiceEditRequest request) {
         return (CompositionService) this.service.editCompositionService(request);
     }
 
-    @JavaService(serviceCode = SVC_SERVICE_FIND_COMPOSITION)
+    @JavaService(operationCode = SVC_SERVICE_FIND_COMPOSITION)
     public CompositionService getCompositionService(String compositionServiceId) {
         return (CompositionService) this.service.getCompositionService(compositionServiceId);
     }

@@ -1,16 +1,16 @@
 package ir.daneshrefah.scm.plugin.scm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingCreateRequest;
-import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.common.error.ErrorMapping;
-import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingEditRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingFindRequest;
 import ir.daneshrefah.scm.common.dto.error.ErrorMappingSearchRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.error.ErrorMapping;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 @Service
 public class ExceptionManagementService extends AbstractJavaService {
@@ -32,7 +32,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         this.errorMappingService = errorMappingService;
     }
 
-    @JavaService(serviceCode = SVC_ERROR_LIST)
+    @JavaService(operationCode = SVC_ERROR_LIST)
     @SuppressWarnings("unused")
     public PagedResponseData<ErrorMapping> list(ErrorMappingFindRequest request){
         List<ErrorMapping> errorMappingsList = errorMappingService.getErrorMappingsCache();
@@ -50,7 +50,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request, result);
     }
 
-    @JavaService(serviceCode = SVC_ERROR_SEARCH)
+    @JavaService(operationCode = SVC_ERROR_SEARCH)
     @SuppressWarnings("unused")
     public PagedResponseData<ErrorMapping> search(ErrorMappingSearchRequest request){
         ValidationUtils.checkNull(request,()->new MissingRequiredInputException("payload"));
@@ -67,7 +67,7 @@ public class ExceptionManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request, result);
     }
 
-    @JavaService(serviceCode = SVC_ERROR_FIND_BY_ID)
+    @JavaService(operationCode = SVC_ERROR_FIND_BY_ID)
     @SuppressWarnings("unused")
     public ErrorMapping findById(String id){
         ValidationUtils.checkNull(id,()-> new InvalidInputException("id"));
@@ -75,13 +75,13 @@ public class ExceptionManagementService extends AbstractJavaService {
         return errorMappingService.findById(Long.parseLong(id));
     }
 
-    @JavaService(serviceCode = SVC_ERROR_CREATE)
+    @JavaService(operationCode = SVC_ERROR_CREATE)
     @SuppressWarnings("unused")
     public ErrorMapping create(ErrorMappingCreateRequest request){
         return errorMappingService.create(request);
     }
 
-    @JavaService(serviceCode = SVC_ERROR_EDIT)
+    @JavaService(operationCode = SVC_ERROR_EDIT)
     @SuppressWarnings("unused")
     public ErrorMapping edit(ErrorMappingEditRequest request){
         return errorMappingService.dynamicUpdate(request);

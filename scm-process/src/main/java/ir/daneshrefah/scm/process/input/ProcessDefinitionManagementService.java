@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.process.input;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.annotation.JavaService;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.process.service.dto.bpmnModel.BpmnModelInstanceRequest;
@@ -16,7 +16,7 @@ import ir.daneshrefah.scm.process.service.processDefinition.ProcessDefinitionMan
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static ir.daneshrefah.scm.common.constant.ServiceCode.*;
+import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 @Service
 public class ProcessDefinitionManagementService extends AbstractJavaService {
@@ -28,22 +28,22 @@ public class ProcessDefinitionManagementService extends AbstractJavaService {
         super(producerTemplate, objectMapper);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_DEFINITION_LIST)
+    @JavaService(operationCode = SVC_PROCESS_DEFINITION_LIST)
     public PagedResponseData<ProcessDefinitionResponse> getList(ProcessDefinitionRequest request) {
         return processDefinitionManagement.findProcessDefinitionList(request);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_DEFINITION_DEPLOY)
+    @JavaService(operationCode = SVC_PROCESS_DEFINITION_DEPLOY)
     public ProcessDeployResponse deployProcess(ProcessDeployRequest request) throws Exception {
         return processDefinitionManagement.deployProcess(request);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_DEFINITION_GET)
+    @JavaService(operationCode = SVC_PROCESS_DEFINITION_GET)
     public BpmnModelInstanceResponse getProcessInstanceXml(BpmnModelInstanceRequest request) {
         return processDefinitionManagement.getProcessInstanceXml(request);
     }
 
-    @JavaService(serviceCode = SVC_PROCESS_DEFINITION_DELETE)
+    @JavaService(operationCode = SVC_PROCESS_DEFINITION_DELETE)
     public boolean deleteDefinition(ProcessDefinitionDeleteRequest request) {
         return processDefinitionManagement.deleteDefinition(request);
     }

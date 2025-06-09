@@ -28,6 +28,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-netty-http-starter'
     api 'org.apache.camel.springboot:camel-jackson-starter'
     api 'org.apache.camel.springboot:camel-opentelemetry-starter'
+    api 'org.apache.camel.springboot:camel-bean-validator-starter'
     api 'org.apache.camel.springboot:camel-servlet-starter'
     api 'org.apache.camel.springboot:camel-resilience4j-starter'
     api 'org.apache.camel.springboot:camel-rest-openapi-starter'
