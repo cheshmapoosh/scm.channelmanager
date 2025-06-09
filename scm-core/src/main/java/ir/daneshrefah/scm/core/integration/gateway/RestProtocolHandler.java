@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestConfigurationDefinition;
+import org.apache.camel.model.rest.RestPropertyDefinition;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
@@ -24,7 +25,15 @@ public class RestProtocolHandler implements ProtocolHandler {
     @Override
     public ProtocolConfigurer config(GatewayChannel gatewayChannel, RouteBuilder builder) {
         RestConfigurationDefinition restConfigurationDefinition = builder.restConfiguration()
-                .component("servlet");
+                .component("servlet")
+                .enableCORS(false);
+        restConfigurationDefinition.setCorsHeaders(List.of(
+                new RestPropertyDefinition("Access-Control-Allow-Origin", "*"),
+                new RestPropertyDefinition("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"),
+                new RestPropertyDefinition("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, X-Requested-With"),
+                new RestPropertyDefinition("Access-Control-Allow-Credentials", "true"),
+                new RestPropertyDefinition("Access-Control-Expose-Headers", "Custom-Header")
+        ));
         String host = gatewayChannel.getHost();
         if (StringUtils.isNotEmpty(host)) {
             restConfigurationDefinition.host(host);
