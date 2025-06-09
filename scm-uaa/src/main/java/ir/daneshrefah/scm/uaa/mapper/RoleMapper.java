@@ -1,14 +1,16 @@
 package ir.daneshrefah.scm.uaa.mapper;
 
 import ir.daneshrefah.scm.uaa.domain.role.Role;
-import ir.daneshrefah.scm.uaa.service.role.RoleDTO;
 import ir.daneshrefah.scm.uaa.repository.authentication.RoleEntity;
+import ir.daneshrefah.scm.uaa.service.role.RoleDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
+
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,10 +19,8 @@ import java.util.List;
  * @version 1.0
  * @since 2024-02-14
  */
-@Mapper
+@Mapper(unmappedTargetPolicy =IGNORE, componentModel = SPRING)
 public interface RoleMapper {
-
-    RoleMapper INSTANCE = Mappers.getMapper(RoleMapper.class);
 
     Role toModel(RoleEntity entity);
 

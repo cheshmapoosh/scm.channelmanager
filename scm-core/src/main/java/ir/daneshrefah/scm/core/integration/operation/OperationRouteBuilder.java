@@ -38,7 +38,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     @Override
     public void configure() {
         List<Operation> operations = operationService.getAllOperations();
-        operations.stream().filter(operation -> operation.getActive()).forEach(operation -> {
+        operations.stream().filter(Operation::getActive).forEach(operation -> {
             String routeId = "route-" + operation.getName();
             String fromUri = resolveFromUri(operation);
             RouteDefinition route = from(fromUri)

@@ -55,6 +55,9 @@ public class ClientService {
     private final PersonService personService;
     private final UserService userService;
     private final PersonRepository personRepository;
+    private final PersonMapper personMapper;
+    private final ClientMapper clientMapper;
+    private final UserMapper userMapper;
 
     @Value("${scm.security.client.default-role:#{null}}")
     private String defaultClientRoleCode;
@@ -80,7 +83,7 @@ public class ClientService {
                         .findAll()
                         .stream()
                         .filter(client -> Objects.equals(client.getStatus(), true))
-                        .map(ClientMapper.INSTANCE::toModel)
+                        .map(clientMapper::toModel)
                         .peek(client -> {
                             client.setScopes(scopeRelationService.findClientScopeRelation(client.getId()));
                         })
@@ -96,7 +99,7 @@ public class ClientService {
                 .filter(client -> StringUtils.isBlank(request.getNickname()) || client.getUser().getNickname().equals(request.getNickname()))
                 .filter(client -> StringUtils.isBlank(request.getTerminalCode()) || client.getTerminalCode().equals(request.getTerminalCode()))
                 .filter(client -> StringUtils.isBlank(request.getTitle()) || StringUtils.containsIgnoreCase(client.getUser().getPerson().getTitle(), request.getTitle()))
-                .map(ClientMapper.INSTANCE::toResponse)
+                .map(clientMapper::toResponse)
                 .collect(Collectors.toList());
         return new PagedResponseData<>(request, clientList);
     }
@@ -110,16 +113,16 @@ public class ClientService {
     }
 
     public Optional<ClientResponse> getClientResponseById(Long id) {
-        return findAll().stream().filter(client -> Objects.equals(id, client.getId())).map(ClientMapper.INSTANCE::toResponse).findFirst();
+        return findAll().stream().filter(client -> Objects.equals(id, client.getId())).map(clientMapper::toResponse).findFirst();
     }
 
     public Client save(Client client) {
-        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
+        ClientEntity entity = clientMapper.toEntity(client);
         if (Objects.nonNull(entity.getVersions())) {
             entity.getVersions().forEach(clientVersionEntity -> clientVersionEntity.setClient(entity));
         }
         ClientEntity save = clientRepository.save(entity);
-        client = ClientMapper.INSTANCE.toModel(save);
+        client = clientMapper.toModel(save);
         reloadCache();
         return client;
     }
@@ -127,7 +130,7 @@ public class ClientService {
     @Transactional
     public ClientResponse updateClient(ClientEditRequest request) {
         ClientEntity foundEntity = clientRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        ClientEntity entity = ClientMapper.INSTANCE.toEntity(mapClientEditRequestToClient(request));
+        ClientEntity entity = clientMapper.toEntity(mapClientEditRequestToClient(request));
         updateAuthGrantType(foundEntity, request);
         dynamicMap(entity, foundEntity);
         if (StringUtils.isNotBlank(request.getPassword())) {
@@ -139,7 +142,7 @@ public class ClientService {
         updateClientPerson(request, foundEntity);
         clientRepository.save(foundEntity);
         reloadCache();
-        return ClientMapper.INSTANCE.toResponse(findByNickname(request.getNickname()).orElseThrow());
+        return clientMapper.toResponse(findByNickname(request.getNickname()).orElseThrow());
     }
 
     private void updateClientPerson(ClientEditRequest request, ClientEntity foundEntity) {
@@ -231,14 +234,14 @@ public class ClientService {
         entity.setStatus(false);
         clientRepository.save(entity);
         reloadCache();
-        return ClientMapper.INSTANCE.toResponse(ClientMapper.INSTANCE.toModel(entity));
+        return clientMapper.toResponse(clientMapper.toModel(entity));
     }
 
     @Transactional
     public ClientResponse create(ClientCreateRequest request) {
         validateClientCreateRequest(request);
-        Client client = ClientMapper.INSTANCE.toModel(request);
-        ClientEntity entity = ClientMapper.INSTANCE.toEntity(client);
+        Client client = clientMapper.toModel(request);
+        ClientEntity entity = clientMapper.toEntity(client);
         Set<ClientAuthorizationGrantTypeEntity> grantTypes = new HashSet<>();
         request
                 .getAuthorizationGrantTypes()
@@ -253,12 +256,12 @@ public class ClientService {
         ClientPerson clientPerson = createClientPerson(request);
         User clientUser = createClientUser(request, clientPerson);
         checkClientRoleAssignment(clientPerson);
-        entity.setUser(UserMapper.INSTANCE.toEntity(clientUser));
+        entity.setUser(userMapper.toEntity(clientUser));
         entity.setStatus(true);
-        entity.setLegalPerson((GeneralLegalPersonEntity) PersonMapper.INSTANCE.toPersonEntity(legalPerson));
+        entity.setLegalPerson((GeneralLegalPersonEntity) personMapper.toPersonEntity(legalPerson));
         ClientEntity saved = clientRepository.save(entity);
         reloadCache();
-        return ClientMapper.INSTANCE.toResponse(findByNickname(saved.getUser().getNickname()).orElseThrow());
+        return clientMapper.toResponse(findByNickname(saved.getUser().getNickname()).orElseThrow());
     }
 
     private ClientPerson createClientPerson(ClientCreateRequest request) {
@@ -280,7 +283,7 @@ public class ClientService {
         clientPerson.setIdentificationSerial(StringUtils.EMPTY);
         clientPerson.setGender(Gender.MALE);
         clientPerson.setLastName(StringUtils.EMPTY);
-        return (ClientPerson) PersonMapper.INSTANCE.toPerson(personRepository.save(clientPerson));
+        return (ClientPerson) personMapper.toPerson(personRepository.save(clientPerson));
     }
 
     private String getClientPersonSubOrg(String nationalId) {
@@ -350,7 +353,7 @@ public class ClientService {
                     person.setIdentificationSerial(StringUtils.EMPTY);
                     person.setGender(Gender.MALE);
                     person.setLastName(StringUtils.EMPTY);
-                    return (GeneralLegalPerson) PersonMapper.INSTANCE.toPerson(personRepository.save(person));
+                    return (GeneralLegalPerson) personMapper.toPerson(personRepository.save(person));
                 });
         return dbPerson;
     }
@@ -371,7 +374,7 @@ public class ClientService {
     }
 
     private Client mapClientEditRequestToClient(ClientEditRequest request) {
-        Client client = ClientMapper.INSTANCE.toModel(request);
+        Client client = clientMapper.toModel(request);
         client.setId(request.getId());
         client.setLastEditDate(LocalDateTime.now());
         return client;

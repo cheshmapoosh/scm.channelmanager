@@ -32,6 +32,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
 
     private final OtpService otpService;
     private final UserService userService;
+    private final UserMapper userMapper;
 
     private void validateOtpRequest(OtpType otpType, String identifier, String claimCode, OtpReason reason, String identifierName) {
         ValidationUtils.checkNull(otpType, () -> new MissingRequiredInputException("otpType"));
@@ -46,7 +47,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         ValidationUtils.checkBlankString(request.getClaimCode(), () -> new MissingRequiredInputException("claimCode"));
         ValidationUtils.checkNull(request.getReason(), () -> new MissingRequiredInputException("reason"));
         UserEntity userEntity = userService.findUser(Objects.requireNonNull(AuthenticationUtils.getLoggedInUserAuthentication()));
-        User user = UserMapper.INSTANCE.toModel(userEntity);
+        User user = userMapper.toModel(userEntity);
         GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,
@@ -74,7 +75,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         validateOtpRequest(request.getOtpType(), request.getUsername(), request.getClaimCode(), request.getReason(), "Username");
         GeneralPersonEntity generalPerson = userService.findPersonByUsername(request.getUsername());
         UserEntity userEntity = findUserByPersonAndTerminal(generalPerson.getId(), extractRequestTerminalCode());
-        User user = UserMapper.INSTANCE.toModel(userEntity);
+        User user = userMapper.toModel(userEntity);
         return verifyOtpForUser(
                 request,
                 generalPerson.getMobile1(),
@@ -88,7 +89,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
     public OtpVerifyResponse verifyOtpByNickname(VerifyOtpByNicknameRequest request) {
         validateOtpRequest(request.getOtpType(), request.getNickname(), request.getClaimCode(), request.getReason(), "nickname");
         UserEntity userEntity = findUserByNicknameAndTerminal(request.getNickname(), extractRequestTerminalCode());
-        User user = UserMapper.INSTANCE.toModel(userEntity);
+        User user = userMapper.toModel(userEntity);
         GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,
@@ -104,7 +105,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
         validateOtpRequest(request.getOtpType(), request.getNationalCode(), request.getClaimCode(), request.getReason(), "nationalCode");
         UserEntity userEntity = userService.findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganizationId(), extractRequestTerminalCode()).orElseThrow(() -> {
             throw new NoMatchRecordFoundException("user");});
-        User user = UserMapper.INSTANCE.toModel(userEntity);
+        User user = userMapper.toModel(userEntity);
         GeneralPerson person = user.getPerson();
         return verifyOtpForUser(
                 request,

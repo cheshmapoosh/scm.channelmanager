@@ -76,6 +76,7 @@ public class UserService {
     private final XUserDetailService xUserDetailService;
     private final CredentialGenerator credentialGenerator;
     private final UPersonService uPersonService;
+    private final UserMapper userMapper;
 
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
@@ -103,7 +104,7 @@ public class UserService {
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     @Transactional
@@ -118,7 +119,7 @@ public class UserService {
         userRepository.save(currentUser);
         xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(currentUser);
+        return userMapper.toModel(currentUser);
     }
 
     public UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
@@ -154,7 +155,7 @@ public class UserService {
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     @Transactional
@@ -173,7 +174,7 @@ public class UserService {
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     private void validatePasswordModificationRequest(PasswordModificationRequest request) {
@@ -353,7 +354,7 @@ public class UserService {
 //        entity.setCreatorBranch(request.getCreatorBranch());
 //        entity.setCreator(creatorEntity.getId());
 //        entity.setLastEditor(creatorEntity.getId());
-        User user = UserMapper.INSTANCE.toModel(entity);
+        User user = userMapper.toModel(entity);
 
         GeneralPerson person = new UnknownPerson();
         person.setId(new Random().nextInt());
@@ -393,7 +394,7 @@ public class UserService {
         assert creatorEntity != null;
         UserEntity entity = mapToUserEntity(request, terminal.getLegacyTerminalId().intValue(), creatorEntity, personEntity, request.getUserType());
         entity = userRepository.save(entity);
-        return UserMapper.INSTANCE.toModel(entity);
+        return userMapper.toModel(entity);
     }
 
     private UserEntity mapToUserEntity(UserDataRequest request, Integer terminalId, GeneralPersonEntity creatorEntity, GeneralPersonEntity personEntity, UserType userType) {
@@ -432,7 +433,7 @@ public class UserService {
         Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
         Page<UserEntity> entities = userRepository.findAll(UserSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
-                UserMapper.INSTANCE.toModels(entities.getContent()));
+                userMapper.toModels(entities.getContent()));
     }
 
     private void validateFindPagedUserList(UserFindRequest request) {
@@ -470,7 +471,7 @@ public class UserService {
             return Optional.empty();
         }
 
-        User user = UserMapper.INSTANCE.toModel(userEntity.get());
+        User user = userMapper.toModel(userEntity.get());
         return Optional.of(user);
     }
 
@@ -536,7 +537,7 @@ public class UserService {
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(nickname, terminalCode);
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     public void verifyOtpCode(UserAuthentication loggedInUserAuthentication, String credential, OtpReason reason, OtpType otpType) {
@@ -603,7 +604,7 @@ public class UserService {
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(nickname, terminalCode);
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     @Transactional
@@ -623,7 +624,7 @@ public class UserService {
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
         userCache.removeUserFromCache(userEntity.getNickname(), request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
 
@@ -683,7 +684,7 @@ public class UserService {
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminal.getCode());
         userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     private void applyDynamicUpdateChanges(UserEntity userEntity, UserDataChangeRequest request) {
@@ -710,7 +711,7 @@ public class UserService {
     }
 
     public User findUserById(Integer userId) {
-        return UserMapper.INSTANCE.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
+        return userMapper.toModel(userRepository.findById(userId).orElseThrow(() -> new NoMatchRecordFoundException("userId")));
     }
 
     public List<UserEntity> findByPersonIdAndLegacyTerminalCode(Integer userId, String terminalCode) {
@@ -723,7 +724,7 @@ public class UserService {
                 .orElseThrow(() -> new InvalidInputException("terminalCode"));
         List<UserEntity> userEntities = findByNicknameAndLegacyTerminalId(nickname, terminal.getLegacyTerminalId().intValue());
         if (Objects.nonNull(userEntities) && !userEntities.isEmpty()) {
-            return UserMapper.INSTANCE.toModel(userEntities.get(0));
+            return userMapper.toModel(userEntities.get(0));
         }
         return null;
     }
@@ -785,7 +786,7 @@ public class UserService {
         userRepository.save(userEntity);
         userRepository.flush();
         uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {

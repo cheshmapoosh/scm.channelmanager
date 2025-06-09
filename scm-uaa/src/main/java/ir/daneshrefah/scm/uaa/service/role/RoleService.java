@@ -31,6 +31,7 @@ import java.util.Optional;
 public class RoleService {
 
     private final RoleRepository roleRepository;
+    private final RoleMapper roleMapper;
 
     public PagedResponseData<Role> findPagedRoleList(RoleFindRequest request) {
         if (null == request) {
@@ -39,7 +40,7 @@ public class RoleService {
         Pageable pageable = PageRequest.of(Math.max(request.getPageNo() - 1, 0), request.getPageSize());
         Page<RoleEntity> entities = roleRepository.findAll(RoleSpecs.toSpecification(request), pageable);
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(),
-                RoleMapper.INSTANCE.toModels(entities.getContent()));
+                roleMapper.toModels(entities.getContent()));
     }
 
     public Role createRole(RoleDTO roleDTO) {
@@ -51,10 +52,10 @@ public class RoleService {
             if (roleEntity.isPresent()) {
                 throw new InputAlreadyExistException("Role With This Code '" + roleCode + "' Already Exists");
             } else {
-                RoleEntity newRole = RoleMapper.INSTANCE.roleDtoToRoleEntity(roleDTO);
+                RoleEntity newRole = roleMapper.roleDtoToRoleEntity(roleDTO);
                 roleRepository.save(newRole);
 
-                return RoleMapper.INSTANCE.toModel(newRole);
+                return roleMapper.toModel(newRole);
             }
         }
     }
@@ -72,10 +73,10 @@ public class RoleService {
         } else {
             Optional<RoleEntity> existingRole = roleRepository.findById(roleId);
             if (existingRole.isPresent()) {
-                RoleMapper.INSTANCE.updateRoleEntityFromDto(roleDTO,existingRole.get());
+                roleMapper.updateRoleEntityFromDto(roleDTO,existingRole.get());
                 roleRepository.save(existingRole.get());
 
-                return RoleMapper.INSTANCE.toModel(existingRole.get());
+                return roleMapper.toModel(existingRole.get());
             } else {
                 throw new NoMatchRecordFoundException("Role Not Found");
             }

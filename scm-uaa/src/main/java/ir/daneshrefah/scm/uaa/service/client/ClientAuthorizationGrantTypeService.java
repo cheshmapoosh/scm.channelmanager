@@ -17,12 +17,13 @@ import java.util.stream.Collectors;
 public class ClientAuthorizationGrantTypeService {
 
     private final ClientAuthorizationGrantTypeRepository authGrantTypeRepository;
+    private final ClientMapper mapper;
 
     public Set<ClientAuthorizationGrantType> findByClientId(Long clientId) {
         return authGrantTypeRepository
                 .findByClientId(clientId)
                 .stream()
-                .map(ClientMapper.INSTANCE::toModel)
+                .map(mapper::toModel)
                 .collect(Collectors.toSet());
     }
 

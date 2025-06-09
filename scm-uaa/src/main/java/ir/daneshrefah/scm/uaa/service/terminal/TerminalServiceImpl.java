@@ -21,12 +21,13 @@ import java.util.stream.Collectors;
 public class TerminalServiceImpl extends TerminalService {
 
     private final TerminalRepository terminalRepository;
+    private final TerminalMapper terminalMapper;
     private List<Terminal> terminals;
 
     @Override
     public List<Terminal> findAllTerminals() {
         if (null == terminals) {
-            terminals = TerminalMapper.INSTANCE.entitiesToModels(terminalRepository.findAll());
+            terminals = terminalMapper.entitiesToModels(terminalRepository.findAll());
         }
         return terminals;
     }
