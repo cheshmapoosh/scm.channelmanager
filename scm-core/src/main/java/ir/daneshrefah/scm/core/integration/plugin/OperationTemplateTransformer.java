@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
 import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
-import ir.daneshrefah.scm.common.plugin.PluginHandler;
+import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.core.integration.template.context.TemplateContextBuilder;
 import ir.daneshrefah.scm.core.integration.template.engine.TemplateEngine;
 import ir.daneshrefah.scm.core.integration.template.extractor.TemplateVariableExtractor;
@@ -44,6 +44,7 @@ public class OperationTemplateTransformer implements PluginHandler {
     @Override
     public void init(RouteDefinition routeDefinition, PluginDetail pluginDetail, Map<String, ?> properties) {
         Operation operation = (Operation) properties.get(Message.OPERATION);
+        
         if (operation == null) {
             throw new IllegalArgumentException("No service operation found in exchange");
         }

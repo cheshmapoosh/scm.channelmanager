@@ -5,14 +5,12 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
-import ir.daneshrefah.scm.common.model.operation.OperationDefinitionType;
-import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.plugin.PluginHandler;
-import ir.daneshrefah.scm.core.integration.operation.handlers.java.JavaOperationProcessor;
+import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import lombok.RequiredArgsConstructor;
@@ -34,16 +32,15 @@ public class OperationRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("operation");
     private final Map<String, PluginHandler> pluginHandlers;
-    private final JavaOperationProcessor javaOperationProcessor;
+    private final List<OperationTypeHandler> operationTypeHandlers;
 
 
     @Override
     public void configure() {
         List<Operation> operations = operationService.getAllOperations();
-        for (Operation operation : operations) {
+        operations.stream().filter(operation -> operation.getActive()).forEach(operation -> {
             String routeId = "route-" + operation.getName();
             String fromUri = resolveFromUri(operation);
-
             RouteDefinition route = from(fromUri)
                     .routeId(routeId)
                     .setProperty(Message.OPERATION, constant(operation));
@@ -62,7 +59,7 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER);
             applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
-        }
+        });
     }
 
 
@@ -133,50 +130,10 @@ public class OperationRouteBuilder extends RouteBuilder {
     }
 
     private void buildTarget(RouteDefinition route, Operation operation) {
-        switch (operation.getType()) {
-            case REST -> {
-                RestConfigOperationDefinition restConfigOperationDefinition = operation.getDefinitions().stream()
-                        .filter(operationDefinition -> Objects.equals(operationDefinition.getType(), OperationDefinitionType.REST_CONFIG))
-                        .findFirst()
-                        .map(RestConfigOperationDefinition.class::cast)
-                        .orElseThrow(() -> new RuntimeException("Operation definition not found"));
-
-                StringBuilder targetUrl = new StringBuilder("webclient:" + restConfigOperationDefinition.getUrl() +
-                                                            "?method=" + restConfigOperationDefinition.getHttpMethod().getValue());
-                Integer responseTimeout = restConfigOperationDefinition.getResponseTimeout();
-                if (responseTimeout != null) {
-                    targetUrl.append("&responseTimeout=").append(responseTimeout);
-                }
-                Integer connectTimeout = restConfigOperationDefinition.getConnectTimeout();
-                if (connectTimeout != null) {
-                    targetUrl.append("&connectTimeout=").append(connectTimeout);
-                }
-                Integer writeTimeout = restConfigOperationDefinition.getWriteTimeout();
-                if (writeTimeout != null) {
-                    targetUrl.append("&writeTimeout=").append(writeTimeout);
-                }
-                Boolean retryEnabled = restConfigOperationDefinition.getRetryEnabled();
-                if (retryEnabled != null) {
-                    targetUrl.append("&retryEnabled=").append(retryEnabled);
-                }
-                Integer maxAttempts = restConfigOperationDefinition.getMaxAttempts();
-                if (maxAttempts != null) {
-                    targetUrl.append("&maxAttempts=").append(maxAttempts);
-                }
-                Integer minBackoff = restConfigOperationDefinition.getMinBackoff();
-                if (minBackoff != null) {
-                    targetUrl.append("&minBackoff=").append(minBackoff);
-                }
-                Boolean wiretap = restConfigOperationDefinition.getWiretap();
-                if (wiretap != null) {
-                    targetUrl.append("&wiretap=").append(wiretap);
-                }
-                route.to(targetUrl.toString());
-            }
-            case BEAN -> route.to("bean:" + operation.getPath());
-            case JAVA -> route.process(javaOperationProcessor);
-            default -> throw new IllegalStateException("Unexpected operation type: " + operation.getType());
-        }
+        OperationTypeHandler handler = operationTypeHandlers.stream()
+                .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type not found"));
+        handler.config(route, operation);
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
