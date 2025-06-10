@@ -47,7 +47,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.10.4.125:8000
+    issuer-uri: http://10.10.4.126:8000
   cache:
     client:
       distributed: true
@@ -55,7 +55,7 @@ scm:
         clusterName: dev3
         network-config:
           addresses:
-            - '10.10.4.125:5701'
+            - '10.10.8.46:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object

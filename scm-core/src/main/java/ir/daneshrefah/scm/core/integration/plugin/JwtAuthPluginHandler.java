@@ -4,22 +4,33 @@ import ir.daneshrefah.scm.common.exception.ScmException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
+import ir.daneshrefah.scm.common.service.PersonProfileLoader;
+import ir.daneshrefah.scm.core.integration.template.context.HeaderContextResolver;
+import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
+import ir.daneshrefah.scm.uaa.client.core.ClientAuthenticationRequest;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+import static ir.daneshrefah.scm.utils.constant.Constants.*;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthPluginHandler implements PluginHandler {
 
-    private String authHeader = "Authorization";
+    private final AuthenticationClientTemplate authenticationClientTemplate;
+    private final HeaderContextResolver headerContextResolver;
+    private final PersonProfileLoader profileLoader;
     private final JwtDecoder jwtDecoder;
+    private String authHeader = "Authorization";
 
     @Override
     public PluginType getType() {
@@ -41,15 +52,35 @@ public class JwtAuthPluginHandler implements PluginHandler {
         }
 
         String token = authValue.substring("Bearer ".length());
-        Jwt jwt;
 
         try {
-            jwt = jwtDecoder.decode(token);
+            ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
+            UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            profileLoader.preparePersonProfile(authentication);
+            exchange.getIn().setHeader("jwt", jwtDecoder.decode(token));
         } catch (JwtException e) {
             throw new ScmException("SCM.100002", "Jwt invalid", e);
         }
 
         // Put the decoded JWT claims in the exchange property for downstream plugins
-        exchange.setProperty("jwt", jwt);
+
     }
+
+
+    private ClientAuthenticationRequest convertToClientAuthenticationRequest(Exchange exchange) {
+        return ClientAuthenticationRequest.builder()
+                .username((String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange))
+                .terminalCode((String) headerContextResolver.resolve(SCM_PARAMETER_TERMINAL, exchange))
+                .clientId((String) headerContextResolver.resolve(SCM_PARAMETER_CLIENT_ID, exchange))
+                .tokenType(AuthenticationUtils.extractTokenType(
+                        (String) headerContextResolver.resolve(SCM_PARAMETER_AUTHORIZATION, exchange),
+                        (String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange),
+                        (String) headerContextResolver.resolve(SCM_PARAMETER_CREDENTIAL, exchange)))
+                .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headerContextResolver.resolve(SCM_PARAMETER_AUTHORIZATION, exchange)))
+                .accessParameter((String) headerContextResolver.resolve(SCM_PARAMETER_ACCESS_PARAMETER, exchange))
+                .build();
+    }
+
+
 }

@@ -2,12 +2,15 @@ package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
+import ir.daneshrefah.scm.common.error.bean.validation.ScmBeanValidationException;
 import ir.daneshrefah.scm.common.exception.ScmException;
 import ir.daneshrefah.scm.common.model.ScmResponse;
+import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import lombok.RequiredArgsConstructor;
+import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +21,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -42,7 +46,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
             route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
         });
         route
-                .to("bean-validator://input")
+                .bean("beanValidator")
                 .bean(beanName, targetBeanPath)
                 .process(exchange -> {
                     ScmResponse response = ScmResponse
@@ -54,7 +58,25 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                     exchange.getIn().setBody(response);
                 })
                 .marshal().json(JsonLibrary.Jackson);
+        beanValidationHandler(route);
+    }
 
+    private void beanValidationHandler(RouteDefinition route) {
+        route.
+                onException(ScmBeanValidationException.class)
+                .handled(true)
+                .process(exchange -> {
+                    ScmBeanValidationException beanValidationException = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, ScmBeanValidationException.class);
+                    List<Error> errors =beanValidationException.getErrors();
+                    ScmResponse response = ScmResponse.builder()
+                            .status(MessageStatus.SC_ERROR_VALIDATION)
+                            .result(null)
+                            .errors(errors)
+                            .build();
+                    exchange.getIn().setBody(response);
+                })
+                .marshal().json(JsonLibrary.Jackson)
+                .end();
     }
 
     private String createTargetBeanPath(Method targetMethod) {

@@ -294,7 +294,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         Channel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new InvalidInputException("terminal"));
         Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessList = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(currentPerson.getId(), channel.getId());
         Iterator<MembershipTerminalAccessEntity> iterator = membershipTerminalAccessList.iterator();
-        final AccountFavoriteActivityResponse response =  AccountFavoriteActivityResponse.builder().build();
+        final AccountFavoriteActivityResponse response = new  AccountFavoriteActivityResponse();
         response.setIsFavorite(request.getIsFavorite());
         applyAccountsFavouriteStatus(scmAuthentication, iterator, request, response);
         if (Objects.nonNull(request.getAccountNoList())) {
