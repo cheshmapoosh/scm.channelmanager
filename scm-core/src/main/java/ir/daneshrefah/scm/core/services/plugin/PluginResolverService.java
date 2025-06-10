@@ -10,9 +10,9 @@ import java.util.List;
 
 public interface PluginResolverService {
 
-    List<PluginDetail> resolveOrderedPluignDefinitions(Channel channel);
+    List<PluginDetail> resolveOrderedPluginDetails(Channel channel);
 
-    List<PluginDetail> resolveOrderedPluignDefinitions(List<PluginDetail> channelPluginDetails, Service service, PluginPhase phase);
+    List<PluginDetail> resolveOrderedPluginDetails(List<PluginDetail> channelPluginDetails, Service service, PluginPhase phase);
 
-    List<PluginDetail> resolveOrderedPluignDefinitions(Operation operation, PluginPhase phase);
+    List<PluginDetail> resolveOrderedPluginDetails(Operation operation, PluginPhase phase);
 }

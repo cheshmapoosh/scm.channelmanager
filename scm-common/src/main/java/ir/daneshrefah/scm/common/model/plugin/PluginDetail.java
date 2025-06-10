@@ -9,5 +9,6 @@ public class PluginDetail {
     private String name;
     private Short order;
     private PluginPhase phase;
+    private Boolean active;
     private Map<String, ?> config;
 }

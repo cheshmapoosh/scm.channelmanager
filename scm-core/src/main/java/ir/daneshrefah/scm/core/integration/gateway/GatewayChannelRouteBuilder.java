@@ -26,6 +26,7 @@ import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,7 +83,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                                 " with " + gatewayChannel.getProtocolType() + " protocol"));
         ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
 
-        List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(gatewayChannel.getChannel());
+        List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
 
         channelServiceAccesses.stream()
                 .filter(channelServiceAccess -> CollectionUtils.isNotEmpty(channelServiceAccess.getService().getServiceOperations()))
@@ -95,7 +96,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
                     RouteDefinition route = protocolConfigurer.routeDefinition(channelServiceAccess, definitions)
                             .setProperty(Message.SERVICE, constant(service));
-                    List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
+                    List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.AFTER_THROWING);
                     defineExceptionHandler(route, orderedAfterThrowingPluginDetails);
@@ -103,14 +104,14 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     applyMetrics(route, service);
                     applyTracing(route, service);
 
-                    List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
+                    List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.BEFORE);
                     applyBeforePlugins(route, orderedBeforePluginDetails);
 
                     buildTarget(route, service);
 
-                    List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(channelPluginDetails,
+                    List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
                             channelServiceAccess.getService(),
                             PluginPhase.AFTER);
                     applyAfterPlugins(route, orderedAfterPluginDetails);
@@ -242,7 +243,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails) {
         route.onException(Exception.class)
-                .handled(true)
+                .handled(false)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
@@ -257,7 +258,8 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     if (scope != null) {
                         scope.close();
                     }
-                });
+                    exchange.getIn().setBody(exception);
+                }).marshal().json(JsonLibrary.Jackson);
 
         if (orderedAfterThrowingPluginDetails == null) {
             return;

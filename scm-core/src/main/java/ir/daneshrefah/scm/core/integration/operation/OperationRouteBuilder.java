@@ -46,18 +46,18 @@ public class OperationRouteBuilder extends RouteBuilder {
                     .setProperty(Message.OPERATION, constant(operation));
 
 
-            List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER_THROWING);
+            List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER_THROWING);
             defineExceptionHandler(route, orderedAfterThrowingPluginDetails, Map.of(Message.OPERATION, operation));
 
             applyMetrics(route, operation);
             applyTracing(route, operation);
 
-            List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.BEFORE);
+            List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
 
             buildTarget(route, operation);
 
-            List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluignDefinitions(operation, PluginPhase.AFTER);
+            List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
             applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
         });
     }

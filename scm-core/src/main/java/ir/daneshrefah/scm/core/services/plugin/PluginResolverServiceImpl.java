@@ -22,7 +22,7 @@ public class PluginResolverServiceImpl implements PluginResolverService {
     private final PluginBindingMapper pluginBindingMapper;
 
     @Override
-    public List<PluginDetail> resolveOrderedPluignDefinitions(Channel channel) {
+    public List<PluginDetail> resolveOrderedPluginDetails(Channel channel) {
         PluginBindingEntity channelPluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(
                 PluginScope.CHANNEL,
                 String.valueOf(channel.getId()),
@@ -33,23 +33,24 @@ public class PluginResolverServiceImpl implements PluginResolverService {
             channelPluginDetails = channelPluginBinding.getDetails();
         }
         return channelPluginDetails.stream()
+                .filter(PluginDetail::getActive)
                 .sorted(Comparator.comparingInt(PluginDetail::getOrder))
                 .toList() ;
 
     }
         @Override
-    public List<PluginDetail> resolveOrderedPluignDefinitions(List<PluginDetail> channelPluginDetails,
-                                                              Service service,
-                                                              PluginPhase phase) {
+    public List<PluginDetail> resolveOrderedPluginDetails(List<PluginDetail> channelPluginDetails,
+                                                          Service service,
+                                                          PluginPhase phase) {
         Map<String, PluginDetail> resolved = new LinkedHashMap<>();
 
-        List<PluginDetail> channelPluginDefinitionsByPhase = resolvePluginDefinitions(channelPluginDetails, phase);
+        List<PluginDetail> channelPluginDefinitionsByPhase = resolveActivePluginDetails(channelPluginDetails, phase);
 
         PluginBindingEntity servicePluginBindingEntity = pluginBindingRepository.findByScopeAndScopeIdAndActive(PluginScope.SERVICE, String.valueOf(service.getId()), true);
         List<PluginDetail> servicePluginDetails = List.of();
         if (servicePluginBindingEntity != null) {
             PluginBinding servicePluginBinding = pluginBindingMapper.toModel(servicePluginBindingEntity);
-            servicePluginDetails = resolvePluginDefinitions(servicePluginBinding.getDetails(), phase);
+            servicePluginDetails = resolveActivePluginDetails(servicePluginBinding.getDetails(), phase);
         }
 
         List<PluginDetail> pluginDetails = Stream.of(
@@ -66,23 +67,24 @@ public class PluginResolverServiceImpl implements PluginResolverService {
     }
 
     @Override
-    public List<PluginDetail> resolveOrderedPluignDefinitions(Operation operation, PluginPhase phase) {
+    public List<PluginDetail> resolveOrderedPluginDetails(Operation operation, PluginPhase phase) {
         PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository
                 .findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
         List<PluginDetail> operationPluginDetails = List.of();
         if (operationPluginBindingEntity != null) {
             PluginBinding operationPluginBinding = pluginBindingMapper.toModel(operationPluginBindingEntity);
-            operationPluginDetails = resolvePluginDefinitions(operationPluginBinding.getDetails(), phase);
+            operationPluginDetails = resolveActivePluginDetails(operationPluginBinding.getDetails(), phase);
         }
         return operationPluginDetails.stream()
                 .sorted(Comparator.comparingInt(PluginDetail::getOrder))
                 .toList() ;
     }
 
-    private List<PluginDetail> resolvePluginDefinitions(List<PluginDetail> pluginDetails, PluginPhase phase) {
+    private List<PluginDetail> resolveActivePluginDetails(List<PluginDetail> pluginDetails, PluginPhase phase) {
         if (pluginDetails == null) { return List.of(); }
 
         return pluginDetails.stream()
+                .filter(pluginDetail -> Objects.equals(Boolean.TRUE, pluginDetail.getActive()))
                 .filter(p -> p.getPhase() == phase)
                 .toList();
     }
