@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import jakarta.jms.Destination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "scm.jms.logout.enabled", havingValue = "true")
 public class LogoutService {
 
     public static final String DOUBLE_COLON = "::";
@@ -21,7 +23,6 @@ public class LogoutService {
     private final Destination logoutTopic;
     private final LogoutJmsConfigProperties properties;
 
-    @Async
     public void sendLogoutMessage(Authentication authentication) {
         try {
             if (authentication != null && authentication.isAuthenticated() && properties.getEnabled()) {
