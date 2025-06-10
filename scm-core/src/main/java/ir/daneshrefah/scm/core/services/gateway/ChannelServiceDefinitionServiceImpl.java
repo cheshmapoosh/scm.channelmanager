@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.core.services.gateway;
 
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
-import ir.daneshrefah.scm.common.model.gateway.*;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.core.mapper.gateway.ChannelServiceDefinitionMapper;
 import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
@@ -19,11 +20,14 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
 
     @Override
     public List<ChannelServiceDefinition> findDefinitions(ChannelServiceAccess channelServiceAccess, GatewayChannel gatewayChannel) {
-        Optional<ChannelServiceDefinitionEntity> channelServiceDefinitionEntityOptional =
+        Optional<List<ChannelServiceDefinitionEntity>> channelServiceDefinitionEntitiesOptional =
                 channelServiceDefinitionRepository.findByChannelServiceAccess_IdAndGatewayChannel_Id(
                         channelServiceAccess.getId(),
                         gatewayChannel.getId());
-
-        return channelServiceDefinitionEntityOptional.map(channelServiceDefinitionMapper::toModel).stream().toList();
+        return channelServiceDefinitionEntitiesOptional
+                .map(channelServiceDefinitionEntities ->
+                        channelServiceDefinitionEntities.stream()
+                                .map(channelServiceDefinitionMapper::toModel).toList())
+                .orElseGet(List::of);
     }
 }

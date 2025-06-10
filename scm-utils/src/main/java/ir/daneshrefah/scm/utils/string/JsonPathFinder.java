@@ -11,6 +11,9 @@ public class JsonPathFinder {
     private JsonPathFinder() {
     }
 
+    public static JsonNode defaultNode (JsonNode node, String path) {
+        return node.get(path);
+    }
 
     public static String defaultAsText(JsonNode node, String path) {
         return defaultAsText(node, path, null);

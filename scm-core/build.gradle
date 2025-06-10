@@ -77,6 +77,7 @@ dependencies {
     implementation 'com.github.victools:jsonschema-generator:4.37.0'
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation 'org.apache.camel.springboot:camel-jsonpath-starter'
     implementation 'org.apache.commons:commons-text'
 
 }

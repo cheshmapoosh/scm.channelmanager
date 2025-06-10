@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
-import ir.daneshrefah.scm.common.exception.SCMException;
+import ir.daneshrefah.scm.common.exception.ScmException;
 import ir.daneshrefah.scm.common.model.ScmResponse;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.operation.Operation;
@@ -93,6 +93,6 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                         .map(JavaService::operationCode)
                         .map(OperationCode::name)
                         .anyMatch(code -> code.equals(operationCode)))
-                .findFirst().orElseThrow(() -> new SCMException("Java service method not found"));
+                .findFirst().orElseThrow(() -> new ScmException("SCM.10000", "Java service method not found"));
     }
 }

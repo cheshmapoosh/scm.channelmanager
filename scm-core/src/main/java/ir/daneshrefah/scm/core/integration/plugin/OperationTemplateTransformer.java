@@ -4,11 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.handler.StatusHandler;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.operation.Operation;
-import ir.daneshrefah.scm.common.model.operation.OperationDefinition;
-import ir.daneshrefah.scm.common.model.operation.OperationDefinitionType;
+import ir.daneshrefah.scm.common.model.operation.*;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
@@ -17,6 +16,7 @@ import ir.daneshrefah.scm.core.integration.template.context.TemplateContextBuild
 import ir.daneshrefah.scm.core.integration.template.engine.TemplateEngine;
 import ir.daneshrefah.scm.core.integration.template.extractor.TemplateVariableExtractor;
 import ir.daneshrefah.scm.utils.string.HttpConstants;
+import ir.daneshrefah.scm.utils.string.JsonPathFinder;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.Builder;
@@ -32,9 +32,12 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class OperationTemplateTransformer implements PluginHandler {
 
+    private final ObjectMapper objectMapper;
     private final List<TemplateEngine> templateEngines;
     private final List<TemplateVariableExtractor> templateVariableExtractors;
     private final TemplateContextBuilder templateContextBuilder;
+    private final Map<String, StatusHandler> statusHandlers;
+
 
     @Override
     public PluginType getType() {
@@ -100,8 +103,18 @@ public class OperationTemplateTransformer implements PluginHandler {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> context = mapper.convertValue(response, new TypeReference<>() {});
             String templateText = definition.getDetails();
-            String body =  templateEngine.render(definition.getName(), templateText, context);
-            exchange.getIn().setBody(body);
+            String render =  templateEngine.render(definition.getName(), templateText, context);
+            JsonNode jsonNode = mapper.readTree(render);
+            String statusHandlerName = JsonPathFinder.defaultAsText(jsonNode, "statusHandler");
+            if (statusHandlerName != null) {
+                StatusHandler statusHandler = statusHandlers.get(statusHandlerName);
+                if (statusHandler != null) {
+                    statusHandler.handle(exchange);
+                } else {
+                    throw new IllegalArgumentException("Unknown status handler " + statusHandlerName);
+                }
+            }
+            exchange.getIn().setBody(JsonPathFinder.defaultNode(jsonNode, "response"));
         }
     }
 }

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.mapper.operation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -12,7 +13,10 @@ import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.operation.OperationDefinitionEntity;
 import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
-import org.mapstruct.*;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -30,6 +34,7 @@ public abstract class OperationDefinitionMapper {
 
     @PostConstruct
     public void init() {
+        mapper.enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION.mappedFeature());
         this.reader = mapper.reader();
     }
 
@@ -76,33 +81,33 @@ public abstract class OperationDefinitionMapper {
     @AfterMapping
     public void afterMapping(@MappingTarget RestConfigOperationDefinition restConfigOperationDefinition) {
         try {
-            JsonNode dtoNode = reader.readTree(restConfigOperationDefinition.getDefinition().getDetails());
+            JsonNode jsonNode = reader.readTree(restConfigOperationDefinition.getDefinition().getDetails());
             
-            String url = JsonPathFinder.defaultAsText(dtoNode, "url");
+            String url = JsonPathFinder.defaultAsText(jsonNode, "url");
             restConfigOperationDefinition.setUrl(url);
             
-            String method = JsonPathFinder.defaultAsText(dtoNode, "method");
+            String method = JsonPathFinder.defaultAsText(jsonNode, "method");
             restConfigOperationDefinition.setHttpMethod(HttpMethod.fromValue(method));
 
-            Integer responseTimeout = JsonPathFinder.defaultAsInteger(dtoNode, "responseTimeout");
+            Integer responseTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "responseTimeout");
             restConfigOperationDefinition.setResponseTimeout(responseTimeout);
 
-            Integer connectTimeout = JsonPathFinder.defaultAsInteger(dtoNode, "connectTimeout");
+            Integer connectTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "connectTimeout");
             restConfigOperationDefinition.setConnectTimeout(connectTimeout);
 
-            Integer writeTimeout = JsonPathFinder.defaultAsInteger(dtoNode, "writeTimeout");
+            Integer writeTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "writeTimeout");
             restConfigOperationDefinition.setWriteTimeout(writeTimeout);
 
-            Boolean retryEnabled = JsonPathFinder.defaultAsBoolean(dtoNode, "retryEnabled");
+            Boolean retryEnabled = JsonPathFinder.defaultAsBoolean(jsonNode, "retryEnabled");
             restConfigOperationDefinition.setRetryEnabled(retryEnabled);
 
-            Integer maxAttempts = JsonPathFinder.defaultAsInteger(dtoNode, "maxAttempts");
+            Integer maxAttempts = JsonPathFinder.defaultAsInteger(jsonNode, "maxAttempts");
             restConfigOperationDefinition.setMaxAttempts(maxAttempts);
 
-            Integer minBackoff = JsonPathFinder.defaultAsInteger(dtoNode, "minBackoff");
+            Integer minBackoff = JsonPathFinder.defaultAsInteger(jsonNode, "minBackoff");
             restConfigOperationDefinition.setMinBackoff(minBackoff);
 
-            Boolean wiretap = JsonPathFinder.defaultAsBoolean(dtoNode, "wiretap");
+            Boolean wiretap = JsonPathFinder.defaultAsBoolean(jsonNode, "wiretap");
             restConfigOperationDefinition.setWiretap(wiretap);
 
         } catch (JsonProcessingException e) {

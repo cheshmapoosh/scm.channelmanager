@@ -36,6 +36,7 @@ public class Message implements Serializable {
     public static final String SERVICE_OPERATION = "scmServiceOperation";
     public static final String TEMPLATE_VARIABLES = "scmTemplateVariables";
     public static final String TEMPLATE_ENGINE = "scmTemplateEngine";
+    public static final String STATUS_HANDLER = "scmStatusHandler";
     public static final String OPERATION_PHASE_DEFINITION = "scmOperationPhaseDefinition";
         public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
     private final Header header;

@@ -69,7 +69,7 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails, Map<String, ?> properties) {
         route.onException(Exception.class)
-                .handled(true)
+                .handled(false)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();

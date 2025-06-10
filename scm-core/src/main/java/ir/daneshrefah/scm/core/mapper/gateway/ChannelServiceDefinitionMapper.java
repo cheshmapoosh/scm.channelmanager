@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.data.mapper.ChannelServiceAccessMapper;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.RestChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.SwggerChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
@@ -35,13 +36,16 @@ public abstract class ChannelServiceDefinitionMapper {
     @Named("toModel")
     public  ChannelServiceDefinition toModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
         return switch (channelServiceDefinitionEntity.getType()) {
-            case REST -> toRestDto(channelServiceDefinitionEntity);
-            case SWAGGER -> throw new IllegalStateException("Unexpected value: " + channelServiceDefinitionEntity.getType());
+            case REST -> toRest(channelServiceDefinitionEntity);
+            case SWAGGER -> toSwagger(channelServiceDefinitionEntity);
         };
     }
 
-    @Named("toRestDto")
-    public abstract RestChannelServiceDefinition toRestDto(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
+    @Named("toRest")
+    public abstract RestChannelServiceDefinition toRest(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
+
+    @Named("toSwagger")
+    public abstract SwggerChannelServiceDefinition toSwagger(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     @AfterMapping
     protected void afterMapping(@MappingTarget RestChannelServiceDefinition restChannelServiceDefinition) {
