@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.plugin;
+package ir.daneshrefah.scm.core.integration.plugin.specific;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +30,7 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class AccountListEnricherPlugin implements PluginHandler {
+public class AccountListEnricherTransformerPlugin implements PluginHandler {
 
     private static final String ACCOUNT_NUMBER = "accountNumber";
     private static final String ACCOUNT_STATUS = "accountStatusCode";
