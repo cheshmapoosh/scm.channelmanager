@@ -6,6 +6,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -69,7 +71,7 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails, Map<String, ?> properties) {
         route.onException(Exception.class)
-                .handled(false)
+                .handled(true)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
@@ -84,7 +86,10 @@ public class OperationRouteBuilder extends RouteBuilder {
                     if (scope != null) {
                         scope.close();
                     }
-                });
+                    //TODO TEMPORARY
+                    Error error = new Error("operation",9999, exception.getMessage(), exception);
+                    exchange.getIn().setBody(error);
+                }).marshal().json(JsonLibrary.Jackson);
 
         if (orderedAfterThrowingPluginDetails == null) {
             return;
