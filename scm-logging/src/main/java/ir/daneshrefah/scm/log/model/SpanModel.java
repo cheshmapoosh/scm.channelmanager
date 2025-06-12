@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-@JsonIgnoreProperties
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SpanModel{
     private Map<String,String> attributes;
     private String kind;
