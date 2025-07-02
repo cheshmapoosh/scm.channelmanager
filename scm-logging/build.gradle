@@ -11,6 +11,7 @@ configurations {
 
 bootJar {
     enabled = true
+    version = parent.version
 }
 
 compileJava.options.encoding = 'UTF-8'

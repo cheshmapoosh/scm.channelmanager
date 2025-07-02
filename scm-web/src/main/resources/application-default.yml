@@ -8,7 +8,7 @@ scm:
       password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
-      default-schema: LOG
+      default-schema: REF
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     nab-tcp: 10.15.27.12:3080
