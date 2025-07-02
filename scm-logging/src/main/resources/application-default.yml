@@ -1,6 +1,9 @@
 spring:
   application:
     name: Logging-server
+  cloud:
+    config:
+      enabled: false
   datasource:
     url: jdbc:db2://10.10.4.104:50001/DBREFSW
     username: db2inst1
@@ -8,13 +11,12 @@ spring:
     driver-class-name: com.ibm.db2.jcc.DB2Driver
     hikari:
       maximum-pool-size: 10
-      schema: REF
+      schema: LOG
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-
   logging:
     config: logback-spring.xml
     level:
@@ -24,44 +26,29 @@ spring:
       org.hibernate.type.descriptor.sql: TRACE # Just for development
       org.hibernate.orm.jdbc.bind: TRACE # Just for development
     file:
-      path: /logserver # Specify the directory path for logs
+      path: /log # Specify the directory path for logs
       name: log-server.log
     pattern:
       file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # Define the log pattern
-
-ibm:
-  mq:
-    queue-manager: CSQ1
-    channel: DEV.ADMIN.SVRCONN
-    conn-name: 10.10.4.238(11414)
-    user: admin
-    password: passw0rd
-
 server:
   port: 9090
-
 scm:
-  mq:
-    concurrency: 10
-    destination: SCM2LOG
-    enabled: true
   log:
-    file-directory: log
-    file-name: ${spring.application.name}.log
-    log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
-    file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
-    file-size: 1MB  #Max size of each log file
-    keep-log-history: 30 #Keep up to 30 days of log files
-    listener:
-      enabled: true
+    chunkSize: 27128
+  jms:
+    log:
+      destination: SCM2LOG
+      queueManager: CSQ1
+      channel: DEV.ADMIN.SVRCONN
+      host: 10.10.4.238
+      port: 11414
+      username: admin
+      password: passw0rd
   cache:
     client:
+      distributed: true
       config:
-        distributed: true
         cluster-name: dev3
-        server-host: 10.10.4.125
-        server-port: 5701
-        near-cache-config:
-          myMap:
-            in-memory-format: object
-            time-to-live-seconds: 10
+        network-config:
+          addresses:
+            - 10.10.4.125:5701

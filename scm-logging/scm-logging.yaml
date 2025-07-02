@@ -1,0 +1,116 @@
+---
+# Source: scm-logging/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scm-logging-service-account
+  labels:
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
+    app.kubernetes.io/version: "8.2.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: scm-logging/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: scm-logging
+  labels:
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
+    app.kubernetes.io/version: "8.2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: http
+      protocol: TCP
+      name: http
+  externalIPs:
+    - 10.10.4.127
+  selector:
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
+---
+# Source: scm-logging/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scm-logging
+  labels:
+    helm.sh/chart: scm-logging-0.1.0
+    app.kubernetes.io/name: scm-logging
+    app.kubernetes.io/instance: scm-logging
+    app.kubernetes.io/version: "8.2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scm-logging
+      app.kubernetes.io/instance: scm-logging
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: scm-logging-0.1.0
+        app.kubernetes.io/name: scm-logging
+        app.kubernetes.io/instance: scm-logging
+        app.kubernetes.io/version: "8.2.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: scm-logging-service-account
+      securityContext:
+        {}
+      containers:
+        - name: scm-logging
+          securityContext:
+            {}
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.2.0-b0224T1130"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JDWP_OPTS
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+            - name: SPRING_PROFILES_ACTIVE
+              value: test
+            - name: SPRING_APPLICATION_NAME
+              value: scm-logging
+            - name: VERSION
+              value: 8.2.0
+            - name: SERVER_PORT
+              value: "9090"
+            - name: SPRING_CLOUD_CONFIG_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_CLOUD_CONFIG_URI
+                  name: scm-config-configmap
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+
+
+
+
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /mnt/log
+              name: log-volume
+      volumes:
+        - hostPath:
+            path: /log
+            type: DirectoryOrCreate
+          name: log-volume
+      nodeSelector:
+        app: scm-web
+      tolerations:
+        - effect: NoSchedule
+          key: daneshrefah.ir/group
+          operator: Equal
+          value: scm

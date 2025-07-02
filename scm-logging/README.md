@@ -78,11 +78,11 @@ on `localhost:5044`.
       json {
         source => "json_message"
         target => "payload"
-        remove_field => ["json_message"]
+        remove_field => ["json_message","[payload][events]"]
       }
       
       mutate {
-        remove_field => ["message"]
+        remove_field => ["message","events"]
       }
     }
 

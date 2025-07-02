@@ -11,7 +11,6 @@ configurations {
 
 bootJar {
     enabled = true
-    version = parent.version
 }
 
 compileJava.options.encoding = 'UTF-8'
@@ -27,13 +26,20 @@ tasks.named("bootJar") {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'com.ibm.mq:mq-jms-spring-boot-starter'
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    runtimeOnly 'com.ibm.db2:db2jcc'
+    runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
+    runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    implementation 'jakarta.servlet:jakarta.servlet-api'
-    api project(':scm-logging-client')
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'commons-io:commons-io:2.18.0'
+    api project(':scm-message-queue')
+    compileOnly project(':scm-common-data')
+    api project(':scm-common')
+    api project(':scm-utils')
 }
 
 

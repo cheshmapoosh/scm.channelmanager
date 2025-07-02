@@ -11,14 +11,14 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "scm.logging")
-@ConditionalOnProperty(value = "scm.logging.datasource.enabled",havingValue = "true")
+//    @ConditionalOnProperty(value = "scm.logging.datasource.enabled",havingValue = "true")
 public class DataSourceConfigProperties {
-
     private DatasourceProperties datasource = new DatasourceProperties();
 
     @Getter
     @Setter
     public static class DatasourceProperties extends DataSourceProperties {
+        private Boolean enabled;
         private int maxConnection;
         private String defaultSchema;
     }

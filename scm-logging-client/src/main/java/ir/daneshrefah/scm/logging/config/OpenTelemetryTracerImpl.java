@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.logging.config;
 
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.*;
@@ -25,6 +26,7 @@ import java.util.Map;
 @Component
 @Slf4j
 public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
+    private static final String HEADER_ORIGINAL_MESSAGE = "ScmOriginalMessage";
     public static final String EXTRACT_PATTERN = "direct";
     private final TracingLogListener logListener = new TracingLogListener();
     private final TracingEventNotifier eventNotifier = new TracingEventNotifier();
@@ -139,7 +141,8 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
                             sd.getInitiatorSpanKind(), parent, ese.getExchange(), injectAdapter);
                     Exchange exchange = ese.getExchange();
                     if (exchange != null) {
-                        traceLogUtils.recordMessageTrace(exchange, span);
+                        Message message = exchange.getProperty(HEADER_ORIGINAL_MESSAGE, Message.class);
+                        traceLogUtils.recordMessageTrace(message, span);
                     }
                     sd.pre(span, ese.getExchange(), ese.getEndpoint());
                     inject(span, injectAdapter);
@@ -158,10 +161,6 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
                     if (span != null) {
                         if (log.isTraceEnabled()) {
                             log.trace("Tracing: stop client span: {}", span);
-                        }
-                        Message message = ese.getExchange().getMessage();
-                        if (message != null) {
-                            span.setTag("response", message.getMandatoryBody(String.class));
                         }
                         sd.post(span, ese.getExchange(), ese.getEndpoint());
                         ActiveSpanManager.deactivate(ese.getExchange());
@@ -185,7 +184,7 @@ public class OpenTelemetryTracerImpl extends OpenTelemetryTracer {
 
         private boolean shouldExclude(SpanDecorator sd, Exchange exchange, Endpoint endpoint) {
             return !sd.newSpan()
-                   || isExcluded(exchange, endpoint);
+                    || isExcluded(exchange, endpoint);
         }
     }
 

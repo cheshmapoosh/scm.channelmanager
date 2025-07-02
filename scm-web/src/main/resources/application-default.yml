@@ -1,5 +1,14 @@
 scm:
-  channels: IB4DEV
+  channels: SCM4DEV
+  logging:
+    datasource:
+      enabled: true
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: LOG
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     nab-tcp: 10.15.27.12:3080
@@ -35,6 +44,7 @@ scm:
         default-schema: REF
   log:
     file-directory: log
+    rolling-archive-directory: archive
     file-name: ${spring.application.name}.log
     log-pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"
     file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
@@ -75,8 +85,8 @@ scm:
       enabled: true
       auth-header-name: "authorization"
       auth-prefix: "Bearer "
-      base-url: "http://localhost:8000"
-      verify-logged-in-url: "/api/otp/verify-by-logged-in-user"
+      base-url: "http://localhost:8000/api"
+      verify-logged-in-url: "/otp/verify-by-logged-in-user"
   membership-access:
     default-services:
       - TAccListInq
@@ -110,6 +120,7 @@ logging:
 spring:
   jpa:
     show-sql: true
+    open-in-view: false
   #  properties:
   #    hibernate:
   #      format_sql: true
