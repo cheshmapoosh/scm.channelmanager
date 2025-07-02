@@ -1,30 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true">
-    <property name="LOG_DIR" value="${spring.logging.file.path:-/default/log/path}" />
+    <property name="LOG_DIR" value="${spring.logging.file.path:-/log/archive}" />
+    <property name="FILE_NAME" value="${spring.application.name:-application}" />
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>application.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_DIR}/application-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory> <!-- Keep logs for 30 days -->
+        <file>${FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/${FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <maxFileSize>10MB</maxFileSize>
         </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="ERROR">
         <appender-ref ref="FILE" />
         <appender-ref ref="CONSOLE" />
     </root>
-
-    <logger name="ir.daneshrefah" level="DEBUG" additivity="false">
-        <appender-ref ref="FILE" />
-        <appender-ref ref="CONSOLE" />
-    </logger>
 </configuration>
