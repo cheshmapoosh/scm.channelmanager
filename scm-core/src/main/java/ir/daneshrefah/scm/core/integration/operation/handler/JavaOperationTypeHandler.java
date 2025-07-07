@@ -45,10 +45,9 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         findRequestBodyParameter(targetMethod).ifPresent(parameter -> {
             route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
         });
-        route
-                .bean("beanValidator")
-                .bean(beanName, targetBeanPath)
-                .process(exchange -> {
+        route.bean("beanValidator");
+        applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
+        route.process(exchange -> {
                     ScmResponse response = ScmResponse
                             .builder()
                             .status(MessageStatus.SC_SUCCESS)
@@ -61,13 +60,37 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         beanValidationHandler(route);
     }
 
+    private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod,String targetBeanPath) {
+        if (hasExchangeInMethodInput(targetMethod)) {
+            /*
+             when you need camel 'Exchange' instance in your method input
+             example:
+             ** path variables and query params must be annotated with '@Header'
+             ** api body dto must be annotated as '@Body'
+             @JavaService(operationCode = SVC_ASSETS_FAVOURITE)
+             public ResultDto process(Exchange exchange,
+                    @Body Person person,
+                    @Header("userId") String userId) {...}
+             */
+            route.bean(beanName, targetMethod.getName());
+        }else {
+            /*
+               example:
+                 ** path variables and query params automatically filed by their names.
+                @JavaService(operationCode = SVC_ASSETS_FAVOURITE)
+                public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){...}
+             */
+            route.bean(beanName, targetBeanPath);
+        }
+    }
+
     private void beanValidationHandler(RouteDefinition route) {
         route.
                 onException(ScmBeanValidationException.class)
                 .handled(true)
                 .process(exchange -> {
                     ScmBeanValidationException beanValidationException = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, ScmBeanValidationException.class);
-                    List<Error> errors =beanValidationException.getErrors();
+                    List<Error> errors = beanValidationException.getErrors();
                     ScmResponse response = ScmResponse.builder()
                             .status(MessageStatus.SC_ERROR_VALIDATION)
                             .result(null)
@@ -103,6 +126,12 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         return Arrays.stream(targetMethod.getParameters())
                 .filter(p -> p.getType().getPackage().getName().startsWith(projectBasePackageFirstPart))
                 .findFirst();
+    }
+
+    private boolean hasExchangeInMethodInput(Method targetMethod) {
+        String camelExchangeClassPath = Exchange.class.getName();
+        return Arrays.stream(targetMethod.getParameters())
+                .anyMatch(p -> p.getType().getName().equalsIgnoreCase(camelExchangeClassPath));
     }
 
     private Method findTargetMethod(Object bean, String operationCode) {
