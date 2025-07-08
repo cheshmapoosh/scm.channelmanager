@@ -12,7 +12,6 @@ import ir.daneshrefah.scm.common.model.logging.LogTraceResponse;
 import ir.daneshrefah.scm.logging.mapper.LogTraceMapper;
 import ir.daneshrefah.scm.logging.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,7 +39,6 @@ public class LogTraceServiceImpl implements LogService {
     }
 
     @Override
-    @Transactional
     public LogTracePayloadResponse getPayload(LogTraceFindByIdRequest request) {
         try {
             ValidationUtils.checkBlankString(request.getSpanId(), () -> new MissingRequiredInputException("spainId"));
