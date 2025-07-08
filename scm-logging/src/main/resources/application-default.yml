@@ -12,9 +12,6 @@ spring:
     hikari:
       maximum-pool-size: 10
       schema: REF
-  cloud:
-    config:
-      enabled: false
   jpa:
     show-sql: true
     properties:

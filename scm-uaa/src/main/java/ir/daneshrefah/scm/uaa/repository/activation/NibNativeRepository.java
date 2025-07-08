@@ -256,7 +256,7 @@ public class NibNativeRepository {
             JOIN ref.MEMBERSHIP_CHANNEL_ACCESS mca ON m.MEMBERSHIP_ID = mca.MEMBERSHIP_ID\s
             JOIN ref.CHANNEL c ON mca.CHANNEL_ID = c.CHANNEL_ID\s
             WHERE c.CODE IN ('IB', 'CIB') and  m.USER_ID = :userId order by mca.MEMBERSHIP_ID  ,c.CODE %s \s
-            """.formatted(fromTerminal == TerminalCodes.IB ? "desc" : "asc");
+            """.formatted(fromTerminal == TerminalType.IB ? "desc" : "asc");
         log.debug("SQL Query: {}", sql);
         Map<String, Object> params = Collections.singletonMap("userId", userId);
         log.debug("Executing query to find MEMBERSHIP_CHANNEL_ACCESS for userId {}: {}", userId, sql);

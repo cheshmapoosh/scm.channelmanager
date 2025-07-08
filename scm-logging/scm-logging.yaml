@@ -108,7 +108,7 @@ spec:
             type: DirectoryOrCreate
           name: log-volume
       nodeSelector:
-        app: scm-logging
+        app: scm-web
       tolerations:
         - effect: NoSchedule
           key: daneshrefah.ir/group
