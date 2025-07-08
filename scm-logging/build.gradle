@@ -22,7 +22,7 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.log.LoggingServerApplication'
-    archiveClassifier = 'boot'
+//    archiveClassifier = 'boot'
 }
 
 dependencies {
@@ -38,7 +38,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'commons-io:commons-io:2.18.0'
     api project(':scm-message-queue')
-    compileOnly project(':scm-common-data')
+    api project(':scm-common-data')
     api project(':scm-common')
     api project(':scm-utils')
 }
