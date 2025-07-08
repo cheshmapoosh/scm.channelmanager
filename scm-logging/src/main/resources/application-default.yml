@@ -5,16 +5,13 @@ spring:
     config:
       enabled: false
   datasource:
-    url: jdbc:db2://10.15.27.82:446/DSNALOC
+    url: jdbc:db2://10.15.27.82:546/DSNBLOC
     username: casadm
     password: a
     driver-class-name: com.ibm.db2.jcc.DB2Driver
     hikari:
       maximum-pool-size: 10
       schema: REF
-  cloud:
-    config:
-      enabled: false
   jpa:
     show-sql: true
     properties:

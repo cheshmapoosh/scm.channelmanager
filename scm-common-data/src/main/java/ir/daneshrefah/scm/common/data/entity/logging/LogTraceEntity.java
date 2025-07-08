@@ -80,6 +80,4 @@ public class LogTraceEntity {
     private String payload;
     @Column(name = "ARCHIVE_NO", updatable = false)
     private Long archiveNo;
-    @Column(name = "ROW_NO")
-    private Integer rowNo;
 }
