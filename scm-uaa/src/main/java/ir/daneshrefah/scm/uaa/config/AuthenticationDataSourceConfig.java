@@ -3,11 +3,10 @@ package ir.daneshrefah.scm.uaa.config;
 import com.zaxxer.hikari.HikariDataSource;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -34,9 +33,15 @@ import java.util.Objects;
         "ir.daneshrefah.scm.common.data",
         "ir.daneshrefah.scm.notification",
         "ir.daneshrefah.scm.uaa.repository.authentication"},
-        entityManagerFactoryRef = "authenticationEntityManagerFactory",
-        transactionManagerRef = "authenticationTransactionManager"
+        entityManagerFactoryRef = "entityManagerFactory",
+        transactionManagerRef = "transactionManager"
+        , excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        value = ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository.class
 )
+)
+
+
 public class AuthenticationDataSourceConfig {
 
     @Bean
@@ -54,7 +59,7 @@ public class AuthenticationDataSourceConfig {
     }
 
     @Primary
-    @Bean
+    @Bean("entityManagerFactory")
     public LocalContainerEntityManagerFactoryBean authenticationEntityManagerFactory(
             DataSourceConfigProperties dataSourceConfigProperties,
             @Qualifier("authenticationDataSource") DataSource dataSource,
@@ -76,10 +81,10 @@ public class AuthenticationDataSourceConfig {
                 .build();
     }
 
-    @Bean
+    @Bean("transactionManager")
     @Primary
     public PlatformTransactionManager authenticationTransactionManager(
-            @Qualifier("authenticationEntityManagerFactory") LocalContainerEntityManagerFactoryBean todosEntityManagerFactory) {
+            @Qualifier("entityManagerFactory") LocalContainerEntityManagerFactoryBean todosEntityManagerFactory) {
         return new JpaTransactionManager(Objects.requireNonNull(todosEntityManagerFactory.getObject()));
     }
 
