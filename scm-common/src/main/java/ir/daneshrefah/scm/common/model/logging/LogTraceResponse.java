@@ -18,16 +18,15 @@ public class LogTraceResponse {
     private String terminalCode;
     private String clientId;
     private String correlationId;
-    private String clientCorrelationId;
-    private String messageId;
+    private String endPoint;
     private Integer statusCode;
     private String nickname;
     private String username;
     private String delegatorUsername;
-    private String endPoint;
     private String amount;
     private String accountNo;
     private String cardNo;
     private Date startTime;
     private Date endTime;
+    private Long durationMillis;
 }
