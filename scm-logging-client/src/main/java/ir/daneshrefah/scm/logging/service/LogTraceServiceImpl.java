@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.logging.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository;
 import ir.daneshrefah.scm.common.data.repository.logging.TraceLogSpec;
@@ -44,6 +45,9 @@ public class LogTraceServiceImpl implements LogService {
             ValidationUtils.checkBlankString(request.getSpanId(), () -> new MissingRequiredInputException("spainId"));
             ValidationUtils.checkBlankString(request.getTraceId(), () -> new MissingRequiredInputException("traceId"));
             String payload = logTraceRepository.findAggregatedPayload(request.getSpanId(), request.getTraceId());
+            if (payload == null) {
+                return new LogTracePayloadResponse();
+            }
             return new LogTracePayloadResponse(payload);
         } catch (Exception e) {
             throw new RuntimeException("Failed to read CLOB result", e);

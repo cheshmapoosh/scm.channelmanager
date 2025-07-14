@@ -21,5 +21,8 @@ public interface LogTraceMapper {
     })
     LogTraceResponse toModel(LogTraceEntity entity);
 
-    List<LogTraceResponse> toModelList(List<LogTraceEntity> entities);
+    default List<LogTraceResponse> toModelList(List<LogTraceEntity> entities) {
+        if (null == entities || entities.isEmpty()) return null;
+        return entities.stream().map(this::toModel).toList();
+    }
 }
