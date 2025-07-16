@@ -2,5 +2,6 @@ package ir.daneshrefah.scm.common.model.gateway;
 
 public enum RoutingStrategy {
     FIRST,
-    FAIL_OVER
+    FAIL_OVER,
+    MULTI_OPERATION
 }

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.mapper.definition;
 
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.ReportingPolicy.IGNORE;

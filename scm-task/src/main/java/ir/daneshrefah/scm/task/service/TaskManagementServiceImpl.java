@@ -22,6 +22,7 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import lombok.AllArgsConstructor;
+import org.apache.camel.Exchange;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -44,7 +45,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
 
     private final ProcessTaskDefinitionService processTaskDefinitionService;
 
-    public PagedResponseData<TaskResponse> findAllTaskByUserIDAndFilter(TaskFilterRequest request) {
+    @Override
+    public PagedResponseData<TaskResponse> findAllTaskByUserIDAndFilter(Exchange exchange,TaskFilterRequest request) {
         request = Objects.nonNull(request) ? request : new TaskFilterRequest();
         request.setUserId(AuthenticationUtils.getLoggedInUserId());
         Sort sort = Sort.by(Sort.Direction.DESC, "id");
@@ -54,8 +56,9 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), taskResponseList);
     }
 
-    public TaskResponse completeTask(TaskRequest taskRequest) {
-        processTaskDefinitionService.validateTaskBeforeComplete(taskRequest);
+    @Override
+    public TaskResponse completeTask(Exchange exchange,TaskRequest taskRequest) {
+        processTaskDefinitionService.validateTaskBeforeComplete(exchange,taskRequest);
         if (taskRequest.getAction() == null) {
             throw new InvalidInputException("action");
         }
@@ -65,30 +68,30 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         validateTaskStatus(taskEntity, taskRequest);
 
         switch (taskRequest.getAction()) {
-            case CANCEL -> handleCancellation(taskEntity);
-            case COMPLETE -> handleCompletion(taskEntity);
+            case CANCEL -> handleCancellation(exchange,taskEntity);
+            case COMPLETE -> handleCompletion(exchange,taskEntity);
             default -> throw new InvalidInputException("Invalid action");
         }
         return taskMapper.toTaskResponseWithProcessInstance(taskEntity);
     }
 
-    private void handleCancellation(TaskEntity taskEntity) {
+    private void handleCancellation(Exchange exchange,TaskEntity taskEntity) {
         cancelPendingTasks(taskEntity.getProcessInstance());
         cancelProcessInstance(taskEntity.getProcessInstance());
-        persistTaskLog(taskEntity);
+        persistTaskLog(exchange,taskEntity);
     }
 
-    private void handleCompletion(TaskEntity taskEntity) {
+    private void handleCompletion(Exchange exchange,TaskEntity taskEntity) {
         ProcessInstanceEntity processInstance = taskEntity.getProcessInstance();
         // If all tasks except for the current task and global tasks are complete
         if (allOtherTasksCompleteExceptGlobal(taskEntity)) {
-            handleGlobalTaskOrCreateNew(taskEntity, processInstance);
+            handleGlobalTaskOrCreateNew(exchange,taskEntity, processInstance);
         } else {
-            completeTask(taskEntity);
+            completeTask(exchange,taskEntity);
         }
     }
 
-    private void handleGlobalTaskOrCreateNew(TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
+    private void handleGlobalTaskOrCreateNew(Exchange exchange,TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
         Optional<TaskEntity> globalTaskOpt = findGlobalTask(processInstance);
         if (globalTaskOpt.isPresent()) {
             TaskEntity globalTask = globalTaskOpt.get();
@@ -100,14 +103,14 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             taskRepository.save(globalTask);
             taskRepository.save(taskEntity);
             processInstanceRepository.save(processInstance);
-            persistTaskLog(globalTask);
-            persistTaskLog(taskEntity);
+            persistTaskLog(exchange,globalTask);
+            persistTaskLog(exchange,taskEntity);
         } else {
-            createOrUpdateConfirmationTask(taskEntity, processInstance);
+            createOrUpdateConfirmationTask(exchange,taskEntity, processInstance);
         }
     }
 
-    private void createOrUpdateConfirmationTask(TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
+    private void createOrUpdateConfirmationTask(Exchange exchange,TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
         if (processInstance.getConfirmUserId() != null) {
             TaskEntity confirmationTask = new TaskEntity();
             confirmationTask.setProcessInstance(processInstance);
@@ -128,29 +131,29 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             taskEntity.setUpdateAt(new Date());
             taskRepository.save(taskEntity);
             processInstanceRepository.save(processInstance);
-            persistTaskLog(taskEntity);
+            persistTaskLog(exchange,taskEntity);
         } else {
-            updateTaskAndProcessStatus(taskEntity, processInstance);
+            updateTaskAndProcessStatus(exchange,taskEntity, processInstance);
         }
     }
 
-    private void completeTask(TaskEntity taskEntity) {
+    private void completeTask(Exchange exchange,TaskEntity taskEntity) {
         taskEntity.setTaskStatus(COMPLETE);
         taskEntity.setUpdateAt(new Date());
         taskRepository.save(taskEntity);
-        persistTaskLog(taskEntity);
+        persistTaskLog(exchange,taskEntity);
     }
 
-    private void updateTaskAndProcessStatus(TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
+    private void updateTaskAndProcessStatus(Exchange exchange,TaskEntity taskEntity, ProcessInstanceEntity processInstance) {
         taskEntity.setTaskStatus(TaskStatusEnum.WAITING_FOR_CONFIRM);
         processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_CONFIRM);
         processInstanceRepository.save(processInstance);
         taskRepository.save(taskEntity);
-        persistTaskLog(taskEntity);
+        persistTaskLog(exchange,taskEntity);
     }
 
-    private void persistTaskLog(TaskEntity taskEntity) {
-        taskLogService.mapToTaskLogAndPersist(taskEntity);
+    private void persistTaskLog(Exchange exchange,TaskEntity taskEntity) {
+        taskLogService.mapToTaskLogAndPersist(exchange,taskEntity);
     }
 
     private Optional<TaskEntity> findGlobalTask(ProcessInstanceEntity processInstance) {
@@ -206,8 +209,9 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 .orElseThrow(() -> new NoMatchRecordFoundException("taskID"));
     }
 
-    public List<TaskResponse> findAllTasksByProcessId(Long processID) {
-        ProcessInstanceEntity processInstance = processManagementService.findByID(processID);
+    @Override
+    public List<TaskResponse> findAllTasksByProcessId(Exchange exchange,Long processID) {
+        ProcessInstanceEntity processInstance = processManagementService.findByID(exchange,processID);
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         boolean hasAccess = processInstance.getTasks()
                 .stream()

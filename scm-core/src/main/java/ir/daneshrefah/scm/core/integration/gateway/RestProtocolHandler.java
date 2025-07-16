@@ -12,8 +12,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class RestProtocolHandler implements ProtocolHandler {
@@ -41,18 +44,39 @@ public class RestProtocolHandler implements ProtocolHandler {
         return new RestProtocolConfigurer(gatewayChannel, builder);
     }
 
-
     private record RestProtocolConfigurer(
             GatewayChannel gatewayChannel,
             RouteBuilder routeBuilder) implements ProtocolConfigurer {
         @Override
-        public RouteDefinition routeDefinition(ChannelServiceAccess channelServiceAccess, List<ChannelServiceDefinition> channelServiceDefinitions) {
+        public List<RouteDefinition> routeDefinition(ChannelServiceAccess channelServiceAccess, List<ChannelServiceDefinition> channelServiceDefinitions) {
+            List<RouteDefinition> routeDefinitions = new ArrayList<>();
             Service service = channelServiceAccess.getService();
+            channelServiceDefinitions.forEach(channelServiceDefinition -> {
+                final AtomicInteger routeIndex = new AtomicInteger(0);
+                routeDefinitions.addAll(
+                        switch (channelServiceDefinition.getType()) {
+                            case REST -> createRestRouteDefinition(service, channelServiceDefinitions,routeIndex);
+                            case REST_MULTIPLE -> createRestMultipleRouteDefinition(service, channelServiceDefinitions,routeIndex);
+                            default -> Collections.emptyList();
+                        }
+                );
+            });
+            return routeDefinitions;
+        }
+
+        private List<RouteDefinition> createRestMultipleRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions,AtomicInteger routeIndex) {
+            List<RouteDefinition> routeDefinitions = new ArrayList<>();
+            channelServiceDefinitions.forEach(channelServiceDefinition -> {
+                RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition = (RestMultipleChannelServiceDefinition) channelServiceDefinition;
+                restMultipleChannelServiceDefinition.getDefinitions().forEach(definition ->
+                        routeDefinitions.addAll(createRestRouteDefinition(service,Collections.singletonList(definition),routeIndex)));
+            });
+            return routeDefinitions;
+        }
+
+        private List<RouteDefinition> createRestRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions,AtomicInteger routeIndex) {
             String serviceCode = service.getCode().trim();
-            URIBuilder uri = new URIBuilder()
-                    .setScheme("rest:post")
-                    .setPath(gatewayChannel.getPath())
-                    .appendPath(serviceCode);
+            URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             RestChannelServiceDefinition definition = null;
             if (CollectionUtils.isNotEmpty(channelServiceDefinitions)) {
                 definition = channelServiceDefinitions.stream()
@@ -72,8 +96,16 @@ public class RestProtocolHandler implements ProtocolHandler {
                 }
             }
 
-            return routeBuilder.from(uri.toString())
-                    .routeId(serviceCode + "-route");
+            RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
+                    .routeId(serviceCode + "-route-"+routeIndex.getAndIncrement());
+            return Collections.singletonList(routeDefinition);
+        }
+
+        private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {
+            return new URIBuilder()
+                    .setScheme("rest:post")
+                    .setPath(gatewayChannel.getPath())
+                    .appendPath(serviceCode);
         }
     }
 }

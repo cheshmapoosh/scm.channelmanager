@@ -8,11 +8,11 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
+import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
@@ -93,28 +93,31 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
                     List<ChannelServiceDefinition> definitions =
                             channelServiceDefinitionService.findDefinitions(channelServiceAccess, gatewayChannel);
+                    List<RouteDefinition> routes = protocolConfigurer.routeDefinition(channelServiceAccess, definitions);
+                    routes.forEach(route -> {
+                        route.setProperty(Message.SERVICE, constant(service));
+                        route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
 
-                    RouteDefinition route = protocolConfigurer.routeDefinition(channelServiceAccess, definitions)
-                            .setProperty(Message.SERVICE, constant(service));
-                    List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                            channelServiceAccess.getService(),
-                            PluginPhase.AFTER_THROWING);
-                    defineExceptionHandler(route, orderedAfterThrowingPluginDetails);
+                        List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
+                                channelServiceAccess.getService(),
+                                PluginPhase.AFTER_THROWING);
+                        defineExceptionHandler(route, orderedAfterThrowingPluginDetails);
 
-                    applyMetrics(route, service);
-                    applyTracing(route, service);
+                        applyMetrics(route, service);
+                        applyTracing(route, service);
 
-                    List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                            channelServiceAccess.getService(),
-                            PluginPhase.BEFORE);
-                    applyBeforePlugins(route, orderedBeforePluginDetails);
+                        List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
+                                channelServiceAccess.getService(),
+                                PluginPhase.BEFORE);
+                        applyBeforePlugins(route, orderedBeforePluginDetails);
 
-                    buildTarget(route, service);
+                        buildTarget(route, service);
 
-                    List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                            channelServiceAccess.getService(),
-                            PluginPhase.AFTER);
-                    applyAfterPlugins(route, orderedAfterPluginDetails);
+                        List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
+                                channelServiceAccess.getService(),
+                                PluginPhase.AFTER);
+                        applyAfterPlugins(route, orderedAfterPluginDetails);
+                    });
                 });
     }
 
@@ -204,6 +207,22 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //            } else {
                 route.to(url);
 //            }
+            return;
+        }
+
+        if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
+            /*
+                ALL MULTIPLE ROUTES NAME ENDS WITH COUNTER ID (0 - size() )
+                SEE  routeDefinition() METHOD IN RestProtocolHandler CLASS
+             */
+            List<ServiceOperation> serviceOperations = service.getServiceOperations();
+            String[] splitRouteId = route.getRouteId().split("-");
+            int routeIndex = Integer.parseInt(splitRouteId[splitRouteId.length - 1]);
+            ServiceOperation serviceOperation = serviceOperations.get(routeIndex);
+            route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
+            String operationName = serviceOperation.getOperationName();
+            String url = resolveOperationUrl(operationName);
+            route.to(url);
             return;
         }
 

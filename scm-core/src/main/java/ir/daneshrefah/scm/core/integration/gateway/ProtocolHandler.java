@@ -14,6 +14,6 @@ public interface ProtocolHandler {
     ProtocolConfigurer config(GatewayChannel gatewayChannel, RouteBuilder builder);
 
     interface ProtocolConfigurer {
-        RouteDefinition routeDefinition(ChannelServiceAccess channelServiceAccess, List<ChannelServiceDefinition> channelServiceDefinitions);
+        List<RouteDefinition> routeDefinition(ChannelServiceAccess channelServiceAccess, List<ChannelServiceDefinition> channelServiceDefinitions);
     }
 }
