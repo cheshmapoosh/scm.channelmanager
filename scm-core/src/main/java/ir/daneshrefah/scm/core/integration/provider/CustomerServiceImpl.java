@@ -531,7 +531,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 .filter(membership ->
                         Objects.isNull(accountNumberList) ||
                         accountNumberList.isEmpty() ||
-                        accountNumberList.contains(membership.getCustomerAccount().getAccount().getAccountNo()))
+                        accountNumberList.contains(membership.getCustomerAccount().getAccount().getAccountNo().trim()))
                 .map(MembershipMapper.INSTANCE::toModel)
                 .forEach(memberships::add);
         return memberships;
