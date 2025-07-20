@@ -69,6 +69,7 @@ public class JpaConfig {
     }
 
     @Bean(name = "transactionManager")
+    @Primary
     public PlatformTransactionManager transactionManager(
             @Qualifier("entityManagerFactory") LocalContainerEntityManagerFactoryBean emf) {
         return new JpaTransactionManager(Objects.requireNonNull(emf.getObject()));
