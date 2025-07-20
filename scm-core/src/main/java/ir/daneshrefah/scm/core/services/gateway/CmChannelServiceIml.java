@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.data.mapper.CmChannelMapper;
 import ir.daneshrefah.scm.common.data.repository.gateway.CmChannelRepository;
 import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.model.gateway.CmChannel;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class CmChannelServiceIml implements CmChannelService {
     public Optional<CmChannel> findChannelByCode(String code) {
         return findAllChannels()
                 .stream()
-                .filter(channel -> channel.getCode().trim().equalsIgnoreCase(code))
+                .filter(channel -> channel.getCode().trim().equalsIgnoreCase(String.valueOf(StringUtils.trim(code))))
                 .filter(channel -> Objects.isNull(channel.getParentId()))
                 .findFirst();
     }
