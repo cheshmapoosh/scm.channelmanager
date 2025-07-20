@@ -253,7 +253,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                     //create account
                     AccountEntity accountEntity = mapToAccount(nabAccount, assetProvider);
                     Account account = new Account();
-                    account.setAccountNo(accountEntity.getAccountNo());
+                    account.setAccountNo(StringUtils.trim(accountEntity.getAccountNo()).toString());
                     AccountType accountType = new AccountType();
                     AccountTypeEntity accountTypeEntity = accountEntity.getAccountType();
                     accountType.setName(accountTypeEntity.getName());
@@ -493,7 +493,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         localMemberships.forEach(localMembership -> {
             membershipSyncList
                     .stream()
-                    .filter(membershipSync -> Objects.equals(Long.parseLong(localMembership.getCustomerAccount().getAccount().getAccountNo()), membershipSync.getAccountNumber()))
+                    .filter(membershipSync -> Objects.equals(Long.parseLong(localMembership.getCustomerAccount().getAccount().getAccountNo().trim()), membershipSync.getAccountNumber()))
                     .findFirst()
                     .ifPresentOrElse(membershipSync -> {
                         membershipSync.setSyncStatus(MembershipSync.MembershipSyncStatus.UPDATED);
