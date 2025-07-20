@@ -640,6 +640,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             accountEntity.setCloseDate((AccountStatus.CLOSED.getCode() == nabAccount.getAccountStatusCode()) ? LocalDateTime.now() : null);
             accountEntity.setAssetProvider(assetProviderRepository.findById(assetProviderId).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId")));
             accountEntity.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
+            accountEntity.setAccountNo(nabAccount.getAccountNumber().toString().trim());
             accountEntity = accountRepository.save(accountEntity);
         } else {
             //create
@@ -652,8 +653,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
     private AccountEntity mapToAccount(ExternalAccountResponseData nabAccount, AssetProvider assetProvider) {
         AccountEntity account = new AccountEntity();
-        account.setAccountNo(nabAccount.getAccountNumber().toString());
-        account.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
+        account.setAccountNo(nabAccount.getAccountNumber().toString().trim());
+        account.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString().trim())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
         account.setClose(AccountStatus.CLOSED.getCode() == nabAccount.getAccountStatusCode() ? 1 : 0);
         account.setAssetProvider(assetProviderRepository.findById(assetProvider.getId()).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId")));
         account.setCloseDate((nabAccount.getAccountStatusCode().equals(1)) ? LocalDateTime.now() : null);
