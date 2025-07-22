@@ -34,6 +34,9 @@ public class Message implements Serializable {
     public static final String SERVICE = "scmService";
     public static final String OPERATION = "scmOperation";
     public static final String CHANNEL_CODE = "scmChannelCode";
+    public static final String CHANNEL_SERVICE_ACCESS = "scmChannelServiceAccess";
+    public static final String GATEWAY_CHANNEL = "scmGatewayChannel";
+    public static final String GATEWAY_CHANNEL_PROTOCOL = "scmGatewayChannelProtocol";
     public static final String SERVICE_OPERATION = "scmServiceOperation";
     public static final String TEMPLATE_VARIABLES = "scmTemplateVariables";
     public static final String TEMPLATE_ENGINE = "scmTemplateEngine";

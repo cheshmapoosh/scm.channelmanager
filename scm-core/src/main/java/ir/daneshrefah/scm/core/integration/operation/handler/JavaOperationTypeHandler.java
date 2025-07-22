@@ -2,11 +2,7 @@ package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
-import ir.daneshrefah.scm.common.error.bean.validation.ScmBeanValidationException;
 import ir.daneshrefah.scm.common.exception.ScmException;
-import ir.daneshrefah.scm.common.model.ScmResponse;
-import ir.daneshrefah.scm.common.model.error.Error;
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +17,6 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -47,17 +42,6 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         });
         route.bean("beanValidator");
         applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
-        route.process(exchange -> {
-                    ScmResponse response = ScmResponse
-                            .builder()
-                            .status(MessageStatus.SC_SUCCESS)
-                            .result(exchange.getIn().getBody())
-                            .errors(null)
-                            .build();
-                    exchange.getIn().setBody(response);
-                })
-                .marshal().json(JsonLibrary.Jackson);
-        beanValidationHandler(route);
     }
 
     private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod,String targetBeanPath) {
@@ -84,23 +68,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         }
     }
 
-    private void beanValidationHandler(RouteDefinition route) {
-        route.
-                onException(ScmBeanValidationException.class)
-                .handled(true)
-                .process(exchange -> {
-                    ScmBeanValidationException beanValidationException = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, ScmBeanValidationException.class);
-                    List<Error> errors = beanValidationException.getErrors();
-                    ScmResponse response = ScmResponse.builder()
-                            .status(MessageStatus.SC_ERROR_VALIDATION)
-                            .result(null)
-                            .errors(errors)
-                            .build();
-                    exchange.getIn().setBody(response);
-                })
-                .marshal().json(JsonLibrary.Jackson)
-                .end();
-    }
+
 
     private String createTargetBeanPath(Method targetMethod) {
         final StringBuilder beanPath = new StringBuilder(targetMethod.getName());

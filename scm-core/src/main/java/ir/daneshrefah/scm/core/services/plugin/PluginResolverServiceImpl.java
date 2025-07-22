@@ -68,6 +68,9 @@ public class PluginResolverServiceImpl implements PluginResolverService {
 
     @Override
     public List<PluginDetail> resolveOrderedPluginDetails(Operation operation, PluginPhase phase) {
+        if (Objects.isNull(operation)) {
+            return Collections.emptyList();
+        }
         PluginBindingEntity operationPluginBindingEntity = pluginBindingRepository
                 .findByScopeAndScopeIdAndActive(PluginScope.OPERATION, operation.getId(), true);
         List<PluginDetail> operationPluginDetails = List.of();

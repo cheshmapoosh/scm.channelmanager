@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.integration.plugin;
 
-import ir.daneshrefah.scm.common.exception.ScmException;
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED;
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_REQUIRED;
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 
 @Component
@@ -48,7 +50,10 @@ public class JwtAuthPluginHandler implements PluginHandler {
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
         String authValue = exchange.getIn().getHeader(authHeader, String.class);
         if (authValue == null || !authValue.startsWith("Bearer ")) {
-            throw new ScmException("SCM.100001", "Auth missing");
+//            throw new ScmException("SCM.100001", "Auth missing");
+            //TODO TEMPORARY
+            throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_REQUIRED,
+                    "authentication required.");
         }
 
         String token = authValue.substring("Bearer ".length());
@@ -60,11 +65,13 @@ public class JwtAuthPluginHandler implements PluginHandler {
             profileLoader.preparePersonProfile(authentication);
             exchange.getIn().setHeader("jwt", jwtDecoder.decode(token));
         } catch (JwtException e) {
-            throw new ScmException("SCM.100002", "Jwt invalid", e);
+            //TODO TEMPORARY
+//            throw new ScmException("SCM.100002", "Jwt invalid", e);
+            throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_FAILED,
+                    "invalid jwt.");
         }
 
         // Put the decoded JWT claims in the exchange property for downstream plugins
-
     }
 
 

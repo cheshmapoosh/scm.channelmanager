@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.error;
 
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.*;
 
 import java.net.URI;
@@ -11,7 +12,10 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ScmFault {
-    private String status;
+    // TODO TEMPORARY FOR SAVING CURRENT STATUS
+    private MessageStatus status;
+    private List<Error> errors;
+    //
     private String title;
     private URI instance;
     @Singular("detail")

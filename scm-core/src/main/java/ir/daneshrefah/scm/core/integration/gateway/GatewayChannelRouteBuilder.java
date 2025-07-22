@@ -7,6 +7,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.*;
@@ -26,7 +27,6 @@ import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,11 +97,11 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     routes.forEach(route -> {
                         route.setProperty(Message.SERVICE, constant(service));
                         route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
+                        route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
+                        route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
+                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
 
-                        List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                                channelServiceAccess.getService(),
-                                PluginPhase.AFTER_THROWING);
-                        defineExceptionHandler(route, orderedAfterThrowingPluginDetails);
+                        defineExceptionHandler(route);
 
                         applyMetrics(route, service);
                         applyTracing(route, service);
@@ -117,6 +117,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                                 channelServiceAccess.getService(),
                                 PluginPhase.AFTER);
                         applyAfterPlugins(route, orderedAfterPluginDetails);
+                        route.to(Routes.GLOBAL_RESPONSE_HANDLER);
                     });
                 });
     }
@@ -260,9 +261,9 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         return "direct:" + operationName;
     }
 
-    private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails) {
+    private void defineExceptionHandler(RouteDefinition route) {
         route.onException(Exception.class)
-                .handled(false)
+                .handled(true)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
@@ -277,19 +278,9 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     if (scope != null) {
                         scope.close();
                     }
-                    exchange.getIn().setBody(exception);
-                }).marshal().json(JsonLibrary.Jackson);
+                })
+                .to(Routes.GLOBAL_ERROR_HANDLER);
 
-        if (orderedAfterThrowingPluginDetails == null) {
-            return;
-        }
-
-        orderedAfterThrowingPluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
-            route.process(exchange -> {
-                pluginHandler.handle(exchange, definition);
-            });
-        });
     }
 
     private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {

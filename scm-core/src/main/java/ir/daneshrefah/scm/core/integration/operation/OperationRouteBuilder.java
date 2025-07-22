@@ -5,8 +5,8 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
-import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -47,18 +46,12 @@ public class OperationRouteBuilder extends RouteBuilder {
                     .routeId(routeId)
                     .setProperty(Message.OPERATION, constant(operation));
 
-
-            List<PluginDetail> orderedAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER_THROWING);
-            defineExceptionHandler(route, orderedAfterThrowingPluginDetails, Map.of(Message.OPERATION, operation));
-
+            defineExceptionHandler(route);
             applyMetrics(route, operation);
             applyTracing(route, operation);
-
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
-
             buildTarget(route, operation);
-
             List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
             applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
         });
@@ -69,7 +62,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         return "direct:" + operation.getName();
     }
 
-    private void defineExceptionHandler(RouteDefinition route, List<PluginDetail> orderedAfterThrowingPluginDetails, Map<String, ?> properties) {
+    private void defineExceptionHandler(RouteDefinition route) {
         route.onException(Exception.class)
                 .handled(true)
                 .process(exchange -> {
@@ -86,22 +79,8 @@ public class OperationRouteBuilder extends RouteBuilder {
                     if (scope != null) {
                         scope.close();
                     }
-                    //TODO TEMPORARY
-                    Error error = new Error("operation",9999, exception.getMessage(), exception);
-                    exchange.getIn().setBody(error);
-                }).marshal().json(JsonLibrary.Jackson);
-
-        if (orderedAfterThrowingPluginDetails == null) {
-            return;
-        }
-
-        orderedAfterThrowingPluginDetails.forEach(detail -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
-            handler.init(route, detail, properties);
-            route.process(exchange -> {
-                handler.handle(exchange, detail);
-            });
-        });
+                    exchange.getIn().setBody(exception);
+                }).to(Routes.GLOBAL_ERROR_HANDLER);
     }
 
     private void applyMetrics(RouteDefinition route, Operation operation) {
