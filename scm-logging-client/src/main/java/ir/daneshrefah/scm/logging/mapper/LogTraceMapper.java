@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -17,9 +18,18 @@ public interface LogTraceMapper {
 
     @Mappings({
             @Mapping(source = "logPrimaryKey.spanId", target = "spanId"),
-            @Mapping(source = "logPrimaryKey.traceId", target = "traceId")
+            @Mapping(source = "logPrimaryKey.traceId", target = "traceId"),
+            @Mapping(target = "durationMillis", expression = "java(calculateDuration(entity.getStartTime(), entity.getEndTime()))")
     })
     LogTraceResponse toModel(LogTraceEntity entity);
 
-    List<LogTraceResponse> toModelList(List<LogTraceEntity> entities);
+    default List<LogTraceResponse> toModelList(List<LogTraceEntity> entities) {
+        if (null == entities || entities.isEmpty()) return null;
+        return entities.stream().map(this::toModel).toList();
+    }
+
+    default Long calculateDuration(Date startTime, Date endTime) {
+        if (startTime == null || endTime == null) return null;
+        return endTime.getTime() - startTime.getTime();
+    }
 }

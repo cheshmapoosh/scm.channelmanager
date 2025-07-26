@@ -4,14 +4,11 @@ import ir.daneshrefah.scm.common.data.converter.GenderConverter;
 import ir.daneshrefah.scm.common.data.converter.MaritalStatusConverter;
 import ir.daneshrefah.scm.common.model.person.Gender;
 import ir.daneshrefah.scm.common.model.person.MaritalStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.*;
 
 /**
  * Description of the class or purpose of the file.

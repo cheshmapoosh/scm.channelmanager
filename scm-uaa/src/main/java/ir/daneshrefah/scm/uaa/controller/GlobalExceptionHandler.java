@@ -47,9 +47,7 @@ GlobalExceptionHandler {
                 .setResult(null)
                 .setStatus(resolves.get(0).getStatus())
                 .setErrors(resolves);
-
         handleSpanException(request, exception);
-
         if (resolves.get(0).getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
             return ResponseEntity.internalServerError().body(result);
         }

@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.core.entity.service;
 
+import ir.daneshrefah.scm.common.data.entity.AbstractVersionAbleDefaultEntity;
 import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
 import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderProtocol;
 import ir.daneshrefah.scm.common.model.service.ServiceProviderStatus;
 import ir.daneshrefah.scm.core.converter.ServiceProviderProtocolConverter;
 import ir.daneshrefah.scm.core.converter.ServiceProviderStatusConverter;
+import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ParameterEntity;
+import ir.daneshrefah.scm.core.entity.service.parameter.ResponseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

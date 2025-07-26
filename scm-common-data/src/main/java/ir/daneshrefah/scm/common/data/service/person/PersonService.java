@@ -1,11 +1,13 @@
 package ir.daneshrefah.scm.common.data.service.person;
 
+import ir.daneshrefah.scm.common.data.entity.person.ClientPersonEntity;
 import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.person.ClientPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.person.*;
 
 import java.util.List;
 import java.util.Optional;

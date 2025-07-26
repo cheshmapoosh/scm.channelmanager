@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.controller.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.dto.spec.RequestData;
+import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import lombok.Getter;
 import lombok.Setter;

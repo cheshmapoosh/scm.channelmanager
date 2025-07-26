@@ -45,6 +45,7 @@ public class TerminalServiceImpl extends TerminalService {
     private final TerminalMapper terminalMapper;
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {

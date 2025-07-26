@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.data.repository.assets.MembershipTerminalAccess
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.repository.activation.NibNativeRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

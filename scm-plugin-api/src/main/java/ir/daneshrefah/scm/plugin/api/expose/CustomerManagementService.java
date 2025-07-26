@@ -70,6 +70,24 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService.accountFavoriteActivity(request);
     }
 
+    @JavaService(serviceCode = SVC_ASSETS_DEFAULT_ACCOUNT)
+    @SuppressWarnings("unused")
+    public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request){
+        return customerService.setDefaultAccount(request);
+    }
+
+    @JavaService(serviceCode = SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT)
+    @SuppressWarnings("unused")
+    public ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request){
+        return customerService.removeDefaultAccount(request);
+    }
+
+    @JavaService(serviceCode = SVC_ASSETS_SHOW_DEFAULT_ACCOUNT)
+    @SuppressWarnings("unused")
+    public PagedResponseData<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request){
+        return new PagedResponseData<>(request,customerService.defaultAccountList(request));
+    }
+
 
 
     @JavaService(operationCode = SVC_ASSETS_LIST_LOCAL)

@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_TYPE_FORM;
@@ -26,6 +27,7 @@ public class RequestLoggingFilter implements Filter {
 
     private static final int MAX_BODY_LENGTH = 1024;
     private static final Log LOGGER = LogFactory.getLog(RequestLoggingFilter.class);
+    private final List<String> unAuthorizedKeyList = List.of("password", "pass", "pw");
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -50,13 +52,19 @@ public class RequestLoggingFilter implements Filter {
             return null;
         }
         if (HTTP_HEADER_CONTENT_TYPE_FORM.equals(contentType)) {
-            Map<String,String[]> parameterMap = request.getParameterMap();
+            Map<String, String[]> parameterMap = request.getParameterMap();
             StringBuilder sb = new StringBuilder();
+
             for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
                 String key = entry.getKey();
                 String[] values = entry.getValue();
+
                 for (int i = 0; i < values.length; i++) {
-                    sb.append(key).append("=").append(values[i]).append("&");
+                    if (!unAuthorizedKeyList.contains(key.toLowerCase())) {
+                        sb.append(key).append("=").append(values[i]).append("&");
+                    } else {
+                        sb.append(key).append("=").append("***").append("&");
+                    }
                 }
             }
             if (sb.length() > 0) {

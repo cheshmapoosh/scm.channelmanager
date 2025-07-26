@@ -13,6 +13,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -76,7 +77,6 @@ public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
     @Column(name = "LAST_DATE_OF_PASSWORD_CHANGE")
     private LocalDate lastDateOfFirstPasswordChange;
     @Column(name = "LAST_REACTION_DATE_TO_PASSWORD")
-    private LocalDate lastReactionDateToFirstPasswordChange;
     private LocalDate lastReactionDateToFirstPasswordChange;
 
     @PrePersist

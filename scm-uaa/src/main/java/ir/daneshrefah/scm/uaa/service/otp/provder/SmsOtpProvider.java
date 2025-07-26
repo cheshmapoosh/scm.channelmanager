@@ -24,6 +24,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;

@@ -75,7 +75,6 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
     private final MembershipTerminalAccessMapper membershipTerminalAccessMapper;
     private final ChannelServiceAccessService channelServiceAccessService;
-    private final CustomerAccountRepository customerAccountRepository;
     private final MembershipConfigProperty membershipConfigProperty;
     private final AssetProviderRepository assetProviderRepository;
     private final ServiceProducerTemplate serviceProducerTemplate;
@@ -92,6 +91,9 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final JdbcTemplate jdbcTemplate;
     private final ServiceMapper serviceMapper;
     private final AssetProviderMapper assetProviderMapper;
+
+    private final OtpClientService otpClientService;
+    private final ChannelServiceAccessRepository channelServiceAccessRepository;
 
 
     @Override
@@ -208,13 +210,13 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             checkPersonAssetAccess(nationalId);
             ScmService service = assetProvider.getService();
             GeneralPerson person = personService.findPerson(personType, nationalId, request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, service.getCode(), request.getPageNo(), request.getPageSize());
+            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, request.getPageNo(), request.getPageSize());
             return MapToAccountMembership(accountList, request, assetProvider);
         }
         return Collections.emptyList();
     }
 
-    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, String serviceCode, Integer pageNo, Integer pageSize) {
+    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, ServiceCode serviceCode, Integer pageNo, Integer pageSize) {
         if (assetProvider.getCode().equals(AssetProviderCode.NAB)) { // TODO IMPL ANOTHER ASSET PROVIDER
             String nationalId = null;
             Map<String, String> requestMap = new HashMap<>();
@@ -234,7 +236,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 requestMap.put("start", start.toString());
                 requestMap.put("end", Integer.toString(end));
             }
-            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callServiceWithException(serviceCode, requestMap, ExternalAccountResponseData[].class);
+            ExternalAccountResponseData[] nabAccountListResponseData = serviceProducerTemplate.callServiceWithException(serviceCode.name(), requestMap, ExternalAccountResponseData[].class);
             return filterActiveAccountResponseDateList(Arrays.stream(nabAccountListResponseData).toList());
         }
         throw new InvalidInputException("assetProviderId");
@@ -255,7 +257,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                     //create account
                     AccountEntity accountEntity = mapToAccount(nabAccount, assetProvider);
                     Account account = new Account();
-                    account.setAccountNo(accountEntity.getAccountNo());
+                    account.setAccountNo(StringUtils.trim(accountEntity.getAccountNo()).toString());
                     AccountType accountType = new AccountType();
                     AccountTypeEntity accountTypeEntity = accountEntity.getAccountType();
                     accountType.setName(accountTypeEntity.getName());
@@ -301,6 +303,61 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             return response;
         }
         throw new InvalidInputException("accountNoList");
+    }
+
+    @Override
+    @Transactional
+    public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        List<MembershipEntity> memberships = membershipRepository.findAllByPersonUsername(person.getUsername());
+        //SET FALSE STATUS FOR CURRENT DEFAULT ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> Boolean.TRUE.equals(m.getDefaultAccount()))
+                .peek(m -> m.setDefaultAccount(false))
+                .forEach(membershipRepository::save);
+        //SET TRUE STATUS FOR REQUESTED ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> request.getAccountNo().equals(m.getCustomerAccount().getAccount().getAccountNo()))
+                .findFirst()
+                .ifPresentOrElse((membership) -> {
+                    membership.setDefaultAccount(true);
+                    membershipRepository.save(membership);
+                }, () -> {
+                    throw new NoMatchRecordFoundException("accountNo");
+                });
+        return new ChangeDefaultAccountStatusResponse().setDefaultAccountNumber(request.getAccountNo());
+    }
+
+    @Override
+    public List<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        return membershipRepository
+                .findAllByPersonUsername(person.getUsername())
+                .stream()
+                .map(membership -> {
+                    DefaultAccountStatusListResponse model = new DefaultAccountStatusListResponse();
+                    Boolean defaultAccount = membership.getDefaultAccount();
+                    model.setDefaultAccount(Objects.nonNull(defaultAccount) && defaultAccount);
+                    model.setAccountNumber(membership.getCustomerAccount().getAccount().getAccountNo());
+                    return model;
+                }).toList();
+
+    }
+
+    @Override
+    public ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request) {
+        GeneralPerson person = personService.findPerson(getRequestCurrentPerson().getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        List<MembershipEntity> memberships = membershipRepository.findAllByPersonUsername(person.getUsername());
+        //SET FALSE STATUS FOR CURRENT DEFAULT ACCOUNT
+        memberships
+                .stream()
+                .filter(m -> m.getCustomerAccount().getAccount().getAccountNo().equals(request.getAccountNo()))
+                .filter(m -> Boolean.TRUE.equals(m.getDefaultAccount()))
+                .peek(m -> m.setDefaultAccount(false))
+                .forEach(membershipRepository::save);
+        return new ChangeDefaultAccountStatusResponse().setDefaultAccountNumber(request.getAccountNo());
     }
 
     private void applyAccountsFavouriteStatus(Authentication authentication, Iterator<MembershipTerminalAccessEntity> iterator, AccountFavoriteActivityRequest request, AccountFavoriteActivityResponse response) {
@@ -406,14 +463,15 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         AssetProvider assetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(request.getAssetProviderId())).orElseThrow(() -> new InvalidInputException("assetProviderId"));
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
-        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, assetProvider.getService().getCode(), null, null);
+        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, 1, 1000);
         // Analyzing memberships
-        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, person, assetProvider);
+        List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, request.getAccountNumberList(), person, assetProvider);
         return syncMemberships(membershipSyncList);
     }
 
     private List<MembershipSync> createMembershipSyncList(List<Membership> localMemberships,
                                                           List<ExternalAccountResponseData> remoteAccountList,
+                                                          List<String> requestedAcoountList,
                                                           GeneralPerson person, AssetProvider assetProvider) {
         List<MembershipSync> membershipSyncList = new ArrayList<>();
         // Add all remote account with create status
@@ -422,6 +480,16 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         // If remote account does not any match for any local membership , remote account stay as create status
         // If local membership does not any match for any remote account , local membership added with delete status
         compareLocalMembershipWithMembershipSync(membershipSyncList, localMemberships, assetProvider, person);
+        return filterRequestedAccountList(membershipSyncList, requestedAcoountList);
+    }
+
+    private List<MembershipSync> filterRequestedAccountList(List<MembershipSync> membershipSyncList, List<String> requestedAcoountList) {
+        if (Objects.nonNull(requestedAcoountList) && !requestedAcoountList.isEmpty()) {
+            return membershipSyncList
+                    .stream()
+                    .filter(membershipSync -> requestedAcoountList.contains(membershipSync.getAccountNumber().toString()))
+                    .toList();
+        }
         return membershipSyncList;
     }
 
@@ -429,7 +497,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         localMemberships.forEach(localMembership -> {
             membershipSyncList
                     .stream()
-                    .filter(membershipSync -> Objects.equals(Long.parseLong(localMembership.getCustomerAccount().getAccount().getAccountNo()), membershipSync.getAccountNumber()))
+                    .filter(membershipSync -> Objects.equals(Long.parseLong(localMembership.getCustomerAccount().getAccount().getAccountNo().trim()), membershipSync.getAccountNumber()))
                     .findFirst()
                     .ifPresentOrElse(membershipSync -> {
                         membershipSync.setSyncStatus(MembershipSync.MembershipSyncStatus.UPDATED);
@@ -491,7 +559,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         MembershipEntity entity = membershipRepository.findById(localMembership.getId()).orElseThrow(() -> new NoMatchRecordFoundException("localMembership"));
         // Deactivate membership channel access list
         membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_Id(entity.getId())
-                .ifPresent(mca -> {
+                .forEach(mca -> {
                     mca.getMembership().setClose(true);
                     membershipTerminalAccessRepository.save(mca);
                 });
@@ -576,6 +644,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             accountEntity.setCloseDate((AccountStatus.CLOSED.getCode() == nabAccount.getAccountStatusCode()) ? LocalDateTime.now() : null);
             accountEntity.setAssetProvider(assetProviderRepository.findById(assetProviderId).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId")));
             accountEntity.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
+            accountEntity.setAccountNo(nabAccount.getAccountNumber().toString().trim());
             accountEntity = accountRepository.save(accountEntity);
         } else {
             //create
@@ -588,11 +657,12 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
     private AccountEntity mapToAccount(ExternalAccountResponseData nabAccount, AssetProvider assetProvider) {
         AccountEntity account = new AccountEntity();
-        account.setAccountNo(nabAccount.getAccountNumber().toString());
-        account.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
+        account.setAccountNo(nabAccount.getAccountNumber().toString().trim());
+        account.setAccountType(accountTypeRepository.findById(Long.parseLong(nabAccount.getAccountTypeCode().toString().trim())).orElseThrow(() -> new InvalidInputException("accountTypeCode")));
         account.setClose(AccountStatus.CLOSED.getCode() == nabAccount.getAccountStatusCode() ? 1 : 0);
         account.setAssetProvider(assetProviderRepository.findById(assetProvider.getId()).orElseThrow(() -> new NoMatchRecordFoundException("assetProviderId")));
         account.setCloseDate((nabAccount.getAccountStatusCode().equals(1)) ? LocalDateTime.now() : null);
+        account.setReasonClose(0);
         return account;
     }
 
@@ -642,7 +712,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
 
     @Override
-    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Integer personId, Short channelId) {
+    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId) {
         if (null == personId) {
             return null;
         }
@@ -737,6 +807,40 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 .filter(Objects::nonNull)
                 .map(CustomerEntity::getCustomerNo)
                 .findFirst();
+    }
+
+
+    @Override
+    @LegacyChannelManger
+    public List<MembershipTerminalServiceAccessDto> findAllMembershipChannelServiceAccessList(MembershipChannelServiceAccessFindRequest request) {
+        GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
+        TerminalType terminalCode = TerminalType.findByTerminalCode(request.getTerminalCode());
+        return membershipTerminalServiceAccessRepository
+                .findByLegacyTerminalIdAndAccountNo(terminalCode.getLegacyTerminalId(), request.getAccountNumber(), person.getId())
+                .stream()
+                .map(MembershipTerminalServiceAccessMapper.INSTANCE::toDto)
+                .toList();
+    }
+
+    @Override
+    public MembershipTerminalAccessDto getMembershipChannelAccess(long id) {
+        MembershipTerminalAccessEntity found = membershipTerminalAccessRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+        return MembershipTerminalAccessMapper.INSTANCE.toDto(found);
+    }
+
+    @Override
+    @LegacyChannelManger
+    public List<ServiceCategory> findAllServiceCategory() {
+        if (DEFAULT_SERVICE_CATEGORY_CACHE.isEmpty()) {
+            jdbcTemplate.query("select * from REF.SERVICE_CATEGORY"
+                    , (rs, rowNum) -> new ServiceCategory()
+                            .setServiceCategoryId(rs.getInt("SERVICE_CATEGORY_ID"))
+                            .setName(StringUtils.trim(rs.getString("NAME")).toString())
+                            .setDescription(StringUtils.trim(rs.getString("DESCRIPTION")).toString())).forEach(serviceCategory -> {
+                DEFAULT_SERVICE_CATEGORY_CACHE.put(serviceCategory.getServiceCategoryId(), serviceCategory);
+            });
+        }
+        return new ArrayList<>(DEFAULT_SERVICE_CATEGORY_CACHE.values());
     }
 
 

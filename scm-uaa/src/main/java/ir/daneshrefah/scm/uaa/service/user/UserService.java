@@ -106,22 +106,7 @@ public class UserService {
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return userMapper.toModel(userEntity);
-    }
-
-    @Transactional
-    public User changeNickNameByAdmin(UserNickNameModifyRequest request) {
-        validateUserNickNameRequest(request);
-        loadUserEntityByUsername(request.getNickName(), request.getTerminalCode()).ifPresent((f) -> {
-            throw new DuplicatedRecordFoundException("nickname");
-        });
-        UserEntity currentUser = loadUserEntityByUsername(request.getCurrentNickName(), request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
-        currentUser.setLastEditDate(LocalDateTime.now());
-        currentUser.setNickname(request.getNickName());
-        userRepository.save(currentUser);
-        xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
-        userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return userMapper.toModel(currentUser);
+        return UserMapper.INSTANCE.toModel(userEntity);
     }
 
     @Transactional
@@ -655,7 +640,7 @@ public class UserService {
             checkStaticPassword(userEntity, claimCode);
             OtpType otpType = OtpType.toOtpType(requestTxMethod);
             verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, otpType);
-        }  else {
+        } else {
             OtpType targetOtpType = OtpType.toOtpType(currentTxMethod);
             verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, targetOtpType);
             if (AuthenticationMethod.STATIC_PASSWORD.equals(requestTxMethod)) {
@@ -811,6 +796,30 @@ public class UserService {
         userRepository.flush();
         uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
         return userMapper.toModel(userEntity);
+    }
+
+    private void verifyOtp(UserAssignTerminalRequest request) {
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrganizationId())
+                .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        Recipient recipient = Recipient.builder()
+                .address(generalPerson.getMobile1())
+                .identifier(generalPerson.getMobile1())
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        OtpVerifyRequest otpRequest = OtpVerifyRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(OtpReason.BANK_CONSOLE_CUSTOMER_VERIFICATION)
+                .claimCode(request.getOtpCode())
+                .recipient(recipient)
+                .build();
+        OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpRequest);
+        if (!otpVerifyResponse.isSuccessful()){
+            throw new InvalidInputException("otpCode");
+        }
     }
 
     private void verifyOtp(UserAssignTerminalRequest request) {

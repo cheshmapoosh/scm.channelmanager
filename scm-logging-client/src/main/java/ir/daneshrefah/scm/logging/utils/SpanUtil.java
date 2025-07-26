@@ -19,9 +19,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -87,18 +87,26 @@ public class SpanUtil {
     }
 
     public static String getRequestBody(HttpServletRequest request) {
-        String requestBody = null;
-        if (request instanceof ContentCachingRequestWrapper contentCachingRequestWrapper) {
-            requestBody = new String(contentCachingRequestWrapper.getContentAsByteArray());
+        try {
+            if (request instanceof ContentCachingRequestWrapper wrapper) {
+                byte[] content = wrapper.getContentAsByteArray();
+                if (content.length > 0) {
+                    String rawBody = new String(content, StandardCharsets.UTF_8);
+                    return objectMapper.writeValueAsString(rawBody);
+                }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
-        return Optional.ofNullable(requestBody).orElse("");
+        return "";
     }
 
     public static String getResponseBody(Object inputArgs) {
         try {
             return objectMapper.writeValueAsString(inputArgs);
         } catch (Exception e) {
-            return "";
+            log.error(e.getMessage(), e);
         }
+        return "";
     }
 }
