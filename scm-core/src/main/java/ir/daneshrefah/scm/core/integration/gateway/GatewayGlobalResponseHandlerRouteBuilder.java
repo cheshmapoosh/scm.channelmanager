@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
+import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
@@ -38,6 +39,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                     .result(null)
                     .errors(scmFault.getErrors())
                     .build();
+            exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, HttpStatusMapper.toHttpStatus(response.getStatus()));
         } else {
             response = ScmResponse
                     .builder()

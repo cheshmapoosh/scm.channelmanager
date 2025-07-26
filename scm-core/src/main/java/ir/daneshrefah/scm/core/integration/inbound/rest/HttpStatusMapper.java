@@ -1,16 +1,7 @@
 package ir.daneshrefah.scm.core.integration.inbound.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.plugin.api.inbound.ResponseBuilder;
-import ir.daneshrefah.scm.utils.constant.Constants;
-import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.apache.camel.Exchange;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +16,7 @@ public class HttpStatusMapper {
 
     private static final String DEFAULT_CONTENT_TYPE = "application/json";
 
-    private static Map<MessageStatus, Integer> statusMappingMap = new HashMap<>();
+    private static final Map<MessageStatus, Integer> statusMappingMap = new HashMap<>();
     static {
         statusMappingMap.put(MessageStatus.SC_PROCESSING, 500);
         statusMappingMap.put(MessageStatus.SC_SUCCESS, 200);
