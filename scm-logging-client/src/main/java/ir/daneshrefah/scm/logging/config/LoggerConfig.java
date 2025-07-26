@@ -26,7 +26,6 @@ import java.io.File;
 @Configuration
 public class LoggerConfig {
 
-    private static final String ROLLING_ARCHIVE_FOLDER_NAME = "archive";
     private final String logFileName;
     private final String fileDirectory;
     private final String logPattern;

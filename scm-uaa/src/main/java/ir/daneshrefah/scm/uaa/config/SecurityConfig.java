@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.uaa.config;
 import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
+import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
@@ -13,7 +14,7 @@ import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticati
 import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
-import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,7 +31,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -78,6 +78,15 @@ public class SecurityConfig {
     private CorsConfigurationSource configurationSource;
     @Autowired
     private LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
+
+    @Autowired
+    private LogoutService logoutService;
+
+    @Autowired
+    private CacheTemplate cacheTemplate;
+
+    @Autowired
+    private UserService userService;
 
     @Bean
     @Order(1)
@@ -146,7 +155,7 @@ public class SecurityConfig {
                                                           GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheTemplate, userService);
         http
 //                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
@@ -170,7 +179,6 @@ public class SecurityConfig {
                         .accessDeniedHandler(new AccessDeniedHandler() {
                             @Override
                             public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-                                System.out.print("");
                             }
                         })
                         .defaultAuthenticationEntryPointFor(
@@ -244,7 +252,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile({"dev", "default,","test","prod"})
+    @Profile({"dev","default","test","prod"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));

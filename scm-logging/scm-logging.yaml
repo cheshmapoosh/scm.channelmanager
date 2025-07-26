@@ -12,15 +12,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
-# Source: scm-logging/templates/configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: scm-logging-configmap
-data:
-  # Key-value pairs for your configuration
-  SPRING_SECURITY_ISSUER_URI: "http://scm-logging.scm.svc.cluster.local:8000"
----
 # Source: scm-logging/templates/service.yaml
 apiVersion: v1
 kind: Service
@@ -33,9 +24,9 @@ metadata:
     app.kubernetes.io/version: "8.2.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: 8000
+    - port: 9090
       targetPort: http
       protocol: TCP
       name: http

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.AnonymousAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
@@ -23,8 +24,8 @@ public class AnonymousAuthenticationProvider extends AbstractClientAuthenticatio
 
     private final String key = "scm_anonymous";
 
-    protected AnonymousAuthenticationProvider(SessionCache sessionCache) {
-        super(sessionCache);
+    protected AnonymousAuthenticationProvider(SessionCache sessionCache, CacheTemplate cacheTemplate) {
+        super(sessionCache,cacheTemplate);
     }
 
     @Override

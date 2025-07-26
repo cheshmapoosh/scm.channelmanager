@@ -40,8 +40,14 @@ public interface Constants {
     String CLAIM_KEY_MAX_IDLE_TIME = "mit";
     String CLAIM_KEY_PERSON_PHONE_NUMBER = "ppn";
     String CLAIM_KEY_ACTIVATOR_TERMINAL_CODE = "atc";
+    String CLAIM_KEY_JWT_IDENTIFIER = "jti";
+
+    String OAUTH2_SCOPE_NAME_SESSION = "session";
+    String OAUTH2_SCOPE_NAME_ACTIVATION = "activation";
+    String OAUTH2_SCOPE_NAME = "scope";
 
 
+    String OAUTH2_PARAM_AUTHORIZATION = "authorization";
     String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
     String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
     String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
@@ -53,11 +59,6 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE = "activation_code";
     String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
     String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
-    String OAUTH2_PARAM_NAME_ACTIVATOR_TERMINAL = "activator_terminal";
-
-    String OAUTH2_SCOPE_NAME_SESSION = "session";
-    String OAUTH2_SCOPE_NAME_ACTIVATION = "activation";
-    String OAUTH2_SCOPE_NAME = "scope";
 
     String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
     String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";
@@ -69,6 +70,7 @@ public interface Constants {
     String OAUTH2_ERROR_CODE_IS_DISABLED = "disabled_user";
     String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";
     String OAUTH2_ERROR_CODE_INVALID_CAPTCHA = "invalid_captcha";
+    String OAUTH2_ERROR_CODE_INVALID_TOKEN = "invalid_token";
 
     //     String CHANNEL_HEADER ="Channel";
 //     String AGENT_HEADER ="Agent";

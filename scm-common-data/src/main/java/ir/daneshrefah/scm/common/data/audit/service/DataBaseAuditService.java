@@ -19,7 +19,7 @@ import java.util.UUID;
 public class DataBaseAuditService implements AuditService {
 
     private final InstanceManager instanceManager;
-    @PersistenceContext
+    @PersistenceContext(unitName = "entityManagerFactory")
     private EntityManager entityManager;
 
     @Override

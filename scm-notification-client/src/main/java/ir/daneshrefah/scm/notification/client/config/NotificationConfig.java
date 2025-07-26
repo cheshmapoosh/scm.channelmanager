@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.notification.client.config;
 
 
-
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.mq.jms.JakarataConnectionFactory;
 import ir.daneshrefah.scm.notification.client.config.prop.ClientConfigProperties;
@@ -11,6 +10,7 @@ import ir.daneshrefah.scm.notification.client.service.NotificationServiceImpl;
 import ir.daneshrefah.scm.notification.client.service.provider.NotificationMessageProvider;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.notification.client.service.template.NotificationBodyProcessor;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.core.JmsTemplate;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Description of the class or purpose of the file.
@@ -63,12 +62,12 @@ public class NotificationConfig {
         JakarataConnectionFactory factory = new JakarataConnectionFactory();
         factory.setQueueManager(properties.getSms().getIbmMq().getQueueManager());
         factory.setHostName(properties.getSms().getIbmMq().getHost());
-        factory.setPort(Objects.nonNull(properties.getSms().getIbmMq().getPort()) ? properties.getSms().getIbmMq().getPort(): IBM_MQ_DEFAULT_PORT);
+        factory.setPort(properties.getSms().getIbmMq().getPort());
         factory.setTransportType(1);
         factory.setChannel(properties.getSms().getIbmMq().getChannel());
         factory.setUsername(properties.getSms().getIbmMq().getUsername());
-        factory.setPassword(properties.getSms().getIbmMq().getPassword());
-
+        String password = properties.getSms().getIbmMq().getPassword();
+        factory.setPassword(StringUtils.isBlank(password) ? null : password);
         return factory;
     }
 

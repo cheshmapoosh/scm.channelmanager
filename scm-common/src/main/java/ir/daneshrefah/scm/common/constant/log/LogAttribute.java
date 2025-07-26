@@ -46,6 +46,8 @@ public enum LogAttribute {
     LOGGABLE("loggable"),
     HTTP_STATUS_CODE("http.status_code"),
     CLIENT_REMOTE_ADDRESS("clientRemoteAddress"),
-    ERROR_DETAILS("errorDetails");
+    ERROR_DETAILS("errorDetails"),
+    STATUS_CODE("statusCode");
     private final String attributeName;
 }
+

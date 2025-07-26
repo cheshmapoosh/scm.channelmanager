@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -19,6 +20,7 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +29,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -41,6 +44,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
@@ -49,6 +54,10 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
 
 @Configuration
 public class JWTConfig {
+
+    private static final String JWT_ID_CACHE_NAME = "jwt:jti";
+    public static final String KEY_SEPARATOR = "::";
+
     @Value("${scm.security.key-store.name}")
     private String keyStoreFilePath;
     @Value("${scm.security.key-store.password}")
@@ -56,6 +65,8 @@ public class JWTConfig {
     @Value("${scm.security.key-store.alias}")
     private String keyStoreAlias;
 
+    @Autowired
+    private CacheTemplate cacheTemplate;
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
@@ -90,6 +101,7 @@ public class JWTConfig {
                        PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
                 PostAuthenticationToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
+                putJtiToCache(user, claims, context);
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_GRANT, principal.getDetails().getGrantType());
@@ -178,6 +190,19 @@ public class JWTConfig {
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
+    }
+
+    private void putJtiToCache(User user, JwtClaimsSet.Builder claims,JwtEncodingContext context) {
+        JwtClaimsSet jwtClaims = claims.build();
+        OAuth2TokenType tokenType = context.getTokenType();
+        if (Objects.nonNull(tokenType) && "access_token".equals(tokenType.getValue())) {
+            String jtiTokenId = jwtClaims.getClaim(CLAIM_KEY_JWT_IDENTIFIER);
+            String cacheKey = String.join(KEY_SEPARATOR, user.getNickname(), user.getTerminalCode());
+            Instant issuedAt = jwtClaims.getClaim("iat");
+            Instant expiresAt = jwtClaims.getClaim("exp");
+            long ttl = Duration.between(issuedAt, expiresAt).toMinutes();
+            cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId, ttl);
+        }
     }
 
     private Object getPersonMaskedPhoneNumber(GeneralPerson person) {

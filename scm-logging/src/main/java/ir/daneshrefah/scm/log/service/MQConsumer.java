@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.log.service;
 
 import ir.daneshrefah.scm.log.config.LogJmsConfigProperties;
-import ir.daneshrefah.scm.logging.service.LogService;
 import ir.daneshrefah.scm.mq.jms.message.JakartaMessage;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -17,7 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Slf4j
 public class MQConsumer {
 
-    private final JmsTemplate logJmsConfig;
+    private final JmsTemplate logJmsTemplate;
     private final LogService logService;
     private final LogJmsConfigProperties properties;
 
@@ -26,8 +25,7 @@ public class MQConsumer {
     public void consumeMessages() {
         while (true) {
             try {
-                Message message = logJmsConfig.receive(properties.getDestination());
-                System.out.println(message == null);
+                Message message = logJmsTemplate.receive(properties.getDestination());
                 if (message instanceof JakartaMessage jakartaMessage) {
                     String msg = jakartaMessage.getBody(String.class);
                     logService.save(msg);

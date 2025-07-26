@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
@@ -34,20 +35,23 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     private final SessionCache sessionCache;
 
-    private UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
+    private final UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
 
-    private UserDetailsChecker postAuthenticationChecks = new DefaultPostAuthenticationChecks();
+    private final UserDetailsChecker postAuthenticationChecks = new DefaultPostAuthenticationChecks();
 
-    private boolean forcePrincipalAsString = false;
+    private final boolean forcePrincipalAsString = false;
 
     protected boolean hideUserNotFoundExceptions = true;
 
     protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 
-    private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
+    private final GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
-    protected AbstractClientAuthenticationProvider(SessionCache sessionCache) {
+    private final CacheTemplate cacheTemplate;
+
+    protected AbstractClientAuthenticationProvider(SessionCache sessionCache,CacheTemplate cacheTemplate) {
         this.sessionCache = sessionCache;
+        this.cacheTemplate = cacheTemplate;
     }
 
     @Override
@@ -174,4 +178,9 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
     protected SessionCache getSessionCache() {
         return sessionCache;
     }
+
+    protected CacheTemplate cacheTemplate() {
+        return cacheTemplate;
+    }
+
 }

@@ -12,7 +12,6 @@ import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;

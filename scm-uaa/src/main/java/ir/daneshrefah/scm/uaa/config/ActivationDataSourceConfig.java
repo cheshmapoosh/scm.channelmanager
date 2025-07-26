@@ -2,21 +2,21 @@ package ir.daneshrefah.scm.uaa.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -27,14 +27,18 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-01-09
  */
-//@Configuration
-//@EnableTransactionManagement
-//@EnableJpaRepositories(
-//        basePackages = "ir.daneshrefah.scm.uaa.repository.activation",
-//        entityManagerFactoryRef = "activationEntityManagerFactory",
-//        transactionManagerRef = "activationTransactionManager"
-//)
-
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+        basePackages = "ir.daneshrefah.scm.uaa.repository.activation",
+        entityManagerFactoryRef = "activationEntityManagerFactory",
+        transactionManagerRef = "activationTransactionManager"
+        , excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        value = ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository.class
+)
+)
+@EnableConfigurationProperties(DataSourceConfigProperties.class)
 public class ActivationDataSourceConfig {
 
     @Bean

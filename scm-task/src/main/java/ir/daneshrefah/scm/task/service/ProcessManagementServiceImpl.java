@@ -165,6 +165,10 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstanceResponse;
     }
 
+    private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Long loggedInUserId) {
+        return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
+    }
+
     @Override
     public PagedResponseData<ProcessInstanceResponse> findAll(Exchange exchange, ProcessInstanceFilterRequest request) {
         request = Objects.nonNull(request) ? request : new ProcessInstanceFilterRequest();
@@ -329,6 +333,26 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)
             || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
+            throw new InvalidProcessStatusException("status", "Invalid process status.");
+        } else if (allowCancelProcess(processInstanceEntity, loggedInUserId)) {
+            processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);
+            processInstanceEntity.getTasks()
+                    .stream()
+                    .filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING))
+                    .forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
+            processInstanceRepository.save(processInstanceEntity);
+        } else {
+            throw new ProcessAuthorityException("Cancel Process", "have not permission");
+        }
+    }
+
+    @Override
+    public void cancelProcess(ProcessInstanceCancelRequest request) {
+        ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("processId"));
+        ProcessInstanceEntity processInstanceEntity = findByID(request.getId());
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)
+                || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
             throw new InvalidProcessStatusException("status", "Invalid process status.");
         } else if (allowCancelProcess(processInstanceEntity, loggedInUserId)) {
             processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);

@@ -11,7 +11,7 @@ import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -73,9 +73,9 @@ public abstract class GeneralRealPersonEntity extends GeneralPersonEntity {
     @Convert(converter = GenderConverter.class)
     private Gender gender;
     @Column(name = "BIRTH_DATE")
-    private LocalDate birthDate;
+    private LocalDateTime birthDate;
     @Transient
-    private LocalDate deadDate;
+    private LocalDateTime deadDate;
     @Transient
     private boolean isLived;
 //    @Column(name = "REGION_CODE")

@@ -48,6 +48,7 @@ public class ServiceManagementService extends AbstractJavaService {
 
     @JavaService(operationCode = SVC_SERVICE_BY_CODE)
     public ScmService findServiceByCode(String serviceCode) {
+//        String serviceCode = message.getPayloadValue("serviceCode");
         if (StringUtils.isEmpty(serviceCode)) {
             return null;
         }

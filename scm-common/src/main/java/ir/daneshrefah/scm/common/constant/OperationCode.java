@@ -99,6 +99,9 @@ public enum OperationCode {
     SVC_JOB_MANAGEMENT_DELETE_TRIGGER_ENTITY(ServiceImplementationType.JAVA),
     SVC_RESPONSE_CONDITION_DATA_SOURCE_LIST(ServiceImplementationType.JAVA),
     SVC_ASSETS_FAVOURITE(ServiceImplementationType.JAVA),
+    SVC_ASSETS_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
+    SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
+    SVC_ASSETS_SHOW_DEFAULT_ACCOUNT(ServiceImplementationType.JAVA),
     SVC_ASSETS_PROVIDER_FIND_ONE(ServiceImplementationType.JAVA),
     SVC_PARAMETER_CREATE(ServiceImplementationType.JAVA),
     SVC_RESPONSE_CONDITION_DATA_SOURCE_CREATE(ServiceImplementationType.JAVA),
@@ -183,7 +186,10 @@ public enum OperationCode {
     SVC_CONVERTERS_PARENT(ServiceImplementationType.PARENT),
     SVC_CONFIG_PARENT(ServiceImplementationType.PARENT),
     SVC_PARAMETER_PARENT(ServiceImplementationType.PARENT),
-    SVC_LOG_PARENT(ServiceImplementationType.PARENT);
+    SVC_LOG_PARENT(ServiceImplementationType.PARENT),
+
+    /* EXTERNAL SERVICES */
+    SVC_NAB_CUSTOMER_ACCOUNT_LIST(ServiceImplementationType.REST_EXTERNAL);
 
     private final ServiceImplementationType type;
 }

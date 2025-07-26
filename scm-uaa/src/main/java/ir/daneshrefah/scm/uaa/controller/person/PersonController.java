@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.service.person.UPersonService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,8 +67,8 @@ public class PersonController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<GeneralPerson> addPersonInfoFromCIF(@RequestBody PersonFindRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonInfoFromCIF(request));
+    public ResponseEntity<GeneralPerson> addPersonInfoFromCIF(@Valid @NotNull @RequestBody PersonFindRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonByCif(request));
     }
 
     @GetMapping("/sync/{personId}")

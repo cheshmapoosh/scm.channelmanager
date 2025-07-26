@@ -31,8 +31,8 @@ import ir.daneshrefah.scm.uaa.service.user.XUserDetailService;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
-import jakarta.jms.Message;
 import jakarta.jms.*;
+import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.core.JmsTemplate;
@@ -99,6 +99,7 @@ public class OtpDeviceService {
         }
         SecondPasswordAuthenticationToken authentication = new SecondPasswordAuthenticationToken(person.getUsername(), request.getClaimCode());
         ResponseMessageDetails responseBody;
+        log.info("Before send to avacast for user with nickname [{}]",user.getNickname());
         try {
             responseBody = sendAndReceiveOTPRequest(authentication, "", user.getNickname(), user.getCreatorBranch());
         } catch (Throwable ex) {
@@ -107,17 +108,22 @@ public class OtpDeviceService {
         }
         String resultCode = responseBody.getResultCode();
         if (Objects.equals(AvaCasResponseCode.OK.getCode(), resultCode)) {
-            return OtpVerifyResponse.builder().isSuccessful(true).build();
+            return OtpVerifyResponse.builder()
+                    .otpType(request.getOtpType())
+                    .isSuccessful(true)
+                    .build();
         }
+        log.info("OTP verification completed with result code [{}] for user with nickname '{}'", resultCode, user.getNickname());
         Optional<String> errorMessage = resourceBundleService.get(AccessibleLocale.FA_IR.getLocale(), AvaCasResponseCode.getStatus(resultCode));//TODO read locale from request header
         return OtpVerifyResponse.builder().isSuccessful(false)
+                .otpType(request.getOtpType())
                 .errorMessage(errorMessage.orElse("Internal Error")).
                 build();
     }
 
     private UserTokenDetails createUserTokenDetailEntity(OtpRegisterDeviceRequest request, ResponseMessageDetails responseBody, UserEntity userEntity) {
         User loggedInUser = AuthenticationUtils.getLoggedInUser();
-        Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
+        Long loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         UserTokenDetails userTokenDetail = new UserTokenDetails();
         assert loggedInUser != null;
         String terminalCode = loggedInUser.getTerminalCode();
@@ -141,7 +147,7 @@ public class OtpDeviceService {
         }
     }
 
-    public boolean hasOTPAssignment(Integer personId) {
+    public boolean hasOTPAssignment(Long personId) {
         return userTokenDetailsRepository.countByPersonId(personId) > 0;
     }
 

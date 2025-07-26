@@ -23,4 +23,5 @@ public class UserAssignTerminalRequest extends UserByNationalCodeFindRequest imp
     private AuthenticationMethod loginAuthenticationMethod;
     private String loginStaticPassword;
     private String transactionStaticPassword;
+    private String otpCode;
 }

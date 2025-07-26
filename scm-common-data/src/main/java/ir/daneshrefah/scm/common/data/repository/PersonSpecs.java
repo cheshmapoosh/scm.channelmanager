@@ -36,7 +36,7 @@ public class PersonSpecs {
                 predicates.add(builder.equal(root.get("subOrganizationId"),request.getSubOrganizationId()));
             }
             if (Objects.nonNull(request.getActive())){
-                predicates.add(builder.equal(root.get("active"),request.getActive()));
+                predicates.add(builder.equal(root.get("status"),request.getActive()));
             }
             if (Objects.nonNull(request.getBranchCode())){
                 predicates.add(builder.like(root.get("branchCode"),getLikeQueryString(request.getBranchCode())));

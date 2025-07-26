@@ -10,7 +10,6 @@ public interface MessageTemplateMapper {
 
     MessageTemplateMapper INSTANCE = Mappers.getMapper(MessageTemplateMapper.class);
     MessageTemplateEntity toEntity(MessageTemplate messageTemplate);
-    MessageTemplate toModel(MessageTemplateEntity messageTemplateEntity);
-
+    MessageTemplate toModel(MessageTemplateEntity entity);
 
 }

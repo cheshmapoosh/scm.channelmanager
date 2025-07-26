@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.plugin.api.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-import ir.daneshrefah.scm.logging.model.LogTraceDetailResponse;
+import ir.daneshrefah.scm.common.model.logging.LogTracePayloadResponse;
 import ir.daneshrefah.scm.logging.model.LogTraceFindByIdRequest;
 import ir.daneshrefah.scm.logging.model.LogTraceRequest;
 import ir.daneshrefah.scm.logging.model.LogTraceResponse;
@@ -28,9 +28,9 @@ public class TransactionLogManagementService extends AbstractJavaService {
         return logService.findAll(request);
     }
 
-    @JavaService(operationCode = SCV_LOG_FIND_BY_ID)
-    public LogTraceDetailResponse findById(LogTraceFindByIdRequest key) {
-        return logService.findById(key);
+    @JavaService(operationCode = SCV_LOG_FIND_BY_ID)//TODO change the service name
+    public LogTracePayloadResponse getPayload(LogTraceFindByIdRequest request) {
+        return logService.getPayload(request);
     }
 }
 

@@ -42,16 +42,12 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 
     private final CIFService cifService;
     private final RoleRepository roleRepository;
-    private final PersonMapper personMapper;
-    private final RoleMapper roleMapper;
 
     public PersonServiceDatabaseImpl(PersonRepository personRepository, TerminalService terminalService, RoleRepository roleRepository,
-                                     CIFService cifService, PersonMapper personMapper, RoleMapper roleMapper) {
-        super(terminalService, personRepository, personMapper);
+                                     CIFService cifService) {
+        super(terminalService, personRepository);
         this.roleRepository = roleRepository;
         this.cifService = cifService;
-        this.personMapper = personMapper;
-        this.roleMapper = roleMapper;
     }
 
     @Override
@@ -72,28 +68,11 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         }
     }
 
-    @Override
-    public GeneralPerson syncPersonInfoFromCIF(PersonFindRequest request) {
-        ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request body"));
-        ValidationUtils.checkBlankString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
-        List<GeneralPerson> cifPersonInfo = findCIFPersonInfo(request);
-        ValidationUtils.checkNullOrEmptyList(cifPersonInfo, () -> new NoMatchRecordFoundException("cif person"));
-        return saveFoundCif(cifPersonInfo);
-    }
 
     @Override
-    public GeneralPerson syncPersonInfoFromCIF(Integer personId) {
-        ValidationUtils.checkNonNull(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
-        ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
-        PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
-        return syncPersonInfoFromCIF(request);
-    }
-
-    @Override
-    public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(Integer personId) {
-        ValidationUtils.checkNonNull(personId, () -> new MissingRequiredInputException("personId"));
-        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
+    public DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId) {
+        ValidationUtils.checkBlankString(personId, () -> new MissingRequiredInputException("personId"));
+        GeneralPerson localPersonInfo = findPersonByPersonId(Long.parseLong(personId));
         ValidationUtils.checkNull(localPersonInfo, () -> new NoMatchRecordFoundException("local person not found"));
         PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
         List<GeneralPerson> cifPersonInfoList = findCIFPersonInfo(request);
@@ -163,35 +142,71 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
         return diffGeneralPerson;
     }
 
+    @Override
+    public GeneralPerson syncPersonByCif(PersonFindRequest request) {
+        GeneralPerson cifPerson = findPerson(request);
+        GeneralPerson localPersonInfo = findPagedPersonList(request).getData().stream().findFirst().orElse(null);
+        GeneralPersonEntity toUpdatePerson;
+        if (Objects.isNull(localPersonInfo)) {
+            //CREATING NEW PERSON
+            toUpdatePerson = PersonMapper.INSTANCE.toPersonEntity(cifPerson);
+            toUpdatePerson.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
+        } else {
+            //UPDATE PERSON
+            toUpdatePerson = personRepository.findById(localPersonInfo.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scm person"));
+            if (cifPerson instanceof GeneralLegalPerson legalPerson) {
+                PersonMapper.INSTANCE.update(legalPerson, (GeneralLegalPersonEntity) toUpdatePerson);
+            } else {
+                GeneralRealPerson realPerson = (GeneralRealPerson) cifPerson;
+                PersonMapper.INSTANCE.update(realPerson, (GeneralRealPersonEntity) toUpdatePerson);
+            }
+        }
+        toUpdatePerson.setUsername(extractUsername(toUpdatePerson));
+        toUpdatePerson.setStatus(PersonStatus.ACTIVE);
+        toUpdatePerson = personRepository.save(toUpdatePerson);
+        return PersonMapper.INSTANCE.toPerson(toUpdatePerson);
+    }
 
-    private GeneralPerson saveFoundCif(List<GeneralPerson> cifPersonInfo) {
+    private GeneralPerson findPerson(PersonFindRequest request) {
+        List<GeneralPerson> cifPersonInfo = findCIFPersonInfo(request);
+        ValidationUtils.checkNullOrEmptyList(cifPersonInfo, () -> new NoMatchRecordFoundException("cif person"));
         if (cifPersonInfo.size() > 1) {
             throw new TooManyRecordFoundException("cif person", cifPersonInfo.size());
         }
-        GeneralPersonEntity personEntity = personMapper.toPersonEntity(cifPersonInfo.get(0));
-        personEntity.setUsername(extractUsername(personEntity));
-        personEntity.setStatus(PersonStatus.ACTIVE);
-        personEntity.setArchiveNo(ArchiveUtils.calculateTenYearsYearlyArchiveNo());
-        List<GeneralPersonEntity> foundLocal = personRepository.findPersonByUsername(personEntity.getUsername());
-        if (foundLocal.size() > 1) {
-            throw new TooManyRecordFoundException("local person", cifPersonInfo.size());
-        } else if (!foundLocal.isEmpty()) {
-            personEntity.setId(foundLocal.get(0).getId());
-        }
-        personEntity = personRepository.save(personEntity);
-        return personMapper.toPerson(personEntity);
+        return cifPersonInfo.get(0);
     }
 
+
     @Override
-    public List<Role> findPersonRoleList(Integer personId) {
+    public GeneralPerson syncPersonByCif(Long personId) {
+        GeneralPerson localPersonInfo = findPersonByPersonId(personId);
+        PersonFindRequest request = createFindRequestFromLocalPerson(localPersonInfo);
+        GeneralPerson cifPerson = findPerson(request);
+        //UPDATE PERSON
+        GeneralPersonEntity toUpdatePerson = personRepository.findById(localPersonInfo.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scm person"));
+        if (cifPerson instanceof GeneralLegalPerson legalPerson) {
+            PersonMapper.INSTANCE.update(legalPerson, (GeneralLegalPersonEntity) toUpdatePerson);
+        } else {
+            GeneralRealPerson realPerson = (GeneralRealPerson) cifPerson;
+            PersonMapper.INSTANCE.update(realPerson, (GeneralRealPersonEntity) toUpdatePerson);
+        }
+        toUpdatePerson.setUsername(extractUsername(toUpdatePerson));
+        toUpdatePerson.setStatus(PersonStatus.ACTIVE);
+        toUpdatePerson = personRepository.save(toUpdatePerson);
+        return PersonMapper.INSTANCE.toPerson(toUpdatePerson);
+    }
+
+
+    @Override
+    public List<Role> findPersonRoleList(Long personId) {
         if (null == personId) {
             throw new MissingRequiredInputException("personId");
         }
-        return roleMapper.toModels(roleRepository.findByPersonId(personId));
+        return RoleMapper.INSTANCE.toModels(roleRepository.findByPersonId(personId));
     }
 
     @Override
-    public Role addPersonRole(Integer personId, Integer roleId) {
+    public Role addPersonRole(Long personId, Integer roleId) {
         if (null == personId) {
             throw new MissingRequiredInputException("personId");
         }
@@ -207,11 +222,11 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
             throw new InvalidInputException("personId");
         }
         roleRepository.insertPersonRole(personId, roleId);
-        return roleMapper.toModel(roleEntity.get());
+        return RoleMapper.INSTANCE.toModel(roleEntity.get());
     }
 
     @Override
-    public Role addPersonRole(Integer personId, String roleCode) {
+    public Role addPersonRole(Long personId, String roleCode) {
         ValidationUtils.checkNull(personId, () -> new MissingRequiredInputException("personId"));
         ValidationUtils.checkEmptyString(roleCode, () -> new MissingRequiredInputException("roleCode"));
         RoleEntity roleEntity = roleRepository.findByCode(roleCode).orElseThrow(() -> new NoMatchRecordFoundException("roleCode"));
@@ -225,7 +240,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
                     roleRepository.insertPersonRole(personEntity.getId(), roleEntity.getId());
                     return roleEntity;
                 });
-        return roleMapper.toModel(roleEntity);
+        return RoleMapper.INSTANCE.toModel(roleEntity);
     }
 
 //    @Override
@@ -245,7 +260,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //        if (null == entity) {
 //            return null;
 //        }
-//        return personMapper.toPerson(entity);
+//        return PersonMapper.INSTANCE.toPerson(entity);
 //    }
 //
 //    @Override
@@ -257,7 +272,7 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //        if (personEntity.isEmpty()) {
 //            return null;
 //        }
-//        return personMapper.toPerson(personEntity.get());
+//        return PersonMapper.INSTANCE.toPerson(personEntity.get());
 //    }
 //
 //    @Override
@@ -267,14 +282,14 @@ public class PersonServiceDatabaseImpl extends AbstractPersonServiceDatabaseImpl
 //
 //    @Override
 //    public GeneralPerson updatePerson(GeneralPerson person) {
-//        GeneralPersonEntity entity = personMapper.toPersonEntity(person);
-//        return personMapper.toPerson(entity);
+//        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
+//        return PersonMapper.INSTANCE.toPerson(entity);
 //    }
 //
 //    @Override
 //    public GeneralPerson savePerson(GeneralPerson person) {
-//        GeneralPersonEntity entity = personMapper.toPersonEntity(person);
-//        return personMapper.toPerson(entity);
+//        GeneralPersonEntity entity = PersonMapper.INSTANCE.toPersonEntity(person);
+//        return PersonMapper.INSTANCE.toPerson(entity);
 //    }
 
 }

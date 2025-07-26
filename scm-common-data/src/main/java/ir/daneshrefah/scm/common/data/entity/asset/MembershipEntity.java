@@ -17,10 +17,11 @@ import lombok.Setter;
 @Table(name = "MEMBERSHIP")
 @Getter
 @Setter
+@SequenceGenerator(name = "membershipSeq",allocationSize = 1,sequenceName = "SQMEMBERSHIP",schema = "REF")
 public class MembershipEntity extends AbstractEntity<Long> {
 
     @Column(name = "MEMBERSHIP_ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "membershipSeq")
     @Id
     private Long id;
 

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.log.config;
 
 import ir.daneshrefah.scm.mq.jms.JakarataConnectionFactory;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,12 @@ public class LogJmsConfig {
         factory.setPort(properties.getPort());
         factory.setTransportType(1);
         factory.setChannel(properties.getChannel());
-        factory.setUsername(properties.getUsername());
-        factory.setPassword(properties.getPassword());
+        if (StringUtils.isNotBlank(properties.getUsername())) {
+            factory.setUsername(properties.getUsername());
+        }
+        if (StringUtils.isNotBlank(properties.getPassword())) {
+            factory.setPassword(properties.getPassword());
+        }
         return factory;
     }
 

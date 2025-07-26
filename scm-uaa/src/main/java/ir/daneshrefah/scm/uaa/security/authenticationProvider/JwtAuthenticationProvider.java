@@ -1,7 +1,13 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import com.nimbusds.jwt.JWTClaimsSet;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
+import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.uaa.service.user.UserService;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,11 +23,11 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
  * Description of the class or purpose of the file.
@@ -33,9 +39,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
+    private static final String JWT_ID_CACHE_NAME = "jwt:jti";
+
     private final Log logger = LogFactory.getLog(getClass());
 
     private final JwtDecoder jwtDecoder;
+
+    private final LogoutService logoutService;
+
+    private final CacheTemplate cacheTemplate;
+
+    private final UserService userService;
 
 //    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtAuthenticationConverter();
     private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtTokenConverter(/*() -> null*/);
@@ -46,11 +60,28 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         Jwt jwt = getJwt(bearer);
         jwt = prepareJwt(jwt, authentication);
         AbstractAuthenticationToken token = this.jwtAuthenticationConverter.convert(jwt);
+        validateJwtId(jwt,token);
         if (token.getDetails() == null) {
             token.setDetails(bearer.getDetails());
         }
         this.logger.debug("Authenticated token");
         return token;
+    }
+
+    private void validateJwtId(Jwt jwt, AbstractAuthenticationToken authentication) {
+        String jwtTokenId = jwt.getClaim(Constants.CLAIM_KEY_JWT_IDENTIFIER);
+        String username = jwt.getClaim("sub");
+        String terminalCode = jwt.getClaim(Constants.CLAIM_KEY_TERMINAL);
+        User user = userService.findByNicknameAndTerminalCode(username, terminalCode);
+        if (user.getPerson().getPersonType().equals(PersonType.CLIENT)) {
+            return;
+        }
+        String cacheKey = String.format("%s%s%s", username, "::", terminalCode);
+        String cachedTokenId = (String) cacheTemplate.getFromCache(JWT_ID_CACHE_NAME, cacheKey);
+        if (StringUtils.isBlank(jwtTokenId) || !jwtTokenId.equals(cachedTokenId)) {
+            logoutService.sendLogoutMessage(authentication);
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_TOKEN, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
+        }
     }
 
     private Jwt prepareJwt(Jwt jwt, Authentication authentication) {
@@ -66,7 +97,8 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     private Jwt getJwt(BearerTokenAuthenticationToken bearer) {
         try {
-            return this.jwtDecoder.decode(bearer.getToken());
+            Jwt decodeJwt = this.jwtDecoder.decode(bearer.getToken());
+            return decodeJwt;
         }
         catch (BadJwtException failed) {
             this.logger.debug("Failed to authenticate since the JWT was invalid");

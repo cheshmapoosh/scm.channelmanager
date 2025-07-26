@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.person;
 
-import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.dto.membership.PersonFindRequest;
 import ir.daneshrefah.scm.common.model.person.DiffGeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
@@ -25,8 +25,9 @@ public interface UPersonService extends PersonService {
 
     Role addPersonRole(Integer personId, String roleCode);
 
-    GeneralPerson syncPersonInfoFromCIF(PersonFindRequest request);
-    GeneralPerson syncPersonInfoFromCIF(Integer personId);
+    GeneralPerson syncPersonByCif(PersonFindRequest request);
+
+    GeneralPerson syncPersonByCif(Integer personId);
 
     DiffGeneralPerson diffPersonInfoFromCIFAndLocal(Integer personId);
 }

@@ -31,4 +31,7 @@ dependencies {
     api project(':scm-common-data')
     api project(':scm-utils')
     api project(':scm-cache-client')
+    api 'com.ibm.mq:com.ibm.mq.allclient:9.4.1.0'
+    api 'com.ibm.mq:com.ibm.mq.jakarta.client:9.4.1.0'
+    api 'org.springframework:spring-jms'
 }

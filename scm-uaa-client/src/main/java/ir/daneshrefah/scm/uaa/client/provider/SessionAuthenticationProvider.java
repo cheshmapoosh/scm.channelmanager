@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
@@ -23,8 +24,8 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE
 public class SessionAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
 
-    protected SessionAuthenticationProvider(SessionCache sessionCache) {
-        super(sessionCache);
+    protected SessionAuthenticationProvider(SessionCache sessionCache, CacheTemplate cacheTemplate) {
+        super(sessionCache,cacheTemplate);
     }
 
     @Override

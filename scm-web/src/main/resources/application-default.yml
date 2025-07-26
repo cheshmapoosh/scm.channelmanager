@@ -1,6 +1,15 @@
 SCM_APPLICATION_NAME: ib-rest
 scm:
   channels: IB4TEST
+  logging:
+    datasource:
+      enabled: true
+      url: jdbc:db2://10.15.27.82:546/DSNBLOC
+      username: casadm
+      password: a
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF
   provider:
     nab: http://scm-core.daneshrefah.ir/Service
     nab-tcp: 10.15.27.12:3080
@@ -47,7 +56,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.10.4.126:8000
+    issuer-uri: http://10.10.4.125:8000
   cache:
     client:
       distributed: true
@@ -87,6 +96,16 @@ scm:
     configs:
       NAB:
         provider-service-code: SVC_NAB_ACCOUNT_LIST_PROXY
+  jms:
+    logout:
+      enabled: true
+      host: 10.15.1.185
+      port: 1818
+      channel: SYSTEM.ADMIN.SVRCONN
+      queueManager: CSQ2
+      username:
+      password:
+      topic: SUA/LOGOUT
 
 server:
   servlet:
@@ -120,12 +139,16 @@ logging:
 spring:
   jpa:
     show-sql: true
+    open-in-view: false
   #  properties:
   #    hibernate:
   #      format_sql: true
   cloud:
     config:
       enabled: false
+  application:
+    name: scm-web
+
 flyway:
   enable: false
   baseline-on-migrate: true

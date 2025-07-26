@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.otp.dto;
 
+import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -13,4 +14,5 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 public class OtpVerifyResponse extends OtpBaseResponse {
+    private OtpType otpType;
 }

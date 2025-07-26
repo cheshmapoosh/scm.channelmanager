@@ -51,6 +51,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
+import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_AUTHORIZATION;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CODE;
 
@@ -120,6 +122,21 @@ public class UserService {
         xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
         return userMapper.toModel(currentUser);
+    }
+
+    @Transactional
+    public User changeNickNameByAdmin(UserNickNameModifyRequest request) {
+        validateUserNickNameRequest(request);
+        loadUserEntityByUsername(request.getNickName(), request.getTerminalCode()).ifPresent((f) -> {
+            throw new DuplicatedRecordFoundException("nickname");
+        });
+        UserEntity currentUser = loadUserEntityByUsername(request.getCurrentNickName(), request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        currentUser.setLastEditDate(LocalDateTime.now());
+        currentUser.setNickname(request.getNickName());
+        userRepository.save(currentUser);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
+        userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
+        return UserMapper.INSTANCE.toModel(currentUser);
     }
 
     public UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
@@ -550,7 +567,8 @@ public class UserService {
                 .build();
         OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpVerifyRequest);
         if (!otpVerifyResponse.isSuccessful()) {
-            throw new InvalidInputException("otpCode");
+            String source = otpVerifyResponse.getOtpType() != null && OtpType.DEVICE.equals(otpVerifyResponse.getOtpType()) ? "otpDevice" : "otpCode";
+            throw new InvalidInputException(source);
         }
     }
 
@@ -627,7 +645,6 @@ public class UserService {
         return userMapper.toModel(userEntity);
     }
 
-
     private void validateTransactionMethodChangeServiceAccess(AuthenticationMethod currentTxMethod
             , AuthenticationMethod requestTxMethod
             , UserEntity userEntity
@@ -638,10 +655,15 @@ public class UserService {
             checkStaticPassword(userEntity, claimCode);
             OtpType otpType = OtpType.toOtpType(requestTxMethod);
             verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, otpType);
-        } else {
-            OtpType otpType = OtpType.toOtpType(currentTxMethod);
-            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, otpType);
-            checkStaticPassword(userEntity, request.getCredential());
+        }  else {
+            OtpType targetOtpType = OtpType.toOtpType(currentTxMethod);
+            verifyOtpCode(currentUserAuthentication, claimCode, OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, targetOtpType);
+            if (AuthenticationMethod.STATIC_PASSWORD.equals(requestTxMethod)) {
+                checkStaticPassword(userEntity, request.getCredential());
+            } else {
+                OtpType currentOtpTypeSource = OtpType.toOtpType(requestTxMethod);
+                verifyOtpCode(currentUserAuthentication, request.getCredential(), OtpReason.CHANGE_TRANSACTION_AUTHENTICATION_METHOD, currentOtpTypeSource);
+            }
         }
     }
 
@@ -769,6 +791,8 @@ public class UserService {
 
     @Transactional
     public User assignTerminalToPerson(UserAssignTerminalRequest request) {
+        ValidationUtils.checkBlankString(request.getOtpCode(),()-> new InvalidInputException("otpCode"));
+        verifyOtp(request);
         findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
             throw new DuplicatedRecordFoundException(request.getNationalId());
         });
@@ -787,6 +811,30 @@ public class UserService {
         userRepository.flush();
         uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
         return userMapper.toModel(userEntity);
+    }
+
+    private void verifyOtp(UserAssignTerminalRequest request) {
+        String terminalCode = extractRequestTerminalCode();
+        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrganizationId())
+                .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        Recipient recipient = Recipient.builder()
+                .address(generalPerson.getMobile1())
+                .identifier(generalPerson.getMobile1())
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        OtpVerifyRequest otpRequest = OtpVerifyRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(OtpReason.BANK_CONSOLE_CUSTOMER_VERIFICATION)
+                .claimCode(request.getOtpCode())
+                .recipient(recipient)
+                .build();
+        OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpRequest);
+        if (!otpVerifyResponse.isSuccessful()){
+            throw new InvalidInputException("otpCode");
+        }
     }
 
     private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {

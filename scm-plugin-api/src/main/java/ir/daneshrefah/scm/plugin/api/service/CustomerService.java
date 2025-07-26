@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.model.asset.Membership;
@@ -29,7 +28,14 @@ public interface CustomerService {
 
     AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request);
 
-    List<MembershipTerminalAccess> findMembershipChannelAccessList(Integer personId, Short channelId);
+    ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request);
+
+    ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request);
+
+    List<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request);
+
+
+    List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId);
 
     Membership findLocalAccountMembership(String membershipId);
 

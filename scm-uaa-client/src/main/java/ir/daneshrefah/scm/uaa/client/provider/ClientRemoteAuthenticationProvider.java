@@ -2,12 +2,13 @@ package ir.daneshrefah.scm.uaa.client.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -35,8 +36,9 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
     public ClientRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
                                               JwtDecoder jwtDecoder,
                                               ObjectMapper objectMapper,
-                                              SessionCache sessionCache) {
-        super(remoteSecurityServiceProvider, sessionCache);
+                                              SessionCache sessionCache,
+                                              CacheTemplate cacheTemplate) {
+        super(remoteSecurityServiceProvider, sessionCache, cacheTemplate);
         this.jwtDecoder = jwtDecoder;
         this.jwtTokenConverter = new JwtTokenConverter();
         this.objectMapper = objectMapper;

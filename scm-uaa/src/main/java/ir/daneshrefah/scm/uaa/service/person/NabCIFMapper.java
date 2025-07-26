@@ -70,15 +70,15 @@ public class NabCIFMapper {
 //        private String username;
 //        private Boolean active;
         result.setNationality(personNode.get(PROP_NATIONALITY).asBoolean() ? Nationality.FOREIGN : Nationality.IRANIAN);
-        result.setMobile1(personNode.get(PROP_MOBILE1).asText());
-        result.setMobile2(extractStringValue(personNode, PROP_MOBILE2));
-        result.setMobile3(extractStringValue(personNode, PROP_MOBILE3));
-        result.setPhone1(extractStringValue(personNode, PROP_TEL1));
-        result.setPhone2(extractStringValue(personNode, PROP_TEL2));
-        result.setAddress1(personNode.get(PROP_ADDRESS1).asText());
-        result.setAddress2(personNode.get(PROP_ADDRESS2).asText());
-        result.setAddress3(personNode.get(PROP_ADDRESS3).asText());
-        result.setAddress4(personNode.get(PROP_ADDRESS4).asText());
+        result.setMobile1(StringUtils.trim(personNode.get(PROP_MOBILE1).asText()));
+        result.setMobile2(StringUtils.trim(extractStringValue(personNode, PROP_MOBILE2)));
+        result.setMobile3(StringUtils.trim(extractStringValue(personNode, PROP_MOBILE3)));
+        result.setPhone1(StringUtils.trim(extractStringValue(personNode, PROP_TEL1)));
+        result.setPhone2(StringUtils.trim(extractStringValue(personNode, PROP_TEL2)));
+        result.setAddress1(StringUtils.trim(personNode.get(PROP_ADDRESS1).asText()));
+        result.setAddress2(StringUtils.trim(personNode.get(PROP_ADDRESS2).asText()));
+        result.setAddress3(StringUtils.trim(personNode.get(PROP_ADDRESS3).asText()));
+        result.setAddress4(StringUtils.trim(personNode.get(PROP_ADDRESS4).asText()));
         result.setPostalCode1(extractStringValue(personNode, PROP_POST1));
         result.setPostalCode2(extractStringValue(personNode, PROP_POST2));
         result.setFax(extractStringValue(personNode, PROP_FAX));
@@ -146,12 +146,12 @@ public class NabCIFMapper {
             return null;
         }
         IndividualPerson result = new IndividualPerson();
-        result.setFirstName(personNode.get("FIRSTNAME").asText());
-        result.setFirstNameEnglish(personNode.get("NAME_LATIN").asText());
-        result.setLastName(personNode.get("LASTNAME").asText());
-        result.setLastNameEnglish(personNode.get("TITLEX_LATIN").asText());
-        result.setFatherName(personNode.get("FATHERNAME").asText());
-        result.setNationalCode(personNode.get("NATIONALID").asText());
+        result.setFirstName(StringUtils.trim(personNode.get("FIRSTNAME").asText()));
+        result.setFirstNameEnglish(StringUtils.trim(personNode.get("NAME_LATIN").asText()));
+        result.setLastName(StringUtils.trim(personNode.get("LASTNAME").asText()));
+        result.setLastNameEnglish(StringUtils.trim(personNode.get("TITLEX_LATIN").asText()));
+        result.setFatherName(StringUtils.trim(personNode.get("FATHERNAME").asText()));
+        result.setNationalCode(StringUtils.trim(personNode.get("NATIONALID").asText()));
         result.setMaritalStatus(Constants.CIF_MARITAL_STATUS_MARRIED == personNode.get("MARRIEDSTATUSCODE").asInt() ?
                 MaritalStatus.MARRIED : MaritalStatus.SINGLE);
         result.setMaritalStatusTitle(personNode.get("MARRIEDSTATUS").asText());

@@ -109,7 +109,7 @@ public class UserController extends BaseController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> findUserById(@PathVariable("userId") Integer userId) {;
+    public ResponseEntity<User> findUserById(@PathVariable("userId") Integer userId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findUserById(userId));
     }
 

@@ -24,7 +24,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -93,7 +93,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         NotificationData data = new NotificationData();
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
         data.put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
-        data.put(NotificationDataKey.LOGIN_TIME, getShamsiLoginTime());
+        data.put(NotificationDataKey.LOGIN_TIME,nowShamsiLoginTime());
         data.put(NotificationDataKey.REASON, OtpReasonDictionary.getOtpReasonDictionary(otp.getReason()).getPersian()); //TODO GET FROM LOCALE
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())
@@ -151,12 +151,13 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         return OtpType.SMS;
     }
 
-    private String getShamsiLoginTime() {
+    private String nowShamsiLoginTime() {
         return DateUtils
                 .ShamsiCalendarConvertor
                 .convertToShamsiDateString(DateUtils
                         .DateConverter
                         .convertToLocalDateTime(DateUtils.DateConverter
-                                .convertToTimestamp(new Timestamp(System.currentTimeMillis()))), "yyyy/MM/dd HH:mm:ss");
+                                .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
     }
+
 }
