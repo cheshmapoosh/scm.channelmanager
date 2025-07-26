@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
-import ir.daneshrefah.scm.common.BaseModel;
+import ir.daneshrefah.scm.common.AbstractModel;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CmChannel extends BaseModel<Integer> {
+public class CmChannel extends AbstractModel<Integer> {
 
     private Integer parentId;
     private Boolean active;

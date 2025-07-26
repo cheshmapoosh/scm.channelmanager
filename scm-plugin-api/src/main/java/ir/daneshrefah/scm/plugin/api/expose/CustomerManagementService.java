@@ -2,8 +2,7 @@ package ir.daneshrefah.scm.plugin.api.expose;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
@@ -70,19 +69,19 @@ public class CustomerManagementService extends AbstractJavaService {
         return customerService.accountFavoriteActivity(request);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_DEFAULT_ACCOUNT)
+    @JavaService(operationCode = SVC_ASSETS_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request){
         return customerService.setDefaultAccount(request);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT)
+    @JavaService(operationCode = SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request){
         return customerService.removeDefaultAccount(request);
     }
 
-    @JavaService(serviceCode = SVC_ASSETS_SHOW_DEFAULT_ACCOUNT)
+    @JavaService(operationCode = SVC_ASSETS_SHOW_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public PagedResponseData<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request){
         return new PagedResponseData<>(request,customerService.defaultAccountList(request));

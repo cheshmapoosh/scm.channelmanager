@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.logging.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository;
 import ir.daneshrefah.scm.common.data.repository.logging.TraceLogSpec;

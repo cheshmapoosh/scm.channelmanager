@@ -55,14 +55,6 @@ public class RestOtpClientServiceImpl implements OtpClientService {
         return getVerifyOTOResponseResponseEntity(authorization,otpCode,reason,accessParameter);
     }
 
-    @Override
-    public boolean verifyByCurrentToken(String otpCode, OtpReason reason){
-        MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
-        String authorization = messageInput.getAuthenticationValue();
-        String accessParameter = messageInput.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
-        return getVerifyOTOResponseResponseEntity(authorization,otpCode,reason,accessParameter);
-    }
-
     private boolean getVerifyOTOResponseResponseEntity(String authorization, String otpCode, OtpReason reason,String accessParameter) {
         ValidationUtils.checkBlankString(authorization, () -> new MissingRequiredInputException("authorization"));
         ValidationUtils.checkBlankString(otpCode, () -> new MissingRequiredInputException("otpCode"));

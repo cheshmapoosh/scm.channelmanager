@@ -60,18 +60,6 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
     String OAUTH2_PARAM_NAME_ACTIVATOR_TERMINAL = "activator_terminal";
 
-    String OAUTH2_PARAM_AUTHORIZATION = "authorization";
-    String OAUTH2_PARAM_NAME_CLIENT_VERSION = "client_version";
-    String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
-    String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
-    String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
-    String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
-    String OAUTH2_PARAM_NAME_MOBILE_NUMBER = "mobileNumber";
-    String OAUTH2_PARAM_NAME_USER_CLAIM = "claim_code";
-    String OAUTH2_PARAM_NAME_ACCESS_PARAMETER = "access_parameter";
-    String OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE = "activation_code";
-    String OAUTH2_PARAM_NAME_USER_REGISTER_CODE = "register_code";
-    String OAUTH2_PARAM_NAME_USER_TERMINAL = "user_terminal";
 
     String OAUTH2_ERROR_CODE_INVALID_USER = "invalid_user";
     String OAUTH2_ERROR_CODE_INVALID_PASSWORD = "invalid_password";
