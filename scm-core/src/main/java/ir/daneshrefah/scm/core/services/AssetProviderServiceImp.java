@@ -23,7 +23,6 @@ public class AssetProviderServiceImp implements AssetProviderService {
     private final AssetProviderRepository assetProviderRepository;
     private final ServiceRepository serviceRepository;
     private final AssetProviderConfigProperties providerConfigProperties;
-    private final AssetProviderConfigProperties providerConfigProperties;
     private final AssetProviderMapper assetProviderMapper;
     private final ScmServiceMapper scmServiceMapper;
     private List<AssetProvider> assetProviders = new ArrayList<>();

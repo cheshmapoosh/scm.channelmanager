@@ -3,13 +3,15 @@ package ir.daneshrefah.scm.core.integration.provider;
 import ir.daneshrefah.scm.common.annotation.LegacyChannelManger;
 import ir.daneshrefah.scm.common.constant.*;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
-import ir.daneshrefah.scm.common.data.mapper.*;
+import ir.daneshrefah.scm.common.data.mapper.ChannelMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalAccessMapper;
+import ir.daneshrefah.scm.common.data.mapper.MembershipTerminalServiceAccessMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.*;
 import ir.daneshrefah.scm.common.data.service.assets.ChannelServiceAccessService;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityRequest;
-import ir.daneshrefah.scm.common.dto.AccountFavoriteActivityResponse;
+import ir.daneshrefah.scm.common.dto.*;
 import ir.daneshrefah.scm.common.dto.asset.*;
 import ir.daneshrefah.scm.common.dto.membership.*;
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
@@ -23,7 +25,6 @@ import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
-import ir.daneshrefah.scm.common.model.service.ScmService;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.core.services.gateway.ChannelService;
@@ -70,11 +71,9 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private static final Map<Integer, ServiceCategory> DEFAULT_SERVICE_CATEGORY_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, List<LegacyChannelServiceAccess>> TERMINAL_CODE_CSA_CACHE = new ConcurrentHashMap<>();
     private final MembershipTerminalServiceAccessRepository membershipTerminalServiceAccessRepository;
-    private final MembershipTerminalServiceAccessMapper membershipTerminalServiceAccessMapper;
     private final MembershipTerminalAccessRepository membershipTerminalAccessRepository;
-    private final ChannelServiceAccessRepository channelServiceAccessRepository;
-    private final MembershipTerminalAccessMapper membershipTerminalAccessMapper;
     private final ChannelServiceAccessService channelServiceAccessService;
+    private final CustomerAccountRepository customerAccountRepository;
     private final MembershipConfigProperty membershipConfigProperty;
     private final AssetProviderRepository assetProviderRepository;
     private final ServiceProducerTemplate serviceProducerTemplate;
@@ -84,16 +83,15 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final PersonRepository personRepository;
-    private final MembershipMapper membershipMapper;
     private final ChannelService channelService;
     private final PersonService personService;
-    private final ChannelMapper channelMapper;
     private final JdbcTemplate jdbcTemplate;
-    private final ServiceMapper serviceMapper;
     private final AssetProviderMapper assetProviderMapper;
-
-    private final OtpClientService otpClientService;
     private final ChannelServiceAccessRepository channelServiceAccessRepository;
+    private final MembershipMapper membershipMapper;
+    private final MembershipTerminalAccessMapper membershipTerminalAccessMapper;
+    private final MembershipTerminalServiceAccessMapper membershipTerminalServiceAccessMapper;
+    private final ChannelMapper channelMapper;
 
 
     @Override
@@ -208,15 +206,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             PersonType personType = getRequestCurrentPerson().getPersonType();
             String nationalId = request.getNationalId();
             checkPersonAssetAccess(nationalId);
-            ScmService service = assetProvider.getService();
             GeneralPerson person = personService.findPerson(personType, nationalId, request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, request.getPageNo(), request.getPageSize());
+            List<ExternalAccountResponseData> accountList = findRemoteMemberships(assetProvider, person, OperationCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, request.getPageNo(), request.getPageSize());
             return MapToAccountMembership(accountList, request, assetProvider);
         }
         return Collections.emptyList();
     }
 
-    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, ServiceCode serviceCode, Integer pageNo, Integer pageSize) {
+    private List<ExternalAccountResponseData> findRemoteMemberships(AssetProvider assetProvider, GeneralPerson person, OperationCode serviceCode, Integer pageNo, Integer pageSize) {
         if (assetProvider.getCode().equals(AssetProviderCode.NAB)) { // TODO IMPL ANOTHER ASSET PROVIDER
             String nationalId = null;
             Map<String, String> requestMap = new HashMap<>();
@@ -257,7 +254,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                     //create account
                     AccountEntity accountEntity = mapToAccount(nabAccount, assetProvider);
                     Account account = new Account();
-                    account.setAccountNo(StringUtils.trim(accountEntity.getAccountNo()).toString());
+                    account.setAccountNo(StringUtils.trim(accountEntity.getAccountNo()));
                     AccountType accountType = new AccountType();
                     AccountTypeEntity accountTypeEntity = accountEntity.getAccountType();
                     accountType.setName(accountTypeEntity.getName());
@@ -296,7 +293,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         Channel channel = channelService.findChannelByCode(terminalCode).orElseThrow(() -> new InvalidInputException("terminal"));
         Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessList = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(currentPerson.getId(), channel.getId());
         Iterator<MembershipTerminalAccessEntity> iterator = membershipTerminalAccessList.iterator();
-        final AccountFavoriteActivityResponse response = new  AccountFavoriteActivityResponse();
+        final AccountFavoriteActivityResponse response = new AccountFavoriteActivityResponse();
         response.setIsFavorite(request.getIsFavorite());
         applyAccountsFavouriteStatus(scmAuthentication, iterator, request, response);
         if (Objects.nonNull(request.getAccountNoList())) {
@@ -449,7 +446,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
     @Override
     public Membership updateMembershipTerminalAccessMaxWithdrawal(MembershipTerminalAccessWithdrawalLimitUpdateRequest request) {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-        Channel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("channelCode"));
+        Channel channel = channelService.findChannelByCode(request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("terminalCode"));
         MembershipEntity membership = membershipRepository.findAccountMembershipByAccountNoAndUsername(request.getAccountNumber(), person.getUsername()).orElseThrow(() -> new NoMatchRecordFoundException("accountNumber"));
         MembershipTerminalAccessEntity mtaEntity = membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByMembership_IdAndChannelCode(membership.getId(), channel.getCode()).orElseThrow(() -> new NoMatchRecordFoundException("membershipCode"));
         mtaEntity.setMaxWithdrawalPerDay(BigDecimal.valueOf(Long.parseLong(request.getMaxWithdrawalPerDay())));
@@ -463,7 +460,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
         AssetProvider assetProvider = assetProviderService.findAssetProviderById(Integer.parseInt(request.getAssetProviderId())).orElseThrow(() -> new InvalidInputException("assetProviderId"));
         List<Membership> localMemberships = findLocalMemberships(person, request.getAccountNumberList());
-        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, ServiceCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, 1, 1000);
+        List<ExternalAccountResponseData> remoteAccountList = findRemoteMemberships(assetProvider, person, OperationCode.SVC_NAB_CUSTOMER_ACCOUNT_LIST, 1, 1000);
         // Analyzing memberships
         List<MembershipSync> membershipSyncList = createMembershipSyncList(localMemberships, remoteAccountList, request.getAccountNumberList(), person, assetProvider);
         return syncMemberships(membershipSyncList);
@@ -535,7 +532,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
                 .filter(membership ->
                         Objects.isNull(accountNumberList) ||
                         accountNumberList.isEmpty() ||
-                        accountNumberList.contains(membership.getCustomerAccount().getAccount().getAccountNo()))
+                        accountNumberList.contains(membership.getCustomerAccount().getAccount().getAccountNo().trim()))
                 .map(membershipMapper::toModel)
                 .forEach(memberships::add);
         return memberships;
@@ -712,14 +709,15 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
 
 
     @Override
-    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId) {
+    public List<MembershipTerminalAccess> findMembershipChannelAccessList(Integer personId, Short channelId) {
         if (null == personId) {
             return null;
         }
-        Iterable<MembershipTerminalAccessEntity> membershipTerminalAccessEntities =
-                membershipTerminalAccessRepository.findMembershipTerminalAccessEntitiesByPersonId(personId, channelId);
-
-        return membershipTerminalAccessMapper.toMembershipTerminalAccessList(membershipTerminalAccessEntities);
+        return membershipTerminalAccessRepository
+                .findMembershipTerminalAccessEntitiesByPersonId(personId, channelId)
+                .stream()
+                .map(membershipTerminalAccessMapper::toModel)
+                .toList();
     }
 
     @Override
@@ -733,7 +731,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             return membershipTerminalAccessRepository
                     .findMembershipTerminalAccessEntitiesByPersonId(person.getId(), terminalCode.getLegacyTerminalId())
                     .stream()
-                    .map(this::toDto)
+                    .map(membershipTerminalAccessMapper::toModel)
+                    .map(membershipTerminalAccessMapper::toDto)
                     .toList();
 
         }
@@ -750,7 +749,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         found.setReason(request.getReason());
         found.setUserReason(request.getUserReason());
         MembershipTerminalAccessEntity saved = membershipTerminalAccessRepository.save(found);
-        return toDto(saved);
+        return membershipTerminalAccessMapper.toDto(saved);
     }
 
     @Override
@@ -777,7 +776,7 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         if (assignmentType.equals(AssignmentType.REVOKE)) {
             csaList
                     .stream()
-                    .map(csa -> membershipTerminalServiceAccessRepository.findByChannelServiceAccessIdAndAccountNoAndPersonId(csa.getId(), request.getAccountNumber(),person.getId()))
+                    .map(csa -> membershipTerminalServiceAccessRepository.findByChannelServiceAccessIdAndAccountNoAndPersonId(csa.getId(), request.getAccountNumber(), person.getId()))
                     .flatMap(Collection::stream)
                     .forEach(membershipTerminalServiceAccessRepository::delete);
         } else {
@@ -818,14 +817,14 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
         return membershipTerminalServiceAccessRepository
                 .findByLegacyTerminalIdAndAccountNo(terminalCode.getLegacyTerminalId(), request.getAccountNumber(), person.getId())
                 .stream()
-                .map(MembershipTerminalServiceAccessMapper.INSTANCE::toDto)
+                .map(membershipTerminalServiceAccessMapper::toDto)
                 .toList();
     }
 
     @Override
     public MembershipTerminalAccessDto getMembershipChannelAccess(long id) {
         MembershipTerminalAccessEntity found = membershipTerminalAccessRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return MembershipTerminalAccessMapper.INSTANCE.toDto(found);
+        return membershipTerminalAccessMapper.toDto(found);
     }
 
     @Override
@@ -835,92 +834,8 @@ public class CustomerServiceImpl implements CustomerService, TaskAssetService {
             jdbcTemplate.query("select * from REF.SERVICE_CATEGORY"
                     , (rs, rowNum) -> new ServiceCategory()
                             .setServiceCategoryId(rs.getInt("SERVICE_CATEGORY_ID"))
-                            .setName(StringUtils.trim(rs.getString("NAME")).toString())
-                            .setDescription(StringUtils.trim(rs.getString("DESCRIPTION")).toString())).forEach(serviceCategory -> {
-                DEFAULT_SERVICE_CATEGORY_CACHE.put(serviceCategory.getServiceCategoryId(), serviceCategory);
-            });
-        }
-        return new ArrayList<>(DEFAULT_SERVICE_CATEGORY_CACHE.values());
-    }
-
-
-    @Override
-    @LegacyChannelManger
-    public List<MembershipTerminalServiceAccessDto> findAllMembershipChannelServiceAccessList(MembershipChannelServiceAccessFindRequest request) {
-        GeneralPerson person = personService.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("nationalId"));
-        TerminalType terminalCode = TerminalType.findByTerminalCode(request.getTerminalCode());
-        return membershipTerminalServiceAccessRepository
-                .findByLegacyTerminalIdAndAccountNo(terminalCode.getLegacyTerminalId(), request.getAccountNumber(), person.getId())
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    private MembershipTerminalServiceAccessDto toDto(MembershipTerminalServiceAccessEntity entity) {
-        if (Objects.isNull(entity)) {
-            return null;
-        }
-        MembershipTerminalServiceAccessDto result = new MembershipTerminalServiceAccessDto();
-        result.setEbService(serviceMapper.toModel(entity.getChannelServiceAccess().getService()));
-        result.setMaxWithdrawalPerTransaction(entity.getMaxWithdrawalPerTransaction().toString());
-        result.setId(entity.getId());
-        return result;
-    }
-
-    @Override
-    public MembershipTerminalAccessDto getMembershipChannelAccess(long id) {
-        MembershipTerminalAccessEntity found = membershipTerminalAccessRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("id"));
-        return toDto(found);
-    }
-
-
-    private MembershipTerminalAccessDto toDto(MembershipTerminalAccessEntity model) {
-        if (Objects.isNull(model)) return null;
-        MembershipTerminalAccessDto dto = new MembershipTerminalAccessDto();
-        dto.setActive(model.getActive());
-        dto.setFavorite(model.getFavorite());
-        dto.setMaxWithdrawalPerDay(StringUtils.EMPTY);
-        dto.setMaxPersWithdrawalPerDay(StringUtils.EMPTY);
-        if (Objects.nonNull(model.getMaxWithdrawalPerDay())) {
-            dto.setMaxWithdrawalPerDay(model.getMaxWithdrawalPerDay().toPlainString());
-        }
-        if(Objects.nonNull(model.getMaxPersWithdrawalPerDay())) {
-            dto.setMaxPersWithdrawalPerDay(model.getMaxPersWithdrawalPerDay().toPlainString());
-        }
-        dto.setFromDate(model.getFromDate());
-        dto.setToDate(model.getToDate());
-        dto.setId(model.getId());
-        dto.setReason(model.getReason());
-        dto.setUserReason(model.getUserReason());
-        dto.setMembership(toDto(membershipMapper.toModel(model.getMembership())));
-        return dto;
-    }
-
-    private MembershipDto toDto(Membership model) {
-        if (Objects.isNull(model)) return null;
-        MembershipDto membershipDto = new MembershipDto();
-        membershipDto.setNickname(model.getNickname());
-        membershipDto.setCustomerAccount(model.getCustomerAccount());
-        membershipDto.setDefaultAccount(model.getDefaultAccount());
-        membershipDto.setArchiveNumber(model.getArchiveNumber());
-        membershipDto.setClose(model.getClose());
-        membershipDto.setId(model.getId());
-        membershipDto.setCreator(model.getCreator());
-        membershipDto.setLastEditor(model.getLastEditor());
-        membershipDto.setCreateDate(model.getCreateDate());
-        membershipDto.setLastEditDate(model.getLastEditDate());
-        return membershipDto;
-    }
-
-    @Override
-    @LegacyChannelManger
-    public List<ServiceCategory> findAllServiceCategory() {
-        if (DEFAULT_SERVICE_CATEGORY_CACHE.isEmpty()) {
-            jdbcTemplate.query("select * from REF.SERVICE_CATEGORY"
-                    , (rs, rowNum) -> new ServiceCategory()
-                            .setServiceCategoryId(rs.getInt("SERVICE_CATEGORY_ID"))
-                            .setName(StringUtils.trim(rs.getString("NAME")).toString())
-                            .setDescription(StringUtils.trim(rs.getString("DESCRIPTION")).toString())).forEach(serviceCategory -> {
+                            .setName(StringUtils.trim(rs.getString("NAME")))
+                            .setDescription(StringUtils.trim(rs.getString("DESCRIPTION")))).forEach(serviceCategory -> {
                 DEFAULT_SERVICE_CATEGORY_CACHE.put(serviceCategory.getServiceCategoryId(), serviceCategory);
             });
         }

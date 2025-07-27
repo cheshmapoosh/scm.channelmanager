@@ -35,7 +35,7 @@ public interface CustomerService {
     List<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request);
 
 
-    List<MembershipTerminalAccess> findMembershipChannelAccessList(Long personId, Integer channelId);
+    List<MembershipTerminalAccess> findMembershipChannelAccessList(Integer personId, Short channelId);
 
     Membership findLocalAccountMembership(String membershipId);
 
@@ -60,11 +60,4 @@ public interface CustomerService {
     List<MembershipTerminalServiceAccessDto> membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request);
 
 
-//    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, Long personId);
-//    Customer findLocalCustomerByProviderIdAndPersonUsername(String providerId, String username);
-//    Customer findLocalCustomerByProviderIdAndPersonId(String providerId, PersonProfile.PersonId personId);
-//    <T extends Asset> List<T> findLocalCustomerAssetListByPersonId(PersonProfile.PersonId personId, Class<T> clazz);
-//    Customer findRemoteCustomerByProviderIdAndPersonId(String providerId, Long personId);
-//    Customer synchronizeProviderCustomerInfoByPersonId(CustomerSynchronizationRequest request);
-//
 }

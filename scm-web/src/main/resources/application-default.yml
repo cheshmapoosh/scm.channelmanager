@@ -69,18 +69,6 @@ scm:
           myMap:
             in-memory-format: object
             time-to-live-seconds: 10
-
-  process:
-    enabled: true
-    client-id: BPM
-    client-secret: myClientSecretValue
-    datasource:
-      url: jdbc:db2://10.15.27.82:446/DSNALOC
-      username: casadm
-      password: a
-      driver-class-name: com.ibm.db2.jcc.DB2Driver
-      max-connection: 10
-      default-schema: db-camunda #change it to REF
   otp:
     rest-client:
       enabled: true
@@ -147,9 +135,5 @@ spring:
     config:
       enabled: false
   application:
-    name: scm-web
+    name: ${SCM_APPLICATION_NAME}
 
-flyway:
-  enable: false
-  baseline-on-migrate: true
-  validate-on-migrate: true

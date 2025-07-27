@@ -98,8 +98,6 @@ public class CustomerManagementService extends AbstractJavaService {
 
 
 
-
-
     @JavaService(operationCode = SVC_ASSETS_LIST)
     @SuppressWarnings("unused")
     public PagedResponseData<Membership> findMembershipList(MembershipFindRequest request){

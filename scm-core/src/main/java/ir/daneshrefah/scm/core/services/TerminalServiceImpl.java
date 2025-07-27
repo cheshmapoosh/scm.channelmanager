@@ -45,7 +45,6 @@ public class TerminalServiceImpl extends TerminalService {
     private final TerminalMapper terminalMapper;
     private List<Terminal> terminals;
     private List<TerminalServiceAccess> terminalServiceAccesses;
-    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<TerminalServiceAccess> findAllTerminalServiceAccesses() {
@@ -271,8 +270,8 @@ public class TerminalServiceImpl extends TerminalService {
                     LEGACY_TERMINALS.addAll(jdbcTemplate.query(query, (rs, rowNum) -> {
                         LegacyTerminal legacyTerminal = new LegacyTerminal();
                         legacyTerminal.setId(rs.getInt("CHANNEL_ID"));
-                        legacyTerminal.setCode(StringUtils.trim(rs.getString("CODE")).toString());
-                        legacyTerminal.setName(StringUtils.trim(rs.getString("NAME")).toString());
+                        legacyTerminal.setCode(StringUtils.trim(rs.getString("CODE")));
+                        legacyTerminal.setName(StringUtils.trim(rs.getString("NAME")));
                         return legacyTerminal;
                     }));
                 }
