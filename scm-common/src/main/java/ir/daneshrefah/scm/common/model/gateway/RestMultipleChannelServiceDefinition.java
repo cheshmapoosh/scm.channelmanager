@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.common.model.gateway;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -10,11 +12,18 @@ import java.util.List;
 public class RestMultipleChannelServiceDefinition extends ChannelServiceDefinition {
 
     private String contextPath;
-    private List<String> definitionIdList;
-    private List<RestChannelServiceDefinition> definitions;
+    private List<MultiRouteDetail> multiRouteDetails;
 
     @Override
     public ChannelServiceDefinitionType getType() {
         return ChannelServiceDefinitionType.REST_MULTIPLE;
+    }
+
+    @Getter
+    @Setter
+    public static class MultiRouteDetail{
+        private String definitionId;
+        private String operationCode;
+        private RestChannelServiceDefinition definition;
     }
 }

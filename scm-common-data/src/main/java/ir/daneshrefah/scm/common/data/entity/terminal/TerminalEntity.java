@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.data.entity.terminal;
 
 import ir.daneshrefah.scm.common.data.converter.TerminalStatusConverter;
-import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.terminal.TerminalStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_TERMINAL")
-public class TerminalEntity extends AbstractStringAuditableEntity<String> {
+public class TerminalEntity extends AbstractEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

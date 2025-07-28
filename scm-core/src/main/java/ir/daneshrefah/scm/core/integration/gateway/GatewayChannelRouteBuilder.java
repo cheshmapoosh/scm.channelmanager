@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
+import ir.daneshrefah.scm.core.utils.RouteUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -192,7 +193,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //        Resilience4jConfigurationDefinition resilience4jConfigurationDefinition = new Resilience4jConfigurationDefinition();
 //        resilience4jConfigurationDefinition.setFailureRateThreshold("50");
 
-        if (Objects.equals(RoutingStrategy.FIRST, service.getRoutingStrategy())) {
+        if (Objects.equals(RoutingStrategy.FIRST, service .getRoutingStrategy())) {
             ServiceOperation serviceOperation = service.getServiceOperations().get(0);
             route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
             String operationName = serviceOperation.getOperationName();
@@ -213,13 +214,16 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
         if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
             /*
-                ALL MULTIPLE ROUTES NAME ENDS WITH COUNTER ID (0 - size() )
+                ALL MULTIPLE ROUTES NAME ENDS WITH MDF OF OPERATION CODE
                 SEE  routeDefinition() METHOD IN RestProtocolHandler CLASS
              */
             List<ServiceOperation> serviceOperations = service.getServiceOperations();
-            String[] splitRouteId = route.getRouteId().split("-");
-            int routeIndex = Integer.parseInt(splitRouteId[splitRouteId.length - 1]);
-            ServiceOperation serviceOperation = serviceOperations.get(routeIndex);
+            String[] splitRouteName = route.getRouteId().split("-");
+            ServiceOperation serviceOperation = serviceOperations
+                    .stream()
+                    .filter(o -> RouteUtils.getInstance().generateRouteUniqId(o.getOperationName()).equals(splitRouteName[splitRouteName.length - 1]))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No route found for " + route.getRouteId()));
             route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
             String operationName = serviceOperation.getOperationName();
             String url = resolveOperationUrl(operationName);

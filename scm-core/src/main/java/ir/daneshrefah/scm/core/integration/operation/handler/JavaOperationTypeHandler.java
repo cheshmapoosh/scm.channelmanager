@@ -85,8 +85,9 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                     }
                     beanPath.append(",");
                 });
-        beanPath.append(")");
-        return StringUtils.removeEnd(beanPath.toString(), ",");
+        String result = StringUtils.removeEnd(beanPath.toString(), ",");
+        result = result.concat(")");
+        return result;
     }
 
     private Optional<Parameter> findRequestBodyParameter(Method targetMethod) {

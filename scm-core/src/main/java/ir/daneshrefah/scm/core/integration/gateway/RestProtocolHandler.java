@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.gateway;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
+import ir.daneshrefah.scm.core.utils.RouteUtils;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestConfigurationDefinition;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class RestProtocolHandler implements ProtocolHandler {
@@ -52,11 +52,10 @@ public class RestProtocolHandler implements ProtocolHandler {
             List<RouteDefinition> routeDefinitions = new ArrayList<>();
             Service service = channelServiceAccess.getService();
             channelServiceDefinitions.forEach(channelServiceDefinition -> {
-                final AtomicInteger routeIndex = new AtomicInteger(0);
                 routeDefinitions.addAll(
                         switch (channelServiceDefinition.getType()) {
-                            case REST -> createRestRouteDefinition(service, channelServiceDefinitions,routeIndex);
-                            case REST_MULTIPLE -> createRestMultipleRouteDefinition(service, channelServiceDefinitions,routeIndex);
+                            case REST -> createRestRouteDefinition(service, channelServiceDefinitions);
+                            case REST_MULTIPLE -> createRestMultipleRouteDefinition(service, channelServiceDefinitions);
                             default -> Collections.emptyList();
                         }
                 );
@@ -64,17 +63,39 @@ public class RestProtocolHandler implements ProtocolHandler {
             return routeDefinitions;
         }
 
-        private List<RouteDefinition> createRestMultipleRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions,AtomicInteger routeIndex) {
+        private List<RouteDefinition> createRestMultipleRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions) {
             List<RouteDefinition> routeDefinitions = new ArrayList<>();
             channelServiceDefinitions.forEach(channelServiceDefinition -> {
                 RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition = (RestMultipleChannelServiceDefinition) channelServiceDefinition;
-                restMultipleChannelServiceDefinition.getDefinitions().forEach(definition ->
-                        routeDefinitions.addAll(createRestRouteDefinition(service,Collections.singletonList(definition),routeIndex)));
+                restMultipleChannelServiceDefinition.getMultiRouteDetails().forEach(multiRouteDetail ->
+                        routeDefinitions.addAll(createRestRouteDefinition(service,multiRouteDetail)));
             });
             return routeDefinitions;
         }
 
-        private List<RouteDefinition> createRestRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions,AtomicInteger routeIndex) {
+
+
+        private List<RouteDefinition> createRestRouteDefinition(Service service, RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
+            String serviceCode = service.getCode().trim();
+            URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
+            RestChannelServiceDefinition definition = multiRouteDetail.getDefinition();
+            if (definition != null) {
+                if (definition.getMethod() != null) {
+                    uri.setScheme("rest:" + definition.getMethod().getValue().toLowerCase());
+                }
+                if (StringUtils.isNotEmpty(definition.getPath())) {
+                    uri.setPath(gatewayChannel.getPath())
+                            .appendPath(definition.getPath());
+                }
+            }
+
+            RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
+                    .routeId(serviceCode + "-route-" + RouteUtils.getInstance().generateRouteUniqId(multiRouteDetail.getOperationCode()));
+            return Collections.singletonList(routeDefinition);
+        }
+
+
+        private List<RouteDefinition> createRestRouteDefinition(Service service, List<ChannelServiceDefinition> channelServiceDefinitions) {
             String serviceCode = service.getCode().trim();
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             RestChannelServiceDefinition definition = null;
@@ -97,7 +118,7 @@ public class RestProtocolHandler implements ProtocolHandler {
             }
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
-                    .routeId(serviceCode + "-route-"+routeIndex.getAndIncrement());
+                    .routeId(serviceCode + "-route");
             return Collections.singletonList(routeDefinition);
         }
 

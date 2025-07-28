@@ -77,14 +77,17 @@ public abstract class ChannelServiceDefinitionMapper {
         }
         String contextPath = JsonPathFinder.defaultAsText(dtoNode, "contextPath");
         restMultipleChannelServiceDefinition.setContextPath(contextPath);
-        JsonNode definitionsNode = JsonPathFinder.defaultNode(dtoNode, "definitions");
-        List<String> definitions = new ArrayList<>();
+        JsonNode definitionsNode = JsonPathFinder.defaultNode(dtoNode, "multiRouteDetails");
+        List<RestMultipleChannelServiceDefinition.MultiRouteDetail> multiRouteDetails = new ArrayList<>();
         if (Objects.nonNull(definitionsNode) && definitionsNode.isArray()) {
             for (JsonNode defNode : definitionsNode) {
-                definitions.add(defNode.asText());
+                RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail = new RestMultipleChannelServiceDefinition.MultiRouteDetail();
+                multiRouteDetail.setDefinitionId(defNode.get("definitionId").asText());
+                multiRouteDetail.setOperationCode(defNode.get("operationCode").asText());
+                multiRouteDetails.add(multiRouteDetail);
             }
         }
-        restMultipleChannelServiceDefinition.setDefinitionIdList(definitions);
+        restMultipleChannelServiceDefinition.setMultiRouteDetails(multiRouteDetails);
     }
 
     public void enrichRestChannelServiceDefinition(RestChannelServiceDefinition restChannelServiceDefinition) {

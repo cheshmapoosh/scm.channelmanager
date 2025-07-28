@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.core.services;
 
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
-import ir.daneshrefah.scm.common.dto.gateway.CmChannelService;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
 import ir.daneshrefah.scm.common.model.customer.UserProfile;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
-import ir.daneshrefah.scm.common.model.gateway.CmChannel;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;

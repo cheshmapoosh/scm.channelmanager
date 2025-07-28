@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,28 +29,26 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
                 .map(channelServiceDefinitionMapper::toModel)
                 .peek(model -> {
                     if (model instanceof RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
-                        List<RestChannelServiceDefinition> definitions = new ArrayList<>();
-                        enrichRestDefinition(definitions, model, restMultipleChannelServiceDefinition.getDefinitionIdList());
-                        restMultipleChannelServiceDefinition.setDefinitions(definitions);
+                        enrichRestDefinition(restMultipleChannelServiceDefinition);
                     }
                 })
                 .toList();
 
     }
 
-    private void enrichRestDefinition(List<RestChannelServiceDefinition> definitions,
-                                      ChannelServiceDefinition channelServiceDefinition,
-                                      List<String> definitionIdList) {
-
-        definitionIdList.forEach(definitionId -> {
-            definitionRepository.findById(definitionId).ifPresent(definition -> {
-                RestChannelServiceDefinition serviceDefinition = new RestChannelServiceDefinition();
-                BeanUtils.copyProperties(channelServiceDefinition, serviceDefinition);
-                serviceDefinition.setDefinition(definitionMapper.toModel(definition));
-                serviceDefinition.setType(ChannelServiceDefinitionType.REST);
-                channelServiceDefinitionMapper.enrichRestChannelServiceDefinition(serviceDefinition);
-                definitions.add(serviceDefinition);
-            });
-        });
+    private void enrichRestDefinition(RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
+        restMultipleChannelServiceDefinition
+                .getMultiRouteDetails()
+                .forEach(multiRouteDetail -> {
+                    definitionRepository.findById(multiRouteDetail.getDefinitionId()).ifPresent(definition -> {
+                        RestChannelServiceDefinition serviceDefinition = new RestChannelServiceDefinition();
+                        BeanUtils.copyProperties(restMultipleChannelServiceDefinition, serviceDefinition);
+                        serviceDefinition.setDefinition(definitionMapper.toModel(definition));
+                        serviceDefinition.setType(ChannelServiceDefinitionType.REST);
+                        channelServiceDefinitionMapper.enrichRestChannelServiceDefinition(serviceDefinition);
+                        multiRouteDetail.setDefinition(serviceDefinition);
+                    });
+                });
     }
+
 }
