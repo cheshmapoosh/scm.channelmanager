@@ -43,8 +43,7 @@ public class WithdrawalListEnricherTransformerPlugin implements PluginHandler {
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
         String jsonBody = String.valueOf(exchange.getIn().getBody());
         JsonNode body = objectMapper.readTree(jsonBody);
-        JsonNode payload = body.get("result");
-        if ((payload instanceof ArrayNode sourceArray)) {
+        if ((body instanceof ArrayNode sourceArray)) {
             ArrayNode result = JsonNodeFactory.instance.arrayNode();
             for (JsonNode sourceNode : sourceArray) {
                 if (!sourceNode.isObject() || sourceNode.isEmpty()) {
@@ -55,7 +54,6 @@ public class WithdrawalListEnricherTransformerPlugin implements PluginHandler {
                     result.add(node);
                 }
             }
-            ((ObjectNode) body).set("result", result);
             exchange.getIn().setBody(body);
         } else {
             log.warn(">>> withdrawal list payload is not an array");

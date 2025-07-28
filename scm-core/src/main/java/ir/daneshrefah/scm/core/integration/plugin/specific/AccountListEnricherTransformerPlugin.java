@@ -54,9 +54,8 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
         String jsonBody = String.valueOf(exchange.getIn().getBody());
         JsonNode body = objectMapper.readTree(jsonBody);
-        JsonNode payload = body.get("result");
         log.info(">>> account list transformer loading");
-        if ((payload instanceof ArrayNode sourceArray)) {
+        if ((body instanceof ArrayNode sourceArray)) {
             ArrayNode result = JsonNodeFactory.instance.arrayNode();
             UserProfile profile = personProfileLoader.preparePersonProfileMemberships(AuthenticationUtils.getScmAuthentication());
             for (JsonNode sourceNode : sourceArray) {
@@ -69,7 +68,6 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
                     result.add(resultAccount);
                 }
             }
-            ((ObjectNode)body).set("result", result);
             exchange.getIn().setBody(body);
         }else {
             log.warn(">>> account list payload is not an array");
@@ -94,7 +92,7 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
             } else {
                 MembershipTerminalAccess membershipTerminalAccess = membership.get();
                 String nickname = membershipTerminalAccess.getMembership().getNickname();
-                sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname : StringUtils.EMPTY);
+                sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname.trim() : StringUtils.EMPTY);
                 checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
             }
             return sourceNode;
