@@ -72,7 +72,7 @@ public class ClientScopeService {
         ScopeEntity entity = scopeRepository.findById(scope.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scope"));
         entity.setCode(scope.getCode());
         entity.setTitle(scope.getTitle());
-        entity.setLastEditDate(scope.getLastEditDate());
+//        entity.setLastEditDate(scope.getLastEditDate()); //TODO MUST ADD version column
         ScopeEntity updated = scopeRepository.save(entity);
         reloadCache();
         return scopeMapper.toModel(updated);
@@ -81,7 +81,7 @@ public class ClientScopeService {
     @Transactional
     public Scope remove(Scope scope) {
         ScopeEntity entity = scopeRepository.findById(scope.getId()).orElseThrow(() -> new NoMatchRecordFoundException("scope"));
-        entity.setLastEditDate(scope.getLastEditDate());
+//        entity.setLastEditDate(scope.getLastEditDate()); //TODO MUST ADD version column
         scopeRepository.delete(entity);
         reloadCache();
         return scopeMapper.toModel(entity);

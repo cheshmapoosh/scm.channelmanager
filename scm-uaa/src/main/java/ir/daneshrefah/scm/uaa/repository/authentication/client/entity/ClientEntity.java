@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
 import ir.daneshrefah.scm.common.data.converter.StringSetConverter;
-import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import jakarta.persistence.*;
@@ -21,7 +21,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "TBL_SUA_CLIENT")
-public class ClientEntity extends AbstractStringAuditableEntity<Long> {
+public class ClientEntity extends AbstractEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -29,5 +29,5 @@ public interface UPersonService extends PersonService {
 
     GeneralPerson syncPersonByCif(Integer personId);
 
-    DiffGeneralPerson diffPersonInfoFromCIFAndLocal(Integer personId);
+    DiffGeneralPerson diffPersonInfoFromCIFAndLocal(String personId);
 }

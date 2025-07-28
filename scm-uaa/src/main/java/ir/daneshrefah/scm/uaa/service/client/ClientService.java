@@ -214,7 +214,7 @@ public class ClientService {
         dbEntity.setSessionTimeToLiveMinute(entity.getSessionTimeToLiveMinute());
         dbEntity.setCheckIpAddress(entity.isCheckIpAddress());
         dbEntity.setAllowIpAddresses(entity.getAllowIpAddresses());
-        dbEntity.setLastEditDate(LocalDateTime.now());
+       // dbEntity.setLastEditDate(LocalDateTime.now()); //TODO MUST ADD version column
     }
 
     //    @Cacheable(cacheNames = "CACHE_CLIENT_AUTHORITY", key = "#clientId")
@@ -230,7 +230,7 @@ public class ClientService {
     @Transactional
     public ClientResponse remove(Long clientId, LocalDateTime lastEditDate) {
         ClientEntity entity = clientRepository.findById(clientId).orElseThrow(() -> new NoMatchRecordFoundException("clientId"));
-        entity.setLastEditDate(lastEditDate);
+      //  entity.setLastEditDate(lastEditDate); //TODO MUST ADD version column
         entity.setStatus(false);
         clientRepository.save(entity);
         reloadCache();

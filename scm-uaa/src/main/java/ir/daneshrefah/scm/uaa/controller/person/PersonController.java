@@ -73,11 +73,11 @@ public class PersonController {
 
     @GetMapping("/sync/{personId}")
     public ResponseEntity<GeneralPerson> syncPersonInfoFromCIF(@PathVariable("personId") Integer personId) {
-        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonInfoFromCIF(personId));
+        return ResponseEntity.status(HttpStatus.OK).body(personService.syncPersonByCif(personId));
     }
 
     @GetMapping("/diff/{personId}")
-    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId")  Integer personId ) {
+    public ResponseEntity<DiffGeneralPerson> diffPersonInfoFromCIFAndLocal(@PathVariable("personId")  String personId ) {
         return ResponseEntity.status(HttpStatus.OK).body(personService.diffPersonInfoFromCIFAndLocal(personId));
     }
 

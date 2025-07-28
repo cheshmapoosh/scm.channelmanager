@@ -2,8 +2,7 @@ package ir.daneshrefah.scm.common.data.mapper;
 
 import ir.daneshrefah.scm.common.data.entity.person.*;
 import ir.daneshrefah.scm.common.model.person.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,5 +98,11 @@ public interface PersonMapper {
     EmployeePersonEntity toEntity(EmployeePerson person);
 
     ClientPersonEntity toEntity(ClientPerson person);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void update(GeneralRealPerson model, @MappingTarget GeneralRealPersonEntity entity);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void update(GeneralLegalPerson model, @MappingTarget GeneralLegalPersonEntity entity);
 
 }

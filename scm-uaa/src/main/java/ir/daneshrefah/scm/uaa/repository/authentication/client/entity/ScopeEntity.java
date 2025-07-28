@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.repository.authentication.client.entity;
 
-import ir.daneshrefah.scm.common.data.entity.AbstractStringAuditableEntity;
+import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SUA_SCOPE")
-public class ScopeEntity extends AbstractStringAuditableEntity<Long> {
+public class ScopeEntity extends AbstractEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

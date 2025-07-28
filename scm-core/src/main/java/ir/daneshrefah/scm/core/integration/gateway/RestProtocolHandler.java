@@ -6,8 +6,8 @@ import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestConfigurationDefinition;
-import org.apache.camel.model.rest.RestPropertyDefinition;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
@@ -26,22 +26,22 @@ public class RestProtocolHandler implements ProtocolHandler {
     }
 
     @Override
-    public ProtocolConfigurer config(GatewayChannel gatewayChannel, RouteBuilder builder) {
-        RestConfigurationDefinition restConfigurationDefinition = builder.restConfiguration()
+    public ProtocolConfigurer config(GatewayChannel gatewayChannel, RouteBuilder routeBuilder) {
+        RestConfigurationDefinition restConfigurationDefinition = routeBuilder.restConfiguration()
                 .component("servlet")
-                .enableCORS(false);
-        restConfigurationDefinition.setCorsHeaders(List.of(
-                new RestPropertyDefinition("Access-Control-Allow-Origin", "*"),
-                new RestPropertyDefinition("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"),
-                new RestPropertyDefinition("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, X-Requested-With"),
-                new RestPropertyDefinition("Access-Control-Allow-Credentials", "true"),
-                new RestPropertyDefinition("Access-Control-Expose-Headers", "Custom-Header")
-        ));
+                .bindingMode(RestBindingMode.json)
+                .enableCORS(true)
+                .corsAllowCredentials(true)
+                .corsHeaderProperty("Access-Control-Allow-Origin", "*")
+                .corsHeaderProperty("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+                .corsHeaderProperty("Access-Control-Allow-Headers", "*")
+                .corsHeaderProperty("Access-Control-Allow-Credentials", "true")
+                .corsHeaderProperty("Access-Control-Expose-Headers", "*");
         String host = gatewayChannel.getHost();
         if (StringUtils.isNotEmpty(host)) {
             restConfigurationDefinition.host(host);
         }
-        return new RestProtocolConfigurer(gatewayChannel, builder);
+        return new RestProtocolConfigurer(gatewayChannel, routeBuilder);
     }
 
     private record RestProtocolConfigurer(
@@ -68,11 +68,10 @@ public class RestProtocolHandler implements ProtocolHandler {
             channelServiceDefinitions.forEach(channelServiceDefinition -> {
                 RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition = (RestMultipleChannelServiceDefinition) channelServiceDefinition;
                 restMultipleChannelServiceDefinition.getMultiRouteDetails().forEach(multiRouteDetail ->
-                        routeDefinitions.addAll(createRestRouteDefinition(service,multiRouteDetail)));
+                        routeDefinitions.addAll(createRestRouteDefinition(service, multiRouteDetail)));
             });
             return routeDefinitions;
         }
-
 
 
         private List<RouteDefinition> createRestRouteDefinition(Service service, RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {

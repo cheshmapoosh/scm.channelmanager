@@ -106,7 +106,7 @@ public class UserService {
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(userEntity);
+        return userMapper.toModel(userEntity);
     }
 
     @Transactional
@@ -121,7 +121,7 @@ public class UserService {
         userRepository.save(currentUser);
         xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
         userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
-        return UserMapper.INSTANCE.toModel(currentUser);
+        return userMapper.toModel(currentUser);
     }
 
     public UserEntity findAuthenticatedUserByUsernameAndTerminalCode(String username, String terminalCode) {
@@ -821,31 +821,7 @@ public class UserService {
             throw new InvalidInputException("otpCode");
         }
     }
-
-    private void verifyOtp(UserAssignTerminalRequest request) {
-        String terminalCode = extractRequestTerminalCode();
-        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
-        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrganizationId())
-                .orElseThrow(()->new NoMatchRecordFoundException("user"));
-        Recipient recipient = Recipient.builder()
-                .address(generalPerson.getMobile1())
-                .identifier(generalPerson.getMobile1())
-                .identifierType(UserIdentifierType.MOBILE_NUMBER)
-                .terminalCode(terminalCode)
-                .accessParameter(accessParameter)
-                .build();
-        OtpVerifyRequest otpRequest = OtpVerifyRequest.builder()
-                .otpType(OtpType.SMS)
-                .reason(OtpReason.BANK_CONSOLE_CUSTOMER_VERIFICATION)
-                .claimCode(request.getOtpCode())
-                .recipient(recipient)
-                .build();
-        OtpVerifyResponse otpVerifyResponse = otpService.verifyOtp(otpRequest);
-        if (!otpVerifyResponse.isSuccessful()){
-            throw new InvalidInputException("otpCode");
-        }
-    }
-
+    
     private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {
         return personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrganizationId);
     }

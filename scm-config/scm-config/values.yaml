@@ -125,6 +125,6 @@ env:
   - name: SPRING_APPLICATION_NAME
     value: scm-config
   - name: VERSION
-    value: 8.2.0
+    value: 8.3.0
   - name: SERVER_PORT
     value: "8888"

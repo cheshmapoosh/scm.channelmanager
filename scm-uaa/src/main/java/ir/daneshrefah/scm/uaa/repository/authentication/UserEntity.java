@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.repository.authentication;
 
 import ir.daneshrefah.scm.common.data.converter.UserStatusConverter;
 import ir.daneshrefah.scm.common.data.converter.UserTypeConverter;
+import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.model.person.UserStatus;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
@@ -13,7 +14,6 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.Date;
 import java.util.Set;
 
 /**
@@ -28,7 +28,7 @@ import java.util.Set;
 @Entity
 @Table(name = "USER_CHANNEL_AUTHENTICATION")
 @SequenceGenerator(name = "ucaGenerator",allocationSize = 1,schema = "REF",sequenceName = "SQUSERCHANNELAUTHENTICATION")
-public class UserEntity extends AbstractDefaultAuditableEntity<Integer> {
+public class UserEntity extends AbstractEntity<Integer> { //TODO MUST ADD version column
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "ucaGenerator")
