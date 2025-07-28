@@ -267,8 +267,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             userModel.setNationalId(legalPerson.getNationalId());
         }
         userModel.setPersonType(person.getPersonType());
-        userModel.setCustomerNo(taskAssetService.findCustomerNo(person.getId())
-                .orElseThrow(() -> new NoMatchRecordFoundException("customerNo")));
+        userModel.setCustomerId(taskAssetService.findCustomerNo(person.getId())
+                .orElseThrow(() -> new NoMatchRecordFoundException("customerId")));
         return userModel;
     }
 

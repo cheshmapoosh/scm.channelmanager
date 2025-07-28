@@ -12,5 +12,5 @@ public class UserModel {
     private String nationalId;
     private PersonType personType;
     private String subOrganization;
-    private String customerNo;
+    private String customerId;
 }
