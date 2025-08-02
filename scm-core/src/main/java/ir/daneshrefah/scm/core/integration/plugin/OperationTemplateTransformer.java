@@ -7,7 +7,9 @@ import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.handler.StatusHandler;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.operation.*;
+import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.common.model.operation.OperationDefinition;
+import ir.daneshrefah.scm.common.model.operation.OperationDefinitionType;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
@@ -87,6 +89,7 @@ public class OperationTemplateTransformer implements PluginHandler {
 
 
     }
+
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
         TemplateEngine templateEngine = exchange.getProperty(Message.TEMPLATE_ENGINE, TemplateEngine.class);

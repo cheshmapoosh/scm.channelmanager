@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.common.model.notification;
 
-import ir.daneshrefah.scm.common.AbstractAuditableModel;
+import ir.daneshrefah.scm.common.AbstractModel;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.common.model.notification.constants.TemplateFormat;
 import lombok.Getter;
@@ -17,7 +17,8 @@ import java.util.Locale;
  */
 @Setter
 @Getter
-public class MessageTemplate extends AbstractAuditableModel<Long> {
+public class MessageTemplate extends AbstractModel<Long> {
+    //TODO CREATOR AND EDITOR TYPE MUST CHANGED TO INTEGER ON DB
 
     private NotificationTemplate code;
     private String title;

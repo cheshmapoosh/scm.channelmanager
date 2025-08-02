@@ -7,7 +7,6 @@ import lombok.Data;
 public class UpdatePasswordRequest {
     private String nationalCode;
     private String subOrganizationId;
-    private String newPassword;
     private AuthenticationMethodType authenticationMethodType;
-    private String terminalCode;
+    private String channelCode;
 }

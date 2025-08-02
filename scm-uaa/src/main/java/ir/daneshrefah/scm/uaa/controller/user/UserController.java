@@ -7,7 +7,6 @@ import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,7 @@ public class UserController extends BaseController {
     public ResponseEntity<User> changeUserNameByAdmin(@RequestBody UserNickNameModifyRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.changeNickNameByAdmin(request));
     }
- 
+
     @PutMapping("/change-login-password")
     public ResponseEntity<User> updateUserLoginStaticPassword(@RequestBody PasswordModificationRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserLoginStaticPassword(request,false));
@@ -62,8 +61,8 @@ public class UserController extends BaseController {
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<Boolean> updatePasswordMethod(@RequestBody UpdatePasswordRequest request) { //TODO this method for figital,validate before change it
-        return ResponseEntity.status(HttpStatus.OK).body(userService.UpdatePasswordRequest(request));
+    public ResponseEntity<Boolean> changePassword(@RequestBody UpdatePasswordRequest request) { //TODO this method for figital,validate before change it
+        return ResponseEntity.status(HttpStatus.OK).body(userService.changePassword(request));
     }
 
     @PutMapping("/change-authentication-method")

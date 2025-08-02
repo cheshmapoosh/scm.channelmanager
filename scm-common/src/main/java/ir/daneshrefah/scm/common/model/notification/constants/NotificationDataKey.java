@@ -15,6 +15,7 @@ public enum NotificationDataKey {
     PERSON_TITLE("personTitle", false),
     LOGIN_TIME("loginTime", true),
     TIME("time", true),
+    PASSWORD("password", false),
     OTP_CODE("otpCode", false),
     USER_NICKNAME("userNickname", false),
     REASON("reason", false);

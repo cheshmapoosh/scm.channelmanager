@@ -12,12 +12,19 @@ import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.exception.*;
+import ir.daneshrefah.scm.common.model.message.IssuerInfo;
+import ir.daneshrefah.scm.common.model.notification.NotificationData;
+import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
+import ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate;
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.common.model.user.UserType;
+import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -40,6 +47,7 @@ import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +59,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
+import static ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate.RESET_FIRST_PASSWORD;
+import static ir.daneshrefah.scm.common.model.notification.constants.NotificationTemplate.RESET_SECOND_PASSWORD;
+import static ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType.LOGIN;
 import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
 import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_AUTHORIZATION;
@@ -65,6 +76,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLAIM_CO
  */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class UserService {
     private final static String CUSTOMER_ROLE_CODE = "ROLE_CUSTOMER";
     //    private final UserActivationRepository userActivationRepository;
@@ -78,6 +90,7 @@ public class UserService {
     private final XUserDetailService xUserDetailService;
     private final CredentialGenerator credentialGenerator;
     private final UPersonService uPersonService;
+    private final NotificationService notificationService;
     private final UserMapper userMapper;
 
     @Transactional
@@ -821,7 +834,7 @@ public class UserService {
             throw new InvalidInputException("otpCode");
         }
     }
-    
+
     private GeneralLegalPersonEntity findLegalPerson(String nationalId, String subOrganizationId) {
         return personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrganizationId);
     }
@@ -926,27 +939,71 @@ public class UserService {
         return Optional.ofNullable(branchCode).orElse("9999");
     }
 
-    public Boolean UpdatePasswordRequest(UpdatePasswordRequest request) {
-        ValidationUtils.checkEmptyString(request.getNewPassword(), () -> new MissingRequiredInputException("newPassword"));
-        ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
+    public Boolean  changePassword(UpdatePasswordRequest request) {
+        ValidationUtils.checkEmptyString(request.getChannelCode(), () -> new MissingRequiredInputException("channelCode"));
         ValidationUtils.checkEmptyString(request.getNationalCode(), () -> new MissingRequiredInputException("nationalCOde"));
         ValidationUtils.checkNull(request.getAuthenticationMethodType(), () -> new MissingRequiredInputException("authenticationMethodType"));
-        UserEntity userEntity = findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganizationId(), request.getTerminalCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        UserEntity userEntity = findByNationalCodeAndTerminalIDAndSubOrganizationId(request.getNationalCode(), request.getSubOrganizationId(), request.getChannelCode()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
         GeneralPersonEntity person = userEntity.getPerson();
-        if (request.getAuthenticationMethodType().equals(AuthenticationMethodType.LOGIN)) {
+        String generatedPassword = StringUtils.generateRandomString(8);
+        if (request.getAuthenticationMethodType().equals(LOGIN)) {
             if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
             }
-            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
+
+            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(generatedPassword, person.getUsername()));
         } else {
             if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
             }
-            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), person.getUsername()));
+            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(generatedPassword, person.getUsername()));
         }
-        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
-        userCache.removeUserFromCache(userEntity.getNickname(), request.getTerminalCode());
+        sendNotification(request,userEntity,generatedPassword);
+        xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getChannelCode());
+        userCache.removeUserFromCache(userEntity.getNickname(), request.getChannelCode() );
         userRepository.save(userEntity);
         return true;
+    }
+
+    private void sendNotification(UpdatePasswordRequest request, UserEntity userEntity, String generatedPassword) {
+        try {
+            NotificationTemplate template = request.getAuthenticationMethodType().equals(LOGIN) ? RESET_FIRST_PASSWORD : RESET_SECOND_PASSWORD;
+            Terminal terminal = terminalService.findTerminalByCode(request.getChannelCode()).orElseThrow(()->new InvalidInputException("channelCode"));
+            NotificationData notificationData = createNotificationData(userEntity.getNickname(), terminal.getTitle(),generatedPassword);
+            GeneralPersonEntity person = userEntity.getPerson();
+            //CREATE ISSUER INFO
+            IssuerInfo issuerInfo = IssuerInfo.builder()
+                    .personType(person.getPersonType())
+                    .personUsername(person.getUsername())
+                    .terminalCode(terminal.getCode())
+                    .build();
+            //CREATE RECIPIENT
+            Recipient recipient = Recipient.builder()
+                    .address(person.getMobile1())
+                    .identifier(userEntity.getNickname())
+                    .identifierType(UserIdentifierType.USER_NICKNAME)
+                    .terminalCode(terminal.getCode())
+                    .build();
+            //CREATE NOTIFICATION REQUEST
+            NotificationRequest notificationRequest = NotificationRequest.builder()
+                    .template(template)
+                    .media(NotificationMedia.SMS)
+                    .recipient(recipient)
+                    .userLocale(new Locale("fa", "IR")) //TODO GET FROM HEADER
+                    .data(notificationData)
+                    .terminalCode(request.getChannelCode())
+                    .issuerInfo(issuerInfo)
+                    .build();
+            notificationService.sendNotification(notificationRequest);
+        } catch (Exception e) {
+            log.error("Exception occurred while sending notification ", e);
+        }
+    }
+
+    private NotificationData createNotificationData(String nickName, String channelTitle,String generatedPassword) {
+        return new NotificationData()
+                .put(NotificationDataKey.CHANNEL_TITLE, channelTitle)
+                .put(NotificationDataKey.USER_NICKNAME, nickName)
+                .put(NotificationDataKey.PASSWORD, generatedPassword);
     }
 }
