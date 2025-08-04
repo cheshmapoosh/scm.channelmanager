@@ -35,4 +35,6 @@ dependencies {
     api project(':scm-uaa-common')
     implementation 'org.springframework.security:spring-security-core'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    api 'com.bucket4j:bucket4j_jdk17-core'
+    api 'com.bucket4j:bucket4j_jdk17-hazelcast'
 }

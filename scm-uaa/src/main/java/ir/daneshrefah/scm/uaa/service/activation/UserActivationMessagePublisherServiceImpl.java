@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.cache.client.connector.QueueTemplate;
 import ir.daneshrefah.scm.cache.client.model.Message;
 import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
+import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class UserActivationMessagePublisherServiceImpl implements UserActivation
 
     @Override
     public void publish(String username, String fromTerminal) {
-        TerminalType terminal = TerminalType.fromCode(fromTerminal).orElseThrow(() -> new RuntimeException("Invalid terminal code " + fromTerminal));
+        TerminalType terminal = TerminalType.fromCode(fromTerminal).orElseThrow(() -> new InvalidInputException("Invalid terminal code " + fromTerminal));
         Message<String> message = new Message<>();
         message.setPayload(username);
         Map<String, String> attributes = new HashMap<>();

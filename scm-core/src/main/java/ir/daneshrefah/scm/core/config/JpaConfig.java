@@ -60,7 +60,7 @@ public class JpaConfig {
                         "ir.daneshrefah.scm.task.entity",
                         "ir.daneshrefah.scm.config.entity",
                         "ir.daneshrefah.scm.notification.client.entity",
-                        "ir.daneshrefah.scm.common.data.entity",
+                        "ir.daneshrefah.scm.common.data",
 //                        "ir.daneshrefah.scm.entity",
                         "ir.daneshrefah.scm.cache.entity"
                 )
