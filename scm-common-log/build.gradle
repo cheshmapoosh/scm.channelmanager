@@ -13,5 +13,7 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     compileOnly project(':scm-utils')
     compileOnly project(':scm-common')
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3'
 }
 

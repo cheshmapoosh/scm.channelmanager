@@ -1,13 +1,10 @@
 package ir.daneshrefah.scm.common.log.entity.transaction;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,8 +12,16 @@ import java.time.LocalDateTime;
 @Table(name = "TRANSACTION_LOG", schema = "REF")
 public class TransactionLogEntity {
 
-    @EmbeddedId
-    private TransactionLogId id;
+//    @EmbeddedId
+//    private TransactionLogId id;
+
+    @Id
+    @Column(name = "TRANSACTION_LOG_ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long transactionLogId;
+
+    @Column(name = "ARCHIVE_NO")
+    private Long archiveNo;
 
     @Column(name = "TRANSACTION_TYPE")
     private Integer transactionType;
@@ -55,7 +60,7 @@ public class TransactionLogEntity {
     private String messageSequenceId;
 
     @Column(name = "LOG_TIME")
-    private LocalDateTime logTime;
+    private Date logTime;
 
     @Column(name = "SERVER_EXCEPTION")
     private String serverException;
@@ -85,7 +90,7 @@ public class TransactionLogEntity {
     private String cardNo;
 
     @Column(name = "CLIENT_DATE")
-    private LocalDateTime clientDate;
+    private Date clientDate;
 
     @Column(name = "EXTERNAL_SEQUENCE_ID")
     private String externalSequenceId;

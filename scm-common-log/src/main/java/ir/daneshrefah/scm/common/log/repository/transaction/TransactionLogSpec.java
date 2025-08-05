@@ -14,7 +14,7 @@ import java.util.Objects;
 public class TransactionLogSpec {
 
     public static Specification<TransactionLogEntity> toSpecification(TransactionLogRequest request) {
-        return (root, query, builder) -> {
+        return (root, query, builder) -> { //TODO : Improve filter
             List<Predicate> predicates = new ArrayList<>();
             boolean hasOrder = true;
             if (Objects.nonNull(request.getChannelId())) {
@@ -25,11 +25,11 @@ public class TransactionLogSpec {
                 hasOrder = false;
             }
             if (Objects.nonNull(request.getTransactionLogId())) {
-                predicates.add(builder.equal(root.get("id").get("transactionLogId"), request.getTransactionLogId()));
+                predicates.add(builder.equal(root.get("transactionLogId"), request.getTransactionLogId()));
             } else if (Objects.nonNull(request.getNextId())) {
-                predicates.add(builder.gt(root.get("id").get("transactionLogId"), request.getNextId()));
+                predicates.add(builder.gt(root.get("transactionLogId"), request.getNextId()));
             } else if (Objects.nonNull(request.getPreviousId())) {
-                predicates.add(builder.lessThan(root.get("id").get("transactionLogId"), request.getPreviousId()));
+                predicates.add(builder.lessThan(root.get("transactionLogId"), request.getPreviousId()));
             }
 //            if (Objects.isNull(request.getArchiveNo())) {
 //                Date date;
@@ -42,7 +42,7 @@ public class TransactionLogSpec {
 //                predicates.add(builder.equal(root.get("id").get("archiveNo"), archiveNo));
 //            }
             if (hasOrder) {
-                query.orderBy(builder.desc(root.get("id").get("transactionLogId")));
+                query.orderBy(builder.desc(root.get("transactionLogId")));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

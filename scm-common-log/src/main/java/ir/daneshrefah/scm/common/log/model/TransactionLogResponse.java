@@ -11,7 +11,7 @@ public class TransactionLogResponse {
 
     private Long transactionLogId;
 
-    private Integer archiveNo;
+    private Long archiveNo;
 
     private Integer transactionType;
 
@@ -38,8 +38,8 @@ public class TransactionLogResponse {
     private String serverCode;
 
     private String messageSequenceId;
-
-    private LocalDateTime logTime;
+//    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+//    private LocalDateTime logTime;
 
     private String serverException;
 

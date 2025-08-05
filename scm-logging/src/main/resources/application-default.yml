@@ -36,9 +36,9 @@ scm:
   datasource:
     transactionLog:
       enabled: true
-      url: jdbc:db2://10.15.27.82:446/DSNALOC
-      username: casadm
-      password: a
+      url: jdbc:db2://10.10.4.104:50001/DBREFSW
+      username: db2inst1
+      password: db2inst1
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF

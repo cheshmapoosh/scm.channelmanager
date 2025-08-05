@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.log.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.log.entity.logging.LogPrimaryKey;
@@ -28,14 +27,14 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class SpanLogConverterService  {
+public class SpanLogConverterService {
 
     private final ObjectMapper objectMapper;
     @Value("${scm.log.chunkSize:27128}")
     private int chunkSize;
 
     public List<LogTraceEntity> mapToLogTraceEntity(String msg) throws Exception {
-        LogMessage logMessage = deserializeLogMessage(msg);
+        LogMessage logMessage = deserializeLogMessage(msg); //Improve this code
         List<LogTraceEntity> logTraceEntities = new ArrayList<>();
         String payload = objectMapper.writeValueAsString(logMessage);
         List<String> splitPayload = splitPayload(payload);
@@ -67,12 +66,8 @@ public class SpanLogConverterService  {
         Integer statusCode = attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName()) != null ? Integer.valueOf(attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName())) : null;
         logTraceEntity.setStatusCode(statusCode);
         logTraceEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
-        if (spanModel.getStartEpochNanos() > 0) {
-            logTraceEntity.setStartTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos())));
-        }
-        if (spanModel.getEndEpochNanos() > 0) {
-            logTraceEntity.setEndTime(new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos())));
-        }
+        logTraceEntity.setStartTime(getStartTime(spanModel));
+        logTraceEntity.setEndTime(getEndTime(spanModel));
         logTraceEntity.setServiceCode(attributes.get(LogAttribute.SERVICE_CODE.getAttributeName()));
         logTraceEntity.setNickname(attributes.get(LogAttribute.NICKNAME.getAttributeName()));
         logTraceEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
@@ -92,6 +87,24 @@ public class SpanLogConverterService  {
         logTraceEntity.setSpanName(spanModel.getName());
         logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         return logTraceEntity;
+    }
+
+    private Date getStartTime(SpanModel spanModel) {
+        String startTime = spanModel.getAttributes().get(LogAttribute.START_TIME.getAttributeName());
+        if (startTime != null) {
+            return new Date(startTime);
+        } else if (spanModel.getStartEpochNanos() > 0) {
+            new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
+        } return null;
+    }
+
+    private Date getEndTime(SpanModel spanModel) {
+        String endTime = spanModel.getAttributes().get(LogAttribute.END_TIME.getAttributeName());
+        if (endTime != null) {
+            return new Date(endTime);
+        } else if (spanModel.getEndEpochNanos() > 0) {
+            return new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
+        } return null;
     }
 
 //    private List<String> splitPayload(String payload) {

@@ -7,5 +7,5 @@ import lombok.Setter;
 @Getter
 public class TransactionPayloadRequest {
     private Long transactionLogId;
-    private Integer archiveNo;
+    private Long archiveNo;
 }

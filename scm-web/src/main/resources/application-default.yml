@@ -1,6 +1,6 @@
-SCM_APPLICATION_NAME: scm-web
+SCM_APPLICATION_NAME: scm-ui
 scm:
-  channels: IB4TEST
+  channels: scm4TEST
   logging:
     datasource:
       enabled: true
@@ -98,7 +98,7 @@ scm:
 server:
   servlet:
     context-path: /
-  port: 8082
+  port: 8083
 camel:
   servlet:
     mapping:

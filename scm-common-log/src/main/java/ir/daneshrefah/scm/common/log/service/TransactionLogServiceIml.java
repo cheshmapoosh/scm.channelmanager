@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.log.service;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
-import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogId;
+//import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogId;
 import ir.daneshrefah.scm.common.log.mapper.TransactionLogMapper;
 import ir.daneshrefah.scm.common.log.model.TransactionLogRequest;
 import ir.daneshrefah.scm.common.log.model.TransactionLogResponse;
@@ -55,7 +55,7 @@ public class TransactionLogServiceIml implements TransactionLogService {
     public TransactionLogResponse getDetails(TransactionPayloadRequest request) {
         ValidationUtils.checkNull(request.getTransactionLogId(), () -> new MissingRequiredInputException("transactionLogId"));
         ValidationUtils.checkNull(request.getArchiveNo(), () -> new MissingRequiredInputException("archiveNo"));
-        return transactionLogRepository.findById(new TransactionLogId(request.getTransactionLogId(), request.getArchiveNo())).map(transactionLogEntity -> {
+        return transactionLogRepository.findById(request.getTransactionLogId()).map(transactionLogEntity -> {
             TransactionLogMapper instance = TransactionLogMapper.INSTANCE;
             return instance.toModel(transactionLogEntity);
         }).orElse(new TransactionLogResponse());

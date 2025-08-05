@@ -16,8 +16,8 @@ public interface TransactionLogMapper {
     TransactionLogMapper INSTANCE = Mappers.getMapper(TransactionLogMapper.class);
 
     @Mappings({
-            @Mapping(source = "id.transactionLogId", target = "transactionLogId"),
-            @Mapping(source = "id.archiveNo", target = "archiveNo"),
+//            @Mapping(source = "id.transactionLogId", target = "transactionLogId"),
+//            @Mapping(source = "id.archiveNo", target = "archiveNo"),
             @Mapping(target = "channelCode", expression = "java(convertTerminalId(entity.getChannelId()))")    })
     TransactionLogResponse toModel(TransactionLogEntity entity);
 
