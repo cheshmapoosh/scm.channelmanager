@@ -125,7 +125,7 @@ spec:
         - name: scm-cache
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0223T1300"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0513T1800"
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE

@@ -53,7 +53,7 @@ spec:
         - name: scm-ui
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0313T1700"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0513T1800"
           imagePullPolicy: IfNotPresent
           env:
             - name: JDWP_OPTS
