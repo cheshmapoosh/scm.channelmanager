@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.exception.ScmException;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.dataformat.JsonLibrary;
@@ -22,6 +23,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JavaOperationTypeHandler implements OperationTypeHandler {
 
     private final ApplicationContext applicationContext;
@@ -36,13 +38,16 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         String operationCode = operation.getName();
         String beanName = operation.getPath();
         var bean = applicationContext.getBean(beanName);
-        Method targetMethod = findTargetMethod(bean, operationCode);
-        String targetBeanPath = createTargetBeanPath(targetMethod);
-        findRequestBodyParameter(targetMethod).ifPresent(parameter -> {
-            route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
+        findTargetMethod(bean, operationCode).ifPresentOrElse(targetMethod -> {
+            String targetBeanPath = createTargetBeanPath(targetMethod);
+            findRequestBodyParameter(targetMethod).ifPresent(parameter -> {
+                route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
+            });
+            route.bean("beanValidator");
+            applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
+        },()->{
+            log.warn("<<<<<< WARN >>>>>>> could not initaial rour for operation '{}'",operation.getName());
         });
-        route.bean("beanValidator");
-        applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
     }
 
     private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod,String targetBeanPath) {
@@ -105,7 +110,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
     }
 
 
-    private Method findTargetMethod(Object bean, String operationCode) {
+    private Optional<Method> findTargetMethod(Object bean, String operationCode) {
         final Set<String> EXCLUDED_METHODS = Set.of("finalize", "equals", "clone");
         return Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                 .filter(method -> !EXCLUDED_METHODS.contains(method.getName()))
@@ -116,7 +121,6 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                         .map(OperationCode::name)
                         .anyMatch(code -> code.equals(operationCode)))
                 .peek(ReflectionUtils::makeAccessible)
-                .findFirst()
-                .orElseThrow(() -> new ScmException("SCM.10000", "Java service method not found"));
+                .findFirst();
     }
 }
