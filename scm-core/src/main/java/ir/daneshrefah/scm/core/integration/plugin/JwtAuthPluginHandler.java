@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.plugin;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
@@ -67,8 +68,7 @@ public class JwtAuthPluginHandler implements PluginHandler {
         } catch (JwtException e) {
             //TODO TEMPORARY
 //            throw new ScmException("SCM.100002", "Jwt invalid", e);
-            throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_FAILED,
-                    "invalid jwt.");
+            throw new AuthenticationRequiredException();
         }
 
         // Put the decoded JWT claims in the exchange property for downstream plugins
