@@ -26,9 +26,4 @@ dependencies {
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
-
-    runtimeOnly 'com.ibm.db2:db2jcc'
-    runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
-    runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
-
 }

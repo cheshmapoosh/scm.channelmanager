@@ -1,22 +1,24 @@
-package ir.daneshrefah.scm.logging.service;
+package ir.daneshrefah.scm.common.log.service;
 
-import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
-import ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository;
-import ir.daneshrefah.scm.common.data.repository.logging.TraceLogSpec;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
-import ir.daneshrefah.scm.common.model.logging.LogTraceFindByIdRequest;
-import ir.daneshrefah.scm.common.model.logging.LogTracePayloadResponse;
-import ir.daneshrefah.scm.common.model.logging.LogTraceRequest;
-import ir.daneshrefah.scm.common.model.logging.LogTraceResponse;
-import ir.daneshrefah.scm.logging.mapper.LogTraceMapper;
-import ir.daneshrefah.scm.logging.utils.PageableUtils;
+import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
+import ir.daneshrefah.scm.common.log.mapper.LogTraceMapper;
+import ir.daneshrefah.scm.common.log.model.LogTraceFindByIdRequest;
+import ir.daneshrefah.scm.common.log.model.LogTracePayloadResponse;
+import ir.daneshrefah.scm.common.log.model.LogTraceRequest;
+import ir.daneshrefah.scm.common.log.model.LogTraceResponse;
+import ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository;
+import ir.daneshrefah.scm.common.log.repository.logging.TraceLogSpec;
+import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +29,11 @@ import java.util.Objects;
 public class LogTraceServiceImpl implements LogService {
 
     private final LogTraceRepository logTraceRepository;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveAll(List<LogTraceEntity> logTraces) {
+        logTraceRepository.saveAll(logTraces);
+    }
 
     @Override
     public PagedResponseData<LogTraceResponse> findAll(LogTraceRequest request) {

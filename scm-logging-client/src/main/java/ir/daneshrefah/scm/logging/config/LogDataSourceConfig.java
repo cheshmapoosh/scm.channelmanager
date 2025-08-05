@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.logging.config;
 
 import com.zaxxer.hikari.HikariDataSource;
-import ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository;
+import ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -26,7 +26,7 @@ import java.util.Objects;
 @EnableTransactionManagement
 @EntityScan(basePackages = "ir.daneshrefah.scm.common.data.entity.logging")
 @EnableJpaRepositories(
-        basePackages = "ir.daneshrefah.scm.common.data.repository.logging",
+        basePackages = "ir.daneshrefah.scm.common.log.repository.logging",
         entityManagerFactoryRef = "logEntityManagerFactory",
         transactionManagerRef = "logTransactionManager",
         includeFilters = @ComponentScan.Filter(
@@ -63,7 +63,7 @@ public class LogDataSourceConfig {
         props.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy");
         return builder
                 .dataSource(logDataSource)
-                .packages("ir.daneshrefah.scm.common.data.entity.logging")
+                .packages("ir.daneshrefah.scm.common.log.entity.logging")
                 .properties(props)
                 .build();
     }

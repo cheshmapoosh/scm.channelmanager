@@ -1,7 +1,8 @@
-package ir.daneshrefah.scm.common.data.repository.logging;
+package ir.daneshrefah.scm.common.log.repository.logging;
 
-import ir.daneshrefah.scm.common.data.entity.logging.LogPrimaryKey;
-import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
+
+import ir.daneshrefah.scm.common.log.entity.logging.LogPrimaryKey;
+import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

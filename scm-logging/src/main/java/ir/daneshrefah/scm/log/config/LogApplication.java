@@ -5,12 +5,29 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+@ConfigurationProperties("scm")
 @Configuration
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class LogApplication {
+
+    private DataSourceConfig datasource;
+
+    @Getter
+    @Setter
+    public static class DataSourceConfig {
+        private DatasourceProperties transactionLog;
+        private DatasourceProperties logTrace;
+    }
 
     @Bean
     @Order(1)

@@ -4,23 +4,15 @@ spring:
   cloud:
     config:
       enabled: false
-  datasource:
-    url: jdbc:db2://10.15.27.82:546/DSNBLOC
-    username: casadm
-    password: a
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
-    hikari:
-      maximum-pool-size: 10
-      schema: REF
   jpa:
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
 
 server:
   port: 9090
-
 scm:
   log:
     chunkSize: 27128
@@ -41,3 +33,20 @@ scm:
         network-config:
           addresses:
             - 10.10.4.125:5701
+  datasource:
+    transactionLog:
+      enabled: true
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
+      username: casadm
+      password: a
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF
+    logTrace:
+      enabled: true
+      url: jdbc:db2://10.15.27.82:546/DSNBLOC
+      username: casadm
+      password: a
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: REF

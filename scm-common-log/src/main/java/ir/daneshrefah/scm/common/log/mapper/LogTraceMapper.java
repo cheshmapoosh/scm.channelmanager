@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.logging.mapper;
+package ir.daneshrefah.scm.common.log.mapper;
 
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.model.LogTraceResponse;

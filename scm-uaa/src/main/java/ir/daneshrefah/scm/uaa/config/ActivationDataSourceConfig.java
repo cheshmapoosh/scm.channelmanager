@@ -35,7 +35,7 @@ import java.util.Objects;
         transactionManagerRef = "activationTransactionManager"
         , excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE,
-        value = ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository.class
+        value = ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository.class
 )
 )
 @EnableConfigurationProperties(DataSourceConfigProperties.class)

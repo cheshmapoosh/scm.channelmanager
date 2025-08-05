@@ -1,7 +1,9 @@
-package ir.daneshrefah.scm.common.data.repository.logging;
 
-import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
-import ir.daneshrefah.scm.common.model.logging.LogTraceRequest;
+package ir.daneshrefah.scm.common.log.repository.logging;
+
+
+import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
+import ir.daneshrefah.scm.common.log.model.LogTraceRequest;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;

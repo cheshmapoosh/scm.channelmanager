@@ -129,6 +129,8 @@ public enum OperationCode {
     SVC_SERVICE_PROVIDER_BY_ID(ServiceImplementationType.JAVA),
     SCV_LOG_FIND_BY_ID(ServiceImplementationType.JAVA),
     SCV_LOG_LIST(ServiceImplementationType.JAVA),
+    SCV_LOG_TRANSACTION_LIST(ServiceImplementationType.JAVA),
+    SCV_LOG_TRANSACTION_DETAIL(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_PROTOCOL_LIST(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_STATUS_LIST(ServiceImplementationType.JAVA),
     SVC_PARAMETER_ACTION_TYPE_LIST(ServiceImplementationType.JAVA),

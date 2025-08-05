@@ -28,26 +28,23 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named("bootJar") {
     mainClass = 'ir.daneshrefah.scm.log.LoggingServerApplication'
-    archiveClassifier = ''
+//    archiveClassifier = 'boot'
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    api 'jakarta.servlet:jakarta.servlet-api'
-    implementation 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'commons-io:commons-io:2.18.0'
-    api project(':scm-logging-client')
     api project(':scm-message-queue')
-    api project(':scm-common-data')
+    api project(':scm-common-log')
     api project(':scm-common')
     api project(':scm-utils')
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.model.logging;
+package ir.daneshrefah.scm.common.log.model;
 
 import lombok.Getter;
 import lombok.Setter;

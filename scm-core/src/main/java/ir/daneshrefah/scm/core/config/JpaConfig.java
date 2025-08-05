@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.config;
 
+import ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -24,10 +25,11 @@ import java.util.Objects;
                 "ir.daneshrefah.scm.notification.client",
                 "ir.daneshrefah.scm.common.data",
                 "ir.daneshrefah.scm.cache",
+                "ir.daneshrefah.scm.common.log",
                 "ir.daneshrefah.scm.repository"
         }, excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE,
-        value = ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository.class
+        value = LogTraceRepository.class
 ),
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "transactionManager"
@@ -37,13 +39,14 @@ import java.util.Objects;
         "ir.daneshrefah.scm.config",
         "ir.daneshrefah.scm.notification.client",
         "ir.daneshrefah.scm.common.data",
+        "ir.daneshrefah.scm.common.log",
         "ir.daneshrefah.scm.cache"
-
 })
 @Primary
 public class JpaConfig {
 
     @Bean(name = "entityManagerFactory")
+    @Primary
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             @Qualifier("primaryDataSource") DataSource dataSource,
             EntityManagerFactoryBuilder builder) {
@@ -60,7 +63,8 @@ public class JpaConfig {
                         "ir.daneshrefah.scm.task.entity",
                         "ir.daneshrefah.scm.config.entity",
                         "ir.daneshrefah.scm.notification.client.entity",
-                        "ir.daneshrefah.scm.common.data",
+                        "ir.daneshrefah.scm.common.log",
+                        "ir.daneshrefah.scm.common.data.entity",
 //                        "ir.daneshrefah.scm.entity",
                         "ir.daneshrefah.scm.cache.entity"
                 )

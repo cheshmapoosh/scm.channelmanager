@@ -28,12 +28,13 @@ import java.util.Objects;
 @EnableJpaRepositories(basePackages = {
         "ir.daneshrefah.scm.common.data",
         "ir.daneshrefah.scm.notification",
+        "ir.daneshrefah.scm.common.log.repository.transaction",
         "ir.daneshrefah.scm.uaa.repository.authentication"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "transactionManager"
         , excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE,
-        value = ir.daneshrefah.scm.common.data.repository.logging.LogTraceRepository.class
+        value = ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository.class
 )
 )
 
@@ -71,6 +72,7 @@ public class AuthenticationDataSourceConfig {
                 .dataSource(dataSource)
                 .packages("ir.daneshrefah.scm.uaa.repository.authentication",
                         "ir.daneshrefah.scm.notification",
+                        "ir.daneshrefah.scm.common.log.entity.transaction",
                         "ir.daneshrefah.scm.common.data.repository",
                         "ir.daneshrefah.scm.common.data")
                 .properties(properties)

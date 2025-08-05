@@ -1,4 +1,4 @@
-SCM_APPLICATION_NAME: ib-rest
+SCM_APPLICATION_NAME: scm-web
 scm:
   channels: IB4TEST
   logging:

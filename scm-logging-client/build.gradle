@@ -21,6 +21,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic'
     implementation 'ch.qos.logback:logback-core'
     api project(':scm-uaa-common')
+    api project(':scm-common-log')
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.mapstruct:mapstruct'

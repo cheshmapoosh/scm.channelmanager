@@ -2,10 +2,11 @@ package ir.daneshrefah.scm.log.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
-import ir.daneshrefah.scm.common.data.entity.logging.LogPrimaryKey;
-import ir.daneshrefah.scm.common.data.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.log.entity.logging.LogPrimaryKey;
+import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
@@ -27,13 +28,12 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class SpanLogConverterService implements ConverterService {
+public class SpanLogConverterService  {
 
     private final ObjectMapper objectMapper;
     @Value("${scm.log.chunkSize:27128}")
     private int chunkSize;
 
-    @Override
     public List<LogTraceEntity> mapToLogTraceEntity(String msg) throws Exception {
         LogMessage logMessage = deserializeLogMessage(msg);
         List<LogTraceEntity> logTraceEntities = new ArrayList<>();

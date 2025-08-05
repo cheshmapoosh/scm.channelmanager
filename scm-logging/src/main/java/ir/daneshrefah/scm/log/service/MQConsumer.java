@@ -17,8 +17,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class MQConsumer {
 
     private final JmsTemplate logJmsTemplate;
-    private final LogService logService;
     private final LogJmsConfigProperties properties;
+    private final MessageProcessingService messageProcessingService;
 
     @Scheduled(fixedRate = 5000)
     @Async("logSchedulerThreadPool")
@@ -28,7 +28,7 @@ public class MQConsumer {
                 Message message = logJmsTemplate.receive(properties.getDestination());
                 if (message instanceof JakartaMessage jakartaMessage) {
                     String msg = jakartaMessage.getBody(String.class);
-                    logService.save(msg);
+                    messageProcessingService.processMessage(msg);
                 } else {
                     log.error("Message body is Not text message {}", message);
                 }

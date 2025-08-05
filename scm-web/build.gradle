@@ -39,8 +39,8 @@ dependencies {
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation project(':scm-cache-client')
+    implementation project(':scm-common-log')
     implementation project(':scm-common-data')
-//    implementation project(':scm-db-migration')
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.apache.camel.springboot:camel-spring-security-starter'
 

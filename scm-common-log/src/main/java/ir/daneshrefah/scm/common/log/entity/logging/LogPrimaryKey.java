@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.data.entity.logging;
+package ir.daneshrefah.scm.common.log.entity.logging;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

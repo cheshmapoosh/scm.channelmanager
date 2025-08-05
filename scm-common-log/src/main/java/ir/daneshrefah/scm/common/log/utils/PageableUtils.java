@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.logging.utils;
+package ir.daneshrefah.scm.common.log.utils;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
 import org.springframework.data.domain.PageRequest;
