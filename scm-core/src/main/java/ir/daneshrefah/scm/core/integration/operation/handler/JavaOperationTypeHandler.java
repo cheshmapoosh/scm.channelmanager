@@ -45,9 +45,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
             });
             route.bean("beanValidator");
             applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
-        },()->{
-            log.warn("<<<<<< WARN >>>>>>> could not initaial rour for operation '{}'",operation.getName());
-        });
+        },()-> log.warn("<<<<<<< WARN >>>>>>> could not initial route for operation '{}'",operation.getName()));
     }
 
     private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod,String targetBeanPath) {
