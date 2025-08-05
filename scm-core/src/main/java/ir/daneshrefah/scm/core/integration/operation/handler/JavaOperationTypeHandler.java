@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -103,17 +104,19 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                 .anyMatch(p -> p.getType().getName().equalsIgnoreCase(camelExchangeClassPath));
     }
 
+
     private Method findTargetMethod(Object bean, String operationCode) {
-        return Arrays.stream(ReflectionUtils
-                        .getAllDeclaredMethods(bean.getClass()))
-                .filter(method -> !method.getName().equals("finalize"))
-                .peek(ReflectionUtils::makeAccessible)
+        final Set<String> EXCLUDED_METHODS = Set.of("finalize", "equals", "clone");
+        return Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
+                .filter(method -> !EXCLUDED_METHODS.contains(method.getName()))
                 .filter(method -> Arrays.stream(method.getDeclaredAnnotations())
                         .filter(annotation -> annotation.annotationType().equals(JavaService.class))
                         .map(JavaService.class::cast)
                         .map(JavaService::operationCode)
                         .map(OperationCode::name)
                         .anyMatch(code -> code.equals(operationCode)))
-                .findFirst().orElseThrow(() -> new ScmException("SCM.10000", "Java service method not found"));
+                .peek(ReflectionUtils::makeAccessible)
+                .findFirst()
+                .orElseThrow(() -> new ScmException("SCM.10000", "Java service method not found"));
     }
 }
