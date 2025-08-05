@@ -4,6 +4,41 @@ import io.github.bucket4j.BucketConfiguration;
 
 import java.util.function.Supplier;
 
+
+/**
+ * <h2>ServiceBucketDefinition</h2>
+ * <p>
+ * This interface defines methods for getting rate limit configuration parameters.
+ * It is typically used to provide values such as token capacity, refill amount, and refill period
+ * for rate limiting algorithms (e.g., Token Bucket).
+ * </p>
+ *
+ *
+ * <h3>Configuration via Properties (No Implementation Needed)</h3>
+ * <p>
+ * <b>Alternatively, you can provide rate-limit configurations via your application properties or YAML configuration
+ * without having to implement or extend this interface.</b> For example, using <code>application.yaml</code>:
+ * </p>
+ * <pre>
+ * scm:
+ *   rate-limit:
+ *     config:
+ *       type: first_code
+ *       definitions:
+ *         uaa_nib_activation:
+ *           token-capacity: 10
+ *           refill-intervally:
+ *             token: 30
+ *             period-seconds: 300
+ * </pre>
+ * <p>
+ * When using Spring Boot or a similar framework, you can bind these configuration properties directly to your beans,
+ * enabling flexible, declarative rate-limiting setup—no code changes or interface implementation required!
+ * </p>
+ *
+ * @author Dariush Abdolahi
+ * @since 1.0
+ */
 public interface ServiceBucketDefinition {
     String serviceBucketName();
 

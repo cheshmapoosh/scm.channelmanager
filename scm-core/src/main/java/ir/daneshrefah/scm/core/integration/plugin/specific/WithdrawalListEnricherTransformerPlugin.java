@@ -54,7 +54,7 @@ public class WithdrawalListEnricherTransformerPlugin implements PluginHandler {
                     result.add(node);
                 }
             }
-            exchange.getIn().setBody(body);
+            exchange.getIn().setBody(result);
         } else {
             log.warn(">>> withdrawal list payload is not an array");
         }

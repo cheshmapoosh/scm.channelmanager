@@ -56,15 +56,15 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.10.4.125:8000
+    issuer-uri: http://10.10.4.126:8000
   cache:
     client:
       distributed: true
       config:
-        clusterName: dev3
+        clusterName: scm
         network-config:
           addresses:
-            - '10.10.4.125:5701'
+            - '10.10.4.123:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
@@ -104,8 +104,8 @@ camel:
     mapping:
       contextPath: /*
 #  datasource:
-#    url: jdbc:db2://10.15.27.82:446/DSNALOC
-#    username: casadm
+#    url: jdbc:db2://10.10.4.104:50001/DBREFSW
+#    username: db2inst1
 #    password: a
 #    driver-class-name: com.ibm.db2.jcc.DB2Driver
 #  jpa:

@@ -68,7 +68,7 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
                     result.add(resultAccount);
                 }
             }
-            exchange.getIn().setBody(body);
+            exchange.getIn().setBody(result);
         }else {
             log.warn(">>> account list payload is not an array");
         }
