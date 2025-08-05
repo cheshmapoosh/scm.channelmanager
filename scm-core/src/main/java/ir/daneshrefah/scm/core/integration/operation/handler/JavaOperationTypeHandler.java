@@ -106,6 +106,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
     private Method findTargetMethod(Object bean, String operationCode) {
         return Arrays.stream(ReflectionUtils
                         .getAllDeclaredMethods(bean.getClass()))
+                .filter(method -> !method.getName().equals("finalize"))
                 .peek(ReflectionUtils::makeAccessible)
                 .filter(method -> Arrays.stream(method.getDeclaredAnnotations())
                         .filter(annotation -> annotation.annotationType().equals(JavaService.class))
