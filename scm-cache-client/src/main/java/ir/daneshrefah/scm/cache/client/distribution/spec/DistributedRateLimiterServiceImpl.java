@@ -5,7 +5,7 @@ import com.hazelcast.map.IMap;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
-import io.github.bucket4j.grid.hazelcast.HazelcastProxyManager;
+import io.github.bucket4j.grid.hazelcast.Bucket4jHazelcast;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class DistributedRateLimiterServiceImpl implements DistributedRateLimiter
     public void configure() {
         log.info("Configuring DistributedRateLimiterService ...");
         IMap<String, byte[]> map = hazelcastInstance.getMap(BUCKET_MAP_NAME);
-        this.proxyManager = new HazelcastProxyManager<>(map);
+        this.proxyManager = Bucket4jHazelcast.entryProcessorBasedBuilder(map).build();
         bucketDefinitionList.forEach(bucketDefinition -> {
             rateLimitConfigs.put(bucketDefinition.serviceBucketName(), bucketDefinition.configuration());
             log.info("create bucket definition '{}' successfully", bucketDefinition.serviceBucketName());
