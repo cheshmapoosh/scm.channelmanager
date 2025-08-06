@@ -53,7 +53,8 @@ public class JpaConfig {
 
         Map<String, Object> props = new HashMap<>();
         props.put("hibernate.hbm2ddl.auto", "none");
-        props.put("hibernate.dialect", "org.hibernate.dialect.DB2Dialect");
+        props.put("hibernate.dialect", "org.hibernate.dialect.DB2zDialect");
+        props.put("hibernate.use-new-id-generator-mappings", "false");
         props.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy");
 
         return builder
