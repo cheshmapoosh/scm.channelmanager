@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.common.log.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 @Setter
 @Getter
@@ -57,7 +57,7 @@ public class TransactionLogResponse {
 
     private String cardNo;
 
-    private LocalDateTime clientDate;
+    private Timestamp clientDate;
 
     private String externalSequenceId;
 

@@ -4,7 +4,6 @@ import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.model.message.MessageInput;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
@@ -19,7 +18,6 @@ import ir.daneshrefah.scm.task.repository.TaskRepository;
 import ir.daneshrefah.scm.task.repository.TaskSpecs;
 import ir.daneshrefah.scm.task.utils.PageableUtils;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
-import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import lombok.AllArgsConstructor;
 import org.apache.camel.Exchange;
@@ -32,6 +30,7 @@ import java.util.*;
 
 import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
 import static ir.daneshrefah.scm.task.constant.TaskStatusEnum.*;
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID;
 
 @Service
 @AllArgsConstructor
@@ -77,7 +76,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
 
     private void handleCancellation(Exchange exchange,TaskEntity taskEntity) {
         cancelPendingTasks(taskEntity.getProcessInstance());
-        cancelProcessInstance(taskEntity.getProcessInstance());
+        cancelProcessInstance(exchange,taskEntity.getProcessInstance());
         persistTaskLog(exchange,taskEntity);
     }
 
@@ -195,9 +194,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 });
     }
 
-    private void cancelProcessInstance(ProcessInstanceEntity processInstanceEntity) {
-        MessageInput context = MessageInputContext.getCurrentContext();
-        processInstanceEntity.setLastMessageSequenceId(context.getClientCorrelationId());
+    private void cancelProcessInstance(Exchange exchange,ProcessInstanceEntity processInstanceEntity) {
+        processInstanceEntity.setLastMessageSequenceId(exchange.getMessage().getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID,String.class));
         processInstanceEntity.setUpdateBy(AuthenticationUtils.getLoggedInUserId());
         processInstanceEntity.setUpdateAt(new Date());
         processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);

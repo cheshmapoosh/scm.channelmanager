@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 @Getter
@@ -60,7 +61,7 @@ public class TransactionLogEntity {
     private String messageSequenceId;
 
     @Column(name = "LOG_TIME")
-    private Date logTime;
+    private Timestamp logTime;
 
     @Column(name = "SERVER_EXCEPTION")
     private String serverException;
@@ -90,7 +91,7 @@ public class TransactionLogEntity {
     private String cardNo;
 
     @Column(name = "CLIENT_DATE")
-    private Date clientDate;
+    private Timestamp clientDate;
 
     @Column(name = "EXTERNAL_SEQUENCE_ID")
     private String externalSequenceId;

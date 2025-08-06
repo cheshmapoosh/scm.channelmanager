@@ -12,11 +12,10 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +52,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
 //        transactionLogEntity.setMessageSequenceId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName())); //TODO: uncomment this
         transactionLogEntity.setMessageSequenceId(UUID.randomUUID().toString()); //TODO: remove this , just for demo
-        transactionLogEntity.setLogTime(getLogTime(attributes, spanModel));
+        transactionLogEntity.setLogTime(getLogTime(attributes, spanModel)); //TODO
         transactionLogEntity.setServerException(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
         transactionLogEntity.setDescription(attributes.get(LogAttribute.DESCRIPTION.getAttributeName()));
         transactionLogEntity.setPayload(attributes.get(LogAttribute.MESSAGE.getAttributeName()));
@@ -63,7 +62,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setAmount(convertToLong(attributes, LogAttribute.AMOUNT));
         transactionLogEntity.setTerminalId(attributes.get(LogAttribute.TERMINAL_Id.getAttributeName()));
         transactionLogEntity.setCardNo(attributes.get(LogAttribute.CARD_NO.getAttributeName()));
-//        transactionLogEntity.setClientDate(new Date(LogAttribute.CLIENT_DATE.getAttributeName()));
+//        transactionLogEntity.setClientDate(new Date(LogAttribute.CLIENT_DATE.getAttributeName())); //TODO
         transactionLogEntity.setExternalSequenceId(attributes.get(LogAttribute.EXTERNAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setOriginalSequenceId(attributes.get(LogAttribute.ORIGINAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
@@ -71,15 +70,16 @@ public class TransactionLogConverterService implements ConverterService {
         return transactionLogEntity;
     }
 
-    private static Date getLogTime(Map<String, String> attributes, SpanModel spanModel) {
-        Date date = null;
+    private static Timestamp getLogTime(Map<String, String> attributes, SpanModel spanModel) {
+        Timestamp timestamp = null;
         String logTime = attributes.get(LogAttribute.LOG_TIME.getAttributeName());
-        if (StringUtils.isNotBlank(logTime)) {
-            date = new Date(logTime);
-        } else {
-            date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
-        }
-        return date;
+//        if (StringUtils.isNotBlank(logTime)) {
+//            timestamp = new Timestamp(logTime);
+//        } else {
+//            date = new Timestamp(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
+//        }
+        //TODO change it log time foramt
+        return new Timestamp(System.currentTimeMillis());
     }
 
     private static Integer convertToInteger(Map<String, String> attributes, LogAttribute logAttribute) {
