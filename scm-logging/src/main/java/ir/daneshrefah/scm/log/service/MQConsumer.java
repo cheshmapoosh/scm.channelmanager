@@ -33,7 +33,9 @@ public class MQConsumer {
                     log.error("Message body is Not text message {}", message);
                 }
             } catch (JMSException e) {
-                log.error("Failed to receive or process message: {} ", e.getMessage());
+                log.error("Failed to receive message: {} ", e.getMessage());
+            } catch (Exception e) {
+                log.error("Failed to process message: {} ", e.getMessage());
             }
         }
     }

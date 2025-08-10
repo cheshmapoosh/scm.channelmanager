@@ -49,7 +49,7 @@ public class TransactionLogDataSourceConfig {
         em.setPackagesToScan("ir.daneshrefah.scm.common.log.entity.transaction");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.dialect", "org.hibernate.dialect.DB2Dialect");
+//        properties.put("hibernate.dialect", "org.hibernate.dialect.DB2Dialect");
         em.setJpaPropertyMap(properties);
         return em;
     }
