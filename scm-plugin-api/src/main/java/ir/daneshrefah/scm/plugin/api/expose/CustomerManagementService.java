@@ -36,6 +36,8 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     //TODO RULE ACCESS CHECK 'ROLE_ADMIN_CUSTOMER'
+
+    // POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/sync'
     @JavaService(operationCode = SVC_ASSETS_SYNC)
     @SuppressWarnings("unused")
     public List<Membership> syncMembershipList(CustomerSyncRequest request){
@@ -43,6 +45,8 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     //TODO RULE ACCESS CHECK 'ROLE_ADMIN_CUSTOMER'
+
+    // POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/assign-channel-access'
     @JavaService(operationCode = SVC_ASSETS_ASSIGN_MEMBERSHIP_CHANNEL)
     @SuppressWarnings("unused")
     public List<String> assignMembershipTerminalAccess(MembershipChannelAccessAssignmentRequest request){
@@ -50,6 +54,8 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     //TODO RULE ACCESS CHECK 'ROLE_ADMIN_CUSTOMER'
+
+    // POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/revoke-channel-access'
     @JavaService(operationCode = SVC_ASSETS_REVOKE_MEMBERSHIP_CHANNEL)
     @SuppressWarnings("unused")
     public List<String> revokeMembershipTerminalAccess(MembershipChannelAccessAssignmentRequest request){
@@ -57,30 +63,36 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     //TODO RULE ACCESS CHECK 'ROLE_ADMIN_CUSTOMER'
+
+//    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/update-channel-access/max-withdrawal'
     @JavaService(operationCode = SVC_ASSETS_MEMBERSHIP_CHL_WDR_LIMIT)
     @SuppressWarnings("unused")
     public Membership updateMembershipTerminalAccessMaxWithdrawal(MembershipTerminalAccessWithdrawalLimitUpdateRequest request){
         return customerService.updateMembershipTerminalAccessMaxWithdrawal(request);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/account/favorite-modification'
     @JavaService(operationCode = SVC_ASSETS_FAVOURITE)
     @SuppressWarnings("unused")
     public AccountFavoriteActivityResponse accountFavoriteActivity(AccountFavoriteActivityRequest request){
         return customerService.accountFavoriteActivity(request);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/default-account'
     @JavaService(operationCode = SVC_ASSETS_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public ChangeDefaultAccountStatusResponse setDefaultAccount(ChangeDefaultAccountStatusRequest request){
         return customerService.setDefaultAccount(request);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/default-account/remove'
     @JavaService(operationCode = SVC_ASSETS_REMOVE_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public ChangeDefaultAccountStatusResponse removeDefaultAccount(ChangeDefaultAccountStatusRequest request){
         return customerService.removeDefaultAccount(request);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/default-account/list'
     @JavaService(operationCode = SVC_ASSETS_SHOW_DEFAULT_ACCOUNT)
     @SuppressWarnings("unused")
     public PagedResponseData<DefaultAccountStatusListResponse> defaultAccountList(DefaultAccountStatusListRequest request){
@@ -88,7 +100,7 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
 
-
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/local-list'
     @JavaService(operationCode = SVC_ASSETS_LIST_LOCAL)
     @SuppressWarnings("unused")
     public PagedResponseData<Membership> findLocalMembershipList(MembershipLocalFindRequest request){
@@ -97,7 +109,7 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
 
-
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/list'
     @JavaService(operationCode = SVC_ASSETS_LIST)
     @SuppressWarnings("unused")
     public PagedResponseData<Membership> findMembershipList(MembershipFindRequest request){
@@ -105,6 +117,7 @@ public class CustomerManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request,result);
     }
 
+    //    GET 'http://127.0.0.1:8083/scm4test/api/v1/assets/local-account/{membershipId}'
     @JavaService(operationCode = SVC_ASSETS_FIND_ACCOUNT_MEMBERSHIP)
     @SuppressWarnings("unused")
     public Membership findAccountMembershipById(String membershipId){
@@ -112,6 +125,7 @@ public class CustomerManagementService extends AbstractJavaService {
     }
     /* MEMBERSHIP CHANNEL ACCESS */
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/mca/list'
     @JavaService(operationCode = SVC_ASSETS_MCA_LIST)
     @SuppressWarnings("unused")
     public PagedResponseData<MembershipTerminalAccessDto> findMembershipTerminalAccessList(MembershipLocalFindRequest request){
@@ -119,12 +133,14 @@ public class CustomerManagementService extends AbstractJavaService {
         return new PagedResponseData<>(request,result);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/mca/edit'
     @JavaService(operationCode = SVC_ASSETS_MCA_EDIT)
     @SuppressWarnings("unused")
     public MembershipTerminalAccessDto editMembershipTerminalAccessList(MembershipLocalEditRequest request){
         return customerService.editMembershipTerminalAccesses(request);
     }
 
+    //    GET 'http://127.0.0.1:8083/scm4test/api/v1/assets/mca/get/{id}'
     @JavaService(operationCode = SVC_ASSETS_MCA_GET)
     @SuppressWarnings("unused")
     public MembershipTerminalAccessDto get(@Valid @Numeric String id){
@@ -134,6 +150,7 @@ public class CustomerManagementService extends AbstractJavaService {
 
     /* CHANNEL SERVICE ACCESS */
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/channel-service-access/list'
     @JavaService(operationCode = SVC_SERVICE_CHANNEL_ACCESS_LIST)
     public List<ChannelServiceAccess> findChannelServiceAccessByTerminal(ChannelServiceAccessFindRequest request){
         return customerService
@@ -143,6 +160,7 @@ public class CustomerManagementService extends AbstractJavaService {
                 .toList();
     }
 
+    //    GET 'http://127.0.0.1:8083/scm4test/api/v1/assets/service-category/list'
     @JavaService(operationCode = SVC_SERVICE_CATEGORY_LIST)
     public List<ServiceCategory> findAllServiceCategory(){
         return customerService.findAllServiceCategory();
@@ -150,11 +168,13 @@ public class CustomerManagementService extends AbstractJavaService {
 
     /* MEMBERSHIP CHANNEL SERVICE ACCESS */
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/mcsa/find'
     @JavaService(operationCode = SVC_MCSA_LIST)
     public List<MembershipTerminalServiceAccessDto> findAllMembershipChannelServiceAccessList(MembershipChannelServiceAccessFindRequest request){
         return customerService.findAllMembershipChannelServiceAccessList(request);
     }
 
+    //    POST 'http://127.0.0.1:8083/scm4test/api/v1/assets/mcsa/service-assignment'
     @JavaService(operationCode = SVC_MCSA_ASSIGNMENT)
     public List<MembershipTerminalServiceAccessDto> membershipChannelAccessServiceAssignment(MembershipTerminalServiceAssignmentRequest request){
         return customerService.membershipChannelAccessServiceAssignment(request);

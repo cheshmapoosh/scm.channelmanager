@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -157,8 +156,8 @@ public class ErrorMappingService {
         entity.setScmErrorCode(request.getScmErrorCode());
         entity.setStatus(request.getStatus());
         entity.setErrorMessage(request.getBundleKey() ? errorMessageAsBundleKey(request.getErrorMessage()) : request.getErrorMessage());
-        entity.setCreateDate(LocalDateTime.now());
-        entity.setLastEditDate(LocalDateTime.now());
+//        entity.setCreateDate(LocalDateTime.now());
+//        entity.setLastEditDate(LocalDateTime.now());
         return entity;
     }
 

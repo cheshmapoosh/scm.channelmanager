@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.config;
 import com.zaxxer.hikari.HikariDataSource;
 import ir.daneshrefah.scm.plugin.api.config.DatasourceProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -29,51 +30,61 @@ import javax.sql.DataSource;
 @RequiredArgsConstructor
 @EnableConfigurationProperties(ApplicationProperties.class)
 @Configuration
+@Slf4j
 public class DataSourceConfig implements BeanDefinitionRegistryPostProcessor {
 
     @Bean
     @Primary
     public DataSource primaryDataSource(ApplicationProperties applicationProperties) {
-        DatasourceProperties datasourceProperties = applicationProperties.getDatasource().getPrimary();
-        HikariDataSource dataSource = DataSourceBuilder.create(this.getClass().getClassLoader())
-                .type(HikariDataSource.class)
-                .url(datasourceProperties.getUrl())
-                .driverClassName(datasourceProperties.getDriverClassName())
-                .username(datasourceProperties.getUsername())
-                .password(datasourceProperties.getPassword())
-                .build();
-        dataSource.setSchema(datasourceProperties.getDefaultSchema());
-        Integer maximumPoolSize = datasourceProperties.getMaxConnection();
-        if (null != maximumPoolSize) {
+        try {
+            DatasourceProperties datasourceProperties = applicationProperties.getDatasource().getPrimary();
+            HikariDataSource dataSource = DataSourceBuilder.create(this.getClass().getClassLoader())
+                    .type(HikariDataSource.class)
+                    .url(datasourceProperties.getUrl())
+                    .driverClassName(datasourceProperties.getDriverClassName())
+                    .username(datasourceProperties.getUsername())
+                    .password(datasourceProperties.getPassword())
+                    .build();
+            dataSource.setSchema(datasourceProperties.getDefaultSchema());
+            int maximumPoolSize = datasourceProperties.getMaxConnection();
             dataSource.setMaximumPoolSize(maximumPoolSize);
+            return dataSource;
+        } catch (Exception e) {
+            log.error("could not instantiate 'primaryDataSource' ", e);
+            throw new RuntimeException(e);
         }
-        return dataSource;
     }
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanRegistry) throws BeansException {
         Environment env = ((DefaultListableBeanFactory) beanRegistry).getBean(Environment.class);
         for (int i = 0; ; i++) {
-            String dataSourceName = env.getProperty("scm.datasource.secondary["+ i + "].name");
-            if (null == dataSourceName) {
-                break;
-            }
-            String dataSourceUrl = env.getProperty("scm.datasource.secondary["+ i + "].url");
-            String dataSourceUsername = env.getProperty("scm.datasource.secondary["+ i + "].username");
-            String dataSourcePassword = env.getProperty("scm.datasource.secondary["+ i + "].password");
-            String dataSourceDriverClassName = env.getProperty("scm.datasource.secondary["+ i + "].driver-class-name");
-            String dataSourceDefaultSchema = env.getProperty("scm.datasource.secondary["+ i + "].default-schema");
-            String dataSourceMaxConnection = env.getProperty("scm.datasource.secondary["+ i + "].max-connection");
+            String dataSourceName = "number-"+i;
+            try {
+                 dataSourceName = env.getProperty("scm.datasource.secondary[" + i + "].name");
+                if (null == dataSourceName) {
+                    break;
+                }
+                String dataSourceUrl = env.getProperty("scm.datasource.secondary[" + i + "].url");
+                String dataSourceUsername = env.getProperty("scm.datasource.secondary[" + i + "].username");
+                String dataSourcePassword = env.getProperty("scm.datasource.secondary[" + i + "].password");
+                String dataSourceDriverClassName = env.getProperty("scm.datasource.secondary[" + i + "].driver-class-name");
+                String dataSourceDefaultSchema = env.getProperty("scm.datasource.secondary[" + i + "].default-schema");
+                String dataSourceMaxConnection = env.getProperty("scm.datasource.secondary[" + i + "].max-connection");
 
-            BeanDefinition dataSourceBeanDef = BeanDefinitionBuilder.genericBeanDefinition(HikariDataSource.class)
-                    .addPropertyValue("jdbcUrl", dataSourceUrl)
-                    .addPropertyValue("username", dataSourceUsername)
-                    .addPropertyValue("password", dataSourcePassword)
-                    .addPropertyValue("driverClassName", dataSourceDriverClassName)
-                    .addPropertyValue("schema", dataSourceDefaultSchema)
-                    .getBeanDefinition();
-            dataSourceBeanDef.setPrimary(false);
-            beanRegistry.registerBeanDefinition("datasource_" + dataSourceName, dataSourceBeanDef);
+                BeanDefinition dataSourceBeanDef = BeanDefinitionBuilder.genericBeanDefinition(HikariDataSource.class)
+                        .addPropertyValue("jdbcUrl", dataSourceUrl)
+                        .addPropertyValue("username", dataSourceUsername)
+                        .addPropertyValue("password", dataSourcePassword)
+                        .addPropertyValue("driverClassName", dataSourceDriverClassName)
+                        .addPropertyValue("schema", dataSourceDefaultSchema)
+                        .getBeanDefinition();
+                dataSourceBeanDef.setPrimary(false);
+                beanRegistry.registerBeanDefinition("datasource_" + dataSourceName, dataSourceBeanDef);
+            } catch (Exception e) {
+                log.error("could not instantiate '{}' ",dataSourceName, e);
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -63,10 +63,12 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         if (CollectionUtils.isEmpty(protocolHandlers)) {
+            log.error("No any handler found");
             throw new IllegalStateException("No any handler found");
         }
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
         if (gatewayChannel == null) {
+            log.error("Gateway channel '" + name + "' not found");
             throw new IllegalStateException("Gateway channel '" + name + "' not found");
         }
 
@@ -103,7 +105,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
 
                         defineExceptionHandler(route);
-
+                        log.info(">>> exception handler defined succefully");
                         applyMetrics(route, service);
                         applyTracing(route, service);
 
