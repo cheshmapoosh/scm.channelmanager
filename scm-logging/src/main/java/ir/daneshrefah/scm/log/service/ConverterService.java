@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.log.service;
 
+import ir.daneshrefah.scm.log.model.LogMessage;
 import org.springframework.stereotype.Service;
 
 @Service
 public interface ConverterService {
-    void convertAndPersist(String message) throws Exception;
+    void convertAndPersist(LogMessage logMessage) throws Exception;
 }

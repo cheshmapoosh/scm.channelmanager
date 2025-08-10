@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.log.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
@@ -8,7 +7,9 @@ import ir.daneshrefah.scm.common.log.entity.logging.LogPrimaryKey;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,8 +35,7 @@ public class SpanLogConverterService {
     @Value("${scm.log.chunkSize:27128}")
     private int chunkSize;
 
-    public List<LogTraceEntity> mapToLogTraceEntity(String msg) throws Exception {
-        LogMessage logMessage = deserializeLogMessage(msg); //Improve this code
+    public List<LogTraceEntity> mapToLogTraceEntity(LogMessage logMessage) throws Exception {
         List<LogTraceEntity> logTraceEntities = new ArrayList<>();
         String payload = objectMapper.writeValueAsString(logMessage);
         List<String> splitPayload = splitPayload(payload);
@@ -90,21 +91,25 @@ public class SpanLogConverterService {
     }
 
     private Date getStartTime(SpanModel spanModel) {
+        Date date = null;
         String startTime = spanModel.getAttributes().get(LogAttribute.START_TIME.getAttributeName());
-        if (startTime != null) {
-            return new Date(startTime);
+        if (StringUtils.isNotBlank(startTime) && StringUtils.isNumeric(startTime)) {
+            date = DateUtils.DateConverter.convertToDate(new Timestamp(Long.parseLong(startTime)));
         } else if (spanModel.getStartEpochNanos() > 0) {
-            new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
-        } return null;
+            date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
+        }
+        return date;
     }
 
     private Date getEndTime(SpanModel spanModel) {
+        Date date = null;
         String endTime = spanModel.getAttributes().get(LogAttribute.END_TIME.getAttributeName());
         if (endTime != null) {
-            return new Date(endTime);
+            date = DateUtils.DateConverter.convertToDate(new Timestamp(Long.parseLong(endTime)));
         } else if (spanModel.getEndEpochNanos() > 0) {
-            return new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
-        } return null;
+            date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
+        }
+        return date;
     }
 
 //    private List<String> splitPayload(String payload) {
@@ -144,10 +149,6 @@ public class SpanLogConverterService {
             start = end;
         }
         return parts;
-    }
-
-    private LogMessage deserializeLogMessage(String msg) throws JsonProcessingException {
-        return objectMapper.readValue(msg, LogMessage.class);
     }
 
     private static String getExceptionClassName(Map<String, String> attributes) {

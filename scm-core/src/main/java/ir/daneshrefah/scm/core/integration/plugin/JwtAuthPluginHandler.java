@@ -53,8 +53,7 @@ public class JwtAuthPluginHandler implements PluginHandler {
         if (authValue == null || !authValue.startsWith("Bearer ")) {
 //            throw new ScmException("SCM.100001", "Auth missing");
             //TODO TEMPORARY
-            throw new AccessDeniedException(SCM_PARAMETER_AUTHENTICATION, ERROR_CODE_AUTHENTICATION_REQUIRED,
-                    "authentication required.");
+            throw new AuthenticationRequiredException();
         }
 
         String token = authValue.substring("Bearer ".length());

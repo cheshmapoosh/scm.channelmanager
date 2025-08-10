@@ -57,7 +57,8 @@ public enum LogAttribute {
     LOG_TIME("logTime"),
     CLIENT_DATE("clientDate"),
     DESTINATION("destination"),
-    MESSAGE("message");
+    MESSAGE("message"),
+    HAS_RESPONSE("hasResponse");
 
     private final String attributeName;
 }
