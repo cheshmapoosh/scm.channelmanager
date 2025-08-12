@@ -37,15 +37,16 @@ public class TransactionLogConverterService implements ConverterService {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
         List<TransactionLogEntity> entities = new ArrayList<>();
-        entities.add(buildTransactionLogEntity(attributes, true));
+        entities.add(buildTransactionLogEntity(spanModel, true));
         String hasResponseStr = attributes.get(LogAttribute.HAS_RESPONSE.getAttributeName());
         if (StringUtils.isNotBlank(hasResponseStr) && Boolean.parseBoolean(hasResponseStr)) {
-            entities.add(buildTransactionLogEntity(attributes, false));
+            entities.add(buildTransactionLogEntity(spanModel, false));
         }
         return entities;
     }
 
-    public TransactionLogEntity buildTransactionLogEntity(Map<String, String> attributes, Boolean isRequest) throws ParseException {
+    public TransactionLogEntity buildTransactionLogEntity(SpanModel spanModel, Boolean isRequest) {
+        Map<String, String> attributes = spanModel.getAttributes();
         TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
         if (isRequest) {
             transactionLogEntity.setTransactionType(TRANSACTION_TYPE_REQUEST);
@@ -66,7 +67,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
         transactionLogEntity.setAccountNo(attributes.get(LogAttribute.ACCOUNT_NO.getAttributeName()));
         transactionLogEntity.setMessageSequenceId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
-        transactionLogEntity.setLogTime(getLogTime(attributes, isRequest));
+        transactionLogEntity.setLogTime(getLogTime(spanModel, isRequest));
         transactionLogEntity.setDescription(attributes.get(LogAttribute.DESCRIPTION.getAttributeName()));
         transactionLogEntity.setPayload(attributes.get(LogAttribute.MESSAGE.getAttributeName()));
         transactionLogEntity.setTerminalType(attributes.get(LogAttribute.TERMINAL_TYPE.getAttributeName()));
@@ -82,7 +83,8 @@ public class TransactionLogConverterService implements ConverterService {
         return transactionLogEntity;
     }
 
-    private static Date getLogTime(Map<String, String> attributes, Boolean isRequest) {
+    private static Date getLogTime(SpanModel spanModel, Boolean isRequest) {
+        Map<String, String> attributes = spanModel.getAttributes();
         Date date = null;
         if (isRequest) {
             String startTime = attributes.get(LogAttribute.START_TIME.getAttributeName());
@@ -93,6 +95,11 @@ public class TransactionLogConverterService implements ConverterService {
             String endTime = attributes.get(LogAttribute.END_TIME.getAttributeName());
             if (StringUtils.isNotBlank(endTime) && StringUtils.isNumeric(endTime)) {
                 date = new Date(TimeUnit.NANOSECONDS.toMillis(Long.parseLong(endTime)));
+            }
+        }
+        if (date == null) {
+            if (spanModel.getStartEpochNanos() > 0) {
+                date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
             }
         }
         return date;
