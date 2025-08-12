@@ -3,3 +3,7 @@ spring:
     active: default
   application:
     name: ${SCM_APPLICATION_NAME}
+scm:
+  application:
+    version: 8.3.0
+    build:  0521T1030

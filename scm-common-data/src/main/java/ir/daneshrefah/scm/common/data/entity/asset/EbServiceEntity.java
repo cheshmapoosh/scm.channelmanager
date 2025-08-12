@@ -31,8 +31,8 @@ public class EbServiceEntity extends AbstractEntity<Integer> {
 
     @Column(name = "ABBREVIATION", length = 3)
     private String abbreviation;
-
-    @Column(name = "SERVICE_CATEGORY_ID")
-    private Integer serviceCategoryId;
+        //TODO PRODUCTION DB DOES NOT HAVE PRIVILEGE
+//    @Column(name = "SERVICE_CATEGORY_ID")
+//    private Integer serviceCategoryId;
 
 }

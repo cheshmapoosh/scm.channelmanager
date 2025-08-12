@@ -5,7 +5,8 @@ import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -48,9 +49,10 @@ public class ServiceEntity extends AbstractEntity<Short> {
     @Column(name = "ABBREVIATION", length = 3)
     private String abbreviation;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "SERVICE_CATEGORY_ID", nullable = false)
-    private ServiceCategoryEntity serviceCategory;
+    //TODO PRODUCTION DB DOES NOT HAVE PRIVILEGE
+//    @ManyToOne(optional = false)
+//    @JoinColumn(name = "SERVICE_CATEGORY_ID", nullable = false)
+//    private ServiceCategoryEntity serviceCategory;
 
     @Size(max = 20)
     @Enumerated(EnumType.STRING)
