@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerUIGenerator;
-import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
+//import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -44,8 +44,8 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
 
     private final RestUrlBuilder urlBuilder;
 
-    @Autowired
-    public TraceLogUtils traceLogUtils;
+//    @Autowired
+//    public TraceLogUtils traceLogUtils; //TODO remove this property
 
     public DynamicRestInboundChanelGenerator(ObjectMapper objectMapper, CamelContext camelContext,
                                              ServiceProducerTemplate producerTemplate,
@@ -137,8 +137,8 @@ public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundC
                         MessageInput messageInput = extractMessageInput(exchange, serviceAccess);
                         Message message = execute();
                         exchange.getMessage().setBody(message);
-                        SpanAdapter span = ActiveSpanManager.getSpan(exchange);
-                        traceLogUtils.recordMessageTrace(message,span);
+//                        SpanAdapter span = ActiveSpanManager.getSpan(exchange);
+//                        traceLogUtils.recordMessageTrace(message,span);
                     })
                     .process(DynamicRestInboundChanelGenerator.this::buildResponse)
                     .process(exchange -> {

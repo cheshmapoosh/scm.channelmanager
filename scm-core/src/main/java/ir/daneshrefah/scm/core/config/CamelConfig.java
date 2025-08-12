@@ -15,14 +15,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class CamelConfig implements CamelContextConfiguration {
 
-    private final CamelTracer camelTracer;
     private final CamelContext camelContext;
 
     @Autowired
-    public CamelConfig(CamelTracer camelTracer, CamelContext camelContext) {
-        this.camelTracer = camelTracer;
+    public CamelConfig(CamelContext camelContext) {
         this.camelContext = camelContext;
-        this.camelContext.setTracer(this.camelTracer);
         this.camelContext.setTracing(true);
     }
 

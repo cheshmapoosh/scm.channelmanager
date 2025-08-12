@@ -43,6 +43,7 @@ public enum LogAttribute {
     URL_PATH("url.path"),
     HTTP_STATUS_CODE("http.status_code"),
     CLIENT_REMOTE_ADDRESS("clientRemoteAddress"),
+    CLIENT_PHONE_NUMBER("clientPhoneNumber"),
     ERROR_DETAILS("errorDetails"),
     STATUS_CODE("statusCode"),
     TRANSACTION_STATE_ID("transactionStateId"),

@@ -27,8 +27,10 @@ public class TransactionLogConverterService implements ConverterService {
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {
-        List<TransactionLogEntity> entities = convert(logMessage);
-        transactionLogService.saveAll(entities);
+        if (logMessage.getPayload() != null && logMessage.getPayload().getKind() != null && !logMessage.getPayload().getKind().equalsIgnoreCase("CLIENT")) {
+            List<TransactionLogEntity> entities = convert(logMessage);
+            transactionLogService.saveAll(entities);
+        }
     }
 
     private List<TransactionLogEntity> convert(LogMessage logMessage) throws ParseException {
@@ -131,6 +133,6 @@ public class TransactionLogConverterService implements ConverterService {
 
     private void setIpAddress(Map<String, String> attributes, TransactionLogEntity transactionLogEntity) {
         transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
-        transactionLogEntity.setClientPhoneNumber(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
+        transactionLogEntity.setClientPhoneNumber(attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName()));
     }
 }

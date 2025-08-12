@@ -29,11 +29,12 @@ public class Constants {
     public static final String SCM_PARAMETER_AUTHENTICATION = "Authentication";
     public static final String SCM_PARAMETER_ASSET = "Asset";
     public static final String SCM_PARAMETER_SERVICE = "Service";
-
     public static final String CAMEL_PARAMETER_HTTP_URL = "CamelHttpUrl";
+    public static final String CAMEL_PARAMETER_HTTP_URI = "CamelHttpUri";
     public static final String CAMEL_PARAMETER_HTTP_METHOD = "CamelHttpMethod";
     public static final String CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS = "CamelNettyRemoteAddress";
-
+    public static final String CAMEL_PARAMETER_HEADER_HOST = "host";
+    public static final String CAMEL_PARAMETER_REFERER= "referer";
 
     public static final String SCM_PERSON_USERNAME_UNKNOWN = "UNKU";
 

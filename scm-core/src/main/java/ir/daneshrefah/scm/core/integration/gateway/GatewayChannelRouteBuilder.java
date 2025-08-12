@@ -1,12 +1,8 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
@@ -14,6 +10,7 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
@@ -28,6 +25,7 @@ import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.tracing.ActiveSpanManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,11 +47,10 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Map<String, PluginHandler> pluginHandlers;
 
-
     @Value("${spring.application.name}")
     private String name;
 
-    private final Tracer tracer = GlobalOpenTelemetry.getTracer("gateway-channel");
+//    private final Tracer tracer = GlobalOpenTelemetry.getTracer("gateway-channel");
 //    private final Meter meter = GlobalOpenTelemetry.getMeter("gateway-channel");
 //    private final LongCounter requestCounter = meter.counterBuilder("gateway_requests_total")
 //            .setDescription("Total number of processed gateway requests")
@@ -136,13 +133,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void applyTracing(ProcessorDefinition<?> route, Service service) {
         route.process(exchange -> {
-            Span span = tracer.spanBuilder("route-" + service.getCode())
-                    .setSpanKind(SpanKind.INTERNAL)
-                    .startSpan();
-            Scope scope = span.makeCurrent();
-            exchange.setProperty("otelSpan", span);
-            exchange.setProperty("otelScope", scope);
-            log.debug("[Tracing] Started span for {}", service.getCode());
+            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
         });
     }
 
@@ -274,16 +265,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
                     log.debug("[Error Handler] Route {} threw: {}", routeId, exception.getMessage());
-                    Span span = (Span) exchange.getProperty("otelSpan");
-                    Scope scope = (Scope) exchange.getProperty("otelScope");
-                    if (span != null) {
-                        span.recordException(exception);
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
-                        span.end();
-                    }
-                    if (scope != null) {
-                        scope.close();
-                    }
+                    TraceUtils.getInstance().traceException(exchange, exception);
                 })
                 .to(Routes.GLOBAL_ERROR_HANDLER);
 
@@ -305,15 +287,9 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
         route.process(exchange -> {
-            Span span = (Span) exchange.getProperty("otelSpan");
-            Scope scope = (Scope) exchange.getProperty("otelScope");
-            if (span != null) {
-                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                span.end();
-            }
-            if (scope != null) {
-                scope.close();
-            }
+            Service service = exchange.getProperty(Message.SERVICE, Service.class);
+            TraceUtils.getInstance().traceAfterRoute(exchange, service);
+            ActiveSpanManager.endScope(exchange);
         });
 
         if (orderedBeforePluginDetails == null) {

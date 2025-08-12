@@ -1,12 +1,9 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.constant.Routes;
+import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
@@ -14,11 +11,14 @@ import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.core.services.operation.OperationService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
+import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.tracing.ActiveSpanManager;
+import org.apache.camel.tracing.SpanAdapter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,10 +31,8 @@ import java.util.Objects;
 public class OperationRouteBuilder extends RouteBuilder {
     private final OperationService operationService;
     private final PluginResolverService pluginResolverService;
-    private final Tracer tracer = GlobalOpenTelemetry.getTracer("operation");
     private final Map<String, PluginHandler> pluginHandlers;
     private final List<OperationTypeHandler> operationTypeHandlers;
-
 
     @Override
     public void configure() {
@@ -57,7 +55,6 @@ public class OperationRouteBuilder extends RouteBuilder {
         });
     }
 
-
     private String resolveFromUri(Operation operation) {
         return "direct:" + operation.getName();
     }
@@ -68,17 +65,10 @@ public class OperationRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
+                    SpanAdapter span = ActiveSpanManager.getSpan(exchange);
+                    span.setTag(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), exception.getClass().getName());
+                    span.setTag(LogAttribute.ERROR_DETAILS.getAttributeName(), exception.getMessage());
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
-                    Span span = (Span) exchange.getProperty("otelSpan");
-                    Scope scope = (Scope) exchange.getProperty("otelScope");
-                    if (span != null) {
-                        span.recordException(exception);
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
-                        span.end();
-                    }
-                    if (scope != null) {
-                        scope.close();
-                    }
                     exchange.getIn().setBody(exception);
                 }).to(Routes.GLOBAL_ERROR_HANDLER);
     }
@@ -89,12 +79,8 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     private void applyTracing(RouteDefinition route, Operation operation) {
         route.process(exchange -> {
-            Span span = tracer.spanBuilder("operation-" + operation.getName())
-                    .setSpanKind(SpanKind.INTERNAL)
-                    .startSpan();
-            Scope scope = span.makeCurrent();
-            exchange.setProperty("otelSpan", span);
-            exchange.setProperty("otelScope", scope);
+            Service service = exchange.getProperty(Message.SERVICE, Service.class);
+            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
             log.info("[Tracing] Started span for {}", operation.getName());
         });
     }
@@ -117,20 +103,14 @@ public class OperationRouteBuilder extends RouteBuilder {
         OperationTypeHandler handler = operationTypeHandlers.stream()
                 .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type not found"));
-        handler.config(route, operation);
+        handler.internalConfig(route, operation);
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
         route.process(exchange -> {
-            Span span = (Span) exchange.getProperty("otelSpan");
-            Scope scope = (Scope) exchange.getProperty("otelScope");
-            if (span != null) {
-                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                span.end();
-            }
-            if (scope != null) {
-                scope.close();
-            }
+            Service service = exchange.getProperty(Message.SERVICE, Service.class);
+            TraceUtils.getInstance().traceAfterRoute(exchange, service);
+            ActiveSpanManager.endScope(exchange);
         });
 
         if (orderedAfterPluginDetails == null) {

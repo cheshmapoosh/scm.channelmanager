@@ -29,7 +29,7 @@ public class LoggerConfig {
     private final String logFileName;
     private final String fileDirectory;
     private final String logPattern;
-    private final String fileNamePattern;
+    private final String filePatternName;
     private final String fileSize;
     private final String rollingArchiveDirectory;
     private final int keepLogHistory;
@@ -37,14 +37,14 @@ public class LoggerConfig {
     public LoggerConfig(@Value("${scm.log.file-name}") String logFileName,
                         @Value("${scm.log.file-directory}") String fileDirectory,
                         @Value("${scm.log.log-pattern}") String logPattern,
-                        @Value("${scm.log.file-name-pattern}") String fileNamePattern,
+                        @Value("${scm.log.file-name-pattern}") String filePatternName,
                         @Value("${scm.log.file-size}") String fileSize,
                         @Value("${scm.log.rolling-archive-directory}") String rollingArchiveDirectory,
                         @Value("${scm.log.keep-log-history}") int keepLogHistory) {
         this.logFileName = logFileName;
         this.fileDirectory = fileDirectory;
         this.logPattern = logPattern;
-        this.fileNamePattern = fileNamePattern;
+        this.filePatternName = filePatternName;
         this.fileSize = fileSize;
         this.keepLogHistory = keepLogHistory;
         this.rollingArchiveDirectory = rollingArchiveDirectory;
@@ -83,7 +83,7 @@ public class LoggerConfig {
         SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
         rollingPolicy.setContext(context);
         rollingPolicy.setParent(rollingFileAppender);
-        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + rollingArchiveDirectory + File.separator + logFileName + fileNamePattern); // Filename pattern
+        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + rollingArchiveDirectory + File.separator + filePatternName);
         rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
         rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to ? days of log files
         rollingPolicy.start();

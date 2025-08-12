@@ -64,8 +64,7 @@ public class SpanLogConverterService {
         logTraceEntity.setMessageId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
         logTraceEntity.setExceptionClassName(getExceptionClassName(attributes));
         logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()) != null ? attributes.get(LogAttribute.END_POINT.getAttributeName()) : attributes.get(LogAttribute.URL_PATH.getAttributeName()));
-        Integer statusCode = attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName()) != null ? Integer.valueOf(attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName())) : null;
-        logTraceEntity.setStatusCode(statusCode);
+        logTraceEntity.setStatusCode(getStatusCode(attributes));
         logTraceEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
         logTraceEntity.setStartTime(getStartTime(spanModel));
         logTraceEntity.setEndTime(getEndTime(spanModel));
@@ -81,13 +80,25 @@ public class SpanLogConverterService {
         logTraceEntity.setAmount(attributes.get(LogAttribute.AMOUNT.getAttributeName()));
         logTraceEntity.setProviderCode(attributes.get(LogAttribute.PROVIDER_CODE.getAttributeName()));
         logTraceEntity.setProviderResponseCode(attributes.get(LogAttribute.PROVIDER_RESPONSE_CODE.getAttributeName()));
-        logTraceEntity.setClientIpAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
+        logTraceEntity.setClientIpAddress(getClientIpAddress(attributes));
         logTraceEntity.setSpanKind(spanModel.getKind());
         logTraceEntity.setSpanStatus(spanModel.getStatus().get(LogAttribute.STATUS_CODE.getAttributeName()));
         logTraceEntity.setParentSpanId(spanModel.getParentSpanId());
         logTraceEntity.setSpanName(spanModel.getName());
         logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         return logTraceEntity;
+    }
+
+    private static Integer getStatusCode(Map<String, String> attributes) {
+        return attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName()) != null ? Integer.valueOf(attributes.get(LogAttribute.HTTP_STATUS_CODE.getAttributeName())) : null;
+    }
+
+    private static String getClientIpAddress(Map<String, String> attributes) {
+        String clientRemoteAddress = attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName());
+        if (StringUtils.isNotBlank(clientRemoteAddress)) {
+            return clientRemoteAddress;
+        }
+        return attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName());
     }
 
     private Date getStartTime(SpanModel spanModel) {
