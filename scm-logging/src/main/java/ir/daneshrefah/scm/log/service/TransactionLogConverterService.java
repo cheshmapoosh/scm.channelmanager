@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,6 +24,7 @@ public class TransactionLogConverterService implements ConverterService {
     private final TransactionLogService transactionLogService;
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
+    private static final int CHUNK_SIZE = 2048;
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {
@@ -33,13 +34,13 @@ public class TransactionLogConverterService implements ConverterService {
         }
     }
 
-    private List<TransactionLogEntity> convert(LogMessage logMessage) throws ParseException {
+    private List<TransactionLogEntity> convert(LogMessage logMessage) {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
         List<TransactionLogEntity> entities = new ArrayList<>();
         entities.add(buildTransactionLogEntity(spanModel, true));
-        String hasResponseStr = attributes.get(LogAttribute.HAS_RESPONSE.getAttributeName());
-        if (StringUtils.isNotBlank(hasResponseStr) && Boolean.parseBoolean(hasResponseStr)) {
+        String responseStr = attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName());
+        if (StringUtils.isNotBlank(responseStr) && Integer.valueOf(responseStr).equals(TRANSACTION_TYPE_RESPONSE)) {
             entities.add(buildTransactionLogEntity(spanModel, false));
         }
         return entities;
@@ -49,14 +50,16 @@ public class TransactionLogConverterService implements ConverterService {
         Map<String, String> attributes = spanModel.getAttributes();
         TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
         if (isRequest) {
-            transactionLogEntity.setTransactionType(TRANSACTION_TYPE_REQUEST);
+            transactionLogEntity.setTransactionType(Integer.valueOf(attributes.get(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName())));
+            transactionLogEntity.setPayload(getMessage(attributes, LogAttribute.MESSAGE_REQUEST));
         } else {
-            transactionLogEntity.setServerException(attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName()));
             transactionLogEntity.setDocNo(attributes.get(LogAttribute.DOC_NO.getAttributeName()));
             transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
             transactionLogEntity.setStatusCode(attributes.get(LogAttribute.STATUS_CODE.getAttributeName()));
-            transactionLogEntity.setTransactionType(TRANSACTION_TYPE_RESPONSE);
+            transactionLogEntity.setTransactionType(Integer.valueOf(attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName())));
+            transactionLogEntity.setPayload(getMessage(attributes, LogAttribute.MESSAGE_RESPONSE));
         }
+        transactionLogEntity.setServerException(getExceptionClassName(attributes));
         transactionLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
         transactionLogEntity.setEbServiceId(convertToInteger(attributes, LogAttribute.SERVICE_ID));
         transactionLogEntity.setChannelId(convertToInteger(attributes, LogAttribute.CHANNEL_ID));
@@ -66,10 +69,9 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setCspUsername(attributes.get(LogAttribute.DELEGATOR_USERNAME.getAttributeName()));
         transactionLogEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
         transactionLogEntity.setAccountNo(attributes.get(LogAttribute.ACCOUNT_NO.getAttributeName()));
-        transactionLogEntity.setMessageSequenceId(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()));
+        transactionLogEntity.setMessageSequenceId(getMessageSequenceId(attributes));
         transactionLogEntity.setLogTime(getLogTime(spanModel, isRequest));
         transactionLogEntity.setDescription(attributes.get(LogAttribute.DESCRIPTION.getAttributeName()));
-        transactionLogEntity.setPayload(attributes.get(LogAttribute.MESSAGE.getAttributeName()));
         transactionLogEntity.setTerminalType(attributes.get(LogAttribute.TERMINAL_TYPE.getAttributeName()));
         transactionLogEntity.setInterBank(convertToBoolean(attributes, LogAttribute.INTER_BANK));
         transactionLogEntity.setAmount(convertToLong(attributes, LogAttribute.AMOUNT));
@@ -81,6 +83,30 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
         setIpAddress(attributes, transactionLogEntity);
         return transactionLogEntity;
+    }
+
+    private static String getMessage(Map<String, String> attributes, LogAttribute logAttribute) {
+        String message = attributes.get(logAttribute.getAttributeName());
+        if (StringUtils.isNotBlank(message)) {
+            return truncateUtf8(message.replaceAll("\\s+", ""));
+        }
+        return null;
+    }
+
+    private static String truncateUtf8(String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length <= CHUNK_SIZE) {
+            return value;
+        }
+        int endIndex = value.length();
+        while (new String(value.substring(0, endIndex).getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8).getBytes(StandardCharsets.UTF_8).length > CHUNK_SIZE) {
+            endIndex--;
+        }
+        return value.substring(0, endIndex);
+    }
+
+    private static String getMessageSequenceId(Map<String, String> attributes) {
+        return attributes.get(LogAttribute.MESSAGE_ID.getAttributeName());
     }
 
     private static Date getLogTime(SpanModel spanModel, Boolean isRequest) {
@@ -141,5 +167,14 @@ public class TransactionLogConverterService implements ConverterService {
     private void setIpAddress(Map<String, String> attributes, TransactionLogEntity transactionLogEntity) {
         transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
         transactionLogEntity.setClientPhoneNumber(attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName()));
+    }
+
+    private static String getExceptionClassName(Map<String, String> attributes) {
+        String exceptionClassName = attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName());
+        int maxLength = 255;
+        if (exceptionClassName != null && exceptionClassName.length() > maxLength) {
+            exceptionClassName = exceptionClassName.substring(exceptionClassName.length() - maxLength);
+        }
+        return exceptionClassName;
     }
 }

@@ -20,14 +20,14 @@ public interface OperationTypeHandler {
     private void logBeforeRoute(RouteDefinition route, Operation operation){
         route.process(exchange -> {
             SpanAdapter span = ActiveSpanManager.getSpan(exchange);
-            span.setTag(LogAttribute.REQUEST.getAttributeName(),exchange.getIn() != null ? exchange.getIn().getBody(String.class) : null);
+            span.setTag(LogAttribute.MESSAGE_REQUEST.getAttributeName(),exchange.getIn() != null ? exchange.getIn().getBody(String.class) : null);
         });
     }
 
     private void logAfterRoute(RouteDefinition route, Operation operation){
         route.process(exchange -> {
             SpanAdapter span = ActiveSpanManager.getSpan(exchange);
-            span.setTag(LogAttribute.REQUEST.getAttributeName(),exchange.getIn() != null ? exchange.getIn().getBody(String.class) : null);
+            span.setTag(LogAttribute.MESSAGE_RESPONSE.getAttributeName(),exchange.getIn() != null ? exchange.getIn().getBody(String.class) : null);
             ActiveSpanManager.endScope(exchange);
         });
     }

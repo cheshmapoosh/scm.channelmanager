@@ -29,8 +29,6 @@ public enum LogAttribute {
     MESSAGE_STATUS("messageStatus"),
     HOST_ADDRESS("hostAddress"),
     ERRORS("errors"),
-    RESPONSE("response"),
-    REQUEST("request"),
     EXCEPTION_CLASS_NAME("exceptionClassName"),
     VERSION("version"),
     END_POINT("endpoint"),
@@ -58,8 +56,11 @@ public enum LogAttribute {
     LOG_TIME("logTime"),
     CLIENT_DATE("clientDate"),
     DESTINATION("destination"),
-    MESSAGE("message"),
-    HAS_RESPONSE("hasResponse");
+    MESSAGE_REQUEST("messageRequest"),
+    MESSAGE_RESPONSE("messageResponse"),
+    TRANSACTION_TYPE("transactionType"),
+    TRANSACTION_TYPE_REQUEST("transactionTypeRequest"),
+    TRANSACTION_TYPE_RESPONSE("transactionTypeResponse");
 
     private final String attributeName;
 }

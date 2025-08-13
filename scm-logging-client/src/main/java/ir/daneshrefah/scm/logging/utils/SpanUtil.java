@@ -39,7 +39,7 @@ public class SpanUtil {
     public static void setRequestSpanAttributes(HttpServletRequest request, Span span) {
         span.setAttribute(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName(), request.getRemoteAddr());
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), request.getMethod());
-        span.setAttribute(LogAttribute.REQUEST.getAttributeName(), getRequestBody(request).trim());
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), getRequestBody(request).trim());
         span.setAttribute(LogAttribute.HOST_ADDRESS.getAttributeName(), request.getLocalAddr());
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), "rest::%s".formatted(request.getServletPath()));
         span.setAttribute(LogAttribute.CLIENT_FLOW_ID.getAttributeName(), request.getHeader(Constants.SCM_PARAMETER_CLIENT_FLOW_ID));
@@ -55,7 +55,7 @@ public class SpanUtil {
         HttpStatus httpStatus = HttpStatus.resolve(statusCode);
         span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), statusCode);
         span.setAttribute(LogAttribute.MESSAGE_STATUS.getAttributeName(), httpStatus != null ? httpStatus.getReasonPhrase() : "");
-        span.setAttribute(LogAttribute.RESPONSE.getAttributeName(), getResponseBody(returnValue));
+        span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), getResponseBody(returnValue));
     }
 
     public static void setSpanAttributes(Span span) {

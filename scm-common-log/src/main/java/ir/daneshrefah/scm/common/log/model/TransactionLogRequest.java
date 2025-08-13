@@ -16,4 +16,6 @@ public class TransactionLogRequest extends PagedRequestData {
     private Integer channelId;
     private Long logTime;
     private Integer archiveNo;
+    private String accountNo;
+    private String messageSequenceId;
 }

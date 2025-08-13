@@ -7,7 +7,6 @@ import ir.daneshrefah.scm.common.model.message.*;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.rest.HttpStatusMapper;
 import ir.daneshrefah.scm.core.utils.CamelUtils;
-import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -20,17 +19,14 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.tracing.ActiveSpanManager;
 import org.apache.camel.tracing.SpanAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_CONTEXT_PATH;
 import static ir.daneshrefah.scm.core.integration.inbound.InboundConstants.CHANNEL_METADATA_REST_PORT;
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
-import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_FLOW_ID;
 import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
 
 /**
@@ -47,8 +43,8 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
     protected String contextPath;
     protected Integer port;
 
-    @Autowired
-    private TraceLogUtils traceLogUtils;
+//    @Autowired
+//    private TraceLogUtils traceLogUtils;
 
     protected AbstractCamelRestInboundChannelGenerator(ObjectMapper objectMapper, CamelContext context,
                                                        ServiceProducerTemplate producerTemplate,
@@ -138,7 +134,7 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         result.set("result", message.getPayload());
         responseMessage.setBody(result);
         SpanAdapter span = ActiveSpanManager.getSpan(input);
-        traceLogUtils.recordMessageTrace(message,span);
+//        traceLogUtils.recordMessageTrace(message,span);
         return input;
     }
 

@@ -3,7 +3,8 @@ package ir.daneshrefah.scm.common.log.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.sql.Timestamp;
+import java.util.Date;
+
 
 @Setter
 @Getter
@@ -38,8 +39,8 @@ public class TransactionLogResponse {
     private String serverCode;
 
     private String messageSequenceId;
-//    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-//    private LocalDateTime logTime;
+
+//    private Date logTime;
 
     private String serverException;
 
@@ -57,7 +58,7 @@ public class TransactionLogResponse {
 
     private String cardNo;
 
-    private Timestamp clientDate;
+//    private Date clientDate;
 
     private String externalSequenceId;
 

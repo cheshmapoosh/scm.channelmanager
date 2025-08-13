@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class MQConsumer {
+public class MQConsumer  {
 
     private final JmsTemplate logJmsTemplate;
     private final LogJmsConfigProperties properties;
@@ -28,6 +28,7 @@ public class MQConsumer {
                 Message message = logJmsTemplate.receive(properties.getDestination());
                 if (message instanceof JakartaMessage jakartaMessage) {
                     String msg = jakartaMessage.getBody(String.class);
+                    log.info(msg);
                     messageProcessingService.processMessage(msg);
                 } else {
                     log.error("Message body is Not text message {}", message);
