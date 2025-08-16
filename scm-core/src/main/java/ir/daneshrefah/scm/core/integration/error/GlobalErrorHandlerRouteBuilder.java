@@ -10,8 +10,10 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
+import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
@@ -51,6 +53,8 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
             } else {
                 globalErrorHandler.handle(exchange);
             }
+            Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+            TraceUtils.getInstance().traceException(exchange,exception);
         }).to(Routes.GLOBAL_RESPONSE_HANDLER);
     }
 
