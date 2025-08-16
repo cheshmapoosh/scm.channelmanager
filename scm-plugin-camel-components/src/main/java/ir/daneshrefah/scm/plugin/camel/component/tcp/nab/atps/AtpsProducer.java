@@ -87,7 +87,7 @@ public class AtpsProducer extends DefaultProducer {
 
         ByteBuf payload = preparePayload(userPart);
 
-        ByteBuf payload = preparePayload(userPart);
+
 
         // Request timeout logic
         int requestTimeout = Optional.ofNullable(exchange.getMessage().getHeader(SERVICE_TIMEOUT))

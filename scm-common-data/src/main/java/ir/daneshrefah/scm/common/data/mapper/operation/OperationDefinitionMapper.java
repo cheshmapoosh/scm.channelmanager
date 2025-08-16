@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import ir.daneshrefah.scm.common.data.entity.operation.OperationDefinitionEntity;
+import ir.daneshrefah.scm.common.data.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.common.model.operation.*;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
