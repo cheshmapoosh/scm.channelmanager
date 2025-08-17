@@ -80,10 +80,7 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
         if (isValidAccount(sourceNode)) {
             final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m-> LocalDate.now().isBefore(m.getToDate()))
-                    .filter(m -> StringUtils.equals(
-                            Long.toString(accountNo),
-                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                    .filter(m -> StringUtils.equals(Long.toString(accountNo), StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
                     ).findFirst();
             if (membership.isEmpty() || !membership.get().getActive()) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
