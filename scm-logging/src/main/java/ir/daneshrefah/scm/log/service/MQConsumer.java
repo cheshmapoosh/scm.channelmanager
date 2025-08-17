@@ -7,6 +7,7 @@ import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,7 +29,6 @@ public class MQConsumer  {
                 Message message = logJmsTemplate.receive(properties.getDestination());
                 if (message instanceof JakartaMessage jakartaMessage) {
                     String msg = jakartaMessage.getBody(String.class);
-                    log.info(msg);
                     messageProcessingService.processMessage(msg);
                 } else {
                     log.error("Message body is Not text message {}", message);
@@ -40,4 +40,8 @@ public class MQConsumer  {
             }
         }
     }
+
+
+
+
 }
