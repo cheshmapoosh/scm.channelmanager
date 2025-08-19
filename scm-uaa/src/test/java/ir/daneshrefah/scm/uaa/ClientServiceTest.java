@@ -52,8 +52,8 @@ public class ClientServiceTest {
         ClientScopeRelation clientScopeRelation = new ClientScopeRelation();
         clientScopeRelation.setClient(client);
         clientScopeRelation.setScope(clientService.findScopeByCode("session"));
-        clientScopeRelation.setCreator("Reza Jamshidi");
-        clientScopeRelation.setLastEditor("Reza Jamshidi");
+//        clientScopeRelation.setCreator("Reza Jamshidi");
+//        clientScopeRelation.setLastEditor("Reza Jamshidi");
         client.setScopes(List.of(clientScopeRelation));
         Client saved = clientService.save(client);
         System.out.println(saved);
