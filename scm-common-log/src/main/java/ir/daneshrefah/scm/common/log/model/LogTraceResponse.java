@@ -14,6 +14,7 @@ import java.util.Date;
 public class LogTraceResponse {
     private String spanId;
     private String traceId;
+    private String serviceCode;
     private String channelCode;
     private String terminalCode;
     private String clientId;

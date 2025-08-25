@@ -4,13 +4,14 @@ import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
+@ConditionalOnProperty(name = "scm.log.logTraceConverter.enabled", havingValue = "true", matchIfMissing = true)
 public class LogTraceConverterService implements ConverterService {
 
     private final LogService logService;

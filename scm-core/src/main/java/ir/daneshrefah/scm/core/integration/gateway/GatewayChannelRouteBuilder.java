@@ -47,7 +47,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Map<String, PluginHandler> pluginHandlers;
 
-    @Value("${spring.application.name}")
+    @Value("${scm.app-name}")
     private String name;
 
 //    private final Tracer tracer = GlobalOpenTelemetry.getTracer("gateway-channel");
