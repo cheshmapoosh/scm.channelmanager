@@ -31,7 +31,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                 .end();
 
     }
-
+    
     private ScmResponse createScmResponse(Exchange exchange) {
         ScmResponse response;
         Service service = exchange.getProperty(Message.SERVICE, Service.class);

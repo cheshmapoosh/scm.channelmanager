@@ -21,6 +21,7 @@ import lombok.Setter;
 @DiscriminatorValue("3")
 @Getter
 @Setter
+@Deprecated
 public class CompositionServiceEntity extends ScmServiceEntity {
 
     @Column(name = "IMPL_COMPOSITION_TYPE_CODE", insertable = false, updatable = false)

@@ -32,6 +32,7 @@ import java.util.Objects;
  */
 @RequiredArgsConstructor
 @Component
+@Deprecated
 public class AuthenticationInterceptor extends MessageInterceptor {
 
     private final AuthenticationClientTemplate authenticationClientTemplate;

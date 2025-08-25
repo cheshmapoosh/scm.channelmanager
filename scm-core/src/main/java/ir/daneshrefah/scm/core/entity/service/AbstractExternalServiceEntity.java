@@ -19,6 +19,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
+@Deprecated
 public abstract class AbstractExternalServiceEntity<T extends AbstractExternalServiceProviderEntity> extends ScmServiceEntity {
 
     @ManyToOne(targetEntity = AbstractExternalServiceProviderEntity.class)

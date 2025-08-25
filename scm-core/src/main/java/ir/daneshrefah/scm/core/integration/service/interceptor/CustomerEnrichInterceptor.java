@@ -27,6 +27,7 @@ import java.util.Objects;
  */
 @RequiredArgsConstructor
 @Component
+@Deprecated
 public class CustomerEnrichInterceptor extends MessageInterceptor {
 
     private final PersonProfileLoader personProfileLoader;

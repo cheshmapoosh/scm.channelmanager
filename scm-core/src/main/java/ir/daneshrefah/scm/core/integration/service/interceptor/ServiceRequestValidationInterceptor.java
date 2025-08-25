@@ -30,6 +30,7 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 @Component
+@Deprecated
 public class ServiceRequestValidationInterceptor extends MessageInterceptor {
 
     private final ObjectMapper objectMapper;

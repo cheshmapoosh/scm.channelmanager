@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.service.scanner.impl;
+package ir.daneshrefah.scm.common.model.service;
 
 import ir.daneshrefah.scm.common.constant.OperationCode;
 import lombok.Data;

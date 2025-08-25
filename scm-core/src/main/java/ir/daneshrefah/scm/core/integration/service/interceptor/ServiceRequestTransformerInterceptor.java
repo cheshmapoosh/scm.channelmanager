@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
  * @since 2024-01-31
  */
 @Component
+@Deprecated
 public class ServiceRequestTransformerInterceptor extends AbstractTransformerInterceptor {
 
     public ServiceRequestTransformerInterceptor(TransformerService transformerService) {

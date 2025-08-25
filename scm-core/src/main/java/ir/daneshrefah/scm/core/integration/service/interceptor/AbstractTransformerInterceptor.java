@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * @since 2024-01-31
  */
 @RequiredArgsConstructor
+@Deprecated
 public abstract class AbstractTransformerInterceptor extends MessageInterceptor {
 
     private final Map<String, List<TransformerExecutionWrapper>> transformers = new HashMap<>();

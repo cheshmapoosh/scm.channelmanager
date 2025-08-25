@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
  * @version 1.0
  * @since 2024-01-03
  */
+@Deprecated
 public interface RestUrlBuilder {
 
      RestUrl build(TerminalServiceAccess serviceAccess);

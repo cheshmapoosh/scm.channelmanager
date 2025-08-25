@@ -16,6 +16,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @DiscriminatorValue("1")
+@Deprecated
 public class CustomExternalServiceEntity extends AbstractExternalServiceEntity<CustomExternalServiceProviderEntity> {
 
 }

@@ -23,6 +23,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "TBL_SCM_SERVICE_PROVIDER")
 @DiscriminatorColumn(name = "PROTOCOL", discriminatorType = DiscriminatorType.INTEGER)
+@Deprecated
 public abstract class AbstractExternalServiceProviderEntity extends AbstractStringAuditableEntity<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

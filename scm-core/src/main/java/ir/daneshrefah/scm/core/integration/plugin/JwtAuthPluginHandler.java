@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.integration.plugin;
 
-import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
@@ -21,8 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_FAILED;
-import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_AUTHENTICATION_REQUIRED;
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 
 @Component

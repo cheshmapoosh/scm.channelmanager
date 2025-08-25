@@ -12,5 +12,6 @@ import jakarta.persistence.Entity;
  */
 @Entity
 @DiscriminatorValue("5")
+@Deprecated
 public class ParentServiceEntity extends ScmServiceEntity {
 }

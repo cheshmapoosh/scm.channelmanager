@@ -10,10 +10,11 @@ import ir.daneshrefah.scm.common.model.terminal.Channel;
  * @version 1.0
  * @since 2024-01-03
  */
+@Deprecated
 public interface InboundExecutor {
 
-    public Message executeService();
+    Message executeService();
 
-    public Channel getChannel();
+    Channel getChannel();
 
 }

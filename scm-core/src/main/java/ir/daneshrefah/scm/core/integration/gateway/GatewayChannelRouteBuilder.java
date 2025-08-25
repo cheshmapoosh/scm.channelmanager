@@ -10,12 +10,12 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
+import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -102,7 +102,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
 
                         defineExceptionHandler(route);
-                        log.info(">>> exception handler defined succefully");
+                        log.info(">>> exception handler defined successfully");
                         applyMetrics(route, service);
                         applyTracing(route, service);
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
+@Deprecated
 public interface TerminalRepository extends CrudRepository<TerminalEntity, String> {
     Optional<TerminalEntity> findByCode(String code);
 

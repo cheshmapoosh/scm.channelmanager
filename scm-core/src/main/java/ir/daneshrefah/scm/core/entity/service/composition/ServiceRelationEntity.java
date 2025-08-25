@@ -17,6 +17,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_SERVICE_RELATION")
+@Deprecated
 public class ServiceRelationEntity extends AbstractDefaultEntity<Long> {
 
     @Id

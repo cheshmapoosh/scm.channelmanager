@@ -13,6 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@Deprecated
 public abstract class ScmService extends AbstractStringAuditableModel<String> {
 
     private String code;

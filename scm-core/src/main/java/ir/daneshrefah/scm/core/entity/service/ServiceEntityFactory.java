@@ -21,6 +21,7 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-01-22
  */
+@Deprecated
 public class ServiceEntityFactory {
 
     public static ScmServiceEntity createServiceEntity(ServiceInfoRequest request) {

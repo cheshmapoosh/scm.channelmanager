@@ -16,6 +16,7 @@ import java.time.Instant;
  * @since 2024-01-29
  */
 @Slf4j
+@Deprecated
 public abstract class MessageInterceptor {
 
     public final Message intercept(Message message) {

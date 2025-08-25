@@ -13,6 +13,7 @@ import java.util.List;
  * @version 1.0
  * @since 2024-01-29
  */
+@Deprecated
 public interface InboundChannelGenerator {
 
     boolean initConfig(Channel channel, List<TerminalServiceAccess> service);

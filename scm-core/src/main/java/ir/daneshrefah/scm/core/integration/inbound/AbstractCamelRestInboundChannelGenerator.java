@@ -37,6 +37,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_METHOD_OPTIONS;
  * @since 2024-01-05
  */
 @Slf4j
+@Deprecated
 public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractCamelInboundChannelGenerator {
 
     private static final String DEFAULT_CONTENT_TYPE = "application/json";

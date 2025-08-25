@@ -10,7 +10,6 @@ import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.core.integration.inbound.AbstractCamelRestInboundChannelGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerGenerator;
 import ir.daneshrefah.scm.core.integration.inbound.rest.dynamicrest.swagger.SwaggerUIGenerator;
-//import ir.daneshrefah.scm.logging.utils.TraceLogUtils;
 import ir.daneshrefah.scm.plugin.api.integration.ErrorHandlerService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
@@ -19,11 +18,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.apache.camel.tracing.ActiveSpanManager;
-import org.apache.camel.tracing.SpanAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +35,7 @@ import static ir.daneshrefah.scm.utils.string.HttpConstants.HTTP_HEADER_CONTENT_
  */
 //@Component
 @Scope("prototype")
+@Deprecated
 public class DynamicRestInboundChanelGenerator extends AbstractCamelRestInboundChannelGenerator {
 
     private final RestUrlBuilder urlBuilder;

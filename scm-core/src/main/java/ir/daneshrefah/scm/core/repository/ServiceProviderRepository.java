@@ -17,6 +17,7 @@ import java.util.Optional;
  * @since 2024-01-20
  */
 @Repository
+@Deprecated
 public interface ServiceProviderRepository extends CrudRepository<AbstractExternalServiceProviderEntity, String> {
     Optional<AbstractExternalServiceProviderEntity> findByCode(String providerCode);
 

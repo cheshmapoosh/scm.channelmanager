@@ -11,14 +11,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @Entity
 @Table(name = "TBL_SCM_SERVICE")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "SERVICE_IMPL_TYPE_CODE", discriminatorType = DiscriminatorType.INTEGER)
+@Deprecated
 public abstract class ScmServiceEntity extends AbstractStringAuditableEntity<String> {
 
     @Id

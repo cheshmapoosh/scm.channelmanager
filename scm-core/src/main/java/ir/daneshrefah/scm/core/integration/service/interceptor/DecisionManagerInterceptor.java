@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @RequiredArgsConstructor
 @Component
+@Deprecated
 public class DecisionManagerInterceptor extends MessageInterceptor {
 
     private final DecisionManager decisionManager;

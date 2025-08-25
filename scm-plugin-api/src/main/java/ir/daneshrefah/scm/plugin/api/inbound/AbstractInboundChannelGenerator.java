@@ -25,6 +25,7 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public abstract class AbstractInboundChannelGenerator implements InboundChannelGenerator {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractInboundChannelGenerator.class);

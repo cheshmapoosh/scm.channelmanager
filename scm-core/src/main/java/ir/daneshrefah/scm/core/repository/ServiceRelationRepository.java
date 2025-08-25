@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+@Deprecated
 public interface ServiceRelationRepository extends CrudRepository<ServiceRelationEntity, String> {
 
     List<ServiceRelationEntity> findAllBySourceServiceId(String sourceServiceId);

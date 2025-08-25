@@ -15,6 +15,7 @@ import java.math.BigDecimal;
  */
 @Getter
 @Setter
+@Deprecated
 public class Terminal extends AbstractStringAuditableModel<String> {
 
     private String code;

@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class TransactionAuthenticationInterceptor extends MessageInterceptor {
 
     private final AuthenticationClientTemplate authenticationClientTemplate;

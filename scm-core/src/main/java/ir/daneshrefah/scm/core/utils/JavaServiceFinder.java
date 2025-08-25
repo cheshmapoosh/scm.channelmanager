@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.core.integration.service;
+package ir.daneshrefah.scm.core.utils;
 
-import ir.daneshrefah.scm.core.integration.service.scanner.impl.JavaServiceMetadata;
+import ir.daneshrefah.scm.common.model.service.JavaServiceMetadata;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceClassNotDefinedException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceMethodNotFoundException;
 import ir.daneshrefah.scm.plugin.api.exception.JavaServiceParameterClassNotFoundException;

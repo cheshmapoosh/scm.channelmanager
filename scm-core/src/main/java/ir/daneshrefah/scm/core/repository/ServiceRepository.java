@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Deprecated
 public interface ServiceRepository extends JpaRepository<ScmServiceEntity, String> {
 
     @Query("SELECT s FROM ScmServiceEntity s WHERE " +

@@ -11,6 +11,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_TERMINAL")
+@Deprecated
 public class TerminalEntity extends AbstractEntity<String> {
 
     @Id

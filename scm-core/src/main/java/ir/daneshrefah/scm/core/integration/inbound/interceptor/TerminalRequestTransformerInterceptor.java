@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
  * @since 2024-01-29
  */
 @Component
+@Deprecated
 public class TerminalRequestTransformerInterceptor extends MessageInterceptor {
 
     @Override

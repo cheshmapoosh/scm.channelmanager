@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
  * @version 1.0
  * @since 2024-01-05
  */
+@Deprecated
 public abstract class AbstractPureInboundChannelGenerator extends AbstractInboundChannelGenerator implements InboundExecutor {
 
     protected AbstractPureInboundChannelGenerator(ObjectMapper objectMapper,

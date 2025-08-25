@@ -18,6 +18,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TBL_SCM_TERMINAL_SERVICE_ACCESS")
+@Deprecated
 public class TerminalServiceAccessEntity extends AbstractDefaultEntity<Long> {
 
     @Id

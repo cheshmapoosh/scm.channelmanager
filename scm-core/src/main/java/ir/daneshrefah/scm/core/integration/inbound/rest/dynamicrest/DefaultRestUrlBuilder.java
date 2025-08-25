@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.model.service.ServiceType;
 import ir.daneshrefah.scm.common.model.terminal.TerminalServiceAccess;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
+
 /**
  * Description of the class or purpose of the file.
  *
@@ -12,6 +13,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
  * @version 1.0
  * @since 2024-01-03
  */
+@Deprecated
 public class DefaultRestUrlBuilder implements RestUrlBuilder {
 
     @Override
@@ -26,12 +28,11 @@ public class DefaultRestUrlBuilder implements RestUrlBuilder {
         String parentServiceUrl = extractServiceUrl(serviceAccess.getService().getParent());
         String serviceUrl = extractServiceUrl(serviceAccess.getService());
         String version = extractServiceVersion(serviceAccess.getService());
-        StringBuilder urlBuilder = new StringBuilder("api");
-        urlBuilder
-                .append(version)
-                .append(StringUtils.isEmpty(parentServiceUrl) ? "" : fixUrlPattern(parentServiceUrl))
-                .append(fixUrlPattern(serviceUrl));
-        return urlBuilder.toString();
+        String urlBuilder = "api" +
+                            version +
+                            (StringUtils.isEmpty(parentServiceUrl) ? "" : fixUrlPattern(parentServiceUrl)) +
+                            fixUrlPattern(serviceUrl);
+        return urlBuilder;
     }
 
     private String extractServiceVersion(ScmService service) {

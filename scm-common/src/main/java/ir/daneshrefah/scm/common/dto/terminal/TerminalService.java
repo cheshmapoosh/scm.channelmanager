@@ -15,6 +15,7 @@ import java.util.Optional;
  * @version 1.0
  * @since 2024-01-17
  */
+@Deprecated
 public abstract class TerminalService {
 
     public static TerminalService INSTANCE;
