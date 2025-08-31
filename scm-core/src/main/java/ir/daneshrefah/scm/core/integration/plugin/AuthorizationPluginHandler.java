@@ -18,7 +18,7 @@ public class AuthorizationPluginHandler implements PluginHandler {
 
     @Override
     public PluginType getType() {
-        return PluginType.VALIDATOR;
+        return PluginType.TRANSFORMER;
     }
 
     @Override

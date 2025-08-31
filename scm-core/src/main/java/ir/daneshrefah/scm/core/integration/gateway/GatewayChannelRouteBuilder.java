@@ -95,10 +95,12 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                             channelServiceDefinitionService.findDefinitions(channelServiceAccess, gatewayChannel);
                     List<RouteDefinition> routes = protocolConfigurer.routeDefinition(channelServiceAccess, definitions);
                     routes.forEach(route -> {
+
                         route.setProperty(Message.SERVICE, constant(service));
                         route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
                         route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
                         route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
+                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
 
                         defineExceptionHandler(route);

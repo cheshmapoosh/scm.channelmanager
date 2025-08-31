@@ -102,5 +102,21 @@ public abstract class ChannelServiceDefinitionMapper {
 
         String method = JsonPathFinder.defaultAsText(dtoNode, "method");
         restChannelServiceDefinition.setMethod(HttpMethod.fromValue(method));
+
+        // checkLoginAuthentication
+        Boolean checkLoginAuthentication = JsonPathFinder.defaultAsBoolean(dtoNode, "checkLoginAuthentication");
+        restChannelServiceDefinition.setCheckLoginAuthentication(
+                checkLoginAuthentication != null ? checkLoginAuthentication : false
+        );
+
+        // accessRoles → List<String>
+        JsonNode rolesNode = JsonPathFinder.defaultNode(dtoNode, "accessRoles");
+        List<String> accessRoles = new ArrayList<>();
+        if (rolesNode != null && rolesNode.isArray()) {
+            for (JsonNode roleNode : rolesNode) {
+                accessRoles.add(roleNode.asText());
+            }
+        }
+        restChannelServiceDefinition.setAccessRoles(accessRoles);
     }
 }

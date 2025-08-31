@@ -43,6 +43,7 @@ public class Message implements Serializable {
     public static final String STATUS_HANDLER = "scmStatusHandler";
     public static final String OPERATION_PHASE_DEFINITION = "scmOperationPhaseDefinition";
         public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
+    public static final String CHANNEL_SERVICE_DEFINITION = "ScmChannelServiceDefinition";
     private final Header header;
     private MessageStatus status;
     private JsonNode payload;

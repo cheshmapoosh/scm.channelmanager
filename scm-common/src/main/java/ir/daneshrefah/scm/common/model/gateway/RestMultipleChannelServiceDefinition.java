@@ -9,7 +9,7 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class RestMultipleChannelServiceDefinition extends ChannelServiceDefinition {
+public class RestMultipleChannelServiceDefinition extends BaseChannelServiceDefinition {
 
     private String contextPath;
     private List<MultiRouteDetail> multiRouteDetails;
