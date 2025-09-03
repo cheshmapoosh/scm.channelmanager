@@ -13,8 +13,10 @@ import lombok.Setter;
 @Entity(name = "CM_ServiceEntity")
 @Table(name = "EB_SERVICE", schema = "REF")
 public class ServiceEntity extends AbstractEntity<Short> {
+
     @Id
     @SequenceGenerator(name = "EB_SERVICE_id_gen", sequenceName = "SQCONSTANTS", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "EB_SERVICE_id_gen")
     @Column(name = "EB_SERVICE_ID", nullable = false)
     private Short id;
 
@@ -50,11 +52,11 @@ public class ServiceEntity extends AbstractEntity<Short> {
     private String abbreviation;
 
     //TODO PRODUCTION DB DOES NOT HAVE PRIVILEGE
-//    @ManyToOne(optional = false)
-//    @JoinColumn(name = "SERVICE_CATEGORY_ID", nullable = false)
-//    private ServiceCategoryEntity serviceCategory;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "SERVICE_CATEGORY_ID", nullable = false)
+    private ServiceCategoryEntity serviceCategory;
 
-    @Size(max = 20)
+//    @Size(max = 20)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private RoutingStrategy routingStrategy;

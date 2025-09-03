@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.dto.channel;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedRequestData;
-import ir.daneshrefah.scm.common.model.terminal.ChannelProtocol;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,12 +14,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChannelFindRequest extends PagedRequestData {
-
     private String code;
-    private String terminalCode;
-    private ChannelProtocol protocol;
-    private String creator;
-    private String lastEditor;
-    private String title;
-
+    private String name;
 }

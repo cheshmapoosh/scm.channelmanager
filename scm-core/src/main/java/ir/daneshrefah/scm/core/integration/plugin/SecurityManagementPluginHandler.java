@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
-import ir.daneshrefah.scm.core.authority.decision.manager.SecurityDecisionManager;
+//import ir.daneshrefah.scm.core.authority.decision.manager.SecurityDecisionManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
@@ -16,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SecurityManagementPluginHandler implements PluginHandler {
 
-    private final SecurityDecisionManager decisionManager;
+//    private final SecurityDecisionManager decisionManager;
 
     @Override
     public PluginType getType() {
@@ -33,8 +33,8 @@ public class SecurityManagementPluginHandler implements PluginHandler {
      */
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
-        if (pluginDetail.getPhase().equals(PluginPhase.BEFORE)){
-            decisionManager.decide(exchange);
-        }
+//        if (pluginDetail.getPhase().equals(PluginPhase.BEFORE)){
+//            decisionManager.decide(exchange);
+//        }
     }
 }

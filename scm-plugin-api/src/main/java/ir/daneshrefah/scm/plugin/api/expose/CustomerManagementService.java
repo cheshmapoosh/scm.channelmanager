@@ -161,10 +161,10 @@ public class CustomerManagementService extends AbstractJavaService {
     }
 
     //    GET 'http://127.0.0.1:8083/scm4test/api/v1/assets/service-category/list'
-    @JavaService(operationCode = SVC_SERVICE_CATEGORY_LIST)
-    public List<ServiceCategory> findAllServiceCategory(){
-        return customerService.findAllServiceCategory();
-    }
+//    @JavaService(operationCode = SVC_SERVICE_CATEGORY_LIST)
+//    public List<ServiceCategory> findAllServiceCategory(){
+//        return customerService.findAllServiceCategory();
+//    }
 
     /* MEMBERSHIP CHANNEL SERVICE ACCESS */
 

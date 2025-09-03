@@ -16,4 +16,7 @@ public interface ChannelServiceAccessRepository extends JpaRepository<ChannelSer
 
     @Query("select o from ChannelServiceAccessEntity o where o.channel.id = :channelId and o.active = true and o.service.publish = true ")
     List<ChannelServiceAccessEntity> findByChannelId(@Param("channelId") Short channelId);
+
+    @Query("select o from ChannelServiceAccessEntity o where o.service.id = :serviceId")
+    List<ChannelServiceAccessEntity> findByServiceId(@Param("serviceId") Long serviceId);
 }
