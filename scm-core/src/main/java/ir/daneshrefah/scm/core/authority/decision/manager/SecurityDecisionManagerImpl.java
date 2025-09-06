@@ -28,7 +28,7 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
 
     private final Map<String, AuthorizationManagerDecisionChain> decisionChains;
     private final AuthorizationManagerFactory authorizationManagerFactory;
-    private final Map<String,AuthorizationManager<Exchange>> authorities;
+
 
 
     @Override
@@ -47,16 +47,18 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
                 throw new IllegalArgumentException("Could not found any AuthorizationManagerDecisionChain with name '" + chain + "'");
             }
             AuthorizationManagerChainDefinition chainDefinition = decisionChain.decisionChain().build();
-            Optional<AuthorizationManager<AuthorizationData>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
-            final List<Class<? extends AuthorizationManager<Exchange>>> authoritiesClassList = chainDefinition.getAuthorities();
-            final List<AuthorizationManager<Exchange>> authorizationList = authoritiesClassList
+            Optional<AuthorizationManager<SecurityContext>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
+            final List<Class<? extends AuthorizationManager<SecurityContext>>> authoritiesClassList = chainDefinition.getAuthorities();
+            final List<AuthorizationManager<SecurityContext>> authorizationList = authoritiesClassList
                     .stream()
-                    .map(ac-> authorities.get(Introspector.decapitalize(ac.getSimpleName())))
+                    .map(ac-> authorizationManagerFactory.getAuthorizationVoter(Introspector.decapitalize(ac.getSimpleName())))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .toList();
             authorizationManager
                     .ifPresentOrElse(manager -> {
-                        AuthorizationData authorizationData = new AuthorizationData(exchange, authorizationList);
-                        manager.verify(() -> authentication, authorizationData);
+                        SecurityContext securityContext = new SecurityContext(exchange, authorizationList);
+                        manager.verify(() -> authentication, securityContext);
                     }, () -> {
                         throw new IllegalArgumentException("Could not found any AuthorizationManager with name '" + chainDefinition.getManagerBeanName() + "'");
                     });

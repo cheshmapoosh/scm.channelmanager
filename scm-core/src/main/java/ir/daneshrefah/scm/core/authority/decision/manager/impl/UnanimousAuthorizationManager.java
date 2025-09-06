@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.core.authority.decision.manager.impl;
 
-import ir.daneshrefah.scm.core.authority.decision.manager.AuthorizationData;
+import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.core.authority.decision.manager.AuthorityManager;
+import ir.daneshrefah.scm.core.authority.decision.manager.SecurityContext;
 import lombok.RequiredArgsConstructor;
-import org.apache.camel.Exchange;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -13,32 +14,34 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS_DENIED;
+
 /**
  * Rejected by first 'ACCESS_DENIED'
  */
 @Component
 @RequiredArgsConstructor
-public class UnanimousAuthorizationManager implements AuthorizationManager<AuthorizationData> {
+public class UnanimousAuthorizationManager implements AuthorizationManager<SecurityContext>, AuthorityManager {
 
     @Override
-    public void verify(Supplier<Authentication> authentication, AuthorizationData authorizationData) {
-        Exchange exchange = authorizationData.getExchange();
-        List<? extends AuthorizationManager<Exchange>> authorities = authorizationData.getAuthorities();
-        for (AuthorizationManager<Exchange> authority : authorities) {
-            AuthorizationResult result = authority.authorize(authentication, exchange);
+    public void verify(Supplier<Authentication> authentication, SecurityContext securityContext) {
+        List<? extends AuthorizationManager<SecurityContext>> authorities = securityContext.getAuthorities();
+        for (AuthorizationManager<SecurityContext> authority : authorities) {
+            AuthorizationResult result = authority.check(authentication, securityContext);
             if (Objects.isNull(result)) {
                 continue;
             }
             if (!result.isGranted()) {
-                throw new AuthorizationDeniedException("Access Denied");
+                throw new AccessDeniedException("access", ERROR_CODE_ACCESS_DENIED, "User does not have access to the process.");
             }
         }
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, AuthorizationData authorizationData) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext securityContext) {
         try {
-            verify(authentication, authorizationData);
+            verify(authentication, securityContext);
             return new AuthorizationDecision(true);
         } catch (AuthorizationDeniedException e) {
             return new AuthorizationDecision(false);

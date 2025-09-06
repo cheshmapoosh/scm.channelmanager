@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
+import ir.daneshrefah.scm.core.authority.decision.manager.SecurityContext;
 import lombok.RequiredArgsConstructor;
-import org.apache.camel.Exchange;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -11,13 +11,13 @@ import java.util.function.Supplier;
 
 @Component
 @RequiredArgsConstructor
-public class TransactionAuthenticationSecurityProvider implements AuthorizationManager<Exchange> {
+public class TransactionAuthenticationSecurityProvider implements AuthorizationManager<SecurityContext> {
 
     //TODO
 
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, Exchange exchange) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext securityContext) {
         return null;
     }
 

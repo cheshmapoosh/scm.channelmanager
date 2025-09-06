@@ -6,12 +6,14 @@ import lombok.NoArgsConstructor;
 import org.apache.camel.Exchange;
 import org.springframework.security.authorization.AuthorizationManager;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthorizationData {
+public class SecurityContext implements Serializable {
     private Exchange exchange;
-    private List<? extends AuthorizationManager<Exchange>> authorities;
+    private List<AuthorizationManager<SecurityContext>> authorities;
+
 }
