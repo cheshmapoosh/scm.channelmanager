@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.gateway;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,5 +9,12 @@ import java.util.List;
 @Setter
 public class BaseChannelServiceDefinition extends ChannelServiceDefinition {
     private Boolean checkLoginAuthentication;
-    private List<String> accessRoles;
+    private AuthorizationConfig authorizationConfig;
+
+    @Data
+    public static class AuthorizationConfig {
+        private String chain;
+        private List<String> accessRoles;
+    }
+
 }

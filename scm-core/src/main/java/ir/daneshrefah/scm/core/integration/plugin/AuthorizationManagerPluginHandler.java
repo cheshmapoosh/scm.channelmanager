@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
-import ir.daneshrefah.scm.core.authority.decision.manager.AuthorizationDecisionManager;
+import ir.daneshrefah.scm.core.authority.decision.manager.AuthorizationDecisionChainManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
@@ -16,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthorizationManagerPluginHandler implements PluginHandler {
 
-    private final AuthorizationDecisionManager decisionManager;
+    private final AuthorizationDecisionChainManager decisionManager;
 
     @Override
     public PluginType getType() {

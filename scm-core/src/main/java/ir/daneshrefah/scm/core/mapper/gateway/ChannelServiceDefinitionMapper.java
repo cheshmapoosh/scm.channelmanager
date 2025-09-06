@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.data.mapper.ChannelServiceAccessMapper;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RestChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RestMultipleChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.SwggerChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
@@ -91,15 +88,18 @@ public abstract class ChannelServiceDefinitionMapper {
     }
 
     public void enrichRestChannelServiceDefinition(RestChannelServiceDefinition restChannelServiceDefinition) {
-        JsonNode dtoNode = null;
+        JsonNode dtoNode;
         try {
             dtoNode = dtoReader.readTree(restChannelServiceDefinition.getDefinition().getDetails());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+
+        // path
         String path = JsonPathFinder.defaultAsText(dtoNode, "path");
         restChannelServiceDefinition.setPath(path);
 
+        // method
         String method = JsonPathFinder.defaultAsText(dtoNode, "method");
         restChannelServiceDefinition.setMethod(HttpMethod.fromValue(method));
 
@@ -109,14 +109,29 @@ public abstract class ChannelServiceDefinitionMapper {
                 checkLoginAuthentication != null ? checkLoginAuthentication : false
         );
 
-        // accessRoles → List<String>
-        JsonNode rolesNode = JsonPathFinder.defaultNode(dtoNode, "accessRoles");
-        List<String> accessRoles = new ArrayList<>();
-        if (rolesNode != null && rolesNode.isArray()) {
-            for (JsonNode roleNode : rolesNode) {
-                accessRoles.add(roleNode.asText());
+        // authorizationConfig
+        JsonNode authorizationConfigNode = dtoNode.get("authorizationConfig");
+        if (authorizationConfigNode != null && !authorizationConfigNode.isNull()) {
+            BaseChannelServiceDefinition.AuthorizationConfig authorizationConfig =
+                    new BaseChannelServiceDefinition.AuthorizationConfig();
+
+            // chain
+            String chain = JsonPathFinder.defaultAsText(authorizationConfigNode, "chain");
+            authorizationConfig.setChain(chain);
+
+            // accessRoles
+            List<String> accessRoles = new ArrayList<>();
+            JsonNode rolesNode = authorizationConfigNode.get("accessRoles");
+            if (rolesNode != null && rolesNode.isArray()) {
+                for (JsonNode roleNode : rolesNode) {
+                    accessRoles.add(roleNode.asText());
+                }
             }
+            authorizationConfig.setAccessRoles(accessRoles);
+
+            restChannelServiceDefinition.setAuthorizationConfig(authorizationConfig);
+        } else {
+            restChannelServiceDefinition.setAuthorizationConfig(null);
         }
-        restChannelServiceDefinition.setAccessRoles(accessRoles);
     }
 }

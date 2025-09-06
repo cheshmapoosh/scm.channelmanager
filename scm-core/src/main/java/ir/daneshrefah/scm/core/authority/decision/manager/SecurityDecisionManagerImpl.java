@@ -1,69 +1,66 @@
 package ir.daneshrefah.scm.core.authority.decision.manager;
 
-import ir.daneshrefah.scm.core.authority.decision.constant.Vote;
-import ir.daneshrefah.scm.core.authority.decision.voter.SecurityProvider;
+import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
+import ir.daneshrefah.scm.common.model.gateway.BaseChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.core.authority.decision.constant.AuthorizationManagerChainDefinition;
+import ir.daneshrefah.scm.core.authority.decision.manager.chain.DefaultAuthorizationManagerChain;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
-import jakarta.annotation.PostConstruct;
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.beans.Introspector;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SecurityDecisionManagerImpl implements SecurityDecisionManager {
+public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainManager {
 
-    private static final List<SecurityProvider> ORDERED_SECURITY_PROVIDER = new ArrayList<>();
-    private final List<SecurityProviderChain> securityProviderChains;
-    private final Map<Class<?>, SecurityProvider> securityProviders;
+    private final Map<String, AuthorizationManagerDecisionChain> decisionChains;
+    private final AuthorizationManagerFactory authorizationManagerFactory;
+    private final BeanFactory beanFactory;
 
-    @PostConstruct
-    public void init() {
-        if (Objects.isNull(securityProviderChains)) {
-            throw new IllegalArgumentException("securityProviderChains could not found any implementation");
-        }
-        if (securityProviderChains.size() > 1) {
-            throw new IllegalArgumentException("securityProviderChains must have only one implementation");
-        }
-        createOrderedSecurityProviderList();
-        checkUnRegisteredSecurityProvider();
-    }
-
-    private void checkUnRegisteredSecurityProvider() {
-        securityProviders
-                .keySet()
-                .stream()
-                .filter(key -> !ORDERED_SECURITY_PROVIDER.contains(securityProviders.get(key)))
-                .forEach(key -> log.warn(">>> [ALERT] SecurityProvider '{}' has not been registered on Chain.", key.getName()));
-    }
-
-    private void createOrderedSecurityProviderList() {
-        securityProviderChains
-                .get(0)
-                .securityProviderChain()
-                .build()
-                .stream()
-                .map(securityProviders::get)
-                .peek(securityProvider -> log.info(">>> SecurityProvider '{}' has been registered", securityProvider.getClass().getName()))
-                .forEachOrdered(ORDERED_SECURITY_PROVIDER::add);
-    }
 
     @Override
     public void decide(Exchange exchange) throws AuthorityBaseException {
-        ORDERED_SECURITY_PROVIDER.stream()
-                .map(p -> p.getVote(exchange))
-                .filter(vote -> Vote.ACCESS_ABSTAIN != vote)
-                .findFirst()
-                .ifPresent(vote -> {
-                    if (vote == Vote.ACCESS_DENIED) {
-                        throw new AuthorityBaseException();
-                    }
-                });
+        Authentication authentication = AuthenticationUtils.getAuthentication();
+        if (Objects.isNull(authentication)) {
+            throw new AuthenticationRequiredException();
+        }
+        BaseChannelServiceDefinition baseChannelServiceDefinition = (BaseChannelServiceDefinition) exchange.getProperty(Message.CHANNEL_SERVICE_DEFINITION);
+        BaseChannelServiceDefinition.AuthorizationConfig authorizationConfig = baseChannelServiceDefinition.getAuthorizationConfig();
+        if (Objects.nonNull(authorizationConfig)) {
+            String chain = authorizationConfig.getChain();
+            chain = StringUtils.isBlank(chain) ? Introspector.decapitalize(DefaultAuthorizationManagerChain.class.getSimpleName()) : chain;
+            AuthorizationManagerDecisionChain decisionChain = decisionChains.get(chain);
+            if (Objects.isNull(decisionChain)) {
+                throw new IllegalArgumentException("Could not found any AuthorizationManagerDecisionChain with name '" + chain + "'");
+            }
+            AuthorizationManagerChainDefinition chainDefinition = decisionChain.decisionChain().build();
+            Optional<AuthorizationManager<AuthorizationData>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
+            final List<Class<? extends AuthorizationManager<Exchange>>> authoritiesClassList = chainDefinition.getAuthorities();
+            final List<? extends AuthorizationManager<Exchange>> authorizationList = authoritiesClassList
+                    .stream()
+                    .map(beanFactory::getBean)
+                    .toList();
+            authorizationManager
+                    .ifPresentOrElse(manager -> {
+                        AuthorizationData authorizationData = new AuthorizationData(exchange, authorizationList);
+                        manager.verify(() -> authentication, authorizationData);
+                    }, () -> {
+                        throw new IllegalArgumentException("Could not found any AuthorizationManager with name '" + chainDefinition.getManagerBeanName() + "'");
+                    });
+        }
     }
 }
