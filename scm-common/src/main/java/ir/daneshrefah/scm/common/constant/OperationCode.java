@@ -32,6 +32,8 @@ public enum OperationCode {
     SVC_CHANNEL_EDIT(ServiceImplementationType.JAVA),
     SVC_CHANNEL_DELETE(ServiceImplementationType.JAVA),
     SVC_SERVICE_LIST(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_FIND_BY_SERVICE_ID(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_CREATE(ServiceImplementationType.JAVA),
     SVC_SERVICE_BY_CODE(ServiceImplementationType.JAVA),
     SVC_SERVICE_BY_ID(ServiceImplementationType.JAVA),
     SVC_SERVICE_CREATE(ServiceImplementationType.JAVA),

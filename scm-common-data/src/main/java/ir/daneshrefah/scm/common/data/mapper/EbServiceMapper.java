@@ -1,16 +1,21 @@
 package ir.daneshrefah.scm.common.data.mapper;
 
-import ir.daneshrefah.scm.common.data.entity.asset.EbServiceEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.ServiceEntity;
 import ir.daneshrefah.scm.common.dto.asset.EbService;
-import ir.daneshrefah.scm.common.data.entity.asset.EbServiceEntity;
+import ir.daneshrefah.scm.common.dto.service.EbServiceCreateRequest;
 import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.MappingConstants;
 
-@Mapper
+import java.util.List;
+
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface EbServiceMapper {
-    EbServiceMapper INSTANCE = Mappers.getMapper(EbServiceMapper.class);
 
-    EbService toModel(EbServiceEntity entity);
+    EbService toModel(ServiceEntity entity);
 
-    EbServiceEntity toEntity(EbService model);
+    List<EbService> toModels(List<ServiceEntity> entities);
+
+    ServiceEntity toEntity(EbService model);
+
+    ServiceEntity toEntity(EbServiceCreateRequest model);
 }

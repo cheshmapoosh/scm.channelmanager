@@ -8,7 +8,7 @@ import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.message.Authentication;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
-import ir.daneshrefah.scm.core.services.gateway.ChannelService;
+import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.plugin.api.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

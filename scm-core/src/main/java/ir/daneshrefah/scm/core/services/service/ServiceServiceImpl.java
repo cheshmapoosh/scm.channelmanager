@@ -57,6 +57,7 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.compareObject;
 @RequiredArgsConstructor
 @Service
 @Slf4j
+@Deprecated
 public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;

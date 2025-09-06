@@ -29,6 +29,7 @@ import static ir.daneshrefah.scm.common.constant.OperationCode.*;
  * @since 2024-01-17
  */
 @Component
+@Deprecated
 public class ServiceManagementService extends AbstractJavaService {
 
     private final ServiceService service;
@@ -41,7 +42,7 @@ public class ServiceManagementService extends AbstractJavaService {
     }
 
 
-    @JavaService(operationCode = SVC_SERVICE_LIST)
+//    @JavaService(operationCode = SVC_SERVICE_LIST)
     public PagedResponseData<ScmService> serviceList(ServiceFindRequest request) {
         return this.service.findServiceList(request);
     }

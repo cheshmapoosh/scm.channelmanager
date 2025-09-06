@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
+import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;

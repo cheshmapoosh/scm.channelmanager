@@ -1,29 +1,19 @@
-//package ir.daneshrefah.scm.common.service.channel;
-//
-//import ir.daneshrefah.scm.common.dto.channel.ChannelCreateRequest;
-//import ir.daneshrefah.scm.common.dto.channel.ChannelDeleteRequest;
-//import ir.daneshrefah.scm.common.dto.channel.ChannelEditRequest;
-//import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
-//import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-//import ir.daneshrefah.scm.common.model.gateway.Channel;
-//
-//import java.util.List;
-//import java.util.Optional;
-//
-///**
-// * Description of the class or purpose of the file.
-// *
-// * @author reza jamshidi
-// * @version 1.0
-// * @since 2024-03-24
-// */
-//public interface ChannelService {
-//
-//    List<Channel> findAllChannels();
-//
+package ir.daneshrefah.scm.common.service.channel;
+
+import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.model.gateway.Channel;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ChannelService {
+
+    List<Channel> findAllChannels(ChannelFindRequest request);
 //    Optional<Channel> findChannelById(String id);
 //
-//    Optional<Channel> findChannelByCode(String code);
+    Optional<Channel> findChannelByCode(String code);
+
+    Channel findChannelById(Short id);
 //
 //    PagedResponseData<Channel> findPagedChannels(ChannelFindRequest request);
 //
@@ -33,3 +23,4 @@
 //
 //    Channel editChannel(ChannelEditRequest request);
 //}
+}
