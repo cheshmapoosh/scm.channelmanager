@@ -1,8 +1,7 @@
-package ir.daneshrefah.scm.core.authority.decision.manager.impl;
+package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
-import ir.daneshrefah.scm.core.authority.decision.manager.AuthorityManager;
-import ir.daneshrefah.scm.core.authority.decision.manager.SecurityContext;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -22,10 +21,10 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS
  */
 @Component
 @RequiredArgsConstructor
-public class ConsensusBasedAuthorizationManager implements AuthorizationManager<SecurityContext>, AuthorityManager {
+public class ConsensusBasedAuthorizationManager implements AuthorizationManager<SecurityContext.ManagerSecurityContext> {
 
     @Override
-    public void verify(Supplier<Authentication> authentication, SecurityContext securityContext) {
+    public void verify(Supplier<Authentication> authentication, SecurityContext.ManagerSecurityContext securityContext) {
         List<? extends AuthorizationManager<SecurityContext>> authorities = securityContext.getAuthorities();
         int grants = 0;
         int denies = 0;
@@ -48,7 +47,7 @@ public class ConsensusBasedAuthorizationManager implements AuthorizationManager<
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext securityContext) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext.ManagerSecurityContext securityContext) {
         try {
             verify(authentication, securityContext);
             return new AuthorizationDecision(true);

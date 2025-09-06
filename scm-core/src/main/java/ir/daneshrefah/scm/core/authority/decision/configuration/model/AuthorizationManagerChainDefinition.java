@@ -1,6 +1,5 @@
-package ir.daneshrefah.scm.core.authority.decision.constant;
+package ir.daneshrefah.scm.core.authority.decision.configuration.model;
 
-import ir.daneshrefah.scm.core.authority.decision.manager.SecurityContext;
 import lombok.Data;
 import org.springframework.security.authorization.AuthorizationManager;
 

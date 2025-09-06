@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.authority.decision.manager;
+package ir.daneshrefah.scm.core.authority.decision.configuration.handler;
 
 import org.apache.camel.Exchange;
 

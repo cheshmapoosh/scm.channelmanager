@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.core.authority.decision.voter;
 
-import ir.daneshrefah.scm.core.authority.decision.manager.SecurityContext;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
