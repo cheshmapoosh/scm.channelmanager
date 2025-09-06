@@ -17,7 +17,7 @@ public class TransactionAuthenticationSecurityProvider implements AuthorizationM
 
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, Exchange object) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, Exchange exchange) {
         return null;
     }
 

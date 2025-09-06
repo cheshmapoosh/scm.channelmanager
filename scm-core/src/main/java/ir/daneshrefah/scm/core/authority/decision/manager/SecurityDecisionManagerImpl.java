@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -29,7 +28,7 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
 
     private final Map<String, AuthorizationManagerDecisionChain> decisionChains;
     private final AuthorizationManagerFactory authorizationManagerFactory;
-    private final BeanFactory beanFactory;
+    private final Map<String,AuthorizationManager<Exchange>> authorities;
 
 
     @Override
@@ -50,9 +49,9 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
             AuthorizationManagerChainDefinition chainDefinition = decisionChain.decisionChain().build();
             Optional<AuthorizationManager<AuthorizationData>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
             final List<Class<? extends AuthorizationManager<Exchange>>> authoritiesClassList = chainDefinition.getAuthorities();
-            final List<? extends AuthorizationManager<Exchange>> authorizationList = authoritiesClassList
+            final List<AuthorizationManager<Exchange>> authorizationList = authoritiesClassList
                     .stream()
-                    .map(beanFactory::getBean)
+                    .map(ac-> authorities.get(Introspector.decapitalize(ac.getSimpleName())))
                     .toList();
             authorizationManager
                     .ifPresentOrElse(manager -> {
