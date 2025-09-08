@@ -29,6 +29,9 @@ public class ScmServiceSpecification {
             if (StringUtils.isNotBlank(request.getCode())) {
                 predicates.add(builder.equal(root.get("code"), request.getCode()));
             }
+            if (request.getFinancial() != null) {
+                predicates.add(builder.equal(root.get("financial"), request.getFinancial()));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }

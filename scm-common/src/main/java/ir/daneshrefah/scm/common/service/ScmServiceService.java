@@ -10,4 +10,5 @@ public interface ScmServiceService {
     PagedResponseData<EbService> findServiceList(EbServiceFilterRequest request);
     EbService createService(EbServiceCreateRequest request);
     EbService findByServiceId(Short id);
+    EbService updateService(EbServiceCreateRequest request);
 }

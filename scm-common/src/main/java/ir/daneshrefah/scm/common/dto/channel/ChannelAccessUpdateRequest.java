@@ -5,9 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ChannelAccessCreateRequest {
-    private Short channelId;
-    private Short serviceId;
+public class ChannelAccessUpdateRequest {
+    private Long id;
     private Integer fixedValue;
     private Integer ratedValue;
     private Long withdrawalAmount;

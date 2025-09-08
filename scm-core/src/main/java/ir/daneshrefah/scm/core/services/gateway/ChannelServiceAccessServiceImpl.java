@@ -6,11 +6,11 @@ import ir.daneshrefah.scm.common.data.entity.asset.ServiceEntity;
 import ir.daneshrefah.scm.common.data.mapper.ChannelMapper;
 import ir.daneshrefah.scm.common.data.mapper.ChannelServiceAccessMapper;
 import ir.daneshrefah.scm.common.data.mapper.EbServiceMapper;
-import ir.daneshrefah.scm.common.data.mapper.ServiceMapper;
 import ir.daneshrefah.scm.common.data.repository.assets.ChannelServiceAccessRepository;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.dto.asset.EbService;
 import ir.daneshrefah.scm.common.dto.channel.ChannelAccessCreateRequest;
+import ir.daneshrefah.scm.common.dto.channel.ChannelAccessUpdateRequest;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
@@ -38,7 +38,6 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
     private final ChannelServiceAccessMapper channelServiceAccessMapper;
     private final ServiceOperationMapper serviceOperationMapper;
     private final Map<TerminalType, List<ChannelServiceAccess>> CACHE = new ConcurrentHashMap<>();
-    private volatile List<ChannelServiceAccess> CACHE_ALL = List.of();
     private final ScmServiceService scmServiceService;
     private final ChannelService channelService;
     private final ChannelMapper channelMapper;
@@ -55,14 +54,14 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
         return channelServiceAccessEntities.stream()
                 .filter(ChannelServiceAccessServiceImpl::support)
                 .map(channelServiceAccessEntity -> {
-                  ChannelServiceAccess channelServiceAccess = channelServiceAccessMapper.toModel(channelServiceAccessEntity);
-                  List<ServiceOperationEntity> serviceOperationEntities = serviceOperationRepository
-                          .findAllByService_Id(channelServiceAccessEntity.getService().getId());
-                  List<ServiceOperation> serviceOperations = serviceOperationEntities.stream()
-                          .map(serviceOperationMapper::toModel)
-                          .toList();
-                  channelServiceAccess.getService().setServiceOperations(serviceOperations);
-                  return channelServiceAccess;
+                    ChannelServiceAccess channelServiceAccess = channelServiceAccessMapper.toModel(channelServiceAccessEntity);
+                    List<ServiceOperationEntity> serviceOperationEntities = serviceOperationRepository
+                            .findAllByService_Id(channelServiceAccessEntity.getService().getId());
+                    List<ServiceOperation> serviceOperations = serviceOperationEntities.stream()
+                            .map(serviceOperationMapper::toModel)
+                            .toList();
+                    channelServiceAccess.getService().setServiceOperations(serviceOperations);
+                    return channelServiceAccess;
                 })
                 .collect(Collectors.toList());
     }
@@ -77,40 +76,31 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
     }
 
     public List<ChannelServiceAccess> findAll() {
-        if (CACHE_ALL.isEmpty()) {
-            synchronized (this) {
-                if (CACHE_ALL.isEmpty()) {
-                    CACHE_ALL = List.copyOf(channelServiceAccessMapper.toModel(channelServiceAccessRepository.findAll()));
-                }
-            }
-        }
-        return CACHE_ALL;
+        return channelServiceAccessMapper.toModel(channelServiceAccessRepository.findAll());
     }
 
-    public List<ChannelServiceAccess> findAllByServiceId(Short serviceId) {
-        return findAll().stream()
-                .filter(channelServiceAccess -> channelServiceAccess.getService() != null && java.util.Objects.equals(channelServiceAccess.getService().getId(), serviceId))
-                .toList();
+    public List<ChannelServiceAccess> findAllByServiceId(Long serviceId) {
+        return channelServiceAccessMapper.toModel(channelServiceAccessRepository.findByServiceId(serviceId));
     }
 
-    public ChannelServiceAccess create(ChannelServiceAccess channelServiceAccess) {
-        ValidationUtils.checkNull(channelServiceAccess.getService(), () -> new MissingRequiredInputException("service"));
-        ValidationUtils.checkNull(channelServiceAccess.getService().getId(), () -> new MissingRequiredInputException("serviceId"));
-        ValidationUtils.checkNull(channelServiceAccess.getChannel(), () -> new MissingRequiredInputException("channel"));
-        ValidationUtils.checkNull(channelServiceAccess.getChannel().getId(), () -> new MissingRequiredInputException("channelId"));
-        EbService ebService = scmServiceService.findByServiceId(channelServiceAccess.getService().getId());
-        Channel channel = channelService.findChannelById(channelServiceAccess.getChannel().getId());
-        ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessMapper.toEntity(channelServiceAccess);
+    public ChannelServiceAccess create(ChannelAccessCreateRequest request) {
+        ValidationUtils.checkNull(request.getServiceId(), () -> new MissingRequiredInputException("serviceId"));
+        ValidationUtils.checkNull(request.getChannelId(), () -> new MissingRequiredInputException("channelId"));
+        EbService ebService = scmServiceService.findByServiceId(request.getServiceId());
+        Channel channel = channelService.findChannelById(request.getChannelId());
+        ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessMapper.toEntity(request);
         channelServiceAccessEntity.setChannel(channelMapper.toEntity(channel));
         channelServiceAccessEntity.setService(ebServiceMapper.toEntity(ebService));
         ChannelServiceAccessEntity save = channelServiceAccessRepository.save(channelServiceAccessEntity);
-        clearCache();
         return channelServiceAccessMapper.toModel(save);
     }
 
-    private void clearCache() {
-        CACHE_ALL = List.of();
-        CACHE.clear();
+    @Override
+    public ChannelServiceAccess update(ChannelAccessUpdateRequest request) {
+        ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("id"));
+        channelServiceAccessRepository.findById(request.getId());
+        ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessMapper.toEntity(request);
+        return channelServiceAccessMapper.toModel(channelServiceAccessRepository.save(channelServiceAccessEntity));
     }
 
     private static boolean support(ChannelServiceAccessEntity entity) {

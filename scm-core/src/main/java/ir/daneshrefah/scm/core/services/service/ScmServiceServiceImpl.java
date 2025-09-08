@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.task.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Header;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,7 +42,6 @@ public class ScmServiceServiceImpl implements ScmServiceService {
         Specification<ServiceEntity> specification = ScmServiceSpecification.toSpecification(request);
         Pageable pageable = PageableUtils.getPageable(request);
         Page<ServiceEntity> ebServiceEntities = scmServiceRepository.findAll(specification, pageable);
-
         List<EbService> ebServices = ebServiceMapper.toModels(ebServiceEntities.getContent());
         return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), ebServiceEntities.getTotalElements(), ebServices);
     }
@@ -58,9 +58,19 @@ public class ScmServiceServiceImpl implements ScmServiceService {
     }
 
     @Override
-    public EbService findByServiceId(Short id) {
-        ValidationUtils.checkNull(Objects.isNull(id), () -> new MissingRequiredInputException("id"));
-        ServiceEntity serviceEntity = scmServiceRepository.findById(id).orElseThrow(() -> new NoMatchRecordFoundException("Service"));
+    public EbService findByServiceId(@Header("serviceId") Short serviceId) {
+        ValidationUtils.checkNull(Objects.isNull(serviceId), () -> new MissingRequiredInputException("serviceId"));
+        ServiceEntity serviceEntity = scmServiceRepository.findById(serviceId).orElseThrow(() -> new NoMatchRecordFoundException("Service"));
+        return ebServiceMapper.toModel(serviceEntity);
+    }
+
+    @Override
+    public EbService updateService(EbServiceCreateRequest request) {
+        ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("id"));
+        ServiceCategoryResponse serviceCategoryResponse = serviceCategoryService.getServiceCategoryById(request.getServiceCategory().getId());
+        ServiceEntity serviceEntity = ebServiceMapper.toEntity(request);
+        serviceEntity.setServiceCategory(serviceCategoryMapper.toEntity(serviceCategoryResponse));
+        scmServiceRepository.save(serviceEntity);
         return ebServiceMapper.toModel(serviceEntity);
     }
 }

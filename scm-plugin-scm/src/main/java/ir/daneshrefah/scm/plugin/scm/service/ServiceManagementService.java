@@ -56,13 +56,13 @@ public class ServiceManagementService extends AbstractJavaService {
         return this.service.findServiceByCode(serviceCode);
     }
 
-    @JavaService(operationCode = SVC_SERVICE_BY_ID)
-    public ScmService findServiceById(String serviceId) {
-        if (StringUtils.isEmpty(serviceId)) {
-            return null;
-        }
-        return this.service.findServiceById(serviceId);
-    }
+//    @JavaService(operationCode = SVC_SERVICE_BY_ID)
+//    public ScmService findServiceById(String serviceId) {
+//        if (StringUtils.isEmpty(serviceId)) {
+//            return null;
+//        }
+//        return this.service.findServiceById(serviceId);
+//    }
 
     @JavaService(operationCode = SVC_SERVICE_EDIT)
     public ScmService updateService(ServiceInfoEditRequest request) {

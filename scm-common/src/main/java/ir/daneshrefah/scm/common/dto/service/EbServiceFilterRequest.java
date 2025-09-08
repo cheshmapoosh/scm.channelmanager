@@ -11,6 +11,7 @@ import lombok.Setter;
 public class EbServiceFilterRequest extends PagedRequestData {
     private Integer id;
     private Boolean publish;
+    private Boolean financial;
     private String name;
     private String code;
     private String abbreviation;

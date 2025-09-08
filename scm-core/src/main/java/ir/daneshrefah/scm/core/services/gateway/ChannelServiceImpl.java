@@ -5,11 +5,13 @@ import ir.daneshrefah.scm.common.data.mapper.ChannelMapper;
 import ir.daneshrefah.scm.common.data.repository.channel.ChannelRepository;
 import ir.daneshrefah.scm.common.data.repository.channel.ChannelSpecification;
 import ir.daneshrefah.scm.common.dto.channel.ChannelFindRequest;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -25,10 +27,11 @@ public class ChannelServiceImpl implements ChannelService {
     private final ChannelMapper channelMapper;
 
     @Override
-    public List<Channel> findAllChannels(ChannelFindRequest request) {
+    public PagedResponseData<Channel> findAllChannels(ChannelFindRequest request) {
         Specification<ChannelEntity> specification = ChannelSpecification.toSpecification(request);
         Pageable pageable = PageableUtils.getPageable(request);
-        return channelRepository.findAll(specification, pageable).stream().map(channelMapper::toModel).toList();
+        Page<ChannelEntity> channelEntityPage = channelRepository.findAll(specification, pageable);
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), channelEntityPage.getTotalElements(), channelMapper.toModels(channelEntityPage.getContent()));
     }
 
     @Override

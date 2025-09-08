@@ -19,8 +19,6 @@ public class EbServiceCreateRequest {
     @NotBlankIfPresent
     private String abbreviation;
     @NotNull
-    private Integer serviceCategoryId;
-    @NotNull
     private Boolean financial;
     private RoutingStrategy routingStrategy;
     @NotNull
