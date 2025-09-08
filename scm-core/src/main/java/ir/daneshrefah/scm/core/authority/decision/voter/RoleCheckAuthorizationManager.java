@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.core.authority.decision.voter;
 
 import ir.daneshrefah.scm.common.model.gateway.BaseChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -16,13 +16,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
-public class RoleCheckAuthorizationManager implements AuthorizationManager<Exchange> {
+public class RoleCheckAuthorizationManager implements AuthorizationManager<SecurityContext> {
 
     private static final String JWT = "jwt";
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, Exchange exchange) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext securityContext) {
+        Exchange exchange = securityContext.getExchange();
         BaseChannelServiceDefinition baseChannelServiceDefinition = (BaseChannelServiceDefinition) exchange.getProperty(Message.CHANNEL_SERVICE_DEFINITION);
         return Optional
                 .ofNullable(baseChannelServiceDefinition)

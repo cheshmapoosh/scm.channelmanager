@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.core.authority.decision.builder;
+package ir.daneshrefah.scm.core.authority.decision.configuration.builder;
 
-import ir.daneshrefah.scm.core.authority.decision.constant.AuthorizationManagerChainDefinition;
-import ir.daneshrefah.scm.core.authority.decision.constant.AuthorizationManagerTypes;
-import org.apache.camel.Exchange;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthorizationManagerChainDefinition;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
+import ir.daneshrefah.scm.core.authority.decision.manager.AuthorizationManagerTypes;
 import org.springframework.security.authorization.AuthorizationManager;
 
 import java.beans.Introspector;
@@ -35,7 +35,7 @@ public record AuthorizationManagerDecisionChainBuilder(AuthorizationManagerChain
     }
 
 
-    public AuthorizationManagerDecisionChainBuilder register(Class<? extends AuthorizationManager<Exchange>> managerClass) {
+    public AuthorizationManagerDecisionChainBuilder register(Class<? extends AuthorizationManager<SecurityContext>> managerClass) {
         this.chainDefinition.getAuthorities().add(managerClass);
         return this;
     }

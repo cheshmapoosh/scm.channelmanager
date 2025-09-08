@@ -1,10 +1,11 @@
-package ir.daneshrefah.scm.core.authority.decision.manager;
+package ir.daneshrefah.scm.core.authority.decision.configuration.handler;
 
 import ir.daneshrefah.scm.common.exception.AuthenticationRequiredException;
 import ir.daneshrefah.scm.common.model.gateway.BaseChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.core.authority.decision.constant.AuthorizationManagerChainDefinition;
-import ir.daneshrefah.scm.core.authority.decision.manager.chain.DefaultAuthorizationManagerChain;
+import ir.daneshrefah.scm.core.authority.decision.chains.DefaultAuthorizationManagerChain;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthorizationManagerChainDefinition;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -28,7 +29,7 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
 
     private final Map<String, AuthorizationManagerDecisionChain> decisionChains;
     private final AuthorizationManagerFactory authorizationManagerFactory;
-    private final Map<String,AuthorizationManager<Exchange>> authorities;
+
 
 
     @Override
@@ -47,16 +48,19 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
                 throw new IllegalArgumentException("Could not found any AuthorizationManagerDecisionChain with name '" + chain + "'");
             }
             AuthorizationManagerChainDefinition chainDefinition = decisionChain.decisionChain().build();
-            Optional<AuthorizationManager<AuthorizationData>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
-            final List<Class<? extends AuthorizationManager<Exchange>>> authoritiesClassList = chainDefinition.getAuthorities();
-            final List<AuthorizationManager<Exchange>> authorizationList = authoritiesClassList
+            Optional<AuthorizationManager<SecurityContext.ManagerSecurityContext>> authorizationManager = authorizationManagerFactory.getAuthorizationManager(chainDefinition.getManagerBeanName());
+            final List<Class<? extends AuthorizationManager<SecurityContext>>> authoritiesClassList = chainDefinition.getAuthorities();
+            final List<AuthorizationManager<SecurityContext>> authorizationList = authoritiesClassList
                     .stream()
-                    .map(ac-> authorities.get(Introspector.decapitalize(ac.getSimpleName())))
+                    .map(ac-> authorizationManagerFactory.getAuthorizationVoter(Introspector.decapitalize(ac.getSimpleName())))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .toList();
             authorizationManager
                     .ifPresentOrElse(manager -> {
-                        AuthorizationData authorizationData = new AuthorizationData(exchange, authorizationList);
-                        manager.verify(() -> authentication, authorizationData);
+                        SecurityContext.ManagerSecurityContext managerSecurityContext = new SecurityContext.ManagerSecurityContext(authorizationList);
+                        managerSecurityContext.setExchange(exchange);
+                        manager.verify(() -> authentication, managerSecurityContext);
                     }, () -> {
                         throw new IllegalArgumentException("Could not found any AuthorizationManager with name '" + chainDefinition.getManagerBeanName() + "'");
                     });

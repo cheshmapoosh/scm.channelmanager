@@ -1,11 +1,10 @@
-package ir.daneshrefah.scm.core.authority.decision.constant;
+package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authorization.AuthorizationManager;
 
 /**
- * @see Vote
  * @see AuthorizationManager
  */
 @Getter

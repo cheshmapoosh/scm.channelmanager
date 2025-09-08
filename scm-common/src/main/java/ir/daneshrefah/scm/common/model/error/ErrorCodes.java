@@ -1,11 +1,10 @@
 package ir.daneshrefah.scm.common.model.error;
 
 /**
- * @apiNote Use ExceptionResolver pattern. using constant exception code
+ * @apiNote Use ExceptionResolver pattern. using model exception code
  * can occur code duplication.
  * @see ir.daneshrefah.scm.common.error.ErrorMapping
  */
-@Deprecated
 public interface ErrorCodes {
 
      int ERROR_CODE_SYSTEM_ERROR = 1001;

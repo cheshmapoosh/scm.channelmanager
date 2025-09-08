@@ -199,7 +199,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //                        .resilience4jConfiguration(resilience4jConfigurationDefinition)
 //                        .to(url)
 //                        .onFallback()
-//                        .setBody(constant("{\"error\":\"fallback\"}"))
+//                        .setBody(model("{\"error\":\"fallback\"}"))
 //                        .end();
 //            } else {
                 route.to(url);
@@ -240,7 +240,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //                            .resilience4jConfiguration(resilience4jConfigurationDefinition)
 //                            .to(url)
 //                            .onFallback()
-//                            .setBody(constant("{\"error\":\"fallback\"}"))
+//                            .setBody(model("{\"error\":\"fallback\"}"))
 //                            .end();
 //                } else {
                     multicast.to(url).end();

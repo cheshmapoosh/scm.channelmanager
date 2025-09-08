@@ -79,6 +79,5 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation 'org.apache.camel.springboot:camel-jsonpath-starter'
     implementation 'org.apache.commons:commons-text'
-    implementation 'org.springframework.security:spring-security-core:6.5.3'
 
 }
