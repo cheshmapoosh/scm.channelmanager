@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.authority.decision.manager;
 
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthoritiesSecurityContext;
 import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authorization.AuthorizationDecision;
@@ -20,10 +21,10 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS
  */
 @Component
 @RequiredArgsConstructor
-public class AffirmativeBasedAuthorizationManager implements AuthorizationManager<SecurityContext.ManagerSecurityContext> {
+public class AffirmativeBasedAuthorizationManager implements AuthorizationManager<AuthoritiesSecurityContext> {
 
     @Override
-    public void verify(Supplier<Authentication> authentication, SecurityContext.ManagerSecurityContext securityContext) {
+    public void verify(Supplier<Authentication> authentication, AuthoritiesSecurityContext securityContext) {
         List<? extends AuthorizationManager<SecurityContext>> authorities = securityContext.getAuthorities();
         boolean granted = false;
         for (AuthorizationManager<SecurityContext> authority : authorities) {
@@ -44,7 +45,7 @@ public class AffirmativeBasedAuthorizationManager implements AuthorizationManage
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, SecurityContext.ManagerSecurityContext securityContext) {
+    public AuthorizationDecision check(Supplier<Authentication> authentication, AuthoritiesSecurityContext securityContext) {
         try {
             verify(authentication, securityContext);
             return new AuthorizationDecision(true);

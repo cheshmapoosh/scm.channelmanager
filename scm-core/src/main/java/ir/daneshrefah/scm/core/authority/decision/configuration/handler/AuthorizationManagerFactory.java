@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.authority.decision.configuration.handler;
 
+import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthoritiesSecurityContext;
 import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,7 @@ import java.util.Optional;
 public class AuthorizationManagerFactory {
 
     private final Map<String, AuthorizationManager<SecurityContext>> authorities;
-    private final Map<String, AuthorizationManager<SecurityContext.ManagerSecurityContext>> managerAuthorities;
+    private final Map<String, AuthorizationManager<AuthoritiesSecurityContext>> managerAuthorities;
 
     @PostConstruct
     public void init() {
@@ -26,7 +27,7 @@ public class AuthorizationManagerFactory {
         authorities.forEach((beanName, manager) -> log.info("Authority rule initialized, name: {} , manager: {}", beanName, manager));
     }
 
-    public List<AuthorizationManager<SecurityContext.ManagerSecurityContext>> getAuthorizationCheckManagers() {
+    public List<AuthorizationManager<AuthoritiesSecurityContext>> getAuthorizationCheckManagers() {
         return managerAuthorities.values().stream().toList();
     }
 
@@ -35,11 +36,11 @@ public class AuthorizationManagerFactory {
     }
 
 
-    public Optional<AuthorizationManager<SecurityContext.ManagerSecurityContext>> getAuthorizationManager(String beanName) {
+    public Optional<AuthorizationManager<AuthoritiesSecurityContext>> getAuthorizationManager(String beanName) {
         return Optional.ofNullable(managerAuthorities.get(beanName));
     }
 
-    public Optional<AuthorizationManager<SecurityContext.ManagerSecurityContext>> getAuthorizationManager(Class<?> beanClass) {
+    public Optional<AuthorizationManager<AuthoritiesSecurityContext>> getAuthorizationManager(Class<?> beanClass) {
         return Optional.ofNullable(managerAuthorities.get(Introspector.decapitalize(beanClass.getSimpleName())));
     }
 
