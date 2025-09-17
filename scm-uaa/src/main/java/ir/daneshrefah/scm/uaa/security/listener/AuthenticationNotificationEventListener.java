@@ -50,7 +50,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
     private NotificationRequest extractNotificationRequest(PostAuthenticationToken authentication, Terminal terminal) {
         User user = authentication.getPrincipal().getUser();
         NotificationData data = new NotificationData()
-                .put(NotificationDataKey.LOGIN_TIME, getShamsiLoginTime(authentication))
+                .put(NotificationDataKey.LOGIN_TIME, convertToPersianNumber(getShamsiLoginTime(authentication)))
                 .put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
         IssuerInfo issuerInfo = IssuerInfo.builder()
                 .parentCorrelationId(authentication.getSessionId())
@@ -81,13 +81,27 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         return request;
     }
 
+    private String convertToPersianNumber(String value) {
+        if (value == null) return null;
+        char[] persianDigits = {'۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'};
+        StringBuilder result = new StringBuilder();
+        for (char ch : value.toCharArray()) {
+            if (Character.isDigit(ch)) {
+                result.append(persianDigits[ch - '0']);
+            } else {
+                result.append(ch);
+            }
+        }
+        return result.toString();
+    }
+
     private String getShamsiLoginTime(PostAuthenticationToken authentication) {
         return DateUtils
                 .ShamsiCalendarConvertor
                 .convertToShamsiDateString(DateUtils
                         .DateConverter
                         .convertToLocalDateTime(DateUtils.DateConverter
-                                .convertToTimestamp(authentication.getIssuedAt())), "yyyy/MM/dd HH:mm:ss");
+                                .convertToTimestamp(authentication.getIssuedAt())), "yyyy/MM/dd-HH:mm");
     }
 
 
