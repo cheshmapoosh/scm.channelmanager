@@ -87,7 +87,7 @@ public class TraceUtils {
         spanAdapter.setTag(LogAttribute.SERVICE_CODE.getAttributeName(), service != null ? service.getCode().trim() : "");
         spanAdapter.setTag(LogAttribute.END_POINT.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_URI, String.class));
         spanAdapter.setTag(LogAttribute.METHOD_TYPE.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_METHOD, String.class));
-        spanAdapter.setTag(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_REFERER, String.class));
+        spanAdapter.setTag(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_REFERER, String.class));
         spanAdapter.setTag(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), exchange.getMessage().getHeader(Constants.SCM_PARAMETER_USERNAME, String.class));
         spanAdapter.setTag(LogAttribute.USERNAME.getAttributeName(), AuthenticationUtils.getEffectiveUsername().orElse(""));
         spanAdapter.setTag(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));

@@ -83,7 +83,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setExternalSequenceId(attributes.get(LogAttribute.EXTERNAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setOriginalSequenceId(attributes.get(LogAttribute.ORIGINAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
-        setIpAddress(attributes, transactionLogEntity);
+        transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName()));
         return transactionLogEntity;
     }
 
@@ -174,10 +174,6 @@ public class TransactionLogConverterService implements ConverterService {
         return null;
     }
 
-    private void setIpAddress(Map<String, String> attributes, TransactionLogEntity transactionLogEntity) {
-        transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
-        transactionLogEntity.setClientPhoneNumber(attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName()));
-    }
 
     private static String getExceptionClassName(Map<String, String> attributes) {
         String exceptionClassName = attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName());
