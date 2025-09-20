@@ -30,6 +30,11 @@ public class ChannelServiceAccessManagement extends AbstractJavaService {
         return channelServiceAccessService.findAllByServiceId(serviceId);
     }
 
+    @JavaService(operationCode = SVC_CHANNEL_SERVICE_ACCESS_FIND_BY_ID)
+    public ChannelServiceAccess findById(@Header("id") Long id) {
+        return channelServiceAccessService.findById(id);
+    }
+
     @JavaService(operationCode = SVC_CHANNEL_SERVICE_ACCESS_CREATE)
     public ChannelServiceAccess create(ChannelAccessCreateRequest request) {
         return channelServiceAccessService.create(request);
