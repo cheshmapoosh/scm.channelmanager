@@ -2,12 +2,17 @@ package ir.daneshrefah.scm.log.service;
 
 import com.vdurmont.semver4j.Requirement;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
 import ir.daneshrefah.scm.common.log.service.TransactionLogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,7 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "scm.log.transactionLogConverter.enabled", havingValue = "true", matchIfMissing = true)
+@RequiredArgsConstructor
+@Conditional(LogConditions.TransactionLogTraceCondition.class)
 public class TransactionLogConverterService implements ConverterService {
 
     private final TransactionLogService transactionLogService;
@@ -46,6 +52,11 @@ public class TransactionLogConverterService implements ConverterService {
     public boolean supports(LogMessage logMessage) {
         String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
         return versionRequirement.isSatisfiedBy(version);
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> TransactionLogConverterService successfully initialized");
     }
 
     @Override

@@ -1,18 +1,21 @@
 package ir.daneshrefah.scm.log.service;
 
-import com.vdurmont.semver4j.Requirement;
-import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@ConditionalOnProperty(name = "scm.log.logTraceConverter.enabled", havingValue = "true", matchIfMissing = true)
+@RequiredArgsConstructor
+@Conditional(LogConditions.LogTraceCondition.class)
+@Slf4j
 public class LogTraceConverterService implements ConverterService {
 
     private final LogService logService;
@@ -41,6 +44,11 @@ public class LogTraceConverterService implements ConverterService {
             //TODO
             return true;
         }
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> LogTraceConverterService successfully initialized");
     }
 
     @Override
