@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.apache.camel.tracing.SpanAdapter;
 
 import java.time.Instant;
 import java.util.*;
@@ -49,7 +48,6 @@ public abstract class MessageInput<T> {
     private String authenticationValue;
     private TokenType transactionAuthenticationType;
     private String transactionAuthenticationValue;
-    private SpanAdapter spanAdapter;
 
     public String getHeader(String key) {
         if (Objects.nonNull(key)) {

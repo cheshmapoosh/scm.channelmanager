@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.common.log.service;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
-//import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogId;
 import ir.daneshrefah.scm.common.log.mapper.TransactionLogMapper;
 import ir.daneshrefah.scm.common.log.model.TransactionLogRequest;
 import ir.daneshrefah.scm.common.log.model.TransactionLogResponse;
@@ -11,12 +11,15 @@ import ir.daneshrefah.scm.common.log.model.TransactionPayloadRequest;
 import ir.daneshrefah.scm.common.log.repository.transaction.TransactionLogRepository;
 import ir.daneshrefah.scm.common.log.repository.transaction.TransactionLogSpec;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -26,12 +29,19 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
+@Conditional(LogConditions.TransactionLogTraceCondition.class)
 public class TransactionLogServiceIml implements TransactionLogService {
 
     private final TransactionLogRepository transactionLogRepository;
 
     @PersistenceContext(name = "entityManagerFactory")
     private final EntityManager entityManager;
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> TransactionLogService successfully initialized");
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveAll(List<TransactionLogEntity> transactionLogs) {

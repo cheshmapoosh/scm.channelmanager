@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.gateway;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
@@ -10,7 +11,7 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
+import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
 import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
@@ -100,6 +101,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
                         route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
+                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
                         defineExceptionHandler(route);
                         log.info(">>> exception handler defined successfully");
                         applyMetrics(route, service);
@@ -132,7 +134,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void applyTracing(ProcessorDefinition<?> route, Service service) {
         route.process(exchange -> {
-            TraceUtils.getInstance().traceScmRequest(exchange, service);
+            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
         });
     }
 
@@ -285,6 +287,13 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
+        route.process(exchange -> {
+            Service service = exchange.getProperty(Message.SERVICE, Service.class);
+            TraceUtils.getInstance().traceAfterRoute(exchange, service);
+            Span span = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
+            span.end();
+        });
+
         if (orderedBeforePluginDetails == null) {
             return;
         }

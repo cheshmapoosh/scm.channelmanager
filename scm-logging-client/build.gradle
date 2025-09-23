@@ -26,6 +26,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
-    implementation 'org.apache.camel.springboot:camel-opentelemetry-starter'
-    implementation("org.apache.commons:commons-lang3:3.17.0")
+    implementation 'org.apache.camel:camel-core'
+    implementation("org.apache.commons:commons-lang3:3.18.0")
 }
