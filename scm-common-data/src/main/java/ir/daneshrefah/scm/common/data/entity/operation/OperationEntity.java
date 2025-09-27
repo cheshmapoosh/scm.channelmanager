@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.entity.operation;
+package ir.daneshrefah.scm.common.data.entity.operation;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class OperationEntity extends AbstractAuditableEntity<String> {
 
     @Size(max = 20)
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "TYPE",nullable = false, length = 20)
     private OperationType type;
 
     @ManyToOne

@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingCreateRequest;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingResponse;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.core.entity.plugin.PluginBindingEntity;
-import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
+import ir.daneshrefah.scm.common.data.mapper.definition.DefinitionMapper;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,7 +36,12 @@ public abstract class PluginBindingMapper {
 
     public abstract PluginBindingEntity toEntity(PluginBinding pluginBinding);
 
+    public abstract PluginBindingEntity toEntity(PluginBindingCreateRequest pluginBindingCreateRequest);
+
     public abstract PluginBinding toModel(PluginBindingEntity pluginBindingEntity);
+
+    @Mapping(target = "definitionId", source = "definition.id")
+    public abstract PluginBindingResponse toPluginBindingResponse(PluginBindingEntity pluginBindingEntity);
 
     @AfterMapping
     public void afterMapping(@MappingTarget PluginBinding pluginBinding) {

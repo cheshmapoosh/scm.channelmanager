@@ -17,6 +17,8 @@ public interface ChannelServiceAccessService {
 
     List<ChannelServiceAccess> findAllByServiceId(Long serviceId);
 
+    ChannelServiceAccess findById(Long serviceId);
+
     ChannelServiceAccess create(ChannelAccessCreateRequest request);
 
     ChannelServiceAccess update(ChannelAccessUpdateRequest request);

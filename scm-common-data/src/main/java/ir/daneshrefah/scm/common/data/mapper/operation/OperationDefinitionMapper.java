@@ -1,25 +1,25 @@
-package ir.daneshrefah.scm.core.mapper.operation;
+package ir.daneshrefah.scm.common.data.mapper.operation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import ir.daneshrefah.scm.common.data.entity.operation.OperationDefinitionEntity;
+import ir.daneshrefah.scm.common.data.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.common.model.operation.OperationDefinition;
 import ir.daneshrefah.scm.common.model.operation.RequestTemplateOperationDefinition;
 import ir.daneshrefah.scm.common.model.operation.ResponseTemplateOperationDefinition;
 import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
-import ir.daneshrefah.scm.core.entity.operation.OperationDefinitionEntity;
-import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
+import jakarta.annotation.PostConstruct;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.ReportingPolicy.IGNORE;

@@ -1,6 +1,7 @@
-package ir.daneshrefah.scm.core.entity.definition;
+package ir.daneshrefah.scm.common.data.entity.definition;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
+import ir.daneshrefah.scm.common.model.definition.DefinitionType;
 import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -26,9 +27,11 @@ public class DefinitionEntity extends AbstractAuditableEntity<String> {
     @Column(length = 50, nullable = false)
     private String name;
     @Enumerated(EnumType.STRING)
-    @Size(max = 20)
     @Column(length = 20)
     private TemplateEngineType engine;
     @Size(max = 2048)
     private String details;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "DEFINITION_TYPE",length = 30)
+    private DefinitionType type;
 }

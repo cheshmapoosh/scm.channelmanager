@@ -14,6 +14,7 @@ import lombok.Setter;
 public class ChannelServiceAccessEntity extends AbstractEntity<Long> {
     @Id
     @SequenceGenerator(name = "CHANNEL_SERVICE_ACCESS_id_gen", sequenceName = "SQCONSTANTS", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "CHANNEL_SERVICE_ACCESS_id_gen")
     @Column(name = "CHANNEL_SERVICE_ACCESS_ID", nullable = false, precision = 22)
     private Long id;
 

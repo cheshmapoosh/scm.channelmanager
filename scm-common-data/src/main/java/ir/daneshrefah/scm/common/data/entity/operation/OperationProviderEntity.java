@@ -1,7 +1,6 @@
-package ir.daneshrefah.scm.core.entity.operation;
+package ir.daneshrefah.scm.common.data.entity.operation;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
-import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

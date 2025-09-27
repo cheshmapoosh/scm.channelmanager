@@ -21,6 +21,7 @@ import ir.daneshrefah.scm.core.entity.gateway.ServiceOperationEntity;
 import ir.daneshrefah.scm.core.mapper.gateway.ServiceOperationMapper;
 import ir.daneshrefah.scm.core.repository.gateway.ServiceOperationRepository;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -83,6 +84,13 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
         return channelServiceAccessMapper.toModel(channelServiceAccessRepository.findByServiceId(serviceId));
     }
 
+    @Override
+    public ChannelServiceAccess findById(Long id) {
+        ValidationUtils.checkNull(id, () -> new MissingRequiredInputException("id"));
+        ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessRepository.findById(id).orElseThrow(() -> new MissingRequiredInputException("id"));
+        return channelServiceAccessMapper.toModel(channelServiceAccessEntity);
+    }
+
     public ChannelServiceAccess create(ChannelAccessCreateRequest request) {
         ValidationUtils.checkNull(request.getServiceId(), () -> new MissingRequiredInputException("serviceId"));
         ValidationUtils.checkNull(request.getChannelId(), () -> new MissingRequiredInputException("channelId"));
@@ -96,10 +104,15 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
     }
 
     @Override
+    @Transactional
     public ChannelServiceAccess update(ChannelAccessUpdateRequest request) {
         ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("id"));
-        channelServiceAccessRepository.findById(request.getId());
+        ChannelServiceAccessEntity entity = channelServiceAccessRepository.findById(request.getId()).orElseThrow(() -> new MissingRequiredInputException("id"));
         ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessMapper.toEntity(request);
+        channelServiceAccessEntity.setChannel(entity.getChannel());
+        channelServiceAccessEntity.setService(entity.getService());
+        channelServiceAccessEntity.setFixedValue(request.getFixedValue());
+        channelServiceAccessEntity.setRatedValue(request.getRatedValue());
         return channelServiceAccessMapper.toModel(channelServiceAccessRepository.save(channelServiceAccessEntity));
     }
 

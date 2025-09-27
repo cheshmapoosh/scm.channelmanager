@@ -3,10 +3,7 @@ package ir.daneshrefah.scm.plugin.scm.service.definition;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
-import ir.daneshrefah.scm.common.dto.definition.DefinitionDetailResponse;
-import ir.daneshrefah.scm.common.dto.definition.DefinitionFilterRequest;
-import ir.daneshrefah.scm.common.dto.definition.DefinitionDetailRequest;
-import ir.daneshrefah.scm.common.dto.definition.DefinitionResponse;
+import ir.daneshrefah.scm.common.dto.definition.*;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.service.definition.DefinitionService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
@@ -29,7 +26,27 @@ public class DefinitionServiceManagement extends AbstractJavaService {
     }
 
     @JavaService(operationCode = OperationCode.SVC_DEFINITION_DETAILS_LIST_BY_ID)
-    public DefinitionDetailResponse getAllDefinitionDetailsById(DefinitionDetailRequest request) {
+    public DefinitionDetailResponse getAllDefinitionDetailsById(DefinitionDetailFilterRequest request) {
         return definitionService.getAllDefinitionDetailsById(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_DEFINITION_CREATE)
+    public DefinitionResponse createDefinition(DefinitionRequest request){
+        return definitionService.createDefinition(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_DEFINITION_UPDATE)
+    public DefinitionResponse updateDefinition(DefinitionRequest request){
+        return definitionService.updateDefinition(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_DEFINITION_DETAIL_CREATE)
+    public DefinitionResponse createDefinitionDetail(DefinitionDetailRequest request){
+        return definitionService.createDefinitionDetail(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_DEFINITION_DETAIL_UPDATE)
+    public DefinitionResponse updateDefinitionDetail(DefinitionDetailRequest request){
+        return definitionService.updateDefinitionDetail(request);
     }
 }

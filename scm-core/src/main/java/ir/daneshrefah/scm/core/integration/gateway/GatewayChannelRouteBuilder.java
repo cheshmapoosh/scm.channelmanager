@@ -13,7 +13,7 @@ import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.core.services.gateway.GatewayService;
-import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
+import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
 import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;

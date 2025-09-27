@@ -3,10 +3,11 @@ package ir.daneshrefah.scm.plugin.scm.service.plugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
-import ir.daneshrefah.scm.common.model.plugin.PluginBindingCreateRequest;
-import ir.daneshrefah.scm.common.model.plugin.PluginBindingRequest;
-import ir.daneshrefah.scm.common.model.plugin.PluginBindingResponse;
-import ir.daneshrefah.scm.common.model.plugin.PluginBindingUpdateRequest;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingCreateRequest;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingRequest;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingResponse;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingUpdateRequest;
+import ir.daneshrefah.scm.common.model.plugin.PluginHandlerModel;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -25,17 +26,22 @@ public class PluginBindingServiceManagement extends AbstractJavaService {
     }
 
     @JavaService(operationCode = OperationCode.SVC_PLUGIN_BINDINGS_LIST_BY_DEFINITION_ID)
-    public List<PluginBindingResponse> bindPlugin(PluginBindingRequest request) {
+    public List<PluginBindingResponse> getPluginBindingsByDefinitionId(PluginBindingRequest request) {
         return pluginResolverService.getPluginBindingsByDefinitionId(request);
     }
 
     @JavaService(operationCode = OperationCode.SVC_PLUGIN_BINDING_CREATE)
-    public PluginBindingResponse createPlugin(PluginBindingCreateRequest request) {
+    public PluginBindingResponse createPluginBinding(PluginBindingCreateRequest request) {
         return pluginResolverService.createPluginBinding(request);
     }
 
     @JavaService(operationCode = OperationCode.SVC_PLUGIN_BINDING_UPDATE)
-    public PluginBindingResponse updatePluginBinding(PluginBindingUpdateRequest request){
+    public PluginBindingResponse updatePluginBinding(PluginBindingUpdateRequest request) {
         return pluginResolverService.updatePluginBinding(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_PLUGIN_BINDING_HANDLER_LIST)
+    public List<PluginHandlerModel> getPluginHandlerModels() {
+        return pluginResolverService.getPluginHandlerModels();
     }
 }

@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.services.gateway;
 
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
-import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
+import ir.daneshrefah.scm.common.data.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.core.mapper.gateway.ChannelServiceDefinitionMapper;
 import ir.daneshrefah.scm.core.repository.DefinitionRepository;
 import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;

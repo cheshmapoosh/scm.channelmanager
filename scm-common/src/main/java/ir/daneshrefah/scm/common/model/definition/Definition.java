@@ -18,5 +18,5 @@ public class Definition extends AbstractAuditableModel<String> {
     private TemplateEngineType engine;
     @Size(max = 2048)
     private String details;
-
+    private DefinitionType type;
 }
