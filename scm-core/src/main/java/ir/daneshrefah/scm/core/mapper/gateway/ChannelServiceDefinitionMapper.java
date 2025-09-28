@@ -129,6 +129,17 @@ public abstract class ChannelServiceDefinitionMapper {
             }
             authorizationConfig.setAccessRoles(accessRoles);
 
+            // authorities list
+            List<String> authorities = new ArrayList<>();
+            JsonNode authoritiesNode = authorizationConfigNode.get("authorities");
+            if (authoritiesNode != null && authoritiesNode.isArray()) {
+                for (JsonNode authorityNode : authoritiesNode) {
+                    authorities.add(authorityNode.asText());
+                }
+            }
+            authorizationConfig.setAuthorities(authorities);
+
+
             restChannelServiceDefinition.setAuthorizationConfig(authorizationConfig);
         } else {
             restChannelServiceDefinition.setAuthorizationConfig(null);
