@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.log.config;
 
 import com.zaxxer.hikari.HikariDataSource;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -24,7 +28,14 @@ import java.util.Map;
         entityManagerFactoryRef = "transactionLogEntityManagerFactory",
         transactionManagerRef = "transactionLogTransactionManager"
 )
+@Conditional(LogConditions.TransactionLogTraceCondition.class)
+@Slf4j
 public class TransactionLogDataSourceConfig {
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> TransactionLogDataSourceConfig successfully initialized");
+    }
 
     @Bean(name = "transactionLogDataSource")
     public DataSource transactionLogDataSource(LogApplication logApplication) {

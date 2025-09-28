@@ -44,6 +44,7 @@ public class Message implements Serializable {
     public static final String OPERATION_PHASE_DEFINITION = "scmOperationPhaseDefinition";
         public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
     public static final String CHANNEL_SERVICE_DEFINITION = "ScmChannelServiceDefinition";
+    public static final String CURRENT_OPEN_TELEMETRY_SPAN = "ScmOtelSpanTrace";
     private final Header header;
     private MessageStatus status;
     private JsonNode payload;

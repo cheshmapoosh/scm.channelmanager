@@ -1,14 +1,17 @@
 package ir.daneshrefah.scm.log.service;
 
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
 import ir.daneshrefah.scm.common.log.service.TransactionLogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -20,13 +23,19 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "scm.log.transactionLogConverter.enabled", havingValue = "true", matchIfMissing = true)
+@Conditional(LogConditions.TransactionLogTraceCondition.class)
+@Slf4j
 public class TransactionLogConverterService implements ConverterService {
 
     private final TransactionLogService transactionLogService;
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
     private static final int CHUNK_SIZE = 2048;
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> TransactionLogConverterService successfully initialized");
+    }
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {

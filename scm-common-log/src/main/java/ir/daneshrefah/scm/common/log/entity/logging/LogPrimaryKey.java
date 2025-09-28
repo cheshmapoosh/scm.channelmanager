@@ -2,10 +2,7 @@ package ir.daneshrefah.scm.common.log.entity.logging;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -14,6 +11,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 public class LogPrimaryKey implements Serializable {
     @Column(name = "SPAN_ID")
     private String spanId;

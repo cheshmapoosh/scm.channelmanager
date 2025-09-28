@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.log.service;
 
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.mapper.LogTraceMapper;
 import ir.daneshrefah.scm.common.log.model.LogTraceFindByIdRequest;
@@ -12,8 +13,10 @@ import ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository;
 import ir.daneshrefah.scm.common.log.repository.logging.TraceLogSpec;
 import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,9 +29,15 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Conditional(LogConditions.LogTraceCondition.class)
 public class LogTraceServiceImpl implements LogService {
 
     private final LogTraceRepository logTraceRepository;
+
+    @PostConstruct
+    public void init() {
+        log.info(">>> LogTraceService successfully initialized");
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveAll(List<LogTraceEntity> logTraces) {

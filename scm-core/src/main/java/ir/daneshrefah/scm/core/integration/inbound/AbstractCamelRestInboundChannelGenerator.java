@@ -17,8 +17,6 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.tracing.ActiveSpanManager;
-import org.apache.camel.tracing.SpanAdapter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -117,7 +115,6 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
                 .clientAgent(CamelUtils.getClientAgentFromExchange(input))
                 .httpUrl(CamelUtils.getHttpUrlFromExchange(input))
                 .httpMethod(httpMethod)
-                .spanAdapter(ActiveSpanManager.getSpan(input))
                 .build();
         MessageInputContext.init(result);
 
@@ -134,7 +131,6 @@ public abstract class AbstractCamelRestInboundChannelGenerator extends AbstractC
         result.putPOJO("errors", message.getErrors());
         result.set("result", message.getPayload());
         responseMessage.setBody(result);
-        SpanAdapter span = ActiveSpanManager.getSpan(input);
 //        traceLogUtils.recordMessageTrace(message,span);
         return input;
     }

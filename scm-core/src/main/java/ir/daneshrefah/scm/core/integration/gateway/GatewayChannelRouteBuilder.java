@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.gateway;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
@@ -25,7 +26,6 @@ import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.tracing.ActiveSpanManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +46,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final List<ProtocolHandler> protocolHandlers;
     private final PluginResolverService pluginResolverService;
     private final Map<String, PluginHandler> pluginHandlers;
+    private final Tracer tracer;
 
     @Value("${scm.app-name}")
     private String name;
@@ -102,7 +103,6 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
-
                         defineExceptionHandler(route);
                         log.info(">>> exception handler defined successfully");
                         applyMetrics(route, service);
@@ -291,7 +291,8 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         route.process(exchange -> {
             Service service = exchange.getProperty(Message.SERVICE, Service.class);
             TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            ActiveSpanManager.endScope(exchange);
+            Span span = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
+            span.end();
         });
 
         if (orderedBeforePluginDetails == null) {
