@@ -10,4 +10,5 @@ import java.util.List;
 public class AuthorizationManagerChainDefinition {
     private final List<Class<? extends AuthorizationManager<SecurityContext>>> authorities = new ArrayList<>();
     private String managerBeanName;
+    private boolean dynamicAuthorization;
 }

@@ -37,18 +37,29 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
     public void config(RouteDefinition route, Operation operation) {
         String operationCode = operation.getName();
         String beanName = operation.getPath();
-        var bean = applicationContext.getBean(beanName);
-        findTargetMethod(bean, operationCode).ifPresentOrElse(targetMethod -> {
-            String targetBeanPath = createTargetBeanPath(targetMethod);
-            findRequestBodyParameter(targetMethod).ifPresent(parameter -> {
-                route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
-            });
-            route.bean("beanValidator");
-            applyTargetMethod(route,beanName,targetMethod,targetBeanPath);
-        },()-> log.warn("<<<<<<< WARN >>>>>>> could not initial route for operation '{}'",operation.getName()));
+        resolveSpringBean(beanName)
+                .map(bean -> findTargetMethod(bean, operationCode))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .ifPresentOrElse(targetMethod -> {
+                    String targetBeanPath = createTargetBeanPath(targetMethod);
+                    findRequestBodyParameter(targetMethod).ifPresent(parameter -> {
+                        route.unmarshal().json(JsonLibrary.Jackson, parameter.getType());
+                    });
+                    route.bean("beanValidator");
+                    applyTargetMethod(route, beanName, targetMethod, targetBeanPath);
+                }, () -> log.warn("<<<<<<< WARN >>>>>>> could not initial route for operation '{}'", operation.getName()));
     }
 
-    private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod,String targetBeanPath) {
+    private Optional<?> resolveSpringBean(String beanName) {
+        try {
+            return Optional.of(applicationContext.getBean(beanName));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private void applyTargetMethod(RouteDefinition route, String beanName, Method targetMethod, String targetBeanPath) {
         if (hasExchangeInMethodInput(targetMethod)) {
             /*
              when you need camel 'Exchange' instance in your method input
@@ -61,7 +72,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
                     @Header("userId") String userId) {...}
              */
             route.bean(beanName, targetMethod.getName());
-        }else {
+        } else {
             /*
                example:
                  ** path variables and query params automatically filed by their names.
@@ -71,7 +82,6 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
             route.bean(beanName, targetBeanPath);
         }
     }
-
 
 
     private String createTargetBeanPath(Method targetMethod) {

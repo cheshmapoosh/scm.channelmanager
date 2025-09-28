@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
+import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.common.constant.Routes;
-import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -17,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.tracing.ActiveSpanManager;
-import org.apache.camel.tracing.SpanAdapter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -65,9 +63,7 @@ public class OperationRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    SpanAdapter span = ActiveSpanManager.getSpan(exchange);
-                    span.setTag(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), exception.getClass().getName());
-                    span.setTag(LogAttribute.ERROR_DETAILS.getAttributeName(), exception.getMessage());
+                    TraceUtils.getInstance().traceException(exchange,exception);
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
                     exchange.getIn().setBody(exception);
                 }).to(Routes.GLOBAL_ERROR_HANDLER);
@@ -110,7 +106,8 @@ public class OperationRouteBuilder extends RouteBuilder {
         route.process(exchange -> {
             Service service = exchange.getProperty(Message.SERVICE, Service.class);
             TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            ActiveSpanManager.endScope(exchange);
+            Span span = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
+            span.end();
         });
 
         if (orderedAfterPluginDetails == null) {

@@ -1,10 +1,8 @@
 package ir.daneshrefah.scm.plugin.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
-
-
 import ir.daneshrefah.scm.common.annotation.JavaService;
+import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.log.model.LogTraceFindByIdRequest;
 import ir.daneshrefah.scm.common.log.model.LogTracePayloadResponse;
 import ir.daneshrefah.scm.common.log.model.LogTraceRequest;

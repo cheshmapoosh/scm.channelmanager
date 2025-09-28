@@ -6,6 +6,7 @@ version = "8.3.0"
 ext {
     set('springCloudVersion', "2023.0.3")
     set('springCamelVersion', "4.8.0")
+    set('camelVersion', "4.8.0")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.5.3.Final")
     set('lombokMapstructBindingVersion', "0.2.0")
@@ -55,7 +56,8 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-netty-http-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-direct-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-timer-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${springCamelVersion}"
+            dependency "org.apache.camel:camel-core:${camelVersion}"
+//            dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-servlet-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-resilience4j-starter:${springCamelVersion}"

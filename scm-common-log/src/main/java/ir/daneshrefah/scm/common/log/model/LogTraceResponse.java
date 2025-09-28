@@ -30,4 +30,21 @@ public class LogTraceResponse {
     private Date startTime;
     private Date endTime;
     private Long durationMillis;
+    private String clientCorrelationId;
+    private String flowId;
+    private String messageId;
+    private String spanStatus;
+    private String delegatorNickname;
+    private String hostAddress;
+    private String spanKind;
+    private String messageStatus;
+    private String spanName;
+    private String clientIpAddress;
+    private String version;
+    private String providerCode;
+    private String providerResponseCode;
+    private String exceptionClassName;
+    private String parentSpanId;
+
+
 }

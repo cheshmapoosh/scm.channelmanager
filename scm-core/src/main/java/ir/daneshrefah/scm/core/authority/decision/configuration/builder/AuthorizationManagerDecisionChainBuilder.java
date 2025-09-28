@@ -40,6 +40,11 @@ public record AuthorizationManagerDecisionChainBuilder(AuthorizationManagerChain
         return this;
     }
 
+    public AuthorizationManagerDecisionChainBuilder registerDynamically() {
+        this.chainDefinition.setDynamicAuthorization(true);
+        return this;
+    }
+
     public AuthorizationManagerChainDefinition build() {
         return chainDefinition;
     }
