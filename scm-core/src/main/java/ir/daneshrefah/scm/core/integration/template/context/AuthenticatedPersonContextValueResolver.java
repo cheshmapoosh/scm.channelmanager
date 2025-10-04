@@ -39,6 +39,13 @@ public class AuthenticatedPersonContextValueResolver implements ContextValueReso
             case "title" -> person.getTitle();
             case "type" -> person.getPersonType();
             case "id" -> person.getId();
+            case "suborg" -> {
+                if (person instanceof GeneralLegalPerson legalPerson) {
+                    String subOrg = legalPerson.getSubOrganizationId();
+                    yield StringUtils.isBlank(subOrg) ? "0" : subOrg;
+                }
+                yield "0";
+            }
             default -> throw new IllegalStateException("Unexpected value: " + key);
         };
     }
