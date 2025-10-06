@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.template.engine;
 
 import freemarker.cache.StringTemplateLoader;
+import freemarker.core.JSONOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
@@ -17,6 +18,8 @@ public class FreeMarkerTemplateEngine implements TemplateEngine {
     public FreeMarkerTemplateEngine() {
         cfg = new Configuration(Configuration.VERSION_2_3_32);
         cfg.setTemplateLoader(new StringTemplateLoader());
+        cfg.setOutputFormat(JSONOutputFormat.INSTANCE);
+        cfg.setNumberFormat("computer");
     }
 
     @Override

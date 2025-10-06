@@ -21,7 +21,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,20 +79,19 @@ public class AccountListEnricherTransformerPlugin implements PluginHandler {
         if (isValidAccount(sourceNode)) {
             final long accountNo = sourceNode.get(ACCOUNT_NUMBER).asLong();
             Optional<MembershipTerminalAccess> membership = memberships.stream()
-                    .filter(m-> LocalDate.now().isBefore(m.getToDate()))
-                    .filter(m -> StringUtils.equals(
-                            Long.toString(accountNo),
-                            StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
+                    .filter(m -> StringUtils.equals(Long.toString(accountNo), StringUtils.trim(m.getMembership().getCustomerAccount().getAccount().getAccountNo()))
                     ).findFirst();
             if (membership.isEmpty() || !membership.get().getActive()) {
                 sourceNode.put("nickName", StringUtils.EMPTY);
                 sourceNode.put("favorite", StringUtils.EMPTY);
+                log.warn("Membership is empty or not active. account=[{}]", accountNo + " Membership is " +  (membership.isEmpty() ? "empty" : membership.get().getId()));
                 return null;
             } else {
                 MembershipTerminalAccess membershipTerminalAccess = membership.get();
                 String nickname = membershipTerminalAccess.getMembership().getNickname();
                 sourceNode.put("nickName", Objects.nonNull(nickname) ? nickname.trim() : StringUtils.EMPTY);
                 checkingAccountFavoriteStatus(sourceNode, membershipTerminalAccess);
+                log.info("Membership added to list. account=[{}]", accountNo);
             }
             return sourceNode;
         }

@@ -3,6 +3,11 @@ package ir.daneshrefah.scm.core.integration.plugin;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import freemarker.cache.StringTemplateLoader;
+import freemarker.core.JSONOutputFormat;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.handler.StatusHandler;
 import ir.daneshrefah.scm.common.model.definition.Definition;
@@ -20,11 +25,15 @@ import ir.daneshrefah.scm.core.integration.template.extractor.TemplateVariableEx
 import ir.daneshrefah.scm.utils.string.HttpConstants;
 import ir.daneshrefah.scm.utils.string.JsonPathFinder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.Builder;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +41,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OperationTemplateTransformer implements PluginHandler {
 
     private final ObjectMapper objectMapper;
@@ -99,6 +109,7 @@ public class OperationTemplateTransformer implements PluginHandler {
             Map<String, Object> context = templateContextBuilder.buildContext(variables, exchange);
             String templateText = definition.getDetails();
             String body = templateEngine.render(definition.getName(), templateText, context);
+            log.info("Template engin is [{}] and definition id is [{}] and before plugin rendered  [{}]", templateEngine.getTemplateEngineType(), definition.getId(), body);
             exchange.getIn().setHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON);
             exchange.getIn().setBody(body);
         } else {
@@ -107,6 +118,7 @@ public class OperationTemplateTransformer implements PluginHandler {
             Map<String, Object> context = mapper.convertValue(response, new TypeReference<>() {});
             String templateText = definition.getDetails();
             String render =  templateEngine.render(definition.getName(), templateText, context);
+            log.info("Template engin is [{}] and definition id is [{}] and after plugin rendered  [{}]", templateEngine.getTemplateEngineType(), definition.getId(), render);
             JsonNode jsonNode = mapper.readTree(render);
             String statusHandlerName = JsonPathFinder.defaultAsText(jsonNode, "statusHandler");
             if (statusHandlerName != null) {
@@ -119,5 +131,24 @@ public class OperationTemplateTransformer implements PluginHandler {
             }
             exchange.getIn().setBody(JsonPathFinder.defaultNode(jsonNode, "response"));
         }
+    }
+
+    public static void main(String[] args) throws IOException, TemplateException {
+        String response = "{\"SUBORG\": 13921"+"}";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode res = mapper.readTree(response);
+        Map<String, Object> context = mapper.convertValue(res, new TypeReference<Map<String, Object>>() {});
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_32);
+        cfg.setTemplateLoader(new StringTemplateLoader());
+        cfg.setOutputFormat(JSONOutputFormat.INSTANCE);
+        cfg.setNumberFormat("computer");
+
+        Template template = new Template("test", new StringReader("{\"subOrg\":${SUBORG}"), cfg);
+        try (StringWriter writer = new StringWriter()) {
+            template.process(context, writer);
+            System.out.println(writer.toString());
+        }
+
+
     }
 }
