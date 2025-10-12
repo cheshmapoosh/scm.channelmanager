@@ -811,6 +811,28 @@ public class UserService {
         return userMapper.toModel(userEntity);
     }
 
+    @Transactional
+    public User assignTerminalToPersonWithoutOtp(UserAssignTerminalRequest request) {
+        findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
+            throw new DuplicatedRecordFoundException(request.getNationalId());
+        });
+        String roleCode;
+        if (request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode())
+                || request.getTerminalCode().equalsIgnoreCase(TerminalType.NIB.getTerminalCode())
+                || request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
+            roleCode = CUSTOMER_ROLE_CODE;
+        } else {
+            throw new InvalidInputException("TerminalCode");
+        }
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId())
+                .orElseThrow(() -> new NoMatchRecordFoundException("person"));
+        UserEntity userEntity = createUserEntity(request, generalPerson);
+        userRepository.save(userEntity);
+        userRepository.flush();
+        uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
+        return userMapper.toModel(userEntity);
+    }
+
     private void verifyOtp(UserAssignTerminalRequest request) {
         String terminalCode = extractRequestTerminalCode();
         String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));

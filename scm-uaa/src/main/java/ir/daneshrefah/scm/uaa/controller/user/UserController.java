@@ -118,4 +118,10 @@ public class UserController extends BaseController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(userService.assignTerminalToPerson(request));
     }
+
+    @PostMapping("/assign-terminal-pba") //For phygital app
+    public ResponseEntity<User> assignTerminalToPersonWithoutOtp(@RequestBody UserAssignTerminalRequest request) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(userService.assignTerminalToPersonWithoutOtp(request));
+    }
 }
