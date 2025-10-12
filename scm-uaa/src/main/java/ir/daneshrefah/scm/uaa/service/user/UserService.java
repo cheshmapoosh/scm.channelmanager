@@ -253,21 +253,20 @@ public class UserService {
         return true;
     }
 
+    @Transactional
     public Boolean activateOrDeactivateStatusUser(UpdateUserStatusRequest request) {
         ValidationUtils.checkNull(request.getStatus(), () -> new MissingRequiredInputException("status"));
+        ValidationUtils.checkBlankString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
         Optional<UserEntity> findUserEntity = findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(
                 request.getPersonType(),
                 request.getNationalId(),
                 request.getSubOrganizationId(),
                 request.getTerminalCode());
         UserEntity user = findUserEntity.orElseThrow(() -> new NoMatchRecordFoundException("user"));
-        if (request.getStatus()) {
-            user.setStatus(UserStatus.ACTIVE);
-        } else {
-            user.setStatus(UserStatus.INACTIVE);
-        }
+        user.setStatus(Boolean.TRUE.equals(request.getStatus()) ? UserStatus.ACTIVE : UserStatus.INACTIVE);
         userRepository.save(user);
-        return true;
+        xUserDetailService.removeXUserByUsernameAndChannelCode(user,request.getTerminalCode().toUpperCase());
+        return UserStatus.getBooleanValue(user.getStatus());
     }
 
     public User createShahkarVerifiedUserAndDeleteOld(String nationalCode, String mobileNo, String terminalCode) {
@@ -897,28 +896,32 @@ public class UserService {
     }
 
     private UserEntity createUserEntity(UserAssignTerminalRequest request, GeneralPersonEntity generalPerson) {
-        ValidationUtils.checkEmptyString(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
-        ValidationUtils.checkEmptyString(request.getLoginStaticPassword(), () -> new MissingRequiredInputException("loginStaticPassword"));
-        ValidationUtils.checkEmptyString(request.getTransactionStaticPassword(), () -> new MissingRequiredInputException("transactionStaticPassword"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
+        ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
         ValidationUtils.checkEmptyString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
         ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
         ValidationUtils.checkNull(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
-        ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
-        ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
         ValidationUtils.checkNull(request.getPersonType(), () -> new MissingRequiredInputException("personType"));
+        ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
+        if (request.getLoginAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            ValidationUtils.checkBlankString(request.getLoginStaticPassword(), () -> new MissingRequiredInputException("loginStaticPassword"));
+        }
+        if (request.getTransactionAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            ValidationUtils.checkBlankString(request.getTransactionStaticPassword(), () -> new MissingRequiredInputException("transactionStaticPassword"));
+        }
         Terminal terminal = findTerminalByCode(request.getTerminalCode());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         String nickName = generateUserNickName(request, generalPerson);
         UserEntity user = new UserEntity();
         user.setNickname(nickName);
-        user.setAccessParameters(Set.of(request.getPhoneNumber())); //TODO How fill it?
+        user.setAccessParameters(Set.of(user.getPerson().getMobile1())); //TODO How fill it?
         user.setTerminalId(terminal.getLegacyTerminalId().intValue());
         user.setLoginAuthenticationMethod(request.getLoginAuthenticationMethod());
         user.setTransactionAuthenticationMethod(request.getLoginAuthenticationMethod());
         user.setStatus(UserStatus.ACTIVE);
         user.setPrintCount(0);
-        user.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), generalPerson.getUsername()));
-        user.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), generalPerson.getUsername()));
+        user.setLoginStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getLoginStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
+        user.setTransactionStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getTransactionStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
         user.setPerson(generalPerson);
         user.setType(UserType.CM_REGULAR); //TODO Is the type set correctly?
         user.setCreatorBranch(getLoggedInBranchCode());
