@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.dto.channel.ChannelAccessCreateRequest;
 import ir.daneshrefah.scm.common.dto.channel.ChannelAccessUpdateRequest;
-import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
+import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.apache.camel.Header;
@@ -16,11 +16,11 @@ import java.util.List;
 import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 
 @Component
-public class ChannelServiceAccessManagement extends AbstractJavaService {
+public class ChannelServiceAccessManagementService extends AbstractJavaService {
 
     private final ChannelServiceAccessService channelServiceAccessService;
 
-    public ChannelServiceAccessManagement(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, ChannelServiceAccessService channelServiceAccessService) {
+    public ChannelServiceAccessManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, ChannelServiceAccessService channelServiceAccessService) {
         super(producerTemplate, objectMapper);
         this.channelServiceAccessService = channelServiceAccessService;
     }

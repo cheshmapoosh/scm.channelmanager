@@ -10,5 +10,8 @@ import java.util.List;
 @Getter
 @Setter
 public class DefinitionFilterRequest extends PagedRequestData {
+    private String id;
     private List<DefinitionType> types;
+    private String name;
+    private String title;
 }

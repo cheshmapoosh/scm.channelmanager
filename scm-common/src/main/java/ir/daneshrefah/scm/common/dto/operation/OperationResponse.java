@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.dto.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,4 +16,6 @@ public class OperationResponse {
     private OperationType type;
     private String operationProviderTitle;
     private String operationProviderName;
+    @JsonIgnore
+    private String version;
 }

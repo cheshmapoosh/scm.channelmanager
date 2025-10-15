@@ -11,11 +11,11 @@ import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DefinitionServiceManagement extends AbstractJavaService {
+public class DefinitionManagementService extends AbstractJavaService {
 
     private final DefinitionService definitionService;
 
-    public DefinitionServiceManagement(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, DefinitionService definitionService) {
+    public DefinitionManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, DefinitionService definitionService) {
         super(producerTemplate, objectMapper);
         this.definitionService = definitionService;
     }
@@ -23,6 +23,11 @@ public class DefinitionServiceManagement extends AbstractJavaService {
     @JavaService(operationCode = OperationCode.SVC_DEFINITION_LIST)
     public PagedResponseData<DefinitionResponse> getAllDefinitionsByTypes(DefinitionFilterRequest request) {
         return definitionService.getAllDefinitionsByTypes(request);
+    }
+
+    @JavaService(operationCode = OperationCode.SVC_DEFINITION_BY_ID)
+    public DefinitionResponse getById(DefinitionFilterRequest request) {
+        return definitionService.getDefinitionById(request.getId());
     }
 
     @JavaService(operationCode = OperationCode.SVC_DEFINITION_DETAILS_LIST_BY_ID)

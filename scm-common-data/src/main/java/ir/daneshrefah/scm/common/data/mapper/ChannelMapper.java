@@ -6,8 +6,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
-import java.util.List;
-
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
         componentModel = MappingConstants.ComponentModel.SPRING,
         uses = {AuthenticationMethodMapper.class})
@@ -15,5 +13,4 @@ public interface ChannelMapper {
     ChannelEntity toEntity(Channel channel);
 
     Channel toModel(ChannelEntity channelEntity);
-    List<Channel> toModels(List<ChannelEntity> channelEntity);
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.services.gateway;
+package ir.daneshrefah.scm.core.services;
 
 import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.entity.asset.ChannelServiceAccessEntity;
@@ -14,9 +14,9 @@ import ir.daneshrefah.scm.common.dto.channel.ChannelAccessUpdateRequest;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
+import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
 import ir.daneshrefah.scm.common.service.ScmServiceService;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
-import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.entity.gateway.ServiceOperationEntity;
 import ir.daneshrefah.scm.core.mapper.gateway.ServiceOperationMapper;
 import ir.daneshrefah.scm.core.repository.gateway.ServiceOperationRepository;
@@ -82,6 +82,16 @@ public class ChannelServiceAccessServiceImpl implements ChannelServiceAccessServ
 
     public List<ChannelServiceAccess> findAllByServiceId(Long serviceId) {
         return channelServiceAccessMapper.toModel(channelServiceAccessRepository.findByServiceId(serviceId));
+    }
+
+    @Override
+    public ChannelServiceAccess findByChannelAndServiceId(Short channelId, Short serviceId) {
+        ValidationUtils.checkNull(channelId, () -> new MissingRequiredInputException("channelId"));
+        ValidationUtils.checkNull(serviceId, () -> new MissingRequiredInputException("serviceId"));
+        ChannelServiceAccessEntity channelServiceAccessEntity = channelServiceAccessRepository.findByChannelIdAndServiceId(channelId, serviceId).orElseThrow(() -> {
+            throw new MissingRequiredInputException("No ChannelServiceAccess found for channelId: " + channelId + " and serviceId: " + serviceId);
+        });
+        return channelServiceAccessMapper.toModel(channelServiceAccessEntity);
     }
 
     @Override

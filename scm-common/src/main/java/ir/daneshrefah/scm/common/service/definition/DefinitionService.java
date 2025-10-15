@@ -12,8 +12,9 @@ public interface DefinitionService {
     DefinitionResponse getDefinitionById(String id);
     PagedResponseData<DefinitionResponse> getAllDefinitionsByTypes(DefinitionFilterRequest request);
     DefinitionDetailResponse getAllDefinitionDetailsById(DefinitionDetailFilterRequest request);
-    DefinitionResponse createDefinition(DefinitionRequest definition);
+    DefinitionResponse createDefinition(DefinitionRequest definition) ;
     DefinitionResponse updateDefinition(DefinitionRequest definition);
     DefinitionResponse createDefinitionDetail(DefinitionDetailRequest request);
     DefinitionResponse updateDefinitionDetail(DefinitionDetailRequest request);
+    DefinitionResponse findByName(String name);
 }

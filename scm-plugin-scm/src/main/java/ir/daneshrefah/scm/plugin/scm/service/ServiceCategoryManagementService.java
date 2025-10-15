@@ -12,11 +12,11 @@ import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ServiceCategoryServiceManagement extends AbstractJavaService {
+public class ServiceCategoryManagementService extends AbstractJavaService {
 
     private final ServiceCategoryService serviceCategoryService;
 
-    public ServiceCategoryServiceManagement(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, ServiceCategoryService serviceCategoryService) {
+    public ServiceCategoryManagementService(ServiceProducerTemplate producerTemplate, ObjectMapper objectMapper, ServiceCategoryService serviceCategoryService) {
         super(producerTemplate, objectMapper);
         this.serviceCategoryService = serviceCategoryService;
     }

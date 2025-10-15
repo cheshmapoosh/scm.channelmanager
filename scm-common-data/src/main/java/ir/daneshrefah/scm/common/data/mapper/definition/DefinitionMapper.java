@@ -1,15 +1,16 @@
 package ir.daneshrefah.scm.common.data.mapper.definition;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
-import ir.daneshrefah.scm.common.dto.definition.*;
-import ir.daneshrefah.scm.common.model.definition.*;
+import ir.daneshrefah.scm.common.dto.definition.DefinitionDetailRequest;
+import ir.daneshrefah.scm.common.dto.definition.DefinitionDetailResponse;
+import ir.daneshrefah.scm.common.dto.definition.DefinitionRequest;
+import ir.daneshrefah.scm.common.dto.definition.DefinitionResponse;
+import ir.daneshrefah.scm.common.model.definition.Definition;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.ReportingPolicy.IGNORE;
@@ -22,42 +23,39 @@ public abstract class DefinitionMapper {
 
     public abstract DefinitionEntity toEntity(Definition definition);
 
+    @Mapping(target = "details", expression = "java(convertToString(definitionResponse.getDetails()))")
     public abstract DefinitionEntity toEntity(DefinitionResponse definitionResponse);
 
-    @Mapping(target = "details", expression = "java(mapToString(definitionRequest.getDetail()))")
+    @Mapping(target = "details", expression = "java(convertToString(definitionRequest.getDetails()))")
     public abstract DefinitionEntity toEntity(DefinitionRequest definitionRequest);
 
     public abstract Definition toModel(DefinitionEntity definitionEntity);
 
-    @Mapping(target = "detail", expression = "java(mapDetails(definitionEntity))")
+    @Mapping(target = "details", expression = "java(convertToJsonNode(definitionEntity.getDetails()))")
     public abstract DefinitionResponse toDefinitionResponse(DefinitionEntity definitionEntity);
 
-    @Mapping(target = "detail", expression = "java(mapDetails(definitionEntity))")
+    @Mapping(target = "details", expression = "java(convertToJsonNode(definitionEntity.getDetails()))")
     public abstract DefinitionDetailResponse toDefinitionDetailResponse(DefinitionEntity definitionEntity);
 
-    @Mapping(target = "details", expression = "java(mapToString(request.getDetail()))")
+    @Mapping(target = "details", expression = "java(convertToString(request.getDetails()))")
     public abstract Definition toDefinition(DefinitionDetailRequest request);
 
-    List<? extends DefinitionDetail> mapDetails(DefinitionEntity entity) {
+
+    public JsonNode convertToJsonNode(String details) {
         try {
-            if (entity == null || entity.getType() == null || entity.getDetails() == null) {
+            if (details == null) {
                 return null;
             }
-            return switch (entity.getType()) {
-                case PLUGIN ->
-                        objectMapper.readValue(entity.getDetails(), new TypeReference<List<PluginDefinitionDetail>>() {
-                        });
-                default -> throw new Exception("Invalid entity type");
-            };
+            return objectMapper.readTree(details);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    String mapToString(List<? extends DefinitionDetail> details) {
-        try {
-            return objectMapper.writeValueAsString(details);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+    public String convertToString(JsonNode details) {
+        if (details != null) {
+            return details.toString();
         }
+        return null;
     }
 }

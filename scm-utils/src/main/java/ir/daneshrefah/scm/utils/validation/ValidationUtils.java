@@ -129,6 +129,12 @@ public class ValidationUtils {
         }
     }
 
+    public static void checkEmptyCollection(Collection<?> collectionToValidate, Supplier<RuntimeException> throwsException) {
+        if (collectionToValidate == null || collectionToValidate.isEmpty()) {
+            throw throwsException.get();
+        }
+    }
+
     public static boolean checkIsValidMobileNumber(String code){
         return StringUtils.isNotEmpty(code);
     }

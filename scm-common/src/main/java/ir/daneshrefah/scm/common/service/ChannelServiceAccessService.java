@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.common.service.channel;
+package ir.daneshrefah.scm.common.service;
 
 import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
@@ -16,6 +16,8 @@ public interface ChannelServiceAccessService {
     List<ChannelServiceAccess> findAll();
 
     List<ChannelServiceAccess> findAllByServiceId(Long serviceId);
+
+    ChannelServiceAccess findByChannelAndServiceId(Short channelId, Short serviceId);
 
     ChannelServiceAccess findById(Long serviceId);
 

@@ -16,4 +16,5 @@ import lombok.Setter;
 public class ChannelFindRequest extends PagedRequestData {
     private String code;
     private String name;
+    private String title;
 }

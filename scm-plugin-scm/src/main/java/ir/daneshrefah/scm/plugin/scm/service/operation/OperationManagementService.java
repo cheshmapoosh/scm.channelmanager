@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.plugin.scm.service.operation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
+import ir.daneshrefah.scm.common.dto.operation.OperationRequest;
 import ir.daneshrefah.scm.common.dto.operation.OperationFilterRequest;
 import ir.daneshrefah.scm.common.dto.operation.OperationResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
@@ -26,5 +28,13 @@ public class OperationManagementService extends AbstractJavaService {
         return operationService.getAllOperationsByFilter(request);
     }
 
+    @JavaService(operationCode = OperationCode.SVC_OPERATION_CREATE)
+    public OperationResponse createOperation(OperationRequest request) throws JsonProcessingException {
+        return operationService.create(request);
+    }
 
+    @JavaService(operationCode = OperationCode.SVC_OPERATION_UPDATE)
+    public OperationResponse updateOperation(OperationRequest request) {
+        return operationService.update(request);
+    }
 }
