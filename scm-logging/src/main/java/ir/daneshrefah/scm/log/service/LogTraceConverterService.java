@@ -1,20 +1,40 @@
 package ir.daneshrefah.scm.log.service;
 
+import com.vdurmont.semver4j.Requirement;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
-
+@ConditionalOnProperty(name = "scm.log.logTraceConverter.enabled", havingValue = "true", matchIfMissing = true)
 public class LogTraceConverterService implements ConverterService {
 
     private final LogService logService;
     private final SpanLogConverterService spanLogConverterService;
+    private final Requirement versionRequirement;
+
+    public LogTraceConverterService(LogService logService,
+                                    SpanLogConverterService spanLogConverterService,
+                                    @Value("${scm.log.logTraceConverter.versionRequirement:#{null}}") String versionRequirement) {
+        this.logService = logService;
+        this.spanLogConverterService = spanLogConverterService;
+        if (versionRequirement != null && !versionRequirement.isEmpty()) {
+            this.versionRequirement = Requirement.buildNPM(versionRequirement);
+        } else {
+            this.versionRequirement = Requirement.buildNPM("*");
+        }
+    }
+
+
+    @Override
+    public boolean supports(LogMessage logMessage) {
+        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+    }
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {

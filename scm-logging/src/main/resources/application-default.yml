@@ -15,6 +15,12 @@ server:
   port: 9090
 scm:
   log:
+    transactionLogConverter:
+      enabled: true
+      versionRequirement: '>=7.20.0'
+    logTraceConverter:
+      enabled: true
+      versionRequirement: '>=8.0.0'
     chunkSize: 27128
   jms:
     log:

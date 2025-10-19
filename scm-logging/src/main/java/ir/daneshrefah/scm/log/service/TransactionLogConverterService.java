@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.log.service;
 
+import com.vdurmont.semver4j.Requirement;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
 import ir.daneshrefah.scm.common.log.service.TransactionLogService;
@@ -7,7 +8,8 @@ import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -18,13 +20,29 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
+@ConditionalOnProperty(name = "scm.log.transactionLogConverter.enabled", havingValue = "true", matchIfMissing = true)
 public class TransactionLogConverterService implements ConverterService {
 
     private final TransactionLogService transactionLogService;
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
     private static final int CHUNK_SIZE = 2048;
+    private final Requirement versionRequirement;
+
+    public TransactionLogConverterService(TransactionLogService transactionLogService,
+                                    @Value("${scm.log.transactionLogConverter.versionRequirement:#{null}}") String versionRequirement) {
+        this.transactionLogService = transactionLogService;
+        if (versionRequirement != null && !versionRequirement.isEmpty()) {
+            this.versionRequirement = Requirement.buildNPM(versionRequirement);
+        } else {
+            this.versionRequirement = Requirement.buildNPM("*");
+        }
+    }
+
+    @Override
+    public boolean supports(LogMessage logMessage) {
+        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+    }
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {
@@ -50,13 +68,13 @@ public class TransactionLogConverterService implements ConverterService {
         Map<String, String> attributes = spanModel.getAttributes();
         TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
         if (isRequest) {
-            transactionLogEntity.setTransactionType(Integer.valueOf(attributes.get(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName())));
+            transactionLogEntity.setTransactionType(getTransactionType(attributes, LogAttribute.TRANSACTION_TYPE_REQUEST));
             transactionLogEntity.setPayload(getMessage(attributes, LogAttribute.MESSAGE_REQUEST));
         } else {
             transactionLogEntity.setDocNo(attributes.get(LogAttribute.DOC_NO.getAttributeName()));
             transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
             transactionLogEntity.setStatusCode(attributes.get(LogAttribute.STATUS_CODE.getAttributeName()));
-            transactionLogEntity.setTransactionType(Integer.valueOf(attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName())));
+            transactionLogEntity.setTransactionType(getTransactionType(attributes, LogAttribute.TRANSACTION_TYPE_RESPONSE));
             transactionLogEntity.setPayload(getMessage(attributes, LogAttribute.MESSAGE_RESPONSE));
         }
         transactionLogEntity.setServerException(getExceptionClassName(attributes));
@@ -83,6 +101,14 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
         setIpAddress(attributes, transactionLogEntity);
         return transactionLogEntity;
+    }
+
+    private static Integer getTransactionType(Map<String, String> attributes, LogAttribute logAttribute) {
+        String transactionType = attributes.get(logAttribute.getAttributeName());
+        if (StringUtils.isNotBlank(transactionType) && StringUtils.isNumeric(transactionType)) {
+            return Integer.valueOf(transactionType);
+        }
+        return null;
     }
 
     private static String getMessage(Map<String, String> attributes, LogAttribute logAttribute) {

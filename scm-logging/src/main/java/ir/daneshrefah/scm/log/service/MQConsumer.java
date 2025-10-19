@@ -20,7 +20,7 @@ public class MQConsumer  {
     private final LogJmsConfigProperties properties;
     private final MessageProcessingService messageProcessingService;
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRateString = "${scm.log.logSchedulerThreadPool.fixedRate:5000}")
     @Async("logSchedulerThreadPool")
     public void consumeMessages() {
         while (true) {
