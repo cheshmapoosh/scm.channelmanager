@@ -24,12 +24,20 @@ public class MessageProcessingService {
                     converter.convertAndPersist(logMessage);
                 }
             } catch (Exception e) {
-                log.error("Failed to process message in converter {}: {}", converter.getClass().getSimpleName(), e.getMessage(), e);
+                logConverterFailure(converter, rawMessage, e);
             }
         }
     }
 
     private LogMessage deserializeLogMessage(String msg) throws Exception {
         return objectMapper.readValue(msg, LogMessage.class);
+    }
+
+    private void logConverterFailure(ConverterService converter, String rawMessage, Exception exception) {
+        log.error("Failed to process message in converter {}: {} , message: {}",
+                converter.getClass().getSimpleName(),
+                exception.getMessage(),
+                rawMessage,
+                exception);
     }
 }
