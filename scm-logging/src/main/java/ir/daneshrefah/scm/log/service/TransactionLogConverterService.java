@@ -144,17 +144,17 @@ public class TransactionLogConverterService implements ConverterService {
         if (isRequest) {
             String startTime = attributes.get(LogAttribute.START_TIME.getAttributeName());
             if (StringUtils.isNotBlank(startTime) && StringUtils.isNumeric(startTime)) {
-                date = new Date(TimeUnit.NANOSECONDS.toMillis(Long.parseLong(startTime)));
+                date = new Date(TimeUnit.MILLISECONDS.toMillis(Long.parseLong(startTime)));
             }
         } else {
             String endTime = attributes.get(LogAttribute.END_TIME.getAttributeName());
             if (StringUtils.isNotBlank(endTime) && StringUtils.isNumeric(endTime)) {
-                date = new Date(TimeUnit.NANOSECONDS.toMillis(Long.parseLong(endTime)));
+                date = new Date(TimeUnit.MILLISECONDS.toMillis(Long.parseLong(endTime)));
             }
         }
         if (date == null) {
             if (spanModel.getStartEpochNanos() > 0) {
-                date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
+                date = new Date(TimeUnit.MILLISECONDS.toMillis(spanModel.getStartEpochNanos()));
             }
         }
         return date;

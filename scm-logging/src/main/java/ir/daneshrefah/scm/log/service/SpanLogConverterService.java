@@ -107,7 +107,7 @@ public class SpanLogConverterService {
         if (StringUtils.isNotBlank(startTime) && StringUtils.isNumeric(startTime)) {
             date = DateUtils.DateConverter.convertToDate(new Timestamp(Long.parseLong(startTime)));
         } else if (spanModel.getStartEpochNanos() > 0) {
-            date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
+            date = new Date(TimeUnit.MILLISECONDS.toMillis(spanModel.getStartEpochNanos()));
         }
         return date;
     }
@@ -118,7 +118,7 @@ public class SpanLogConverterService {
         if (endTime != null) {
             date = DateUtils.DateConverter.convertToDate(new Timestamp(Long.parseLong(endTime)));
         } else if (spanModel.getEndEpochNanos() > 0) {
-            date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getEndEpochNanos()));
+            date = new Date(TimeUnit.MILLISECONDS.toMillis(spanModel.getEndEpochNanos()));
         }
         return date;
     }
