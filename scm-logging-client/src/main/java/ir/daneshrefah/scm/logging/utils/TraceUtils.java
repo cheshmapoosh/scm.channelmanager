@@ -79,7 +79,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_NICKNAME.getAttributeName(), AuthenticationUtils.getDelegatorNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), AuthenticationUtils.getDelegatorUsername().orElse(""));
-        span.setAttribute(LogAttribute.VERSION.getAttributeName(), version + build);
+        span.setAttribute(LogAttribute.VERSION.getAttributeName(), version );
     }
 
     public void recordExceptionTrace(Exception ex, Span span) {
