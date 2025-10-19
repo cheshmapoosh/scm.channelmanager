@@ -144,22 +144,36 @@ public class TransactionLogConverterService implements ConverterService {
         if (isRequest) {
             String startTime = attributes.get(LogAttribute.START_TIME.getAttributeName());
             if (StringUtils.isNotBlank(startTime) && StringUtils.isNumeric(startTime)) {
-                date = new Date(TimeUnit.MILLISECONDS.toMillis(Long.parseLong(startTime)));
+                date = convertToDate(startTime);
             }
         } else {
             String endTime = attributes.get(LogAttribute.END_TIME.getAttributeName());
             if (StringUtils.isNotBlank(endTime) && StringUtils.isNumeric(endTime)) {
-                date = new Date(TimeUnit.MILLISECONDS.toMillis(Long.parseLong(endTime)));
+                date =  convertToDate(endTime);
             }
         }
         if (date == null) {
             if (spanModel.getStartEpochNanos() > 0) {
-                date = new Date(TimeUnit.MILLISECONDS.toMillis(spanModel.getStartEpochNanos()));
+                date = new Date(TimeUnit.NANOSECONDS.toMillis(spanModel.getStartEpochNanos()));
             }
         }
         return date;
     }
 
+    private static Date convertToDate(String date) {
+        switch (date.length()) {
+            case 10:
+                return new Date(TimeUnit.SECONDS.toMillis(Long.parseLong(date)));
+            case 13:
+                return new Date(TimeUnit.MILLISECONDS.toMillis(Long.parseLong(date)));
+            case 16:
+                return new Date(TimeUnit.MICROSECONDS.toMillis(Long.parseLong(date)));
+            case 19:
+                return new Date(TimeUnit.NANOSECONDS.toMillis(Long.parseLong(date)));
+            default:
+                return null;
+        }
+    }
     private static Date getClientTime(Map<String, String> attributes) {
         Date date = null;
         String logTime = attributes.get(LogAttribute.LOG_TIME.getAttributeName());
