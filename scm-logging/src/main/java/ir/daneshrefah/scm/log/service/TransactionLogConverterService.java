@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.log.service;
 
+import com.vdurmont.semver4j.Requirement;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
 import ir.daneshrefah.scm.common.log.service.TransactionLogService;
@@ -7,7 +8,7 @@ import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "scm.log.transactionLogConverter.enabled", havingValue = "true", matchIfMissing = true)
 public class TransactionLogConverterService implements ConverterService {
 
@@ -27,6 +27,22 @@ public class TransactionLogConverterService implements ConverterService {
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
     private static final int CHUNK_SIZE = 2048;
+    private final Requirement versionRequirement;
+
+    public TransactionLogConverterService(TransactionLogService transactionLogService,
+                                    @Value("${scm.log.transactionLogConverter.versionRequirement:#{null}}") String versionRequirement) {
+        this.transactionLogService = transactionLogService;
+        if (versionRequirement != null && !versionRequirement.isEmpty()) {
+            this.versionRequirement = Requirement.buildNPM(versionRequirement);
+        } else {
+            this.versionRequirement = Requirement.buildNPM("*");
+        }
+    }
+
+    @Override
+    public boolean supports(LogMessage logMessage) {
+        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+    }
 
     @Override
     public void convertAndPersist(LogMessage logMessage) throws Exception {
