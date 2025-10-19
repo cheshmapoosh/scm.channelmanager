@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class MQConsumer  {
+public class MQConsumer {
 
     private final JmsTemplate logJmsTemplate;
     private final LogJmsConfigProperties properties;
@@ -24,23 +24,36 @@ public class MQConsumer  {
     @Async("logSchedulerThreadPool")
     public void consumeMessages() {
         while (true) {
+            String messageBody = null;
             try {
-                Message message = logJmsTemplate.receive(properties.getDestination());
-                if (message instanceof JakartaMessage jakartaMessage) {
-                    String msg = jakartaMessage.getBody(String.class);
-                    messageProcessingService.processMessage(msg);
-                } else {
-                    log.error("Message body is Not text message {}", message);
+                Message message = receiveMessage();
+                if (message == null) {
+                    log.error("No message received from queue [{}] ", properties.getDestination());
+                    return;
                 }
+                messageBody = extractMessageBody(message);
+                messageProcessingService.processMessage(messageBody);
             } catch (JMSException e) {
-                log.error("Failed to receive message: {} ", e.getMessage());
+                log.error("Failed to receive message from queue [{}]: {}",
+                        properties.getDestination(), e.getMessage(), e);
             } catch (Exception e) {
-                log.error("Failed to process message: {} ", e.getMessage());
+                log.error("Failed to process message. Message body: [{}]. Error: {}",
+                        messageBody != null ? messageBody : "null", e.getMessage(), e);
             }
         }
     }
 
+    private Message receiveMessage() {
+        return logJmsTemplate.receive(properties.getDestination());
+    }
 
-
+    private String extractMessageBody(Message message) throws JMSException {
+        if (message instanceof JakartaMessage jakartaMessage) {
+            return jakartaMessage.getBody(String.class);
+        } else {
+            log.error("Message body is Not text message {}", message);
+            return null;
+        }
+    }
 
 }
