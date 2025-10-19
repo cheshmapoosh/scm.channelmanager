@@ -20,7 +20,9 @@ public class MessageProcessingService {
         LogMessage logMessage = deserializeLogMessage(rawMessage);
         for (ConverterService converter : converters) {
             try {
-                converter.convertAndPersist(logMessage);
+                if (converter.supports(logMessage)) {
+                    converter.convertAndPersist(logMessage);
+                }
             } catch (Exception e) {
                 log.error("Failed to process message in converter {}: {}", converter.getClass().getSimpleName(), e.getMessage(), e);
             }

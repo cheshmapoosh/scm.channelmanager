@@ -7,7 +7,6 @@ import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,7 +20,7 @@ public class MQConsumer  {
     private final LogJmsConfigProperties properties;
     private final MessageProcessingService messageProcessingService;
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRateString = "${scm.log.logSchedulerThreadPool.fixedRate:5000}")
     @Async("logSchedulerThreadPool")
     public void consumeMessages() {
         while (true) {
