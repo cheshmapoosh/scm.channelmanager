@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @ConditionalOnProperty(name = "scm.log.transactionLogConverter.enabled", havingValue = "true", matchIfMissing = true)
 public class TransactionLogConverterService implements ConverterService {
@@ -41,7 +43,8 @@ public class TransactionLogConverterService implements ConverterService {
 
     @Override
     public boolean supports(LogMessage logMessage) {
-        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+        String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+        return versionRequirement.isSatisfiedBy(version);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.log.service;
 
 import com.vdurmont.semver4j.Requirement;
+import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
@@ -33,7 +34,8 @@ public class LogTraceConverterService implements ConverterService {
 
     @Override
     public boolean supports(LogMessage logMessage) {
-        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+        String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+        return versionRequirement.isSatisfiedBy(version);
     }
 
     @Override
