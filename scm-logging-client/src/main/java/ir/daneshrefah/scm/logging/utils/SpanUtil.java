@@ -37,7 +37,7 @@ public class SpanUtil {
     }
 
     public static void setRequestSpanAttributes(HttpServletRequest request, Span span) {
-        span.setAttribute(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName(), request.getRemoteAddr());
+        span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), request.getRemoteAddr());
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), request.getMethod());
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), getRequestBody(request).trim());
         span.setAttribute(LogAttribute.HOST_ADDRESS.getAttributeName(), request.getLocalAddr());

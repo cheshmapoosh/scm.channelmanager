@@ -12,7 +12,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -85,4 +84,10 @@ public abstract class GeneralPersonEntity extends AbstractEntity<Integer> {
     @Column(name = "ARCHIVE_NO", updatable = false)
     private Long archiveNo;
 
+    @PostLoad
+    private void trimFields() {
+        if (username != null) {
+            username = username.trim();
+        }
+    }
 }

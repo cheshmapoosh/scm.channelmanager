@@ -33,9 +33,9 @@ public abstract class AbstractStaticAuthenticationProvider extends AbstractAuthe
         }
         String presentedPassword = authentication.getCredentials().toString();
         String encodedPassword = encoder.encodePassword(presentedPassword, userDetails.getUser().getPerson().getUsername());
-        String currentPassword = extractCurrentPassword(userDetails);
-        if (null == currentPassword || !currentPassword.trim().equals(encodedPassword)) {
-            this.logger.debug("Failed to authenticate since password does not match stored value");
+        String currentEncodePassword = extractCurrentPassword(userDetails);
+        if (null == currentEncodePassword || !currentEncodePassword.trim().equals(encodedPassword)) {
+            this.logger.debug("Failed to authenticate since password does not match stored value. currentEncodePassword: " + currentEncodePassword + ",  encodedPassword: " + encodedPassword);
             throw new BadCredentialsException("AbstractStaticAuthenticationProvider.badCredentials");
         }
     }
