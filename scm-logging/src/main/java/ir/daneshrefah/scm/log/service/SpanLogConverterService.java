@@ -66,7 +66,8 @@ public class SpanLogConverterService {
         logTraceEntity.setEndPoint(attributes.get(LogAttribute.END_POINT.getAttributeName()) != null ? attributes.get(LogAttribute.END_POINT.getAttributeName()) : attributes.get(LogAttribute.URL_PATH.getAttributeName()));
         logTraceEntity.setStatusCode(getStatusCode(attributes));
         logTraceEntity.setVersion(attributes.get(LogAttribute.VERSION.getAttributeName()));
-        logTraceEntity.setStartTime(getStartTime(spanModel));
+        Date startTime = getStartTime(spanModel);
+        logTraceEntity.setStartTime(startTime);
         logTraceEntity.setEndTime(getEndTime(spanModel));
         logTraceEntity.setServiceCode(attributes.get(LogAttribute.SERVICE_CODE.getAttributeName()));
         logTraceEntity.setNickname(attributes.get(LogAttribute.NICKNAME.getAttributeName()));
@@ -85,7 +86,7 @@ public class SpanLogConverterService {
         logTraceEntity.setSpanStatus(spanModel.getStatus().get(LogAttribute.STATUS_CODE.getAttributeName()));
         logTraceEntity.setParentSpanId(spanModel.getParentSpanId());
         logTraceEntity.setSpanName(spanModel.getName());
-        logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
+        logTraceEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo(startTime));
         return logTraceEntity;
     }
 

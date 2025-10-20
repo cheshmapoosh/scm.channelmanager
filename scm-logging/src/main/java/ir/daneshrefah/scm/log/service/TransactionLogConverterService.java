@@ -82,7 +82,8 @@ public class TransactionLogConverterService implements ConverterService {
             transactionLogEntity.setPayload(getMessage(attributes, LogAttribute.MESSAGE_RESPONSE));
         }
         transactionLogEntity.setServerException(getExceptionClassName(attributes));
-        transactionLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
+        Date logTime = getLogTime(spanModel, isRequest);
+        transactionLogEntity.setArchiveNo(ArchiveUtils.calculateTenDaysArchiveNo(logTime));
         transactionLogEntity.setEbServiceId(convertToInteger(attributes, LogAttribute.SERVICE_ID));
         transactionLogEntity.setChannelId(convertToInteger(attributes, LogAttribute.CHANNEL_ID));
         transactionLogEntity.setTransactionStateId(convertToInteger(attributes, LogAttribute.TRANSACTION_STATE_ID));
@@ -92,7 +93,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setUsername(attributes.get(LogAttribute.USERNAME.getAttributeName()));
         transactionLogEntity.setAccountNo(attributes.get(LogAttribute.ACCOUNT_NO.getAttributeName()));
         transactionLogEntity.setMessageSequenceId(getMessageSequenceId(attributes));
-        transactionLogEntity.setLogTime(getLogTime(spanModel, isRequest));
+        transactionLogEntity.setLogTime(logTime);
         transactionLogEntity.setDescription(attributes.get(LogAttribute.DESCRIPTION.getAttributeName()));
         transactionLogEntity.setTerminalType(attributes.get(LogAttribute.TERMINAL_TYPE.getAttributeName()));
         transactionLogEntity.setInterBank(convertToBoolean(attributes, LogAttribute.INTER_BANK));
@@ -118,7 +119,7 @@ public class TransactionLogConverterService implements ConverterService {
     private String getMessage(Map<String, String> attributes, LogAttribute logAttribute) {
         String message = attributes.get(logAttribute.getAttributeName());
         if (StringUtils.isNotBlank(message)) {
-            return truncateUtf8(message.replaceAll("\\s+", ""));
+            return truncateUtf8(message.replaceAll(" {2,}", " "));
         }
         return null;
     }
@@ -128,18 +129,11 @@ public class TransactionLogConverterService implements ConverterService {
         if (bytes.length <= CHUNK_SIZE) {
             return value;
         }
-        int byteCount = 0;
-        int endIndex = 0;
-        for (int i = 0; i < value.length(); i++) {
-            int codePoint = value.codePointAt(i);
-            int charBytes = new String(Character.toChars(codePoint)).getBytes(StandardCharsets.UTF_8).length;
-            if (byteCount + charBytes > CHUNK_SIZE) {
-                break;
-            }
-            byteCount += charBytes;
-            endIndex += Character.charCount(codePoint);
+        int len = CHUNK_SIZE;
+        while (len > 0 && (bytes[len] & 0xC0) == 0x80) {
+            len--;
         }
-        return value.substring(0, endIndex);
+        return new String(bytes, 0, len, StandardCharsets.UTF_8);
     }
 
     private static String getMessageSequenceId(Map<String, String> attributes) {
