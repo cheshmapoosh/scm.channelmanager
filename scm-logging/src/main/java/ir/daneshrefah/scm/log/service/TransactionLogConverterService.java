@@ -28,11 +28,12 @@ public class TransactionLogConverterService implements ConverterService {
     private final TransactionLogService transactionLogService;
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
-    private static final int CHUNK_SIZE = 2048;
+    @Value("${scm.log.transactionLogConverter.chunkSize:2040}")
+    private Integer CHUNK_SIZE;
     private final Requirement versionRequirement;
 
     public TransactionLogConverterService(TransactionLogService transactionLogService,
-                                    @Value("${scm.log.transactionLogConverter.versionRequirement:#{null}}") String versionRequirement) {
+                                          @Value("${scm.log.transactionLogConverter.versionRequirement:#{null}}") String versionRequirement) {
         this.transactionLogService = transactionLogService;
         if (versionRequirement != null && !versionRequirement.isEmpty()) {
             this.versionRequirement = Requirement.buildNPM(versionRequirement);
@@ -114,7 +115,7 @@ public class TransactionLogConverterService implements ConverterService {
         return null;
     }
 
-    private static String getMessage(Map<String, String> attributes, LogAttribute logAttribute) {
+    private String getMessage(Map<String, String> attributes, LogAttribute logAttribute) {
         String message = attributes.get(logAttribute.getAttributeName());
         if (StringUtils.isNotBlank(message)) {
             return truncateUtf8(message.replaceAll("\\s+", ""));
@@ -122,14 +123,21 @@ public class TransactionLogConverterService implements ConverterService {
         return null;
     }
 
-    private static String truncateUtf8(String value) {
+    private String truncateUtf8(String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         if (bytes.length <= CHUNK_SIZE) {
             return value;
         }
-        int endIndex = value.length();
-        while (new String(value.substring(0, endIndex).getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8).getBytes(StandardCharsets.UTF_8).length > CHUNK_SIZE) {
-            endIndex--;
+        int byteCount = 0;
+        int endIndex = 0;
+        for (int i = 0; i < value.length(); i++) {
+            int codePoint = value.codePointAt(i);
+            int charBytes = new String(Character.toChars(codePoint)).getBytes(StandardCharsets.UTF_8).length;
+            if (byteCount + charBytes > CHUNK_SIZE) {
+                break;
+            }
+            byteCount += charBytes;
+            endIndex += Character.charCount(codePoint);
         }
         return value.substring(0, endIndex);
     }
@@ -149,7 +157,7 @@ public class TransactionLogConverterService implements ConverterService {
         } else {
             String endTime = attributes.get(LogAttribute.END_TIME.getAttributeName());
             if (StringUtils.isNotBlank(endTime) && StringUtils.isNumeric(endTime)) {
-                date =  convertToDate(endTime);
+                date = convertToDate(endTime);
             }
         }
         if (date == null) {
@@ -174,6 +182,7 @@ public class TransactionLogConverterService implements ConverterService {
                 return null;
         }
     }
+
     private static Date getClientTime(Map<String, String> attributes) {
         Date date = null;
         String logTime = attributes.get(LogAttribute.LOG_TIME.getAttributeName());
