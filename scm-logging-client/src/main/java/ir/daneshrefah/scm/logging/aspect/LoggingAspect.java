@@ -38,14 +38,15 @@ public class LoggingAspect {
         boolean hasError = false;
         HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
         Span span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
+        SpanUtil spanUtil = SpanUtil.getInstance();
         try (Scope rootScope = span.makeCurrent()) {
-            SpanUtil.setRequestSpanAttributes(request, span);
+            spanUtil.setRequestSpanAttributes(request, span);
             Object result = joinPoint.proceed();
-            SpanUtil.setResponseSpanAttributes(result, span);
+            spanUtil.setResponseSpanAttributes(result, span);
             return result;
         } catch (Throwable ex) {
             request.setAttribute("otel.span", span);
-            SpanUtil.setException(ex, span);
+            spanUtil.setException(ex, span);
             hasError = true;
             throw ex;
         } finally {

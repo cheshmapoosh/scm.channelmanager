@@ -60,8 +60,9 @@ GlobalExceptionHandler {
             span = (Span) request.getAttribute("otel.span");
             if (span == null) {
                 span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
-                SpanUtil.setRequestSpanAttributes(request, span);
-                SpanUtil.setException(exception,span);
+                SpanUtil spanUtil = SpanUtil.getInstance();
+                spanUtil.setRequestSpanAttributes(request, span);
+                spanUtil.setException(exception,span);
                 span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), HttpStatus.BAD_REQUEST.value());
             }
         } catch (Exception e) {
