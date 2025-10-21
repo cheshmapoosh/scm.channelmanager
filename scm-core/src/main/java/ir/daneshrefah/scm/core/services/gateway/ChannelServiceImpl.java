@@ -31,7 +31,8 @@ public class ChannelServiceImpl implements ChannelService {
         Specification<ChannelEntity> specification = ChannelSpecification.toSpecification(request);
         Pageable pageable = PageableUtils.getPageable(request);
         Page<ChannelEntity> channelEntityPage = channelRepository.findAll(specification, pageable);
-        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), channelEntityPage.getTotalElements(), channelMapper.toModels(channelEntityPage.getContent()));
+        List<Channel> channels = channelEntityPage.getContent().stream().map(channelMapper::toModel).toList();
+        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), channelEntityPage.getTotalElements(), channels);
     }
 
     @Override

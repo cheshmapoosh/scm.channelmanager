@@ -25,7 +25,7 @@ import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.service.AssetProviderService;
-import ir.daneshrefah.scm.common.service.channel.ChannelServiceAccessService;
+import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
 import ir.daneshrefah.scm.core.mapper.AssetProviderMapper;
 import ir.daneshrefah.scm.common.service.channel.ChannelService;
 import ir.daneshrefah.scm.plugin.api.config.MembershipConfigProperty;

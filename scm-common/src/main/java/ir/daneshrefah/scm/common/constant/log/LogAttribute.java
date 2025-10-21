@@ -40,8 +40,7 @@ public enum LogAttribute {
     CARD_NO("cardNo"),
     URL_PATH("url.path"),
     HTTP_STATUS_CODE("http.status_code"),
-    CLIENT_REMOTE_ADDRESS("clientRemoteAddress"),
-    CLIENT_PHONE_NUMBER("clientPhoneNumber"),
+    CLIENT_IP_ADDRESS("clientIpAddress"),
     ERROR_DETAILS("errorDetails"),
     STATUS_CODE("statusCode"),
     TRANSACTION_STATE_ID("transactionStateId"),
@@ -61,7 +60,6 @@ public enum LogAttribute {
     TRANSACTION_TYPE("transactionType"),
     TRANSACTION_TYPE_REQUEST("transactionTypeRequest"),
     TRANSACTION_TYPE_RESPONSE("transactionTypeResponse");
-
     private final String attributeName;
 }
 

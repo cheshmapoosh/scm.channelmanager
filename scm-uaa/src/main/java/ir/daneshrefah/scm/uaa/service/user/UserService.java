@@ -253,21 +253,20 @@ public class UserService {
         return true;
     }
 
+    @Transactional
     public Boolean activateOrDeactivateStatusUser(UpdateUserStatusRequest request) {
         ValidationUtils.checkNull(request.getStatus(), () -> new MissingRequiredInputException("status"));
+        ValidationUtils.checkBlankString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
         Optional<UserEntity> findUserEntity = findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(
                 request.getPersonType(),
                 request.getNationalId(),
                 request.getSubOrganizationId(),
                 request.getTerminalCode());
         UserEntity user = findUserEntity.orElseThrow(() -> new NoMatchRecordFoundException("user"));
-        if (request.getStatus()) {
-            user.setStatus(UserStatus.ACTIVE);
-        } else {
-            user.setStatus(UserStatus.INACTIVE);
-        }
+        user.setStatus(Boolean.TRUE.equals(request.getStatus()) ? UserStatus.ACTIVE : UserStatus.INACTIVE);
         userRepository.save(user);
-        return true;
+        xUserDetailService.removeXUserByUsernameAndChannelCode(user,request.getTerminalCode().toUpperCase());
+        return UserStatus.getBooleanValue(user.getStatus());
     }
 
     public User createShahkarVerifiedUserAndDeleteOld(String nationalCode, String mobileNo, String terminalCode) {
@@ -813,20 +812,24 @@ public class UserService {
 
     @Transactional
     public User assignTerminalToPersonWithoutOtp(UserAssignTerminalRequest request) {
-        this.findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent((userEntityx) -> {
+        findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent(userEntity -> {
             throw new DuplicatedRecordFoundException(request.getNationalId());
         });
-        if (!request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode()) && !request.getTerminalCode().equalsIgnoreCase(TerminalType.NIB.getTerminalCode()) && !request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
-            throw new InvalidInputException("TerminalCode");
+        String roleCode;
+        if (request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode())
+                || request.getTerminalCode().equalsIgnoreCase(TerminalType.NIB.getTerminalCode())
+                || request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
+            roleCode = CUSTOMER_ROLE_CODE;
         } else {
-            String roleCode = "ROLE_CUSTOMER";
-            GeneralPersonEntity generalPerson = this.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("person"));
-            UserEntity userEntity = this.createUserEntity(request, generalPerson);
-            this.userRepository.save(userEntity);
-            this.userRepository.flush();
-            this.uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
-            return this.userMapper.toModel(userEntity);
+            throw new InvalidInputException("TerminalCode");
         }
+        GeneralPersonEntity generalPerson = findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId())
+                .orElseThrow(() -> new NoMatchRecordFoundException("person"));
+        UserEntity userEntity = createUserEntity(request, generalPerson);
+        userRepository.save(userEntity);
+        userRepository.flush();
+        uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
+        return userMapper.toModel(userEntity);
     }
 
     private void verifyOtp(UserAssignTerminalRequest request) {
@@ -893,7 +896,7 @@ public class UserService {
     }
 
     private UserEntity createUserEntity(UserAssignTerminalRequest request, GeneralPersonEntity generalPerson) {
-        ValidationUtils.checkEmptyString(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
+        ValidationUtils.checkBlankStringIfNotNull(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
         ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
         ValidationUtils.checkEmptyString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
         ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
@@ -911,7 +914,7 @@ public class UserService {
         String nickName = generateUserNickName(request, generalPerson);
         UserEntity user = new UserEntity();
         user.setNickname(nickName);
-        user.setAccessParameters(Set.of(request.getPhoneNumber())); //TODO How fill it?
+        user.setAccessParameters(Set.of(user.getPerson().getMobile1())); //TODO How fill it?
         user.setTerminalId(terminal.getLegacyTerminalId().intValue());
         user.setLoginAuthenticationMethod(request.getLoginAuthenticationMethod());
         user.setTransactionAuthenticationMethod(request.getLoginAuthenticationMethod());

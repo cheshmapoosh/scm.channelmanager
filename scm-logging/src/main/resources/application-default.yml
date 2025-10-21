@@ -17,9 +17,16 @@ scm:
   log:
     transactionLogConverter:
       enabled: true
+      versionRequirement: '>=7.20.0'
     logTraceConverter:
       enabled: true
+      versionRequirement: '>=8.0.0'
     chunkSize: 27128
+    logSchedulerThreadPool:
+       corePoolSize: 5
+       maxPoolSize: 5
+       fixedRate: 5000
+
   jms:
     log:
       destination: SCM2LOG

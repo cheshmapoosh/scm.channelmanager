@@ -20,7 +20,9 @@ public class ChannelSpecification {
             if (Objects.nonNull(request.getName())) {
                 predicates.add(builder.like(root.get("name"), getLikeQueryString(request.getName())));
             }
-
+            if (Objects.nonNull(request.getTitle())) {
+                predicates.add(builder.like(root.get("title"), getLikeQueryString(request.getTitle())));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
     }

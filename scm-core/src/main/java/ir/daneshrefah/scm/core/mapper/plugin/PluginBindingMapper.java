@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import ir.daneshrefah.scm.common.dto.plugin.PluginBindingSearchResponse;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.plugin.PluginBinding;
 import ir.daneshrefah.scm.common.dto.plugin.PluginBindingCreateRequest;
@@ -42,6 +43,8 @@ public abstract class PluginBindingMapper {
 
     @Mapping(target = "definitionId", source = "definition.id")
     public abstract PluginBindingResponse toPluginBindingResponse(PluginBindingEntity pluginBindingEntity);
+
+    public abstract PluginBindingSearchResponse toPluginBindingCreateResponse(PluginBindingEntity pluginBindingEntity);
 
     @AfterMapping
     public void afterMapping(@MappingTarget PluginBinding pluginBinding) {

@@ -3,10 +3,7 @@ package ir.daneshrefah.scm.core.services.plugin;
 import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import ir.daneshrefah.scm.common.data.mapper.definition.DefinitionMapper;
 import ir.daneshrefah.scm.common.dto.definition.DefinitionResponse;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingCreateRequest;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingRequest;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingResponse;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingUpdateRequest;
+import ir.daneshrefah.scm.common.dto.plugin.*;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
@@ -127,6 +124,21 @@ public class PluginResolverServiceImpl implements PluginResolverService {
     }
 
     @Override
+    public PluginBindingResponse getPluginBindingById(PluginBindingRequest request) {
+        PluginBindingEntity pluginBindingEntity = pluginBindingRepository.findById(request.getPluginId()).orElseThrow(() -> new NoMatchRecordFoundException("id"));
+        return getPluginBindingResponse(pluginBindingEntity,pluginBindingMapper.toPluginBindingResponse(pluginBindingEntity));
+    }
+
+    @Override
+    public PluginBindingSearchResponse getPluginBindingsByScopeAndScopeId(PluginBindingRequest request) {
+        ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request"));
+        ValidationUtils.checkNull(request.getScope(), () -> new MissingRequiredInputException("scope"));
+        ValidationUtils.checkEmptyString(request.getScopeId(), () -> new MissingRequiredInputException("scopeId"));
+        PluginBindingEntity entity = pluginBindingRepository.findByScopeAndScopeId(request.getScope(), request.getScopeId());
+        return pluginBindingMapper.toPluginBindingCreateResponse(entity);
+    }
+
+    @Override
     public List<PluginBindingResponse> getPluginBindingsByDefinitionId(PluginBindingRequest request) {
         ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request"));
         ValidationUtils.checkNull(request.getDefinitionId(), () -> new MissingRequiredInputException("definitionId"));
@@ -136,17 +148,21 @@ public class PluginResolverServiceImpl implements PluginResolverService {
         return pluginBindingEntities.stream()
                 .map(entity -> {
                     PluginBindingResponse response = pluginBindingMapper.toPluginBindingResponse(entity);
-                    switch (entity.getScope()) {
-                        case CHANNEL -> response.setName(
-                                channelService.findChannelById(Short.parseShort(entity.getScopeId())).getName());
-                        case SERVICE -> response.setName(
-                                scmServiceService.findByServiceId(Short.parseShort(entity.getScopeId())).getName());
-                        case OPERATION -> response.setName(
-                                operationService.findById(entity.getScopeId()).getTitle());
-                    }
-                    return response;
+                    return getPluginBindingResponse(entity, response);
                 })
                 .toList();
+    }
+
+    private PluginBindingResponse getPluginBindingResponse(PluginBindingEntity entity, PluginBindingResponse response) {
+        switch (entity.getScope()) {
+            case CHANNEL -> response.setName(
+                    channelService.findChannelById(Short.parseShort(entity.getScopeId())).getName());
+            case SERVICE -> response.setName(
+                    scmServiceService.findByServiceId(Short.parseShort(entity.getScopeId())).getName());
+            case OPERATION -> response.setName(
+                    operationService.findById(entity.getScopeId()).getTitle());
+        }
+        return response;
     }
 
     @Override
@@ -175,7 +191,7 @@ public class PluginResolverServiceImpl implements PluginResolverService {
         }
         pluginBindingEntity.setActive(request.getActive());
         pluginBindingRepository.save(pluginBindingEntity);
-        return pluginBindingMapper.toPluginBindingResponse(pluginBindingEntity);
+        return getPluginBindingResponse(pluginBindingEntity, pluginBindingMapper.toPluginBindingResponse(pluginBindingEntity));
     }
 
     private void validateScope(PluginScope scope, String scopeId) {

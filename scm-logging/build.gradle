@@ -40,6 +40,7 @@ dependencies {
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation 'org.projectlombok:lombok'
+    implementation 'com.vdurmont:semver4j'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'commons-io:commons-io:2.18.0'

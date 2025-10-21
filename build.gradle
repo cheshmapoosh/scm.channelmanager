@@ -11,6 +11,7 @@ ext {
     set('mapstructVersion', "1.5.3.Final")
     set('lombokMapstructBindingVersion', "0.2.0")
     set('bucket4jVersion', "8.14.0")
+    set('semver4jVersion', "3.1.0")
 }
 subprojects {
     apply plugin: 'java'
@@ -87,6 +88,7 @@ subprojects {
             dependency "com.ibm.mq:mq-jms-spring-boot-starter:3.3.3"
             dependency "com.bucket4j:bucket4j_jdk17-core:${bucket4jVersion}"
             dependency "com.bucket4j:bucket4j_jdk17-hazelcast:${bucket4jVersion}"
+            dependency "com.vdurmont:semver4j:${semver4jVersion}"
         }
     }
 

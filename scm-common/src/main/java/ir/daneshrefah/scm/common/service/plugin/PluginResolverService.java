@@ -1,9 +1,6 @@
 package ir.daneshrefah.scm.common.service.plugin;
 
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingCreateRequest;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingRequest;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingResponse;
-import ir.daneshrefah.scm.common.dto.plugin.PluginBindingUpdateRequest;
+import ir.daneshrefah.scm.common.dto.plugin.*;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.operation.Operation;
@@ -21,7 +18,11 @@ public interface PluginResolverService {
 
     List<PluginDetail> resolveOrderedPluginDetails(Operation operation, PluginPhase phase);
 
+    PluginBindingResponse getPluginBindingById(PluginBindingRequest request);
+
     List<PluginBindingResponse> getPluginBindingsByDefinitionId(PluginBindingRequest request);
+
+    PluginBindingSearchResponse getPluginBindingsByScopeAndScopeId(PluginBindingRequest request);
 
     PluginBindingResponse createPluginBinding(PluginBindingCreateRequest request);
 

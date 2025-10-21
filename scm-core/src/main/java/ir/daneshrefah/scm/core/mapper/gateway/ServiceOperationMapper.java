@@ -1,9 +1,10 @@
 package ir.daneshrefah.scm.core.mapper.gateway;
 
 import ir.daneshrefah.scm.common.data.mapper.ServiceMapper;
+import ir.daneshrefah.scm.common.dto.serviceOperation.ServiceOperationResponse;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.core.entity.gateway.ServiceOperationEntity;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.ReportingPolicy.IGNORE;
@@ -13,5 +14,7 @@ public interface ServiceOperationMapper {
     ServiceOperationEntity toEntity(ServiceOperation serviceOperation);
 
     ServiceOperation toModel(ServiceOperationEntity serviceOperationEntity);
+
+    ServiceOperationResponse toServiceOperationResponse(ServiceOperationEntity serviceOperationEntity);
 
 }

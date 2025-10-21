@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.log.service;
 
+import com.vdurmont.semver4j.Requirement;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
@@ -12,6 +13,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -31,6 +34,22 @@ public class TransactionLogConverterService implements ConverterService {
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
     private static final int CHUNK_SIZE = 2048;
+    private final Requirement versionRequirement;
+
+    public TransactionLogConverterService(TransactionLogService transactionLogService,
+                                    @Value("${scm.log.transactionLogConverter.versionRequirement:#{null}}") String versionRequirement) {
+        this.transactionLogService = transactionLogService;
+        if (versionRequirement != null && !versionRequirement.isEmpty()) {
+            this.versionRequirement = Requirement.buildNPM(versionRequirement);
+        } else {
+            this.versionRequirement = Requirement.buildNPM("*");
+        }
+    }
+
+    @Override
+    public boolean supports(LogMessage logMessage) {
+        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
+    }
 
     @PostConstruct
     public void init() {
@@ -92,7 +111,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setExternalSequenceId(attributes.get(LogAttribute.EXTERNAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setOriginalSequenceId(attributes.get(LogAttribute.ORIGINAL_SEQUENCE_ID.getAttributeName()));
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
-        setIpAddress(attributes, transactionLogEntity);
+        transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName()));
         return transactionLogEntity;
     }
 
@@ -183,10 +202,6 @@ public class TransactionLogConverterService implements ConverterService {
         return null;
     }
 
-    private void setIpAddress(Map<String, String> attributes, TransactionLogEntity transactionLogEntity) {
-        transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName()));
-        transactionLogEntity.setClientPhoneNumber(attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName()));
-    }
 
     private static String getExceptionClassName(Map<String, String> attributes) {
         String exceptionClassName = attributes.get(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName());

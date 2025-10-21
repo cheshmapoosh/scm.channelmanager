@@ -9,4 +9,5 @@ import java.util.List;
 public interface PluginBindingRepository extends JpaRepository<PluginBindingEntity, String> {
   PluginBindingEntity findByScopeAndScopeIdAndActive(PluginScope scope, String scopeId, boolean active);
   List<PluginBindingEntity> findByDefinitionId(String definitionId);
+  PluginBindingEntity findByScopeAndScopeId(PluginScope scope,String scopeId);
  }

@@ -26,7 +26,7 @@ public class OperationSpecification {
                 predicates.add(builder.equal(root.get("active"), request.getActive()));
             }
             if (null != request.getType()) {
-                predicates.add(builder.like(root.get("type"), request.getName()));
+                predicates.add(builder.like(root.get("type"), request.getType().name()));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import ir.daneshrefah.scm.common.data.mapper.ChannelServiceAccessMapper;
+import ir.daneshrefah.scm.common.dto.channelServiceDefination.ChannelServiceDefinitionResponse;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
@@ -45,6 +46,8 @@ public abstract class ChannelServiceDefinitionMapper {
             case REST_MULTIPLE -> toRestMultiple(channelServiceDefinitionEntity);
         };
     }
+
+    public abstract ChannelServiceDefinitionResponse toChannelServiceDefinition(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     @Named("toRestMultiple")
     public abstract RestMultipleChannelServiceDefinition toRestMultiple(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
