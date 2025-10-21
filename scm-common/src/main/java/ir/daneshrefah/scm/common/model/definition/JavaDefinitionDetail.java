@@ -17,5 +17,5 @@ public class JavaDefinitionDetail extends DefinitionDetail {
     private String path;
     private HttpMethod method;
     private boolean checkLoginAuthentication;
-    private List<BaseChannelServiceDefinition.AuthorizationConfig> authorizationConfigs;
+    private BaseChannelServiceDefinition.AuthorizationConfig authorizationConfig;
 }
