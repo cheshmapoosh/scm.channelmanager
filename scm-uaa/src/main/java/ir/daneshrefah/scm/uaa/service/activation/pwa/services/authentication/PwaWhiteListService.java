@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication;
 
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
+import ir.daneshrefah.scm.uaa.config.PwaAuthenticationConfigProperties;
 import ir.daneshrefah.scm.uaa.domain.pwa.WhiteList;
 import ir.daneshrefah.scm.uaa.mapper.WhiteListMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.WhiteListRepository;
@@ -22,10 +23,8 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_IN
 public class PwaWhiteListService {
 
     private final WhiteListRepository whiteListRepository;
+    private final PwaAuthenticationConfigProperties properties;
     private final WhiteListMapper mapper;
-
-    //    @Value("${application.pilot.enable}") //TODO
-    private final boolean isWhiteListEnabled = false;
 
 
     public Optional<WhiteList> findByUsername(String username) {
@@ -35,7 +34,7 @@ public class PwaWhiteListService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void checkWhiteList(String username) {
-        if (isWhiteListEnabled) {
+        if (Boolean.TRUE.equals(properties.getWhiteListEnabled())) {
             log.info("Whitelist is ON");
             if (findByUsername(username).isEmpty()) {
                 log.warn("User '{}' was not found in whitelist",username);
