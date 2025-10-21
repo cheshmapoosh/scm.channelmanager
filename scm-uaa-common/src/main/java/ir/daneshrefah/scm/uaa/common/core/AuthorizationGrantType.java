@@ -15,7 +15,8 @@ public enum AuthorizationGrantType {
     FIRST_PASSWORD("first_password", true, true, true),
     SECOND_PASSWORD("second_password", false, false, false),
     SMS_OTP("sms_otp", false, false, false),
-    SHAHKAR("ext_shk", false, false, false);
+    SHAHKAR("ext_shk", false, false, false),
+    DEFAULT("default", true, true, true);
 
     private final String code;
     private final boolean supportNotification;

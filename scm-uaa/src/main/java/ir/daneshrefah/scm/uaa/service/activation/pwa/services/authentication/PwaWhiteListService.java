@@ -1,0 +1,46 @@
+package ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication;
+
+import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
+import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
+import ir.daneshrefah.scm.uaa.domain.pwa.WhiteList;
+import ir.daneshrefah.scm.uaa.mapper.WhiteListMapper;
+import ir.daneshrefah.scm.uaa.repository.activation.WhiteListRepository;
+import ir.daneshrefah.scm.uaa.service.activation.pwa.common.GeneralPwaOauthException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_INVALID_USER;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PwaWhiteListService {
+
+    private final WhiteListRepository whiteListRepository;
+    private final WhiteListMapper mapper;
+
+    //    @Value("${application.pilot.enable}") //TODO
+    private final boolean isWhiteListEnabled = false;
+
+
+    public Optional<WhiteList> findByUsername(String username) {
+        log.debug("Request to find user from username: {}", username);
+        return whiteListRepository.findByUsername(username).map(mapper::toModel);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void checkWhiteList(String username) {
+        if (isWhiteListEnabled) {
+            log.info("Whitelist is ON");
+            if (findByUsername(username).isEmpty()) {
+                log.warn("User '{}' was not found in whitelist",username);
+                ErrorUtils.throwError(OAUTH2_ERROR_CODE_INVALID_USER,PwaOauthMessage.INVALID_CREDENTIALS.name());
+            }
+        }
+    }
+}

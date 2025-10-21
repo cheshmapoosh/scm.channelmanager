@@ -22,7 +22,7 @@ import java.util.Base64;
  * @since 2023-12-27
  */
 @RestController
-@RequestMapping("/public/token")
+@RequestMapping("/oauth/token_key")
 public class TokenController extends BaseController {
 
     private final JWKSet jwkSet;

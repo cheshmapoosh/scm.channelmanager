@@ -9,7 +9,8 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
-import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,7 +39,8 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                                          UserDetailsService userDetailsService,
                                          OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                          DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                         UserActivationAuthenticationService userActivationAuthenticationService) {
+                                         UserActivationAuthenticationService userActivationAuthenticationService,
+                                         PwaAuthenticationService pwaAuthenticationService) {
 
         super(clientRepository,
                 clientService,
@@ -46,7 +48,8 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                 userDetailsService,
                 authenticationTokenGenerator,
                 delegatorAuthenticationProvider,
-                userActivationAuthenticationService);
+                userActivationAuthenticationService,
+                pwaAuthenticationService);
     }
 
     @Override

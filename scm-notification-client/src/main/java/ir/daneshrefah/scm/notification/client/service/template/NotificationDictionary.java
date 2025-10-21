@@ -5,9 +5,11 @@ import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import static ir.daneshrefah.scm.utils.string.StringUtils.isBlank;
@@ -44,6 +46,7 @@ public class NotificationDictionary {
             case TERMINAL_TITLE -> extractTerminalTitle(request.getTerminalCode());
             case PERSON_TITLE -> extractPersonTitle(request.getTerminalCode());
             case USER_NICKNAME -> extractUserNickname(request.getTerminalCode());
+            case LOGIN_TIME -> nowLoginTime();
             default -> autoMapping(request,dataKey);
         };
     }
@@ -70,5 +73,14 @@ public class NotificationDictionary {
         }catch (Exception e){
             return DEFAULT_NOT_FOUND_VALUE;
         }
+    }
+
+    private String nowLoginTime() {
+        return DateUtils
+                .ShamsiCalendarConvertor
+                .convertToShamsiDateString(DateUtils
+                        .DateConverter
+                        .convertToLocalDateTime(DateUtils.DateConverter
+                                .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
     }
 }

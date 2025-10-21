@@ -24,7 +24,10 @@ public enum NotificationTemplate {
     RESET_SECOND_PASSWORD("reset_second_password"),
     CHANNEL_ACTIVATION_REQUEST("channel_activation_request"),
     CHANNEL_ACTIVATION_SUCCESS("channel_successful_activation"),
-    CHANNEL_ACTIVATION_FAILED("channel_failed_activation");
+    CHANNEL_ACTIVATION_FAILED("channel_failed_activation"),
+    LOGIN_BLOCKED_MESSAGE("login_blocked_message"),
+    REGISTER_BLOCKED_MESSAGE("register_blocked_message"),
+    MB_ACTIVATION_CODE("mb_activation_code");
 
     private final String value;
 

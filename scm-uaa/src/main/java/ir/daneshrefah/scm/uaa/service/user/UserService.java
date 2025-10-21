@@ -811,6 +811,24 @@ public class UserService {
         return userMapper.toModel(userEntity);
     }
 
+    @Transactional
+    public User assignTerminalToPersonWithoutOtp(UserAssignTerminalRequest request) {
+        this.findByNationalCodeAndTerminalIDAndPersonTypeAndSubOrganizationId(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId(), request.getTerminalCode()).ifPresent((userEntityx) -> {
+            throw new DuplicatedRecordFoundException(request.getNationalId());
+        });
+        if (!request.getTerminalCode().equalsIgnoreCase(TerminalType.IB.getTerminalCode()) && !request.getTerminalCode().equalsIgnoreCase(TerminalType.NIB.getTerminalCode()) && !request.getTerminalCode().equals(TerminalType.MB.getTerminalCode())) {
+            throw new InvalidInputException("TerminalCode");
+        } else {
+            String roleCode = "ROLE_CUSTOMER";
+            GeneralPersonEntity generalPerson = this.findPerson(request.getPersonType(), request.getNationalId(), request.getSubOrganizationId()).orElseThrow(() -> new NoMatchRecordFoundException("person"));
+            UserEntity userEntity = this.createUserEntity(request, generalPerson);
+            this.userRepository.save(userEntity);
+            this.userRepository.flush();
+            this.uPersonService.addPersonRole(userEntity.getPerson().getId(), roleCode);
+            return this.userMapper.toModel(userEntity);
+        }
+    }
+
     private void verifyOtp(UserAssignTerminalRequest request) {
         String terminalCode = extractRequestTerminalCode();
         String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
@@ -876,14 +894,18 @@ public class UserService {
 
     private UserEntity createUserEntity(UserAssignTerminalRequest request, GeneralPersonEntity generalPerson) {
         ValidationUtils.checkEmptyString(request.getPhoneNumber(), () -> new MissingRequiredInputException("phoneNumber"));
-        ValidationUtils.checkEmptyString(request.getLoginStaticPassword(), () -> new MissingRequiredInputException("loginStaticPassword"));
-        ValidationUtils.checkEmptyString(request.getTransactionStaticPassword(), () -> new MissingRequiredInputException("transactionStaticPassword"));
+        ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
         ValidationUtils.checkEmptyString(request.getNationalId(), () -> new MissingRequiredInputException("nationalId"));
         ValidationUtils.checkEmptyString(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
         ValidationUtils.checkNull(request.getTerminalCode(), () -> new MissingRequiredInputException("terminalCode"));
-        ValidationUtils.checkNull(request.getLoginAuthenticationMethod(), () -> new MissingRequiredInputException("loginAuthenticationMethod"));
-        ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
         ValidationUtils.checkNull(request.getPersonType(), () -> new MissingRequiredInputException("personType"));
+        ValidationUtils.checkNull(request.getTransactionAuthenticationMethod(), () -> new MissingRequiredInputException("transactionAuthenticationMethod"));
+        if (request.getLoginAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            ValidationUtils.checkBlankString(request.getLoginStaticPassword(), () -> new MissingRequiredInputException("loginStaticPassword"));
+        }
+        if (request.getTransactionAuthenticationMethod().equals(AuthenticationMethod.STATIC_PASSWORD)) {
+            ValidationUtils.checkBlankString(request.getTransactionStaticPassword(), () -> new MissingRequiredInputException("transactionStaticPassword"));
+        }
         Terminal terminal = findTerminalByCode(request.getTerminalCode());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         String nickName = generateUserNickName(request, generalPerson);
@@ -895,8 +917,8 @@ public class UserService {
         user.setTransactionAuthenticationMethod(request.getLoginAuthenticationMethod());
         user.setStatus(UserStatus.ACTIVE);
         user.setPrintCount(0);
-        user.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), generalPerson.getUsername()));
-        user.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), generalPerson.getUsername()));
+        user.setLoginStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getLoginStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
+        user.setTransactionStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getTransactionStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
         user.setPerson(generalPerson);
         user.setType(UserType.CM_REGULAR); //TODO Is the type set correctly?
         user.setCreatorBranch(getLoggedInBranchCode());

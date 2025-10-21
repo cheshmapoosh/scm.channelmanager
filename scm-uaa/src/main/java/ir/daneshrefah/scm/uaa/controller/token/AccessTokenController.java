@@ -21,7 +21,6 @@ import java.util.Objects;
 /**
  * Use this api only on development environment.
  */
-@Profile({"dev","default"})
 @Slf4j
 @RequiredArgsConstructor
 @RestController

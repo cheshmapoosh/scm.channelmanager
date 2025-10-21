@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest
-public class ClientServiceTest {
+public class DeviceClientEntityServiceTest {
     @Autowired
     private ClientService clientService;
 //    @Autowired

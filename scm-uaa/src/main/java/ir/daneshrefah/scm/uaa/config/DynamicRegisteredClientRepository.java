@@ -122,7 +122,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 isScopeOpenIdAdded = isScopeOpenIdAdded || OidcScopes.OPENID.equalsIgnoreCase(scope.getScope().getCode());
             }
         }
-        if (!isScopeOpenIdAdded) {
+         if (!isScopeOpenIdAdded) {
             clientBuilder.scope(OidcScopes.OPENID);
         }
         //TODO: Resolve bug for fetch from db

@@ -1,0 +1,24 @@
+package ir.daneshrefah.scm.uaa.security.token;
+
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+
+@Data
+@Accessors(chain = true)
+public class DefaultGrantPreAuthenticationToken implements Serializable {
+    private String accessParam;
+    private String channel;
+    private String agent;
+    private String deviceModel;
+    private String appVersion;
+    private String signature;
+    private String ip;
+    private String otpCode;
+    private String registryToken;
+    private String uuid;
+    private String hashcode;
+    private String terminalType;
+    private String operationSystemVersion;
+}
