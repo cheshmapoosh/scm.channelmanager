@@ -493,6 +493,76 @@ VALUES ('mb_activation_code', 'MB_ACTIVATION', 'VELOCITY',
         '2024-06-09 11:48:36.000000', 'fa-IR');
 
 
+INSERT INTO REF.USER (ARCHIVE_NO, USER_ID, ACTIVE, USER_TYPE, GENDER_ID, MARITAL_STATUS, CUSTOMER_TYPE_CODE, TITLE_CODE,
+                      IDENTITY_DOCUMENT_TYPE, JOB_CODE, CARD_TYPE_CODE, REGION_CODE, EDUCATION_CODE, MAJOR_CODE,
+                      CITY_CODE, BRANCH_CODE, USERNAME, NATIONAL_CODE, POSTAL_CODE, FAX_NUMBER, NATIONALITY_CODE,
+                      IDENTIFICATION_NO, ISSUE_PLACE, PHONE, MOBILE, FIRST_NAME, FIRST_NAME_ENGLISH, LAST_NAME,
+                      LAST_NAME_ENGLISH, FATHER_NAME, EMAIL, IDENTIFICATION_SERIAL, IDENTIFICATION_SERIAL_NO, ADDRESS,
+                      BIRTH_PLACE, BIRTH_DATE, ISSUE_DATE, SUB_ORGANIZATION_ID, DE_ACTIVE_REASON, GROUP_LEVEL)
+VALUES (8, 30387117, 1, 7, 1, null, '42', null, null, null, null, '001', null, null, '100', '000110',
+        'drp-mb', '14006284864', '1234567890', '88731043', 'I',
+        '500656', '', '44636398',
+        '',
+        'همراه بانک بانک جدید',
+        'DRP NEW MOBILE Bank',
+        '',
+        '',
+        '',
+        'A@YAHOO.COM', '',
+        '',
+        '',
+        '',
+        '2019-03-21 00:00:00.000000', null, '00000005', '0', 0);
+
+
+INSERT INTO REF.USER_CHANNEL_AUTHENTICATION (ARCHIVE_NO, CHANNEL_ID, ACTIVE, AUTHENTICATION_METHOD_ID,
+                                             USER_AUTHENTICATION_TYPE, USER_CHANNEL_AUTHENTICATION_ID, USER_ID,
+                                             FROM_DATE, TO_DATE, FIRST_PASSWORD, SECOND_PASSWORD, CHANNEL_ACCESS_PARAM,
+                                             SECOND_LEVEL_AUTH_METHOD_ID, PRINT_COUNT, PASSWORD_SET_PRINTED, CREATED_BY,
+                                             MODIFIED_BY, CREATION_DATE, MODIFICATION_DATE, EFFECTIVE_DATE,
+                                             OTP_SERIAL_NO, STATE, NICK_NAME, BRANCH_CODE, PIN_BASED_PASSWORD,
+                                             PATTERN_BASED_PASSWORD, LAST_DATE_OF_PASSWORD_CHANGE,
+                                             LAST_REACTION_DATE_TO_PASSWORD, USER_REASON, REASON, DE_ACTIVE_REASON,
+                                             ABORT_PASS)
+VALUES (8, 211, 1, 1, 3, 792818402, 30387117, null, null,
+        '',
+        '',
+        null, 1, 0, null, 101, 101, '2025-03-01 10:50:15.622965', '2025-03-01 10:50:15.622965', null, null, 1,
+        'PWA', '', null, null, '2025-05-06', '2025-05-06', null, null, null, 0);
+
+
+INSERT INTO REF.TBL_SUA_CLIENT (CLIENT_ID, TITLE, CLIENT_IDENTIFIER, CLIENT_SECRET, TERMINAL_CODE,
+                                CLIENT_AUTH_METHOD_BASIC, CLIENT_AUTH_METHOD_POST, CLIENT_AUTH_METHOD_SEC_JWT,
+                                CLIENT_AUTH_METHOD_KEY_JWT, CLIENT_AUTH_METHOD_NONE, ALLOW_IP_ADDRESSES,
+                                CHECK_IP_ADDRESS, REDIRECT_URIS, REQUIRE_AUTH_CONSENT, REQUIRE_PROOF_KEY, CHECK_VERSION,
+                                CHECK_ACTIVATION, SESSION_TTL_MINUTE, CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR,
+                                USER_CHANNEL_AUTHENTICATION_ID, STATUS, LEGAL_USER_ID)
+VALUES (21, '', 'MB', '', 'MB', 1, 0, 0, 0, 1, '', 0,
+        'http://127.0.0.1:3001/authorized,http://10.10.8.122:3001/authorized,http://10.10.8.46:3001/authorized,http://10.10.4.128:3001/authorized,http://10.10.8.146:3001/authorized,http://10.10.8.41:3001/authorized,http://10.10.4.127:3001/authorized,http://log-ui.daneshrefah.ir/authorized',
+        1, 0, 0, 0, 60, '2025-03-01 10:42:36.228330', '2025-03-01 11:36:43.240000', '6428007237', '6428007237',
+        792818402, 1, 22037200);
+
+
+INSERT INTO REF.TBL_SUA_CLIENT_VERSION (CLIENT_VERSION_ID, CLIENT_ID, VERSION, IS_FORCED, SIGNATURE, STATUS,
+                                        CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES (21, 21, 'PWA', 0,
+        '83A255752C852385F198717884462A2C298FECC3514958544BE9ED09F4EE2E9C170F273D276AE1DD1A69C4B09787C25916E2F668CB4FFC69585024F6AC014D7B-1682122241-2231558975',
+        1, '2024-02-06 11:48:29.137390', '2024-02-06 11:48:29.137390', null, null);
+
+
+INSERT INTO REF.TBL_SUA_CLIENT_SCOPE (CLIENT_SCOPE_ID, CLIENT_ID, SCOPE_ID, CREATE_DATE, LAST_EDIT_DATE, CREATOR,
+                                      LAST_EDITOR)
+VALUES (41, 21, 1, '2024-05-26 09:06:38.344257', '2024-05-26 09:06:38.344257', null, null);
+
+
+INSERT INTO REF.TBL_SUA_CLIENT_AUTHORIZATION_GRANT_TYPE (CLIENT_AUTH_GRANT_TYPE_ID, CLIENT_ID, GRANT_TYPE_CODE,
+                                                         CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES (41, 21, 'default', '2024-05-18 12:59:45.362146', '2024-05-18 12:59:45.362146', 'Reza Jamshidi',
+        'Reza Jamshidi');
+INSERT INTO REF.TBL_SUA_CLIENT_AUTHORIZATION_GRANT_TYPE (CLIENT_AUTH_GRANT_TYPE_ID, CLIENT_ID, GRANT_TYPE_CODE,
+                                                         CREATE_DATE, LAST_EDIT_DATE, CREATOR, LAST_EDITOR)
+VALUES (42, 21, 'refresh_token', '2024-05-18 12:59:45.362146', '2024-05-18 12:59:45.362146', 'Reza Jamshidi',
+        'Reza Jamshidi');
 
 
 ------------------------------------------------------------------------------------------------
