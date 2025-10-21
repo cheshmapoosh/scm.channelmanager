@@ -69,7 +69,7 @@ public class PwaUserLoginService {
             login.setStatus(AuthStatus.BLOCKED);
             save(login);
             log.info("Sending block SMS in login process for username {} to phoneNumber {}", login.getUsername(), login.getPhoneNumber());
-            pwaNotificationCenter.sendBlockedNotification(login,properties.getLogin().rateLimitCount().toString(), properties.getLogin().rateLimitBlockedTimeMinutes().toString(), MB_LOGIN_BLOCKED);
+            pwaNotificationCenter.sendLoginBlockedNotification(login,properties.getLogin().rateLimitCount().toString(), properties.getLogin().rateLimitBlockedTimeMinutes().toString());
             return true;
         } else {
             log.info("Saving failed trial for user with username: {} in login process", login.getUsername());

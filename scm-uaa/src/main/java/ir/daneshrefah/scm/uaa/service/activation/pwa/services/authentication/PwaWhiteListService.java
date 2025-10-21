@@ -6,7 +6,6 @@ import ir.daneshrefah.scm.uaa.config.PwaAuthenticationConfigProperties;
 import ir.daneshrefah.scm.uaa.domain.pwa.WhiteList;
 import ir.daneshrefah.scm.uaa.mapper.WhiteListMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.WhiteListRepository;
-import ir.daneshrefah.scm.uaa.service.activation.pwa.common.GeneralPwaOauthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

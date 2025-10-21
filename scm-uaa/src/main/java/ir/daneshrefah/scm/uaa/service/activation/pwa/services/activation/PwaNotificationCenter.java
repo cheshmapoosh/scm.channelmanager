@@ -10,7 +10,6 @@ import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
-import ir.daneshrefah.scm.uaa.common.constants.SMSMessageType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.domain.pwa.PwaLogin;
 import ir.daneshrefah.scm.uaa.domain.pwa.UserActivation;
@@ -22,8 +21,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
-
-import static ir.daneshrefah.scm.uaa.common.constants.SMSMessageType.MB_LOGIN_BLOCKED;
 
 @Component
 @RequiredArgsConstructor
@@ -72,17 +69,10 @@ public class PwaNotificationCenter {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void sendBlockedNotification(ActivationRequest request, String failedTrials, String blockedTime, SMSMessageType messageType) {
+    public void sendActivationBlockedNotification(ActivationRequest request, String failedTrials, String blockedTime) {
         try {
-            NotificationData notificationData;
-            NotificationTemplate template;
-            if (MB_LOGIN_BLOCKED.equals(messageType)) {
-                notificationData = createLoginBlockNotificationData(request.getUsername(), failedTrials, blockedTime);
-                template = NotificationTemplate.LOGIN_BLOCKED_MESSAGE;
-            } else {
-                notificationData = createRegisterBlockNotificationData(request.getUsername(), blockedTime, failedTrials, request.getPhoneNumber());
-                template = NotificationTemplate.REGISTER_BLOCKED_MESSAGE;
-            }
+            NotificationData  notificationData = createRegisterBlockNotificationData(request.getUsername(), blockedTime, failedTrials, request.getPhoneNumber());
+            NotificationTemplate template = NotificationTemplate.REGISTER_BLOCKED_MESSAGE;
             //CREATE ISSUER INFO
             IssuerInfo issuerInfo = IssuerInfo.builder()
                     .personType(PersonType.UNKNOWN)
@@ -132,7 +122,36 @@ public class PwaNotificationCenter {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void sendBlockedNotification(PwaLogin login, String string, String string1, SMSMessageType smsMessageType) {
-        //TODO
+    public void sendLoginBlockedNotification(PwaLogin login, String failedTrials, String blockedTime) {
+        try {
+            NotificationData notificationData = createLoginBlockNotificationData(login.getUsername(), failedTrials, blockedTime);
+            NotificationTemplate  template = NotificationTemplate.LOGIN_BLOCKED_MESSAGE;
+            //CREATE ISSUER INFO
+            IssuerInfo issuerInfo = IssuerInfo.builder()
+                    .personType(PersonType.UNKNOWN)
+                    .personUsername(login.getUsername())
+                    .terminalCode(login.getDeviceModel())
+                    .build();
+            //CREATE RECIPIENT
+            Recipient recipient = Recipient.builder()
+                    .address(login.getPhoneNumber())
+                    .identifier(login.getPhoneNumber())
+                    .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                    .terminalCode(login.getDeviceModel())
+                    .build();
+            //CREATE NOTIFICATION REQUEST
+            NotificationRequest notificationRequest = NotificationRequest.builder()
+                    .template(template)
+                    .media(NotificationMedia.SMS)
+                    .recipient(recipient)
+                    .userLocale(new Locale("fa", "IR")) //TODO GET FROM HEADER
+                    .data(notificationData)
+                    .terminalCode(login.getDeviceModel())
+                    .issuerInfo(issuerInfo)
+                    .build();
+            notificationService.sendNotification(notificationRequest);
+        } catch (Exception e) {
+            log.error("Exception occurred while sending notification ", e);
+        }
     }
 }

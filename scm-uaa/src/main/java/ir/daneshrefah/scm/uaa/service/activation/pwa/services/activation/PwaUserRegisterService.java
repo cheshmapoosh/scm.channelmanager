@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static ir.daneshrefah.scm.uaa.common.constants.SMSMessageType.MB_REGISTER_BLOCKED;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -91,7 +89,7 @@ public class PwaUserRegisterService {
             register.setStatus(AuthStatus.BLOCKED);
             save(register);
             log.debug("Sending block SMS in registration process to phoneNumber {}", register.getPhoneNumber());
-            pwaNotificationCenter.sendBlockedNotification(request, properties.getActivation().rateLimitCount().toString(), properties.getActivation().rateLimitBlockedTimeMinutes().toString(), MB_REGISTER_BLOCKED);
+            pwaNotificationCenter.sendActivationBlockedNotification(request, properties.getActivation().rateLimitCount().toString(), properties.getActivation().rateLimitBlockedTimeMinutes().toString());
         } else {
             log.debug("Adding failed register trial for user with phoneNumber: {}", register.getPhoneNumber());
             register.setStatus(AuthStatus.NOT_FOUND);
