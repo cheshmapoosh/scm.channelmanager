@@ -1,15 +1,21 @@
 package ir.daneshrefah.scm.uaa.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,6 +31,35 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL
  * @since 2024-05-29
  */
 public class RequestUtils {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static void enrichResponse(HttpServletResponse httpServletResponse, List<Cookie> cookies) {
+        if (Objects.nonNull(cookies) &&  !cookies.isEmpty()) {
+            cookies.forEach(httpServletResponse::addCookie);
+        }
+    }
+
+    public static String getOrDefaultRequestIp(String defaultIp, HttpServletRequest request) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(defaultIp)) {
+            String[] headers = {
+                    "X-Forwarded-For",
+                    "Proxy-Client-IP",
+                    "WL-Proxy-Client-IP",
+                    "HTTP_CLIENT_IP",
+                    "HTTP_X_FORWARDED_FOR",
+                    "X-Real-IP"
+            };
+            for (String header : headers) {
+                String foundIp = request.getHeader(header);
+                if (foundIp != null && !foundIp.isEmpty() && !"unknown".equalsIgnoreCase(defaultIp)) {
+                    return foundIp.split(",")[0].trim();
+                }
+            }
+            return request.getRemoteAddr();
+        }
+        return defaultIp;
+    }
 
 //    public static IssuerInfo extractIssuerInfo() {
 //        HttpServletRequest request = extractHttpRequest();
@@ -49,7 +84,8 @@ public class RequestUtils {
 //                .remoteAddress(Objects.nonNull(request) ? request.getRemoteHost() : null)
 //                .xForwardedFor(Objects.nonNull(request) ? request.getHeader(IP_HEADER) : null)
 //                .hostAddress(getLocalHostAddress())
-////        private String instanceName;
+
+    /// /        private String instanceName;
 //                .build();
 //        return result;
 //    }
@@ -90,7 +126,6 @@ public class RequestUtils {
 //        }
 //        return UserIdentifierType.NONE;
 //    }
-
     public static HttpServletRequest extractHttpRequest() {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
         if (Objects.nonNull(attributes) && attributes instanceof ServletRequestAttributes) {
@@ -150,6 +185,15 @@ public class RequestUtils {
             return Optional.empty();
         }
         return Optional.of(header);
+    }
+
+
+    public static MultiValueMap<String, String> getRequestHeaders(HttpServletRequest request) {
+        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+        request.getHeaderNames().asIterator().forEachRemaining(header -> {
+            headers.add(header, request.getHeader(header));
+        });
+        return headers;
     }
 
 }

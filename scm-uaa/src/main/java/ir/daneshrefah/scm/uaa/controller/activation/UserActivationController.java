@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.rate.limit.aspect.LimitType;
 import ir.daneshrefah.scm.uaa.rate.limit.aspect.RateLimit;
-import ir.daneshrefah.scm.uaa.service.activation.UserActivationMessagePublisherService;
+import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationMessagePublisherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

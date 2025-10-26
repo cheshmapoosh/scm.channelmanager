@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.service.activation;
+package ir.daneshrefah.scm.uaa.service.activation.nib;
 
 import ir.daneshrefah.scm.cache.client.connector.QueueTemplate;
 import ir.daneshrefah.scm.common.constant.TerminalType;

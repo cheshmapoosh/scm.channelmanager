@@ -115,8 +115,11 @@ public class JWTConfig {
                 if (StringUtils.isNotEmpty(sessionKey)) {
                     claims.claim(CLAIM_KEY_SESSION, sessionKey);
                 }
+                /*
+                          ***  IT SEEMS DOES NOT NEED TO ADD THIS CLAIMS ***
                 if (null != user.getAccessParameters() && !user.getAccessParameters().isEmpty())
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, user.getAccessParameters());
+                 */
                 PersonType personType = user.getPerson().getPersonType();
                 claims.claim(CLAIM_KEY_PERSON_NATIONALITY, user.getPerson().getNationality().getCode());
                 claims.claim(CLAIM_KEY_PERSON_TYPE, user.getPerson().getPersonType().getCode());

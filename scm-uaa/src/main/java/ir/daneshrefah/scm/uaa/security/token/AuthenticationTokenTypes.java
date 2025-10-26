@@ -28,9 +28,9 @@ public enum AuthenticationTokenTypes {
     TRANSACTION_OTP(SecondLvlOtpAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.OTP, false),
     ;
 
-    private Class<? extends GeneralAuthenticationToken> tokenClass;
-    private AuthorizationGrantType grantType;
-    private AuthenticationMethod authenticationMethod;
-    private boolean claimCodeProvided;
+    private final Class<? extends GeneralAuthenticationToken> tokenClass;
+    private final AuthorizationGrantType grantType;
+    private final AuthenticationMethod authenticationMethod;
+    private final boolean claimCodeProvided;
 
 }

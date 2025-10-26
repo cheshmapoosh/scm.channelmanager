@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
@@ -12,18 +11,11 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
-import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
-
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_CHECK_ACTIVATION;
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
-import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
  * Description of the class or purpose of the file.
@@ -39,11 +31,10 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
 
     private final UserService userService;
 
-    private UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
+    private final UserDetailsChecker preAuthenticationChecks = new DefaultPreAuthenticationChecks();
 
-    private UserDetailsChecker postAuthenticationChecks = new DefaultPostAuthenticationChecks();
+    private final UserDetailsChecker postAuthenticationChecks = new DefaultPostAuthenticationChecks();
 
-    private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -103,7 +94,7 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
                     authentication.getPrincipal(),
                     authentication.getDetails());
         } else {
-            result = PostAuthenticationToken.authenticated(
+            result = PostAuthenticationToken. authenticated(
                     authentication.getPrincipal(),
                     authentication.getDetails(),
                     authentication.getPrincipal().getAuthorities());

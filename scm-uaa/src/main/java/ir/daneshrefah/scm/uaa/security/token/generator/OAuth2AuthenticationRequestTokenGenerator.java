@@ -1,9 +1,9 @@
 package ir.daneshrefah.scm.uaa.security.token.generator;
 
+import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
-import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.security.token.AuthenticationTokenTypes;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -15,9 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Description of the class or purpose of the file.
@@ -30,18 +28,26 @@ import java.util.stream.Collectors;
 public class OAuth2AuthenticationRequestTokenGenerator implements AuthenticationRequestTokenGenerator {
 
     @Override
-    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication,
-                                                                                  TerminalUserDetails userDetails) {
+    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication, TerminalUserDetails userDetails) {
         Assert.isAssignable(PreAuthenticationToken.class, authentication.getClass());
         PreAuthenticationToken preAuthenticationToken = (PreAuthenticationToken) authentication;
         AuthenticationMethod authenticationMethod = extractAuthenticationMethod(preAuthenticationToken.getGrantType(),
                 userDetails.getUser());
         Optional<AuthenticationTokenTypes> filteredTokenType = Arrays.stream(AuthenticationTokenTypes.values()).filter(
-                        authenticationTokenType -> authenticationTokenType.getGrantType().equals(preAuthenticationToken.getGrantType()) &&
+                        authenticationTokenType -> authenticationTokenType.getGrantType().equals(getGrantType(preAuthenticationToken)) &&
                                 authenticationTokenType.isClaimCodeProvided() == StringUtils.isNotEmpty(preAuthenticationToken.getClaimCode()) &&
                                 authenticationTokenType.getAuthenticationMethod().equals(authenticationMethod))
                 .findFirst();
         return filteredTokenType.map(AuthenticationTokenTypes::getTokenClass);
+    }
+
+    private AuthorizationGrantType getGrantType(PreAuthenticationToken preAuthenticationToken) {
+        AuthorizationGrantType grantType = preAuthenticationToken.getGrantType();
+        // PROXYING 'DEFAULT' GRANT TYPE ON 'FIRST_PASSWORD' ( USED ON PWA/MB )
+        if (AuthorizationGrantType.DEFAULT.equals(grantType)) {
+            return AuthorizationGrantType.FIRST_PASSWORD;
+        }
+        return grantType;
     }
 
     public GeneralAuthenticationToken generateToken(PreAuthenticationToken authentication, TerminalUserDetails userDetails) throws Exception {
@@ -60,7 +66,7 @@ public class OAuth2AuthenticationRequestTokenGenerator implements Authentication
 
     private AuthenticationMethod extractAuthenticationMethod(AuthorizationGrantType grantType, User user) {
         AuthenticationMethod toTest;
-        if (AuthorizationGrantType.FIRST_PASSWORD.equals(grantType)) {
+        if (AuthorizationGrantType.FIRST_PASSWORD.equals(grantType) || AuthorizationGrantType.DEFAULT.equals(grantType)) {
             toTest = user.getLoginAuthenticationMethod();
         } else if (AuthorizationGrantType.SECOND_PASSWORD.equals(grantType)) {
             toTest = user.getTransactionAuthenticationMethod();

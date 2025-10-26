@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.springframework.security.core.Authentication;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -15,21 +16,17 @@ import java.util.Set;
  * @version 1.0
  * @since 2023-12-18
  */
+@Getter@Setter
 public class PreAuthenticationToken extends AbstractAuthenticationToken {
 
     private String username;
     private String password;
-    @Getter
-    @Setter
     private String claimCode;
-    @Getter
     private AuthorizationGrantType grantType;
-    @Setter
-    @Getter
     private String remoteAddress;
-    @Getter
-    @Setter
     private String activatorTerminal;
+    /* (DEFAULT GRANT TYPE) PWA PRE AUTHENTICATION TOKEN DATA */
+    private DefaultGrantPreAuthenticationToken defaultGrantPreAuthToken;
 
     /**
      * if in user authentication time, client doesn't authenticate. user must send client's id
@@ -42,6 +39,10 @@ public class PreAuthenticationToken extends AbstractAuthenticationToken {
         this.username = username;
         this.password = password;
         this.grantType = grantType;
+    }
+
+    public boolean hasDefaultGrantPreAuthToken() {
+        return Objects.nonNull(defaultGrantPreAuthToken);
     }
 
     @Override

@@ -3,7 +3,6 @@ scm:
     url: http://scm-core.daneshrefah.ir/Service/
   logging:
     datasource:
-
       url: jdbc:db2://10.10.4.104:50001/DBREFSW
       username: casadm
       password: a
@@ -26,12 +25,28 @@ scm:
       max-connection: 10
       default-schema: REF
     activationDatasource:
-      url: jdbc:db2://10.15.27.82:446/DSNALOC:currentSchema=REF;
-      username: casadm
-      password: a
+      url: jdbc:db2://10.15.1.197:50000/DBREFSW
+      username: pwausr
+      password: pwausr
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: MBUAA
+
+    oauth:
+      config:
+        pwa:
+          white-list-enabled: false
+          activation:
+            check-registry-token: true
+            otp-code-trails-count: 5
+            otp-code-expiration-minutes: 2
+            rate-limit-count: 5
+            rate-limit-blocked-time-minutes: 10
+          login:
+            rate-limit-count: 5
+            rate-limit-blocked-time-minutes: 10
+            token-change-warn-period-days: 31
+
   cache:
     client:
       distributed: true
@@ -66,11 +81,11 @@ scm:
       enabled: true
       ibm-mq:
         queue-manager: CSQ1
-        channel: DEV.ADMIN.SVRCONN
-        username: admin
-        password: passw0rd
-        port: 11414
-        host: 10.10.4.238
+        channel: SYSTEM.ADMIN.SVRCONN
+        username: Administrator
+        password: " "
+        port: 1717
+        host: 10.15.1.185
   captcha:
     border:
       enabled: true
@@ -111,6 +126,8 @@ scm:
       username:
       password:
       topic: SUA/LOGOUT
+
+
 #spring:
 #  application:
 #    name: scm-uaa

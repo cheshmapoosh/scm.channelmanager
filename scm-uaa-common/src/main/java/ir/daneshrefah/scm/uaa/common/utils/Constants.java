@@ -72,17 +72,29 @@ public interface Constants {
     String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";
     String OAUTH2_ERROR_CODE_INVALID_CAPTCHA = "invalid_captcha";
     String OAUTH2_ERROR_CODE_INVALID_TOKEN = "invalid_token";
+    String OAUTH2_ERROR_CODE_INVALID_APP_VERSION = "invalid_app_version";
+    String OAUTH2_ERROR_CODE_LOGIN_LIMITED = "reached_login_limit";
 
-    //     String CHANNEL_HEADER ="Channel";
-//     String AGENT_HEADER ="Agent";
-//     String DEVICE_MODEL_HEADER ="DeviceModel";
-//     String OPERATING_SYSTEM_VERSION_HEADER ="OsVersion";
-//     String UUID_HEADER ="UUID";
-//     String HASHCODE_HEADER ="HashCode";
-//     String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
+    String ACCESS_PARAM_HEADER = "AccessParameter";
+    String CHANNEL_HEADER = "Channel";
+    String AGENT_HEADER = "Agent";
+    String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    String UUID_HEADER = "UUID";
+    String APP_VERSION_HEADER = "AppVersion";
+    String OPERATING_SYSTEM_VERSION_HEADER ="OsVersion";
+    String HASHCODE_HEADER ="HashCode";
+    String REGISTRY_TOKEN_HEADER = "RegistryToken";
+    String DEVICE_MODEL_HEADER ="DeviceModel";
+    String SIGNATURE_HEADER = "Signature";
+    String PWA_OTP_CODE_HEADER = "x-otp-code";
+    String PWA_TERMINAL_TYPE_HEADER = "terminal_type";
+
+
+    String PRE_AUTHENTICATION_INSTANCE = "preAuthenticationInstance";
+
 //     String AUTH_HEADER ="X_UserAuthorization";
-    String IP_HEADER = "X-Forwarded-For";
-//     String ACCESS_PARAM_HEADER ="AccessParameter";
+//     String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
+//    String IP_HEADER = "X-Forwarded-For";
 //     String FIRST_LVL_AUTH_GRANT="cm-first-password";
 //     String SECOND_LVL_AUTH_GRANT="cm-second-password";
 

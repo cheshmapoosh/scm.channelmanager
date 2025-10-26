@@ -18,6 +18,11 @@ public enum NotificationDataKey {
     PASSWORD("password", false),
     OTP_CODE("otpCode", false),
     USER_NICKNAME("userNickname", false),
+    BLOCKED_TIME("blockedTime", false),
+    MOBILE("mobile", false),
+    TRAILS("trials", false),
+    CODE("code", false),
+    HASH_CODE("hashCode", false),
     REASON("reason", false);
 
     private final String code;

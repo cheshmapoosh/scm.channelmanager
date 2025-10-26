@@ -9,7 +9,8 @@ import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
-import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.utils.date.DateUtils;
@@ -49,14 +50,16 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                                                OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
                                                DelegatorAuthenticationProvider delegatorAuthenticationProvider,
                                                AuthenticationResponseTokenGenerator responseTokenGenerator,
-                                               UserActivationAuthenticationService userActivationService) {
+                                               UserActivationAuthenticationService userActivationService,
+                                               PwaAuthenticationService pwaAuthenticationService) {
         super(clientRepository,
                 clientService,
                 userCache,
                 userDetailsService,
                 authenticationTokenGenerator,
                 delegatorAuthenticationProvider,
-                userActivationService);
+                userActivationService,
+                pwaAuthenticationService);
         this.responseTokenGenerator = responseTokenGenerator;
     }
 
