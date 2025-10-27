@@ -10,8 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ChannelServiceDefinitionCreateRequest {
-    private Short channelId;
-    private Short serviceId;
+    private Long channelServiceAccessId;
     private ChannelServiceDefinitionType type;
     private String gatewayId;
     private List<String> operationNames;
