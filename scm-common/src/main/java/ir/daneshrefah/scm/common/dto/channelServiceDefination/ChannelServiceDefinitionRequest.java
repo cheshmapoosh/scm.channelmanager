@@ -7,6 +7,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChannelServiceDefinitionRequest extends PagedRequestData {
-    private Short serviceId;
-    private Short channelId;
+    private Long id;
 }
