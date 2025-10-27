@@ -62,10 +62,10 @@ scm:
     client:
       distributed: true
       config:
-        clusterName: scm
+        clusterName: dev3
         network-config:
           addresses:
-            - '10.10.4.123:5701'
+           - 10.10.4.125:5701
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
