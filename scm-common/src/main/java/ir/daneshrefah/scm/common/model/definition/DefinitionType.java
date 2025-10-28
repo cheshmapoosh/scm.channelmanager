@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.common.model.definition;
 
 public enum DefinitionType {
-    JAVA_MULTIPLE_ROUTE,
+    MULTIPLE_ROUTE_CONFIG,
     JAVA,
     PLUGIN,
     REST,

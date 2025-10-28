@@ -65,7 +65,7 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
 
     @Override
     public List<ChannelServiceDefinitionResponse> findDefinitionsByChannelServiceAccess(ChannelServiceDefinitionRequest request) {
-        ChannelServiceAccess channelServiceAccess = channelServiceAccessService.findByChannelAndServiceId(request.getChannelId(), request.getServiceId());
+        ChannelServiceAccess channelServiceAccess = channelServiceAccessService.findById(request.getId());
         return channelServiceDefinitionRepository.findByChannelServiceAccess_Id(
                         channelServiceAccess.getId())
                 .stream()
@@ -77,7 +77,7 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
         ValidationUtils.checkEmptyCollection(request.getOperationNames(), () -> {
             throw new MissingRequiredInputException("definitionIds");
         });
-        ChannelServiceAccess channelServiceAccess = channelServiceAccessService.findByChannelAndServiceId(request.getChannelId(), request.getServiceId());
+        ChannelServiceAccess channelServiceAccess = channelServiceAccessService.findById(request.getChannelServiceAccessId());
         GatewayChannel gatewayChannel = GatewayService.findById(request.getGatewayId());
         GatewayChannelEntity gatewayChannelEntity = gatewayChannelMapper.toEntity(gatewayChannel);
         ChannelServiceDefinitionEntity channelServiceDefinitionEntity = new ChannelServiceDefinitionEntity();
@@ -119,7 +119,7 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
             javaMultiRouteDefinitionDetail.setContextPath(request.getContextPath());
             javaMultiRouteDefinitionDetail.setMultiRouteDetails(multiRouteDetails);
             DefinitionRequest definitionRequest = request.getDefinition();
-            definitionRequest.setType(DefinitionType.JAVA_MULTIPLE_ROUTE);
+            definitionRequest.setType(DefinitionType.MULTIPLE_ROUTE_CONFIG);
             definitionRequest.setDetails(objectMapper.valueToTree(javaMultiRouteDefinitionDetail));
             DefinitionResponse definitionResponse = definitionService.createDefinition(definitionRequest);
             definitionEntity = definitionMapper.toEntity(definitionResponse);
