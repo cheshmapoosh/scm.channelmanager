@@ -17,8 +17,6 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static ir.daneshrefah.scm.logging.utils.LogUtils.getMessage;
-
 @Component
 public class TraceUtils {
 
@@ -41,7 +39,7 @@ public class TraceUtils {
         Span span = Span.current();
         span.setStatus(StatusCode.OK);
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), UUID.randomUUID().toString().replace("-", "")); // maximum char must be 32
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), getMessage(exchange));
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), LogUtils.getInstance().getMessage(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
     }
@@ -50,7 +48,7 @@ public class TraceUtils {
 //        SpanAdapter span = ActiveSpanManager.getSpan(exchange);
         Span span = Span.current();
         span.setStatus(StatusCode.OK);
-        span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), getMessage(exchange));
+        span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), LogUtils.getInstance().getMessage(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
         trace(exchange, service, span);
     }

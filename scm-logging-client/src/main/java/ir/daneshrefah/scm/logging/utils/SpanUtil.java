@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-import static ir.daneshrefah.scm.logging.utils.LogUtils.getRequestBody;
 import static ir.daneshrefah.scm.logging.utils.LogUtils.getResponseBody;
 
 @Slf4j
@@ -45,7 +44,7 @@ public class SpanUtil {
     public void setRequestSpanAttributes(HttpServletRequest request, Span span) {
         span.setAttribute(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName(), request.getRemoteAddr());
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), request.getMethod());
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), getRequestBody(request));
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), LogUtils.getInstance().getRequestBody(request));
         span.setAttribute(LogAttribute.HOST_ADDRESS.getAttributeName(), request.getLocalAddr());
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), "rest::%s".formatted(request.getServletPath()));
         span.setAttribute(LogAttribute.CLIENT_FLOW_ID.getAttributeName(), request.getHeader(Constants.SCM_PARAMETER_CLIENT_FLOW_ID));
