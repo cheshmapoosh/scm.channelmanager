@@ -22,7 +22,7 @@ import java.util.Map;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 
-@Component
+@Component("jwtAuthPluginHandler")
 @RequiredArgsConstructor
 public class AuthenticationPluginHandler implements PluginHandler {
 
