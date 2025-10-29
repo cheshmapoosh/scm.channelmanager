@@ -25,10 +25,9 @@ public class TraceUtils {
 
     @Getter
     private static TraceUtils instance;
+
     @Value("${scm.application.version:#{null}}")
     private String version;
-    @Value("${scm.application.build:#{null}}")
-    private String build;
 
     @PostConstruct
     public void init() {
@@ -40,7 +39,7 @@ public class TraceUtils {
         Span span = Span.current();
         span.setStatus(StatusCode.OK);
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), UUID.randomUUID().toString().replace("-", "")); // maximum char must be 32
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), LogUtils.getInstance().getMessage(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
     }
@@ -49,7 +48,7 @@ public class TraceUtils {
 //        SpanAdapter span = ActiveSpanManager.getSpan(exchange);
         Span span = Span.current();
         span.setStatus(StatusCode.OK);
-        span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
+        span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), LogUtils.getInstance().getMessage(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
         trace(exchange, service, span);
     }
@@ -79,7 +78,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_NICKNAME.getAttributeName(), AuthenticationUtils.getDelegatorNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), AuthenticationUtils.getDelegatorUsername().orElse(""));
-        span.setAttribute(LogAttribute.VERSION.getAttributeName(), version );
+        span.setAttribute(LogAttribute.VERSION.getAttributeName(), version);
     }
 
     public void recordExceptionTrace(Exception ex, Span span) {

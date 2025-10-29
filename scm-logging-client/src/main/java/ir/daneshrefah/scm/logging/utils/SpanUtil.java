@@ -1,9 +1,5 @@
 package ir.daneshrefah.scm.logging.utils;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
@@ -21,13 +17,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.annotation.PostConstruct;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
+
+import static ir.daneshrefah.scm.logging.utils.LogUtils.getResponseBody;
 
 @Slf4j
 @Component
@@ -40,28 +36,15 @@ public class SpanUtil {
     @Value("${scm.application.version:null}")
     private String version;
 
-    @Value("${scm.application.build:null}")
-    private String build;
-
-    private static final ObjectMapper objectMapper;
-
     @PostConstruct
-    public void init(){
+    public void init() {
         instance = this;
     }
-
-    static {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
-
 
     public void setRequestSpanAttributes(HttpServletRequest request, Span span) {
         span.setAttribute(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName(), request.getRemoteAddr());
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), request.getMethod());
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), getRequestBody(request).trim());
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), LogUtils.getInstance().getRequestBody(request));
         span.setAttribute(LogAttribute.HOST_ADDRESS.getAttributeName(), request.getLocalAddr());
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), "rest::%s".formatted(request.getServletPath()));
         span.setAttribute(LogAttribute.CLIENT_FLOW_ID.getAttributeName(), request.getHeader(Constants.SCM_PARAMETER_CLIENT_FLOW_ID));
@@ -107,30 +90,5 @@ public class SpanUtil {
                 "\n{}\nSpanId: {}\nTraceId: {}\nException Message: {}",
                 delimiter, spanId, traceId, ex.getMessage(), ex
         );
-//        ex.setStackTrace(stackTraceElements);
-    }
-
-    public String getRequestBody(HttpServletRequest request) {
-        try {
-            if (request instanceof ContentCachingRequestWrapper wrapper) {
-                byte[] content = wrapper.getContentAsByteArray();
-                if (content.length > 0) {
-                    String rawBody = new String(content, StandardCharsets.UTF_8);
-                    return objectMapper.writeValueAsString(rawBody);
-                }
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return "";
-    }
-
-    public String getResponseBody(Object inputArgs) {
-        try {
-            return objectMapper.writeValueAsString(inputArgs);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return "";
     }
 }
