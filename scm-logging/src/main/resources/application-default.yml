@@ -37,6 +37,7 @@ scm:
       port: 11414
       username: admin
       password: passw0rd
+      time-to-live: 172800000
   cache:
     client:
       distributed: true

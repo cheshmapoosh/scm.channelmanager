@@ -39,7 +39,7 @@ public class LogJmsConfig {
     public JmsTemplate logJmsTemplate(@Qualifier("jmsMqConnectionFactory") ConnectionFactory connectionFactory) {
         JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
         jmsTemplate.setDefaultDestinationName(properties.getDestination());
-        jmsTemplate.setTimeToLive(300000);
+        jmsTemplate.setTimeToLive(properties.getTimeToLive());
         jmsTemplate.setDeliveryMode(1);
         jmsTemplate.setSessionTransacted(false);
         jmsTemplate.setExplicitQosEnabled(true);
