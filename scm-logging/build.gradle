@@ -34,6 +34,7 @@ tasks.named("bootJar") {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'com.ibm.mq:mq-jms-spring-boot-starter:3.5.7'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     runtimeOnly 'com.ibm.db2:db2jcc'
@@ -44,7 +45,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'commons-io:commons-io:2.18.0'
-    api project(':scm-message-queue')
     api project(':scm-common-log')
     api project(':scm-common')
     api project(':scm-utils')

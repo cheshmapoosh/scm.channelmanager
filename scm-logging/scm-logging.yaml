@@ -71,13 +71,13 @@ spec:
         - name: scm-logging
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0224T1130"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0810T1700"
           imagePullPolicy: IfNotPresent
           env:
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
-              value: test
+              value: prod
             - name: SPRING_APPLICATION_NAME
               value: scm-logging
             - name: VERSION

@@ -4,13 +4,16 @@ spring:
   cloud:
     config:
       enabled: false
-  jpa:
-    show-sql: true
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-
+  jms:
+    template:
+      default-destination: SCM2LOG
+      delivery-mode: NON_PERSISTENT
+      qos-enabled: false
+      time-to-live: 172800000   # 2 days
+      receive-timeout: 5000     # optional
+    listener:
+      min-concurrency: 5
+      max-concurrency: 30
 server:
   port: 9090
 scm:
@@ -23,21 +26,6 @@ scm:
       enabled: true
       versionRequirement: '>=8.0.0'
     chunkSize: 27128
-    logSchedulerThreadPool:
-       corePoolSize: 5
-       maxPoolSize: 5
-       fixedRate: 5000
-
-  jms:
-    log:
-      destination: SCM2LOG
-      queueManager: CSQ1
-      channel: DEV.ADMIN.SVRCONN
-      host: 10.10.4.238
-      port: 11414
-      username: admin
-      password: passw0rd
-      time-to-live: 172800000
   cache:
     client:
       distributed: true
@@ -63,3 +51,11 @@ scm:
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
+ibm:
+  mq:
+    queue-manager: CSQ1
+    channel: DEV.ADMIN.SVRCONN
+    conn-name: 10.10.4.238(11414)
+    user: admin
+    password: passw0rd
+

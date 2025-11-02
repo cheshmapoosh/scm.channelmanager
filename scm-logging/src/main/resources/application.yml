@@ -3,3 +3,8 @@ spring:
     active: default
   application:
     name: scm-logging
+
+scm:
+  application:
+    version: 8.3.0
+    build: 0810T1400
