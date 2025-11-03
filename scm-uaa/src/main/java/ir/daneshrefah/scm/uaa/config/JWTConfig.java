@@ -196,11 +196,13 @@ public class JWTConfig {
         };
     }
 
+    @SuppressWarnings("unchecked")
     private void removeAudienceClaimForPwaToken(JwtClaimsSet.Builder claims) {
         Map<String, Object> unModifiableClaims = claims.build().getClaims();
         Optional
                 .ofNullable(unModifiableClaims.get(CLAIM_KEY_AUDIENCE))
-                .filter(aud-> StringUtils.equalsAnyIgnoreCase(String.valueOf(aud),"pwa"))
+                .map(aud-> (List<String>) aud)
+                .filter(aud-> aud.stream().map(String::trim).anyMatch(a-> a.equalsIgnoreCase("pwa")))
                 .ifPresent(c->{
                     claims.audience(Collections.emptyList());
                     claims.claim(OAUTH2_PARAM_PWA_NAME_USER_USERNAME,unModifiableClaims.get(CLAIM_KEY_SUBJECT));
