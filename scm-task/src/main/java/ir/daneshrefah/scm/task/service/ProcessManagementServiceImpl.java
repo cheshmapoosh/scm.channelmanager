@@ -192,7 +192,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     @Override
     public ProcessInstanceUpdateResponse updateDescription(Exchange exchange, ProcessInstanceUpdateRequest request) {
-        ChainValidation.crateValidator(request.getDescription(), "description").checkBlank();
         ProcessInstanceEntity processInstanceEntity = processInstanceRepository.findById(request.getId()).orElseThrow(() -> new NoMatchRecordFoundException("processId"));
 
         if (!hasUserAccess(processInstanceEntity)) {
