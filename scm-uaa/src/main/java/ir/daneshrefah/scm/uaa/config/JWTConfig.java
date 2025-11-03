@@ -200,7 +200,7 @@ public class JWTConfig {
         Map<String, Object> unModifiableClaims = claims.build().getClaims();
         Optional
                 .ofNullable(unModifiableClaims.get(CLAIM_KEY_AUDIENCE))
-                .map(aud-> StringUtils.equalsAnyIgnoreCase(String.valueOf(aud),"pwa"))
+                .filter(aud-> StringUtils.equalsAnyIgnoreCase(String.valueOf(aud),"pwa"))
                 .ifPresent(c->{
                     claims.audience(Collections.emptyList());
                     claims.claim(OAUTH2_PARAM_PWA_NAME_USER_USERNAME,unModifiableClaims.get(CLAIM_KEY_SUBJECT));
