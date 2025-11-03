@@ -203,6 +203,7 @@ public class JWTConfig {
                 .map(aud-> StringUtils.equalsAnyIgnoreCase(String.valueOf(aud),"pwa"))
                 .ifPresent(c->{
                     claims.audience(Collections.emptyList());
+                    claims.claim(OAUTH2_PARAM_PWA_NAME_USER_USERNAME,unModifiableClaims.get(CLAIM_KEY_SUBJECT));
                 });
 
     }

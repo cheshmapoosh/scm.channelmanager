@@ -21,6 +21,7 @@ public interface Constants {
 
     String CLAIM_KEY_TERMINAL = "trm";
     String CLAIM_KEY_AUDIENCE= "aud";
+    String CLAIM_KEY_SUBJECT= "sub";
     String CLAIM_KEY_GRANT = "grn";
     String CLAIM_KEY_SESSION = "sni";
     String CLAIM_KEY_LOGIN_AUTH_METHOD = "lam";
@@ -51,6 +52,7 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
     String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
     String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
+    String OAUTH2_PARAM_PWA_NAME_USER_USERNAME = "user_name";
     String OAUTH2_PARAM_AUTHORIZATION = "authorization";
     String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
     String OAUTH2_PARAM_NAME_MOBILE_NUMBER = "mobileNumber";
