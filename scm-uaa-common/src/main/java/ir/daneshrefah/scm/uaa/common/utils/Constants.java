@@ -20,6 +20,7 @@ public interface Constants {
     String CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES = "allowIpAddresses";
 
     String CLAIM_KEY_TERMINAL = "trm";
+    String CLAIM_KEY_AUDIENCE= "aud";
     String CLAIM_KEY_GRANT = "grn";
     String CLAIM_KEY_SESSION = "sni";
     String CLAIM_KEY_LOGIN_AUTH_METHOD = "lam";
