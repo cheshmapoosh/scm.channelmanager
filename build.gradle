@@ -1,11 +1,13 @@
 plugins {
+    id 'org.springframework.boot' version '3.4.11'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 version = "8.5.0"
 ext {
     set('springCloudVersion', "2025.0.0")
-    set('springCamelVersion', "4.15.0")
+    set('camelVersion', "4.15.0")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.6.2")
     set('lombokMapstructBindingVersion', "0.2.0")
@@ -50,33 +52,33 @@ subprojects {
     dependencyManagement {
         imports {
             mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-            mavenBom "org.apache.camel.springboot:camel-spring-boot-bom:${springCamelVersion}"
+            mavenBom "org.apache.camel.springboot:camel-spring-boot-bom:${camelVersion}"
         }
 
         dependencies {
             dependency "org.mapstruct:mapstruct:${mapstructVersion}"
             dependency "org.mapstruct:mapstruct-processor:${mapstructVersion}"
             dependency 'org.projectlombok:lombok:1.18.34'
-            dependency "org.apache.camel.springboot:camel-spring-boot-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-jackson-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-json-validator-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-http-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-netty-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-netty-http-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-direct-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-timer-starter:${springCamelVersion}"
+            dependency "org.apache.camel.springboot:camel-spring-boot-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-jackson-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-json-validator-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-http-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-netty-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-netty-http-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-direct-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-timer-starter:${camelVersion}"
             dependency "org.apache.camel:camel-core:${camelVersion}"
-//            dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-servlet-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-resilience4j-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-rest-openapi-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-bean-validator-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-jsonpath-starter:${springCamelVersion}"
-            dependency "org.apache.camel:camel-openapi-java:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
-            dependency "org.apache.camel.springboot:camel-netty-starter:${springCamelVersion}"
-            dependency "org.apache.camel:camel-bean:${springCamelVersion}"
+//            dependency "org.apache.camel.springboot:camel-opentelemetry-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-spring-security-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-servlet-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-resilience4j-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-rest-openapi-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-bean-validator-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-jsonpath-starter:${camelVersion}"
+            dependency "org.apache.camel:camel-openapi-java:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-spring-security-starter:${camelVersion}"
+            dependency "org.apache.camel.springboot:camel-netty-starter:${camelVersion}"
+            dependency "org.apache.camel:camel-bean:${camelVersion}"
             dependency "com.ibm.db2:db2jcc_license_cisuz:${ibmDb2Version}"
             dependency "com.ibm.db2:db2jcc:${ibmDb2Version}"
             dependency "com.ibm.db2.jcc:db2jcc:db2jcc4"
@@ -90,7 +92,7 @@ subprojects {
             dependency 'org.apache.httpcomponents:httpclient:4.5.13'
             dependency "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2"
             dependency "com.ibm.mq:mq-jms-spring-boot-starter:3.3.3"
-            dependency "org.apache.camel:camel-test-spring-junit5:${springCamelVersion}"
+            dependency "org.apache.camel:camel-test-spring-junit5:${camelVersion}"
             dependency "com.ibm.mq:mq-jms-spring-boot-starter:3.3.3"
             dependency "com.bucket4j:bucket4j_jdk17-core:${bucket4jVersion}"
             dependency "com.bucket4j:bucket4j_jdk17-hazelcast:${bucket4jVersion}"
