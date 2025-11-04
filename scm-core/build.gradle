@@ -6,16 +6,15 @@
 
 plugins {
     id 'ir.daneshrefah.scm.java-library-conventions'
-    id "io.freefair.lombok" version "8.0.1"
 }
 
 
 dependencies {
-    implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.0.2'
+    implementation 'jakarta.validation:jakarta.validation-api'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
-    implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
-    compileOnly group: 'org.projectlombok', name: 'lombok'
+    implementation 'jakarta.validation:jakarta.validation-api'
+    implementation 'org.hibernate.validator:hibernate-validator'
+    compileOnly 'org.projectlombok:lombok'
     api 'org.apache.camel.springboot:camel-spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.mapstruct:mapstruct'
@@ -33,33 +32,18 @@ dependencies {
     api 'org.apache.camel.springboot:camel-resilience4j-starter'
     api 'org.apache.camel.springboot:camel-rest-openapi-starter'
     api 'org.apache.camel:camel-openapi-java'
-    api 'org.apache.camel:camel-beanstalk:3.16.0'
     api 'com.bucket4j:bucket4j_jdk17-core'
-//    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
-//    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
     api 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.projectlombok:lombok"
     annotationProcessor 'org.projectlombok:lombok'
-//    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema-jakarta'
-
-    // JUnit 5
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.1'
-    testImplementation 'org.apache.camel:camel-test-spring-junit5'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
-    // Mockito
-    testImplementation 'org.mockito:mockito-core:4.0.0'
-
-//    implementation 'ir.daneshrefah.scm.uaa:uaa-client:0.0.1-SNAPSHOT'
-
-//    implementation 'org.openapi4j:openapi-core:1.0.7'
-    implementation group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.2.15'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    implementation 'org.apache.commons:commons-collections4'
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation 'org.apache.camel.springboot:camel-jsonpath-starter'
+    implementation 'org.apache.commons:commons-text'
 
-    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     api project(':scm-common-data')
-    //    api project(':scm-common')
     api project(':scm-plugin-nab')
     api project(':scm-plugin-pichack')
     api project(':scm-plugin-sayad')
@@ -70,14 +54,11 @@ dependencies {
     api project(':scm-otp-client')
     api project(':scm-logging-client')
     api project(':scm-plugin-camel-components')
-    implementation 'org.apache.commons:commons-collections4'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema'
-    implementation 'io.github.classgraph:classgraph:4.8.179'
-    implementation 'com.github.victools:jsonschema-generator:4.37.0'
-    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-    implementation 'org.apache.camel.springboot:camel-jsonpath-starter'
-    implementation 'org.apache.commons:commons-text'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'org.apache.camel:camel-test-spring-junit5'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-core'
 
 }

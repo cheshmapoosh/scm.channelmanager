@@ -1,16 +1,15 @@
 plugins {
-    id 'org.springframework.boot' version '3.3.13'
-    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.springframework.boot' version '3.4.11'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
-version = "8.3.0"
+version = "8.5.0"
 ext {
-    set('springCloudVersion', "2023.0.3")
-    set('springCamelVersion', "4.8.0")
-    set('camelVersion', "4.8.0")
+    set('springCloudVersion', "2024.0.2")
+    set('springCamelVersion', "4.14.2")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.5.3.Final")
     set('lombokMapstructBindingVersion', "0.2.0")
-    set('bucket4jVersion', "8.14.0")
+    set('bucket4jVersion', "8.15.0")
     set('semver4jVersion', "3.1.0")
     set('janinoVersion',"3.1.12")
 }
@@ -19,8 +18,8 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.springframework.boot'
 
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 
     repositories {
         repositories {
@@ -67,8 +66,6 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-bean-validator-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-jsonpath-starter:${springCamelVersion}"
             dependency "org.apache.camel:camel-openapi-java:${springCamelVersion}"
-            dependency 'com.bucket4j:bucket4j_jdk17-core:8.14.0'
-
             dependency "org.apache.camel.springboot:camel-spring-security-starter:${springCamelVersion}"
             dependency "org.apache.camel:camel-netty:${springCamelVersion}"
             dependency "org.apache.camel:camel-bean:${springCamelVersion}"
