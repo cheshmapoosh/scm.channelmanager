@@ -10,7 +10,7 @@ plugins {
 
 dependencies {
     compileOnly 'org.springframework:spring-jdbc'
-    implementation 'org.apache.camel:camel-netty'
+    implementation 'org.apache.camel.springboot:camel-netty-starter'
     implementation 'org.apache.camel:camel-bean'
     implementation 'org.apache.camel.springboot:camel-timer-starter'
     implementation 'org.apache.camel.springboot:camel-direct-starter'

@@ -67,12 +67,6 @@ public class WebClientEndpoint extends DefaultEndpoint {
     @UriParam(defaultValue = "1000", description = "Backoff delay in milliseconds between retries")
     private int minBackoff = 1000;
 
-    public boolean isRetryEnabled() {
-        return retryEnabled;
-    }
-
-
-
     public WebClientEndpoint(String endpointUri, DefaultComponent component) {
         super(endpointUri, component);
     }
@@ -213,6 +207,10 @@ public class WebClientEndpoint extends DefaultEndpoint {
 
     public void setInsecureSsl(boolean insecureSsl) {
         this.insecureSsl = insecureSsl;
+    }
+
+    public boolean isRetryEnabled() {
+        return retryEnabled;
     }
 
     public void setRetryEnabled(boolean retryEnabled) {
