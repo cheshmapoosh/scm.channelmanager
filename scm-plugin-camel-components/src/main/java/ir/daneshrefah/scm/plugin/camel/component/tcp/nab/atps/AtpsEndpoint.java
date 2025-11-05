@@ -70,4 +70,16 @@ public class AtpsEndpoint extends DefaultEndpoint {
 
     // ----- getters/setters -----
     public String getNettyUriBase() { return nettyUri; }
+    public int getConnectTimeout() { return connectTimeout; }
+    public void setConnectTimeout(int connectTimeout) { this.connectTimeout = connectTimeout; }
+    public int getRequestTimeout() { return requestTimeout; }
+    public void setRequestTimeout(int requestTimeout) { this.requestTimeout = requestTimeout; }
+    public boolean isTcpNoDelay() { return tcpNoDelay; }
+    public void setTcpNoDelay(boolean tcpNoDelay) { this.tcpNoDelay = tcpNoDelay; }
+    public boolean isKeepAlive() { return keepAlive; }
+    public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
+    public boolean isValidateAck() { return validateAck; }
+    public void setValidateAck(boolean validateAck) { this.validateAck = validateAck; }
+    public String getAckEquals() { return ackEquals; }
+    public void setAckEquals(String ackEquals) { this.ackEquals = ackEquals; }
 }

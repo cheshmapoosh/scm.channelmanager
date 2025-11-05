@@ -84,6 +84,7 @@ public class AtpsProducer extends DefaultProducer {
 
         // Process the message: header and payload preparation
         ByteBuf header = Unpooled.wrappedBuffer(ATPS.getBytes(CP1256));
+        ByteBuf payload = preparePayload(inBody);
 
         ByteBuf payload = preparePayload(userPart);
 
@@ -115,10 +116,16 @@ public class AtpsProducer extends DefaultProducer {
     }
 
     private ByteBuf preparePayload(Object inBody) {
-        return AtpsHelper.toByteBuf(inBody, CP1256);
+        if (inBody instanceof byte[] bytes) {
+            return Unpooled.wrappedBuffer(bytes);
+        } else if (inBody instanceof String s) {
+            return Unpooled.wrappedBuffer(s.getBytes(CP1256));
+        } else if (inBody instanceof ByteBuf byteBuf) {
+            return byteBuf;
+        } else {
+            throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
+        }
     }
-
-
 
     private void prepareAndProcessHeader(Exchange exchange, ByteBuf header, long requestTimeout) throws Exception {
         exchange.getIn().setHeader(NettyConstants.NETTY_REQUEST_TIMEOUT, requestTimeout);
@@ -159,34 +166,18 @@ public class AtpsProducer extends DefaultProducer {
     private void handleFinalResponse(Exchange exchange) {
         byte[] responseBytes = exchange.getMessage().getBody(byte[].class);
         Message responseMessage = new DefaultMessage(exchange);
-
-        Object parsedResponse = parseResponse(responseBytes);
-        responseMessage.setBody(parsedResponse);
-
-
+        String[] response = byteToString(responseBytes);
+        responseMessage.setBody(response);
         exchange.setMessage(responseMessage);
 
         exchange.getMessage().setHeader(RECEIVED_MESSAGE_FROM_CORE_TIME, new Date());
     }
 
-    /**
-     * Parses raw byte[] response into either:
-     * - String[] if multiline (contains '\n')
-     * - String if single line
-     */
-    private Object parseResponse(byte[] bytes) {
+    private String[] byteToString(byte[] bytes) {
         if (bytes == null || bytes.length < 5) {
             throw new RuntimeException("Received message is invalid");
         }
-
-        String responseString = new String(bytes, CP1256).trim();
-
-        if (responseString.contains("\n")) {
-            // Multi-line response → split to array
-            return responseString.split("\\r?\\n");
-        } else {
-            // Single-line response → single object
-            return responseString;
-        }
+        String byteString = new String(bytes, CP1256);
+        return byteString.split("\n");
     }
 }
