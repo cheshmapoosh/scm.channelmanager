@@ -14,10 +14,15 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter'
     implementation 'org.apache.camel.springboot:camel-netty-starter'
+
     implementation 'org.apache.httpcomponents:httpclient'
     implementation 'org.apache.commons:commons-text'
+    implementation 'org.apache.camel:camel-groovy:4.14.2'
+    implementation 'org.apache.groovy:groovy-json:4.0.29'
+
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.apache.camel:camel-test-spring-junit5'
 }
 
 tasks.named('test') {
