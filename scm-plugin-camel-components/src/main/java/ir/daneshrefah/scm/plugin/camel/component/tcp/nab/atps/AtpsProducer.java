@@ -9,6 +9,7 @@ import org.apache.camel.Producer;
 import org.apache.camel.component.netty.NettyConstants;
 import org.apache.camel.support.DefaultMessage;
 import org.apache.camel.support.DefaultProducer;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -69,16 +70,21 @@ public class AtpsProducer extends DefaultProducer {
         }
     }
 
+
+
     @Override
     public void process(Exchange exchange) throws Exception {
         Object inBody = exchange.getMessage().getBody();
+
         if (inBody == null) {
             throw new IllegalArgumentException("ATPS body must not be null");
         }
+        String userPart = enricherHeader(inBody);
 
         // Process the message: header and payload preparation
         ByteBuf header = Unpooled.wrappedBuffer(ATPS.getBytes(CP1256));
-        ByteBuf payload = preparePayload(inBody);
+
+        ByteBuf payload = preparePayload(userPart);
 
         // Request timeout logic
         int requestTimeout = Optional.ofNullable(exchange.getMessage().getHeader(SERVICE_TIMEOUT))
@@ -99,17 +105,17 @@ public class AtpsProducer extends DefaultProducer {
         handleFinalResponse(exchange);
     }
 
-    private ByteBuf preparePayload(Object inBody) {
-        if (inBody instanceof byte[] bytes) {
-            return Unpooled.wrappedBuffer(bytes);
-        } else if (inBody instanceof String s) {
-            return Unpooled.wrappedBuffer(s.getBytes(CP1256));
-        } else if (inBody instanceof ByteBuf byteBuf) {
-            return byteBuf;
-        } else {
-            throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
-        }
+    private String enricherHeader(Object inBody) {
+        String headerPart = AtpsHelper.enrichRequestBody(null);
+        String userPart = AtpsHelper.toString(inBody, CP1256);
+        return headerPart + userPart;
     }
+
+    private ByteBuf preparePayload(Object inBody) {
+        return AtpsHelper.toByteBuf(inBody, CP1256);
+    }
+
+
 
     private void prepareAndProcessHeader(Exchange exchange, ByteBuf header, long requestTimeout) throws Exception {
         exchange.getIn().setHeader(NettyConstants.NETTY_REQUEST_TIMEOUT, requestTimeout);

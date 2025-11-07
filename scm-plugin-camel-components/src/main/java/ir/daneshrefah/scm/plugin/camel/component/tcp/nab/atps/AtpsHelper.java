@@ -1,9 +1,17 @@
 package ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDate;
+import ir.daneshrefah.scm.utils.date.DateUtils;
 
+import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 public class AtpsHelper {
@@ -96,5 +104,51 @@ public class AtpsHelper {
         }
 
         return nodes;
+    }
+
+    public static String enrichRequestBody(Object body) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(fix("97",2));
+        sb.append(fix("05",2));
+        sb.append(fix(getNowAsPersianDateTime(),14));
+        sb.append(fix("999998",10));
+        sb.append(fix("1234567890",10));
+        sb.append(fix("",16));
+        return sb.toString();
+    }
+    private static String getNowAsPersianDateTime() {
+        ShamsiDate currentDate = DateUtils.ShamsiCalendarConvertor.getCurrentDate();
+        return currentDate.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    }
+
+    public static String toString(Object inBody, Charset charset) {
+        if (inBody == null) return "";
+        if (inBody instanceof String s) {
+            return s.trim();
+        } else if (inBody instanceof byte[] bytes) {
+            return new String(bytes, charset);
+        } else if (inBody instanceof ByteBuf byteBuf) {
+            byte[] bytes = new byte[byteBuf.readableBytes()];
+            byteBuf.getBytes(byteBuf.readerIndex(), bytes);
+            return new String(bytes, charset);
+        } else {
+            throw new IllegalArgumentException("Body must be String, byte[] or ByteBuf");
+
+        }
+    }
+
+    public static ByteBuf toByteBuf(Object inBody, Charset charset) {
+        if (inBody == null) {
+            throw new IllegalArgumentException("Body must not be null");
+        } else if (inBody instanceof ByteBuf byteBuf) {
+            return byteBuf;
+        } else if (inBody instanceof byte[] bytes) {
+            return Unpooled.wrappedBuffer(bytes);
+        } else if (inBody instanceof String s) {
+            return Unpooled.wrappedBuffer(s.getBytes(charset));
+        } else {
+            throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
+
+        }
     }
 }

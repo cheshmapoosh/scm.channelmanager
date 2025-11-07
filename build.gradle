@@ -7,7 +7,7 @@ ext {
     set('springCloudVersion', "2024.0.2")
     set('springCamelVersion', "4.14.2")
     set('ibmDb2Version', "9.1")
-    set('mapstructVersion', "1.5.3.Final")
+    set('mapstructVersion', "1.6.2")
     set('lombokMapstructBindingVersion', "0.2.0")
     set('bucket4jVersion', "8.15.0")
     set('semver4jVersion', "3.1.0")
@@ -48,7 +48,7 @@ subprojects {
         dependencies {
             dependency "org.mapstruct:mapstruct:${mapstructVersion}"
             dependency "org.mapstruct:mapstruct-processor:${mapstructVersion}"
-            dependency 'org.projectlombok:lombok:1.18.28'
+            dependency 'org.projectlombok:lombok:1.18.34'
             dependency "org.apache.camel.springboot:camel-spring-boot-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-jackson-starter:${springCamelVersion}"
             dependency "org.apache.camel.springboot:camel-json-validator-starter:${springCamelVersion}"

@@ -47,10 +47,10 @@ public class NabTcpClientTest {
             @Override
             public void configure() throws Exception {
                 from("direct:to-core")
-                        .transform().groovy("""
-                       import ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps.AtpsHelper
-                       return AtpsHelper.jsonToPlainText(body)
-                       """)
+//                        .transform().groovy("""
+//                       import ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps.AtpsHelper
+//                       return AtpsHelper.jsonToPlainText(body)
+//                       """)
                         .to("atps:tcp://10.15.27.12:3080"
                                 + "?connectTimeout=3000"
                                 + "&requestTimeout=5000"
@@ -66,7 +66,7 @@ public class NabTcpClientTest {
 
 
         String payload = "";
-        payload = s;
+
         String[] reply = tpl.requestBody("direct:to-core", payload, String[].class);
         ObjectNode[] nodes = AtpsHelper.parseFixedWidthArray(reply);
         System.out.println("Reply : " + Arrays.toString(reply));
