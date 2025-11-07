@@ -84,7 +84,8 @@ public class AtpsProducer extends DefaultProducer {
 
         // Process the message: header and payload preparation
         ByteBuf header = Unpooled.wrappedBuffer(ATPS.getBytes(CP1256));
-        ByteBuf payload = preparePayload(inBody);
+
+        ByteBuf payload = preparePayload(userPart);
 
         ByteBuf payload = preparePayload(userPart);
 
@@ -116,16 +117,10 @@ public class AtpsProducer extends DefaultProducer {
     }
 
     private ByteBuf preparePayload(Object inBody) {
-        if (inBody instanceof byte[] bytes) {
-            return Unpooled.wrappedBuffer(bytes);
-        } else if (inBody instanceof String s) {
-            return Unpooled.wrappedBuffer(s.getBytes(CP1256));
-        } else if (inBody instanceof ByteBuf byteBuf) {
-            return byteBuf;
-        } else {
-            throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
-        }
+        return AtpsHelper.toByteBuf(inBody, CP1256);
     }
+
+
 
     private void prepareAndProcessHeader(Exchange exchange, ByteBuf header, long requestTimeout) throws Exception {
         exchange.getIn().setHeader(NettyConstants.NETTY_REQUEST_TIMEOUT, requestTimeout);
