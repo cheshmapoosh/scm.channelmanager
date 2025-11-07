@@ -1,11 +1,11 @@
 plugins {
-    id 'org.springframework.boot' version '3.4.11'
+    id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 version = "8.5.0"
 ext {
     set('springCloudVersion', "2024.0.2")
-    set('springCamelVersion', "4.14.2")
+    set('springCamelVersion', "4.15.0")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.6.2")
     set('lombokMapstructBindingVersion', "0.2.0")
