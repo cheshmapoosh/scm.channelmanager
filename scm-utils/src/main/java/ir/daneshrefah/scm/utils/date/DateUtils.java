@@ -169,6 +169,10 @@ public class DateUtils {
             return ShamsiDate.now();
         }
 
+        public static ShamsiDateTime getCurrentDateTime(){
+            return ShamsiDateTime.now();
+        }
+
         public static ShamsiDate convertToShamsiCalendar(Timestamp timestamp){
             return convertToShamsiCalendar(DateConverter.convertToLocalDate(timestamp));
         }

@@ -18,8 +18,8 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.springframework.boot'
 
-//    sourceCompatibility = JavaVersion.VERSION_21
-//    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 
     repositories {
         repositories {
