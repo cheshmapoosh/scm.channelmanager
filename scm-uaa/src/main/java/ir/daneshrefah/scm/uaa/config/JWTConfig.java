@@ -143,6 +143,7 @@ public class JWTConfig {
                 if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())) {
                     claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, principal.getDetails().getActivatorTerminal());
                 }
+                removeAudienceClaimForPwaToken(claims);
                 addTokenLifeTimeClaims(principal, claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {
                 OAuth2ClientAuthenticationToken principal = context.getPrincipal();
@@ -193,6 +194,20 @@ public class JWTConfig {
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeAudienceClaimForPwaToken(JwtClaimsSet.Builder claims) {
+        Map<String, Object> unModifiableClaims = claims.build().getClaims();
+        Optional
+                .ofNullable(unModifiableClaims.get(CLAIM_KEY_AUDIENCE))
+                .map(aud-> (List<String>) aud)
+                .filter(aud-> aud.stream().map(String::trim).anyMatch(a-> a.equalsIgnoreCase("pwa")))
+                .ifPresent(c->{
+                    claims.audience(Collections.emptyList());
+                    claims.claim(OAUTH2_PARAM_PWA_NAME_USER_USERNAME,unModifiableClaims.get(CLAIM_KEY_SUBJECT));
+                });
+
     }
 
     private void putJtiToCache(User user, JwtClaimsSet.Builder claims,JwtEncodingContext context) {

@@ -36,14 +36,13 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.upperCase;
 @Slf4j
 public abstract class AbstractOtpProvider {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     protected final CacheTemplate cacheTemplate;
     private final OtpProperties otpProperties;
     private final ProfileInfo profileInfo;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     @PostConstruct
-    public void configure(){
+    public void configure() {
         OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
     }
@@ -53,9 +52,9 @@ public abstract class AbstractOtpProvider {
     }
 
     /**
-     *Provider Implementer class should override this method.
+     * Provider Implementer class should override this method.
      */
-    protected  OtpSendResponse sendOtpInternal(OtpSendRequest request){
+    protected OtpSendResponse sendOtpInternal(OtpSendRequest request) {
         throw new MethodNotSupportedException("otp");
     }
 
@@ -66,9 +65,9 @@ public abstract class AbstractOtpProvider {
 
     @SneakyThrows
     private OtpSendResponse adviseOtpResponse(OtpSendResponse otpSendResponse) {
-        if (profileInfo.isTraceMode()){
+        if (profileInfo.isTraceMode()) {
             log.info(OBJECT_MAPPER.writeValueAsString(otpSendResponse.getOtp()));
-           return otpSendResponse;
+            return otpSendResponse;
         }
         return cleanResponseSecureData(otpSendResponse);
     }
@@ -103,30 +102,38 @@ public abstract class AbstractOtpProvider {
         return recipient.getAddress();
     }
 
+    private boolean usedAtLeastTOneTime(Otp otp) {
+        int reusedCount = otp.getReusedCount();
+        int maxReusedCount = otp.getReason().getMaxReusedCount();
+        return maxReusedCount > reusedCount && reusedCount > 0;
+    }
+
     protected final Otp buildOtpInstance(OtpSendRequest request, boolean requireDeliver) {
         String otpKey = extractOtpKey(request);
         Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
-        if (Objects.nonNull(otp) && DateUtils.InstantTools.currentDate().isBefore(otp.getExpireTime())) {
+        if (Objects.nonNull(otp)
+                && !usedAtLeastTOneTime(otp)
+                && DateUtils.InstantTools.currentDate().isBefore(otp.getExpireTime())) {
             return otp;
         }
 //        ValidationUtils.checkNonNull(otp, () -> new OtpAlreadyExistException());
         String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getLength());
         ValidationUtils.checkBlankString(otpCode, OtpCodeGenerationException::new);
-        otp = createOtp(otpKey,request,otpCode,requireDeliver) ;
+        otp = createOtp(otpKey, request, otpCode, requireDeliver);
         cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp, otp.getReason().getTimeToLiveMinutes());
         return otp;
     }
 
     private Otp createOtp(String otpKey, OtpSendRequest request, String otpCode, boolean requireDeliver) {
-            return Otp.builder()
-                    .key(otpKey)
-                    .otpType(request.getOtpType())
-                    .reason(request.getReason())
-                    .recipient(request.getRecipient())
-                    .otpCode(otpCode)
-                    .expireTime(DateUtils.InstantTools.plusMinutesToCurrent(request.getReason().getTimeToLiveMinutes()))
-                    .isDelivered(!requireDeliver)
-                    .build();
+        return Otp.builder()
+                .key(otpKey)
+                .otpType(request.getOtpType())
+                .reason(request.getReason())
+                .recipient(request.getRecipient())
+                .otpCode(otpCode)
+                .expireTime(DateUtils.InstantTools.plusMinutesToCurrent(request.getReason().getTimeToLiveMinutes()))
+                .isDelivered(!requireDeliver)
+                .build();
     }
 
     protected Otp deliverOtp(Otp otp) {
