@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.service.activation.pwa.services.activation;
 
+import ir.daneshrefah.scm.common.constant.AccessibleLocale;
 import ir.daneshrefah.scm.common.model.message.IssuerInfo;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
@@ -144,7 +145,7 @@ public class PwaNotificationCenter {
                     .template(template)
                     .media(NotificationMedia.SMS)
                     .recipient(recipient)
-                    .userLocale(new Locale("fa", "IR")) //TODO GET FROM HEADER
+                    .userLocale(AccessibleLocale.FA_IR.getLocale()) //TODO GET FROM HEADER
                     .data(notificationData)
                     .terminalCode(login.getDeviceModel())
                     .issuerInfo(issuerInfo)
