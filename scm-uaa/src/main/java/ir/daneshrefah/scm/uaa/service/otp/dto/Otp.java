@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -35,6 +36,9 @@ public class Otp implements Serializable {
     private int reusedCount;
     @Setter
     private int failedCount;
+    @Setter
+    private Map<String,Object> metadata;
+
     public void plusReusedCount() {
         reusedCount++;
     }

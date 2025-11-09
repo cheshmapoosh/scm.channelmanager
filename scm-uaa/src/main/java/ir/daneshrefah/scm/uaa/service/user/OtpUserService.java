@@ -73,6 +73,7 @@ public class OtpUserService {
                 .otpType(OtpType.SMS)
                 .reason(request.getReason())
                 .recipient(recipient)
+                .metadata(request.getMetadata())
                 .build();
         return otpService.sendOtp(otpRequest);
     }

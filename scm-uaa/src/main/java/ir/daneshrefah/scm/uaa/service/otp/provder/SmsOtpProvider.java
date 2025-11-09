@@ -92,6 +92,13 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     private void sendNotification(Otp otp) {
         Terminal terminal = terminalService.findTerminalByCode(otp.getRecipient().getTerminalCode()).orElseThrow(InvalidOtpCodeException::new);
         NotificationData data = new NotificationData();
+        otp.getMetadata().keySet().forEach(key -> {
+            NotificationDataKey dataKey = NotificationDataKey.findByCode(key);
+            if (dataKey == null) {
+                throw new InvalidInputException("Invalid data key");
+            }
+            data.put(dataKey, otp.getMetadata().get(key));
+        });
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
         data.put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
         data.put(NotificationDataKey.LOGIN_TIME,nowShamsiLoginTime());

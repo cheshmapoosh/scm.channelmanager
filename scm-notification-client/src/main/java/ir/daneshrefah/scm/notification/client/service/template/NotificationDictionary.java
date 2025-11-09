@@ -1,11 +1,12 @@
 package ir.daneshrefah.scm.notification.client.service.template;
 
+import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.common.model.notification.NotificationData;
 import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationDataKey;
 import ir.daneshrefah.scm.common.model.terminal.Terminal;
-import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
+import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -69,6 +70,7 @@ public class NotificationDictionary {
     private String autoMapping(NotificationRequest request, NotificationDataKey dataKey) {
         try {
             NotificationData data = request.getData();
+            validateDataType(dataKey, data);
             return String.valueOf(data.get(dataKey.getCode()));
         }catch (Exception e){
             return DEFAULT_NOT_FOUND_VALUE;
@@ -82,5 +84,22 @@ public class NotificationDictionary {
                         .DateConverter
                         .convertToLocalDateTime(DateUtils.DateConverter
                                 .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
+    }
+
+    private void validateDataType(NotificationDataKey dataKey, NotificationData data) {
+        if (Objects.nonNull(dataKey.getClassType())) {
+            Class<?> expectedType = dataKey.getClassType();
+            Object value = data.get(dataKey.getCode());
+            if (Number.class.isAssignableFrom(expectedType)) {
+                ValidationUtils.isNumber(value, () -> {
+                    throw new IllegalArgumentException(
+                            String.format("Value for key '%s' must be a Number, but got: %s",
+                                    dataKey.getCode(),
+                                    value != null ? value.getClass().getSimpleName() : "null")
+                    );
+                });
+            }
+            // Add more type validations here
+        }
     }
 }

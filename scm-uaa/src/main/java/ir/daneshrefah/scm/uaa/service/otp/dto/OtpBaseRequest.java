@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -26,4 +27,5 @@ public abstract class OtpBaseRequest {
     private OtpReason reason;
     private Recipient recipient;
     private final Instant receiveTime = Instant.now();
+    private Map<String,Object> metadata;
 }
