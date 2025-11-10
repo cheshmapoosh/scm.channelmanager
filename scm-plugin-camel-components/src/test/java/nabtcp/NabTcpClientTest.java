@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps.AtpsComponent;
 import ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps.AtpsHelper;
 import ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps.AtpsResponseBodyDecoder;
+import ir.daneshrefah.scm.plugin.camel.config.NabProperties;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
@@ -13,12 +14,16 @@ import org.apache.camel.spi.DataType;
 import org.apache.camel.test.spring.junit5.CamelSpringBootTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Arrays;
 
 @CamelSpringBootTest
 @SpringBootTest(classes = ir.daneshrefah.scm.plugin.camel.CamelWebclientApplication.class)
+@EnableConfigurationProperties(NabProperties.class)
+@TestPropertySource(locations = "classpath:nab.properties")
 public class NabTcpClientTest {
 
     @Autowired

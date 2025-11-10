@@ -19,7 +19,9 @@ dependencies {
     implementation 'org.apache.commons:commons-text'
     implementation 'org.apache.camel:camel-groovy:4.14.2'
     implementation 'org.apache.groovy:groovy-json:4.0.29'
-    implementation  project(':scm-utils')
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    api  project(':scm-utils')
 
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

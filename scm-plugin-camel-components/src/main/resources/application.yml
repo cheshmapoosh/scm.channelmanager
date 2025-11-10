@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: classpath:nab.properties
+
   application:
     name: scm-plugin-camel-components
 logging:

@@ -5,15 +5,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import ir.daneshrefah.scm.plugin.camel.config.NabProperties;
 import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDateTime;
 import ir.daneshrefah.scm.utils.date.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
+@Component
 public class AtpsHelper {
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static  NabProperties nabProperties;
+
+
+
+    public AtpsHelper(NabProperties nabProperties) {
+        AtpsHelper.nabProperties = nabProperties;
+    }
+
     /**
      * Fixes string length by trimming or padding right with spaces.
      * @param value  Input value (nullable)
@@ -63,31 +74,58 @@ public class AtpsHelper {
         return command + service + dateTime + cmUserId + cmPassword + rquid;
     }
 
+    public static AtpsResponseHeader parseHeader(String response) {
+        if (response == null || response.length() < 39) {
+            throw new IllegalArgumentException("Response too short for ATPS header: " + response);
+        }
+
+        int idx = 0;
+        String actionCode  = response.substring(idx, idx + 5); idx += 5;
+        String command     = response.substring(idx, idx + 2); idx += 2;
+        String service     = response.substring(idx, idx + 2); idx += 2;
+        String dateTime    = response.substring(idx, idx + 14); idx += 14;
+        String referenceNo = response.substring(idx, idx + 16); idx += 16;
+
+        return new AtpsResponseHeader.AtpsResponseHeaderBuilder()
+                .actionCode(actionCode.trim())
+                .command(command.trim())
+                .service(service.trim())
+                .dateTime(dateTime.trim())
+                .referenceNo(referenceNo.trim())
+                .build();
+    }
+
     public static ObjectNode parseFixedWidthResponse(String response) {
         if (response == null || response.length() < 61) {
             throw new IllegalArgumentException("Response too short: " + response);
         }
 
-        int idx = 0;
-        String actionCode         = response.substring(idx, idx + 5); idx += 5;
-        String command            = response.substring(idx, idx + 2); idx += 2;
-        String service            = response.substring(idx, idx + 2); idx += 2;
-        String dateTime           = response.substring(idx, idx + 14); idx += 14;
-        String referenceNo        = response.substring(idx, idx + 16); idx += 16;
+        // --- Header ---
+        AtpsResponseHeader header = parseHeader(response);
+
+        int idx = 39; // header size fixed
         String paymentCode        = response.substring(idx, idx + 6); idx += 6;
         String paymentDescription = response.substring(idx, idx + 16); idx += 16;
 
+        // --- JSON mapping ---
         ObjectNode node = mapper.createObjectNode();
-        node.put("actionCode", actionCode.trim());
-        node.put("command", command.trim());
-        node.put("service", service.trim());
-        node.put("dateTime", dateTime.trim());
-        node.put("referenceNo", referenceNo.trim());
+        node.put("actionCode", header.getActionCode());
+        node.put("command", header.getCommand());
+        node.put("service", header.getService());
+        node.put("dateTime", header.getDateTime());
+        node.put("referenceNo", header.getReferenceNo());
+
         node.put("paymentCode", paymentCode.trim());
         node.put("paymentDescription", paymentDescription.trim());
 
+
+        if (response.length() > idx) {
+//            throw new RuntimeException("Unexpected extra data in response: " + response.substring(idx));
+        }
+
         return node;
     }
+
 
     public static ObjectNode[] parseFixedWidthArray(String[] records) {
         if (records == null) {
@@ -106,12 +144,12 @@ public class AtpsHelper {
 
     public static String enrichRequestBody(Object body) {
         StringBuilder sb = new StringBuilder();
-        sb.append(fix("97",2));
-        sb.append(fix("05",2));
-        sb.append(fix(getNowAsPersianDateTime(),14));
-        sb.append(fix("999998",10));
-        sb.append(fix("1234567890",10));
-        sb.append(fix("",16));
+        sb.append(fix("97", 2));
+        sb.append(fix("05", 2));
+        sb.append(fix(getNowAsPersianDateTime(), 14));
+        sb.append(fix(nabProperties.getUsername(), 10));
+        sb.append(fix(nabProperties.getPassword(), 10));
+        sb.append(fix("123456987", 16));
         return sb.toString();
     }
     private static String getNowAsPersianDateTime() {

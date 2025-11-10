@@ -14,12 +14,13 @@ import org.apache.commons.lang3.StringUtils;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Producer for handling ATPS protocol messages in a Camel route.
  */
 public class AtpsProducer extends DefaultProducer {
-
+    Logger LOG = Logger.getLogger(AtpsProducer.class.getName());
     public static final String SERVICE_TIMEOUT = "SERVICE_TIMEOUT";
     public static final String SEND_MESSAGE_TO_CORE_TIME = "SEND_MESSAGE_TO_CORE_TIME";
     public static final String RECEIVED_MESSAGE_FROM_CORE_TIME = "RECEIVED_MESSAGE_FROM_CORE_TIME";
@@ -92,11 +93,15 @@ public class AtpsProducer extends DefaultProducer {
                 .map(Integer::parseInt)
                 .orElse(atpsEndpoint.getRequestTimeout());
 
+      LOG.log(java.util.logging.Level.INFO, "[ATPS] Using request timeout: " + requestTimeout + " ms");
+
         // Step 1: Send header, get ack without closing the channel
         prepareAndProcessHeader(exchange, header, requestTimeout);
 
         // Step 2: Validate ack if needed
         validateAck(exchange);
+
+
 
         // Step 3: Send payload and close the channel for the final response
         prepareAndProcessPayload(exchange, payload, requestTimeout);
@@ -106,7 +111,7 @@ public class AtpsProducer extends DefaultProducer {
     }
 
     private String enricherHeader(Object inBody) {
-        String headerPart = AtpsHelper.enrichRequestBody(null);
+        String headerPart = AtpsHelper.enrichRequestBody(inBody);
         String userPart = AtpsHelper.toString(inBody, CP1256);
         return headerPart + userPart;
     }
@@ -156,18 +161,34 @@ public class AtpsProducer extends DefaultProducer {
     private void handleFinalResponse(Exchange exchange) {
         byte[] responseBytes = exchange.getMessage().getBody(byte[].class);
         Message responseMessage = new DefaultMessage(exchange);
-        String[] response = byteToString(responseBytes);
-        responseMessage.setBody(response);
+
+        Object parsedResponse = parseResponse(responseBytes);
+        responseMessage.setBody(parsedResponse);
+
+
         exchange.setMessage(responseMessage);
 
         exchange.getMessage().setHeader(RECEIVED_MESSAGE_FROM_CORE_TIME, new Date());
     }
 
-    private String[] byteToString(byte[] bytes) {
+    /**
+     * Parses raw byte[] response into either:
+     * - String[] if multiline (contains '\n')
+     * - String if single line
+     */
+    private Object parseResponse(byte[] bytes) {
         if (bytes == null || bytes.length < 5) {
             throw new RuntimeException("Received message is invalid");
         }
-        String byteString = new String(bytes, CP1256);
-        return byteString.split("\n");
+
+        String responseString = new String(bytes, CP1256).trim();
+
+        if (responseString.contains("\n")) {
+            // Multi-line response → split to array
+            return responseString.split("\\r?\\n");
+        } else {
+            // Single-line response → single object
+            return responseString;
+        }
     }
 }
