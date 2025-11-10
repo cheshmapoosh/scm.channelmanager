@@ -24,7 +24,8 @@ public enum NotificationDataKey {
     CODE("code", false, null),
     HASH_CODE("hashCode", false, null),
     REASON("reason", false, null),
-    AMOUNT("amount",true,Number .class);
+    AMOUNT("amount", true, Number.class),
+    RECEIVER("receiver", true, String.class);
 
     private final String code;
     private final boolean builtIn;

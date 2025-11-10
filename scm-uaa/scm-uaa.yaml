@@ -80,7 +80,7 @@ spec:
         - name: scm-uaa
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0818T1530"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0819T1000"
           imagePullPolicy: IfNotPresent
           env:
             - name: JDWP_OPTS

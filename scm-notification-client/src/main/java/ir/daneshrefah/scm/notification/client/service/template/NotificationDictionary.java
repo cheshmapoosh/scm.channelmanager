@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -48,8 +49,15 @@ public class NotificationDictionary {
             case PERSON_TITLE -> extractPersonTitle(request.getTerminalCode());
             case USER_NICKNAME -> extractUserNickname(request.getTerminalCode());
             case LOGIN_TIME -> nowLoginTime();
+            case AMOUNT -> extractAmount(request, dataKey);
             default -> autoMapping(request,dataKey);
         };
+    }
+
+    private String extractAmount(NotificationRequest request, NotificationDataKey dataKey) {
+        validateDataType(dataKey, request.getData());
+        NumberFormat formatter = NumberFormat.getInstance();
+        return formatter.format(request.getData().get(dataKey.getCode()));
     }
 
     private String extractUserNickname(String terminalCode) {
@@ -70,7 +78,6 @@ public class NotificationDictionary {
     private String autoMapping(NotificationRequest request, NotificationDataKey dataKey) {
         try {
             NotificationData data = request.getData();
-            validateDataType(dataKey, data);
             return String.valueOf(data.get(dataKey.getCode()));
         }catch (Exception e){
             return DEFAULT_NOT_FOUND_VALUE;
