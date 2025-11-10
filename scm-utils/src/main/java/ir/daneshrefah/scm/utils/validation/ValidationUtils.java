@@ -135,6 +135,13 @@ public class ValidationUtils {
         }
     }
 
+    public static void isNumber(Object object, Supplier<RuntimeException> throwsException) {
+        String str = String.valueOf(object);
+        if (!org.apache.commons.lang3.StringUtils.isNumeric(str)) {
+            throw throwsException.get();
+        }
+    }
+
     public static boolean checkIsValidMobileNumber(String code){
         return StringUtils.isNotEmpty(code);
     }
