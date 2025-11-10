@@ -4,7 +4,7 @@ plugins {
 }
 version = "8.5.0"
 ext {
-    set('springCloudVersion', "2024.0.2")
+    set('springCloudVersion', "2025.0.0")
     set('springCamelVersion', "4.15.0")
     set('ibmDb2Version', "9.1")
     set('mapstructVersion', "1.6.2")

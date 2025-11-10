@@ -118,6 +118,7 @@ public class SecurityConfig {
                 .oidc(Customizer.withDefaults());// Enable OpenID Connect 1.0
 
         http
+//                .securityMatcher("/uaa/**", "/oauth2/**")
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/oauth2/token").permitAll()
@@ -154,7 +155,8 @@ public class SecurityConfig {
         AuthenticationFailureHandler failureHandler = failureHandler();
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheTemplate, userService);
         http
-//                .authenticationProvider(generalAuthenticationProvider)
+                .securityMatcher("/api/**", "/oauth2/**")
+                .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
                                 .requestMatchers("/error").permitAll()
