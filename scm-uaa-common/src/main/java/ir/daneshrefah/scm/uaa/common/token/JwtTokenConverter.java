@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE_PROVIDED;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_TERMINAL;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME;
 
 /**
@@ -37,15 +38,16 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_USERNAME
 public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private static final String SCOPE_PREFIX = "SCOPE_";
-    private final String CLAIM_AUTHENTICATION = "claim_authentication";
-//    private final Supplier<Authentication> extractAuthentication;
+    private static final String CLAIM_AUTHENTICATION = "claim_authentication";
+    private static final String PWA_CLIENT_ID = "PWA";
+    private static final String MB_CLIENT_ID = "MB";
 
     public UserAuthentication convert(Jwt jwt) {
         return convert(jwt, extractUsername(jwt));
     }
 
     public UserAuthentication convert(Jwt jwt, String username) {
-        String clientId = jwt.getAudience().get(0);
+        String clientId = getClientId(jwt);
 
         Collection<GrantedAuthority> authorities = Collections.emptyList();
         String commaSeparatedAuthorities = jwt.getClaimAsString(Constants.CLAIM_KEY_AUTHORITIES);
@@ -107,8 +109,19 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
         return new ArrayList<>();
     }
 
+    private String getClientId(Jwt jwt) {
+        return Optional.ofNullable(jwt.getAudience())
+                .map(audList-> audList.get(0))
+                .orElseGet(()-> Optional.ofNullable(jwt.getClaim(CLAIM_KEY_TERMINAL))
+                        .map(String::valueOf)
+                        .filter(terminal-> StringUtils.equals(terminal, PWA_CLIENT_ID) || StringUtils.equals(terminal, MB_CLIENT_ID))
+                        .map(f-> PWA_CLIENT_ID)
+                        .orElse(null));
+    }
+
     private User extractUserFromJwt(Jwt jwt) {
-        String clientId = jwt.getAudience().get(0);
+        String clientId = getClientId(jwt);
+
         AuthorizationGrantType grantType = AuthorizationGrantType.valueOf(jwt.getClaimAsString(Constants.CLAIM_KEY_GRANT));
         PersonType personType = PersonType.findByCode(Integer.parseInt(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_TYPE)));
         GeneralPerson person = null;
@@ -146,7 +159,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
             person.setNationality(Nationality.findByCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONALITY)));
         }
 
-        String terminalCode = jwt.getClaimAsString(Constants.CLAIM_KEY_TERMINAL);
+        String terminalCode = jwt.getClaimAsString(CLAIM_KEY_TERMINAL);
         AuthenticationMethod loginAuthenticationMethod = null;
         if (StringUtils.isNotEmpty(jwt.getClaimAsString(Constants.CLAIM_KEY_LOGIN_AUTH_METHOD))) {
             loginAuthenticationMethod = AuthenticationMethod.findByCode(
