@@ -103,6 +103,8 @@ public class AtpsProducer extends DefaultProducer {
         // Step 2: Validate ack if needed
         validateAck(exchange);
 
+
+
         // Step 3: Send payload and close the channel for the final response
         prepareAndProcessPayload(exchange, payload, requestTimeout);
 
@@ -161,18 +163,34 @@ public class AtpsProducer extends DefaultProducer {
     private void handleFinalResponse(Exchange exchange) {
         byte[] responseBytes = exchange.getMessage().getBody(byte[].class);
         Message responseMessage = new DefaultMessage(exchange);
-        String[] response = byteToString(responseBytes);
-        responseMessage.setBody(response);
+
+        Object parsedResponse = parseResponse(responseBytes);
+        responseMessage.setBody(parsedResponse);
+
+
         exchange.setMessage(responseMessage);
 
         exchange.getMessage().setHeader(RECEIVED_MESSAGE_FROM_CORE_TIME, new Date());
     }
 
-    private String[] byteToString(byte[] bytes) {
+    /**
+     * Parses raw byte[] response into either:
+     * - String[] if multiline (contains '\n')
+     * - String if single line
+     */
+    private Object parseResponse(byte[] bytes) {
         if (bytes == null || bytes.length < 5) {
             throw new RuntimeException("Received message is invalid");
         }
-        String byteString = new String(bytes, CP1256);
-        return byteString.split("\n");
+
+        String responseString = new String(bytes, CP1256).trim();
+
+        if (responseString.contains("\n")) {
+            // Multi-line response → split to array
+            return responseString.split("\\r?\\n");
+        } else {
+            // Single-line response → single object
+            return responseString;
+        }
     }
 }
