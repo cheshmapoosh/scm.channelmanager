@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
 @Conditional(LogConditions.TransactionLogTraceCondition.class)
 @Slf4j
 public class TransactionLogConverterService implements ConverterService {

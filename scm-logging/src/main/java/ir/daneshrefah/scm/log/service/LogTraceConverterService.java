@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Conditional(LogConditions.LogTraceCondition.class)
 @Slf4j
 public class LogTraceConverterService implements ConverterService {
