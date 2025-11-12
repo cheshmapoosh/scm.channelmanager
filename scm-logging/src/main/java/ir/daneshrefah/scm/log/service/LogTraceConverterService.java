@@ -34,8 +34,13 @@ public class LogTraceConverterService implements ConverterService {
 
     @Override
     public boolean supports(LogMessage logMessage) {
-        String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
-        return versionRequirement.isSatisfiedBy(version);
+        try {
+            String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+            return versionRequirement.isSatisfiedBy(version);
+        }catch (Exception ignored) {
+            //TODO
+            return true;
+        }
     }
 
     @Override
