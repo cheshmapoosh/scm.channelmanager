@@ -30,38 +30,34 @@ import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_P
 @ConditionalOnProperty(prefix = "scm.otp.rest-client", name = "enabled", havingValue = "true")
 public class RestOtpClientServiceImpl implements OtpClientService {
 
+    private final RestClient restClient = RestClientUtils.createRestClient();
     @Value("${scm.otp.rest-client.auth-header-name}")
     private String authorizationHeader;
-
     @Value("${scm.otp.rest-client.auth-prefix}")
     private String bearerPrefix;
-
     @Value("${scm.otp.rest-client.base-url}")
     private String baseUrl;
-
     @Value("${scm.otp.rest-client.verify-logged-in-url}")
     private String verifyLoggedInUrl;
 
     @Override
-    public boolean verifyOtpOrStaticPasswordLoggedInUser(String authorization, String otpCode, OtpReason reason,String accessParameter) {
-        return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason,accessParameter);
+    public boolean verifyOtpOrStaticPasswordLoggedInUser(String authorization, String otpCode, OtpReason reason, String accessParameter) {
+        return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason, accessParameter);
     }
 
     @Override
-    public boolean verifyByCurrentToken(String otpCode, OtpReason reason){
+    public boolean verifyByCurrentToken(String otpCode, OtpReason reason) {
         MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
         String authorization = messageInput.getAuthenticationValue();
         String accessParameter = messageInput.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
-        return getVerifyOTOResponseResponseEntity(authorization,otpCode,reason,accessParameter);
+        return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason, accessParameter);
     }
 
-    private boolean getVerifyOTOResponseResponseEntity(String authorization, String otpCode, OtpReason reason,String accessParameter) {
+    private boolean getVerifyOTOResponseResponseEntity(String authorization, String otpCode, OtpReason reason, String accessParameter) {
         ValidationUtils.checkBlankString(authorization, () -> new MissingRequiredInputException("authorization"));
         ValidationUtils.checkBlankString(otpCode, () -> new MissingRequiredInputException("otpCode"));
         ValidationUtils.checkNull(reason, () -> new MissingRequiredInputException("reason"));
         ValidationUtils.checkBlankString(accessParameter, () -> new MissingRequiredInputException("accessParameter"));
-        RestClient restClient = RestClientUtils.createRestClient();
-
         if (StringUtils.isBlank(authorization)) {
             throw new InvalidInputException(authorizationHeader);
         }

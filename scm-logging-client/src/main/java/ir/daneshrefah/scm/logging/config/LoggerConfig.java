@@ -34,13 +34,13 @@ public class LoggerConfig {
     private final String rollingArchiveDirectory;
     private final int keepLogHistory;
 
-    public LoggerConfig(@Value("${scm.log.file-name}") String logFileName,
-                        @Value("${scm.log.file-directory}") String fileDirectory,
-                        @Value("${scm.log.log-pattern}") String logPattern,
-                        @Value("${scm.log.file-name-pattern}") String filePatternName,
-                        @Value("${scm.log.file-size}") String fileSize,
-                        @Value("${scm.log.rolling-archive-directory}") String rollingArchiveDirectory,
-                        @Value("${scm.log.keep-log-history}") int keepLogHistory) {
+    public LoggerConfig(@Value("${scm.log.trace.file-name}") String logFileName,
+                        @Value("${scm.log.trace.file-directory}") String fileDirectory,
+                        @Value("${scm.log.trace.log-pattern}") String logPattern,
+                        @Value("${scm.log.trace.file-name-pattern}") String filePatternName,
+                        @Value("${scm.log.trace.file-size}") String fileSize,
+                        @Value("${scm.log.trace.rolling-archive-directory}") String rollingArchiveDirectory,
+                        @Value("${scm.log.trace.keep-log-history}") int keepLogHistory) {
         this.logFileName = logFileName;
         this.fileDirectory = fileDirectory;
         this.logPattern = logPattern;
