@@ -1,16 +1,16 @@
 package ir.daneshrefah.scm.log.service;
 
-import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import com.vdurmont.semver4j.Requirement;
+import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,14 +38,20 @@ public class LogTraceConverterService implements ConverterService {
     }
 
 
-    @Override
-    public boolean supports(LogMessage logMessage) {
-        return versionRequirement.isSatisfiedBy(logMessage.getVersion());
-    }
-
     @PostConstruct
     public void init() {
         log.info(">>> LogTraceConverterService successfully initialized");
+    }
+
+    @Override
+    public boolean supports(LogMessage logMessage) {
+        try {
+            String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+            return versionRequirement.isSatisfiedBy(version);
+        }catch (Exception ignored) {
+            //TODO
+            return true;
+        }
     }
 
     @Override
