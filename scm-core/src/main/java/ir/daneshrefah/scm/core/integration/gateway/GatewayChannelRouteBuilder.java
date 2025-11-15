@@ -100,7 +100,6 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
                         route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
                         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
-
                         defineExceptionHandler(route);
                         log.info(">>> exception handler defined successfully");
                         applyMetrics(route, service);

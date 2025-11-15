@@ -1,0 +1,40 @@
+<configuration>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="application" />
+    <springProperty scope="context" name="ARCHIVE_DIR" source="scm.log.app.rolling-archive-directory" defaultValue="archive" />
+    <springProperty scope="context" name="LOG_DIR" source="scm.log.app.file-directory"  />
+    <springProperty scope="context" name="LOG_MAX_HISTORY_DAYS" source="scm.log.app.keep-log-history"  />
+    <springProperty scope="context" name="LOG_MAX_SIZE" source="scm.log.app.file-size"  />
+    <springProperty scope="context" name="LOG_PATTERN" source="scm.log.app.log-pattern"  />
+    <springProperty scope="context" name="CONSOLE_ENABLED" source="scm.log.app.console-enabled" defaultValue="false" />
+
+    <property name="ACTIVE_LOG" value="${LOG_DIR}/${APP_NAME}.log" />
+    <property name="ARCHIVE_PATTERN" value="${ARCHIVE_DIR}/${APP_NAME}-%d{yyyy-MM-dd}.log" />
+
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${ACTIVE_LOG}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${ARCHIVE_PATTERN}</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY_DAYS}</maxHistory>
+            <totalSizeCap>${LOG_MAX_SIZE}</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ROLLING_FILE" />
+        <if condition='property("CONSOLE_ENABLED").equalsIgnoreCase("true")'>
+            <then>
+                <appender-ref ref="CONSOLE" />
+            </then>
+        </if>
+    </root>
+</configuration>

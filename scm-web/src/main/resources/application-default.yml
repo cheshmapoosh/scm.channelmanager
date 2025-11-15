@@ -56,7 +56,7 @@ scm:
       console-enabled: true
       file-directory: log/app
       rolling-archive-directory: archive
-      log-pattern: '%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n'
+      log-pattern: '%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] [%X{traceId:-}] %logger{36} - %msg%n'
       file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
       file-size: 1MB  #Max size of each log file
       keep-log-history: 30 #Keep up to 30 days of log files

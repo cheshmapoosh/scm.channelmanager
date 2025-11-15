@@ -11,6 +11,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.apache.camel.Exchange;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), LogUtils.getInstance().getMessage(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
+        MDC.put("traceId",span.getSpanContext().getTraceId());
     }
 
     public void traceAfterRoute(Exchange exchange, Service service) {
