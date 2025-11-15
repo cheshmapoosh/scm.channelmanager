@@ -53,6 +53,7 @@ dependencies {
     implementation 'org.apache.commons:commons-collections4'
     api 'com.ibm.mq:com.ibm.mq.allclient:9.4.1.0'
     api 'com.ibm.mq:com.ibm.mq.jakarta.client:9.4.1.0'
+    implementation ('org.codehaus.janino:janino')
 }
 
 test{

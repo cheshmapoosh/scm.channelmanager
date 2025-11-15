@@ -199,7 +199,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //                        .resilience4jConfiguration(resilience4jConfigurationDefinition)
 //                        .to(url)
 //                        .onFallback()
-//                        .setBody(model("{\"error\":\"fallback\"}"))
+//                        .setBody(constant("{\"error\":\"fallback\"}"))
 //                        .end();
 //            } else {
                 route.to(url);

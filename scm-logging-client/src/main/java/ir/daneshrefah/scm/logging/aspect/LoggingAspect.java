@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -20,7 +21,7 @@ import java.util.Objects;
 
 @Aspect
 @Component
-@ConditionalOnProperty(name = "scm.log.aspect.enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "scm.log.trace.aspect.enable", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class LoggingAspect {
 
@@ -38,6 +39,7 @@ public class LoggingAspect {
         boolean hasError = false;
         HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
         Span span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
+        MDC.put("traceId",span.getSpanContext().getTraceId());
         try (Scope rootScope = span.makeCurrent()) {
             SpanUtil.setRequestSpanAttributes(request, span);
             Object result = joinPoint.proceed();
