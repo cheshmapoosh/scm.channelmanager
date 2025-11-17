@@ -39,6 +39,9 @@ public class Slf4jLogExporterConfig implements SpanExporter {
     public CompletableResultCode export(Collection<SpanData> spans) {
         spans.forEach(span -> {
             if (span != null) {
+                if (span.getTotalAttributeCount() == 0) {
+                    return;
+                }
                 String method = span.getAttributes().get(AttributeKey.stringKey("http.method"));
                 if (OPTIONS_METHOD.equalsIgnoreCase(method)) {
                     return;

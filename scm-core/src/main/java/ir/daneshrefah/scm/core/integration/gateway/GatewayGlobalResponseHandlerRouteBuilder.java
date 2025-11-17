@@ -35,7 +35,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
     private ScmResponse createScmResponse(Exchange exchange) {
         ScmResponse response;
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
-        TraceUtils.getInstance().traceBeforeRoute(exchange, service);
+        TraceUtils.getInstance().traceScmResponse(exchange, service);
         if (exchange.getIn().getBody() instanceof ScmFault scmFault) {
             response = ScmResponse
                     .builder()

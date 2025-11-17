@@ -1,5 +1,6 @@
 SCM_APPLICATION_NAME: scm-web
 scm:
+  app-name: scm-web
   channels: IB4TEST
   logging:
     datasource:
