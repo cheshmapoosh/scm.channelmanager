@@ -134,7 +134,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void applyTracing(ProcessorDefinition<?> route, Service service) {
         route.process(exchange -> {
-            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
+            TraceUtils.getInstance().traceScmRequest(exchange, service);
         });
     }
 
@@ -287,13 +287,6 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            Span span = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
-            span.end();
-        });
-
         if (orderedBeforePluginDetails == null) {
             return;
         }
