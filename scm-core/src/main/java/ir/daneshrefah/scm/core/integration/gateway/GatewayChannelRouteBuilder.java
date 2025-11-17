@@ -25,7 +25,6 @@ import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.tracing.ActiveSpanManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +45,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final List<ProtocolHandler> protocolHandlers;
     private final PluginResolverService pluginResolverService;
     private final Map<String, PluginHandler> pluginHandlers;
+    private final Tracer tracer;
 
     @Value("${spring.application.name}")
     private String name;
@@ -132,7 +132,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private void applyTracing(ProcessorDefinition<?> route, Service service) {
         route.process(exchange -> {
-            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
+            TraceUtils.getInstance().traceScmRequest(exchange, service);
         });
     }
 
@@ -285,12 +285,6 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            ActiveSpanManager.endScope(exchange);
-        });
-
         if (orderedBeforePluginDetails == null) {
             return;
         }

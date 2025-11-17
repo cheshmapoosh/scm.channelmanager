@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
 import ir.daneshrefah.scm.common.constant.Routes;
-import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -17,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.tracing.ActiveSpanManager;
-import org.apache.camel.tracing.SpanAdapter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -46,7 +43,6 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             defineExceptionHandler(route);
             applyMetrics(route, operation);
-            applyTracing(route, operation);
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
             buildTarget(route, operation);
@@ -65,9 +61,7 @@ public class OperationRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    SpanAdapter span = ActiveSpanManager.getSpan(exchange);
-                    span.setTag(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), exception.getClass().getName());
-                    span.setTag(LogAttribute.ERROR_DETAILS.getAttributeName(), exception.getMessage());
+                    TraceUtils.getInstance().traceException(exchange,exception);
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
                     exchange.getIn().setBody(exception);
                 }).to(Routes.GLOBAL_ERROR_HANDLER);
@@ -75,14 +69,6 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     private void applyMetrics(RouteDefinition route, Operation operation) {
 
-    }
-
-    private void applyTracing(RouteDefinition route, Operation operation) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
-            log.info("[Tracing] Started span for {}", operation.getName());
-        });
     }
 
     private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Map<String, ?> properties) {
@@ -107,12 +93,6 @@ public class OperationRouteBuilder extends RouteBuilder {
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            ActiveSpanManager.endScope(exchange);
-        });
-
         if (orderedAfterPluginDetails == null) {
             return;
         }
