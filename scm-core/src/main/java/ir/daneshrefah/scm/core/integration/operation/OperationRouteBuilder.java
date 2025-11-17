@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
-import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.Service;
@@ -44,7 +43,6 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             defineExceptionHandler(route);
             applyMetrics(route, operation);
-            applyTracing(route, operation);
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
             buildTarget(route, operation);
@@ -73,14 +71,6 @@ public class OperationRouteBuilder extends RouteBuilder {
 
     }
 
-    private void applyTracing(RouteDefinition route, Operation operation) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceBeforeRoute(exchange, service);
-            log.info("[Tracing] Started span for {}", operation.getName());
-        });
-    }
-
     private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Map<String, ?> properties) {
         if (orderedBeforePluginDetails == null) {
             return;
@@ -103,13 +93,6 @@ public class OperationRouteBuilder extends RouteBuilder {
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
-        route.process(exchange -> {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            TraceUtils.getInstance().traceAfterRoute(exchange, service);
-            Span span = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
-            span.end();
-        });
-
         if (orderedAfterPluginDetails == null) {
             return;
         }
