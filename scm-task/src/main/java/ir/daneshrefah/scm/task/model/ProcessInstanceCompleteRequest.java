@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ProcessInstanceCompleteRequest {
+public class ProcessInstanceCompleteRequest extends ProcessInstanceRequest {
     private Long id;
     private ProcessStatusEnum status;
 }

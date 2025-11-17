@@ -19,6 +19,7 @@ public class ProcessInstanceApproveResponse {
     private String createAt;
     private ProcessCodeEnum processCode;
     private JsonNode transactionData;
+    private JsonNode attribute;
     private String correlationId;
     private List<TaskResponse> tasks;
     private List<UserModel> users;

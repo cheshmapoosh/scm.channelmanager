@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.task.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
+import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import lombok.Data;
 
 import java.util.List;
@@ -21,6 +21,7 @@ public class ProcessInstanceResponse {
     private IssuerModel createdBy;
     private ProcessCodeEnum processCode;
     private JsonNode transactionData;
+    private JsonNode attribute;
     private String correlationId;
     private Long confirmUserId;
     private List<TaskResponse> tasks;
