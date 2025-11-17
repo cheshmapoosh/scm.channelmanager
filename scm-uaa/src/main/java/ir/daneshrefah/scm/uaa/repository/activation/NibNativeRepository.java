@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.constant.TerminalType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Repository
@@ -493,4 +495,62 @@ public class NibNativeRepository {
         return params;
     }
 
+    public Map<String, Long> findRoleCustomers(String roleCorporateCustomer, String roleCustomer) {
+        String sql = """
+         select CODE,ROLE_ID from ref.ROLE r where r.CODE in (:roleCorporateCustomer, :roleCustomer)
+         """;
+        Map<String, Object> params = Map.of(
+                "roleCorporateCustomer", roleCorporateCustomer,
+                "roleCustomer", roleCustomer
+        );
+        try {
+            List<Map<String, Object>> rows = namedParameterJdbcTemplate.queryForList(sql, params);
+            Map<String, Long> result = rows.stream()
+                    .collect(Collectors.toMap(
+                            r -> (String) r.get("CODE"),
+                            r -> ((Integer) r.get("ROLE_ID")).longValue()
+                    ));
+
+            return Collections.unmodifiableMap(result);
+
+        } catch (DataAccessException e) {
+            log.error("Failed to fetch roles for codes {} and {}: %s".formatted(roleCorporateCustomer, roleCustomer, e.getMessage()),e);
+        }
+        return Collections.emptyMap();
+    }
+
+    public Boolean findUserRole(Integer id, Long roleId) {
+        String sql="select 1 from ref.USERROLE ur where ur.USER_ID=:userId and ur.ROLE_ID=:roleId";
+
+        Map<String, Object> params = Map.of(
+                "userId", id,
+                "roleId", roleId
+        );
+        try {
+            return namedParameterJdbcTemplate.queryForObject(sql, params,Boolean.class);
+        }catch (EmptyResultDataAccessException e){
+            return false;
+        } catch (DataAccessException e) {
+            log.error("Failed to fetch USERROLE for userId %s and roleId %s: %s".formatted(id, roleId, e.getMessage()),e);
+            return null;
+        }
+
+
+    }
+
+    public void insertRoleCustomer(Integer personId, Long roleId) {
+        String sqlInsert = "INSERT INTO REF.USERROLE (ROLE_ID, USER_ID) VALUES (:roleId, :personId)";
+        Map<String, Object> params = Map.of(
+                "roleId", roleId,
+                "personId", personId
+        );
+        try {
+            int update = namedParameterJdbcTemplate.update(sqlInsert, params);
+            log.info("Inserted USERROLE for userId %s and roleId %s, rows affected: %d".formatted(personId, roleId, update));
+        } catch (DataAccessException e) {
+            log.error("Failed to insert USERROLE for userId %s and roleId %s: %s".formatted(personId, roleId, e.getMessage()),e);
+            throw e;
+        }
+
+    }
 }

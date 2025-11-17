@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.uaa.service.activation;
 
 import ir.daneshrefah.scm.common.constant.TerminalType;
+import ir.daneshrefah.scm.common.data.entity.person.CorporatePersonEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.TerminalRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.MembershipRepository;
@@ -39,13 +41,16 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     public void activate(GeneralPerson person, TerminalType fromTerminal) {
         validateInput(person, fromTerminal);
         GeneralPersonEntity personEntity = findPersonEntity(person.getUsername());
+        checkAndCreateRole(personEntity, fromTerminal);
+
+
         duplicateUserChannelAuthentication(fromTerminal, personEntity);
 
         // TODO: Implement membership and membershipTerminalAccess logic
 
 
         Map<Integer, Integer> nibChannelMap = nibNativeRepository.findNibChannel();
-       duplicateMembershipChannelAccess(personEntity.getId(), nibChannelMap,fromTerminal);
+        duplicateMembershipChannelAccess(personEntity.getId(), nibChannelMap, fromTerminal);
 
 
         log.info("User activation completed for username: {}", person.getUsername());
@@ -55,25 +60,24 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * Duplicates all MEMBERSHIP_CHANNEL_ACCESS records for a user, updates CHANNEL_ID based on a provided mapping,
      * and saves them with new MEMBERSHIP_CHANNEL_ACCESS_IDs.
      *
-     * @param userId         The ID of the user to duplicate records for.
-     * @param channelIdMap   A Map mapping old CHANNEL_IDs to new CHANNEL_IDs.
+     * @param userId       The ID of the user to duplicate records for.
+     * @param channelIdMap A Map mapping old CHANNEL_IDs to new CHANNEL_IDs.
      * @throws IllegalStateException if duplication or insertion fails.
      */
-    private void duplicateMembershipChannelAccess(Integer userId, Map<Integer, Integer> channelIdMap,TerminalType fromTerminal) {
+    private void duplicateMembershipChannelAccess(Integer userId, Map<Integer, Integer> channelIdMap, TerminalType fromTerminal) {
         log.debug("Starting duplication of MEMBERSHIP_CHANNEL_ACCESS for userId: {}", userId);
 
         // Fetch existing records
-        List<Map<String, Object>> membershipChannelAccess = nibNativeRepository.findMembershipChannelAccessByUserId(userId,fromTerminal);
+        List<Map<String, Object>> membershipChannelAccess = nibNativeRepository.findMembershipChannelAccessByUserId(userId, fromTerminal);
         if (membershipChannelAccess.isEmpty()) {
             log.warn("No MEMBERSHIP_CHANNEL_ACCESS records found to duplicate for userId: {}", userId);
             return;
         }
 
         try {
-                Integer membershipId = null;
+            Integer membershipId = null;
             for (Map<String, Object> original : membershipChannelAccess) {
                 // Create a new record by copying the original
-
 
 
                 if (membershipId != null && membershipId.equals(original.get("MEMBERSHIP_ID"))) {
@@ -114,7 +118,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
                 // Duplicate related MEMBERSHIP_CHANNEL_SERVICE_ACCESS records
                 duplicateMembershipChannelServiceAccess(
                         (Integer) original.get("MEMBERSHIP_CHANNEL_ACCESS_ID"),
-                        membershipChannelAccessId ,
+                        membershipChannelAccessId,
                         (Integer) original.get("CHANNEL_ID"),
                         newChannelId
                 );
@@ -129,10 +133,10 @@ public class NibUserActivationServiceImpl implements UserActivationService {
      * Duplicates MEMBERSHIP_CHANNEL_SERVICE_ACCESS records for a given MCS_ID, updating to a new MCS_ID
      * and mapping CHANNEL_EB_ACCESS_ID based on old and new CHANNEL_IDs.
      *
-     * @param oldMcsId       The original MEMBERSHIP_CHANNEL_ACCESS_ID.
-     * @param newMcsId       The new MEMBERSHIP_CHANNEL_ACCESS_ID.
-     * @param oldChannelId   The original CHANNEL_ID.
-     * @param newChannelId   The new CHANNEL_ID.
+     * @param oldMcsId     The original MEMBERSHIP_CHANNEL_ACCESS_ID.
+     * @param newMcsId     The new MEMBERSHIP_CHANNEL_ACCESS_ID.
+     * @param oldChannelId The original CHANNEL_ID.
+     * @param newChannelId The new CHANNEL_ID.
      */
     private void duplicateMembershipChannelServiceAccess(Integer oldMcsId, Integer newMcsId,
                                                          Integer oldChannelId, Integer newChannelId) {
@@ -173,7 +177,6 @@ public class NibUserActivationServiceImpl implements UserActivationService {
                     newMcsId, newChannelEbAccessId);
         }
     }
-
 
 
     /**
@@ -280,4 +283,64 @@ public class NibUserActivationServiceImpl implements UserActivationService {
             throw new IllegalStateException("Failed to insert user channel authentication");
         }
     }
+
+    public void checkAndCreateRole(GeneralPersonEntity personEntity, TerminalType fromTerminal) {
+
+        final String ROLE_CORPORATE = "ROLE_CORPORATE_CUSTOMER";
+        final String ROLE_CUSTOMER = "ROLE_CUSTOMER";
+
+
+        Map<String, Long> roleCustomers =
+                nibNativeRepository.findRoleCustomers(ROLE_CORPORATE, ROLE_CUSTOMER);
+
+        Long roleCorporateCustomerId = roleCustomers.get(ROLE_CORPORATE);
+        Long roleCustomerId = roleCustomers.get(ROLE_CUSTOMER);
+
+        if (roleCorporateCustomerId == null || roleCustomerId == null) {
+            log.error("Role IDs not found. roles={}", roleCustomers);
+            return;
+        }
+
+        Integer personId = personEntity.getId();
+        String username = personEntity.getUsername();
+
+        // ===============================
+        // 2. Corporate Person → دو نقش
+        // ===============================
+        if (personEntity instanceof CorporatePersonEntity) {
+
+            // ROLE_CORPORATE_CUSTOMER
+            Boolean hasCorpRole = nibNativeRepository.findUserRole(personId, roleCorporateCustomerId);
+            if (hasCorpRole == null || !hasCorpRole) {
+                nibNativeRepository.insertRoleCustomer(personId, roleCorporateCustomerId);
+                log.info("Inserted ROLE_CORPORATE_CUSTOMER for personId={} username={}", personId, username);
+            } else {
+                log.info("Corporate role already exists for personId={}", personId);
+            }
+
+            // ROLE_CUSTOMER
+            Boolean hasCustomerRole = nibNativeRepository.findUserRole(personId, roleCustomerId);
+            if (hasCustomerRole == null || !hasCustomerRole) {
+                nibNativeRepository.insertRoleCustomer(personId, roleCustomerId);
+                log.info("Inserted ROLE_CUSTOMER for personId={} username={}", personId, username);
+            } else {
+                log.info("Customer role already exists for personId={}", personId);
+            }
+
+        }else {
+
+            Boolean hasCustomerRole = nibNativeRepository.findUserRole(personId, roleCustomerId);
+
+            if (hasCustomerRole == null || !hasCustomerRole) {
+                nibNativeRepository.insertRoleCustomer(personId, roleCustomerId);
+                log.info("Inserted ROLE_CUSTOMER for personId={} username={}", personId, username);
+            } else {
+                log.info("Customer role already exists for personId={}", personId);
+            }
+
+        }
+
+    }
+
+
 }
