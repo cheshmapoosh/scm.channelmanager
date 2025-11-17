@@ -44,7 +44,13 @@ public abstract class TaskMapper {
 
 
     public List<TaskResponse> toTaskResponseList(List<TaskEntity> taskEntities) {
-        return taskEntities.stream().map(this::toTaskResponse).toList();
+        List<TaskResponse> taskResponseList = new ArrayList<>();
+        for (TaskEntity taskEntity : taskEntities) {
+            TaskResponse taskResponse = toTaskResponse(taskEntity);
+            taskResponse.setProcessInstance(processInstanceMapper.toProcessInstanceResponse(taskEntity.getProcessInstance()));
+            taskResponseList.add(taskResponse);
+        }
+        return taskResponseList;
     }
 
     public List<TaskResponse> toTaskResponseListWithProcessInstance(List<TaskEntity> taskEntities) {

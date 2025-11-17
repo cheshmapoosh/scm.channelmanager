@@ -51,10 +51,10 @@ scm:
     client:
       distributed: true
       config:
-        cluster-name: dev3
+        cluster-name: scm
         network-config:
           addresses:
-            - 10.10.4.125:5701
+            - '10.10.4.123:5701'
   otp:
     time-to-live-minutes: 1
     jms:

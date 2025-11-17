@@ -1,11 +1,9 @@
 package ir.daneshrefah.scm.task.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.constant.ProcessCodeEnum;
-import ir.daneshrefah.scm.task.converter.ProcessStatusConverter;
-import ir.daneshrefah.scm.task.converter.TransactionDataConverter;
+import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
 import ir.daneshrefah.scm.task.converter.ProcessCodeConverter;
+import ir.daneshrefah.scm.task.converter.ProcessStatusConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,10 +29,6 @@ public class ProcessInstanceEntity {
     @Column(name = "ACCOUNT_NO", nullable = false)
     private String accountNo;
 
-    @Column(name = "TRANSACTION_DATA", nullable = false)
-    @Convert(converter = TransactionDataConverter.class)
-    private JsonNode transactionData;
-
     @Column(name = "LAST_MESSAGE_SEQUENCE_ID")
     private String lastMessageSequenceId;
 
@@ -53,6 +47,7 @@ public class ProcessInstanceEntity {
 
     @Column(name = "DESTINATION")
     private String destination;
+
     @OneToMany(mappedBy = "processInstance", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<TaskEntity> tasks = new ArrayList<>();
 

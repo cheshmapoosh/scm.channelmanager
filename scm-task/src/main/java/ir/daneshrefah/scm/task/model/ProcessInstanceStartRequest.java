@@ -10,7 +10,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class ProcessInstanceStartRequest {
+public class ProcessInstanceStartRequest extends ProcessInstanceRequest {
     private String accountNo;
     private UserModel confirmUser;
     private List<UserModel> users;
