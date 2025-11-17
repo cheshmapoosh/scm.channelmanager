@@ -40,15 +40,14 @@ public class LoggingAspect {
         HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
         Span span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
         MDC.put("traceId",span.getSpanContext().getTraceId());
-        SpanUtil spanUtil = SpanUtil.getInstance();
         try (Scope rootScope = span.makeCurrent()) {
-            spanUtil.setRequestSpanAttributes(request, span);
+            SpanUtil.setRequestSpanAttributes(request, span);
             Object result = joinPoint.proceed();
-            spanUtil.setResponseSpanAttributes(result, span);
+            SpanUtil.setResponseSpanAttributes(result, span);
             return result;
         } catch (Throwable ex) {
             request.setAttribute("otel.span", span);
-            spanUtil.setException(ex, span);
+            SpanUtil.setException(ex, span);
             hasError = true;
             throw ex;
         } finally {
