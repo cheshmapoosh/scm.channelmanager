@@ -103,8 +103,6 @@ public class AtpsProducer extends DefaultProducer {
         // Step 2: Validate ack if needed
         validateAck(exchange);
 
-
-
         // Step 3: Send payload and close the channel for the final response
         prepareAndProcessPayload(exchange, payload, requestTimeout);
 
