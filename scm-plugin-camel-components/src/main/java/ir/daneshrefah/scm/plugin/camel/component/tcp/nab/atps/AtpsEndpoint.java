@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.camel.*;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
@@ -19,22 +21,34 @@ public class AtpsEndpoint extends DefaultEndpoint {
     private final String nettyUri;
 
     // گزینه‌ها (با @UriParam تا از application.yml هم ست شوند)
+    @Setter
+    @Getter
     @UriParam(defaultValue = "3000", label = "common")
     private int connectTimeout = 3000;
 
+    @Setter
+    @Getter
     @UriParam(defaultValue = "5000", label = "common")
     private int requestTimeout = 5000;
 
+    @Setter
+    @Getter
     @UriParam(label = "advanced", defaultValue = "true")
     private boolean tcpNoDelay = true;
 
+    @Setter
+    @Getter
     @UriParam(label = "advanced", defaultValue = "true")
     private boolean keepAlive = true;
 
     // اگر بخواهید ack را بررسی کنید
+    @Setter
+    @Getter
     @UriParam(label = "advanced", defaultValue = "false")
     private boolean validateAck;
 
+    @Setter
+    @Getter
     @UriParam(label = "advanced")
     private String ackEquals; // مثلا "00000"
 
@@ -56,16 +70,4 @@ public class AtpsEndpoint extends DefaultEndpoint {
 
     // ----- getters/setters -----
     public String getNettyUriBase() { return nettyUri; }
-    public int getConnectTimeout() { return connectTimeout; }
-    public void setConnectTimeout(int connectTimeout) { this.connectTimeout = connectTimeout; }
-    public int getRequestTimeout() { return requestTimeout; }
-    public void setRequestTimeout(int requestTimeout) { this.requestTimeout = requestTimeout; }
-    public boolean isTcpNoDelay() { return tcpNoDelay; }
-    public void setTcpNoDelay(boolean tcpNoDelay) { this.tcpNoDelay = tcpNoDelay; }
-    public boolean isKeepAlive() { return keepAlive; }
-    public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
-    public boolean isValidateAck() { return validateAck; }
-    public void setValidateAck(boolean validateAck) { this.validateAck = validateAck; }
-    public String getAckEquals() { return ackEquals; }
-    public void setAckEquals(String ackEquals) { this.ackEquals = ackEquals; }
 }

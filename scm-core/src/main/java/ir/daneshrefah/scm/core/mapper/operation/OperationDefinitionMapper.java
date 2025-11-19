@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import ir.daneshrefah.scm.common.model.operation.OperationDefinition;
-import ir.daneshrefah.scm.common.model.operation.RequestTemplateOperationDefinition;
-import ir.daneshrefah.scm.common.model.operation.ResponseTemplateOperationDefinition;
-import ir.daneshrefah.scm.common.model.operation.RestConfigOperationDefinition;
+import ir.daneshrefah.scm.common.model.operation.*;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.entity.operation.OperationDefinitionEntity;
 import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
@@ -47,6 +44,7 @@ public abstract class OperationDefinitionMapper {
             case REQUEST_TEMPLATE -> toRequestTemplateModel(operationDefinitionEntity);
             case RESPONSE_TEMPLATE -> toResponseTemplateModel(operationDefinitionEntity);
             case REST_CONFIG -> toRestConfigModel(operationDefinitionEntity);
+            case TCP_CONFIG -> toTcpConfigModel(operationDefinitionEntity);
             default -> throw new IllegalStateException("Unexpected value: " + operationDefinitionEntity.getType());
         };
     }
@@ -59,6 +57,9 @@ public abstract class OperationDefinitionMapper {
 
     @Named("restConfig")
     public abstract RestConfigOperationDefinition toRestConfigModel(OperationDefinitionEntity operationDefinitionEntity);
+
+    @Named("tcpConfig")
+    public abstract TcpConfigOperationDefinition toTcpConfigModel(OperationDefinitionEntity operationDefinitionEntity);
 
     @AfterMapping
     public void afterMapping(@MappingTarget RequestTemplateOperationDefinition requestTemplateOperationDefinition) {
@@ -109,6 +110,37 @@ public abstract class OperationDefinitionMapper {
 
             Boolean wiretap = JsonPathFinder.defaultAsBoolean(jsonNode, "wiretap");
             restConfigOperationDefinition.setWiretap(wiretap);
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @AfterMapping
+    public void afterMapping(@MappingTarget TcpConfigOperationDefinition tcpConfigOperationDefinition) {
+        try {
+            JsonNode jsonNode = reader.readTree(tcpConfigOperationDefinition.getDefinition().getDetails());
+
+            String url = JsonPathFinder.defaultAsText(jsonNode, "url");
+            tcpConfigOperationDefinition.setUrl(url);
+
+            Integer connectTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "connectTimeout");
+            tcpConfigOperationDefinition.setConnectTimeout(connectTimeout);
+
+            Boolean tcpNoDelay = JsonPathFinder.defaultAsBoolean(jsonNode, "tcpNoDelay");
+            tcpConfigOperationDefinition.setTcpNoDelay(tcpNoDelay == null ? false : true);
+
+            String ackEquals = JsonPathFinder.defaultAsText(jsonNode, "ackEquals");
+            tcpConfigOperationDefinition.setAckEquals(ackEquals);
+
+            Integer requestTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "requestTimeout");
+            tcpConfigOperationDefinition.setRequestTimeout(requestTimeout);
+
+            Boolean validateAck = JsonPathFinder.defaultAsBoolean(jsonNode, "validateAck");
+            tcpConfigOperationDefinition.setValidateAck(validateAck);
+
+            Boolean keepAlive = JsonPathFinder.defaultAsBoolean(jsonNode, "keepAlive");
+            tcpConfigOperationDefinition.setKeepAlive(keepAlive == null ? false : true);
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

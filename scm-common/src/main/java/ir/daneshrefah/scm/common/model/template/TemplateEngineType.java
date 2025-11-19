@@ -5,5 +5,5 @@ public enum TemplateEngineType {
     THYMELEAF,
     PLACEHOLDER,
     CONSTANT,
-
+    GROOVY
 }

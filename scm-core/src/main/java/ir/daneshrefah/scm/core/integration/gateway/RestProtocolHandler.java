@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
+@Slf4j
 public class RestProtocolHandler implements ProtocolHandler {
     @Override
     public ProtocolType getProtocol() {
@@ -76,6 +78,9 @@ public class RestProtocolHandler implements ProtocolHandler {
 
         private List<RouteDefinition> createRestRouteDefinition(Service service, RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
             String serviceCode = service.getCode().trim();
+            if(service.getName().trim().equals("کارپرداز من")){
+                System.out.println("");
+            }
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             RestChannelServiceDefinition definition = multiRouteDetail.getDefinition();
             if (definition != null) {
@@ -122,6 +127,10 @@ public class RestProtocolHandler implements ProtocolHandler {
         }
 
         private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {
+            if (serviceCode.trim().equals("karpardaz")) {
+                System.out.println("inja");
+            }
+            log.info("createDefaultUri of service : " + serviceCode);
             return new URIBuilder()
                     .setScheme("rest:post")
                     .setPath(gatewayChannel.getPath())

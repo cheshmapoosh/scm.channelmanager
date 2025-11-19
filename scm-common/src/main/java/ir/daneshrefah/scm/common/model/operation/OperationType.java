@@ -4,4 +4,5 @@ public enum OperationType {
     REST,
     JAVA,
     BEAN,
+    ATPS
 }
