@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:db2://10.10.4.104:50001/DBREFSW
-    username: db2inst1
-    password: db2inst1
+    url: jdbc:db2://10.15.27.82:446/DSNALOC
+    username: casadm
+    password: a
     driver-class-name: com.ibm.db2.jcc.DB2Driver
   cloud:
     config:
@@ -16,7 +16,7 @@ spring:
 hazelcast:
   config:
     instance-name: my-instance3
-    clustername: dev3
+    cluster-name: dev3
     properties:
       hazelcast:
         socket:
