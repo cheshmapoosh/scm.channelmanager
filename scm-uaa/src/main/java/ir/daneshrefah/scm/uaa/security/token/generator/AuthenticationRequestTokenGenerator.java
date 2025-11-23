@@ -15,7 +15,6 @@ import java.util.Optional;
  */
 public interface AuthenticationRequestTokenGenerator {
 
-    public Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication,
-                                                                                  TerminalUserDetails userDetails);
+     Optional<Class<? extends GeneralAuthenticationToken>> extractTokenType(Authentication authentication, TerminalUserDetails userDetails);
 
 }

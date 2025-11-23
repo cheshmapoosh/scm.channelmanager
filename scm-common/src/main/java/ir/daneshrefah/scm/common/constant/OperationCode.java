@@ -32,9 +32,14 @@ public enum OperationCode {
     SVC_CHANNEL_EDIT(ServiceImplementationType.JAVA),
     SVC_CHANNEL_DELETE(ServiceImplementationType.JAVA),
     SVC_SERVICE_LIST(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_FIND_BY_SERVICE_ID(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_FIND_BY_ID(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_CREATE(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_ACCESS_UPDATE(ServiceImplementationType.JAVA),
     SVC_SERVICE_BY_CODE(ServiceImplementationType.JAVA),
     SVC_SERVICE_BY_ID(ServiceImplementationType.JAVA),
     SVC_SERVICE_CREATE(ServiceImplementationType.JAVA),
+    SVC_SERVICE_UPDATE(ServiceImplementationType.JAVA),
     SVC_CARTABLE_APPROVE_PROCESS(ServiceImplementationType.JAVA),
     SVC_CARTABLE_START_PROCESS(ServiceImplementationType.JAVA),
     SVC_CARTABLE_GET_ALL_PROCESS(ServiceImplementationType.JAVA),
@@ -150,7 +155,37 @@ public enum OperationCode {
     SVC_ASSETS_ASSIGN_MEMBERSHIP_CHANNEL(ServiceImplementationType.JAVA),
     SVC_ASSETS_REVOKE_MEMBERSHIP_CHANNEL(ServiceImplementationType.JAVA),
     SVC_ASSETS_MEMBERSHIP_CHL_WDR_LIMIT(ServiceImplementationType.JAVA),
-
+    SVC_OPERATION_LIST(ServiceImplementationType.JAVA),
+    SVC_OPERATION_CREATE(ServiceImplementationType.JAVA),
+    SVC_OPERATION_UPDATE(ServiceImplementationType.JAVA),
+    SVC_OPERATION_PROVIDER_LIST(ServiceImplementationType.JAVA),
+    //-----------------------------Service Operation----------------------
+    SCV_SERVICE_OPERATION_LIST(ServiceImplementationType.JAVA),
+    SCV_SERVICE_OPERATION_CREATE(ServiceImplementationType.JAVA),
+    //-----------------------------Definition-----------------------------
+    SVC_DEFINITION_LIST(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_BY_ID(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_DETAILS_LIST_BY_ID(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_CREATE(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_UPDATE(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_DETAIL_CREATE(ServiceImplementationType.JAVA),
+    SVC_DEFINITION_DETAIL_UPDATE(ServiceImplementationType.JAVA),
+    //-----------------------------Plugin--------------------------------
+    SVC_PLUGIN_BINDINGS_LIST_BY_DEFINITION_ID(ServiceImplementationType.JAVA),
+    SVC_PLUGIN_BINDINGS_BY_ID(ServiceImplementationType.JAVA),
+    SVC_PLUGIN_BINDINGS_SEARCH(ServiceImplementationType.JAVA),
+    SVC_PLUGIN_BINDING_CREATE(ServiceImplementationType.JAVA),
+    SVC_PLUGIN_BINDING_UPDATE(ServiceImplementationType.JAVA),
+    SVC_PLUGIN_BINDING_HANDLER_LIST(ServiceImplementationType.JAVA),
+    //-----------------------------Channel Service Definition -----------
+    SVC_CHANNEL_SERVICE_DEFINITION_LIST(ServiceImplementationType.JAVA),
+    SVC_CHANNEL_SERVICE_DEFINITION_CREATE(ServiceImplementationType.JAVA),
+    //-----------------------------Gateway Channel-----------------------
+    SVC_GATEWAY_CHANNEL_LIST(ServiceImplementationType.JAVA),
+    //
+    SVC_JAVA_SERVICE_LIST(ServiceImplementationType.JAVA),
+    SCV_AUTHORITY_CONFIG_LIST(ServiceImplementationType.JAVA),
+    SCV_AUTHORITY_LIST(ServiceImplementationType.JAVA),
 
     /* PARENT SERVICE */
     SVC_TERMINAL_PARENT(ServiceImplementationType.PARENT),

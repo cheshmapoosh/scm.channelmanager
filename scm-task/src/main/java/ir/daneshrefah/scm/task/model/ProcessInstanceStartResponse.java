@@ -17,4 +17,5 @@ public class ProcessInstanceStartResponse {
     private String createAt;
     private ProcessCodeEnum processCode;
     private JsonNode transactionData;
+    private JsonNode attribute;
 }

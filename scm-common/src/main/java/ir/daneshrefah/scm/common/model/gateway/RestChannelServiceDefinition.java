@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class RestChannelServiceDefinition extends ChannelServiceDefinition {
+public class RestChannelServiceDefinition extends BaseChannelServiceDefinition {
 
     private HttpMethod method;
     private String path;

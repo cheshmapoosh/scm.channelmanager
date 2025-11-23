@@ -7,9 +7,11 @@ import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientVersionRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.entity.ClientVersionEntity;
+import ir.daneshrefah.scm.uaa.service.activation.pwa.common.GeneralPwaOauthException;
 import ir.daneshrefah.scm.uaa.service.client.dto.VersionFindRequest;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,14 +19,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.CLIENT_INVALID_APP_VERSION;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClientVersionService {
 
+    private static final List<ClientVersion> CLIENT_VERSIONS = new ArrayList<>();
     private final ClientVersionRepository clientVersionRepository;
     private final ClientRepository clientRepository;
-    private static final List<ClientVersion> CLIENT_VERSIONS = new ArrayList<>();
     private final ClientVersionMapper clientVersionMapper;
+
+    public static List<ClientVersion> getClientVersionsList() {
+        return CLIENT_VERSIONS;
+    }
 
     @PostConstruct
     public void init() {
@@ -46,7 +55,7 @@ public class ClientVersionService {
     public List<ClientVersion> getClientVersionByClientId(Long clientId) {
         return CLIENT_VERSIONS
                 .stream()
-                .filter(clientVersion -> Objects.equals(clientVersion.getClientId(),clientId))
+                .filter(clientVersion -> Objects.equals(clientVersion.getClientId(), clientId))
                 .toList();
     }
 
@@ -54,6 +63,13 @@ public class ClientVersionService {
         return CLIENT_VERSIONS
                 .stream()
                 .filter(clientVersion -> clientVersion.getId().equals(id))
+                .findFirst();
+    }
+
+    public Optional<ClientVersion> getClientVersionByAppVersion(String appVersion) {
+        return CLIENT_VERSIONS
+                .stream()
+                .filter(clientVersion -> Objects.equals(clientVersion.getVersion(), appVersion))
                 .findFirst();
     }
 
@@ -80,15 +96,11 @@ public class ClientVersionService {
 
     public ClientVersion remove(ClientVersion clientVersion) {
         ClientVersionEntity clientVersionEntity = clientVersionRepository.findById(clientVersion.getId()).orElseThrow(() -> new InvalidInputException("clientVersionId"));
-        clientVersionEntity.getClient().getVersions().removeIf(versionEntity-> versionEntity.getId().equals(clientVersion.getId()));
+        clientVersionEntity.getClient().getVersions().removeIf(versionEntity -> versionEntity.getId().equals(clientVersion.getId()));
         clientVersionEntity.setLastEditDate(clientVersion.getLastEditDate());
         clientVersionRepository.delete(clientVersionEntity);
         reloadCache();
         return clientVersionMapper.toModel(clientVersionEntity);
-    }
-
-    public static List<ClientVersion> getClientVersionsList() {
-        return CLIENT_VERSIONS;
     }
 
     public List<ClientVersion> getList(VersionFindRequest request) {
@@ -102,5 +114,22 @@ public class ClientVersionService {
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getStatus()) || request.getStatus().equals(version.getStatus()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getIsForced()) || request.getIsForced().equals(version.isForced()))
                 .toList();
+    }
+
+    public void checkAppSignature(String appVersion, String signature) {
+        getClientVersionByAppVersion(appVersion)
+                .filter(cv -> Objects.equals(cv.getSignature(), signature))
+                .orElseThrow(() -> {
+                    log.warn("Invalid app version caught:{}", appVersion);
+                    return new GeneralPwaOauthException(CLIENT_INVALID_APP_VERSION);
+                });
+
+    }
+
+    public boolean isAppSignatureValid(String appVersion, String signature) {
+        return getClientVersionByAppVersion(appVersion)
+                .filter(cv -> Objects.equals(cv.getSignature(), signature))
+                .map(a -> Boolean.TRUE)
+                .orElse(false);
     }
 }

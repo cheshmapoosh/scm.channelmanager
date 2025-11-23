@@ -95,11 +95,7 @@ public class SpanLogConverterService {
     }
 
     private static String getClientIpAddress(Map<String, String> attributes) {
-        String clientRemoteAddress = attributes.get(LogAttribute.CLIENT_REMOTE_ADDRESS.getAttributeName());
-        if (StringUtils.isNotBlank(clientRemoteAddress)) {
-            return clientRemoteAddress;
-        }
-        return attributes.get(LogAttribute.CLIENT_PHONE_NUMBER.getAttributeName());
+        return attributes.get(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName());
     }
 
     private Date getStartTime(SpanModel spanModel) {

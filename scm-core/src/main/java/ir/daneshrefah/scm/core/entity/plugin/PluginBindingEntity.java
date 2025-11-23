@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.core.entity.plugin;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
-import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginScope;
-import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
+import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -29,7 +28,6 @@ public class PluginBindingEntity extends AbstractAuditableEntity<String> {
     private String id;
 
     @Enumerated(EnumType.STRING)
-    @Size(max = 20)
     @Column(nullable = false, length = 20)
     private PluginScope scope;
 

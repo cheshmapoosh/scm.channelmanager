@@ -22,6 +22,15 @@ public enum UserStatus {
 
     private final int code;
 
+    public static Boolean getBooleanValue(UserStatus userStatus) {
+        if (ACTIVE.equals(userStatus)) {
+            return true;
+        } else if (INACTIVE.equals(userStatus)) {
+            return false;
+        }
+        return null;
+    }
+
     public static UserStatus findByCode(int code) {
         return Arrays.stream(UserStatus.values())
                 .filter(s -> s.code == code)

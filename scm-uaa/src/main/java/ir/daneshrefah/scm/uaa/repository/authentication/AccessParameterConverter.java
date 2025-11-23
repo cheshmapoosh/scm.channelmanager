@@ -5,6 +5,8 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,9 +20,25 @@ import java.util.stream.Collectors;
 @Converter
 public class AccessParameterConverter implements AttributeConverter<Set<String>, String> {
 
+    private static final int MOBILE_NUMBER_LENGTH = 11;
+
     @Override
     public String convertToDatabaseColumn(Set<String> attribute) {
-        return attribute == null ? null : String.join(",", attribute);
+        if (Objects.isNull(attribute)) {
+            return null;
+        }
+        /* IF CONTENT HAS ONE VALUE AND THAT IS NOT MOBILE NUMBER */
+        if (attribute.size() == 1 ) {
+            String value = attribute.iterator().next();
+            if (!(value.startsWith("0") && value.length() == MOBILE_NUMBER_LENGTH
+                    || value.length() == MOBILE_NUMBER_LENGTH-1)) {
+                return value;
+            }
+        }
+        return attribute
+                .stream()
+                .map(p -> ";" + p + ";")
+                .collect(Collectors.joining(","));
     }
 
     @Override
@@ -28,11 +46,18 @@ public class AccessParameterConverter implements AttributeConverter<Set<String>,
         if (StringUtils.isEmpty(dbData)) {
             return null;
         }
-        String[] values = dbData.split(";");
-        return Arrays.stream(values)
-                .filter(s -> !s.isEmpty())
-                .filter(s -> !s.equalsIgnoreCase(","))
-                .map(String::trim)
-                .collect(Collectors.toSet());
+        /* IF DATA IS MOBILE NUMBER */
+        if (dbData.startsWith(";")) {
+            String[] values = dbData.split(",");
+            return Arrays.stream(values)
+                    .filter(s -> !s.isEmpty())
+                    .filter(s -> !s.equalsIgnoreCase(",") && !s.equalsIgnoreCase(";"))
+                    .map(s -> s.replace(";", StringUtils.EMPTY).replace(",", StringUtils.EMPTY))
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+        }
+        HashSet<String> result = new HashSet<>();
+        result.add(dbData);
+        return result;
     }
 }

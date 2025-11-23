@@ -13,8 +13,10 @@ import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
 import ir.daneshrefah.scm.task.constant.ProcessStatusEnum;
+import ir.daneshrefah.scm.task.constant.ProcessWatcherEnum;
 import ir.daneshrefah.scm.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.task.entity.ProcessInstanceEntity;
+import ir.daneshrefah.scm.task.entity.ProcessInstanceWatcherEntity;
 import ir.daneshrefah.scm.task.entity.TaskEntity;
 import ir.daneshrefah.scm.task.entity.TaskLogEntity;
 import ir.daneshrefah.scm.task.exception.InvalidProcessStatusException;
@@ -29,7 +31,6 @@ import ir.daneshrefah.scm.task.utils.PageableUtils;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.AllArgsConstructor;
 import org.apache.camel.Exchange;
@@ -56,6 +57,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     private final PersonService personService;
     private final TaskAssetService taskAssetService;
 
+
     private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
         return processInstance.getConfirmUserId() != null && processInstance.getConfirmUserId().equals(loggedInUserId);
     }
@@ -73,7 +75,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         GeneralPerson generalPerson = null;
         ProcessInstanceEntity processInstanceEntity = new ProcessInstanceEntity();
         processInstanceEntity.setAccountNo(request.getAccountNo());
-        processInstanceEntity.setTransactionData(request.getTransactionData());
         processInstanceEntity.setProcessCode(request.getProcessCode());
         processInstanceEntity.setAmount(request.getAmount());
         processInstanceEntity.setDescription(request.getDescription());
@@ -86,16 +87,14 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceEntity.setProcessStatus(ProcessStatusEnum.PENDING);
         processInstanceEntity.setCreateBy(AuthenticationUtils.getLoggedInUserId());
         processInstanceEntity.setCreateAt(new Date());
-        processInstanceEntity.setWatcherEntities(List.of(processInstanceWatcherService.createProcessInstanceWatcherEntity(processInstanceEntity, ProcessStatusEnum.START)));
+        processInstanceEntity.setWatcherEntities(processInstanceWatcherService.createProcessInstanceWatcherEntity(processInstanceEntity, request.getTransactionData(), ProcessWatcherEnum.REQUEST));
         processInstanceEntity.addTaskEntities(createTaskEntity(request));
         createGlobalTaskIfNeeded(processInstanceEntity, generalPerson);
         return processInstanceEntity;
     }
 
     private void createGlobalTaskIfNeeded(ProcessInstanceEntity processInstance, GeneralPerson person) {
-        boolean shouldCreateGlobalTask = processInstance.getConfirmUserId() != null && processInstance.getTasks()
-                .stream()
-                .noneMatch(task -> task.getUserId().equals(processInstance.getConfirmUserId()));
+        boolean shouldCreateGlobalTask = processInstance.getConfirmUserId() != null && processInstance.getTasks().stream().noneMatch(task -> task.getUserId().equals(processInstance.getConfirmUserId()));
         if (shouldCreateGlobalTask) {
             TaskEntity globalTask = new TaskEntity();
             globalTask.setUserId(processInstance.getConfirmUserId());
@@ -142,7 +141,8 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceResponse.setProcessStatus(processInstance.getProcessStatus());
         processInstanceResponse.setDescription(processInstance.getDescription());
         processInstanceResponse.setProcessCode(processInstance.getProcessCode());
-        processInstanceResponse.setTransactionData(processInstance.getTransactionData());
+        processInstanceResponse.setAttribute(processInstanceMapper.mapToAttribute(processInstance.getWatcherEntities()));
+        processInstanceResponse.setTransactionData(processInstanceMapper.mapToMetadata(processInstance.getWatcherEntities()));
         processInstanceResponse.setDestination(processInstance.getDestination());
         processInstanceResponse.setAmount(processInstance.getAmount());
         processInstanceResponse.setCreateAt(String.valueOf(processInstance.getCreateAt().getTime()));
@@ -181,8 +181,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private GeneralPerson findUserByPersonTypeAndNationalCodeAndSubOrg(UserModel confirmUserModel) {
-        return personService.findPerson(confirmUserModel.getPersonType(), confirmUserModel.getNationalId(), confirmUserModel.getSubOrganization())
-                .orElseThrow(() -> new NoMatchRecordFoundException("user"));
+        return personService.findPerson(confirmUserModel.getPersonType(), confirmUserModel.getNationalId(), confirmUserModel.getSubOrganization()).orElseThrow(() -> new NoMatchRecordFoundException("user"));
     }
 
     @Override
@@ -205,21 +204,19 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return processInstanceMapper.toProcessInstanceUpdateResponse(processInstanceEntity);
     }
 
-
     public boolean hasUserAccess(ProcessInstanceEntity processInstanceEntity) {
         Integer confirmUserId = processInstanceEntity.getConfirmUserId();
         Integer loggedInUser = AuthenticationUtils.getLoggedInUserId();
         if (Objects.equals(confirmUserId, loggedInUser)) {
             return true;
         }
-        return processInstanceEntity.getTasks().stream()
-                .anyMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
+        return processInstanceEntity.getTasks().stream().anyMatch(taskEntity -> Objects.equals(taskEntity.getUserId(), loggedInUser));
     }
 
     @Override
     public ProcessInstanceApproveResponse approve(Exchange exchange, ProcessInstanceApproveRequest request) {
-        validateApproveRequest(exchange,request);
-        ProcessInstanceEntity processInstance = findByID(exchange,request.getId());
+        validateApproveRequest(exchange, request);
+        ProcessInstanceEntity processInstance = findByID(exchange, request.getId());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
@@ -234,13 +231,15 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         List<UserModel> users = getTaskUsers(processInstance);
         response.setUsers(users);
 
-        persistTaskLogEntity(exchange,taskEntity);
+        persistTaskLogEntity(exchange, taskEntity);
         processInstanceRepository.save(processInstance);
         return response;
     }
 
     private ProcessInstanceApproveResponse createResponseWithConfirmUser(ProcessInstanceEntity processInstance) {
         ProcessInstanceApproveResponse response = processInstanceMapper.toProcessInstanceApproveResponse(processInstance);
+        response.setTransactionData(processInstanceMapper.mapToMetadata(processInstance.getWatcherEntities()));
+        response.setAttribute(processInstanceMapper.mapToAttribute(processInstance.getWatcherEntities()));
         if (Objects.nonNull(processInstance.getConfirmUserId())) {
             GeneralPerson confirmUser = personService.findPersonByPersonId(processInstance.getConfirmUserId());
             UserModel userModel = createUserModel(confirmUser);
@@ -250,12 +249,10 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private List<UserModel> getTaskUsers(ProcessInstanceEntity processInstance) {
-        return processInstance.getTasks().stream()
-                .filter(TaskEntity::getSigner).map(task -> {
-                    GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
-                    return createUserModel(person);
-                })
-                .toList();
+        return processInstance.getTasks().stream().filter(TaskEntity::getSigner).map(task -> {
+            GeneralPerson person = personService.findPersonByPersonId(task.getUserId());
+            return createUserModel(person);
+        }).toList();
     }
 
     private UserModel createUserModel(GeneralPerson person) {
@@ -266,31 +263,27 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
             userModel.setNationalId(legalPerson.getNationalId());
         }
         userModel.setPersonType(person.getPersonType());
-        userModel.setCustomerId(taskAssetService.findCustomerNo(person.getId())
-                .orElseThrow(() -> new NoMatchRecordFoundException("customerId")));
+        userModel.setCustomerId(taskAssetService.findCustomerNo(person.getId()).orElseThrow(() -> new NoMatchRecordFoundException("customerId")));
         return userModel;
     }
 
     private TaskEntity findTaskByStatus(ProcessInstanceEntity processInstance, TaskStatusEnum status) {
-        return processInstance.getTasks().stream()
-                .filter(task -> task.getTaskStatus().equals(status))
-                .findFirst()
-                .orElseThrow(() -> new NoMatchRecordFoundException("task"));
+        return processInstance.getTasks().stream().filter(task -> task.getTaskStatus().equals(status)).findFirst().orElseThrow(() -> new NoMatchRecordFoundException("task"));
     }
 
-    private void validateApproveRequest(Exchange exchange,ProcessInstanceApproveRequest request) {
-        processTaskDefinitionService.validateProcessBeforeApprove(exchange,request);
+    private void validateApproveRequest(Exchange exchange, ProcessInstanceApproveRequest request) {
+        processTaskDefinitionService.validateProcessBeforeApprove(exchange, request);
         ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
             throw new InvalidInputException("correlationId");
         });
     }
 
-    private void persistTaskLogEntity(Exchange exchange,TaskEntity taskEntity) {
+    private void persistTaskLogEntity(Exchange exchange, TaskEntity taskEntity) {
         TaskLogEntity taskLogEntity = new TaskLogEntity();
         //TODO TEMPORARY GET CHANNEL CODE FROM EXCHANGE
 //        MessageInput context = MessageInputContext.getCurrentContext();
 //        taskLogEntity.setLastChannelCode(context.getChannel().getCode());
-        taskLogEntity.setLastChannelCode(exchange.getProperty(Message.CHANNEL_CODE,String.class));
+        taskLogEntity.setLastChannelCode(exchange.getProperty(Message.CHANNEL_CODE, String.class));
         taskLogEntity.setTaskEntity(taskEntity);
         taskLogEntity.setStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         taskLogEntity.setArchiveNo(ArchiveUtils.calculateOneMonthArchiveNo());
@@ -302,39 +295,35 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     @Override
     public void complete(Exchange exchange, ProcessInstanceCompleteRequest request) {
         validateProcessStatus(request.getStatus(), EnumSet.of(ProcessStatusEnum.COMPLETE, ProcessStatusEnum.FAIL));
-
-        ProcessInstanceEntity processInstance = findByID(exchange,request.getId());
+        ProcessInstanceEntity processInstance = findByID(exchange, request.getId());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         validateUserAccess(processInstance, loggedInUserId);
-
 //        MessageInput context = MessageInputContext.getCurrentContext();
         if (ProcessStatusEnum.COMPLETE.equals(request.getStatus())) {
             updateProcessInstanceForCompletion(processInstance, loggedInUserId, exchange, ProcessStatusEnum.COMPLETE);
             completeTasks(exchange, processInstance, TaskStatusEnum.COMPLETE);
-
             processInstanceRepository.save(processInstance);
         } else {
+            List<ProcessInstanceWatcherEntity> processInstanceWatcherEntities = processInstanceWatcherService.createProcessInstanceWatcherEntity(processInstance, request.getAttribute(), ProcessWatcherEnum.ATTRIBUTE);
+            processInstance.getWatcherEntities().addAll(processInstanceWatcherEntities);
             updateProcessInstanceForCompletion(processInstance, loggedInUserId, exchange, ProcessStatusEnum.FAIL);
             completeTasks(exchange, processInstance, TaskStatusEnum.CANCEL);
         }
+        processInstanceRepository.save(processInstance);
     }
 
     @Override
     public void cancelProcess(Exchange exchange, ProcessInstanceCancelRequest request) {
         ValidationUtils.checkNull(request.getId(), () -> new MissingRequiredInputException("processId"));
-        ProcessInstanceEntity processInstanceEntity = findByID(exchange,request.getId());
+        ProcessInstanceEntity processInstanceEntity = findByID(exchange, request.getId());
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
-        if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE)
-            || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
+        if (processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.COMPLETE) || processInstanceEntity.getProcessStatus().equals(ProcessStatusEnum.CANCEL)) {
             throw new InvalidProcessStatusException("status", "Invalid process status.");
         } else if (allowCancelProcess(processInstanceEntity, loggedInUserId)) {
             processInstanceEntity.setProcessStatus(ProcessStatusEnum.CANCEL);
-            processInstanceEntity.getTasks()
-                    .stream()
-                    .filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING))
-                    .forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
+            processInstanceEntity.getTasks().stream().filter(taskEntity -> taskEntity.getTaskStatus().equals(TaskStatusEnum.PENDING)).forEach(taskEntity -> taskEntity.setTaskStatus(TaskStatusEnum.CANCEL));
             processInstanceRepository.save(processInstanceEntity);
         } else {
             throw new ProcessAuthorityException("Cancel Process", "have not permission");
@@ -348,10 +337,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     }
 
     private void validateTaskStates(ProcessInstanceEntity processInstance, TaskStatusEnum taskStatusEnum) {
-        boolean isStateInvalid = processInstance
-                .getTasks()
-                .stream()
-                .anyMatch(task -> !EnumSet.of(TaskStatusEnum.COMPLETE, taskStatusEnum).contains(task.getTaskStatus()));
+        boolean isStateInvalid = processInstance.getTasks().stream().anyMatch(task -> !EnumSet.of(TaskStatusEnum.COMPLETE, taskStatusEnum).contains(task.getTaskStatus()));
         if (isStateInvalid) {
             throw new InvalidTaskStatusException("status", "Invalid task status.");
         }
@@ -366,21 +352,19 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         }
     }
 
-    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Integer loggedInUserId,Exchange exchange, ProcessStatusEnum processStatusEnum) {
+    private void updateProcessInstanceForCompletion(ProcessInstanceEntity processInstance, Integer loggedInUserId, Exchange exchange, ProcessStatusEnum processStatusEnum) {
         processInstance.setUpdateAt(new Date());
         processInstance.setUpdateBy(loggedInUserId);
         processInstance.setProcessStatus(processStatusEnum);
-        processInstance.setLastMessageSequenceId(exchange.getMessage().getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID,String.class));
+        processInstance.setLastMessageSequenceId(exchange.getMessage().getHeader(SCM_PARAMETER_CLIENT_CORRELATION_ID, String.class));
     }
 
     private void completeTasks(Exchange exchange, ProcessInstanceEntity processInstance, TaskStatusEnum taskStatusEnum) {
-        processInstance.getTasks().stream().
-                filter(task -> TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE.equals(task.getTaskStatus()))
-                .forEach(task -> {
-                    task.setUpdateAt(new Date());
-                    task.setTaskStatus(taskStatusEnum);
-                    taskLogService.mapToTaskLogAndPersist(exchange, task);
-                });
+        processInstance.getTasks().stream().filter(task -> TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE.equals(task.getTaskStatus())).forEach(task -> {
+            task.setUpdateAt(new Date());
+            task.setTaskStatus(taskStatusEnum);
+            taskLogService.mapToTaskLogAndPersist(exchange, task);
+        });
     }
 }
 

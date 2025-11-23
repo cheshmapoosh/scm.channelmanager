@@ -105,7 +105,7 @@ public abstract class AbstractOtpProvider {
     private boolean usedAtLeastTOneTime(Otp otp) {
         int reusedCount = otp.getReusedCount();
         int maxReusedCount = otp.getReason().getMaxReusedCount();
-        return maxReusedCount > reusedCount && reusedCount > 0;
+        return maxReusedCount >= reusedCount && reusedCount > 0;
     }
 
     protected final Otp buildOtpInstance(OtpSendRequest request, boolean requireDeliver) {
@@ -131,6 +131,7 @@ public abstract class AbstractOtpProvider {
                 .reason(request.getReason())
                 .recipient(request.getRecipient())
                 .otpCode(otpCode)
+                .metadata(request.getMetadata())
                 .expireTime(DateUtils.InstantTools.plusMinutesToCurrent(request.getReason().getTimeToLiveMinutes()))
                 .isDelivered(!requireDeliver)
                 .build();

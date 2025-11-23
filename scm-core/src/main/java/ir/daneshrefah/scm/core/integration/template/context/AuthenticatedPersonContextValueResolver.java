@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -39,27 +38,29 @@ public class AuthenticatedPersonContextValueResolver implements ContextValueReso
             case "title" -> person.getTitle();
             case "type" -> person.getPersonType();
             case "id" -> person.getId();
-            case "suborg" -> {
-                if (person instanceof GeneralLegalPerson legalPerson) {
-                    String subOrg = legalPerson.getSubOrganizationId();
-                    yield StringUtils.isBlank(subOrg) ? "0" : subOrg;
-                }
-                yield "0";
-            }
+            case "suborg" -> getSubOrganizationId(person);
             default -> throw new IllegalStateException("Unexpected value: " + key);
         };
     }
 
+    private Object getSubOrganizationId(GeneralPerson person) {
+        if (person instanceof GeneralLegalPerson legalPerson) {
+            var subOrg = legalPerson.getSubOrganizationId();
+            return StringUtils.isBlank(subOrg) ? "0" : subOrg.trim();
+        }
+        return  "0";
+    }
+
     private Object getPersonMobileNumber(GeneralPerson person) {
-        String mobile1 = person.getMobile1();
+        var mobile1 = person.getMobile1();
         if (StringUtils.isNotBlank(mobile1)) {
             return mobile1;
         }
-        String mobile2 = person.getMobile2();
+        var mobile2 = person.getMobile2();
         if (StringUtils.isNotBlank(mobile2)) {
             return mobile2;
         }
-        String mobile3 = person.getMobile3();
+        var mobile3 = person.getMobile3();
         if (StringUtils.isNotBlank(mobile3)) {
             return mobile3;
         }
@@ -77,9 +78,9 @@ public class AuthenticatedPersonContextValueResolver implements ContextValueReso
     }
 
     private GeneralPerson getCurrentPerson() {
-        User loggedInUser = AuthenticationUtils.getLoggedInUser();
+        var loggedInUser = AuthenticationUtils.getLoggedInUser();
         ValidationUtils.checkNull(loggedInUser, AuthenticationRequiredException::new);
-        GeneralPerson person = Objects.requireNonNull(loggedInUser).getPerson();
+        var person = Objects.requireNonNull(loggedInUser).getPerson();
         ValidationUtils.checkNull(person, () -> new NoMatchRecordFoundException("nationalId"));
         return person;
     }

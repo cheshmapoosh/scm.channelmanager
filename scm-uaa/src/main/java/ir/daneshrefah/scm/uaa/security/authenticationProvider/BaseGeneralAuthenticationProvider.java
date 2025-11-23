@@ -14,7 +14,8 @@ import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
-import ir.daneshrefah.scm.uaa.service.activation.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
     private final UserActivationAuthenticationService userActivationAuthenticationService;
+    private final PwaAuthenticationService pwaAuthenticationService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -88,6 +90,11 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         } else {
             userDetails = getUserDetails(preAuthenticationToken, preAuthenticationToken.getName(), clientTerminalCode, true);
         }
+
+        if (preAuthenticationToken.hasDefaultGrantPreAuthToken()) {
+            pwaAuthenticationService.preAuthenticateCheck(preAuthenticationToken);
+        }
+
         GeneralAuthenticationToken token;
         try {
             token = authenticationTokenGenerator.generateToken(

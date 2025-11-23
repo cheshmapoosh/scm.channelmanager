@@ -20,6 +20,8 @@ public interface Constants {
     String CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES = "allowIpAddresses";
 
     String CLAIM_KEY_TERMINAL = "trm";
+    String CLAIM_KEY_AUDIENCE= "aud";
+    String CLAIM_KEY_SUBJECT= "sub";
     String CLAIM_KEY_GRANT = "grn";
     String CLAIM_KEY_SESSION = "sni";
     String CLAIM_KEY_LOGIN_AUTH_METHOD = "lam";
@@ -50,6 +52,7 @@ public interface Constants {
     String OAUTH2_PARAM_NAME_CLIENT_SIGNATURE = "client_signature";
     String OAUTH2_PARAM_NAME_CLIENT_AUTHENTICATION = "client_authentication";
     String OAUTH2_PARAM_NAME_USER_USERNAME = "username";
+    String OAUTH2_PARAM_PWA_NAME_USER_USERNAME = "user_name";
     String OAUTH2_PARAM_AUTHORIZATION = "authorization";
     String OAUTH2_PARAM_NAME_USER_PASSWORD = "password";
     String OAUTH2_PARAM_NAME_MOBILE_NUMBER = "mobileNumber";
@@ -72,17 +75,29 @@ public interface Constants {
     String OAUTH2_ERROR_CODE_IS_EXPIRED = "expired_user";
     String OAUTH2_ERROR_CODE_INVALID_CAPTCHA = "invalid_captcha";
     String OAUTH2_ERROR_CODE_INVALID_TOKEN = "invalid_token";
+    String OAUTH2_ERROR_CODE_INVALID_APP_VERSION = "invalid_app_version";
+    String OAUTH2_ERROR_CODE_LOGIN_LIMITED = "reached_login_limit";
 
-    //     String CHANNEL_HEADER ="Channel";
-//     String AGENT_HEADER ="Agent";
-//     String DEVICE_MODEL_HEADER ="DeviceModel";
-//     String OPERATING_SYSTEM_VERSION_HEADER ="OsVersion";
-//     String UUID_HEADER ="UUID";
-//     String HASHCODE_HEADER ="HashCode";
-//     String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
+    String ACCESS_PARAM_HEADER = "AccessParameter";
+    String CHANNEL_HEADER = "Channel";
+    String AGENT_HEADER = "Agent";
+    String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    String UUID_HEADER = "UUID";
+    String APP_VERSION_HEADER = "AppVersion";
+    String OPERATING_SYSTEM_VERSION_HEADER ="OsVersion";
+    String HASHCODE_HEADER ="HashCode";
+    String REGISTRY_TOKEN_HEADER = "RegistryToken";
+    String DEVICE_MODEL_HEADER ="DeviceModel";
+    String SIGNATURE_HEADER = "Signature";
+    String PWA_OTP_CODE_HEADER = "x-otp-code";
+    String PWA_TERMINAL_TYPE_HEADER = "terminal_type";
+
+
+    String PRE_AUTHENTICATION_INSTANCE = "preAuthenticationInstance";
+
 //     String AUTH_HEADER ="X_UserAuthorization";
-    String IP_HEADER = "X-Forwarded-For";
-//     String ACCESS_PARAM_HEADER ="AccessParameter";
+//     String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
+//    String IP_HEADER = "X-Forwarded-For";
 //     String FIRST_LVL_AUTH_GRANT="cm-first-password";
 //     String SECOND_LVL_AUTH_GRANT="cm-second-password";
 

@@ -24,7 +24,6 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
@@ -92,9 +91,18 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     private void sendNotification(Otp otp) {
         Terminal terminal = terminalService.findTerminalByCode(otp.getRecipient().getTerminalCode()).orElseThrow(InvalidOtpCodeException::new);
         NotificationData data = new NotificationData();
+        if (otp.getMetadata() != null) {
+            otp.getMetadata().keySet().forEach(key -> {
+                NotificationDataKey dataKey = NotificationDataKey.findByCode(key);
+                if (dataKey == null) {
+                    throw new InvalidInputException("Invalid data key");
+                }
+                data.put(dataKey, otp.getMetadata().get(key));
+            });
+        }
         data.put(NotificationDataKey.OTP_CODE, otp.getOtpCode());
         data.put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
-        data.put(NotificationDataKey.LOGIN_TIME,nowShamsiLoginTime());
+        data.put(NotificationDataKey.LOGIN_TIME, nowShamsiLoginTime());
         data.put(NotificationDataKey.REASON, OtpReasonDictionary.getOtpReasonDictionary(otp.getReason()).getPersian()); //TODO GET FROM LOCALE
         NotificationRequest request = NotificationRequest.builder()
                 .template(otp.getReason().getNotificationTemplate())

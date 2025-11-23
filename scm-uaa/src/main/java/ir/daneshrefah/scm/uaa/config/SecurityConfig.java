@@ -9,17 +9,17 @@ import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticat
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2SmsOtpAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.converter.FirstPasswordGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.converter.SecondPasswordGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.converter.ShahkarGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.converter.SmsOtpGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.converter.*;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
+import ir.daneshrefah.scm.uaa.security.filter.MissingGrantTypeFallbackFilter;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
+import ir.daneshrefah.scm.uaa.utils.Urls;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -44,6 +44,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -52,7 +53,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Description of the class or purpose of the file.
@@ -65,25 +69,18 @@ import java.util.*;
 @EnableWebSecurity
 @Slf4j
 @EnableMethodSecurity
+@RequiredArgsConstructor
+@EnableConfigurationProperties(PwaAuthenticationConfigProperties.class)
 public class SecurityConfig {
 
     private static final String LOGIN_PROCESS_URI = "/login";
 
-    //    @Autowired
-//    private UserDetailsService userDetailsService;
-    @Autowired
-    private CorsConfigurationSource configurationSource;
-    @Autowired
-    private LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
 
-    @Autowired
-    private LogoutService logoutService;
-
-    @Autowired
-    private CacheTemplate cacheTemplate;
-
-    @Autowired
-    private UserService userService;
+    private final CorsConfigurationSource configurationSource;
+    private final LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
+    private final LogoutService logoutService;
+    private final CacheTemplate cacheTemplate;
+    private final UserService userService;
 
     @Bean
     @Order(1)
@@ -92,10 +89,8 @@ public class SecurityConfig {
                                                                       OAuth2SmsOtpAuthenticationProvider oAuth2SmsOtpAuthenticationProvider)
             throws Exception {
 
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer();
-        RequestMatcher endpointsMatcher = authorizationServerConfigurer
-                .getEndpointsMatcher();
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
         authorizationServerConfigurer
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint.consentPage("/consent"))
@@ -106,22 +101,19 @@ public class SecurityConfig {
                                                         Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
                                                                 new SecondPasswordGrantAuthenticationConverter(),
                                                                 new SmsOtpGrantAuthenticationConverter(),
-                                                                new ShahkarGrantAuthenticationConverter()))
+                                                                new ShahkarGrantAuthenticationConverter(),
+                                                                new DefaultGrantAuthenticationConverter()))
                                         )
-//                                .authenticationProviders(authenticationProviders -> {
-//                                    authenticationProviders.add(oAuth2GeneralAuthenticationProvider);
-//                                    authenticationProviders.add(oAuth2SmsOtpAuthenticationProvider);
-//                                })
                                         .authenticationProvider(oAuth2GeneralAuthenticationProvider)
                                         .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
                 )
                 .oidc(Customizer.withDefaults());// Enable OpenID Connect 1.0
 
         http
-//                .securityMatcher("/uaa/**", "/oauth2/**")
+                .addFilterBefore(new MissingGrantTypeFallbackFilter(), BasicAuthenticationFilter.class)
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/oauth2/token").permitAll()
+                        .requestMatchers(Urls.OAUTH2_TOKEN).permitAll()
                         .requestMatchers("/otp/public/**").permitAll()
                         .requestMatchers("/api/access-token/get-first-password-token").permitAll()
                         .anyRequest().authenticated()
@@ -138,9 +130,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer((resourceServer) -> resourceServer
                         .jwt(Customizer.withDefaults()))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
-                .apply(authorizationServerConfigurer);
-
-//        /*http
+                .with(authorizationServerConfigurer,Customizer.withDefaults());
 
         return http.build();
     }
@@ -162,18 +152,19 @@ public class SecurityConfig {
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers("/public/**").permitAll()
                                 .requestMatchers("/otp/public/**").permitAll()
+                                .requestMatchers("/oauth/token_key").permitAll()
+                                .requestMatchers("/auth/login").permitAll()
                                 .requestMatchers("/login**").permitAll()
                                 .requestMatchers("/assets/**").permitAll()
+                                .requestMatchers("/api/register").permitAll()
+                                .requestMatchers("/api/valid").permitAll()
                                 .requestMatchers("/api/access-token/get-first-password-token").permitAll()
-
-//                        .requestMatchers("/oauth2/token").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(captchaVerifyFilter(failureHandler), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(bearerAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class)
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
-//                .formLogin(Customizer.withDefaults());
                 .exceptionHandling((exceptions) -> exceptions
                         .accessDeniedHandler(new AccessDeniedHandler() {
                             @Override
@@ -201,14 +192,11 @@ public class SecurityConfig {
                     logout.clearAuthentication(true);
                 })
                 .formLogin(login -> {
-//                    login.setFormLoginEnabled(true);
                     login.usernameParameter("username");
                     login.passwordParameter("password");
                     login.loginPage(LOGIN_PROCESS_URI);
                     login.failureHandler(failureHandler);
-//                    login.failureUrl("/login?error");
                     login.authenticationDetailsSource(new TerminalAuthenticationDetailsSource());
-//                    login.setAuthenticationUrl(getLoginProcessingUrl());
                 });
         return http.build();
     }
@@ -251,7 +239,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile({"dev","default","test","prod"})
+    @Profile({"dev", "default", "test", "prod"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));

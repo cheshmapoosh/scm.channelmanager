@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.gateway;
 
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
 @Slf4j
@@ -95,6 +98,7 @@ public class RestProtocolHandler implements ProtocolHandler {
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
                     .routeId(serviceCode + "-route-" + RouteUtils.getInstance().generateRouteUniqId(multiRouteDetail.getOperationCode()));
+            routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION,constant(definition));
             return Collections.singletonList(routeDefinition);
         }
 
@@ -123,6 +127,7 @@ public class RestProtocolHandler implements ProtocolHandler {
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
                     .routeId(serviceCode + "-route");
+            routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION,constant(definition));
             return Collections.singletonList(routeDefinition);
         }
 

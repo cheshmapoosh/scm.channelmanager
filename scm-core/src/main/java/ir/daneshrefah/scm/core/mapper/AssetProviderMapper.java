@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.mapper;
 
 import ir.daneshrefah.scm.common.data.entity.asset.AssetProviderEntity;
 import ir.daneshrefah.scm.common.model.asset.AssetProvider;
-import ir.daneshrefah.scm.core.mapper.definition.DefinitionMapper;
 import org.mapstruct.Mapper;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;

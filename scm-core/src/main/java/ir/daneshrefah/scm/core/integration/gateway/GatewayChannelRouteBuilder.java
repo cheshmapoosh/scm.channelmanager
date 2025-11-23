@@ -11,10 +11,10 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.core.services.gateway.ChannelServiceAccessService;
-import ir.daneshrefah.scm.core.services.gateway.ChannelServiceDefinitionService;
-import ir.daneshrefah.scm.core.services.gateway.GatewayService;
-import ir.daneshrefah.scm.core.services.plugin.PluginResolverService;
+import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
+import ir.daneshrefah.scm.common.service.ChannelServiceDefinitionService;
+import ir.daneshrefah.scm.common.service.GatewayService;
+import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
 import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final Map<String, PluginHandler> pluginHandlers;
     private final Tracer tracer;
 
-    @Value("${spring.application.name}")
+    @Value("${scm.app-name}")
     private String name;
 
 //    private final Tracer tracer = GlobalOpenTelemetry.getTracer("gateway-channel");
@@ -96,6 +96,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                             channelServiceDefinitionService.findDefinitions(channelServiceAccess, gatewayChannel);
                     List<RouteDefinition> routes = protocolConfigurer.routeDefinition(channelServiceAccess, definitions);
                     routes.forEach(route -> {
+
                         route.setProperty(Message.SERVICE, constant(service));
                         route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
                         route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
@@ -239,7 +240,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //                            .resilience4jConfiguration(resilience4jConfigurationDefinition)
 //                            .to(url)
 //                            .onFallback()
-//                            .setBody(constant("{\"error\":\"fallback\"}"))
+//                            .setBody(model("{\"error\":\"fallback\"}"))
 //                            .end();
 //                } else {
                     multicast.to(url).end();

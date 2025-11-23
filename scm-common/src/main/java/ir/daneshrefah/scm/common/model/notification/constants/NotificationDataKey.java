@@ -8,20 +8,28 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum NotificationDataKey {
 
-    BANK_NAME("bankName", true),
-    TERMINAL_TITLE("terminalTitle", true),
-    CHANNEL_TITLE("channelTitle", false),
-    PERSON("person", false),
-    PERSON_TITLE("personTitle", false),
-    LOGIN_TIME("loginTime", true),
-    TIME("time", true),
-    PASSWORD("password", false),
-    OTP_CODE("otpCode", false),
-    USER_NICKNAME("userNickname", false),
-    REASON("reason", false);
+    BANK_NAME("bankName", true, null),
+    TERMINAL_TITLE("terminalTitle", true, null),
+    CHANNEL_TITLE("channelTitle", false, null),
+    PERSON("person", false, null),
+    PERSON_TITLE("personTitle", false, null),
+    LOGIN_TIME("loginTime", true, null),
+    TIME("time", true, null),
+    PASSWORD("password", false, null),
+    OTP_CODE("otpCode", false, null),
+    USER_NICKNAME("userNickname", false, null),
+    BLOCKED_TIME("blockedTime", false, null),
+    MOBILE("mobile", false, null),
+    TRAILS("trials", false, null),
+    CODE("code", false, null),
+    HASH_CODE("hashCode", false, null),
+    REASON("reason", false, null),
+    AMOUNT("amount", true, Number.class),
+    RECEIVER("receiver", true, String.class);
 
     private final String code;
     private final boolean builtIn;
+    private final Class classType;
 
     public static NotificationDataKey findByCode(String code) throws NullPointerException {
         for (NotificationDataKey value : values()) {

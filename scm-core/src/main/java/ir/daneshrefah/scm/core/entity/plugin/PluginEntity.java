@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.entity.plugin;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
-import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
+import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;

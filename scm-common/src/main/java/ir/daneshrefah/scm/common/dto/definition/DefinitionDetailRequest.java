@@ -1,0 +1,20 @@
+package ir.daneshrefah.scm.common.dto.definition;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import ir.daneshrefah.scm.common.model.definition.DefinitionType;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class DefinitionDetailRequest{
+    private String id;
+    private JsonNode details;
+    @NotNull
+    private DefinitionType type;
+}

@@ -21,6 +21,7 @@ import java.util.Optional;
  * @version 1.0
  * @since 2024-01-17
  */
+@Deprecated
 public interface ServiceService extends
         ServiceProviderService,
         JavaServicesService,

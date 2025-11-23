@@ -44,4 +44,5 @@ public class MQConsumer {
             throw e;
         }
     }
+
 }

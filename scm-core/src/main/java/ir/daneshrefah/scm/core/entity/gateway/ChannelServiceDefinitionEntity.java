@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.core.entity.gateway;
 import ir.daneshrefah.scm.common.data.entity.AbstractAuditableEntity;
 import ir.daneshrefah.scm.common.data.entity.asset.ChannelServiceAccessEntity;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
-import ir.daneshrefah.scm.core.entity.definition.DefinitionEntity;
+import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,7 @@ public class MessageTemplateService {
         log.info("findMessageTemplateByCodeAndLocale() invoked for templateCode {} and locale {}",templateCode,locale);
         return findMessageTemplates()
                 .stream()
-                .filter(messageTemplate -> messageTemplate.getCode().equals(templateCode))
+                .filter(messageTemplate -> Objects.equals(messageTemplate.getCode(),templateCode))
                 .filter(messageTemplate -> messageTemplate.getLocale().equals(locale))
                 .findFirst()
                 .orElseThrow(() -> new NotificationTemplateNotFoundException(null, templateCode.getValue()));

@@ -20,6 +20,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.util.Objects;
 import java.util.Set;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLAIM_KEY_LOGIN_AUTH_METHOD;
@@ -60,16 +61,16 @@ public class AuthenticationResponseTokenGenerator {
         Assert.isAssignable(PostAuthenticationToken.class, tokenContext.getPrincipal().getClass());
         PostAuthenticationToken.AuthenticationStatus authenticationStatus = ((PostAuthenticationToken) tokenContext.getPrincipal()).getAuthenticationStatus();
         String tokenValue;
-        switch (authenticationStatus) {
-            case AUTHENTICATED -> tokenValue = generatedAccessToken.getTokenValue();
-            default ->
-                    tokenValue = generateClaimAccessToken(tokenContext.getPrincipal());//tokenContext.getPrincipal().getName();
+        if (Objects.requireNonNull(authenticationStatus) == PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED) {
+            tokenValue = generatedAccessToken.getTokenValue();
+        } else {
+            tokenValue = generateClaimAccessToken(tokenContext.getPrincipal());//tokenContext.getPrincipal().getName();
         }
         Assert.isAssignable(PostAuthenticationToken.class, tokenContext.getPrincipal().getClass());
-        OAuth2AccessToken accessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,
+
+        return new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,
                 tokenValue, generatedAccessToken.getIssuedAt(),
                 generatedAccessToken.getExpiresAt(), tokenContext.getAuthorizedScopes());
-        return accessToken;
     }
 
     private String generateClaimAccessToken(PostAuthenticationToken principal) {

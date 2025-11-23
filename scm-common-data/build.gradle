@@ -13,13 +13,14 @@ dependencies {
     compileOnly 'org.springframework:spring-context'
     compileOnly 'org.springframework.data:spring-data-commons'
     compileOnly 'org.springframework.data:spring-data-jpa'
+    implementation 'org.hibernate.orm:hibernate-core:6.4.8.Final'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     compileOnly 'jakarta.persistence:jakarta.persistence-api'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.apache.commons:commons-lang3'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    compileOnly project(':scm-common')
+    api project(':scm-common')
     compileOnly project(':scm-utils')
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'

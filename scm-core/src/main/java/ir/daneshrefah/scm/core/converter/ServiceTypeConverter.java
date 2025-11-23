@@ -13,6 +13,7 @@ import jakarta.persistence.Converter;
  * @since 2023-07-22
  */
 @Converter
+@Deprecated
 public class ServiceTypeConverter implements AttributeConverter<ServiceType, Integer> {
 
     @Override

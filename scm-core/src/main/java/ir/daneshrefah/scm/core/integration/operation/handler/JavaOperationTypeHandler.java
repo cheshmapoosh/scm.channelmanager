@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.OperationCode;
-import ir.daneshrefah.scm.common.exception.ScmException;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +17,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -90,7 +90,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
         final String basePackage = this.getClass().getPackage().getName().split("\\.")[0];
         Arrays.stream(targetMethod.getParameters())
                 .forEach(parameter -> {
-                    if (parameter.getType().getPackage().getName().startsWith(basePackage)) {
+                    if (Objects.nonNull(parameter.getType().getPackage()) && parameter.getType().getPackage().getName().startsWith(basePackage)) {
                         //REQUEST BODY
                         beanPath.append("${body}");
                     } else {
@@ -107,6 +107,7 @@ public class JavaOperationTypeHandler implements OperationTypeHandler {
     private Optional<Parameter> findRequestBodyParameter(Method targetMethod) {
         String projectBasePackageFirstPart = this.getClass().getPackage().getName().split("\\.")[0];
         return Arrays.stream(targetMethod.getParameters())
+                .filter(p -> Objects.nonNull(p.getType().getPackage()))
                 .filter(p -> p.getType().getPackage().getName().startsWith(projectBasePackageFirstPart))
                 .findFirst();
     }

@@ -15,8 +15,8 @@ import lombok.Data;
 @Builder
 public class PublicKeyResponse {
 
-    private String value;
     @JsonProperty("alg")
     private String algorithm;
+    private String value;
 
 }
