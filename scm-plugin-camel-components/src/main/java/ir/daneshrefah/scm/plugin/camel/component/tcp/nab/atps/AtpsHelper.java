@@ -142,9 +142,9 @@ public class AtpsHelper {
         return nodes;
     }
 
-    public static String enrichRequestBody(Object body) {
+    public static String enrichRequestBody(String command) {
         StringBuilder sb = new StringBuilder();
-        sb.append(fix("97", 2));
+        sb.append(fix(command, 2));
         sb.append(fix("05", 2));
         sb.append(fix(getNowAsPersianDateTime(), 14));
         sb.append(fix(nabProperties.getUsername(), 10));

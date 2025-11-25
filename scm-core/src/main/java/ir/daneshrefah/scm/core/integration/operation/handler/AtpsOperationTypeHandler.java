@@ -24,6 +24,13 @@ public class AtpsOperationTypeHandler implements OperationTypeHandler {
                 .findFirst()
                 .map(TcpConfigOperationDefinition.class::cast)
                 .orElseThrow(() -> new IllegalArgumentException("Any definition for tcp config not found"));
+        route.transform().language("groovy", """
+                def body = request.getBody(String.class);
+                    if(body == null){
+                        body = "";
+                    }
+                    return body;
+        """);
 
         String url = operation.getPath();
         if (StringUtils.isEmpty(url)) {
@@ -33,6 +40,13 @@ public class AtpsOperationTypeHandler implements OperationTypeHandler {
             throw new IllegalArgumentException("An empty url for tcp config. both operation.path and operationDefinition.url is empty");
         }
         StringBuilder urlAttachment = new StringBuilder();
+        String command = tcpConfigOperationDefinition.getCommand();
+        if (StringUtils.isEmpty(command)) {
+            log.error("An empty command for atps tcp config. operation id: {}", operation.getId());
+        } else {
+            urlAttachment.append("&command=").append(command);
+        }
+
 
         Integer connectTimeout = tcpConfigOperationDefinition.getConnectTimeout();
         if (connectTimeout != null) {

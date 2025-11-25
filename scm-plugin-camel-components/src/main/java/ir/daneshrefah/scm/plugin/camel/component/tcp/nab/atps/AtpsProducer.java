@@ -27,6 +27,7 @@ public class AtpsProducer extends DefaultProducer {
 
     private static final Charset CP1256 = Charset.forName("Cp1256");
     private static final String ATPS = "ATPS";
+    private String command;
     private final AtpsEndpoint atpsEndpoint;
 
     private Endpoint nettyEndpoint;
@@ -42,6 +43,7 @@ public class AtpsProducer extends DefaultProducer {
         super.doStart();
         String nettyUri = buildNettyUri();
         this.nettyEndpoint = getEndpoint().getCamelContext().getEndpoint(nettyUri);
+        command = atpsEndpoint.getCommand();
         this.nettyProducer = nettyEndpoint.createProducer();
         this.nettyProducer.start();
     }
@@ -111,7 +113,7 @@ public class AtpsProducer extends DefaultProducer {
     }
 
     private String enricherHeader(Object inBody) {
-        String headerPart = AtpsHelper.enrichRequestBody(inBody);
+        String headerPart = AtpsHelper.enrichRequestBody(command);
         String userPart = AtpsHelper.toString(inBody, CP1256);
         return headerPart + userPart;
     }

@@ -19,6 +19,10 @@ public class AtpsEndpoint extends DefaultEndpoint {
 
     // URI نتتی که زیر پوست استفاده می‌کنیم
     private final String nettyUri;
+    @Setter
+    @Getter
+    @UriParam( label = "common")
+    private String command = "";
 
     // گزینه‌ها (با @UriParam تا از application.yml هم ست شوند)
     @Setter

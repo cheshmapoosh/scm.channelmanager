@@ -124,6 +124,9 @@ public abstract class OperationDefinitionMapper {
             String url = JsonPathFinder.defaultAsText(jsonNode, "url");
             tcpConfigOperationDefinition.setUrl(url);
 
+            String command = JsonPathFinder.defaultAsText(jsonNode, "command");
+            tcpConfigOperationDefinition.setCommand(command);
+
             Integer connectTimeout = JsonPathFinder.defaultAsInteger(jsonNode, "connectTimeout");
             tcpConfigOperationDefinition.setConnectTimeout(connectTimeout);
 

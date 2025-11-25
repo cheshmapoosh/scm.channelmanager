@@ -83,6 +83,23 @@ public class OperationTemplateTransformer implements PluginHandler {
 
         TemplateEngineType templateEngineType = definition.getEngine();
 
+
+
+        if (templateEngineType == TemplateEngineType.GROOVY || templateEngineType == TemplateEngineType.DATA_SONNET) {
+
+            if (pluginDetail.getPhase() == PluginPhase.BEFORE) {
+                routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());
+            }
+            if (pluginDetail.getPhase() == PluginPhase.AFTER) {
+                routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());
+            }
+
+            routeDefinition.setProperty(Message.TEMPLATE_ENGINE,
+                    Builder.constant(TemplateEngineType.GROOVY));
+
+            return;
+        }
+
         TemplateVariableExtractor templateVariableExtractor = templateVariableExtractors.stream()
                 .filter(e -> Objects.equals(e.getTemplateEngineType(), templateEngineType))
                 .findFirst()
@@ -90,11 +107,13 @@ public class OperationTemplateTransformer implements PluginHandler {
         String templateText = definition.getDetails();
         Set<String> variables = templateVariableExtractor.extractVariables(templateText);
         routeDefinition.setProperty(Message.TEMPLATE_VARIABLES, Builder.constant(variables));
-
         TemplateEngine templateEngine = templateEngines.stream()
                 .filter(e -> Objects.equals(e.getTemplateEngineType(), templateEngineType))
                 .findFirst()
                 .orElseThrow();
+        if (templateEngine.getTemplateEngineType().equals(TemplateEngineType.GROOVY)) {
+            log.warn("Groovy template engine is not implemented yet.");
+        }
         routeDefinition.setProperty(Message.TEMPLATE_ENGINE, Builder.constant(templateEngine));
 
 
@@ -103,6 +122,11 @@ public class OperationTemplateTransformer implements PluginHandler {
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
         TemplateEngine templateEngine = exchange.getProperty(Message.TEMPLATE_ENGINE, TemplateEngine.class);
+        if(templateEngine==null){
+            log.warn("No template engine found in exchange, skipping template transformation.");
+            return;
+        }
+
         Definition definition = exchange.getProperty(Message.OPERATION_PHASE_DEFINITION, Definition.class);
         if (pluginDetail != null && pluginDetail.getPhase().equals(PluginPhase.BEFORE)) {
             Set<String> variables = exchange.getProperty(Message.TEMPLATE_VARIABLES, Set.class);

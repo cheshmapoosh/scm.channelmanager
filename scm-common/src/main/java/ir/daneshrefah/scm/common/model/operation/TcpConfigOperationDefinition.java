@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class TcpConfigOperationDefinition extends OperationDefinition {
     private String url;
+    private String command;
     private Integer connectTimeout;
     private Integer requestTimeout;
     private Boolean validateAck;
