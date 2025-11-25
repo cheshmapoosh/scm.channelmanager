@@ -111,12 +111,8 @@ public class OperationTemplateTransformer implements PluginHandler {
                 .filter(e -> Objects.equals(e.getTemplateEngineType(), templateEngineType))
                 .findFirst()
                 .orElseThrow();
-        if (templateEngine.getTemplateEngineType().equals(TemplateEngineType.GROOVY)) {
-            log.warn("Groovy template engine is not implemented yet.");
-        }
+
         routeDefinition.setProperty(Message.TEMPLATE_ENGINE, Builder.constant(templateEngine));
-
-
     }
 
     @Override
