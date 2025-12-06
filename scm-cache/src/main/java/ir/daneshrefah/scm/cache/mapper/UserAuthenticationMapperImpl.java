@@ -14,7 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -48,6 +50,7 @@ public class UserAuthenticationMapperImpl implements UserAuthenticationMapper {
     public UserAuthenticationTO mapUserAuthenticationTO(UserAuthentication userAuthentication) {
         UserAuthenticationTO authenticationTO = new UserAuthenticationTO();
         UserAuthentication.AuthenticationDetail details = userAuthentication.getDetails();
+        User principal = userAuthentication.getPrincipal();
         if (Objects.nonNull(details)) {
             if (Objects.nonNull(details.getExpiresAt())) {
                 authenticationTO.setExpiresAt(details.getExpiresAt().toEpochMilli());
@@ -59,10 +62,12 @@ public class UserAuthenticationMapperImpl implements UserAuthenticationMapper {
                 authenticationTO.setIssuedAt(details.getIssuedAt().toEpochMilli());
             }
             authenticationTO.setIssuer(details.getIssuer());
-            authenticationTO.setLoginAccessParameter(details.getLoginAccessParameter());
+            String accessParameter = principal.getAccessParameters().stream()
+                    .map(n -> ";" + n + ";")
+                    .collect(Collectors.joining(","));
+            authenticationTO.setLoginAccessParameter(accessParameter);
             authenticationTO.setSessionId(details.getSessionId());
         }
-        User principal = userAuthentication.getPrincipal();
         if (Objects.nonNull(principal)) {
             AuthenticationMethod loginAuthenticationMethod = principal.getLoginAuthenticationMethod();
             authenticationTO.setLoginAuthenticationMethod(Objects.nonNull(loginAuthenticationMethod) ? loginAuthenticationMethod.name() : null);
