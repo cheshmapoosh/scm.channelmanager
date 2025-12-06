@@ -51,7 +51,7 @@ scm:
     client:
       distributed: true
       config:
-        cluster-name: scm
+        cluster-name: dev3
         network-config:
           addresses:
             - '127.0.0.1:5701'
