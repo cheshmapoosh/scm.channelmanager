@@ -499,4 +499,16 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.trim(str);
     }
 
+    public static String fix(Object value, int length) {
+        if (value == null) {
+            return String.format("%-" + length + "s", "");
+        }
+
+        String str = value.toString().trim();
+        if (str.length() > length) {
+            str = str.substring(0, length);
+        }
+        return String.format("%-" + length + "s", str);
+    }
+
 }

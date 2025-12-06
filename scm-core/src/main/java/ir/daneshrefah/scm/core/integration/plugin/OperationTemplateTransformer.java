@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.Builder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.dataformat.BindyType;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -88,7 +90,9 @@ public class OperationTemplateTransformer implements PluginHandler {
         if (templateEngineType == TemplateEngineType.GROOVY || templateEngineType == TemplateEngineType.DATA_SONNET) {
 
             if (pluginDetail.getPhase() == PluginPhase.BEFORE) {
+                routeDefinition.unmarshal().json(JsonLibrary.Jackson);
                 routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());
+
             }
             if (pluginDetail.getPhase() == PluginPhase.AFTER) {
                 routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());

@@ -8,6 +8,7 @@ import io.netty.buffer.Unpooled;
 import ir.daneshrefah.scm.plugin.camel.config.NabProperties;
 import ir.daneshrefah.scm.utils.calendar.shamsi.impl.ShamsiDateTime;
 import ir.daneshrefah.scm.utils.date.DateUtils;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,15 +33,7 @@ public class AtpsHelper {
      * @return String of exact length (padded or trimmed)
      */
     public static String fix(Object value, int length) {
-        if (value == null) {
-            return String.format("%-" + length + "s", "");
-        }
-
-        String str = value.toString().trim();
-        if (str.length() > length) {
-            str = str.substring(0, length);
-        }
-        return String.format("%-" + length + "s", str);
+        return StringUtils.fix(value, length);
     }
 
     /**
