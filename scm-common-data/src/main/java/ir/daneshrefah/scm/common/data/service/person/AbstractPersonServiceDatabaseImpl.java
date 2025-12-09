@@ -127,7 +127,7 @@ public abstract class AbstractPersonServiceDatabaseImpl implements PersonService
     public Optional<GeneralPerson> findPerson(PersonType personType, String nationalId, String subOrg) {
         boolean isRealPerson = (Objects.nonNull(personType) && personType.equals(PersonType.REAL)) || ValidationUtils.checkIsValidNationalCode(nationalId);
         if (isRealPerson) {
-            return Optional.ofNullable(personMapper.toPerson(personRepository.findRealPersonByNationalCode(nationalId)));
+            return Optional.ofNullable(personMapper.toPerson(personRepository.findIndividualPersonByNationalCode(nationalId)));
         } else if (Objects.nonNull(subOrg) && !subOrg.isBlank() && StringUtils.notEquals("0", subOrg)) {
             return Optional.ofNullable(personMapper.toPerson(personRepository.findGeneralLegalPersonEntityByNationalIdAndSubOrganizationId(nationalId, subOrg)));
         } else {
