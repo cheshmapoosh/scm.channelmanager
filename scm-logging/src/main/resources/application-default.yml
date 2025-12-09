@@ -24,7 +24,7 @@ scm:
     logTraceConverter:
       enabled: true
       versionRequirement: '>=8.0.0'
-    chunkSize: 27128
+    chunkSize: 5600
     logSchedulerThreadPool:
        corePoolSize: 5
        maxPoolSize: 5

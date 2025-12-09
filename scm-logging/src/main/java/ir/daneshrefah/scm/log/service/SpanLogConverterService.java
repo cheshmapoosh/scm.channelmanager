@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class SpanLogConverterService {
 
     private final ObjectMapper objectMapper;
-    @Value("${scm.log.chunkSize:27128}")
+    @Value("${scm.log.chunkSize:5600}")
     private int chunkSize;
 
     public List<LogTraceEntity> mapToLogTraceEntity(LogMessage logMessage) throws Exception {
