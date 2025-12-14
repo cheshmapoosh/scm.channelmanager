@@ -31,7 +31,6 @@ public class DefinitionEntity extends AbstractAuditableEntity<String> {
     private TemplateEngineType engine;
     @Size(max = 2048)
     private String details;
-    @Enumerated(EnumType.STRING)
-    @Column(name = "DEFINITION_TYPE",length = 30)
+    @Transient
     private DefinitionType type;
 }
