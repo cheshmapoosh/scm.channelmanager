@@ -54,7 +54,9 @@ public class ResponseProxyAdviosrFilter implements Filter {
                     responseWrapper.resetBuffer();
                     responseWrapper.setContentType(responseProxy.getContentType());
                     responseWrapper.setStatus(responseProxy.getHttpStatusCode());
-                    responseWrapper.getWriter().write(objectMapper.writeValueAsString(responseProxy.getResponseBody()));
+                    String responseBodyJson = objectMapper.writeValueAsString(responseProxy.getResponseBody());
+                    log.info("response body: " + responseBodyJson);
+                    responseWrapper.getWriter().write(responseBodyJson);
                 }).onFailure(exception -> {
                     log.error(exception.getMessage(), exception);
                 }));
