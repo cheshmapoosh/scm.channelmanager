@@ -46,11 +46,21 @@ public class DefaultGrantAuthenticationConverter implements AuthenticationConver
                 .orElse(null);
         request.getParameter(Constants.CORRELATION_ID_HEADER);
         request.getParameter(Constants.UUID_HEADER);
-        return craetePreAuthentication(username, password, clientPrincipal, parameters, request);
+        return createPreAuthentication(username, password, clientPrincipal, parameters, request);
     }
 
-    private Authentication craetePreAuthentication(String username, String password, Authentication clientPrincipal, ParameterSearch parameters, HttpServletRequest request) {
-        String clientId = getClientId(clientPrincipal, parameters.getFirst(Constants.APP_VERSION_HEADER).orElse(null));
+    private Authentication createPreAuthentication(String username, String password, Authentication clientPrincipal, ParameterSearch parameters, HttpServletRequest request) {
+        String appVersion = getClientId(clientPrincipal, parameters.getFirst(Constants.APP_VERSION_HEADER).orElse(null));
+        String clientId = null;
+        if (StringUtils.startsWithIgnoreCase(appVersion, "MB")) {
+            clientId = "MB";
+        }
+        if (StringUtils.startsWithIgnoreCase(appVersion, "SA")) {
+            clientId = "SA";
+        }
+        if (clientId == null) {
+            clientId = "PWA";
+        }
         HashSet<String> scopes = geScopes(parameters);
         PreAuthenticationToken preAuthenticationToken = new PreAuthenticationToken(username, password,
                 AuthorizationGrantType.DEFAULT,
