@@ -149,7 +149,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
         return Optional
                 .ofNullable(request.getHeader(Constants.APP_VERSION_HEADER))
                 .stream()
-                .anyMatch(LEGACY_APP_VERSION::equalsIgnoreCase);
+                .anyMatch(s -> StringUtils.equalsIgnoreCase(s, LEGACY_APP_VERSION) || StringUtils.startsWithIgnoreCase(s, "MB"));
     }
 
     @Override

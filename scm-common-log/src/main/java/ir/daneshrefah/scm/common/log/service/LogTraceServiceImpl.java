@@ -39,9 +39,22 @@ public class LogTraceServiceImpl implements LogService {
         log.info(">>> LogTraceService successfully initialized");
     }
 
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveAll(List<LogTraceEntity> logTraces) {
-        logTraceRepository.saveAll(logTraces);
+        for (LogTraceEntity e : logTraces) {
+            int rowNo = e.getLogPrimaryKey().getRowNo();
+            String spanId = e.getLogPrimaryKey().getSpanId();
+            String traceId = e.getLogPrimaryKey().getTraceId();
+
+            Integer exists = logTraceRepository.exists(rowNo, spanId, traceId);
+
+            if (exists != null && exists == 1) {
+                logTraceRepository.update(e);
+            } else {
+                logTraceRepository.insert(e);
+            }
+        }
     }
 
     @Override

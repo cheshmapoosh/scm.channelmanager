@@ -1,0 +1,24 @@
+SPRING_CLOUD_CONFIG_URI: http://scm-config.scm.svc.cluster.local:8888/config
+SPRING_CLOUD_CONFIG_USERNAME: scm
+SPRING_CLOUD_CONFIG_PASSWORD: scm
+spring:
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: mb4pilot
+  cloud:
+    config:
+      username: ${SPRING_CLOUD_CONFIG_USERNAME}
+      password: ${SPRING_CLOUD_CONFIG_PASSWORD}
+      enabled: true
+      uri: ${SPRING_CLOUD_CONFIG_URI}
+      retry:
+        max-attempts: 5
+        max-interval: 3000
+      fail-fast: true
+
+scm:
+  otp:
+    rest-client:
+      base-url: ${SPRING_SECURITY_ISSUER_URI}
+      verify-logged-in-url: "/api/otp/verify-by-logged-in-user"
