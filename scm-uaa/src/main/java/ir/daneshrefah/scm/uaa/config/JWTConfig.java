@@ -17,6 +17,7 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -104,12 +105,13 @@ public class JWTConfig {
                 putJtiToCache(user, claims, context);
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
-                claims.claim(CLAIM_KEY_GRANT, principal.getDetails().getGrantType());
+                PreAuthenticationToken details = principal.getDetails();
+                claims.claim(CLAIM_KEY_GRANT, details.getGrantType());
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
                 claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
                         Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
                                 .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
-                Collection<GrantedAuthority> authorities = principal.getDetails().getAuthorities();
+                Collection<GrantedAuthority> authorities = details.getAuthorities();
                 claims.claim(CLAIM_KEY_AUTHORITIES, !authorities.isEmpty() ? authorities : principal.getAuthorities().toString());
                 String sessionKey = principal.getSessionId();
                 if (StringUtils.isNotEmpty(sessionKey)) {
@@ -140,8 +142,11 @@ public class JWTConfig {
                         break;
                 }
                 claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
-                if (StringUtils.isNotBlank(principal.getDetails().getActivatorTerminal())) {
-                    claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, principal.getDetails().getActivatorTerminal());
+                if (StringUtils.isNotBlank(details.getActivatorTerminal())) {
+                    claims.claim(CLAIM_KEY_ACTIVATOR_TERMINAL_CODE, details.getActivatorTerminal());
+                }
+                if (StringUtils.isNotEmpty(details.getAccessParameter())) {
+                    claims.claim(CLAIM_KEY_ACCESS_PARAMETER, details.getAccessParameter());
                 }
                 removeAudienceClaimForPwaToken(claims);
                 addTokenLifeTimeClaims(principal, claims);
