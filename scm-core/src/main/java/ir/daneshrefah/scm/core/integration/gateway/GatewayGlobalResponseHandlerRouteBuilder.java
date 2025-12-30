@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
 import ir.daneshrefah.scm.common.constant.Routes;
+import ir.daneshrefah.scm.common.model.FailResponse;
 import ir.daneshrefah.scm.common.model.ScmResponse;
+import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
@@ -23,11 +25,23 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                 .choice()
                 .when(exchange -> exchange.getProperty(Message.GATEWAY_CHANNEL_PROTOCOL) == ProtocolType.REST)
                 .process(exchange -> exchange.getIn().setBody(createScmResponse(exchange)))
+                .choice()
+                .when(exchange -> {
+                    ScmResponse response = (ScmResponse) (exchange.getIn().getBody());
+                    return response.getErrors() != null && !response.getErrors().isEmpty();
+                })
+                .process(exchange -> exchange.getIn().setBody(createScmFailResponse(exchange)))
+//                .otherwise()
+//                .process(exchange -> exchange.getIn().setBody(createScmSuccessResponse(exchange)))
+//                .end()
                 .marshal()
                 .json(JsonLibrary.Jackson)
-                .endChoice()
-                .otherwise()
-                .throwException(new IllegalStateException("Unsupported protocol type"))
+                .end()
+                .choice()
+                .when(exchangeProperty(Message.GATEWAY_CHANNEL_PROTOCOL)
+                        .isNotEqualTo(ProtocolType.REST))
+                .throwException(
+                        new IllegalStateException("Unsupported protocol type"))
                 .end();
 
     }
@@ -55,4 +69,38 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         return response;
     }
 
+    private FailResponse createScmFailResponse(Exchange exchange){
+
+        ScmResponse scmResponse = (ScmResponse)  exchange.getIn().getBody();
+        Error error = scmResponse.getErrors().get(0);
+        int code = extractCode(error.getErrorCode());
+
+        Integer httpStatus = HttpStatusMapper.toHttpStatus(error.getStatus());
+        if(httpStatus == null)
+            httpStatus = 500;
+        exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, httpStatus);
+
+        return FailResponse
+                .builder()
+                .status(500)
+                .code(code)
+                .title("error")
+                .detail(error.getMessageFa())
+                .error(error.getException().getMessage())
+                .message(error.getMessage())
+                .messageKey(error.getSource())
+                .build();
+    }
+
+    private static Integer extractCode(String errorCode) {
+        try {
+            return Integer.parseInt(errorCode.replace("SCM-", ""));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+//    private Object createScmSuccessResponse(Exchange exchange){
+//        return null;
+//    }
 }
