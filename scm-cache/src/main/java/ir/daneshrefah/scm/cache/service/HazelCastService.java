@@ -9,6 +9,8 @@ import java.util.Map;
 
 public interface HazelCastService {
 
+    void removeUser(String nickname, String terminalCode);
+
     List<String> getMapList();
 
     Object getMapData(String map);
@@ -34,5 +36,5 @@ public interface HazelCastService {
 
     UserAuthenticationTO putSession(UserAuthenticationTO userAuthentication);
     UserAuthenticationTO getSession(String nickname,String terminalCode);
-    UserAuthenticationTO removeSession(String nickname,String terminalCode);
+    void removeSession(String nickname,String terminalCode);
 }

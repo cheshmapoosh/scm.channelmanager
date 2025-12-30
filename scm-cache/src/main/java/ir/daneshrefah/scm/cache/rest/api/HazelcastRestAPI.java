@@ -85,10 +85,14 @@ public class HazelcastRestAPI {
         return ResponseEntity.ok(hazelCastService.removeFromCache(mapName, key));
     }
 
-    @DeleteMapping("/session/{user-nickname}/{terminal-code}")
-    public ResponseEntity<Object> removeSession(@PathVariable("user-nickname") String userNickname,
-                                                @PathVariable("terminal-code") String terminalCode) {
-        return ResponseEntity.ok(hazelCastService.removeSession(userNickname, terminalCode));
+    @DeleteMapping("/session/{userNickname}/{terminalCode}")
+    public ResponseEntity<Void> removeSession(
+            @PathVariable String userNickname,
+            @PathVariable String terminalCode) {
+
+        hazelCastService.removeSession(userNickname, terminalCode);
+        hazelCastService.removeUser(userNickname, terminalCode);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/create/{mapName}")

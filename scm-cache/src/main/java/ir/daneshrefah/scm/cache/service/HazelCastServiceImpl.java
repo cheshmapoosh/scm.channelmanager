@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class HazelCastServiceImpl implements HazelCastService {
 
     private static final String SESSION_CACHE_MAP = "session_cache";
+    private static final String USER_CACHE_NAME = "user_cache";
     private final HazelcastInstance hazelcastInstance;
     private final UserAuthenticationMapper userAuthenticationMapper;
 
@@ -110,8 +111,13 @@ public class HazelCastServiceImpl implements HazelCastService {
     }
 
     @Override
-    public UserAuthenticationTO removeSession(String nickname, String terminalCode) {
-        return userAuthenticationMapper.mapUserAuthenticationTO(String.valueOf(removeFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname,terminalCode))));
+    public void removeSession(String nickname, String terminalCode) {
+        removeFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname,terminalCode));
+    }
+
+    @Override
+    public void removeUser(String nickname, String terminalCode) {
+        removeFromCache(USER_CACHE_NAME, userAuthenticationMapper.generateKey(nickname,terminalCode));
     }
 
     @Override
