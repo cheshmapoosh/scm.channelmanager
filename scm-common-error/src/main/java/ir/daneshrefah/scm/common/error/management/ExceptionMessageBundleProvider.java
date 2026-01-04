@@ -47,6 +47,11 @@ public class ExceptionMessageBundleProvider {
         return getExceptionMessage(locale, key, parameters);
     }
 
+    public String getExceptionMessage(java.util.Locale locale, Throwable throwable, Map<String, String> parameters, String errorCode) {
+        String key = EXCEPTION_BUNDLE_DEFAULT_PREFIX + throwable.getClass().getName() + StringUtils.COLON + errorCode;
+        return getExceptionMessage(locale, key, parameters);
+    }
+
     public String getExceptionMessageClassPath(java.util.Locale locale, String exceptionPackagePath, Map<String, String> parameters) {
         String key = EXCEPTION_BUNDLE_DEFAULT_PREFIX + exceptionPackagePath;
         return getExceptionMessage(locale, key, parameters);

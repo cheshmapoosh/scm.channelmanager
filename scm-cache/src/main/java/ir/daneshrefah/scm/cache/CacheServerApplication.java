@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Description of the class or purpose of the file.
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.FilterType;
  */
 @SpringBootApplication
 @EnableCaching
+@EnableScheduling
 @ComponentScan(basePackages = {"ir.daneshrefah.scm.cache"},
         excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
 public class CacheServerApplication {

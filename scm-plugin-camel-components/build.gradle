@@ -26,6 +26,7 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.apache.camel.springboot:camel-spring-boot-starter-test'
+    compileOnly project(':scm-common')
 }
 
 tasks.named('test') {

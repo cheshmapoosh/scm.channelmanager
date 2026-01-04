@@ -1,8 +1,13 @@
 package ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -40,6 +45,10 @@ public final class AtpsResponseBodyDecoder extends ByteToMessageDecoder {
 
     /** Internal aggregator used only when terminatorBytes != null. */
     private ByteArrayOutputStream aggregate;
+
+    public AtpsResponseBodyDecoder() {
+        this(1024 * 1024, false, TERMINATOR_BYTES);
+    }
 
     public AtpsResponseBodyDecoder(int maxTotalBytes) {
         this(maxTotalBytes, false, TERMINATOR_BYTES);

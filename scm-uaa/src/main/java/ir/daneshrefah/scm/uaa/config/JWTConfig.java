@@ -148,6 +148,7 @@ public class JWTConfig {
                 if (StringUtils.isNotEmpty(details.getAccessParameter())) {
                     claims.claim(CLAIM_KEY_ACCESS_PARAMETER, details.getAccessParameter());
                 }
+                claims.claim(CLAIM_KEY_PERSON_BRANCh_CODE, user.getPerson().getBranchCode());
                 removeAudienceClaimForPwaToken(claims);
                 addTokenLifeTimeClaims(principal, claims);
             } else if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass())) {

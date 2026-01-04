@@ -60,5 +60,5 @@ dependencies {
     testImplementation 'org.apache.camel:camel-test-spring-junit5'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mockito:mockito-core'
-
+    api project(':scm-cache-client')
 }

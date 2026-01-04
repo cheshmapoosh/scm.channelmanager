@@ -24,16 +24,17 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         from(Routes.GLOBAL_RESPONSE_HANDLER)
                 .choice()
                 .when(exchange -> exchange.getProperty(Message.GATEWAY_CHANNEL_PROTOCOL) == ProtocolType.REST)
-                .process(exchange -> exchange.getIn().setBody(createScmResponse(exchange)))
+//                .process(exchange -> exchange.getIn().setBody(createScmResponse(exchange)))
                 .choice()
                 .when(exchange -> {
-                    ScmResponse response = (ScmResponse) (exchange.getIn().getBody());
-                    return response.getErrors() != null && !response.getErrors().isEmpty();
+                   return  exchange.getIn().getBody() instanceof ScmFault;
+//                    ScmResponse response = (ScmResponse) (exchange.getIn().getBody());
+//                    return response.getErrors() != null && !response.getErrors().isEmpty();
                 })
                 .process(exchange -> exchange.getIn().setBody(createScmFailResponse(exchange)))
-//                .otherwise()
-//                .process(exchange -> exchange.getIn().setBody(createScmSuccessResponse(exchange)))
-//                .end()
+                .otherwise()
+                .process(exchange -> exchange.getIn().setBody(createScmResponse(exchange)))
+                .end()
                 .marshal()
                 .json(JsonLibrary.Jackson)
                 .end()
@@ -71,7 +72,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
 
     private FailResponse createScmFailResponse(Exchange exchange){
 
-        ScmResponse scmResponse = (ScmResponse)  exchange.getIn().getBody();
+        ScmFault scmResponse = (ScmFault)  exchange.getIn().getBody();
         Error error = scmResponse.getErrors().get(0);
         int code = extractCode(error.getErrorCode());
 

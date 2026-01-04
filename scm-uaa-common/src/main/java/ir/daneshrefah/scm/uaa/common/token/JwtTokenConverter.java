@@ -131,6 +131,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 ((IndividualPerson) person).setNationalCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_NATIONAL_ID));
                 ((IndividualPerson) person).setFirstName(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_FIRST_NAME));
                 ((IndividualPerson) person).setLastName(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_LAST_NAME));
+                ((IndividualPerson) person).setBranchCode(jwt.getClaimAsString(Constants.CLAIM_KEY_PERSON_BRANCh_CODE));
                 break;
             case EMPLOYEE:
                 person = new EmployeePerson();

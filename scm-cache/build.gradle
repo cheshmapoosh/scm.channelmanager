@@ -37,4 +37,5 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     api 'com.bucket4j:bucket4j_jdk17-core'
     api 'com.bucket4j:bucket4j_jdk17-hazelcast'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }

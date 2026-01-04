@@ -108,4 +108,5 @@ public interface Constants {
     int CIF_PERSON_TYPE_GOVERNANCE = 1;
     int CIF_MARITAL_STATUS_MARRIED = 1;
     int CIF_MARITAL_STATUS_SINGLE = 0;
+    String CLAIM_KEY_PERSON_BRANCh_CODE = "pbc";
 }
