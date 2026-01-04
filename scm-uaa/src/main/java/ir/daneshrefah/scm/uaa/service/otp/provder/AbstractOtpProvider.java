@@ -120,6 +120,7 @@ public abstract class AbstractOtpProvider {
         String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getLength());
         ValidationUtils.checkBlankString(otpCode, OtpCodeGenerationException::new);
         otp = createOtp(otpKey, request, otpCode, requireDeliver);
+        log.info("Generated OTP Code: {}", otpCode);
         cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp, otp.getReason().getTimeToLiveMinutes());
         return otp;
     }

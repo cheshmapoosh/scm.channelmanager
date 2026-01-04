@@ -145,7 +145,7 @@ public class SecurityConfig {
         AuthenticationFailureHandler failureHandler = failureHandler();
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheTemplate, userService);
         http
-                .securityMatcher("/api/**", "/oauth2/**")
+                .securityMatcher("/api/**", "/oauth2/**","/logout")
                 .authenticationProvider(generalAuthenticationProvider)
                 .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
                 .authorizeHttpRequests((authorize) -> authorize
@@ -158,6 +158,7 @@ public class SecurityConfig {
                                 .requestMatchers("/assets/**").permitAll()
                                 .requestMatchers("/api/register").permitAll()
                                 .requestMatchers("/api/valid").permitAll()
+                                .requestMatchers("/api/client/version/checkAppVersion").permitAll()
                                 .requestMatchers("/api/access-token/get-first-password-token").permitAll()
                                 .anyRequest().authenticated()
                 )

@@ -23,7 +23,6 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -63,7 +62,7 @@ public class RegisterService {
             if (StringUtils.isEmpty(request.getClientVersion())) {
                 throw new MissingRequiredInputException("clientVersion");
             }
-            Optional<ClientVersion> clientVersion = client.getVersions().stream().filter(version -> request.getClientVersion().equals(version.getVersion())).findFirst();
+            Optional<ClientVersion> clientVersion = client.getVersions().stream().filter(version -> request.getClientVersion().equals(version.getAppVersion())).findFirst();
             if (clientVersion.isEmpty()) {
                 throw new InvalidInputException("clientVersion");
             }
@@ -124,7 +123,7 @@ public class RegisterService {
             if (StringUtils.isEmpty(request.getClientVersion())) {
                 throw new MissingRequiredInputException("clientVersion");
             }
-            Optional<ClientVersion> clientVersion = client.getVersions().stream().filter(version -> request.getClientVersion().equals(version.getVersion())).findFirst();
+            Optional<ClientVersion> clientVersion = client.getVersions().stream().filter(version -> request.getClientVersion().equals(version.getAppVersion())).findFirst();
             if (clientVersion.isEmpty()) {
                 throw new InvalidInputException("clientVersion");
             }

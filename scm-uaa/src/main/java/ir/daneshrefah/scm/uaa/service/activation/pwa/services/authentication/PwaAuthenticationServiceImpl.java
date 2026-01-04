@@ -149,7 +149,8 @@ public class PwaAuthenticationServiceImpl implements PwaAuthenticationService {
                     }
                     resp.setSecondAuthenticationMethod(user.getTransactionAuthenticationMethod());
                     resp.setLastChangePassword(DateUtils.ShamsiCalendarConvertor.convertToShamsiDateString(user.getLastEditDate(), "yyyy/MM/dd HH:MM"));
-                    resp.setWarnUserToChangePassword(checkUserChangePasswordWarn(user.getLastEditDate()));
+//                    resp.setWarnUserToChangePassword(checkUserChangePasswordWarn(user.getLastEditDate()));
+                    resp.setWarnUserToChangePassword( Boolean.FALSE.toString().toLowerCase());//todo for now disable password change warning
                     resp.setGrn(GRN_CLAIM_VALUE);
                 });
     }

@@ -202,7 +202,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         }
         String userClientSignature = preAuthenticationToken.getClientSignature();
         List<ClientVersion> clientVersions = clientService.findByNickname(registeredClient.getClientId()).orElseThrow().getVersions();
-        Optional<ClientVersion> clientVersion = clientVersions.stream().filter(version -> userClientVersion.equals(version.getVersion())).findFirst();
+        Optional<ClientVersion> clientVersion = clientVersions.stream().filter(version -> userClientVersion.equals(version.getAppVersion())).findFirst();
         if (clientVersion.isEmpty()) {
             throwError(preAuthenticationToken, new InvalidClientVersionException(userClientVersion));
         }

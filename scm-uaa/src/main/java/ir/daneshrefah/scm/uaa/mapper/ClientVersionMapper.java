@@ -15,7 +15,10 @@ public interface ClientVersionMapper {
 
 
     @Mapping(target = "clientId",expression = "java(getClientId(entity))")
+    @Mapping(target = "appVersion", source = "entity.version")
+    @Mapping(target = "url", constant = "https://newmob.rkbank.ir")
     ClientVersion toModel(ClientVersionEntity entity);
+    @Mapping(target = "version", source = "model.appVersion")
     ClientVersionEntity toEntity(ClientVersion model);
 
     default Long getClientId(ClientVersionEntity entity){

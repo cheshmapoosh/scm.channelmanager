@@ -15,10 +15,11 @@ import lombok.Setter;
 @Setter
 public class ClientVersion extends AbstractStringAuditableModel<Long> {
 
-    private String version;
+    private String appVersion;
     private boolean isForced;
     private String signature;
     private ClientVersionStatus status;
     private Long clientId;
+    private String url;
 
 }

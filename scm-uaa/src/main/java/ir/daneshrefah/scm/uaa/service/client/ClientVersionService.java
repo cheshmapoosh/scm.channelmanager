@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.service.client;
 
 import ir.daneshrefah.scm.common.exception.InvalidInputException;
 import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
+import ir.daneshrefah.scm.uaa.domain.client.ClientVersionStatus;
 import ir.daneshrefah.scm.uaa.mapper.ClientVersionMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientRepository;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.ClientVersionRepository;
@@ -69,7 +70,7 @@ public class ClientVersionService {
     public Optional<ClientVersion> getClientVersionByAppVersion(String appVersion) {
         return CLIENT_VERSIONS
                 .stream()
-                .filter(clientVersion -> Objects.equals(clientVersion.getVersion(), appVersion))
+                .filter(clientVersion -> Objects.equals(clientVersion.getAppVersion(), appVersion))
                 .findFirst();
     }
 
@@ -84,7 +85,7 @@ public class ClientVersionService {
 
     public ClientVersion update(ClientVersion clientVersion) {
         ClientVersionEntity clientVersionEntity = clientVersionRepository.findById(clientVersion.getId()).orElseThrow(() -> new InvalidInputException("id"));
-        clientVersionEntity.setVersion(clientVersion.getVersion());
+        clientVersionEntity.setVersion(clientVersion.getAppVersion());
         clientVersionEntity.setSignature(clientVersion.getSignature());
         clientVersionEntity.setStatus(clientVersion.getStatus());
         clientVersionEntity.setForced(clientVersion.isForced());
@@ -109,7 +110,7 @@ public class ClientVersionService {
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getId()) || request.getId().equals(version.getId()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getCreator()) || request.getCreator().isBlank() || version.getCreator().toLowerCase().contains(request.getCreator().toLowerCase()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getLastEditor()) || request.getLastEditor().isBlank() || version.getLastEditor().toLowerCase().contains(request.getLastEditor().toLowerCase()))
-                .filter(version -> Objects.isNull(request) || Objects.isNull(request.getVersion()) || version.getVersion().isBlank() || version.getVersion().toLowerCase().contains(request.getVersion().toLowerCase()))
+                .filter(version -> Objects.isNull(request) || Objects.isNull(request.getVersion()) || version.getAppVersion().isBlank() || version.getAppVersion().toLowerCase().contains(request.getVersion().toLowerCase()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getSignature()) || version.getSignature().isBlank() || version.getSignature().toLowerCase().contains(request.getSignature().toLowerCase()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getStatus()) || request.getStatus().equals(version.getStatus()))
                 .filter(version -> Objects.isNull(request) || Objects.isNull(request.getIsForced()) || request.getIsForced().equals(version.isForced()))
@@ -132,4 +133,20 @@ public class ClientVersionService {
                 .map(a -> Boolean.TRUE)
                 .orElse(false);
     }
+
+    public ClientVersion findClientVersionByAppVersionAndSignature(String appVersion, String signature) {
+        return getClientVersionByAppVersion(appVersion)
+                .filter(cv -> Objects.equals(cv.getSignature(), signature))
+                .map(clientVersionMapper::toEntity)
+                .map(clientVersionMapper::toModel)
+                .orElseGet(() -> {
+                    ClientVersion cv = new ClientVersion();
+                    cv.setClientId(0L);
+                    cv.setAppVersion(appVersion);
+                    cv.setSignature(signature);
+                    cv.setStatus(ClientVersionStatus.INVALID);
+                    return cv;
+                });
+    }
+
 }

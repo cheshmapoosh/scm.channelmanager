@@ -1,8 +1,6 @@
 package ir.daneshrefah.scm.uaa;
 
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.domain.client.*;
-import ir.daneshrefah.scm.uaa.service.client.ClientScopeService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 //import ir.daneshrefah.scm.uaa.service.client.ClientVersionService;
 import org.junit.jupiter.api.Test;
@@ -39,7 +37,7 @@ public class DeviceClientEntityServiceTest {
         client.setSessionTimeToLiveMinute(1000L);
 
         ClientVersion byId = new ClientVersion();
-        byId.setVersion("MB-3.3.7");
+        byId.setAppVersion("MB-3.3.7");
         byId.setForced(false);
         byId.setSignature("DF2A4EB3A644FE1F43DFBD9D818991B8262AD45982D5A9BD81A1D5CDB0EA0A0A132ADF9AC3097E07734942817A0A6CE32155F106C6D613999412A266B0A6B0A4-2825155330-4259616679");
         byId.setStatus(ClientVersionStatus.VALID);

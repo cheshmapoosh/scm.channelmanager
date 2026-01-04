@@ -30,7 +30,7 @@ public class ClientVersionController {
     public ResponseEntity<ClientVersion> createVersion(@RequestBody @Valid @NotNull VersionCreateRequest request) {
         ClientVersion clientVersion = new ClientVersion();
         clientVersion.setClientId(request.getClientId());
-        clientVersion.setVersion(request.getVersion());
+        clientVersion.setAppVersion(request.getVersion());
         clientVersion.setSignature(request.getSignature());
         clientVersion.setStatus(request.getStatus());
         clientVersion.setForced(request.isForced());
@@ -40,7 +40,7 @@ public class ClientVersionController {
     @PutMapping("/edit")
     public ResponseEntity<ClientVersion> editSVersion(@RequestBody @Valid @NotNull VersionEditRequest request) {
         ClientVersion clientVersion = new ClientVersion();
-        clientVersion.setVersion(request.getVersion());
+        clientVersion.setAppVersion(request.getVersion());
         clientVersion.setSignature(request.getSignature());
         clientVersion.setStatus(request.getStatus());
         clientVersion.setId(request.getId());
@@ -69,6 +69,12 @@ public class ClientVersionController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new PagedResponseData<>(request, clientVersionService.getClientVersionByClientId(Long.parseLong(request.getClientId()))));
+    }
+    @GetMapping("/checkAppVersion")
+    public ResponseEntity<ClientVersion> getClientVersionByAppVersion(@NotNull @RequestHeader String appVersion, @NotNull @RequestHeader String signature) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(clientVersionService.findClientVersionByAppVersionAndSignature(appVersion,signature));
     }
 
 }

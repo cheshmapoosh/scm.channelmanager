@@ -17,7 +17,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum OtpReason {
 
-    AUTHENTICATION                                  (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,1),
+    AUTHENTICATION                                  (2, 5,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,1),
     CHANGE_LOGIN_AUTHENTICATION_METHOD              (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,2),
     CHANGE_TRANSACTION_AUTHENTICATION_METHOD        (2, 4,OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1,3),
     ACTIVATION                                      (2, 4,OtpPattern.NUMERIC, NotificationTemplate.GENERAL, 1, 1,4),
