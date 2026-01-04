@@ -6,9 +6,3 @@ spring:
 
 open-banking:
   uri: "https://api.rb24.ir/connect/token"
-
-open-banking:
-  uri: "https://api.rb24.ir/connect/token"
-
-open-banking:
-  uri: "https://api.rb24.ir/connect/token"
