@@ -17,6 +17,7 @@ import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
