@@ -79,25 +79,19 @@ public class WebClientProducer extends DefaultProducer {
         HttpMethod httpMethod = HttpMethod.valueOf(method);
 
 
-        RestClient.RequestBodySpec requestSpec = restClient.method(httpMethod).uri(uri);
-
-
-        headers.entrySet().stream()
-                .filter(entry -> {
-                    String key = entry.getKey();
-                    return !StringUtils.containsIgnoreCase(key, "camelHttp") &&
-                            !StringUtils.containsIgnoreCase(key, "camelServlet") &&
-                            !StringUtils.equalsIgnoreCase(key, "host") &&
-                            entry.getValue() != null;
-                })
-                .forEach(entry -> requestSpec.header(entry.getKey(), entry.getValue().toString()));
-
-
         ResponseEntity<String> entity;
         if (Objects.equals(HttpMethod.DELETE, httpMethod)) {
-            entity = requestSpec.retrieve().toEntity(String.class);
+            entity = restClient.delete()
+                    .uri(uri)
+                    .headers(getHttpHeadersConsumer(headers))
+                    .retrieve()
+                    .toEntity(String.class);
         } else if (Objects.equals(HttpMethod.GET, httpMethod)) {
-            entity = requestSpec.retrieve().toEntity(String.class);
+            entity = restClient.get()
+                    .uri(uri)
+                    .headers(getHttpHeadersConsumer(headers))
+                    .retrieve()
+                    .toEntity(String.class);
         } else {
             entity = restClient.post()
                     .uri(uri)
