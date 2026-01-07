@@ -48,6 +48,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_PERSON_TYPE_CLIENT;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
@@ -112,7 +113,10 @@ public class JWTConfig {
                         Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
                                 .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
                 Collection<GrantedAuthority> authorities = details.getAuthorities();
-                claims.claim(CLAIM_KEY_AUTHORITIES, !authorities.isEmpty() ? authorities : principal.getAuthorities().toString());
+                List<String> authorityNames =
+                        resolveAuthorityNames(authorities, principal.getAuthorities());
+
+                claims.claim(CLAIM_KEY_AUTHORITIES, authorityNames);
                 String sessionKey = principal.getSessionId();
                 if (StringUtils.isNotEmpty(sessionKey)) {
                     claims.claim(CLAIM_KEY_SESSION, sessionKey);
@@ -163,7 +167,7 @@ public class JWTConfig {
                 claims.claim(CLAIM_KEY_PERSON_TITLE, ((GeneralLegalPerson) user.getPerson()).getTitleEnglish());
                 List<String> authorities = clientService.loadClientAuthorities(id).orElse(new ArrayList<>());
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
-                claims.claim(CLAIM_KEY_AUTHORITIES, authorities.toString());
+                claims.claim(CLAIM_KEY_AUTHORITIES, authorities);
                 addTokenLifeTimeClaims(principal, claims);
             } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                        context.getPrincipal().isAuthenticated()) {
@@ -176,7 +180,10 @@ public class JWTConfig {
 //                claims.claim(CLAIM_KEY_TRANSACTION_AUTH_METHOD,
 //                        Optional.ofNullable(user.getTransactionAuthenticationMethod().getCode())
 //                                .orElse(ir.daneshrefah.scm.utils.string.StringUtils.EMPTY));
-                claims.claim(CLAIM_KEY_AUTHORITIES, authenticationToken.getAuthorities().toString());
+                List<String> authorities = authenticationToken.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toList());
+                claims.claim(CLAIM_KEY_AUTHORITIES, authorities);
 //                String sessionKey = authenticationToken.getSessionId();
 //                if (StringUtils.isNotEmpty(sessionKey)) {
 //                    claims.claim(CLAIM_KEY_SESSION, sessionKey);
@@ -305,7 +312,19 @@ public class JWTConfig {
             claims.claim(CLAIM_KEY_MAX_IDLE_TIME, timeToLiveMinutes);
         }
     }
+    public  List<String> resolveAuthorityNames(
+            Collection<? extends GrantedAuthority> authorities,
+            Collection<? extends GrantedAuthority> principalAuthorities
+    ) {
+        Collection<? extends GrantedAuthority> effectiveAuthorities =
+                authorities != null && !authorities.isEmpty()
+                        ? authorities
+                        : Objects.requireNonNullElse(principalAuthorities, List.of());
 
+        return effectiveAuthorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+    }
 //    @Bean
 //    public BCryptPasswordEncoder passwordEncoder() {
 //        return new BCryptPasswordEncoder();
