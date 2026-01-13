@@ -135,14 +135,14 @@ public class AtpsHelper {
         return nodes;
     }
 
-    public static String enrichRequestBody(String command) {
+    public static String enrichRequestBody(String command, String id) {
         StringBuilder sb = new StringBuilder();
         sb.append(fix(command, 2));
-        sb.append(fix("05", 2));
+        sb.append(fix("99", 2));
         sb.append(fix(getNowAsPersianDateTime(), 14));
         sb.append(fix(nabProperties.getUsername(), 10));
         sb.append(fix(nabProperties.getPassword(), 10));
-        sb.append(fix("123456987", 16));
+        sb.append(fix(id, 16));
         return sb.toString();
     }
     private static String getNowAsPersianDateTime() {
@@ -153,7 +153,8 @@ public class AtpsHelper {
     public static String toString(Object inBody, Charset charset) {
         if (inBody == null) return "";
         if (inBody instanceof String s) {
-            return s.trim();
+            return s;
+//            return s.trim();
         } else if (inBody instanceof byte[] bytes) {
             return new String(bytes, charset);
         } else if (inBody instanceof ByteBuf byteBuf) {

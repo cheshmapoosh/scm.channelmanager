@@ -58,4 +58,4 @@ springdoc:
     enabled: true
   packages-to-scan: ir.daneshrefah.scm.cache.rest
 server:
-  port: 8080
+  port: 8086

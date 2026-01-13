@@ -1,12 +1,13 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
-import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.common.token.OpenBankingToken;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
@@ -35,6 +36,10 @@ public class OperationRouteBuilder extends RouteBuilder {
     public void configure() {
         List<Operation> operations = operationService.getAllOperations();
         operations.stream().filter(Operation::getActive).forEach(operation -> {
+            if(operation.getName().trim().equals("PROCUREMENT_CORPORATE_BY_NATIONAL")){
+                System.out.println("");
+            }
+
             String routeId = "route-" + operation.getName();
             String fromUri = resolveFromUri(operation);
             RouteDefinition route = from(fromUri)
@@ -43,6 +48,13 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             defineExceptionHandler(route);
             applyMetrics(route, operation);
+
+            route.process(exchange -> {
+                if(operation.getName().trim().equals("XFER_COMMISSION")){
+                    exchange.getIn().setHeader("commissionType", "31");
+                }
+            });
+
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
             buildTarget(route, operation);

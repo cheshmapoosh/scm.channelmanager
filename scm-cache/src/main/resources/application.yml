@@ -3,3 +3,6 @@ spring:
     active: default
   application:
     name: scm-cache
+
+open-banking:
+  uri: "https://api.rb24.ir/connect/token"

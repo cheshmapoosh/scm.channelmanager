@@ -81,9 +81,6 @@ public class RestProtocolHandler implements ProtocolHandler {
 
         private List<RouteDefinition> createRestRouteDefinition(Service service, RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
             String serviceCode = service.getCode().trim();
-            if(service.getName().trim().equals("کارپرداز من")){
-                System.out.println("");
-            }
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             RestChannelServiceDefinition definition = multiRouteDetail.getDefinition();
             if (definition != null) {
@@ -132,9 +129,6 @@ public class RestProtocolHandler implements ProtocolHandler {
         }
 
         private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {
-            if (serviceCode.trim().equals("karpardaz")) {
-                System.out.println("inja");
-            }
             log.info("createDefaultUri of service : " + serviceCode);
             return new URIBuilder()
                     .setScheme("rest:post")

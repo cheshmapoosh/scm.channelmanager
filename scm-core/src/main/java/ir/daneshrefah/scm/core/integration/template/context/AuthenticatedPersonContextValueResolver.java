@@ -38,6 +38,7 @@ public class AuthenticatedPersonContextValueResolver implements ContextValueReso
             case "title" -> person.getTitle();
             case "type" -> person.getPersonType();
             case "id" -> person.getId();
+            case "branchCode" -> person.getBranchCode();
             case "suborg" -> getSubOrganizationId(person);
             default -> throw new IllegalStateException("Unexpected value: " + key);
         };

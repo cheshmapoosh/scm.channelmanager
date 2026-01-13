@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.plugin.camel.component.tcp.nab.atps;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -9,16 +10,20 @@ import org.apache.camel.Producer;
 import org.apache.camel.component.netty.NettyConstants;
 import org.apache.camel.support.DefaultMessage;
 import org.apache.camel.support.DefaultProducer;
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Producer for handling ATPS protocol messages in a Camel route.
  */
+@Slf4j
 public class AtpsProducer extends DefaultProducer {
     Logger LOG = Logger.getLogger(AtpsProducer.class.getName());
     public static final String SERVICE_TIMEOUT = "SERVICE_TIMEOUT";
@@ -50,7 +55,7 @@ public class AtpsProducer extends DefaultProducer {
 
     private String buildNettyUri() {
         return String.format("%s?sync=true" +
-                        "&reuseChannel=true" +
+                        "&reuseChannel=false" +
                         "&disconnect=false" +
                         "&allowDefaultCodec=false" +
                         "&decoders=#atpsResponseBodyDecoder" +
@@ -113,9 +118,18 @@ public class AtpsProducer extends DefaultProducer {
     }
 
     private String enricherHeader(Object inBody) {
-        String headerPart = AtpsHelper.enrichRequestBody(command);
+//        Object inBody = exchange.getIn().getBody();
+//        String exchangeId = exchange.getExchangeId().split("-")[0];
+        String headerPart = AtpsHelper.enrichRequestBody(command, generateUniqueId());
         String userPart = AtpsHelper.toString(inBody, CP1256);
         return headerPart + userPart;
+    }
+
+    private String generateUniqueId(){
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 16);
     }
 
     private ByteBuf preparePayload(Object inBody) {
@@ -166,11 +180,22 @@ public class AtpsProducer extends DefaultProducer {
 
         Object parsedResponse = parseResponse(responseBytes);
         responseMessage.setBody(parsedResponse);
-
+        LOG.log(Level.INFO, "[ATPS] Received response: " + parsedResponse);
 
         exchange.setMessage(responseMessage);
 
         exchange.getMessage().setHeader(RECEIVED_MESSAGE_FROM_CORE_TIME, new Date());
+
+        exchange.setProperty("actionCode", resolveActionCode(parsedResponse.toString()));
+    }
+
+    private String resolveActionCode(String response) {
+        if (response.isEmpty()) {
+            LOG.log(java.util.logging.Level.INFO, "Received nab message is empty, so there is not any action code.");
+        }
+        String actionCode = response.substring(0, 5);
+        actionCode = actionCode.replace(" ", "0");
+        return actionCode;
     }
 
     /**

@@ -15,7 +15,8 @@ dependencies {
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter'
     implementation 'org.apache.camel.springboot:camel-netty-starter'
 
-    implementation 'org.apache.httpcomponents:httpclient'
+//    implementation 'org.apache.httpcomponents:httpclient'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'org.apache.commons:commons-text'
     implementation 'org.apache.camel:camel-groovy:4.14.2'
     implementation 'org.apache.groovy:groovy-json:4.0.29'
@@ -26,6 +27,7 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.apache.camel.springboot:camel-spring-boot-starter-test'
+    compileOnly project(':scm-common')
 }
 
 tasks.named('test') {
