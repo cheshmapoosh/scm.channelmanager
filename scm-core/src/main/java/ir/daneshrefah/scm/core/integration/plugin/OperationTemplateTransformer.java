@@ -19,6 +19,7 @@ import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
 import ir.daneshrefah.scm.common.model.template.TemplateEngineType;
+import ir.daneshrefah.scm.core.config.TransformerConfigProperties;
 import ir.daneshrefah.scm.core.integration.template.context.TemplateContextBuilder;
 import ir.daneshrefah.scm.core.integration.template.engine.TemplateEngine;
 import ir.daneshrefah.scm.core.integration.template.extractor.TemplateVariableExtractor;
@@ -29,13 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.Builder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.dataformat.BindyType;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +54,7 @@ public class OperationTemplateTransformer implements PluginHandler {
     private final List<TemplateVariableExtractor> templateVariableExtractors;
     private final TemplateContextBuilder templateContextBuilder;
     private final Map<String, StatusHandler> statusHandlers;
-
+    private final TransformerConfigProperties transformerProps;
 
     @Override
     public PluginType getType() {
@@ -95,11 +98,12 @@ public class OperationTemplateTransformer implements PluginHandler {
 
             if (pluginDetail.getPhase() == PluginPhase.BEFORE) {
                 routeDefinition.unmarshal().json(JsonLibrary.Jackson);
-                routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());
-
+                String transformerBefore = loadScript(definition.getDetails());
+                routeDefinition.transform().language(templateEngineType.getType(), transformerBefore);
             }
             if (pluginDetail.getPhase() == PluginPhase.AFTER) {
-                routeDefinition.transform().language(templateEngineType.getType(),definition.getDetails());
+                String transformerAfter = loadScript(definition.getDetails());
+                routeDefinition.transform().language(templateEngineType.getType(),transformerAfter);
             }
 
             routeDefinition.setProperty(Message.TEMPLATE_ENGINE,
@@ -122,6 +126,46 @@ public class OperationTemplateTransformer implements PluginHandler {
 
         routeDefinition.setProperty(Message.TEMPLATE_ENGINE, Builder.constant(templateEngine));
     }
+
+        private String loadScript(String name) {
+            try {
+
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("DB value is empty");
+                }
+
+                String path;
+
+                if (name.trim().startsWith("{")) {
+                    JsonNode root = objectMapper.readTree(name);
+
+                    JsonNode pathNode = root.get("path");
+                    if (pathNode == null || pathNode.isNull()) {
+                        throw new IllegalStateException("JSON does not contain 'path'");
+                    }
+
+                    path = pathNode.asText();
+                } else {
+                    return name;
+                }
+                String logicalPath =
+                        transformerProps.getDir() +  path;
+
+                ClassPathResource resource =
+                        new ClassPathResource(logicalPath);
+
+                return StreamUtils.copyToString(
+                        resource.getInputStream(),
+                        StandardCharsets.UTF_8
+                );
+
+            } catch (Exception e) {
+                throw new IllegalStateException(
+                        "Cannot load groovy transformer from classpath",
+                        e
+                );
+            }
+        }
 
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {

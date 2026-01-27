@@ -1,6 +1,6 @@
 SCM_APPLICATION_NAME: scm-mb
 scm:
-  app-name: scm-mb
+  app-name: scm-web
   channels: MB4TEST
   logging:
     datasource:
@@ -66,7 +66,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.167.6.225:8000
+    issuer-uri: http://10.10.4.125:8000
   cache:
     client:
       distributed: true
@@ -74,7 +74,7 @@ scm:
         clusterName: dev3
         network-config:
           addresses:
-            - '10.167.6.225:5701'
+            - '10.10.4.125:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
@@ -84,7 +84,7 @@ scm:
       enabled: true
       auth-header-name: "authorization"
       auth-prefix: "Bearer "
-      base-url: "http://localhost:8000"
+      base-url: "http://10.10.4.125:8000"
       verify-logged-in-url: "/api/otp/verify-by-logged-in-user"
   membership-access:
     default-services:
@@ -104,7 +104,8 @@ scm:
       username:
       password:
       topic: SUA/LOGOUT
-
+  transformers:
+    dir: /transformers
 server:
   servlet:
     context-path: /
