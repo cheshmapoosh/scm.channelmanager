@@ -69,7 +69,7 @@ public class OperationTemplateTransformer implements PluginHandler {
             throw new IllegalArgumentException("No service operation found in exchange");
         }
 
-        if(operation.getName().trim().equals("PROCUREMENT_CORPORATE_BY_NATIONAL")){
+        if(operation.getName().trim().equals("SCV_CAR_FINES_INQ_DETAIL")){
             System.out.println("");
         }
         OperationDefinition operationDefinition = null;
