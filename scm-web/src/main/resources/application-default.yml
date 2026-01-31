@@ -1,6 +1,6 @@
 SCM_APPLICATION_NAME: scm-mb
 scm:
-  app-name: scm-web
+  app-name: scm-mb
   channels: MB4TEST
   logging:
     datasource:

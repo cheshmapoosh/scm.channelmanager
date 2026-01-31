@@ -75,6 +75,7 @@ public class PwaActivationServiceImpl implements PwaActivationService {
             return new GeneralPwaOauthException(CLIENT_NOT_FOUND);
         });
         UserActivation userActivation = activationService.save(request);
+        System.out.println("user activation code with phone number( " +userActivation.getPhoneNumber() +" ) activation code ->"+userActivation.getActivationCode());
         pwaNotificationCenter.sendActivationOtp(user, request, userActivation);
         pwaUserRegisterService.saveRegistry(request, AuthStatus.OTP_SENT);
         return responseMapper.getMessage(PwaOauthMessage.CLIENT_REGISTRATION_SENT);
