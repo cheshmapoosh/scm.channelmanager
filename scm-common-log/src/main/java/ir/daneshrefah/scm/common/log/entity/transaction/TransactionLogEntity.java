@@ -13,8 +13,8 @@ import java.util.Date;
 public class TransactionLogEntity {
 
     @Id
-    @Column(name = "TRANSACTION_LOG_ID")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "TRANSACTION_LOG_ID",    nullable = false,    updatable = false,    insertable = false,    precision = 22)
     private Long transactionLogId;
 
     @Column(name = "ARCHIVE_NO")

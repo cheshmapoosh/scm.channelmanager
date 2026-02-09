@@ -31,4 +31,16 @@ public class LogConditions {
     }
 
 
+
+
+    public static class MessageLogCondition implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            String datasourceStatus = context.getEnvironment().getProperty("scm.datasource.messageLog.enabled");
+            String converterStatus = context.getEnvironment().getProperty("scm.log.messageLogConverter.enabled");
+            return "true".equalsIgnoreCase(datasourceStatus) && "true".equalsIgnoreCase(converterStatus);
+        }
+    }
+
+
 }

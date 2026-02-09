@@ -24,22 +24,22 @@ import java.util.Map;
 @AutoConfiguration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = "ir.daneshrefah.scm.common.log.repository.transaction",
-        entityManagerFactoryRef = "transactionLogEntityManagerFactory",
-        transactionManagerRef = "transactionLogTransactionManager"
+        basePackages = "ir.daneshrefah.scm.common.log.repository.message",
+        entityManagerFactoryRef = "messageLogEntityManagerFactory",
+        transactionManagerRef = "messageLogTransactionManager"
 )
-@Conditional(LogConditions.TransactionLogTraceCondition.class)
+@Conditional(LogConditions.MessageLogCondition.class)
 @Slf4j
-public class TransactionLogDataSourceConfig {
+public class MessageLogDataSourceConfig {
 
     @PostConstruct
     public void init() {
-        log.info(">>> TransactionLogDataSourceConfig successfully initialized");
+        log.info(">>> MessageLogDataSourceConfig successfully initialized");
     }
 
-    @Bean(name = "transactionLogDataSource")
-    public DataSource transactionLogDataSource(LogApplication logApplication) {
-        DatasourceProperties datasourceProperties = logApplication.getDatasource().getTransactionLog();
+    @Bean(name = "messageLogDataSource")
+    public DataSource messageLogDataSource(LogApplication logApplication) {
+        DatasourceProperties datasourceProperties = logApplication.getDatasource().getMessageLog();
         HikariDataSource dataSource = DataSourceBuilder.create(this.getClass().getClassLoader())
                 .type(HikariDataSource.class)
                 .url(datasourceProperties.getUrl())
@@ -52,12 +52,12 @@ public class TransactionLogDataSourceConfig {
         return dataSource;
     }
 
-    @Bean(name = "transactionLogEntityManagerFactory")
+    @Bean(name = "messageLogEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean transactionLogEntityManagerFactory(
-            @Qualifier("transactionLogDataSource") DataSource dataSource) {
+            @Qualifier("messageLogDataSource") DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("ir.daneshrefah.scm.common.log.entity.transaction");
+        em.setPackagesToScan("ir.daneshrefah.scm.common.log.entity.message");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Map<String, Object> properties = new HashMap<>();
         properties.put("hibernate.dialect", "org.hibernate.dialect.DB2Dialect");
@@ -65,9 +65,9 @@ public class TransactionLogDataSourceConfig {
         return em;
     }
 
-    @Bean(name = "transactionLogTransactionManager")
+    @Bean(name = "messageLogTransactionManager")
     public PlatformTransactionManager transactionLogTransactionManager(
-            @Qualifier("transactionLogEntityManagerFactory") EntityManagerFactory emf) {
+            @Qualifier("messageLogEntityManagerFactory") EntityManagerFactory emf) {
         return new JpaTransactionManager(emf);
     }
 }

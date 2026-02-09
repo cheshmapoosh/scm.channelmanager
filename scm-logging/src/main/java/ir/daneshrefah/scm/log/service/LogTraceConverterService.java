@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.log.configuration.LogConditions;
 import ir.daneshrefah.scm.common.log.entity.logging.LogTraceEntity;
 import ir.daneshrefah.scm.common.log.service.LogService;
 import ir.daneshrefah.scm.log.model.LogMessage;
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Conditional(LogConditions.LogTraceCondition.class)
 @Slf4j
 public class LogTraceConverterService implements ConverterService {
@@ -42,7 +42,7 @@ public class LogTraceConverterService implements ConverterService {
     public boolean supports(LogMessage logMessage) {
         try {
             String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
-            return versionRequirement.isSatisfiedBy(version);
+            return   StringUtils.isEmpty(logMessage.getPayload().getAttributes().get("scm-source"))  && versionRequirement.isSatisfiedBy(version);
         }catch (Exception ignored) {
             //TODO
             return true;

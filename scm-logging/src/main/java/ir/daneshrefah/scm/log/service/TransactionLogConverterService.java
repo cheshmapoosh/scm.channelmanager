@@ -1,10 +1,13 @@
 package ir.daneshrefah.scm.log.service;
 
 import com.vdurmont.semver4j.Requirement;
+import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.log.configuration.LogConditions;
+import ir.daneshrefah.scm.common.log.entity.message.LogStatus;
 import ir.daneshrefah.scm.common.log.entity.transaction.TransactionLogEntity;
 import ir.daneshrefah.scm.common.log.service.TransactionLogService;
+import ir.daneshrefah.scm.log.model.Log;
 import ir.daneshrefah.scm.log.model.LogMessage;
 import ir.daneshrefah.scm.log.model.SpanModel;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
@@ -19,11 +22,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 
 @Slf4j
 @Service
@@ -50,7 +57,7 @@ public class TransactionLogConverterService implements ConverterService {
     @Override
     public boolean supports(LogMessage logMessage) {
         String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
-        return versionRequirement.isSatisfiedBy(version);
+        return   StringUtils.isNotBlank(logMessage.getPayload().getAttributes().get("scm-source")) || versionRequirement.isSatisfiedBy(version);
     }
 
     @PostConstruct
@@ -70,13 +77,60 @@ public class TransactionLogConverterService implements ConverterService {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
         List<TransactionLogEntity> entities = new ArrayList<>();
-        entities.add(buildTransactionLogEntity(spanModel, true));
-        String responseStr = attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName());
-        if (StringUtils.isNotBlank(responseStr) && Integer.valueOf(responseStr).equals(TRANSACTION_TYPE_RESPONSE)) {
-            entities.add(buildTransactionLogEntity(spanModel, false));
+        if(StringUtils.isEmpty(attributes.get("scm-source"))) {
+            entities.add(buildTransactionLogEntity(spanModel, true));
+            String responseStr = attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName());
+            if (StringUtils.isNotBlank(responseStr) && Integer.valueOf(responseStr).equals(TRANSACTION_TYPE_RESPONSE)) {
+                entities.add(buildTransactionLogEntity(spanModel, false));
+            }
+        } else if (StringUtils.isNotBlank(attributes.get("scm-source"))) {
+                entities.add(buildScmUaaTransactionLogEntity(spanModel,true));
+            String responseStr = attributes.get("responseBody");
+            if (StringUtils.isNotBlank(responseStr)) {
+                entities.add(buildScmUaaTransactionLogEntity(spanModel,false));
+            }
+
         }
         return entities;
     }
+
+    public TransactionLogEntity buildScmUaaTransactionLogEntity(SpanModel spanModel, Boolean isRequest) {
+        Map<String, String> attributes = spanModel.getAttributes();
+        TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
+
+        if (isRequest) {
+            transactionLogEntity.setTransactionType(1);
+            transactionLogEntity.setPayload(attributes.get( "requestBody"));
+            transactionLogEntity.setTransactionStateId(7);
+        } else {
+            transactionLogEntity.setDocNo(attributes.get(LogAttribute.DOC_NO.getAttributeName()));
+            transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
+            String stCode =attributes.get("responseStatus");
+            String  resultStCode = LogStatus.RESPONSE_FROM_CHANNEL.name().equals(stCode) ? "0" : "100";
+            transactionLogEntity.setStatusCode(resultStCode);
+            transactionLogEntity.setTransactionType(2);
+            transactionLogEntity.setPayload(attributes.get("responseBody"));
+            transactionLogEntity.setTransactionStateId(8);
+        }
+        //transactionLogEntity.setServerException(getExceptionClassName(attributes));
+        LocalDateTime ldt = LocalDateTime.parse(required(attributes,"transactionDate"));
+        Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        Date logTime = Date.from(instant);
+        transactionLogEntity.setArchiveNo(ArchiveUtils.calculateTenDaysArchiveNo(logTime));
+        transactionLogEntity.setEbServiceId(34);
+        String channelCode = attributes.get("clientType");
+        if("PWA".equals(channelCode)){
+            channelCode = TerminalType.MB.name();
+        }
+        transactionLogEntity.setChannelId(TerminalType.findByTerminalCode(channelCode).getLegacyTerminalId().intValue());
+        transactionLogEntity.setUsername(attributes.get("nickName"));
+        transactionLogEntity.setMessageSequenceId(attributes.get("correlationId"));
+        transactionLogEntity.setLogTime(logTime);
+        transactionLogEntity.setClientDate(getClientTime(attributes));
+        transactionLogEntity.setClientIPAddress(attributes.get("ip"));
+        return transactionLogEntity;
+    }
+
 
     public TransactionLogEntity buildTransactionLogEntity(SpanModel spanModel, Boolean isRequest) {
         Map<String, String> attributes = spanModel.getAttributes();
@@ -228,5 +282,13 @@ public class TransactionLogConverterService implements ConverterService {
             exceptionClassName = exceptionClassName.substring(exceptionClassName.length() - maxLength);
         }
         return exceptionClassName;
+    }
+
+    private static String required(Map<String, String> attrs, String key) {
+        String value = attrs.get(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(key + " is required");
+        }
+        return value;
     }
 }

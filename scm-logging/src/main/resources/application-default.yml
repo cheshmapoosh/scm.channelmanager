@@ -24,6 +24,9 @@ scm:
     logTraceConverter:
       enabled: true
       versionRequirement: '>=8.0.0'
+    messageLogConverter:
+      enabled: true
+      versionRequirement: '>=8.0.0'
     chunkSize: 5600
     logSchedulerThreadPool:
        corePoolSize: 5
@@ -58,12 +61,20 @@ scm:
       default-schema: REF
     logTrace:
       enabled: true
-      url: jdbc:db2://10.15.27.82:546/DSNBLOC
+      url: jdbc:db2://10.15.27.82:446/DSNALOC
       username: casadm
       password: a
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: REF
+    messageLog:
+      enabled: true
+      url: jdbc:db2://10.15.1.197:50000/DBREFSW
+      username: pwausr
+      password: pwausr
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      max-connection: 10
+      default-schema: LOGGER
 ibm:
   mq:
     queue-manager: CSQ1

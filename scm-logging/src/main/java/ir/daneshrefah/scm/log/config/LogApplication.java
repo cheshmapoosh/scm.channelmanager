@@ -27,6 +27,7 @@ public class LogApplication {
     public static class DataSourceConfig {
         private DatasourceProperties transactionLog;
         private DatasourceProperties logTrace;
+        private DatasourceProperties messageLog;
     }
 
     @Bean
