@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -61,6 +62,11 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                 userActivationService,
                 pwaAuthenticationService);
         this.responseTokenGenerator = responseTokenGenerator;
+    }
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        return super.authenticate(authentication);
     }
 
     @Override
