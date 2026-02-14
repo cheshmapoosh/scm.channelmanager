@@ -18,6 +18,18 @@ server:
   port: 9090
 scm:
   log:
+    root-level: INFO
+    console:
+      enabled: false
+    level:
+      spring: INFO
+      hibernate: WARN
+    app:
+      file-directory: /var/log/app
+      rolling-archive-directory: /var/log/app/archive
+      max-history-days: 50
+      max-file-size: 200MB
+      total-size-cap: 10GB
     transactionLogConverter:
       enabled: true
       versionRequirement: '>=7.20.0'
