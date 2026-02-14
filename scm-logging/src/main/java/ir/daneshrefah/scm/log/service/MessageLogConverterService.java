@@ -93,7 +93,7 @@ public class MessageLogConverterService implements ConverterService {
         messageLogsEntity.setRealUsername(required(attributes,"username"));
         messageLogsEntity.setIp(required(attributes,"ip"));
         messageLogsEntity.setUsername(required(attributes,"nickName"));
-        messageLogsEntity.setServiceType("loginResponse");
+        messageLogsEntity.setServiceType(required(attributes,"serviceType"));
         messageLogsEntity.setStatus(LogStatus.valueOf(required(attributes,"status")));
 
         LocalDateTime ldt = LocalDateTime.parse(required(attributes,"transactionDate"));
@@ -113,7 +113,7 @@ public class MessageLogConverterService implements ConverterService {
         messageLogsEntity.setRespAllocatedTime(Long.parseLong(attributes.get("allocatedTime")));
         messageLogsEntity.setRealUsername(required(attributes,"username"));
         messageLogsEntity.setUsername(required(attributes,"nickName"));
-        messageLogsEntity.setServiceType(required(attributes,"serviceType"));
+        messageLogsEntity.setServiceType("loginResponse");
         messageLogsEntity.setStatus(LogStatus.valueOf(required(attributes,"responseStatus")));
 
         LocalDateTime ldt = LocalDateTime.parse(attributes.get("transactionDate"));
