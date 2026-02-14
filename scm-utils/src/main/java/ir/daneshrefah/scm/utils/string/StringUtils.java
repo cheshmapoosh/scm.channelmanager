@@ -185,6 +185,10 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.substringBefore(str, separator);
     }
 
+    public static String left(String str, int length) {
+        return org.apache.commons.lang3.StringUtils.left(str, length);
+    }
+
     public static String replaceNull(String value, String replaceWith) {
         if (null == value) {
             return replaceWith;

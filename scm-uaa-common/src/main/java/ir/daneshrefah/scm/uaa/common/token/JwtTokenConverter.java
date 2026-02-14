@@ -115,7 +115,7 @@ public class JwtTokenConverter implements Converter<Jwt, AbstractAuthenticationT
                 .orElseGet(()-> Optional.ofNullable(jwt.getClaim(CLAIM_KEY_TERMINAL))
                         .map(String::valueOf)
                         .filter(terminal-> StringUtils.equals(terminal, PWA_CLIENT_ID) || StringUtils.equals(terminal, MB_CLIENT_ID))
-                        .map(f-> PWA_CLIENT_ID)
+//                        .map(f-> PWA_CLIENT_ID)
                         .orElse(null));
     }
 

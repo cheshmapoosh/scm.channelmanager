@@ -1,12 +1,14 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import lombok.Data;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
 @Data
 @Accessors(chain = true)
+@ToString(callSuper = true)
 public class DefaultGrantPreAuthenticationToken implements Serializable {
     private String accessParam;
     private String channel;
@@ -21,4 +23,6 @@ public class DefaultGrantPreAuthenticationToken implements Serializable {
     private String hashcode;
     private String terminalType;
     private String operationSystemVersion;
+
+
 }

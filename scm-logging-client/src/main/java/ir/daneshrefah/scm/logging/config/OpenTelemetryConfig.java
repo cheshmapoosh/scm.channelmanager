@@ -4,8 +4,10 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +32,12 @@ public class OpenTelemetryConfig {
     @Bean
     public OpenTelemetry openTelemetry() {
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+                .setSpanLimits(
+                        SpanLimits.builder()
+                        .setMaxNumberOfAttributes(128)
+                        .build()
+                )
+                .setSampler(Sampler.alwaysOn())
                 .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter()))
                 .build();
         return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();

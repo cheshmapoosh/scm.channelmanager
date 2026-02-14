@@ -54,7 +54,7 @@ scm:
         cluster-name: dev3
         network-config:
           addresses:
-            - '127.0.0.1:5701'
+            - '10.10.4.125:5701'
   otp:
     time-to-live-minutes: 1
     jms:

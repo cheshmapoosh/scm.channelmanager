@@ -44,8 +44,10 @@ public class SpanUtil {
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), "rest::%s".formatted(request.getServletPath()));
         span.setAttribute(LogAttribute.CLIENT_FLOW_ID.getAttributeName(), request.getHeader(Constants.SCM_PARAMETER_CLIENT_FLOW_ID));
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), UUID.randomUUID().toString());
-        span.setAttribute(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName(), request.getHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID));
+        String clientCorrelationId = request.getHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID);
+        span.setAttribute(LogAttribute.CLIENT_CORRELATION_ID.getAttributeName(), clientCorrelationId);
         span.setAttribute(LogAttribute.CORRELATION_ID.getAttributeName(), UUID.randomUUID().toString());
+        span.setAttribute(LogAttribute.VERSION.getAttributeName(), "8.5.2");
         setSpanAttributes(span);
     }
 

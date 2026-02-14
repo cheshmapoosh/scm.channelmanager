@@ -56,8 +56,9 @@ public class TransactionLogConverterService implements ConverterService {
 
     @Override
     public boolean supports(LogMessage logMessage) {
-        String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
-        return   StringUtils.isNotBlank(logMessage.getPayload().getAttributes().get("scm-source")) || versionRequirement.isSatisfiedBy(version);
+//        String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+//        return   StringUtils.isNotBlank(logMessage.getPayload().getAttributes().get("scm-source")) || versionRequirement.isSatisfiedBy(version);
+        return true;
     }
 
     @PostConstruct
@@ -77,17 +78,17 @@ public class TransactionLogConverterService implements ConverterService {
         SpanModel spanModel = logMessage.getPayload();
         Map<String, String> attributes = spanModel.getAttributes();
         List<TransactionLogEntity> entities = new ArrayList<>();
-        if(StringUtils.isEmpty(attributes.get("scm-source"))) {
+        if (StringUtils.isEmpty(attributes.get("scm-source"))) {
             entities.add(buildTransactionLogEntity(spanModel, true));
             String responseStr = attributes.get(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName());
             if (StringUtils.isNotBlank(responseStr) && Integer.valueOf(responseStr).equals(TRANSACTION_TYPE_RESPONSE)) {
                 entities.add(buildTransactionLogEntity(spanModel, false));
             }
         } else if (StringUtils.isNotBlank(attributes.get("scm-source"))) {
-                entities.add(buildScmUaaTransactionLogEntity(spanModel,true));
+            entities.add(buildScmUaaTransactionLogEntity(spanModel, true));
             String responseStr = attributes.get("responseBody");
             if (StringUtils.isNotBlank(responseStr)) {
-                entities.add(buildScmUaaTransactionLogEntity(spanModel,false));
+                entities.add(buildScmUaaTransactionLogEntity(spanModel, false));
             }
 
         }
@@ -100,26 +101,26 @@ public class TransactionLogConverterService implements ConverterService {
 
         if (isRequest) {
             transactionLogEntity.setTransactionType(1);
-            transactionLogEntity.setPayload(attributes.get( "requestBody"));
+            transactionLogEntity.setPayload(attributes.get("requestBody"));
             transactionLogEntity.setTransactionStateId(7);
         } else {
             transactionLogEntity.setDocNo(attributes.get(LogAttribute.DOC_NO.getAttributeName()));
             transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
-            String stCode =attributes.get("responseStatus");
-            String  resultStCode = LogStatus.RESPONSE_FROM_CHANNEL.name().equals(stCode) ? "0" : "100";
+            String stCode = attributes.get("responseStatus");
+            String resultStCode = LogStatus.RESPONSE_FROM_CHANNEL.name().equals(stCode) ? "0" : "100";
             transactionLogEntity.setStatusCode(resultStCode);
             transactionLogEntity.setTransactionType(2);
             transactionLogEntity.setPayload(attributes.get("responseBody"));
             transactionLogEntity.setTransactionStateId(8);
         }
         //transactionLogEntity.setServerException(getExceptionClassName(attributes));
-        LocalDateTime ldt = LocalDateTime.parse(required(attributes,"transactionDate"));
+        LocalDateTime ldt = LocalDateTime.parse(required(attributes, "transactionDate"));
         Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
         Date logTime = Date.from(instant);
         transactionLogEntity.setArchiveNo(ArchiveUtils.calculateTenDaysArchiveNo(logTime));
         transactionLogEntity.setEbServiceId(34);
         String channelCode = attributes.get("clientType");
-        if("PWA".equals(channelCode)){
+        if ("PWA".equals(channelCode)) {
             channelCode = TerminalType.MB.name();
         }
         transactionLogEntity.setChannelId(TerminalType.findByTerminalCode(channelCode).getLegacyTerminalId().intValue());
@@ -165,8 +166,8 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setTerminalId(attributes.get(LogAttribute.TERMINAL_Id.getAttributeName()));
         transactionLogEntity.setCardNo(attributes.get(LogAttribute.CARD_NO.getAttributeName()));
         transactionLogEntity.setClientDate(getClientTime(attributes));
-        transactionLogEntity.setExternalSequenceId(attributes.get(LogAttribute.EXTERNAL_SEQUENCE_ID.getAttributeName()));
-        transactionLogEntity.setOriginalSequenceId(attributes.get(LogAttribute.ORIGINAL_SEQUENCE_ID.getAttributeName()));
+        transactionLogEntity.setExternalSequenceId(StringUtils.left(attributes.get(LogAttribute.EXTERNAL_SEQUENCE_ID.getAttributeName()), 32));
+        transactionLogEntity.setOriginalSequenceId(StringUtils.left(attributes.get(LogAttribute.ORIGINAL_SEQUENCE_ID.getAttributeName()), 32));
         transactionLogEntity.setDestination(attributes.get(LogAttribute.DESTINATION.getAttributeName()));
         transactionLogEntity.setClientIPAddress(attributes.get(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName()));
         return transactionLogEntity;
@@ -201,7 +202,7 @@ public class TransactionLogConverterService implements ConverterService {
     }
 
     private static String getMessageSequenceId(Map<String, String> attributes) {
-        return attributes.get(LogAttribute.MESSAGE_ID.getAttributeName());
+        return StringUtils.left(attributes.get(LogAttribute.MESSAGE_ID.getAttributeName()), 32);
     }
 
     private static Date getLogTime(SpanModel spanModel, Boolean isRequest) {

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.log.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.log.model.LogMessage;
+import ir.daneshrefah.scm.log.model.SpanModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,13 @@ public class MessageProcessingService {
             try {
                 if (converter.supports(logMessage)) {
                     converter.convertAndPersist(logMessage);
+                    SpanModel payload = logMessage.getPayload();
+                    String traceId = payload != null ? payload.getTraceId() : "null";
+                    String spanId = payload != null ? payload.getSpanId() : "null";
+                    log.info("Successfully converted and persist log message with {}. traceId: {}, spanId: {}",
+                            converter.getClass().getSimpleName(),
+                            traceId,
+                            spanId);
                 }
             } catch (Exception e) {
                 logConverterFailure(converter, rawMessage, e);

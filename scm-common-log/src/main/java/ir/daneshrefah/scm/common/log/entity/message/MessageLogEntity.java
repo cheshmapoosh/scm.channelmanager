@@ -18,7 +18,7 @@ public class MessageLogEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator",allocationSize = 1)
+    @SequenceGenerator(name = "sequenceGenerator", sequenceName = "SEQUENCE_GENERATOR", allocationSize = 1)
     private Long id;
 
 

@@ -40,13 +40,14 @@ public class LogTraceConverterService implements ConverterService {
 
     @Override
     public boolean supports(LogMessage logMessage) {
-        try {
-            String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
-            return   StringUtils.isEmpty(logMessage.getPayload().getAttributes().get("scm-source"))  && versionRequirement.isSatisfiedBy(version);
-        }catch (Exception ignored) {
-            //TODO
-            return true;
-        }
+//        try {
+//            String version = logMessage.getPayload().getAttributes().get(LogAttribute.VERSION.getAttributeName());
+//            return   StringUtils.isEmpty(logMessage.getPayload().getAttributes().get("scm-source"))  && versionRequirement.isSatisfiedBy(version);
+//        }catch (Exception ignored) {
+//            //TODO
+//            return true;
+//        }
+        return false;
     }
 
     @PostConstruct
