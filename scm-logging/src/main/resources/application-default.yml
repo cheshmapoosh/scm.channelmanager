@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: Logging-server
   cloud:
     config:
       enabled: false

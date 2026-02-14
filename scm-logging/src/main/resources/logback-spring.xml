@@ -2,7 +2,7 @@
 
     <!-- ===== Spring / Config Server properties ===== -->
     <springProperty scope="context" name="APP_NAME"
-                    source="spring.application.name" defaultValue="application" />
+                    source="spring.application.name" defaultValue="scm-logging" />
 
     <springProperty scope="context" name="LOG_DIR"
                     source="scm.log.app.file-directory" defaultValue="/var/log/app" />
@@ -75,12 +75,6 @@
     <root level="${ROOT_LEVEL}">
         <appender-ref ref="ROLLING_FILE" />
 
-        <!-- attach console only when enabled -->
-        <if condition='property("CONSOLE_ENABLED").equals("true")'>
-            <then>
-                <appender-ref ref="CONSOLE" />
-            </then>
-        </if>
     </root>
 
 </configuration>
