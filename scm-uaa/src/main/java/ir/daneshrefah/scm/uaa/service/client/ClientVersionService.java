@@ -15,10 +15,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.CLIENT_INVALID_APP_VERSION;
 
@@ -27,13 +26,13 @@ import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.CLIENT_INV
 @Slf4j
 public class ClientVersionService {
 
-    private static final List<ClientVersion> CLIENT_VERSIONS = new ArrayList<>();
+    private static volatile Map<String, ClientVersion> CLIENT_VERSIONS = Map.of();
     private final ClientVersionRepository clientVersionRepository;
     private final ClientRepository clientRepository;
     private final ClientVersionMapper clientVersionMapper;
 
-    public static List<ClientVersion> getClientVersionsList() {
-        return CLIENT_VERSIONS;
+    public static Collection<ClientVersion> getClientVersionsList() {
+        return CLIENT_VERSIONS.values();
     }
 
     @PostConstruct
@@ -42,36 +41,32 @@ public class ClientVersionService {
     }
 
     private void reloadCache() {
-        synchronized (CLIENT_VERSIONS) {
-            CLIENT_VERSIONS.clear();
-            clientVersionRepository.flush();
-            clientVersionRepository
-                    .findAll()
-                    .stream()
-                    .map(clientVersionMapper::toModel)
-                    .forEach(CLIENT_VERSIONS::add);
-        }
+        CLIENT_VERSIONS = clientVersionRepository.findAll()
+                .stream()
+                .map(clientVersionMapper::toModel)
+                .collect(Collectors.toUnmodifiableMap(
+                        ClientVersion::getAppVersion,
+                        Function.identity()
+                ));
     }
 
     public List<ClientVersion> getClientVersionByClientId(Long clientId) {
         return CLIENT_VERSIONS
+                .values()
                 .stream()
-                .filter(clientVersion -> Objects.equals(clientVersion.getClientId(), clientId))
+                .filter(cv -> Objects.equals(cv.getClientId(), clientId))
                 .toList();
     }
 
     public Optional<ClientVersion> getClientVersionById(Long id) {
         return CLIENT_VERSIONS
+                .values()
                 .stream()
-                .filter(clientVersion -> clientVersion.getId().equals(id))
-                .findFirst();
+                .filter(cv -> Objects.equals(cv.getId(), id)).findFirst();
     }
 
     public Optional<ClientVersion> getClientVersionByAppVersion(String appVersion) {
-        return CLIENT_VERSIONS
-                .stream()
-                .filter(clientVersion -> Objects.equals(clientVersion.getAppVersion(), appVersion))
-                .findFirst();
+        return Optional.ofNullable(CLIENT_VERSIONS.get(appVersion));
     }
 
     public ClientVersion save(ClientVersion clientVersion) {
