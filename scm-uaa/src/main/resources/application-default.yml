@@ -117,14 +117,18 @@ scm:
       keep-log-history: 30 #Keep up to 30 days of log files
       aspect:
         enable: true
+    root-level: INFO
+    console:
+      enabled: false
+    level:
+      spring: INFO
+      hibernate: WARN
     app:
-      console-enabled: true
-      file-directory: log/app
-      rolling-archive-directory: archive
-      log-pattern: '%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] [%X{traceId:-}] %logger{36} - %msg%n'
-      file-name-pattern: "%d{yyyy-MM-dd}.%i.log"
-      file-size: 1MB  #Max size of each log file
-      keep-log-history: 30 #Keep up to 30 days of log files
+      file-directory: /var/log/app
+      rolling-archive-directory: /var/log/app/archive
+      max-history-days: 50
+      max-file-size: 200MB
+      total-size-cap: 10GB
   jms:
     logout:
       enabled: true
