@@ -98,11 +98,16 @@ public class TransactionLogConverterService implements ConverterService {
     public TransactionLogEntity buildScmUaaTransactionLogEntity(SpanModel spanModel, Boolean isRequest) {
         Map<String, String> attributes = spanModel.getAttributes();
         TransactionLogEntity transactionLogEntity = new TransactionLogEntity();
-
+        LocalDateTime ldt = LocalDateTime.parse(required(attributes, "transactionDate"));
+        ldt = ldt.withNano((ldt.getNano() / 1_000) * 1_000);
+        Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        Date logTime = Date.from(instant);
+        transactionLogEntity.setArchiveNo(ArchiveUtils.calculateTenDaysArchiveNo(logTime));
         if (isRequest) {
             transactionLogEntity.setTransactionType(1);
             transactionLogEntity.setPayload(attributes.get("requestBody"));
             transactionLogEntity.setTransactionStateId(7);
+            transactionLogEntity.setLogTime(logTime);
         } else {
             transactionLogEntity.setDocNo(attributes.get(LogAttribute.DOC_NO.getAttributeName()));
             transactionLogEntity.setServerCode(attributes.get((LogAttribute.PROVIDER_CODE.getAttributeName())));
@@ -112,13 +117,22 @@ public class TransactionLogConverterService implements ConverterService {
             transactionLogEntity.setTransactionType(2);
             transactionLogEntity.setPayload(attributes.get("responseBody"));
             transactionLogEntity.setTransactionStateId(8);
+            long endEpochNanos = spanModel.getEndEpochNanos();
+            Instant instantRes = Instant.ofEpochSecond(
+                    endEpochNanos / 1_000_000_000L,   // seconds
+                    endEpochNanos % 1_000_000_000L    // nanoseconds part
+            );
+            transactionLogEntity.setLogTime(Date.from(instantRes ));
         }
         //transactionLogEntity.setServerException(getExceptionClassName(attributes));
-        LocalDateTime ldt = LocalDateTime.parse(required(attributes, "transactionDate"));
-        Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
-        Date logTime = Date.from(instant);
-        transactionLogEntity.setArchiveNo(ArchiveUtils.calculateTenDaysArchiveNo(logTime));
-        transactionLogEntity.setEbServiceId(34);
+
+        if(attributes.get("serviceType") != null && "loginRequest".equals(attributes.get("serviceType"))){
+               transactionLogEntity.setEbServiceId(34);
+        }
+        else {
+            transactionLogEntity.setEbServiceId(convertToInteger(attributes, LogAttribute.SERVICE_ID));
+        }
+
         String channelCode = attributes.get("clientType");
         if ("PWA".equals(channelCode)) {
             channelCode = TerminalType.MB.name();
@@ -126,7 +140,7 @@ public class TransactionLogConverterService implements ConverterService {
         transactionLogEntity.setChannelId(TerminalType.findByTerminalCode(channelCode).getLegacyTerminalId().intValue());
         transactionLogEntity.setUsername(attributes.get("nickName"));
         transactionLogEntity.setMessageSequenceId(attributes.get("correlationId"));
-        transactionLogEntity.setLogTime(logTime);
+
         transactionLogEntity.setClientDate(getClientTime(attributes));
         transactionLogEntity.setClientIPAddress(attributes.get("ip"));
         return transactionLogEntity;

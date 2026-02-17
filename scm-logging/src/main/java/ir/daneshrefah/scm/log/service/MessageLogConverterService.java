@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -116,8 +117,15 @@ public class MessageLogConverterService implements ConverterService {
         messageLogsEntity.setServiceType("loginResponse");
         messageLogsEntity.setStatus(LogStatus.valueOf(required(attributes,"responseStatus")));
 
-        LocalDateTime ldt = LocalDateTime.parse(attributes.get("transactionDate"));
-        messageLogsEntity.setTransactionDate(ldt);
+        long endEpochNanos = spanModel.getEndEpochNanos();
+
+        Instant instant = Instant.ofEpochSecond(
+                endEpochNanos / 1_000_000_000L,   // seconds
+                endEpochNanos % 1_000_000_000L    // nanoseconds part
+        );
+
+        LocalDateTime endDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        messageLogsEntity.setTransactionDate(endDateTime);
 
         return messageLogsEntity;
     }
