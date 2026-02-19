@@ -134,6 +134,10 @@ public class TransactionLogConverterService implements ConverterService {
         }
 
         String channelCode = attributes.get("clientType");
+        if(StringUtils.isNotEmpty(channelCode)){
+            if(channelCode.startsWith("MB-"))
+                channelCode = channelCode.substring(0,2);
+        }
         if ("PWA".equals(channelCode)) {
             channelCode = TerminalType.MB.name();
         }
