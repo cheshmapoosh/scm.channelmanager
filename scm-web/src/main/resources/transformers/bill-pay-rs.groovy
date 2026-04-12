@@ -12,13 +12,13 @@ def paymentStatus = status == 0 ? "PROCESSED" : "FAILED"
 def batchProcessed = body[106..106]
 def followupCode = body[90..105]
 return [
-        "RQID" : RQID,
-        "ledegrBalance" : ledegrBalance,
-        "availBalance" : availBalance,
-        "iBan" : iBan,
-        "nationalCode" : nationalCode,
-        "status" : status,
-        "paymentStatus" : paymentStatus,
-        "batchProcessed" : batchProcessed,
-        "followupCode" : followupCode
+        "RQID" : RQID.toString()..toString().trim(),
+        "ledegrBalance" : ledegrBalance.toString()..toString().trim(),
+        "availBalance" : availBalance..toString().trim(),
+        "iBan" : iBan..toString().trim(),
+        "nationalCode" : nationalCode..toString().trim(),
+        "status" : status..toString().trim(),
+        "paymentStatus" : paymentStatus..toString().trim(),
+        "batchProcessed" : batchProcessed..toString().trim(),
+        "followupCode" : followupCode..toString().trim()
 ]

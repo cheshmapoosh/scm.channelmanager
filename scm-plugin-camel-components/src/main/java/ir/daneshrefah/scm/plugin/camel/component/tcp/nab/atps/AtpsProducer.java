@@ -56,7 +56,7 @@ public class AtpsProducer extends DefaultProducer {
     private String buildNettyUri() {
         return String.format("%s?sync=true" +
                         "&reuseChannel=false" +
-                        "&disconnect=false" +
+                        "&disconnect=true" +
                         "&allowDefaultCodec=false" +
                         "&decoders=#atpsResponseBodyDecoder" +
                         "&tcpNoDelay=%b" +
@@ -88,6 +88,7 @@ public class AtpsProducer extends DefaultProducer {
             throw new IllegalArgumentException("ATPS body must not be null");
         }
         String userPart = enricherHeader(inBody);
+        LOG.log(Level.INFO, "[ATPS] request: " + userPart);
 
         // Process the message: header and payload preparation
         ByteBuf header = Unpooled.wrappedBuffer(ATPS.getBytes(CP1256));
@@ -192,6 +193,7 @@ public class AtpsProducer extends DefaultProducer {
     private String resolveActionCode(String response) {
         if (response.isEmpty()) {
             LOG.log(java.util.logging.Level.INFO, "Received nab message is empty, so there is not any action code.");
+            return "";
         }
         String actionCode = response.substring(0, 5);
         actionCode = actionCode.replace(" ", "0");
@@ -209,13 +211,26 @@ public class AtpsProducer extends DefaultProducer {
         }
 
         String responseString = new String(bytes, CP1256).trim();
+        String actionCode = responseString.trim().isEmpty() ? responseString : responseString.substring(0, 5);
 
-        if (responseString.contains("\n")) {
-            // Multi-line response → split to array
+
+        if ("10000".equals(actionCode)) {
+            // Always return list (even if one item)
             return responseString.split("\\r?\\n");
-        } else {
-            // Single-line response → single object
+        }else  {
+            // Single object
             return responseString;
         }
+
+//        else {
+//            throw new RuntimeException("Unknown response type: " + actionCode);
+//        }
+//        if (responseString.contains("\n")) {
+//            // Multi-line response → split to array
+//            return responseString.split("\\r?\\n");
+//        } else {
+//            // Single-line response → single object
+//            return responseString;
+//        }
     }
 }

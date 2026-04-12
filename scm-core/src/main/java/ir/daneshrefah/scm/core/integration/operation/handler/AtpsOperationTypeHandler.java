@@ -34,7 +34,8 @@ public class AtpsOperationTypeHandler implements OperationTypeHandler {
 
         String url = operation.getPath();
         if (StringUtils.isEmpty(url)) {
-            url = tcpConfigOperationDefinition.getUrl();
+            url = operation.getProvider().getUri();
+//            url = tcpConfigOperationDefinition.getUrl();
         }
         if (StringUtils.isEmpty(url)) {
             throw new IllegalArgumentException("An empty url for tcp config. both operation.path and operationDefinition.url is empty");

@@ -1,28 +1,35 @@
 package transformers
 
 import groovy.json.JsonOutput
-import ir.daneshrefah.scm.common.model.message.Authentication
+import ir.daneshrefah.scm.common.model.person.GeneralPerson
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
+import ir.daneshrefah.scm.uaa.common.model.user.User
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
 
 def body = exchange.in.body
-//def headers = exchange.in.headers
 
-def principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+def user = (User) AuthenticationUtils.getAuthentication().getPrincipal()
+def accessParameter = user.getAccessParameters()
 
-String mobile = principal.getMobileNumber();
-String nationalId = principal.getNationalId();
+def mobileNumber = accessParameter[0]
 
 
-//def mobile = body?.mobileNumber ?: headers?.get("X-Mobile-Number") ?: ""
-//def nationalId = body?.nationalID ?: headers?.get("X-National-Id") ?: ""
+def person = AuthenticationUtils.getLoggedInUser().getPerson()
+
+String nationalId = ""
+
+if(person instanceof GeneralPerson){
+    nationalId = ((GeneralRealPerson) person).getNationalCode()
+}
 
 def request = [
-        left             :  "12",
+        left             : body?.left ?: "",
         mid              : body?.mid ?: "",
         right            : body?.right ?: "",
         alphabet         : body?.alphabet ?: "",
-        mobileNumber     : mobile,
-        nationalID       : nationalId,
-        walletIdentifier : mobile
+        mobileNumber     : mobileNumber ?: "",
+        nationalID       : nationalId ?: "",
+        walletIdentifier : mobileNumber ?: ""
 ]
 
 exchange.in.body = JsonOutput.toJson(request)

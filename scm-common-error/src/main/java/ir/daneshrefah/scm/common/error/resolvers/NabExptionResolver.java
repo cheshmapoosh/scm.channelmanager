@@ -21,20 +21,20 @@ public class NabExptionResolver extends ExceptionResolver<NabError> {
     private final ExceptionMessageBundleProvider exceptionMessageBundleProvider;
     private final ErrorMappingService errorMappingService;
 
-    private String getMessage(Locale locale, NabError exception) {
-        return exceptionMessageBundleProvider.getExceptionMessage(locale, exception, new HashMap<>());
+    private String getMessage(Locale locale, NabError exception, String errorCode) {
+        return exceptionMessageBundleProvider.getExceptionMessage(locale, exception, new HashMap<>(), errorCode);
     }
 
     @Override
     public List<Error> resolve(NabError exception, Locale locale) {
-        ErrorMapping errorMapping = errorMappingService.findByExceptionClassName(exception.getClass().getName()).orElseThrow(RuntimeException::new);
+        ErrorMapping errorMapping = errorMappingService.findByExceptionClassNameAndErrorCode(exception.getClass().getName(), exception.getCode()).orElseThrow(RuntimeException::new);
 
         List<Error> errors = new ArrayList<>();
         errors.add(new Error(
                 null,
                 exception.getCode(),
-                getMessage(locale, exception),
-                getMessage(AccessibleLocale.FA_IR.getLocale(), exception),
+                getMessage(locale, exception, exception.getCode()),
+                getMessage(AccessibleLocale.FA_IR.getLocale(), exception, exception.getCode()),
                 errorMapping.getStatus(),
                 exception));
         return errors;

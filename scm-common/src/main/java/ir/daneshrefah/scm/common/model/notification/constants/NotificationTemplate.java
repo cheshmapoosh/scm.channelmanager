@@ -46,7 +46,8 @@ public enum NotificationTemplate {
     PAYMENT_TRANSFER_INTERNAL_BATCH                 ("payment_transfer_internal_batch"),
     PAYMENT_TRANSFER_INSURANCE_BATCH                ("payment_transfer_insurance_batch"),
     PAYMENT_TRANSFER_RECURRING_ADD_ACH              ("payment_transfer_recurring_add_ach"),
-    PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH        ("payment_transfer_recurring_add_batch_ach");
+    PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH        ("payment_transfer_recurring_add_batch_ach"),
+    INQUIRY                                         ("inquiry");
 
     private final String value;
 

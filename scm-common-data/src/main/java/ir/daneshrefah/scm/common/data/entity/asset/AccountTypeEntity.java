@@ -25,5 +25,5 @@ public class AccountTypeEntity extends AbstractEntity<Long> {
     @Column(name = "ACCOUNT_TYPE_ID")
     private Long id;
     private String name;
-
+    private String code;
 }
