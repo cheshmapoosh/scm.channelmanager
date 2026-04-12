@@ -1,8 +1,8 @@
 package transformers
 
-def person = header['person']
+def person = exchange.in.headers['person']
 println "groovy person $person"
-def nationalIdRaw = "14006284864" //person.nationalCode
+def nationalIdRaw =  "14006284864" //person.nationalCode  //"14006284864"
 if(!nationalIdRaw){throw new IllegalArgumentException("nationalId not found")}
 def nationalId=nationalIdRaw.toString()
 nationalId=nationalId.length()>12?nationalId[0..11]:nationalId.padRight(12,' ')

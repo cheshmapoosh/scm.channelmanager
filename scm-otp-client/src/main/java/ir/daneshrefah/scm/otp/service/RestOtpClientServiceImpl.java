@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.util.Objects;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "scm.otp.rest-client", name = "enabled", havingValue = "true")
@@ -40,11 +42,14 @@ public class RestOtpClientServiceImpl implements OtpClientService {
     @Value("${scm.otp.rest-client.verify-logged-in-url}")
     private String verifyLoggedInUrl;
 
+    public static final String SMS = "SMS";
+
     @Override
     public boolean verifyOtpOrStaticPasswordLoggedInUser(String authorization, String otpCode, OtpReason reason, String accessParameter) {
         return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason, accessParameter);
     }
 
+    //TODO should be use MessageInputContext but not impl until
     @Override
     public boolean verifyByCurrentToken(String otpCode, OtpReason reason) {
         MessageInput<?> messageInput = MessageInputContext.getCurrentContext();
@@ -68,7 +73,7 @@ public class RestOtpClientServiceImpl implements OtpClientService {
         String fullUrl = baseUrl + verifyLoggedInUrl;
 
         VerifyOTORequest verifyOTORequest = VerifyOTORequest.builder()
-                .otpType("SMS")
+                .otpType(SMS)
                 .reason(reason.name())
                 .claimCode(otpCode)
                 .build();
@@ -100,4 +105,10 @@ public class RestOtpClientServiceImpl implements OtpClientService {
             throw new InvalidPasswordException("password", "invalid password");
         }
     }
+
+    @Override
+    public boolean verifyByParams(String otpCode, OtpReason reason, String authorization, String accessParameter) {
+        return getVerifyOTOResponseResponseEntity(authorization, otpCode, reason, accessParameter);
+    }
+
 }

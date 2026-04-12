@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.model.FailResponse;
 import ir.daneshrefah.scm.common.model.ScmResponse;
@@ -15,6 +17,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 
 @Component
 public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
@@ -27,7 +30,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
 //                .process(exchange -> exchange.getIn().setBody(createScmResponse(exchange)))
                 .choice()
                 .when(exchange -> {
-                   return  exchange.getIn().getBody() instanceof ScmFault;
+                    return exchange.getIn().getBody() instanceof ScmFault;
 //                    ScmResponse response = (ScmResponse) (exchange.getIn().getBody());
 //                    return response.getErrors() != null && !response.getErrors().isEmpty();
                 })
@@ -46,7 +49,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                 .end();
 
     }
-    
+
     private ScmResponse createScmResponse(Exchange exchange) {
         ScmResponse response;
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
@@ -70,24 +73,43 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         return response;
     }
 
-    private FailResponse createScmFailResponse(Exchange exchange){
+    private FailResponse createScmFailResponse(Exchange exchange) {
 
-        ScmFault scmResponse = (ScmFault)  exchange.getIn().getBody();
-        Error error = scmResponse.getErrors().get(0);
-        int code = extractCode(error.getErrorCode());
+        ScmFault scmResponse = (ScmFault) exchange.getIn().getBody();
+        Error error = scmResponse.getErrors().getFirst();
+
+        Integer code = extractCode(error.getErrorCode());
 
         Integer httpStatus = HttpStatusMapper.toHttpStatus(error.getStatus());
-        if(httpStatus == null)
+        if (httpStatus == null) {
             httpStatus = 500;
+        }
+
+        String detail = error.getMessageFa();
+        String errorText = error.getException() != null
+                ? error.getException().getMessage()
+                : null;
+
+        if (error.getException() instanceof HttpClientErrorException ex) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(ex.getResponseBodyAsString());
+
+                httpStatus = root.path("status").asInt(httpStatus);
+                detail = root.path("message").asText(detail);
+
+            } catch (Exception ignored) {
+            }
+        }
+
         exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, httpStatus);
 
-        return FailResponse
-                .builder()
-                .status(500)
-                .code(code)
+        return FailResponse.builder()
+                .status(httpStatus)
+                .code(code != null ? code : httpStatus)
                 .title("error")
-                .detail(error.getMessageFa())
-                .error(error.getException().getMessage())
+                .detail(detail)
+                .error(errorText)
                 .message(error.getMessage())
                 .messageKey(error.getSource())
                 .build();
@@ -95,13 +117,15 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
 
     private static Integer extractCode(String errorCode) {
         try {
-            return Integer.parseInt(errorCode.replace("SCM-", ""));
+            if (errorCode == null) {
+                return 0;
+            }
+//            return Integer.parseInt(errorCode.replace("SCM-", ""));
+            return Integer.parseInt(errorCode.contains("-") ? errorCode.split("-")[1] : errorCode);
         } catch (Exception e) {
             return null;
         }
     }
 
-//    private Object createScmSuccessResponse(Exchange exchange){
-//        return null;
-//    }
+
 }

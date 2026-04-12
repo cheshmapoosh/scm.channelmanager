@@ -59,7 +59,13 @@ public class OtpUserService {
         User user = AuthenticationUtils.getLoggedInUser();
         ValidationUtils.checkNull(user, AuthenticationRequiredException::new);
         String terminalCode = extractRequestTerminalCode();
-        String accessParameter = extractRequestAccessParameter().orElseThrow(() -> new MissingRequiredInputException("accessParameter"));
+
+        String accessParameter = extractRequestAccessParameter()
+                .orElseGet(() -> {
+                    assert user != null;
+                    return user.getPerson().getMobile1();
+                });
+
         assert user != null;
         GeneralPersonEntity personEntity = userService.findPersonById(user.getPerson().getId());
         Recipient recipient = Recipient.builder()

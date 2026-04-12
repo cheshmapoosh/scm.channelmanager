@@ -63,7 +63,7 @@ public class WithdrawalListEnricherTransformerPlugin implements PluginHandler {
     private ObjectNode convertNode(ObjectNode sourceNode) {
         final String personTypeField = "personType";
         JsonNode personTypeNode = sourceNode.get(personTypeField);
-        if (Objects.nonNull(personTypeNode)) {
+        if (Objects.nonNull(personTypeNode) && Integer.parseInt(personTypeNode.asText()) != 0) {
             PersonType personType = PersonType.findNabDetailCode(Integer.parseInt(personTypeNode.asText()));
             sourceNode.put(personTypeField, personType.name());
         }

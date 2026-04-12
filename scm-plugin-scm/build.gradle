@@ -11,5 +11,6 @@ plugins {
 dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     api project(":scm-plugin-api")
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 //    api project(':scm-process')
 }

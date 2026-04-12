@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.entity.asset;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.model.membership.MembershipType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -44,5 +45,13 @@ public class MembershipEntity extends AbstractEntity<Long> {
 
     @Column(name = "CLOSE")
     private Boolean close;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CUSTOMER_NO")
+    private CustomerEntity customer;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "MEMBERSHIP_TYPE")
+    private MembershipType membershipType;
 
 }

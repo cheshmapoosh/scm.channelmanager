@@ -9,4 +9,6 @@ public interface OtpClientService {
     void verifyOtpOrStaticPasswordLoggedInUserWithException(String authorization, String otpCode, OtpReason reason, String accessParameter);
 
     boolean verifyByCurrentToken(String otpCode, OtpReason reason);
+
+    boolean verifyByParams(String otpCode, OtpReason reason, String authorization, String accessParameter);
 }

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.services;
 
+import ir.daneshrefah.scm.common.data.entity.asset.AccountTypeLoader;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.model.asset.MembershipTerminalAccess;
 import ir.daneshrefah.scm.common.model.customer.ServiceAccess;
