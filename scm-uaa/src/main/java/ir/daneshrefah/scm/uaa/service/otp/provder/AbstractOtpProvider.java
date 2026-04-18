@@ -67,6 +67,7 @@ public abstract class AbstractOtpProvider {
     private OtpSendResponse adviseOtpResponse(OtpSendResponse otpSendResponse) {
         if (profileInfo.isTraceMode()) {
             log.info(OBJECT_MAPPER.writeValueAsString(otpSendResponse.getOtp()));
+            System.out.println("otp send response :" + otpSendResponse.getOtp().getOtpCode());
             return otpSendResponse;
         }
         return cleanResponseSecureData(otpSendResponse);

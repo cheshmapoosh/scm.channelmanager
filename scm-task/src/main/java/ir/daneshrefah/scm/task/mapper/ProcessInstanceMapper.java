@@ -73,7 +73,13 @@ public abstract class ProcessInstanceMapper {
         entities.stream()
                 .filter(e -> e.getType().equals(ProcessWatcherEnum.ATTRIBUTE))
                 .map(ProcessInstanceWatcherEntity::getData)
-                .forEach(json -> result.setAll((ObjectNode) json));  // append fields
+                .forEach(json ->
+                        {
+                            if (json.has("value")) {
+                                result.setAll((ObjectNode) json);
+                            }
+                        }
+                );  // append fields
         return result;
     }
 }
