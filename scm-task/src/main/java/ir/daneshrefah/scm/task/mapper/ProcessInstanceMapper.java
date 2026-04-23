@@ -72,7 +72,7 @@ public abstract class ProcessInstanceMapper {
     public JsonNode mapToAttribute(List<ProcessInstanceWatcherEntity> entities) {
         ObjectNode result = objectMapper.createObjectNode();
         entities.stream()
-                .filter(e -> e.getType().equals(ProcessWatcherEnum.ATTRIBUTE))
+                .filter(e -> e.getType() != null && e.getType().equals(ProcessWatcherEnum.ATTRIBUTE))
                 .map(ProcessInstanceWatcherEntity::getData)
                 .forEach(json ->
                         {
