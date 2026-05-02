@@ -20,7 +20,7 @@ public class SecurityConstants {
     public static final String ROLE_ADMIN_BPM = "ROLE_ADMIN_BPM";
     public static final String ROLE_CSP = "ROLE_CSP";
     public static final String ROLE_SMS_OTP_AUTHENTICATED = "ROLE_SMS_OTP_AUTHENTICATED";
-    public static final String ROLE_SHAHKAR_AUTHENTICATED = "ROLE_SHAHKAR_AUTHENTICATED";
+    public static final String ROLE_SHAHKAR_AUTHENTICATED = "ROLE_SHAHKAR_CUSTOMER";
 //    public static final String ROLE_PERSON_TYPE_REAL = "ROLE_REAL";
 //    public static final String ROLE_PERSON_TYPE_EMPLOYEE = "ROLE_EMPLOYEE";
 //    public static final String ROLE_PERSON_TYPE_CORPORATE = "ROLE_CORPORATE";

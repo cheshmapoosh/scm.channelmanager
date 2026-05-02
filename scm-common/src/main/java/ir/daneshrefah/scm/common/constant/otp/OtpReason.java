@@ -43,7 +43,9 @@ public enum OtpReason {
     PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH        (2,5,OtpPattern.NUMERIC,NotificationTemplate.PAYMENT_TRANSFER_RECURRING_ADD_BATCH_ACH,2,1,24),
     BANK_CONSOLE_CUSTOMER_VERIFICATION              (10,5,OtpPattern.NUMERIC,NotificationTemplate.GENERAL,5,1,25),
     PROCUREMENT_AGENT_PERMISSION                    (5, 5, OtpPattern.NUMERIC, NotificationTemplate.AUTHENTICATION_OTP, 1, 1, 26),
-    INQUIRY_COMMISSION                              (2,5,OtpPattern.NUMERIC,NotificationTemplate.INQUIRY,2,1,26);
+    INQUIRY_COMMISSION                              (2,5,OtpPattern.NUMERIC,NotificationTemplate.INQUIRY,2,1,26),
+    SHAHKAR_AUTHENTICATION              (10,5,OtpPattern.NUMERIC,NotificationTemplate.SHAHKAR_AUTHENTICATION,5,1,26),
+    ;
 
     private final int timeToLiveMinutes;
     private final int length;

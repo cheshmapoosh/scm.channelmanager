@@ -22,8 +22,11 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.ROLE_SHAHKAR_AUTHENTICATED;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_TERMINAL_CODE;
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
 
 /**
  * Description of the class or purpose of the file.
@@ -67,35 +70,39 @@ public class OAuth2ShahkarAuthenticationProvider extends BaseTokenAuthentication
         if (!ValidationUtils.checkIsValidMobileNumber(mobileNumber)) {
             ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_MOBILE_NUMBER);
         }
-        String otpCode = authenticationToken.getCredentials();
-        if (StringUtils.isBlank(otpCode)) {
-            ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_CLAIM);
-        }
+        String otpCode = authenticationToken.getActivationCode();
         String terminalCode = authenticationToken.getRegisteredClient().getClientSettings().getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
-        Recipient recipient = Recipient.builder()
-                .address(mobileNumber)
-                .identifier(mobileNumber)
-                .identifierType(UserIdentifierType.MOBILE_NUMBER)
-                .terminalCode(terminalCode)
-                .accessParameter(authenticationToken.getAccessParameter())
-                .build();
+        User user = userService.createShahkarVerifiedUserAndDeleteOld(nationalCode, mobileNumber, terminalCode);
+        OAuth2ShahkarAuthenticationToken oatuh = new OAuth2ShahkarAuthenticationToken(new TerminalUserDetails(user), mobileNumber, authenticationToken.getCredentials(),
+                authenticationToken.getScopes(), authenticationToken.getClientPrincipal(),
+                AuthorityUtils.commaSeparatedStringToAuthorityList(ROLE_SHAHKAR_AUTHENTICATED), Instant.now(),Instant.now());
+        if(StringUtils.isNotEmpty(otpCode) && StringUtils.notEquals("-",otpCode)) { //verify
+            Recipient recipient = Recipient.builder()
+                    .address(mobileNumber)
+                    .identifier(mobileNumber)
+                    .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                    .terminalCode(terminalCode)
+                    .accessParameter(authenticationToken.getAccessParameter())
+                    .build();
 
-        OtpVerifyRequest request = OtpVerifyRequest.builder()
-                .otpType(OtpType.SMS)
-                .reason(OtpReason.AUTHENTICATION)
-                .recipient(recipient)
-                .claimCode(authenticationToken.getCredentials())
-                .build();
-        OtpVerifyResponse verifyResponse = otpService.verifyOtp(request);
-        if (!verifyResponse.isSuccessful()) {
-            ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_CLAIM, verifyResponse.getErrorMessage());
+            OtpVerifyRequest request = OtpVerifyRequest.builder()
+                    .otpType(OtpType.SMS)
+                    .reason(OtpReason.SHAHKAR_AUTHENTICATION)
+                    .recipient(recipient)
+                    .claimCode(authenticationToken.getActivationCode())
+                    .build();
+            OtpVerifyResponse verifyResponse = otpService.verifyOtp(request);
+            if (!verifyResponse.isSuccessful()) {
+                ErrorUtils.throwError(Constants.OAUTH2_ERROR_CODE_INVALID_CLAIM, verifyResponse.getErrorMessage());
+            }
+            oatuh.setAuthenticated(true);
+
+        }
+        else{
+            oatuh.setAuthenticated(false);
         }
 
-        User user = userService.createShahkarVerifiedUserAndDeleteOld(nationalCode, mobileNumber, terminalCode);
-
-        return new OAuth2ShahkarAuthenticationToken(new TerminalUserDetails(user), mobileNumber, authenticationToken.getCredentials(),
-                authenticationToken.getScopes(), authenticationToken.getClientPrincipal(),
-                AuthorityUtils.commaSeparatedStringToAuthorityList(ROLE_SHAHKAR_AUTHENTICATED));
+        return oatuh;
     }
 
     @Override
