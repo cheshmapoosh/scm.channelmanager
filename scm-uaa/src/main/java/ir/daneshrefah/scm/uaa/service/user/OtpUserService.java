@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.controller.otp.DelegatedSmsOtpSendRequest;
 import ir.daneshrefah.scm.uaa.controller.otp.SmsOtpSendRequest;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
@@ -21,6 +22,8 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -32,6 +35,7 @@ import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCo
 @Service
 public class OtpUserService {
 
+    private static final Logger log = LoggerFactory.getLogger(OtpUserService.class);
     private final OtpService otpService;
     private final UserService userService;
     private final PersonService personService;
@@ -56,6 +60,8 @@ public class OtpUserService {
     }
 
     public OtpSendResponse sendOtpByLoggedInUser(SmsOtpSendRequest request) {
+        log.info("Start sendOtpByLoggedInUser, reason={}", request.getReason());
+
         User user = AuthenticationUtils.getLoggedInUser();
         ValidationUtils.checkNull(user, AuthenticationRequiredException::new);
         String terminalCode = extractRequestTerminalCode();
@@ -66,7 +72,8 @@ public class OtpUserService {
                     return user.getPerson().getMobile1();
                 });
 
-        assert user != null;
+        log.debug("AccessParameter resolved");
+
         GeneralPersonEntity personEntity = userService.findPersonById(user.getPerson().getId());
         Recipient recipient = Recipient.builder()
                 .address(personEntity.getMobile1())

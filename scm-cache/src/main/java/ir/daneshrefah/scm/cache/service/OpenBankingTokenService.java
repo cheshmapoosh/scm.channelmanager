@@ -27,7 +27,7 @@ public class OpenBankingTokenService {
     @Value("${open-banking.uri}")
     private String uri;
 
-    @Scheduled(fixedRate = 3600000)
+  /*  @Scheduled(fixedRate = 3600000)*/
     public void getToken() {
         removeTokenFromCache();
 

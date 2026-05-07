@@ -33,7 +33,12 @@ public class HazelcastRestAPI {
     @GetMapping("/session/{user-nickname}/{terminal-code}")
     public ResponseEntity<Object> getSession(@PathVariable("user-nickname") String nickname,
                                              @PathVariable("terminal-code") String terminalCode) {
-        return ResponseEntity.ok(hazelCastService.getSession(nickname,terminalCode));
+        UserAuthenticationTO session = hazelCastService.getSession(nickname,terminalCode);
+        if(session != null){
+            return ResponseEntity.ok(session);
+
+        }
+        return  ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{mapName}/{key}/entry-view")

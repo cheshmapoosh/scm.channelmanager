@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.notification.constants.NotificationMedia;
 import ir.daneshrefah.scm.common.model.notification.constants.NotificationType;
 import jakarta.jms.TextMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import java.util.Objects;
  * @version 1.0
  * @since 2024-05-18
  */
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class SMSNotificationMessageProvider implements NotificationMessageProvider {
@@ -48,8 +50,10 @@ public class SMSNotificationMessageProvider implements NotificationMessageProvid
         jsonMessage.put("message", notificationMessage.getPayload());
         smsJmsTemplate.send(session -> {
             TextMessage textMessage = session.createTextMessage();
-            textMessage.setText(jsonMessage.toString());
+            String text = jsonMessage.toString();
+            textMessage.setText(text);
             textMessage.setJMSCorrelationID(java.util.UUID.randomUUID().toString());
+            log.trace("send text message: {}", text);
             return textMessage;
         });
     }

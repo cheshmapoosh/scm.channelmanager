@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-config-server'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
     implementation 'commons-io:commons-io'
     implementation 'org.apache.commons:commons-collections4'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -30,7 +30,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     implementation 'com.hazelcast:hazelcast-spring'
-    implementation 'io.springfox:springfox-swagger-ui'
+//    implementation 'io.springfox:springfox-swagger-ui'
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.8.0.202311291450-r'
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
 }

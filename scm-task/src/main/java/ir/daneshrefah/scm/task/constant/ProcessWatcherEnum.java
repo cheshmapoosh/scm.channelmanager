@@ -8,7 +8,7 @@ import java.util.Arrays;
 @AllArgsConstructor
 @Getter
 public enum ProcessWatcherEnum {
-
+    EMPTY(0),
     REQUEST(1),
     ATTRIBUTE(2);
 

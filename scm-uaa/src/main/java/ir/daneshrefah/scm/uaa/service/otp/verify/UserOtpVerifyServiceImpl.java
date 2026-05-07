@@ -19,6 +19,7 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.*;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -28,6 +29,7 @@ import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCo
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
 
     private final OtpService otpService;
@@ -132,6 +134,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
 
     private OtpVerifyResponse handleStaticPasswordAuthentication(String claimCode, User user, AuthenticationMethodType authenticationMethodType) {
         boolean isValid = userService.validateStaticPassword(user, claimCode, authenticationMethodType);
+        log.trace("static password authentication is {} for user {}", isValid, user.getNickname());
         return OtpVerifyResponse.builder()
                 .isSuccessful(isValid)
                 .build();

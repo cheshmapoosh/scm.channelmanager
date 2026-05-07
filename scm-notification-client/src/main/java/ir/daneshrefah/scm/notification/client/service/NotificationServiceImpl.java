@@ -58,6 +58,7 @@ public class NotificationServiceImpl implements NotificationService {
         for (Iterator<NotificationMessageProvider> iterator = messageProviders.iterator(); iterator.hasNext(); ) {
             NotificationMessageProvider messageProvider = iterator.next();
             if (messageProvider.supports(notificationMessage)) {
+                log.trace("message provider is {}", messageProvider.getClass().getName());
                 messageProvider.send(notificationMessage);
             }
         }

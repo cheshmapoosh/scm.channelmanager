@@ -98,6 +98,9 @@ public class HazelCastServiceImpl implements HazelCastService {
     @Override
     public UserAuthenticationTO getSession(String nickname, String terminalCode) {
         Object fromCache = getFromCache(SESSION_CACHE_MAP, userAuthenticationMapper.generateKey(nickname, terminalCode));
+        if(fromCache == null){
+            return null;
+        }
         try {
             UserAuthentication userAuthentication = (UserAuthentication) fromCache;
             return userAuthenticationMapper.mapUserAuthenticationTO(userAuthentication);

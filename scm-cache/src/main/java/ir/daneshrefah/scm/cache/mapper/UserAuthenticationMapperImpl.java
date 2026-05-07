@@ -14,8 +14,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -62,7 +64,11 @@ public class UserAuthenticationMapperImpl implements UserAuthenticationMapper {
                 authenticationTO.setIssuedAt(details.getIssuedAt().toEpochMilli());
             }
             authenticationTO.setIssuer(details.getIssuer());
-            String accessParameter = principal.getAccessParameters().stream()
+
+            String accessParameter = Optional.ofNullable(principal)
+                    .map(User::getAccessParameters)
+                    .orElse(Collections.emptySet())
+                    .stream()
                     .map(n -> ";" + n + ";")
                     .collect(Collectors.joining(","));
             authenticationTO.setLoginAccessParameter(accessParameter);

@@ -22,6 +22,8 @@ import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -38,6 +40,7 @@ import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
  * @since 2023-12-30
  */
 @Component
+@Slf4j
 public class SmsOtpProvider extends AbstractOtpProvider {
 
     private final NotificationService notificationService;
@@ -61,6 +64,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         if (!otp.isDelivered()) {
             sendNotification(otp);
             otp = deliverOtp(otp);
+            log.trace("sent otp {}", otp.toString());
         }
         return OtpSendResponse.builder()
                 .otp(otp)
@@ -150,6 +154,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         } else {
             cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
         }
+        log.trace("verify otp is successful for key {}", otp.getKey());
         return OtpVerifyResponse.builder()
                 .isSuccessful(true)
                 .build();

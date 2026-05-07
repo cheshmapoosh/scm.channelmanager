@@ -46,12 +46,6 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @Column(name = "CLOSE")
     private Boolean close;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CUSTOMER_NO")
-    private CustomerEntity customer;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "MEMBERSHIP_TYPE")
-    private MembershipType membershipType;
 
 }

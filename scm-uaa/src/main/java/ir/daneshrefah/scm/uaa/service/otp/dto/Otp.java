@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -21,6 +22,7 @@ import java.util.Map;
  */
 @Getter
 @Builder
+@ToString
 public class Otp implements Serializable {
 
     private final String key;
