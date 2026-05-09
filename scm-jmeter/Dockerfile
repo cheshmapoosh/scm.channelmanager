@@ -1,1 +1,0 @@
-FROM justb4/jmeter

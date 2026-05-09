@@ -1,7 +1,10 @@
-FROM reg.daneshrefah.ir/modern-banking/openjdk:17-alpine
+FROM reg.daneshrefah.ir/modern-banking/openjdk:latest
 
 WORKDIR /app
-ARG VERSION=''
+
+ARG VERSION
+
 COPY build/libs/scm-cache-${VERSION}.jar scm-cache.jar
 
-CMD ["java", "-jar", "/app/scm-cache.jar"]
+ENTRYPOINT ["java", "-jar", "/app/scm-cache.jar"]
+

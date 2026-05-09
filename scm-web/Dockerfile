@@ -1,6 +1,13 @@
-FROM openjdk:17-jdk-alpine
+FROM reg.daneshrefah.ir/modern-banking/openjdk:latest
 
 WORKDIR /home/app/
-COPY scm-web.jar .
+ARG VERSION
 
-CMD ["java", "-jar", "/home/pwausr/scm/scm-web.jar"]
+
+COPY build/libs/scm-web-${VERSION}.jar scm-web.jar
+
+
+
+ENTRYPOINT ["java", "-jar", "/app/scm-web.jar"]
+
+

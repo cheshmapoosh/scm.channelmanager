@@ -14,7 +14,9 @@ configurations {
         extendsFrom annotationProcessor
     }
 }
-
+ext{
+    version = parent.version
+}
 bootJar {
     enabled = true
     version = parent.version

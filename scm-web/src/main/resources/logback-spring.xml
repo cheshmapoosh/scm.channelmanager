@@ -3,7 +3,7 @@
     <springProperty scope="context" name="ARCHIVE_DIR" source="scm.log.app.rolling-archive-directory" defaultValue="archive" />
     <springProperty scope="context" name="LOG_DIR" source="scm.log.app.file-directory"  />
     <springProperty scope="context" name="LOG_MAX_HISTORY_DAYS" source="scm.log.app.keep-log-history"  />
-    <springProperty scope="context" name="LOG_MAX_SIZE" source="scm.log.app.file-size"  />
+    <springProperty scope="context" name="LOG_MAX_SIZE" source="scm.log.app.file-size" defaultValue="100MB"  />
     <springProperty scope="context" name="LOG_PATTERN" source="scm.log.app.log-pattern"  />
     <springProperty scope="context" name="CONSOLE_ENABLED" source="scm.log.app.console-enabled" defaultValue="false" />
 

@@ -27,8 +27,50 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    tasks.register('dockerPush', Exec) {
+
+        doFirst {
+            if (!file("Dockerfile").exists()) {
+                println "Skipping dockerPush for ${project.name}: No Dockerfile found"
+                throw new StopExecutionException()
+            }
+        }
+        dependsOn clean
+        dependsOn bootJar
+
+        bootJar.mustRunAfter clean
+        workingDir project.projectDir
 
 
+        def imageVersion = project.findProperty("imageVersion") ?: project.version
+        def image = "local/${project.name}:${imageVersion}"
+        def remote = "reg.daneshrefah.ir/modern-banking/${project.name}:${imageVersion}"
+
+
+        commandLine 'sh', '-c', """
+            set -e
+
+            echo "VERSION=${imageVersion}"
+            
+            docker build \\
+              --build-arg VERSION=${imageVersion} \\
+              -t ${image} .
+
+           """
+
+//        commandLine 'sh', '-c', """
+//            set -e
+//
+//            echo "Building image: ${image}" version : ${version}
+//            docker build --build-arg VERSION=${version} -t ${image} .
+//
+//            echo "Tagging image as remote: ${remote}"
+//            docker tag ${image} ${remote}
+//
+//            echo "Pushing image: ${remote}"
+//            docker push ${remote}
+//        """
+    }
     repositories {
         repositories {
             mavenLocal()

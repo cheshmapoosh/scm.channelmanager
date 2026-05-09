@@ -1,39 +1,67 @@
 stages:
   - build
-  - deploy
-image: registry.daneshrefah.ir/refahprojects/build-image:gradle-7-4-2-jdk17
-build:
+  - docker
+
+
+variables:
+  REGISTRY_URL: "reg.daneshrefah.ir/modern-banking"
+  IMAGE_NAME: "scm-all-in-one"
+
+build_jars:
   stage: build
-  when: manual
+  only:
+    - tags
+  image: reg.daneshrefah.ir/modern-banking/scm-ci:alpine-jdk21-gradle-docker
+
+  cache:
+    key: gradle-cache
+    policy: pull-push
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches
+  script:
+    - chmod +x gradlew
+    - ./gradlew clean :scm-config:bootJar :scm-cache:bootJar :scm-uaa:bootJar :scm-web:bootJar :scm-logging:bootJar --parallel --max-workers=4 -x test
   artifacts:
     paths:
-      - "scm-web/build/libs/*.jar"
-  script:
-    - gradle bootJar
+      - "**/build/libs/*.jar"
+    expire_in: 1 hour
 
-deploy:
-  stage: deploy
-  needs:
-    - job: build
-      artifacts: true
-  script:
-    - 'which ssh-agent || ( apt-get install -qq openssh-client )'
-    - eval $(ssh-agent -s)
-    - ssh-add <(echo "$DEV_SCM_1_SSH_PRIVATE_KEY")
-    - ssh-add <(echo "$DEV_SCM_2_SSH_PRIVATE_KEY")
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_1_SSH_PORT $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER "pkill -f scm-web.jar;"
-    - current_date=$(date +\%Y\%m\%d)
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_1_SSH_PORT $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
-    - scp -o StrictHostKeyChecking=no -P $DEV_SCM_1_SSH_PORT scm-web/build/libs/*.jar $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER:/home/pwausr/scm-web.jar
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_1_SSH_PORT $DEV_SCM_1_SSH_USER@$DEV_SCM_1_SSH_SERVER "bash -c /home/pwausr/server.sh"
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER "pkill -f scm-web.jar;"
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER mv /home/pwausr/scm-web.jar /home/pwausr/scm-web-$current_date.jar
-    - scp -o StrictHostKeyChecking=no -P $DEV_SCM_2_SSH_PORT scm-web/build/libs/*.jar $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER:/home/pwausr/scm-web.jar
-    - ssh -o StrictHostKeyChecking=no -p $DEV_SCM_2_SSH_PORT $DEV_SCM_2_SSH_USER@$DEV_SCM_2_SSH_SERVER "bash -c /home/pwausr/server.sh"
-#    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl restart your-app.service"
-#    - ssh pwausr:pwausr@10.10.4.121 "sudo systemctl stop your-app.service"
-#    - ssh pwausr:pwausr@10.10.4.121 "mv /path/to/deployment/your-app.jar /path/to/deployment/your-app-$(date +\%Y\%m\%d).jar"
-#    - scp target/your-app.jar pwausr:pwausr@10.10.4.121:/path/to/deployment/
-#    - ssh user@server "sudo systemctl start your-app.service"
+docker_build:
+  stage: docker
+  tags:
+    - docker
   only:
-    - main
+    - tags
+  image: reg.daneshrefah.ir/modern-banking/scm-ci:alpine-jdk21-gradle-docker
+  services:
+    - docker:29-dind
+
+  needs:
+    - job: build_jars
+      artifacts: true
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+
+  before_script:
+    - docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+
+  script:
+    - export VERSION=$(echo $CI_COMMIT_TAG | cut -d'-' -f1)
+    - echo "Building Single Image VERSION=$VERSION"
+
+    - docker build --build-arg VERSION=$VERSION --build-arg SPRING_APPLICATION_NAME=scm-web -t $REGISTRY_URL/$IMAGE_NAME:$VERSION .
+
+
+
+    - mkdir images
+    - docker save $REGISTRY_URL/$IMAGE_NAME:$VERSION -o images/scm-all-$VERSION.tar
+
+
+
+  artifacts:
+    paths:
+      - images/scm-all-*.tar
+    expire_in: 1 days
+#  gzip -dc scm-all-8.5.3.tar.gz | docker load
