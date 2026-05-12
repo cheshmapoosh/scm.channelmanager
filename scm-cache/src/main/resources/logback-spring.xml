@@ -2,7 +2,7 @@
 
     <!-- ===== Spring / Config Server properties ===== -->
     <springProperty scope="context" name="APP_NAME"
-                    source="spring.application.name" defaultValue="scm-logging" />
+                    source="spring.application.name" defaultValue="scm-cache" />
 
     <springProperty scope="context" name="LOG_DIR"
                     source="scm.log.app.file-directory" defaultValue="/var/log/app" />
@@ -12,8 +12,8 @@
 
     <!-- Rolling knobs -->
     <springProperty scope="context" name="MAX_HISTORY_DAYS"
-                    source="scm.log.app.max-history-days" defaultValue="50" />
-   <!-- <springProperty scope="context" name="TOTAL_SIZE_CAP"
+                    source="scm.log.app.max-history" defaultValue="50" />
+    <!--<springProperty scope="context" name="TOTAL_SIZE_CAP"
                     source="scm.log.app.total-size-cap" defaultValue="10GB" />-->
     <springProperty scope="context" name="MAX_FILE_SIZE"
                     source="scm.log.app.max-file-size" defaultValue="100MB" />
@@ -52,6 +52,7 @@
             <fileNamePattern>${ARCHIVE_PATTERN}</fileNamePattern>
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
             <maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
+
             <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
 
