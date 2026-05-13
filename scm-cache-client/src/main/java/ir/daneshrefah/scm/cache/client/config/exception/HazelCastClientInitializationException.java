@@ -7,4 +7,12 @@ package ir.daneshrefah.scm.cache.client.config.exception;
  * @since 2023-11-22
  */
 public class HazelCastClientInitializationException extends RuntimeException {
+
+    public HazelCastClientInitializationException() {
+        super("Hazelcast client initialization failed");
+    }
+
+    public HazelCastClientInitializationException(Throwable cause) {
+        super("Hazelcast client initialization failed", cause);
+    }
 }

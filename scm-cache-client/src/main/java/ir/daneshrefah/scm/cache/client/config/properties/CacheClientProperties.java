@@ -1,45 +1,72 @@
 package ir.daneshrefah.scm.cache.client.config.properties;
 
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.SerializationConfig;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Description of the class or purpose of the file.
- *
- * @author dariush abdolahi
- * @version 1.0
- * @since 2023-11-22
- */
-//@ConfigurationProperties("scm.cache.client.config")
-//@Setter
-//@Getter
+@Getter
+@Setter
+@ConfigurationProperties("scm.cache.client")
 public class CacheClientProperties {
-    /*
-       set properties on target module
-       config sample >>
 
-       scm:
-         cache:
-            client:
-                config:
-                    cluster-name: dev3
-                    server-host: 127.0.0.1
-                    server-port: 5701
-                    near-cache-config:
-                         myMap:
-                            in-memory-format: object
-                            time-to-live-seconds: 10
-
+    /**
+     * Backward-compatible switch:
+     * true  -> use Hazelcast client (connect to remote scm-cache)
+     * false -> start embedded Hazelcast instance
      */
+    private boolean distributed = true;
 
-    private String serverHost;                              //mandatory
-    private String serverPort;                              //mandatory
-    private String clusterName;                             //mandatory
-    private Map<String, NearCacheConfig> nearCacheConfig;   //optional
-    private SerializationConfig serializationConfig;        //optional
+    /**
+     * Default backend when cache name is not explicitly configured.
+     */
+    private CacheType defaultType = CacheType.REMOTE;
+
+    /**
+     * Default ttl applied by template operations when ttl is not provided.
+     * zero or negative => no ttl.
+     */
+    private Duration defaultTtl = Duration.ZERO;
+
+    /**
+     * Default max size for local (Caffeine) caches.
+     */
+    private long defaultMaximumSize = 10_000L;
+
+    /**
+     * Per cache configuration.
+     * Example:
+     * scm.cache.client.caches.user_cache.type=near
+     */
+    private Map<String, CacheDefinition> caches = new HashMap<>();
+
+    @Getter
+    @Setter
+    public static class CacheDefinition {
+
+        /**
+         * Cache backend type for this cache name.
+         */
+        private CacheType type;
+
+        /**
+         * Remote map name for REMOTE/NEAR.
+         * If null, cacheName will be used.
+         */
+        private String remoteName;
+
+        /**
+         * ttl override for this cache.
+         * zero or negative => no ttl.
+         */
+        private Duration ttl;
+
+        /**
+         * max size override for local caffeine cache.
+         */
+        private Long maximumSize;
+    }
 }

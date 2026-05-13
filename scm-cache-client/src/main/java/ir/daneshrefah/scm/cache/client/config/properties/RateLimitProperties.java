@@ -3,21 +3,26 @@ package ir.daneshrefah.scm.cache.client.config.properties;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Setter
 @Getter
 @ConfigurationProperties("scm.rate-limit.config")
-@Component
 public class RateLimitProperties {
 
-    private Type type = Type.FIRST_CODE;
+    private MissingBucketPolicy missingBucketPolicy = MissingBucketPolicy.REJECT;
+    private OverflowPolicy overflowPolicy = OverflowPolicy.REJECT;
+    private Duration maxWaitDuration = Duration.ZERO;
     private Map<String, RateLimitDefinition> definitions;
 
-    public enum Type {
-        FIRST_CODE , FIRST_PROPERTIES
+    public enum MissingBucketPolicy {
+        REJECT, ALLOW
+    }
+
+    public enum OverflowPolicy {
+        REJECT, WAIT
     }
 
     @Setter
@@ -25,6 +30,7 @@ public class RateLimitProperties {
     public static class RateLimitDefinition {
         private Integer tokenCapacity;
         private RefillIntervally refillIntervally;
+        private Duration maxWaitDuration;
     }
 
     @Setter
@@ -35,4 +41,3 @@ public class RateLimitProperties {
     }
 
 }
-
