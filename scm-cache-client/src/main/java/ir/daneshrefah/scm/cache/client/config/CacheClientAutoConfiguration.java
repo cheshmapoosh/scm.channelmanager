@@ -24,16 +24,22 @@ import ir.daneshrefah.scm.cache.client.connector.backend.LocalCaffeineCacheBacke
 import ir.daneshrefah.scm.cache.client.connector.routing.CacheRouteResolver;
 import ir.daneshrefah.scm.cache.client.connector.spring.RoutingCacheManager;
 import ir.daneshrefah.scm.cache.client.utility.lock.HazelcastLockUtility;
+import ir.daneshrefah.scm.cache.client.utility.lock.LocalLockUtility;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
 import ir.daneshrefah.scm.cache.client.utility.lock.aspect.WithLockAspect;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.Bucket4jRateLimiterUtility;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.aspect.RateLimiterAspect;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.HazelcastRateLimitBucketService;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.LocalRateLimitBucketService;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.RateLimitBucketService;
-import ir.daneshrefah.scm.cache.client.utility.semaphore.HazelcastSemaphoreUtility;
-import ir.daneshrefah.scm.cache.client.utility.semaphore.SemaphoreUtility;
-import ir.daneshrefah.scm.cache.client.utility.semaphore.aspect.WithSemaphoreAspect;
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.HazelcastResourceLeaseUtility;
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.LocalResourceLeaseUtility;
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.HazelcastConcurrencyLimiterUtility;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.LocalConcurrencyLimiterUtility;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.ConcurrencyLimiterUtility;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.aspect.WithConcurrencyLimitAspect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -142,13 +148,17 @@ public class CacheClientAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(HazelcastInstance.class)
     @ConditionalOnMissingBean
-    public RateLimitBucketService rateLimitBucketService(
-            HazelcastInstance hazelcastInstance,
-            RateLimitProperties rateLimitProperties
-    ) {
-        return new HazelcastRateLimitBucketService(hazelcastInstance, rateLimitProperties);
+    public RateLimitBucketService rateLimitBucketService(Optional<HazelcastInstance> hazelcastInstance,
+                                                         RateLimitProperties rateLimitProperties,
+                                                         CacheClientProperties cacheProperties) {
+        CacheClientProperties.UtilityBackendType backendType = cacheProperties.getUtilities().getRateLimit();
+        if (backendType == CacheClientProperties.UtilityBackendType.LOCAL) {
+            log.info("RateLimiterUtility uses LOCAL backend");
+            return new LocalRateLimitBucketService(rateLimitProperties);
+        }
+        log.info("RateLimiterUtility uses REMOTE backend");
+        return new HazelcastRateLimitBucketService(requireHazelcast(hazelcastInstance, "rate-limit"), rateLimitProperties);
     }
 
     @Bean
@@ -167,10 +177,16 @@ public class CacheClientAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(HazelcastInstance.class)
     @ConditionalOnMissingBean
-    public LockUtility lockUtility(HazelcastInstance hazelcastInstance) {
-        return new HazelcastLockUtility(hazelcastInstance);
+    public LockUtility lockUtility(Optional<HazelcastInstance> hazelcastInstance,
+                                   CacheClientProperties cacheProperties) {
+        CacheClientProperties.UtilityBackendType backendType = cacheProperties.getUtilities().getLock();
+        if (backendType == CacheClientProperties.UtilityBackendType.LOCAL) {
+            log.info("LockUtility uses LOCAL backend");
+            return new LocalLockUtility();
+        }
+        log.info("LockUtility uses REMOTE backend");
+        return new HazelcastLockUtility(requireHazelcast(hazelcastInstance, "lock"));
     }
 
     @Bean
@@ -181,17 +197,36 @@ public class CacheClientAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(HazelcastInstance.class)
     @ConditionalOnMissingBean
-    public SemaphoreUtility semaphoreUtility(HazelcastInstance hazelcastInstance) {
-        return new HazelcastSemaphoreUtility(hazelcastInstance);
+    public ConcurrencyLimiterUtility concurrencyLimiterUtility(Optional<HazelcastInstance> hazelcastInstance,
+                                                               CacheClientProperties cacheProperties) {
+        CacheClientProperties.UtilityBackendType backendType = cacheProperties.getUtilities().getConcurrencyLimit();
+        if (backendType == CacheClientProperties.UtilityBackendType.LOCAL) {
+            log.info("ConcurrencyLimiterUtility uses LOCAL backend");
+            return new LocalConcurrencyLimiterUtility();
+        }
+        log.info("ConcurrencyLimiterUtility uses REMOTE backend");
+        return new HazelcastConcurrencyLimiterUtility(requireHazelcast(hazelcastInstance, "concurrency-limit"));
     }
 
     @Bean
-    @ConditionalOnBean(SemaphoreUtility.class)
+    @ConditionalOnBean(ConcurrencyLimiterUtility.class)
     @ConditionalOnMissingBean
-    public WithSemaphoreAspect withSemaphoreAspect(SemaphoreUtility semaphoreUtility) {
-        return new WithSemaphoreAspect(semaphoreUtility);
+    public WithConcurrencyLimitAspect withConcurrencyLimitAspect(ConcurrencyLimiterUtility concurrencyLimiterUtility) {
+        return new WithConcurrencyLimitAspect(concurrencyLimiterUtility);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceLeaseUtility resourceLeaseUtility(Optional<HazelcastInstance> hazelcastInstance,
+                                                     CacheClientProperties cacheProperties) {
+        CacheClientProperties.UtilityBackendType backendType = cacheProperties.getUtilities().getResourceLease();
+        if (backendType == CacheClientProperties.UtilityBackendType.LOCAL) {
+            log.info("ResourceLeaseUtility uses LOCAL backend");
+            return new LocalResourceLeaseUtility();
+        }
+        log.info("ResourceLeaseUtility uses REMOTE backend");
+        return new HazelcastResourceLeaseUtility(requireHazelcast(hazelcastInstance, "resource-lease"));
     }
 
     private void configureNearCaches(ClientConfig clientConfig, CacheClientProperties cacheProperties) {
@@ -206,6 +241,11 @@ public class CacheClientAutoConfiguration {
             clientConfig.addNearCacheConfig(nearCacheConfig);
             log.info("Near cache enabled for remote cache '{}' (target='{}')", cacheName, targetName);
         }
+    }
+
+    private HazelcastInstance requireHazelcast(Optional<HazelcastInstance> hazelcastInstance, String utilityName) {
+        return hazelcastInstance.orElseThrow(() -> new IllegalStateException(
+                "HazelcastInstance is required for REMOTE " + utilityName + " utility backend"));
     }
 
     private NearCacheConfig resolveOrCreateNearCache(ClientConfig clientConfig, String targetName, long defaultMaximumSize) {

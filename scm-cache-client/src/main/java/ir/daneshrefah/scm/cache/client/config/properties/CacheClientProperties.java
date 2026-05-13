@@ -43,6 +43,16 @@ public class CacheClientProperties {
      */
     private Map<String, CacheDefinition> caches = new HashMap<>();
 
+    /**
+     * Backend selection for utility APIs. LOCAL is process-local; REMOTE is Hazelcast-backed.
+     */
+    private UtilityBackends utilities = new UtilityBackends();
+
+    public enum UtilityBackendType {
+        LOCAL,
+        REMOTE
+    }
+
     @Getter
     @Setter
     public static class CacheDefinition {
@@ -68,5 +78,27 @@ public class CacheClientProperties {
          * max size override for local caffeine cache.
          */
         private Long maximumSize;
+    }
+
+    @Getter
+    @Setter
+    public static class UtilityBackends {
+
+        private UtilityBackendType rateLimit = UtilityBackendType.REMOTE;
+        private UtilityBackendType lock = UtilityBackendType.REMOTE;
+        private UtilityBackendType concurrencyLimit;
+        @Deprecated
+        private UtilityBackendType semaphore;
+        private UtilityBackendType resourceLease = UtilityBackendType.REMOTE;
+
+        public UtilityBackendType getConcurrencyLimit() {
+            if (concurrencyLimit != null) {
+                return concurrencyLimit;
+            }
+            if (semaphore != null) {
+                return semaphore;
+            }
+            return UtilityBackendType.REMOTE;
+        }
     }
 }

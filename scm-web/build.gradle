@@ -41,6 +41,7 @@ dependencies {
     implementation project(':scm-cache-client')
     implementation project(':scm-common-log')
     implementation project(':scm-common-data')
+    implementation project(':scm-provider-shetab')
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.apache.camel.springboot:camel-spring-security-starter'
     implementation 'org.projectlombok:lombok'
@@ -53,4 +54,3 @@ dependencies {
 
 
 }
-

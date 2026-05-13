@@ -16,6 +16,11 @@ scm:
       default-type: remote
       default-ttl: 30m
       default-maximum-size: 10000
+      utilities:
+        rate-limit: remote # local | remote
+        lock: remote       # local | remote
+        concurrency-limit: remote # local | remote
+        resource-lease: remote # local | remote
       caches:
         user_cache:
           type: near
@@ -65,13 +70,53 @@ UserAuthentication auth = (UserAuthentication) cacheTemplate.getFromCache("sessi
 
 برای cache دیتابیس (service/repository method cache) فقط کافی است annotationهای Spring (`@Cacheable`, `@CachePut`, `@CacheEvict`) را استفاده کنید و برای هر `cacheNames` نوع backend را در تنظیمات بالا تعیین کنید.
 
-## Utility های آماده برای Rate Limit / Lock / Semaphore
+## Utility های آماده برای Rate Limit / Lock / Concurrency Limit / Resource Lease
 
 این ماژول utility های زیر را به صورت bean در اختیار شما قرار می‌دهد:
 
-- `RateLimiterUtility` (روی `bucket4j` + backend توزیع‌شده)
-- `LockUtility` (روی `Hazelcast CP FencedLock`)
-- `SemaphoreUtility` (روی `Hazelcast CP ISemaphore`)
+- `RateLimiterUtility` (روی `bucket4j` + backend قابل انتخاب `local/remote`)
+- `LockUtility` (روی backend قابل انتخاب `local/remote`)
+- `ConcurrencyLimiterUtility` (روی backend قابل انتخاب `local/remote`)
+- `ResourceLeaseUtility` (روی backend قابل انتخاب `local/remote`)
+
+### انتخاب backend برای Utility ها
+
+```yaml
+scm:
+  cache:
+    client:
+      utilities:
+        rate-limit: remote # local | remote
+        lock: remote       # local | remote
+        concurrency-limit: remote # local | remote
+        resource-lease: remote # local | remote
+```
+
+- `local`: داخل همان JVM/Pod نگهداری می‌شود و بین پادها مشترک نیست.
+- `remote`: روی Hazelcast اجرا می‌شود و برای محدودیت/lock/concurrency-limit توزیع‌شده بین چند پاد مناسب است.
+- برای نیازهایی مثل اخذ پورت منحصر به فرد بین پادها، از backend `remote` برای `resource-lease` استفاده کنید.
+
+### Resource Lease برای منابع انحصاری (مثل local port)
+
+```java
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLease;
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
+
+try (ResourceLease lease = resourceLeaseUtility.acquire(
+        "shetab-local-port::0.0.0.0",
+        List.of("40001", "40002", "40003"),
+        Duration.ofSeconds(30)
+)) {
+    int selectedPort = Integer.parseInt(lease.resourceName());
+    // use selectedPort
+}
+```
+
+ویژگی‌ها:
+
+- تا وقتی lease باز است، utility به شکل heartbeat آن را refresh می‌کند.
+- اگر pod/release crash شود، بعد از TTL منقضی می‌شود و resource به pool برمی‌گردد.
+- با `close()` یا پایان `try-with-resources`، resource بلافاصله آزاد می‌شود.
 
 ### Lock با Annotation استاندارد ماژول
 
@@ -115,29 +160,29 @@ lockUtility.runWithLock("ledger::sync", true, () -> {
 });
 ```
 
-### Semaphore با Annotation استاندارد ماژول
+### Concurrency Limit با Annotation استاندارد ماژول
 
 ```java
-import ir.daneshrefah.scm.cache.client.utility.semaphore.annotation.WithSemaphore;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.annotation.WithConcurrencyLimit;
 
-@WithSemaphore(name = "otp-send", key = "'uid::' + #p1.id", maxConcurrentExecutions = 3, waitMillis = -1)
+@WithConcurrencyLimit(name = "otp-send", key = "'uid::' + #p1.id", maxConcurrentExecutions = 3, waitMillis = -1)
 public void sendOtp(String actor, User user) {
     // ...
 }
 ```
 
-- نام annotation: `@WithSemaphore`
-- `name`: نام پایه semaphore
+- نام annotation: `@WithConcurrencyLimit`
+- `name`: نام پایه concurrency limit
 - `maxConcurrentExecutions`: حداکثر اجرای همزمان
 - `key`: کلید سفارشی با SpEL (مثل `#p0.id`, `#p1.profile.customerId`)
 - `perUser`: اگر `true` باشد و `key` خالی باشد، کلید بر اساس کاربر جاری ساخته می‌شود
 - `global`: اگر `true` باشد و `key` خالی باشد، کلید ثابت `global` استفاده می‌شود
-- `waitMillis`: رفتار انتظار برای permit:
-  - منفی: بلاک تا آزاد شدن permit
+- `waitMillis`: رفتار انتظار برای slot:
+  - منفی: بلاک تا آزاد شدن slot
   - صفر: تلاش فوری (`tryAcquire`)
   - مثبت: انتظار تا مدت مشخص
 
-قاعده کلید نهایی semaphore:
+قاعده کلید نهایی concurrency limit:
 
 - خروجی نهایی همیشه به فرم `name::keyPart` ساخته می‌شود.
 - اگر `key` تنظیم شده باشد، `keyPart` از `evaluateExpressionKey` می‌آید.
@@ -176,10 +221,10 @@ String result = lockUtility.executeWithLock(
 );
 ```
 
-نمونه `SemaphoreUtility`:
+نمونه `ConcurrencyLimiterUtility`:
 
 ```java
-String result = semaphoreUtility.executeQueued(
+String result = concurrencyLimiterUtility.executeWithConcurrencyLimit(
         "otp-send-queue",
         20,
         null,
@@ -190,14 +235,14 @@ String result = semaphoreUtility.executeQueued(
 
 نکته:
 
-- برای lock/semaphore/rate-limit اگر callback خطا ندهید، خطا به‌صورت exception پرتاب می‌شود.
+- برای lock/concurrency-limit/rate-limit اگر callback خطا ندهید، خطا به‌صورت exception پرتاب می‌شود.
 
 ### Rate limit با Annotation استاندارد ماژول
 
 ```java
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.RateLimiter;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.WithRateLimit;
 
-@RateLimiter(bucket = "uaa_nib_activation", perUser = true)
+@WithRateLimit(name = "uaa_nib_activation", perUser = true)
 public void activate() {
     // ...
 }
@@ -217,8 +262,8 @@ scm:
             period-seconds: 30
 ```
 
-- نام annotation: `@RateLimiter`
-- `bucket` نام bucket
+- نام annotation: `@WithRateLimit`
+- `name`: نام rate-limit bucket
 - `perUser`: کلید به‌صورت per-user
 - `global`: کلید سراسری ثابت (`global`)
 - `key`: کلید سفارشی با SpEL (اولویت بالاتر از موارد بالا)
@@ -226,13 +271,13 @@ scm:
 نمونه `CUSTOM`:
 
 ```java
-@RateLimiter(bucket = "login", key = "'uid::' + #authenticationName")
+@WithRateLimit(name = "login", key = "'uid::' + #authenticationName")
 public void login() {
     // ...
 }
 ```
 
-### راهنمای دقیق `@RateLimiter` و `evaluateExpressionKey`
+### راهنمای دقیق `@WithRateLimit` و `evaluateExpressionKey`
 
 ترتیب تعیین `key` در runtime به این صورت است:
 
@@ -261,21 +306,21 @@ public void login() {
 نمونه‌های کاربردی `key`:
 
 ```java
-@RateLimiter(bucket = "otp_send", key = "'terminal::' + #p0")
+@WithRateLimit(name = "otp_send", key = "'terminal::' + #p0")
 public void sendOtp(String terminalCode) {
     // ...
 }
 ```
 
 ```java
-@RateLimiter(bucket = "user_login", key = "'uid::' + #authenticationName + '::m::' + #methodName")
+@WithRateLimit(name = "user_login", key = "'uid::' + #authenticationName + '::m::' + #methodName")
 public void login() {
     // ...
 }
 ```
 
 ```java
-@RateLimiter(bucket = "global_health_check", global = true)
+@WithRateLimit(name = "global_health_check", global = true)
 public void healthCheck() {
     // ...
 }
@@ -345,18 +390,18 @@ scm:
 
 ### اجرای صف‌محور واقعی (بدون sleep ثابت)
 
-اگر می‌خواهید «به محض آزاد شدن یک slot، درخواست بعدی اجرا شود»، از `SemaphoreUtility` استفاده کنید:
+اگر می‌خواهید «به محض آزاد شدن یک slot، درخواست بعدی اجرا شود»، از `ConcurrencyLimiterUtility` استفاده کنید:
 
 ```java
 @Component
 @RequiredArgsConstructor
 public class QueuedProcessor implements Processor {
 
-    private final SemaphoreUtility semaphoreUtility;
+    private final ConcurrencyLimiterUtility concurrencyLimiterUtility;
 
     @Override
     public void process(Exchange exchange) {
-        semaphoreUtility.runQueued("camel-queue::activation", 20, null, () -> {
+        concurrencyLimiterUtility.runWithConcurrencyLimit("camel-queue::activation", 20, null, () -> {
             // business logic
         });
     }
@@ -367,4 +412,4 @@ public class QueuedProcessor implements Processor {
 
 - `20` یعنی حداکثر اجرای همزمان.
 - `waitTime = null` یعنی تا آزاد شدن slot منتظر بماند (queue-like behavior).
-- ترد بعدی بلافاصله بعد از `release` شدن permit اجرا می‌شود.
+- ترد بعدی بلافاصله بعد از `release` شدن slot اجرا می‌شود.

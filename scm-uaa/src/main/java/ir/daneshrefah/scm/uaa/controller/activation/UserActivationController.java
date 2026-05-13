@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.config.ratelimit.RateLimitBuckets;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.RateLimiter;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.WithRateLimit;
 import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationMessagePublisherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class UserActivationController {
 
     @GetMapping("/active")
     @PreAuthorize("hasAuthority(@grant.scopes.ACTIVATION)")
-    @RateLimiter(bucket = RateLimitBuckets.UAA_NIB_ACTIVATION, perUser = true)
+    @WithRateLimit(name = RateLimitBuckets.UAA_NIB_ACTIVATION, perUser = true)
     public ResponseEntity<?> findPagedClientList() {
         Authentication authentication = AuthenticationUtils.getAuthentication();
         UserAuthentication.AuthenticationDetail details = (UserAuthentication.AuthenticationDetail) authentication.getDetails();

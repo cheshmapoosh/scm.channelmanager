@@ -11,7 +11,7 @@ public interface LockUtility {
     <T> T executeWithLock(String lockName, Duration waitTime, Callable<T> job);
 
     /**
-     * Blocking lock mode (same behavior style as semaphore queued mode):
+     * Blocking lock mode (same behavior style as concurrency-limit queued mode):
      * waits until lock is acquired.
      */
     default <T> T executeWithLock(String lockName, boolean block, Callable<T> job) {
