@@ -30,5 +30,11 @@ public @interface WithLock {
      */
     String key() default "";
 
+    /**
+     * Wait behavior:
+     * - negative: block until lock is acquired
+     * - zero: immediate tryLock (no wait)
+     * - positive: wait up to this duration
+     */
     long waitMillis() default 0L;
 }
