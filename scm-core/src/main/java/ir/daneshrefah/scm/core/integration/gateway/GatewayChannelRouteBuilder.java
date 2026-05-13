@@ -189,7 +189,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 //        resilience4jConfigurationDefinition.setFailureRateThreshold("50");
 
         if (Objects.equals(RoutingStrategy.FIRST, service .getRoutingStrategy())) {
-            ServiceOperation serviceOperation = service.getServiceOperations().get(0);
+            ServiceOperation serviceOperation = resolveFirstServiceOperation(service);
             route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
             String operationName = serviceOperation.getOperationName();
             String url = resolveOperationUrl(operationName);
@@ -251,6 +251,21 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         }
 
         throw new IllegalArgumentException("Unsupported routing strategy: " + service.getRoutingStrategy());
+    }
+
+    private ServiceOperation resolveFirstServiceOperation(Service service) {
+        List<ServiceOperation> activeOperations = service.getServiceOperations()
+                .stream()
+                .filter(operation -> Boolean.TRUE.equals(operation.getActive()))
+                .toList();
+
+        if (activeOperations.isEmpty()) {
+            throw new IllegalStateException("No active operation found for service " + service.getCode());
+        }
+        if (activeOperations.size() > 1) {
+            throw new IllegalStateException("FIRST routing requires exactly one active operation for service " + service.getCode());
+        }
+        return activeOperations.getFirst();
     }
 
     private String resolveOperationUrl(String operationName) {

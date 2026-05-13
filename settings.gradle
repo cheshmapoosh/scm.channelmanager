@@ -26,4 +26,4 @@ include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 
         'scm-config', 'scm-cache','scm-cache-client', 'scm-uaa', 'scm-uaa-client', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-logging-client','scm-plugin-iban','scm-common-error','scm-message-queue','scm-task','scm-otp-client')
 include ('scm-jmeter', 'scm-plugin-camel-components')
 include ('scm-common-log')
-
+include ('scm-provider-shetab')

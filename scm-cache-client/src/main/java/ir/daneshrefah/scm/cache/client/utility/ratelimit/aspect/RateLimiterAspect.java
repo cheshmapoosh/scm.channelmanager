@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.cache.client.utility.ratelimit.aspect;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededException;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.RateLimiter;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.WithRateLimit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -32,35 +32,35 @@ public class RateLimiterAspect {
     private final ExpressionParser expressionParser = new SpelExpressionParser();
     private final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
-    @Around("@annotation(rateLimiter)")
-    public Object applyRateLimit(ProceedingJoinPoint joinPoint, RateLimiter rateLimiter) throws Throwable {
-        int requestedTokens = Math.max(1, rateLimiter.tokens());
-        String key = resolveRateLimitKey(joinPoint, rateLimiter);
-        RateLimitResult result = rateLimiterUtility.tryConsume(rateLimiter.bucket(), key, requestedTokens);
+    @Around("@annotation(withRateLimit)")
+    public Object applyRateLimit(ProceedingJoinPoint joinPoint, WithRateLimit withRateLimit) throws Throwable {
+        int requestedTokens = Math.max(1, withRateLimit.tokens());
+        String key = resolveRateLimitKey(joinPoint, withRateLimit);
+        RateLimitResult result = rateLimiterUtility.tryConsume(withRateLimit.name(), key, requestedTokens);
 
-        log.debug("Rate limiter checked: bucket='{}', key='{}', allowed={}, remaining={}",
+        log.debug("Rate limiter checked: name='{}', key='{}', allowed={}, remaining={}",
                 result.bucketName(), result.key(), result.allowed(), result.remainingTokens());
 
         if (!result.allowed()) {
-            log.warn("Rate limit exceeded: bucket='{}', key='{}', retryAfterSeconds={}",
+            log.warn("Rate limit exceeded: name='{}', key='{}', retryAfterSeconds={}",
                     result.bucketName(), result.key(), result.retryAfterSeconds());
             throw new RateLimitExceededException(result);
         }
         return joinPoint.proceed();
     }
 
-    private String resolveRateLimitKey(ProceedingJoinPoint joinPoint, RateLimiter rateLimiter) {
-        if (StringUtils.hasText(rateLimiter.key())) {
-            return evaluateExpressionKey(joinPoint, rateLimiter.key());
+    private String resolveRateLimitKey(ProceedingJoinPoint joinPoint, WithRateLimit withRateLimit) {
+        if (StringUtils.hasText(withRateLimit.key())) {
+            return evaluateExpressionKey(joinPoint, withRateLimit.key());
         }
 
-        if (rateLimiter.perUser() && rateLimiter.global()) {
-            throw new IllegalArgumentException("RateLimiter cannot be both perUser and global. method=" + resolveMethodKey(joinPoint));
+        if (withRateLimit.perUser() && withRateLimit.global()) {
+            throw new IllegalArgumentException("WithRateLimit cannot be both perUser and global. method=" + resolveMethodKey(joinPoint));
         }
-        if (rateLimiter.global()) {
+        if (withRateLimit.global()) {
             return DEFAULT_GLOBAL_KEY;
         }
-        if (rateLimiter.perUser()) {
+        if (withRateLimit.perUser()) {
             return resolveMethodKey(joinPoint) + "::uid::" + resolveCurrentUserKey();
         }
         return resolveMethodKey(joinPoint);
@@ -108,11 +108,11 @@ public class RateLimiterAspect {
         Expression expression = expressionParser.parseExpression(expressionText);
         Object value = expression.getValue(context);
         if (value == null) {
-            throw new IllegalArgumentException("RateLimiter key expression returned null: '" + expressionText + "'");
+            throw new IllegalArgumentException("WithRateLimit key expression returned null: '" + expressionText + "'");
         }
         String resolved = value.toString().trim();
         if (!StringUtils.hasText(resolved)) {
-            throw new IllegalArgumentException("RateLimiter key expression returned blank value: '" + expressionText + "'");
+            throw new IllegalArgumentException("WithRateLimit key expression returned blank value: '" + expressionText + "'");
         }
         return resolved;
     }
