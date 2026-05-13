@@ -2,10 +2,10 @@ package ir.daneshrefah.scm.cache.client.config;
 
 import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import ir.daneshrefah.scm.cache.client.config.properties.RateLimitProperties;
-import ir.daneshrefah.scm.cache.client.utility.lock.LocalLockUtility;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.LocalRateLimitBucketService;
-import ir.daneshrefah.scm.cache.client.utility.resourcelease.LocalResourceLeaseUtility;
-import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.LocalConcurrencyLimiterUtility;
+import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.RoutingConcurrencyLimiterUtility;
+import ir.daneshrefah.scm.cache.client.utility.lock.RoutingLockUtility;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.RoutingRateLimitBucketService;
+import ir.daneshrefah.scm.cache.client.utility.resourcelease.RoutingResourceLeaseUtility;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -26,12 +26,12 @@ class CacheClientAutoConfigurationUtilityBackendTest {
         properties.getUtilities().setResourceLease(CacheClientProperties.UtilityBackendType.LOCAL);
 
         assertInstanceOf(
-                LocalRateLimitBucketService.class,
+                RoutingRateLimitBucketService.class,
                 configuration.rateLimitBucketService(Optional.empty(), new RateLimitProperties(), properties)
         );
-        assertInstanceOf(LocalLockUtility.class, configuration.lockUtility(Optional.empty(), properties));
-        assertInstanceOf(LocalConcurrencyLimiterUtility.class, configuration.concurrencyLimiterUtility(Optional.empty(), properties));
-        assertInstanceOf(LocalResourceLeaseUtility.class, configuration.resourceLeaseUtility(Optional.empty(), properties));
+        assertInstanceOf(RoutingLockUtility.class, configuration.lockUtility(Optional.empty(), properties));
+        assertInstanceOf(RoutingConcurrencyLimiterUtility.class, configuration.concurrencyLimiterUtility(Optional.empty(), properties));
+        assertInstanceOf(RoutingResourceLeaseUtility.class, configuration.resourceLeaseUtility(Optional.empty(), properties));
     }
 
     @Test

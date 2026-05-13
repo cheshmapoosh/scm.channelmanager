@@ -85,11 +85,15 @@ public class CacheClientProperties {
     public static class UtilityBackends {
 
         private UtilityBackendType rateLimit = UtilityBackendType.REMOTE;
+        private Map<String, UtilityBackendType> rateLimitNames = new HashMap<>();
         private UtilityBackendType lock = UtilityBackendType.REMOTE;
+        private Map<String, UtilityBackendType> lockNames = new HashMap<>();
         private UtilityBackendType concurrencyLimit;
+        private Map<String, UtilityBackendType> concurrencyLimitNames = new HashMap<>();
         @Deprecated
         private UtilityBackendType semaphore;
         private UtilityBackendType resourceLease = UtilityBackendType.REMOTE;
+        private Map<String, UtilityBackendType> resourceLeaseNames = new HashMap<>();
 
         public UtilityBackendType getConcurrencyLimit() {
             if (concurrencyLimit != null) {
@@ -99,6 +103,97 @@ public class CacheClientProperties {
                 return semaphore;
             }
             return UtilityBackendType.REMOTE;
+        }
+
+        public UtilityBackendType resolveRateLimit(String name) {
+            return resolveByName(rateLimitNames, name, rateLimit);
+        }
+
+        public UtilityBackendType resolveLock(String name) {
+            return resolveByName(lockNames, name, lock);
+        }
+
+        public UtilityBackendType resolveConcurrencyLimit(String name) {
+            return resolveByName(concurrencyLimitNames, name, getConcurrencyLimit());
+        }
+
+        public UtilityBackendType resolveResourceLease(String name) {
+            return resolveByName(resourceLeaseNames, name, resourceLease);
+        }
+
+        public boolean requiresRemoteRateLimit() {
+            return requiresRemote(rateLimit, rateLimitNames);
+        }
+
+        public boolean requiresRemoteLock() {
+            return requiresRemote(lock, lockNames);
+        }
+
+        public boolean requiresRemoteConcurrencyLimit() {
+            return requiresRemote(getConcurrencyLimit(), concurrencyLimitNames);
+        }
+
+        public boolean requiresRemoteResourceLease() {
+            return requiresRemote(resourceLease, resourceLeaseNames);
+        }
+
+        private UtilityBackendType resolveByName(Map<String, UtilityBackendType> overrides,
+                                                 String name,
+                                                 UtilityBackendType defaultBackend) {
+            UtilityBackendType exact = findExact(overrides, name);
+            if (exact != null) {
+                return exact;
+            }
+            String baseName = baseName(name);
+            if (!baseName.equals(normalizeName(name))) {
+                UtilityBackendType base = findExact(overrides, baseName);
+                if (base != null) {
+                    return base;
+                }
+            }
+            return defaultBackend == null ? UtilityBackendType.REMOTE : defaultBackend;
+        }
+
+        private UtilityBackendType findExact(Map<String, UtilityBackendType> overrides, String name) {
+            if (overrides == null || overrides.isEmpty()) {
+                return null;
+            }
+            String normalizedName = normalizeName(name);
+            if (normalizedName.isEmpty()) {
+                return null;
+            }
+            for (Map.Entry<String, UtilityBackendType> entry : overrides.entrySet()) {
+                if (entry.getValue() == null) {
+                    continue;
+                }
+                if (normalizedName.equals(normalizeName(entry.getKey()))) {
+                    return entry.getValue();
+                }
+            }
+            return null;
+        }
+
+        private boolean requiresRemote(UtilityBackendType defaultBackend, Map<String, UtilityBackendType> overrides) {
+            if (defaultBackend == null || defaultBackend == UtilityBackendType.REMOTE) {
+                return true;
+            }
+            if (overrides == null || overrides.isEmpty()) {
+                return false;
+            }
+            return overrides.values().stream().anyMatch(UtilityBackendType.REMOTE::equals);
+        }
+
+        private String baseName(String name) {
+            String normalizedName = normalizeName(name);
+            int separator = normalizedName.indexOf("::");
+            if (separator < 0) {
+                return normalizedName;
+            }
+            return normalizedName.substring(0, separator);
+        }
+
+        private String normalizeName(String name) {
+            return name == null ? "" : name.trim();
         }
     }
 }
