@@ -33,6 +33,7 @@ import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.HazelcastRateLi
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.RateLimitBucketService;
 import ir.daneshrefah.scm.cache.client.utility.semaphore.HazelcastSemaphoreUtility;
 import ir.daneshrefah.scm.cache.client.utility.semaphore.SemaphoreUtility;
+import ir.daneshrefah.scm.cache.client.utility.semaphore.aspect.WithSemaphoreAspect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -184,6 +185,13 @@ public class CacheClientAutoConfiguration {
     @ConditionalOnMissingBean
     public SemaphoreUtility semaphoreUtility(HazelcastInstance hazelcastInstance) {
         return new HazelcastSemaphoreUtility(hazelcastInstance);
+    }
+
+    @Bean
+    @ConditionalOnBean(SemaphoreUtility.class)
+    @ConditionalOnMissingBean
+    public WithSemaphoreAspect withSemaphoreAspect(SemaphoreUtility semaphoreUtility) {
+        return new WithSemaphoreAspect(semaphoreUtility);
     }
 
     private void configureNearCaches(ClientConfig clientConfig, CacheClientProperties cacheProperties) {

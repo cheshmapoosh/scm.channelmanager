@@ -54,7 +54,10 @@ public class WithLockAspect {
     }
 
     private Duration resolveWaitTime(WithLock withLock) {
-        if (withLock.waitMillis() <= 0) {
+        if (withLock.waitMillis() < 0) {
+            return null;
+        }
+        if (withLock.waitMillis() == 0) {
             return Duration.ZERO;
         }
         return Duration.ofMillis(withLock.waitMillis());

@@ -39,7 +39,11 @@ public class HazelcastLockUtility implements LockUtility {
     }
 
     private boolean acquire(FencedLock lock, Duration waitTime) {
-        if (waitTime == null || waitTime.isNegative() || waitTime.isZero()) {
+        if (waitTime == null || waitTime.isNegative()) {
+            lock.lock();
+            return true;
+        }
+        if (waitTime.isZero()) {
             return lock.tryLock();
         }
         long millis = waitTime.toMillis();

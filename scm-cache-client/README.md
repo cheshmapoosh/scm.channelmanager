@@ -89,7 +89,10 @@ public void updateUser(String actor, User user) {
 - `key`: کلید سفارشی با SpEL (مثل `#p0.id`, `#p1.profile.customerId`)
 - `perUser`: اگر `true` باشد و `key` خالی باشد، کلید بر اساس کاربر جاری ساخته می‌شود
 - `global`: اگر `true` باشد و `key` خالی باشد، کلید ثابت `global` استفاده می‌شود
-- `waitMillis`: زمان انتظار برای گرفتن lock (صفر یعنی تلاش فوری)
+- `waitMillis`: رفتار انتظار برای lock:
+  - منفی: بلاک تا آزاد شدن lock
+  - صفر: تلاش فوری (`tryLock`)
+  - مثبت: انتظار تا مدت مشخص
 
 قاعده کلید نهایی lock:
 
@@ -103,6 +106,91 @@ public void updateUser(String actor, User user) {
 نکته:
 
 - حالت `perUser=true` و `global=true` همزمان نامعتبر است و خطا می‌دهد.
+
+نمونه Utility برای lock به‌صورت بلاکی:
+
+```java
+lockUtility.runWithLock("ledger::sync", true, () -> {
+    // critical section
+});
+```
+
+### Semaphore با Annotation استاندارد ماژول
+
+```java
+import ir.daneshrefah.scm.cache.client.utility.semaphore.annotation.WithSemaphore;
+
+@WithSemaphore(name = "otp-send", key = "'uid::' + #p1.id", maxConcurrentExecutions = 3, waitMillis = -1)
+public void sendOtp(String actor, User user) {
+    // ...
+}
+```
+
+- نام annotation: `@WithSemaphore`
+- `name`: نام پایه semaphore
+- `maxConcurrentExecutions`: حداکثر اجرای همزمان
+- `key`: کلید سفارشی با SpEL (مثل `#p0.id`, `#p1.profile.customerId`)
+- `perUser`: اگر `true` باشد و `key` خالی باشد، کلید بر اساس کاربر جاری ساخته می‌شود
+- `global`: اگر `true` باشد و `key` خالی باشد، کلید ثابت `global` استفاده می‌شود
+- `waitMillis`: رفتار انتظار برای permit:
+  - منفی: بلاک تا آزاد شدن permit
+  - صفر: تلاش فوری (`tryAcquire`)
+  - مثبت: انتظار تا مدت مشخص
+
+قاعده کلید نهایی semaphore:
+
+- خروجی نهایی همیشه به فرم `name::keyPart` ساخته می‌شود.
+- اگر `key` تنظیم شده باشد، `keyPart` از `evaluateExpressionKey` می‌آید.
+- اگر `key` خالی باشد:
+  - `global=true` -> `keyPart = global`
+  - `perUser=true` -> `keyPart = class::method::uid::username`
+  - در غیر این صورت -> `keyPart = class::method`
+
+### الگوی Functional یکسان برای هر ۳ Utility + کنترل خطا
+
+الگوی پیشنهادی یکسان:
+
+- مسیر موفق: `execute...(..., () -> business)`
+- مسیر خطا: `execute...(..., () -> business, exception -> fallback)`
+- برای متدهای `void`: `run...(..., () -> business, exception -> handle)`
+
+نمونه `RateLimiterUtility`:
+
+```java
+String result = rateLimiterUtility.executeRateLimited(
+        "uaa_nib_activation",
+        "uid::" + userId,
+        () -> activationService.activate(userId),
+        exception -> "fallback-response"
+);
+```
+
+نمونه `LockUtility`:
+
+```java
+String result = lockUtility.executeWithLock(
+        "ledger::settlement",
+        true,
+        () -> settlementService.run(),
+        exception -> "fallback-response"
+);
+```
+
+نمونه `SemaphoreUtility`:
+
+```java
+String result = semaphoreUtility.executeQueued(
+        "otp-send-queue",
+        20,
+        null,
+        () -> otpService.send(userId),
+        exception -> "fallback-response"
+);
+```
+
+نکته:
+
+- برای lock/semaphore/rate-limit اگر callback خطا ندهید، خطا به‌صورت exception پرتاب می‌شود.
 
 ### Rate limit با Annotation استاندارد ماژول
 
