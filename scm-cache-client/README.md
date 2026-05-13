@@ -21,6 +21,14 @@ scm:
         lock: remote       # local | remote
         concurrency-limit: remote # local | remote
         resource-lease: remote # local | remote
+        rate-limit-names:
+          login: local
+        lock-names:
+          user-update: remote
+        concurrency-limit-names:
+          otp-send: remote
+        resource-lease-names:
+          shetab-local-port: remote
       caches:
         user_cache:
           type: near
@@ -90,10 +98,20 @@ scm:
         lock: remote       # local | remote
         concurrency-limit: remote # local | remote
         resource-lease: remote # local | remote
+        rate-limit-names:
+          login: local
+        lock-names:
+          user-update: remote
+        concurrency-limit-names:
+          otp-send: remote
+        resource-lease-names:
+          shetab-local-port: remote
 ```
 
 - `local`: داخل همان JVM/Pod نگهداری می‌شود و بین پادها مشترک نیست.
 - `remote`: روی Hazelcast اجرا می‌شود و برای محدودیت/lock/concurrency-limit توزیع‌شده بین چند پاد مناسب است.
+- مقدارهای `rate-limit`, `lock`, `concurrency-limit`, `resource-lease` پیش‌فرض همان utility هستند.
+- mapهای `*-names` برای override بر اساس `name` استفاده می‌شوند. اگر نام نهایی به فرم `name::keyPart` باشد، ابتدا exact match و بعد بخش قبل از `::` بررسی می‌شود.
 - برای نیازهایی مثل اخذ پورت منحصر به فرد بین پادها، از backend `remote` برای `resource-lease` استفاده کنید.
 
 ### Resource Lease برای منابع انحصاری (مثل local port)
