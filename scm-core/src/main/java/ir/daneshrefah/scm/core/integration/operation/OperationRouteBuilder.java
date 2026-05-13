@@ -89,7 +89,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         }
 
         orderedBeforePluginDetails.forEach(detail -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()),"Plugin not found:"+detail.getName());
             handler.init(route, detail, properties);
             route.process(exchange -> {
                 handler.handle(exchange, detail);
@@ -110,7 +110,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         }
 
         orderedAfterPluginDetails.forEach(detail -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()),"Plugin not found:"+detail.getName());
             handler.init(route, detail, properties);
             route.process(exchange -> {
                 handler.handle(exchange, detail);
