@@ -19,10 +19,13 @@ publishing {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.apache.commons:commons-lang3'
 
     api 'com.hazelcast:hazelcast-spring'
+    api 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -32,6 +35,10 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     api 'com.bucket4j:bucket4j_jdk17-core'
     api 'com.bucket4j:bucket4j_jdk17-hazelcast'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 publishing {

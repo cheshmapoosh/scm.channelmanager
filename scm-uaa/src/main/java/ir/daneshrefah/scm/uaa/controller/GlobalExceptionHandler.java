@@ -8,6 +8,8 @@ import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededException;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
 import ir.daneshrefah.scm.logging.utils.SpanUtil;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +41,27 @@ GlobalExceptionHandler {
 
     private final Tracer tracer;
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<?> handleRateLimitExceeded(HttpServletRequest request, RateLimitExceededException exception) {
+        RateLimitResult rateLimitResult = exception.getResult();
+        Error error = new Error(
+                "rateLimit",
+                9000,
+                "too many requests",
+                "تعداد درخواست‌ها بیشتر از حد مجاز است",
+                MessageStatus.SC_ACCESS_DENIED,
+                exception
+        );
+        ResponseResult result = new ResponseResult()
+                .setResult(null)
+                .setStatus(MessageStatus.SC_ACCESS_DENIED)
+                .setErrors(List.of(error));
+        handleSpanException(request, exception, HttpStatus.TOO_MANY_REQUESTS);
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS);
+        rateLimitResult.toHeaders().forEach((name, value) -> responseBuilder.header(name, String.valueOf(value)));
+        return responseBuilder.body(result);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(HttpServletRequest request, Exception exception) {
         List<Error> resolves = ExceptionResolverHelper.getInstance().resolve(exception, detectRequesteLocale(request));
@@ -47,14 +70,15 @@ GlobalExceptionHandler {
                 .setResult(null)
                 .setStatus(resolves.get(0).getStatus())
                 .setErrors(resolves);
-        handleSpanException(request, exception);
         if (resolves.get(0).getStatus().equals(MessageStatus.SC_ERROR_SYSTEM)) {
-            return ResponseEntity.internalServerError().body(result);
+            handleSpanException(request, exception, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
+        handleSpanException(request, exception, HttpStatus.BAD_REQUEST);
         return ResponseEntity.badRequest().body(result);
     }
 
-    private void handleSpanException(HttpServletRequest request, Exception exception) {
+    private void handleSpanException(HttpServletRequest request, Exception exception, HttpStatus responseStatus) {
         Span span = null;
         try {
             span = (Span) request.getAttribute("otel.span");
@@ -62,7 +86,7 @@ GlobalExceptionHandler {
                 span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
                 SpanUtil.setRequestSpanAttributes(request, span);
                 SpanUtil.setException(exception,span);
-                span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), HttpStatus.BAD_REQUEST.value());
+                span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), responseStatus.value());
             }
         } catch (Exception e) {
             log.error("Exception occurred while handling global exception span", e);
