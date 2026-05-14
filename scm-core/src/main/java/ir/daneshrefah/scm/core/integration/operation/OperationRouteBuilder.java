@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.integration.operation;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.message.Message;

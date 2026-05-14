@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.otp.OtpReasonDictionary;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
@@ -24,6 +23,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -47,12 +47,12 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     private final TerminalService terminalService;
 
     public SmsOtpProvider(
-            CacheTemplate cacheTemplate,
+            CacheManager cacheManager,
             OtpProperties otpProperties,
             NotificationService notificationService,
             ProfileInfo profileInfo,
             TerminalService terminalService) {
-        super(cacheTemplate, otpProperties, profileInfo);
+        super(cacheManager, otpProperties, profileInfo);
         this.notificationService = notificationService;
         this.terminalService = terminalService;
     }
@@ -124,7 +124,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request) {
         ValidationUtils.checkNull(request, () -> new MissingRequiredInputException("request"));
         String otpKey = extractOtpKey(request);
-        Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
+        Otp otp = getOtpFromCache(otpKey);
         ValidationUtils.checkNull(otp, OtpNotFoundException::new);
 
         if (Objects.equals(Otp.OtpStatus.PENDING, otp.status())) {
@@ -132,27 +132,27 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         }
 
         if (Objects.equals(Otp.OtpStatus.EXPIRED, otp.status())) {
-            cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+            removeOtpFromCache(otpKey);
             throw new InvalidOtpCodeException("Expired otp");
         }
 
         ValidationUtils.checkNotEqualsString(otp.getOtpCode(), request.getClaimCode(), () -> {
             otp.plusFailedCount();
             if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_FAILED, otp.status())) {
-                cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+                removeOtpFromCache(otpKey);
                 return new InvalidOtpCodeException("max attempts failed");
             } else {
-                cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
+                putOtpInCache(otpKey, otp);
                 return new InvalidOtpCodeException("Invalid otp code");
             }
         });
 
         otp.plusReusedCount();
         if (Objects.equals(Otp.OtpStatus.MAX_ATTEMPTS_REUSED, otp.status())) {
-            cacheTemplate.removeFromCache(CACHE_NAME_OTP, otpKey);
+            removeOtpFromCache(otpKey);
             throw new InvalidOtpCodeException("max attempts reused");
         } else {
-            cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp);
+            putOtpInCache(otpKey, otp);
         }
         log.trace("verify otp is successful for key {}", otp.getKey());
         return OtpVerifyResponse.builder()

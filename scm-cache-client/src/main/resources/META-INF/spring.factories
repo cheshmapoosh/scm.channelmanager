@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration,\
+ir.daneshrefah.scm.cache.client.config.CacheClientSecurityAutoConfiguration

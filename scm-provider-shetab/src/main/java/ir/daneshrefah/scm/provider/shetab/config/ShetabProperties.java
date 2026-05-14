@@ -14,19 +14,13 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "scm.provider.shetab")
 public class ShetabProperties {
     private boolean enabled = true;
-    private String podId = System.getenv().getOrDefault("HOSTNAME", "scm-web");
     private Instance defaults = new Instance();
     private Map<String, Instance> providers = new HashMap<>();
 
     @Getter
     @Setter
     public static class Instance {
-        private String host;
-        private Integer port;
-        private String localAddress;
-        private List<Integer> localPorts = new ArrayList<>();
-        private String channelType = "ASCII";
-        private Integer lengthDigits = 4;
+        private List<String> endpoints = new ArrayList<>();
         private String packagerClass;
         private String packagerXml;
         private Integer connectTimeoutMs = 3000;
@@ -34,9 +28,11 @@ public class ShetabProperties {
         private Integer responseTimeoutMs = 6000;
         private Integer sendTimeoutMs = 1000;
         private Integer reconnectDelayMs = 1000;
+        private Integer sameEndpointReconnectAttempts;
         private Integer queueCapacity = 1000;
         private RateLimit rateLimit = new RateLimit();
-        private PortLease portLease = new PortLease();
+        private EndpointLease endpointLease = new EndpointLease();
+        private Security security = new Security();
     }
 
     @Getter
@@ -49,8 +45,35 @@ public class ShetabProperties {
 
     @Getter
     @Setter
-    public static class PortLease {
+    public static class EndpointLease {
         private Boolean enabled = true;
         private Long ttlMs = 30000L;
+    }
+
+    @Getter
+    @Setter
+    public static class Security {
+        private Pin pin = new Pin();
+        private Mac mac = new Mac();
+    }
+
+    @Getter
+    @Setter
+    public static class Pin {
+        private Boolean enabled;
+        private String key;
+        private Integer field = 52;
+        private Integer panField = 2;
+    }
+
+    @Getter
+    @Setter
+    public static class Mac {
+        private Boolean enabled;
+        private String key;
+        private Integer field = 128;
+        private Boolean verifyResponse;
+        private String placeholder = "AAAAAAAAAAAAAAAA";
+        private Integer packedLengthBytes = 16;
     }
 }

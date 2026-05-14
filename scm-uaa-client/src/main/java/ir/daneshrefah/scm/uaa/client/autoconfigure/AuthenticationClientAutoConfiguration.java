@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.client.filter.BearerAuthenticationFilter;
 import ir.daneshrefah.scm.uaa.client.provider.AbstractClientAuthenticationProvider;
@@ -12,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,15 +43,13 @@ import java.util.stream.Collectors;
 public class AuthenticationClientAutoConfiguration {
 
     /*@Autowired
-    private CacheTemplate cacheTemplate;*/
+    private CacheManager cacheManager;*/
 //    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
 //    private String publicKeyUrl;
 //
 //    @Value("${uaa.server.token-endpoint}")
 //    private String tokenEndpoint;
     private String ANONYMOUS_AUTH_KEY = "scm_anonymous";//UUID.randomUUID().toString();
-    @Autowired
-    private CacheTemplate cacheTemplate;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context, JwtDecoder jwtDecoder) throws Exception {
@@ -77,8 +75,8 @@ public class AuthenticationClientAutoConfiguration {
     }
 
     @Bean
-    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
-        return new SessionCache(cacheTemplate);
+    public SessionCache sessionCache(CacheManager cacheManager) {
+        return new SessionCache(cacheManager);
     }
 
     @Bean

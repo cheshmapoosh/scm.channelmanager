@@ -29,33 +29,67 @@ scm:
   provider:
     shetab:
       enabled: true
-      pod-id: ${HOSTNAME:${spring.application.name:scm-web}}
       defaults:
         connect-timeout-ms: 3000
         socket-timeout-ms: 1000
         response-timeout-ms: 6000
         send-timeout-ms: 1000
         reconnect-delay-ms: 1000
+        same-endpoint-reconnect-attempts: 3
         queue-capacity: 1000
-        channel-type: ASCII
-        length-digits: 4
         rate-limit:
           enabled: false
           bucket: shetab-default
           key: provider
-        port-lease:
+        endpoint-lease:
           enabled: true
           ttl-ms: 30000
       providers:
         poya:
-          host: 10.10.10.10
-          port: 9000
-          local-address: 0.0.0.0
-          local-ports: [41001, 41002, 41003]
+          endpoints: [10.10.10.10:9000, 10.10.10.11:9000, 10.10.10.12:9000]
+          packager-class: Shetab7AsciiXAPackager
+          security:
+            pin:
+              enabled: true
+              key: ${SCM_SHETAB_POYA_PIN_KEY}
+            mac:
+              enabled: true
+              key: ${SCM_SHETAB_POYA_MAC_KEY}
           rate-limit:
             enabled: true
             bucket: shetab-poya
 ```
 
 Rate-limit bucket definitions are read from `scm-config` via `scm-rate-limit.config.definitions`.
-Local-port leases use `ResourceLeaseUtility` from `scm-cache-client` (`utilities.resource-lease=remote` for distributed mode).
+HPS endpoint leases use `ResourceLeaseUtility` from `scm-cache-client` (`utilities.resource-lease=remote` for distributed mode).
+Built-in packager classes are `Shetab7AsciiXAPackager` and `Shetab7BinaryXAPackager` (legacy `CardSystem...` class names are also accepted).
+
+`fields.52` and `fields.128` are provider-owned. Operation transformers should pass normal ISO fields plus optional security metadata:
+
+```json
+{
+  "mti": "1100",
+  "fields": {
+    "2": "5894631159226349",
+    "3": "330000",
+    "11": "261655",
+    "37": "691199261655"
+  },
+  "security": {
+    "pin": "1234",
+    "pinRequired": true,
+    "macRequired": true
+  }
+}
+```
+
+Run the real Poya card-inquiry test explicitly:
+
+```bash
+SCM_SHETAB_POYA_INTEGRATION=true \
+SCM_SHETAB_POYA_ENDPOINTS=10.10.10.10:9000 \
+SCM_SHETAB_POYA_PIN=1234 \
+SCM_SHETAB_POYA_PIN_KEY=0123456789ABCDEF \
+SCM_SHETAB_POYA_MAC_KEY=0123456789ABCDEF \
+./gradlew :scm-provider-shetab:test --tests '*ShetabPoyaCardInquiryIntegrationTest'
+```

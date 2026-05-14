@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.service.otp.provder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.common.constant.otp.OtpPattern;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportedException;
@@ -19,7 +19,10 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 
+import java.time.Duration;
 import java.util.Objects;
 
 import static ir.daneshrefah.scm.common.constant.CacheConstants.CACHE_NAME_OTP;
@@ -37,7 +40,7 @@ import static ir.daneshrefah.scm.utils.string.StringUtils.upperCase;
 public abstract class AbstractOtpProvider {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    protected final CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
     private final OtpProperties otpProperties;
     private final ProfileInfo profileInfo;
 
@@ -111,7 +114,7 @@ public abstract class AbstractOtpProvider {
 
     protected final Otp buildOtpInstance(OtpSendRequest request, boolean requireDeliver) {
         String otpKey = extractOtpKey(request);
-        Otp otp = (Otp) cacheTemplate.getFromCache(CACHE_NAME_OTP, otpKey);
+        Otp otp = getOtpFromCache(otpKey);
         if (Objects.nonNull(otp)
                 && !usedAtLeastTOneTime(otp)
                 && DateUtils.InstantTools.currentDate().isBefore(otp.getExpireTime())) {
@@ -122,7 +125,7 @@ public abstract class AbstractOtpProvider {
         ValidationUtils.checkBlankString(otpCode, OtpCodeGenerationException::new);
         otp = createOtp(otpKey, request, otpCode, requireDeliver);
         log.info("Generated OTP Code: {}", otpCode);
-        cacheTemplate.putInCache(CACHE_NAME_OTP, otpKey, otp, otp.getReason().getTimeToLiveMinutes());
+        putOtpInCache(otpKey, otp, Duration.ofMinutes(otp.getReason().getTimeToLiveMinutes()));
         return otp;
     }
 
@@ -144,8 +147,38 @@ public abstract class AbstractOtpProvider {
             return otp;
         }
         otp.setDelivered(true);
-        cacheTemplate.putInCache(CACHE_NAME_OTP, otp.getKey(), otp, otp.getReason().getTimeToLiveMinutes());
+        putOtpInCache(otp.getKey(), otp, Duration.ofMinutes(otp.getReason().getTimeToLiveMinutes()));
         return otp;
+    }
+
+    protected Otp getOtpFromCache(String otpKey) {
+        Cache.ValueWrapper valueWrapper = otpCache().get(otpKey);
+        return valueWrapper == null ? null : (Otp) valueWrapper.get();
+    }
+
+    protected void putOtpInCache(String otpKey, Otp otp) {
+        otpCache().put(otpKey, otp);
+    }
+
+    protected void putOtpInCache(String otpKey, Otp otp, Duration ttl) {
+        Cache cache = otpCache();
+        if (cache instanceof TtlAwareCache ttlAwareCache) {
+            ttlAwareCache.put(otpKey, otp, ttl);
+            return;
+        }
+        cache.put(otpKey, otp);
+    }
+
+    protected void removeOtpFromCache(String otpKey) {
+        otpCache().evict(otpKey);
+    }
+
+    private Cache otpCache() {
+        Cache cache = cacheManager.getCache(CACHE_NAME_OTP);
+        if (cache == null) {
+            throw new IllegalStateException("Spring cache is not configured: " + CACHE_NAME_OTP);
+        }
+        return cache;
     }
 
     public String generateOtpCode(OtpPattern pattern, int count) {

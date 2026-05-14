@@ -4,12 +4,7 @@ import java.util.List;
 
 public record ShetabResolvedConfig(
         String provider,
-        String host,
-        int port,
-        String localAddress,
-        List<Integer> localPorts,
-        String channelType,
-        int lengthDigits,
+        List<String> endpoints,
         String packagerClass,
         String packagerXml,
         int connectTimeoutMs,
@@ -17,9 +12,11 @@ public record ShetabResolvedConfig(
         int responseTimeoutMs,
         int sendTimeoutMs,
         int reconnectDelayMs,
+        int sameEndpointReconnectAttempts,
         int queueCapacity,
         RateLimit rateLimit,
-        PortLease portLease
+        EndpointLease endpointLease,
+        Security security
 ) {
     public record RateLimit(
             boolean enabled,
@@ -28,9 +25,33 @@ public record ShetabResolvedConfig(
     ) {
     }
 
-    public record PortLease(
+    public record EndpointLease(
             boolean enabled,
             long ttlMs
+    ) {
+    }
+
+    public record Security(
+            Pin pin,
+            Mac mac
+    ) {
+    }
+
+    public record Pin(
+            boolean enabled,
+            String key,
+            int field,
+            int panField
+    ) {
+    }
+
+    public record Mac(
+            boolean enabled,
+            String key,
+            int field,
+            boolean verifyResponse,
+            String placeholder,
+            int packedLengthBytes
     ) {
     }
 }

@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import org.springframework.cache.CacheManager;
 
 /**
  * Description of the class or purpose of the file.
@@ -17,8 +17,8 @@ public abstract class AbstractRemoteClientAuthenticationProvider extends Abstrac
 
     protected AbstractRemoteClientAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
                                                          SessionCache sessionCache,
-                                                         CacheTemplate cacheTemplate) {
-        super(sessionCache,cacheTemplate);
+                                                         CacheManager cacheManager) {
+        super(sessionCache, cacheManager);
         this.remoteSecurityServiceProvider = remoteSecurityServiceProvider;
     }
 

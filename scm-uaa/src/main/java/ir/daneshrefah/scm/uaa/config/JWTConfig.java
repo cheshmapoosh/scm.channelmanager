@@ -5,7 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
@@ -21,8 +21,9 @@ import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -67,8 +68,11 @@ public class JWTConfig {
     @Value("${scm.security.key-store.alias}")
     private String keyStoreAlias;
 
-    @Autowired
-    private CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
+
+    public JWTConfig(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
@@ -239,8 +243,21 @@ public class JWTConfig {
             Instant issuedAt = jwtClaims.getClaim("iat");
             Instant expiresAt = jwtClaims.getClaim("exp");
             long ttl = Duration.between(issuedAt, expiresAt).toMinutes();
-            cacheTemplate.putInCache(JWT_ID_CACHE_NAME, cacheKey, jtiTokenId, ttl);
+            Cache cache = jwtIdCache();
+            if (cache instanceof TtlAwareCache ttlAwareCache) {
+                ttlAwareCache.put(cacheKey, jtiTokenId, Duration.ofMinutes(ttl));
+                return;
+            }
+            cache.put(cacheKey, jtiTokenId);
         }
+    }
+
+    private Cache jwtIdCache() {
+        Cache cache = cacheManager.getCache(JWT_ID_CACHE_NAME);
+        if (cache == null) {
+            throw new IllegalStateException("Spring cache is not configured: " + JWT_ID_CACHE_NAME);
+        }
+        return cache;
     }
 
     private Object getPersonMaskedPhoneNumber(GeneralPerson person) {

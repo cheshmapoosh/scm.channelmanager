@@ -31,8 +31,15 @@ public class ShetabTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", config.provider());
-            span.setAttribute("net.peer.name", config.host());
-            span.setAttribute("net.peer.port", config.port());
+            String primaryEndpoint = primaryEndpoint(config);
+            if (primaryEndpoint != null) {
+                span.setAttribute("shetab.endpoint.primary", primaryEndpoint);
+                EndpointParts endpointParts = parseEndpoint(primaryEndpoint);
+                if (endpointParts != null) {
+                    span.setAttribute("net.peer.name", endpointParts.host());
+                    span.setAttribute("net.peer.port", endpointParts.port());
+                }
+            }
             span.setAttribute("shetab.iso.mti", safeMti(request));
             span.setAttribute("shetab.iso.stan", safeField(request, 11));
             span.setAttribute("shetab.iso.rrn", safeField(request, 37));
@@ -87,5 +94,36 @@ public class ShetabTraceSupport {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private String primaryEndpoint(ShetabResolvedConfig config) {
+        if (config.endpoints() == null || config.endpoints().isEmpty()) {
+            return null;
+        }
+        String endpoint = config.endpoints().get(0);
+        if (endpoint == null || endpoint.isBlank()) {
+            return null;
+        }
+        return endpoint.trim();
+    }
+
+    private EndpointParts parseEndpoint(String endpoint) {
+        int separator = endpoint.lastIndexOf(':');
+        if (separator <= 0 || separator == endpoint.length() - 1) {
+            return null;
+        }
+        try {
+            String host = endpoint.substring(0, separator).trim();
+            int port = Integer.parseInt(endpoint.substring(separator + 1).trim());
+            if (host.isBlank() || port < 1) {
+                return null;
+            }
+            return new EndpointParts(host, port);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private record EndpointParts(String host, int port) {
     }
 }

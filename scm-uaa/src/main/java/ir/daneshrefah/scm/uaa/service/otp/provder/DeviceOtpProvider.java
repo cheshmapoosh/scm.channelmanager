@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
 import ir.daneshrefah.scm.uaa.service.otp.OtpDeviceService;
@@ -9,6 +8,7 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,8 +25,8 @@ public class DeviceOtpProvider extends AbstractOtpProvider {
     @Autowired
     private OtpDeviceService otpDeviceService;
 
-    public DeviceOtpProvider(CacheTemplate cacheTemplate, OtpProperties otpProperties, ProfileInfo profileInfo) {
-        super(cacheTemplate, otpProperties, profileInfo);
+    public DeviceOtpProvider(CacheManager cacheManager, OtpProperties otpProperties, ProfileInfo profileInfo) {
+        super(cacheManager, otpProperties, profileInfo);
     }
 
     @Override

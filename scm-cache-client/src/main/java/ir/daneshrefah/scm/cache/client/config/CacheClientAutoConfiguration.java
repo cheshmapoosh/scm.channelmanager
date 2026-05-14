@@ -13,8 +13,6 @@ import ir.daneshrefah.scm.cache.client.config.exception.HazelCastClientInitializ
 import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
 import ir.daneshrefah.scm.cache.client.config.properties.CacheType;
 import ir.daneshrefah.scm.cache.client.config.properties.RateLimitProperties;
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplateImpl;
 import ir.daneshrefah.scm.cache.client.connector.QueueTemplate;
 import ir.daneshrefah.scm.cache.client.connector.QueueTemplateImpl;
 import ir.daneshrefah.scm.cache.client.connector.backend.CacheBackend;
@@ -134,14 +132,6 @@ public class CacheClientAutoConfiguration {
                                      CacheBackendRouter backendRouter,
                                      CacheClientProperties cacheProperties) {
         return new RoutingCacheManager(routeResolver, backendRouter, cacheProperties);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public CacheTemplate cacheTemplate(CacheRouteResolver routeResolver,
-                                       CacheBackendRouter backendRouter,
-                                       Optional<HazelcastInstance> hazelcastInstance) {
-        return new CacheTemplateImpl(routeResolver, backendRouter, hazelcastInstance);
     }
 
     @Bean

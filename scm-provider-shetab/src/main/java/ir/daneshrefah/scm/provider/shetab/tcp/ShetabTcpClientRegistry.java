@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.provider.shetab.tcp;
 
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
-import ir.daneshrefah.scm.provider.shetab.lease.ShetabPortLeaseManager;
+import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ShetabTcpClientRegistry implements ShetabClientRegistry {
     private final ShetabPackagerFactory packagerFactory;
-    private final ShetabPortLeaseManager portLeaseManager;
+    private final ShetabEndpointLeaseManager endpointLeaseManager;
     private final ShetabProviderMetrics metrics;
     private final Map<String, ShetabIsoChannelClient> clients = new ConcurrentHashMap<>();
 
@@ -26,7 +26,7 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
     }
 
     private ShetabIsoChannelClient createClient(ShetabResolvedConfig config) {
-        ShetabIsoChannelClient client = new ShetabIsoChannelClient(config, packagerFactory, portLeaseManager, metrics);
+        ShetabIsoChannelClient client = new ShetabIsoChannelClient(config, packagerFactory, endpointLeaseManager, metrics);
         client.start();
         return client;
     }

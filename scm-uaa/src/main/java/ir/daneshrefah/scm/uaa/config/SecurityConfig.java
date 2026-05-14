@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
@@ -20,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -79,7 +79,7 @@ public class SecurityConfig {
     private final CorsConfigurationSource configurationSource;
     private final LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
     private final LogoutService logoutService;
-    private final CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
     private final UserService userService;
 
     @Bean
@@ -143,7 +143,7 @@ public class SecurityConfig {
                                                           GeneralAuthenticationProvider generalAuthenticationProvider)
             throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheTemplate, userService);
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder, logoutService, cacheManager, userService);
         http
                 .securityMatcher("/api/**", "/oauth2/**","/logout")
                 .authenticationProvider(generalAuthenticationProvider)
@@ -255,8 +255,8 @@ public class SecurityConfig {
 
 
     @Bean
-    public SessionCache sessionCache(CacheTemplate cacheTemplate) {
-        return new SessionCache(cacheTemplate);
+    public SessionCache sessionCache(CacheManager cacheManager) {
+        return new SessionCache(cacheManager);
     }
 
 }

@@ -3,13 +3,13 @@ package ir.daneshrefah.scm.cache.client.connector.spring;
 import ir.daneshrefah.scm.cache.client.connector.backend.CacheBackend;
 import ir.daneshrefah.scm.cache.client.connector.routing.CacheRoute;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
 @RequiredArgsConstructor
-public class RoutingSpringCache implements Cache {
+public class RoutingSpringCache implements TtlAwareCache {
 
     private final CacheRoute route;
     private final CacheBackend backend;
@@ -68,13 +68,23 @@ public class RoutingSpringCache implements Cache {
     }
 
     @Override
+    public void put(Object key, Object value, Duration ttl) {
+        backend.put(route, toKey(key), value, ttl);
+    }
+
+    @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
+        return putIfAbsent(key, value, route.ttl());
+    }
+
+    @Override
+    public ValueWrapper putIfAbsent(Object key, Object value, Duration ttl) {
         String cacheKey = toKey(key);
         Object currentValue = backend.get(route, cacheKey);
         if (currentValue != null) {
             return () -> currentValue;
         }
-        backend.putIfAbsent(route, cacheKey, value, route.ttl());
+        backend.putIfAbsent(route, cacheKey, value, ttl);
         Object valueAfterPut = backend.get(route, cacheKey);
         if (valueAfterPut == null || Objects.equals(valueAfterPut, value)) {
             return null;
