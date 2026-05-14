@@ -20,7 +20,6 @@ import ir.daneshrefah.scm.uaa.exception.ImpossibleOTPException;
 import ir.daneshrefah.scm.uaa.exception.RegisterNewUserException;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
-import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
 import ir.daneshrefah.scm.uaa.service.otp.crypt.model.OtpChannel;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpRegisterDeviceRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
@@ -36,6 +35,7 @@ import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -178,11 +178,15 @@ public class OtpDeviceService {
     }
 
     private void updateUserCache(String username, String channelCode) {
-        userCache.removeUserFromCache(username, channelCode);
+        userCache.removeUserFromCache(userCacheKey(username, channelCode));
     }
 
     private void updateUserCache(String username) {
         userCache.removeUserFromCache(username);
+    }
+
+    private String userCacheKey(String username, String channelCode) {
+        return username + StringUtils.DOUBLE_COLON + channelCode;
     }
 
     public ResponseMessageDetails sendAndReceiveOTPRequest(Object request, String otpTokenType, String username, String employeeBranchCode) {

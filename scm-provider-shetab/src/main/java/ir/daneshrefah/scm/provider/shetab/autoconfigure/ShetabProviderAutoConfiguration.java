@@ -4,9 +4,9 @@ import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
 import ir.daneshrefah.scm.provider.shetab.camel.ShetabComponent;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabProperties;
-import ir.daneshrefah.scm.provider.shetab.lease.CacheClientShetabPortLeaseManager;
-import ir.daneshrefah.scm.provider.shetab.lease.NoopShetabPortLeaseManager;
-import ir.daneshrefah.scm.provider.shetab.lease.ShetabPortLeaseManager;
+import ir.daneshrefah.scm.provider.shetab.lease.CacheClientShetabEndpointLeaseManager;
+import ir.daneshrefah.scm.provider.shetab.lease.NoopShetabEndpointLeaseManager;
+import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.CacheClientShetabRateLimiter;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.NoopShetabRateLimiter;
@@ -49,12 +49,12 @@ public class ShetabProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ShetabPortLeaseManager shetabPortLeaseManager(ObjectProvider<ResourceLeaseUtility> resourceLeaseUtility) {
+    public ShetabEndpointLeaseManager shetabEndpointLeaseManager(ObjectProvider<ResourceLeaseUtility> resourceLeaseUtility) {
         ResourceLeaseUtility utility = resourceLeaseUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("ResourceLeaseUtility not found; Shetab local port lease falls back to noop. Runtime deployments should enable scm-cache-client resource-lease.");
-            return new NoopShetabPortLeaseManager();
+            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease falls back to first configured endpoint. Runtime deployments should enable scm-cache-client resource-lease.");
+            return new NoopShetabEndpointLeaseManager();
         }
-        return new CacheClientShetabPortLeaseManager(utility);
+        return new CacheClientShetabEndpointLeaseManager(utility);
     }
 }

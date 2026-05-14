@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.SessionAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
@@ -24,8 +24,8 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_NONE
 public class SessionAuthenticationProvider extends AbstractClientAuthenticationProvider {
 
 
-    protected SessionAuthenticationProvider(SessionCache sessionCache, CacheTemplate cacheTemplate) {
-        super(sessionCache,cacheTemplate);
+    protected SessionAuthenticationProvider(SessionCache sessionCache, CacheManager cacheManager) {
+        super(sessionCache, cacheManager);
     }
 
     @Override

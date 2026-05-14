@@ -15,31 +15,28 @@ public class ShetabConfigResolver {
     private final ShetabProperties properties;
 
     public ShetabResolvedConfig resolve(String provider, ShetabEndpointOverrides overrides) {
-        String providerName = StringUtils.trimToNull(provider);
+        String providerName = normalizeProviderName(provider);
         if (providerName == null) {
             throw new IllegalArgumentException("Shetab provider is required");
         }
 
         ShetabProperties.Instance instance = findProvider(providerName);
         ShetabProperties.Instance defaults = properties.getDefaults();
-        String host = first(instance.getHost(), defaults.getHost());
-        Integer port = first(instance.getPort(), defaults.getPort());
-        if (StringUtils.isBlank(host) || port == null) {
-            throw new IllegalArgumentException("Shetab provider " + providerName + " must define host and port");
+        List<String> endpoints = nonNullList(instance.getEndpoints()).isEmpty()
+                ? nonNullList(defaults.getEndpoints())
+                : nonNullList(instance.getEndpoints());
+        if (endpoints.isEmpty()) {
+            throw new IllegalArgumentException("Shetab provider " + providerName + " must define at least one endpoint (ip:port)");
         }
 
         ShetabProperties.RateLimit rateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
-        ShetabProperties.PortLease portLease = mergePortLease(defaults.getPortLease(), instance.getPortLease());
+        ShetabProperties.EndpointLease endpointLease = mergeEndpointLease(defaults.getEndpointLease(), instance.getEndpointLease());
+        ShetabResolvedConfig.Security security = mergeSecurity(defaults.getSecurity(), instance.getSecurity());
         int responseTimeout = value(first(instance.getResponseTimeoutMs(), defaults.getResponseTimeoutMs()), 6000);
 
         return new ShetabResolvedConfig(
                 providerName,
-                host,
-                port,
-                first(instance.getLocalAddress(), defaults.getLocalAddress()),
-                nonNullList(instance.getLocalPorts()).isEmpty() ? nonNullList(defaults.getLocalPorts()) : nonNullList(instance.getLocalPorts()),
-                value(first(instance.getChannelType(), defaults.getChannelType()), "ASCII"),
-                value(first(instance.getLengthDigits(), defaults.getLengthDigits()), 4),
+                endpoints,
                 first(instance.getPackagerClass(), defaults.getPackagerClass()),
                 first(instance.getPackagerXml(), defaults.getPackagerXml()),
                 value(first(instance.getConnectTimeoutMs(), defaults.getConnectTimeoutMs()), 3000),
@@ -47,13 +44,32 @@ public class ShetabConfigResolver {
                 overrides != null && overrides.timeoutMs() != null ? overrides.timeoutMs() : responseTimeout,
                 value(first(instance.getSendTimeoutMs(), defaults.getSendTimeoutMs()), 1000),
                 value(first(instance.getReconnectDelayMs(), defaults.getReconnectDelayMs()), 1000),
+                value(first(instance.getSameEndpointReconnectAttempts(), defaults.getSameEndpointReconnectAttempts()), 3),
                 value(first(instance.getQueueCapacity(), defaults.getQueueCapacity()), 1000),
                 resolvedRateLimit(rateLimit, overrides),
-                new ShetabResolvedConfig.PortLease(
-                        Boolean.TRUE.equals(portLease.getEnabled()),
-                        value(portLease.getTtlMs(), 30000L)
-                )
+                new ShetabResolvedConfig.EndpointLease(
+                        Boolean.TRUE.equals(endpointLease.getEnabled()),
+                        value(endpointLease.getTtlMs(), 30000L)
+                ),
+                security
         );
+    }
+
+    private String normalizeProviderName(String provider) {
+        String providerName = StringUtils.trimToNull(provider);
+        if (providerName == null) {
+            return null;
+        }
+        int separator = providerName.indexOf(':');
+        if (separator < 0) {
+            return providerName;
+        }
+        String type = providerName.substring(0, separator).trim();
+        String name = providerName.substring(separator + 1).trim();
+        if (!"shetab".equalsIgnoreCase(type) || name.isBlank()) {
+            throw new IllegalArgumentException("Invalid Shetab provider name: " + providerName + ". Expected shetab:<name>");
+        }
+        return name;
     }
 
     private ShetabProperties.Instance findProvider(String providerName) {
@@ -92,11 +108,37 @@ public class ShetabConfigResolver {
         return result;
     }
 
-    private ShetabProperties.PortLease mergePortLease(ShetabProperties.PortLease defaults, ShetabProperties.PortLease instance) {
-        ShetabProperties.PortLease result = new ShetabProperties.PortLease();
+    private ShetabProperties.EndpointLease mergeEndpointLease(ShetabProperties.EndpointLease defaults, ShetabProperties.EndpointLease instance) {
+        ShetabProperties.EndpointLease result = new ShetabProperties.EndpointLease();
         result.setEnabled(first(instance.getEnabled(), defaults.getEnabled()));
         result.setTtlMs(first(instance.getTtlMs(), defaults.getTtlMs()));
         return result;
+    }
+
+    private ShetabResolvedConfig.Security mergeSecurity(ShetabProperties.Security defaults, ShetabProperties.Security instance) {
+        ShetabProperties.Security defaultSecurity = defaults == null ? new ShetabProperties.Security() : defaults;
+        ShetabProperties.Security instanceSecurity = instance == null ? new ShetabProperties.Security() : instance;
+
+        ShetabProperties.Pin defaultPin = defaultSecurity.getPin() == null ? new ShetabProperties.Pin() : defaultSecurity.getPin();
+        ShetabProperties.Pin instancePin = instanceSecurity.getPin() == null ? new ShetabProperties.Pin() : instanceSecurity.getPin();
+        ShetabProperties.Mac defaultMac = defaultSecurity.getMac() == null ? new ShetabProperties.Mac() : defaultSecurity.getMac();
+        ShetabProperties.Mac instanceMac = instanceSecurity.getMac() == null ? new ShetabProperties.Mac() : instanceSecurity.getMac();
+
+        ShetabResolvedConfig.Pin pin = new ShetabResolvedConfig.Pin(
+                Boolean.TRUE.equals(first(instancePin.getEnabled(), defaultPin.getEnabled())),
+                first(instancePin.getKey(), defaultPin.getKey()),
+                value(first(instancePin.getField(), defaultPin.getField()), 52),
+                value(first(instancePin.getPanField(), defaultPin.getPanField()), 2)
+        );
+        ShetabResolvedConfig.Mac mac = new ShetabResolvedConfig.Mac(
+                Boolean.TRUE.equals(first(instanceMac.getEnabled(), defaultMac.getEnabled())),
+                first(instanceMac.getKey(), defaultMac.getKey()),
+                value(first(instanceMac.getField(), defaultMac.getField()), 128),
+                Boolean.TRUE.equals(first(instanceMac.getVerifyResponse(), defaultMac.getVerifyResponse())),
+                value(first(instanceMac.getPlaceholder(), defaultMac.getPlaceholder()), "AAAAAAAAAAAAAAAA"),
+                value(first(instanceMac.getPackedLengthBytes(), defaultMac.getPackedLengthBytes()), 16)
+        );
+        return new ShetabResolvedConfig.Security(pin, mac);
     }
 
     private static <T> T first(T value, T fallback) {
@@ -115,7 +157,7 @@ public class ShetabConfigResolver {
         return StringUtils.defaultIfBlank(value, fallback);
     }
 
-    private static List<Integer> nonNullList(List<Integer> value) {
+    private static <T> List<T> nonNullList(List<T> value) {
         return value == null ? List.of() : List.copyOf(value);
     }
 }

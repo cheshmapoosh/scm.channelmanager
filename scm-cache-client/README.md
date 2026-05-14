@@ -16,6 +16,12 @@ scm:
       default-type: remote
       default-ttl: 30m
       default-maximum-size: 10000
+      security:
+        user-cache:
+          enabled: true
+          cache-name: user_cache
+          # optional SpEL with #user as UserDetails
+          # key-expression: "#user.username + '::' + #user.user.terminalCode"
       utilities:
         rate-limit: remote # local | remote
         lock: remote       # local | remote
@@ -39,6 +45,10 @@ scm:
         authority_cache:
           type: remote
           remote-name: security_authority_map
+        "jwt:jti":
+          type: remote
+        cache_otp:
+          type: remote
 
       # client config for hazelcast
       config:
@@ -67,12 +77,62 @@ public class UserService {
 
 Routing بر اساس `cacheNames` انجام می‌شود. یعنی هر cache name به صورت مستقل می‌تواند `local/remote/near` باشد.
 
-## استفاده با CacheTemplate
+## استفاده با Spring CacheManager
 
 ```java
-cacheTemplate.putInCache("session_cache", sessionKey, userAuth);
-UserAuthentication auth = (UserAuthentication) cacheTemplate.getFromCache("session_cache", sessionKey);
+Cache cache = cacheManager.getCache("session_cache");
+cache.put(sessionKey, userAuth);
+UserAuthentication auth = cache.get(sessionKey, UserAuthentication.class);
 ```
+
+`CacheTemplate` حذف شده است. برای کدهای جدید از `CacheManager`، `Cache` و annotationهای استاندارد Spring استفاده کنید.
+
+اگر TTL هر entry باید در زمان اجرا تعیین شود، cache برگشتی scm-cache-client از نوع `TtlAwareCache` هم هست:
+
+```java
+Cache cache = cacheManager.getCache("session_cache");
+if (cache instanceof TtlAwareCache ttlAwareCache) {
+    ttlAwareCache.put(sessionKey, userAuth, Duration.ofMinutes(30));
+} else {
+    cache.put(sessionKey, userAuth);
+}
+```
+
+## Spring Security UserCache
+
+اگر `spring-security-core` در application وجود داشته باشد، scm-cache-client به صورت خودکار bean استاندارد زیر را می‌سازد:
+
+```java
+org.springframework.security.core.userdetails.UserCache
+```
+
+پیاده‌سازی bean از کلاس استاندارد Spring Security است:
+
+```java
+org.springframework.security.core.userdetails.cache.SpringCacheBasedUserCache
+```
+
+این bean پشت صحنه از cache نام‌گذاری‌شده در `scm.cache.client.security.user-cache.cache-name` استفاده می‌کند. بنابراین نوع backend آن مثل هر cache دیگر از بخش `caches` قابل تنظیم است:
+
+```yaml
+scm:
+  cache:
+    client:
+      security:
+        user-cache:
+          enabled: true
+          cache-name: user_cache
+          key-expression: "#user.username + '::' + #user.user.terminalCode"
+      caches:
+        user_cache:
+          type: near # local | remote | near
+          ttl: 30m
+```
+
+- اگر `key-expression` خالی باشد، برای `UserDetails` معمولی کلید `user.getUsername()` است.
+- برای `TerminalUserDetails` فعلی پروژه، چون `getUser().getTerminalCode()` دارد، scm-cache-client به صورت خودکار `username::terminalCode` را می‌سازد.
+- برای سازگاری با `username::terminalCode`، فقط `Cache` زیر `SpringCacheBasedUserCache` هنگام `putUserInCache` کلید را resolve می‌کند؛ خود `UserCache` همان پیاده‌سازی استاندارد Spring Security است.
+- برای invalidate کردن cache کافی است `UserCache.removeUserFromCache(cacheKey)` را با همان کلید نهایی صدا بزنید.
 
 ## Cache لایه دیتابیس در Spring
 

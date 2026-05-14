@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.provider.shetab.config.ShetabHeaders;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabIsoMapConverter;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.ShetabRateLimiter;
+import ir.daneshrefah.scm.provider.shetab.security.ShetabMessageSecurityProcessor;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabClientRegistry;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabTraceSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,8 @@ import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
 import org.jpos.iso.ISOMsg;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
@@ -29,6 +32,7 @@ public class ShetabProducer extends DefaultProducer {
     private ShetabIsoMapConverter isoMapConverter;
     private ShetabClientRegistry clientRegistry;
     private ShetabRateLimiter rateLimiter;
+    private ShetabMessageSecurityProcessor securityProcessor;
     private ShetabTraceSupport traceSupport;
     private ObjectMapper objectMapper;
 
@@ -44,6 +48,7 @@ public class ShetabProducer extends DefaultProducer {
         isoMapConverter = bean(ShetabIsoMapConverter.class);
         clientRegistry = bean(ShetabClientRegistry.class);
         rateLimiter = bean(ShetabRateLimiter.class);
+        securityProcessor = bean(ShetabMessageSecurityProcessor.class);
         traceSupport = bean(ShetabTraceSupport.class);
         objectMapper = bean(ObjectMapper.class);
     }
@@ -58,14 +63,16 @@ public class ShetabProducer extends DefaultProducer {
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
+        securityProcessor.protectRequest(config, requestMap, request);
 
-        log.info("Shetab provider request provider={} operation={} body={}", config.provider(), operationName, requestMap);
+        log.info("Shetab provider request provider={} operation={} body={}", config.provider(), operationName, maskSensitive(requestMap));
         ISOMsg response = traceSupport.clientSpan(exchange, config, request, () -> {
             rateLimiter.acquire(config, operationName);
             return clientRegistry.request(config, request);
         });
+        securityProcessor.verifyResponse(config, response);
         Map<String, Object> responseMap = isoMapConverter.toMap(response);
-        log.info("Shetab provider response provider={} operation={} body={}", config.provider(), operationName, responseMap);
+        log.info("Shetab provider response provider={} operation={} body={}", config.provider(), operationName, maskSensitive(responseMap));
         exchange.getMessage().setBody(responseMap);
     }
 
@@ -115,6 +122,38 @@ public class ShetabProducer extends DefaultProducer {
             }
         }
         return objectMapper.convertValue(body, MAP_TYPE);
+    }
+
+    private Object maskSensitive(Object value) {
+        return maskSensitive(null, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object maskSensitive(String key, Object value) {
+        if (isSensitiveKey(key)) {
+            return "***";
+        }
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> masked = new LinkedHashMap<>();
+            map.forEach((entryKey, entryValue) ->
+                    masked.put(String.valueOf(entryKey), maskSensitive(String.valueOf(entryKey), entryValue)));
+            return masked;
+        }
+        if (value instanceof Collection<?> collection) {
+            return collection.stream().map(item -> maskSensitive(null, item)).toList();
+        }
+        return value;
+    }
+
+    private boolean isSensitiveKey(String key) {
+        if (key == null) {
+            return false;
+        }
+        String normalized = key.replace("-", "").replace("_", "").toLowerCase();
+        return "52".equals(key)
+                || "128".equals(key)
+                || normalized.contains("pin")
+                || normalized.contains("mac");
     }
 
     private <T> T first(T value, T fallback) {

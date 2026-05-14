@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -47,11 +47,11 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     private final GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
-    private final CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
 
-    protected AbstractClientAuthenticationProvider(SessionCache sessionCache,CacheTemplate cacheTemplate) {
+    protected AbstractClientAuthenticationProvider(SessionCache sessionCache, CacheManager cacheManager) {
         this.sessionCache = sessionCache;
-        this.cacheTemplate = cacheTemplate;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -179,8 +179,8 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
         return sessionCache;
     }
 
-    protected CacheTemplate cacheTemplate() {
-        return cacheTemplate;
+    protected CacheManager cacheManager() {
+        return cacheManager;
     }
 
 }

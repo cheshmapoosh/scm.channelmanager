@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.AnonymousAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -24,8 +24,8 @@ public class AnonymousAuthenticationProvider extends AbstractClientAuthenticatio
 
     private final String key = "scm_anonymous";
 
-    protected AnonymousAuthenticationProvider(SessionCache sessionCache, CacheTemplate cacheTemplate) {
-        super(sessionCache,cacheTemplate);
+    protected AnonymousAuthenticationProvider(SessionCache sessionCache, CacheManager cacheManager) {
+        super(sessionCache, cacheManager);
     }
 
     @Override

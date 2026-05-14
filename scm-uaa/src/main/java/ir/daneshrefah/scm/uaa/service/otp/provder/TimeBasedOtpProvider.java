@@ -1,11 +1,11 @@
 package ir.daneshrefah.scm.uaa.service.otp.provder;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.uaa.config.OtpProperties;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import ir.daneshrefah.scm.uaa.utils.ProfileInfo;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class TimeBasedOtpProvider extends AbstractOtpProvider {
 
-    public TimeBasedOtpProvider(CacheTemplate cacheTemplate, OtpProperties otpProperties, ProfileInfo profileInfo) {
-        super(cacheTemplate, otpProperties, profileInfo);
+    public TimeBasedOtpProvider(CacheManager cacheManager, OtpProperties otpProperties, ProfileInfo profileInfo) {
+        super(cacheManager, otpProperties, profileInfo);
     }
 
     @Override

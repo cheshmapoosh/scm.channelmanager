@@ -2,8 +2,8 @@ package ir.daneshrefah.scm.provider.shetab.tcp;
 
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
-import ir.daneshrefah.scm.provider.shetab.lease.ShetabPortLease;
-import ir.daneshrefah.scm.provider.shetab.lease.ShetabPortLeaseManager;
+import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLease;
+import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.jpos.core.SimpleConfiguration;
@@ -26,31 +26,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class ShetabIsoChannelClient {
+    private static final int SHETAB_LENGTH_DIGITS = 4;
+
     private final ShetabResolvedConfig config;
     private final ShetabPackagerFactory packagerFactory;
-    private final ShetabPortLeaseManager portLeaseManager;
+    private final ShetabEndpointLeaseManager endpointLeaseManager;
     private final ShetabProviderMetrics.CounterSet metrics;
     private final ArrayBlockingQueue<PendingRequest> sendQueue;
     private final Map<String, CompletableFuture<ISOMsg>> responseMap = new ConcurrentHashMap<>();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Object connectionLock = new Object();
-    private final Object sendLock = new Object();
 
     private volatile ISOChannel channel;
-    private volatile ShetabPortLease portLease = ShetabPortLease.none();
+    private volatile ShetabEndpointLease leasedEndpoint = ShetabEndpointLease.none();
     private volatile boolean connected;
+    private volatile Throwable lastConnectionFailure;
+    private int sameEndpointFailureCount;
     private Thread senderThread;
     private Thread receiverThread;
 
     public ShetabIsoChannelClient(
             ShetabResolvedConfig config,
             ShetabPackagerFactory packagerFactory,
-            ShetabPortLeaseManager portLeaseManager,
+            ShetabEndpointLeaseManager endpointLeaseManager,
             ShetabProviderMetrics metrics
     ) {
         this.config = config;
         this.packagerFactory = packagerFactory;
-        this.portLeaseManager = portLeaseManager;
+        this.endpointLeaseManager = endpointLeaseManager;
         this.metrics = metrics.provider(config.provider());
         this.sendQueue = new ArrayBlockingQueue<>(config.queueCapacity());
     }
@@ -63,7 +66,8 @@ public class ShetabIsoChannelClient {
         receiverThread = thread("shetab-receiver-" + config.provider(), this::receiverLoop);
         senderThread.start();
         receiverThread.start();
-        log.info("Started Shetab ISOChannel client provider={} host={} port={}", config.provider(), config.host(), config.port());
+        log.info("Started Shetab ISOChannel client provider={} endpointCount={}",
+                config.provider(), config.endpoints() != null ? config.endpoints().size() : 0);
     }
 
     public void stop() {
@@ -116,9 +120,7 @@ public class ShetabIsoChannelClient {
             try {
                 PendingRequest pending = sendQueue.take();
                 ensureConnected();
-                synchronized (sendLock) {
-                    channel.send(pending.msg());
-                }
+                channel.send(pending.msg());
                 metrics.sent();
                 log.info("Shetab SEND provider={} key={} mti={} stan={} rrn={} queueSize={}",
                         config.provider(), pending.key(), safeMti(pending.msg()), safeField(pending.msg(), 11),
@@ -130,7 +132,7 @@ public class ShetabIsoChannelClient {
                 metrics.failed();
                 log.error("Shetab sender error provider={}", config.provider(), e);
                 failAll(e);
-                reconnectQuietly();
+                markDisconnected(e, false);
             }
         }
     }
@@ -156,12 +158,14 @@ public class ShetabIsoChannelClient {
             } catch (SocketException e) {
                 if (running.get()) {
                     log.warn("Shetab receiver socket error provider={}", config.provider(), e);
-                    reconnectQuietly();
+                    failAll(e);
+                    markDisconnected(e, false);
                 }
             } catch (Exception e) {
                 if (running.get()) {
                     log.warn("Shetab receiver error provider={}", config.provider(), e);
-                    reconnectQuietly();
+                    failAll(e);
+                    markDisconnected(e, false);
                 }
             }
         }
@@ -182,50 +186,71 @@ public class ShetabIsoChannelClient {
     private void connect() {
         while (running.get()) {
             try {
-                closeChannel();
-                portLease = portLeaseManager.acquire(config);
-                channel = createChannel();
+                if (isEmptyLease(leasedEndpoint)) {
+                    leasedEndpoint = endpointLeaseManager.acquire(config);
+                    sameEndpointFailureCount = 0;
+                    log.info("Acquired Shetab endpoint lease provider={} endpoint={}",
+                            config.provider(), leasedEndpoint.endpoint());
+                }
+                closeSocket();
+                channel = createChannel(leasedEndpoint);
                 channel.connect();
                 connected = true;
-                log.info("Connected Shetab ISOChannel provider={} remote={}:{} localPort={}",
-                        config.provider(), config.host(), config.port(), portLease.port());
+                lastConnectionFailure = null;
+                sameEndpointFailureCount = 0;
+                log.info("Connected Shetab ISOChannel provider={} remoteEndpoint={}",
+                        config.provider(), leasedEndpoint.endpoint());
                 return;
             } catch (Exception e) {
                 connected = false;
-                log.error("Shetab connection failed provider={} remote={}:{} retryInMs={}",
-                        config.provider(), config.host(), config.port(), config.reconnectDelayMs(), e);
+                lastConnectionFailure = e;
+                sameEndpointFailureCount++;
+                log.error("Shetab connection failed provider={} remoteEndpoint={} attempt={}/{} retryInMs={}",
+                        config.provider(), leasedEndpoint.endpoint(), sameEndpointFailureCount,
+                        maxSameEndpointReconnectAttempts(), config.reconnectDelayMs(), e);
+                closeSocket();
+                if (sameEndpointFailureCount >= maxSameEndpointReconnectAttempts()) {
+                    releaseLease();
+                }
                 sleep(config.reconnectDelayMs());
             }
         }
     }
 
-    private ISOChannel createChannel() throws Exception {
-        if (!"ASCII".equalsIgnoreCase(config.channelType())) {
-            throw new IllegalArgumentException("Unsupported Shetab channel type " + config.channelType());
+    private ISOChannel createChannel(ShetabEndpointLease endpointLease) throws Exception {
+        String remoteHost = endpointLease.remoteHost();
+        int remotePort = endpointLease.remotePort();
+        if (remoteHost == null || remoteHost.isBlank() || remotePort <= 0) {
+            throw new IllegalStateException("Invalid leased endpoint for provider " + config.provider() + ": " + endpointLease.endpoint());
         }
-        ASCIIChannel asciiChannel = new ASCIIChannel(config.host(), config.port(), packagerFactory.create(config));
+        ASCIIChannel asciiChannel = new ASCIIChannel(remoteHost, remotePort, packagerFactory.create(config));
         Properties channelConfig = new Properties();
-        channelConfig.put("host", config.host());
-        channelConfig.put("port", String.valueOf(config.port()));
+        channelConfig.put("host", remoteHost);
+        channelConfig.put("port", String.valueOf(remotePort));
         channelConfig.put("timeout", String.valueOf(config.socketTimeoutMs()));
         channelConfig.put("connect-timeout", String.valueOf(config.connectTimeoutMs()));
-        channelConfig.put("length-digits", String.valueOf(config.lengthDigits()));
-        if (portLease.port() > 0) {
-            String localAddress = config.localAddress() == null ? "0.0.0.0" : config.localAddress();
-            channelConfig.put("local-iface", localAddress);
-            channelConfig.put("local-port", String.valueOf(portLease.port()));
-        }
+        channelConfig.put("length-digits", String.valueOf(SHETAB_LENGTH_DIGITS));
         asciiChannel.setConfiguration(new SimpleConfiguration(channelConfig));
         return asciiChannel;
     }
 
-    private void reconnectQuietly() {
+    private void markDisconnected(Throwable error, boolean releaseLease) {
         synchronized (connectionLock) {
-            closeChannel();
+            lastConnectionFailure = error;
+            closeSocket();
+            if (releaseLease) {
+                releaseLease();
+            }
         }
     }
 
     private void closeChannel() {
+        connected = false;
+        closeSocket();
+        releaseLease();
+    }
+
+    private void closeSocket() {
         connected = false;
         ISOChannel current = channel;
         channel = null;
@@ -235,8 +260,28 @@ public class ShetabIsoChannelClient {
             } catch (Exception ignored) {
             }
         }
-        portLease.close();
-        portLease = ShetabPortLease.none();
+    }
+
+    private void releaseLease() {
+        leasedEndpoint.close();
+        leasedEndpoint = ShetabEndpointLease.none();
+        sameEndpointFailureCount = 0;
+    }
+
+    public boolean isHealthy() {
+        return running.get() && connected && channel != null && channel.isConnected() && lastConnectionFailure == null;
+    }
+
+    public Throwable lastConnectionFailure() {
+        return lastConnectionFailure;
+    }
+
+    private boolean isEmptyLease(ShetabEndpointLease endpointLease) {
+        return endpointLease == null || endpointLease.endpoint() == null || endpointLease.endpoint().isBlank();
+    }
+
+    private int maxSameEndpointReconnectAttempts() {
+        return Math.max(1, config.sameEndpointReconnectAttempts());
     }
 
     private void failAll(Throwable error) {

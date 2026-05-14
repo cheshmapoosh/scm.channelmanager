@@ -41,12 +41,7 @@ class CacheClientShetabRateLimiterTest {
     private ShetabResolvedConfig config(String provider, boolean enabled, String bucket, String key) {
         return new ShetabResolvedConfig(
                 provider,
-                "127.0.0.1",
-                9000,
-                "0.0.0.0",
                 List.of(),
-                "ASCII",
-                4,
                 null,
                 null,
                 3000,
@@ -54,9 +49,14 @@ class CacheClientShetabRateLimiterTest {
                 6000,
                 1000,
                 1000,
+                3,
                 1000,
                 new ShetabResolvedConfig.RateLimit(enabled, bucket, key),
-                new ShetabResolvedConfig.PortLease(false, 30000)
+                new ShetabResolvedConfig.EndpointLease(false, 30000),
+                new ShetabResolvedConfig.Security(
+                        new ShetabResolvedConfig.Pin(false, null, 52, 2),
+                        new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16)
+                )
         );
     }
 

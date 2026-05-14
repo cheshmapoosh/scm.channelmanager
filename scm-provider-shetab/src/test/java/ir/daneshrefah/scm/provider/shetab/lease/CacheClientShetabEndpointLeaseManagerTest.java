@@ -12,18 +12,20 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CacheClientShetabPortLeaseManagerTest {
+class CacheClientShetabEndpointLeaseManagerTest {
 
     @Test
-    void acquiresPortUsingResourceLeaseUtility() {
-        FakeResourceLeaseUtility utility = new FakeResourceLeaseUtility("5002");
-        CacheClientShetabPortLeaseManager manager = new CacheClientShetabPortLeaseManager(utility);
+    void acquiresEndpointUsingResourceLeaseUtility() {
+        FakeResourceLeaseUtility utility = new FakeResourceLeaseUtility("10.10.10.11:5002");
+        CacheClientShetabEndpointLeaseManager manager = new CacheClientShetabEndpointLeaseManager(utility);
 
-        ShetabPortLease lease = manager.acquire(config(true, List.of(5001, 5002), "10.10.10.10"));
+        ShetabEndpointLease lease = manager.acquire(config(true, List.of("10.10.10.10:5001", "10.10.10.11:5002")));
 
-        assertEquals(5002, lease.port());
-        assertEquals("shetab-local-port::10.10.10.10", utility.poolName);
-        assertEquals(List.of("5001", "5002"), utility.candidates);
+        assertEquals("10.10.10.11:5002", lease.endpoint());
+        assertEquals("10.10.10.11", lease.remoteHost());
+        assertEquals(5002, lease.remotePort());
+        assertEquals("shetab-hps-endpoint::poya", utility.poolName);
+        assertEquals(List.of("10.10.10.10:5001", "10.10.10.11:5002"), utility.candidates);
         assertEquals(Duration.ofMillis(30_000L), utility.ttl);
 
         lease.close();
@@ -31,24 +33,21 @@ class CacheClientShetabPortLeaseManagerTest {
     }
 
     @Test
-    void returnsNoneWhenPortLeaseIsDisabled() {
-        FakeResourceLeaseUtility utility = new FakeResourceLeaseUtility("5001");
-        CacheClientShetabPortLeaseManager manager = new CacheClientShetabPortLeaseManager(utility);
+    void returnsFirstEndpointWhenLeaseIsDisabled() {
+        FakeResourceLeaseUtility utility = new FakeResourceLeaseUtility("10.10.10.10:5001");
+        CacheClientShetabEndpointLeaseManager manager = new CacheClientShetabEndpointLeaseManager(utility);
 
-        ShetabPortLease lease = manager.acquire(config(false, List.of(5001, 5002), null));
+        ShetabEndpointLease lease = manager.acquire(config(false, List.of("10.10.10.10:5001", "10.10.10.11:5002")));
 
-        assertEquals(0, lease.port());
+        assertEquals("10.10.10.10:5001", lease.endpoint());
+        assertEquals("10.10.10.10", lease.remoteHost());
+        assertEquals(5001, lease.remotePort());
     }
 
-    private static ShetabResolvedConfig config(boolean enabled, List<Integer> localPorts, String localAddress) {
+    private static ShetabResolvedConfig config(boolean enabled, List<String> endpoints) {
         return new ShetabResolvedConfig(
                 "poya",
-                "127.0.0.1",
-                9000,
-                localAddress,
-                localPorts,
-                "ASCII",
-                4,
+                endpoints,
                 null,
                 null,
                 3000,
@@ -56,9 +55,14 @@ class CacheClientShetabPortLeaseManagerTest {
                 6000,
                 1000,
                 1000,
+                3,
                 1000,
                 new ShetabResolvedConfig.RateLimit(false, "unused", "provider"),
-                new ShetabResolvedConfig.PortLease(enabled, 30_000L)
+                new ShetabResolvedConfig.EndpointLease(enabled, 30_000L),
+                new ShetabResolvedConfig.Security(
+                        new ShetabResolvedConfig.Pin(false, null, 52, 2),
+                        new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16)
+                )
         );
     }
 

@@ -1,12 +1,12 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BasicAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.remote.RemoteSecurityServiceProvider;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
@@ -25,8 +25,8 @@ public class BasicRemoteAuthenticationProvider extends AbstractRemoteClientAuthe
 
     public BasicRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
                                              SessionCache sessionCache,
-                                             CacheTemplate cacheTemplate) {
-        super(remoteSecurityServiceProvider, sessionCache, cacheTemplate);
+                                             CacheManager cacheManager) {
+        super(remoteSecurityServiceProvider, sessionCache, cacheManager);
     }
 
     @Override

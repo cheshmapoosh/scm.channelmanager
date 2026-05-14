@@ -48,9 +48,42 @@ public class CacheClientProperties {
      */
     private UtilityBackends utilities = new UtilityBackends();
 
+    /**
+     * Optional integrations with Spring ecosystem components.
+     */
+    private Security security = new Security();
+
     public enum UtilityBackendType {
         LOCAL,
         REMOTE
+    }
+
+    @Getter
+    @Setter
+    public static class Security {
+
+        private UserCache userCache = new UserCache();
+    }
+
+    @Getter
+    @Setter
+    public static class UserCache {
+
+        /**
+         * Enables scm-cache-client backed org.springframework.security.core.userdetails.UserCache.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Spring cache name used for UserDetails entries.
+         */
+        private String cacheName = "user_cache";
+
+        /**
+         * Optional SpEL expression evaluated with #user as UserDetails.
+         * Example: #user.username + '::' + #user.user.terminalCode
+         */
+        private String keyExpression;
     }
 
     @Getter

@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.model.person.ClientPerson;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseTerminalAuthenticationToken;
@@ -12,6 +11,8 @@ import ir.daneshrefah.scm.uaa.common.token.JwtTokenConverter;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -38,8 +39,8 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
 
     public BearerAuthenticationProvider(JwtDecoder jwtDecoder,
                                         SessionCache sessionCache,
-                                        CacheTemplate cacheTemplate) {
-        super(sessionCache, cacheTemplate);
+                                        CacheManager cacheManager) {
+        super(sessionCache, cacheManager);
         this.jwtDecoder = jwtDecoder;
         this.jwtTokenConverter = new JwtTokenConverter();
     }
@@ -90,11 +91,20 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
     private void validateJwtId(Jwt jwt, String username, String terminalCode, BearerAuthenticationToken authentication) {
         String jwtTokenId = jwt.getClaim(Constants.CLAIM_KEY_JWT_IDENTIFIER);
         String cacheKey = String.format("%s%s%s", username, "::", terminalCode);
-        String cachedTokenId = (String) cacheTemplate().getFromCache(JWT_ID_CACHE_NAME, cacheKey);
+        String cachedTokenId = cachedJwtId(cacheKey);
         if (StringUtils.isBlank(jwtTokenId) || !jwtTokenId.equals(cachedTokenId)) {
             logoutService.sendLogoutMessage(authentication);
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_TOKEN, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
+    }
+
+    private String cachedJwtId(String cacheKey) {
+        Cache cache = cacheManager().getCache(JWT_ID_CACHE_NAME);
+        if (cache == null) {
+            throw new IllegalStateException("Spring cache is not configured: " + JWT_ID_CACHE_NAME);
+        }
+        Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
+        return valueWrapper == null ? null : (String) valueWrapper.get();
     }
 
     @Override

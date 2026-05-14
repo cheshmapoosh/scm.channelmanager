@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.task.service;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.otp.service.OtpClientService;
 import ir.daneshrefah.scm.task.constant.DefinitionTypeEnum;
@@ -15,6 +14,8 @@ import ir.daneshrefah.scm.task.repository.ProcessTaskDefinitionRepository;
 import ir.daneshrefah.scm.utils.validation.ChainValidation;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
@@ -25,7 +26,7 @@ public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionSe
 
     private final ProcessTaskDefinitionRepository processTaskDefinitionRepository;
     private final OtpClientService otpClientService;
-    private final CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
     public static final String CACHE_NAME_OTP = "task_definition_otp";
 
     @Override
@@ -57,12 +58,21 @@ public class ProcessTaskDefinitionServiceImpl implements ProcessTaskDefinitionSe
 
     private ProcessTaskDefinitionEntity getProcessTaskDefinitionEntityFromCache(ProcessNameEnum processName, ExecutionMethodTypeEnum executionMethodType, DefinitionTypeEnum definitionType, ProcessCodeEnum processCode) {
         String key = processName.getProcessName() + "~" + executionMethodType.getCode() + "~" + definitionType.getCode() + "~" + processCode.getCode();
-        ProcessTaskDefinitionEntity processTaskDefinitionEntity = (ProcessTaskDefinitionEntity) cacheTemplate.getFromCache(CACHE_NAME_OTP, key);
+        Cache cache = taskDefinitionCache();
+        ProcessTaskDefinitionEntity processTaskDefinitionEntity = cache.get(key, ProcessTaskDefinitionEntity.class);
         if (processTaskDefinitionEntity == null) {
             processTaskDefinitionEntity = findProcessTaskDefinitionEntity(processName, executionMethodType, definitionType, processCode);
-            cacheTemplate.putInCache(CACHE_NAME_OTP, key, processTaskDefinitionEntity);
+            cache.put(key, processTaskDefinitionEntity);
         }
         return processTaskDefinitionEntity;
+    }
+
+    private Cache taskDefinitionCache() {
+        Cache cache = cacheManager.getCache(CACHE_NAME_OTP);
+        if (cache == null) {
+            throw new IllegalStateException("Spring cache is not configured: " + CACHE_NAME_OTP);
+        }
+        return cache;
     }
 
     @Override

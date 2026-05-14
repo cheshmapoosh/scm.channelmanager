@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider;
 
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
@@ -12,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -47,7 +48,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     private final LogoutService logoutService;
 
-    private final CacheTemplate cacheTemplate;
+    private final CacheManager cacheManager;
 
     private final UserService userService;
 
@@ -77,11 +78,20 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
             return;
         }
         String cacheKey = String.format("%s%s%s", username, "::", terminalCode);
-        String cachedTokenId = (String) cacheTemplate.getFromCache(JWT_ID_CACHE_NAME, cacheKey);
+        String cachedTokenId = cachedJwtId(cacheKey);
         if (StringUtils.isBlank(jwtTokenId) || !jwtTokenId.equals(cachedTokenId)) {
             logoutService.sendLogoutMessage(authentication);
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_TOKEN, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
+    }
+
+    private String cachedJwtId(String cacheKey) {
+        Cache cache = cacheManager.getCache(JWT_ID_CACHE_NAME);
+        if (cache == null) {
+            throw new IllegalStateException("Spring cache is not configured: " + JWT_ID_CACHE_NAME);
+        }
+        Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
+        return valueWrapper == null ? null : (String) valueWrapper.get();
     }
 
     private Jwt prepareJwt(Jwt jwt, Authentication authentication) {

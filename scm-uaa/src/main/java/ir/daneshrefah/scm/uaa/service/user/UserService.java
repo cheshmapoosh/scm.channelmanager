@@ -35,7 +35,6 @@ import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
 import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
-import ir.daneshrefah.scm.uaa.security.userDetails.UserCache;
 import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
@@ -52,6 +51,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -93,6 +93,10 @@ public class UserService {
     private final NotificationService notificationService;
     private final UserMapper userMapper;
 
+    private String userCacheKey(String username, String terminalCode) {
+        return username + StringUtils.DOUBLE_COLON + terminalCode;
+    }
+
     @Transactional
     public User changeNickName(UserNickNameModifyRequest request, HttpServletRequest servletRequest) {
         String claimCodeHeader = servletRequest.getHeader(SCM_PARAMETER_CLAIM_CODE);
@@ -118,7 +122,7 @@ public class UserService {
         assert currentAuthentication != null;
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(userCacheKey(request.getCurrentNickName(), request.getTerminalCode()));
         return userMapper.toModel(userEntity);
     }
 
@@ -133,7 +137,7 @@ public class UserService {
         currentUser.setNickname(request.getNickName());
         userRepository.save(currentUser);
         xUserDetailService.removeXUserByUsernameAndChannelCode(currentUser, request.getTerminalCode());
-        userCache.removeUserFromCache(request.getCurrentNickName() + "::" + request.getTerminalCode());
+        userCache.removeUserFromCache(userCacheKey(request.getCurrentNickName(), request.getTerminalCode()));
         return userMapper.toModel(currentUser);
     }
 
@@ -169,7 +173,7 @@ public class UserService {
         assert currentAuthentication != null;
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
+        userCache.removeUserFromCache(userCacheKey(request.getUsername(), request.getTerminalCode()));
         return userMapper.toModel(userEntity);
     }
 
@@ -188,7 +192,7 @@ public class UserService {
         assert currentAuthentication != null;
         String terminalCode = currentAuthentication.getTerminalCode();
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(request.getUsername(), request.getTerminalCode());
+        userCache.removeUserFromCache(userCacheKey(request.getUsername(), request.getTerminalCode()));
         return userMapper.toModel(userEntity);
     }
 
@@ -560,7 +564,7 @@ public class UserService {
         userEntity.setLoginAuthenticationMethod(requestMethod);
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(nickname, terminalCode);
+        userCache.removeUserFromCache(userCacheKey(nickname, terminalCode));
         return userMapper.toModel(userEntity);
     }
 
@@ -628,7 +632,7 @@ public class UserService {
         String nickname = currentUserAuthentication.getName();
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminalCode);
-        userCache.removeUserFromCache(nickname, terminalCode);
+        userCache.removeUserFromCache(userCacheKey(nickname, terminalCode));
         return userMapper.toModel(userEntity);
     }
 
@@ -648,7 +652,7 @@ public class UserService {
         }
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getTerminalCode());
-        userCache.removeUserFromCache(userEntity.getNickname(), request.getTerminalCode());
+        userCache.removeUserFromCache(userCacheKey(userEntity.getNickname(), request.getTerminalCode()));
         return userMapper.toModel(userEntity);
     }
 
@@ -712,7 +716,7 @@ public class UserService {
         Terminal terminal = terminalService.findTerminalByLegacyId(userEntity.getTerminalId()).orElseThrow(() -> new NoMatchRecordFoundException("terminal"));
         userRepository.save(userEntity);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, terminal.getCode());
-        userCache.removeUserFromCache(request.getNickname() + "::" + terminal.getCode());
+        userCache.removeUserFromCache(userCacheKey(request.getNickname(), terminal.getCode()));
         return userMapper.toModel(userEntity);
     }
 
@@ -995,7 +999,7 @@ public class UserService {
         }
         sendNotification(request,userEntity,generatedPassword);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getChannelCode());
-        userCache.removeUserFromCache(userEntity.getNickname(), request.getChannelCode() );
+            userCache.removeUserFromCache(userCacheKey(userEntity.getNickname(), request.getChannelCode()));
         userRepository.save(userEntity);
         return true;
     }
