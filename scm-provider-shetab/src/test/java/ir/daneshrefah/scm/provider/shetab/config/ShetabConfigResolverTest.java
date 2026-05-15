@@ -11,14 +11,14 @@ class ShetabConfigResolverTest {
     @Test
     void resolvesTypedOperationProviderNameToShetabProviderInstance() {
         ShetabProperties properties = new ShetabProperties();
-        ShetabProperties.Instance poya = new ShetabProperties.Instance();
-        poya.setEndpoints(List.of("10.10.10.10:9000"));
-        poya.setPackagerClass("Shetab7AsciiXAPackager");
-        properties.getProviders().put("poya", poya);
+        ShetabProperties.Instance hps = new ShetabProperties.Instance();
+        hps.setEndpoints(List.of("10.10.10.10:9000"));
+        hps.setPackagerClass("Shetab7AsciiXAPackager");
+        properties.getProviders().put("hps", hps);
 
-        ShetabResolvedConfig config = new ShetabConfigResolver(properties).resolve("shetab:poya", null);
+        ShetabResolvedConfig config = new ShetabConfigResolver(properties).resolve("shetab:hps", null);
 
-        assertEquals("poya", config.provider());
+        assertEquals("hps", config.provider());
         assertEquals(List.of("10.10.10.10:9000"), config.endpoints());
     }
 
@@ -28,11 +28,11 @@ class ShetabConfigResolverTest {
         properties.getDefaults().getSecurity().getPin().setEnabled(true);
         properties.getDefaults().getSecurity().getPin().setKey("0123456789ABCDEF");
 
-        ShetabProperties.Instance poya = new ShetabProperties.Instance();
-        poya.setEndpoints(List.of("10.10.10.10:9000"));
-        properties.getProviders().put("poya", poya);
+        ShetabProperties.Instance hps = new ShetabProperties.Instance();
+        hps.setEndpoints(List.of("10.10.10.10:9000"));
+        properties.getProviders().put("hps", hps);
 
-        ShetabResolvedConfig config = new ShetabConfigResolver(properties).resolve("poya", null);
+        ShetabResolvedConfig config = new ShetabConfigResolver(properties).resolve("hps", null);
 
         assertEquals(true, config.security().pin().enabled());
         assertEquals("0123456789ABCDEF", config.security().pin().key());

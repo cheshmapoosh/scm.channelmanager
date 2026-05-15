@@ -19,7 +19,7 @@ class CacheClientShetabRateLimiterTest {
                 new RateLimitResult("bucket-a", "ignored", 1, true, true, 10, 0, 0)
         );
         CacheClientShetabRateLimiter limiter = new CacheClientShetabRateLimiter(utility, new ShetabProviderMetrics());
-        limiter.acquire(config("poya", true, "bucket-a", "operation"), "cardInquiry");
+        limiter.acquire(config("hps", true, "bucket-a", "operation"), "cardInquiry");
 
         assertEquals("bucket-a", utility.bucketName);
         assertEquals("cardInquiry", utility.key);
@@ -34,8 +34,8 @@ class CacheClientShetabRateLimiterTest {
         CacheClientShetabRateLimiter limiter = new CacheClientShetabRateLimiter(utility, metrics);
 
         assertThrows(IllegalStateException.class,
-                () -> limiter.acquire(config("poya", true, "bucket-b", "provider"), "op"));
-        assertEquals(1, metrics.provider("poya").rateLimitedCount());
+                () -> limiter.acquire(config("hps", true, "bucket-b", "provider"), "op"));
+        assertEquals(1, metrics.provider("hps").rateLimitedCount());
     }
 
     private ShetabResolvedConfig config(String provider, boolean enabled, String bucket, String key) {

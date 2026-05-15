@@ -24,7 +24,7 @@ class CacheClientShetabEndpointLeaseManagerTest {
         assertEquals("10.10.10.11:5002", lease.endpoint());
         assertEquals("10.10.10.11", lease.remoteHost());
         assertEquals(5002, lease.remotePort());
-        assertEquals("shetab-hps-endpoint::poya", utility.poolName);
+        assertEquals("shetab-hps-endpoint::hps", utility.poolName);
         assertEquals(List.of("10.10.10.10:5001", "10.10.10.11:5002"), utility.candidates);
         assertEquals(Duration.ofMillis(30_000L), utility.ttl);
 
@@ -46,7 +46,7 @@ class CacheClientShetabEndpointLeaseManagerTest {
 
     private static ShetabResolvedConfig config(boolean enabled, List<String> endpoints) {
         return new ShetabResolvedConfig(
-                "poya",
+                "hps",
                 endpoints,
                 null,
                 null,

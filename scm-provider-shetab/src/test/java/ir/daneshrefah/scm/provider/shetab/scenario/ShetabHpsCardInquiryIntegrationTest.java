@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-class ShetabPoyaCardInquiryIntegrationTest {
+class ShetabHpsCardInquiryIntegrationTest {
     private static final Path CARD_INQUIRY_SAMPLE_PATH =
             Path.of("/home/cheshmapoush.a@drp.local/Downloads/1100.xml");
 
@@ -46,18 +46,18 @@ class ShetabPoyaCardInquiryIntegrationTest {
     private final ShetabMessageSecurityProcessor securityProcessor = new ShetabMessageSecurityProcessor(packagerFactory);
 
     @Test
-    void sendsCardInquiryToPoyaAndReceivesNetworkResponse() throws Exception {
-        Assumptions.assumeTrue(Boolean.parseBoolean(env("SCM_SHETAB_POYA_INTEGRATION", "false")),
-                "Set SCM_SHETAB_POYA_INTEGRATION=true to run the real Poya integration test");
+    void sendsCardInquiryToHpsAndReceivesNetworkResponse() throws Exception {
+        Assumptions.assumeTrue(Boolean.parseBoolean(env("SCM_SHETAB_HPS_INTEGRATION", "false")),
+                "Set SCM_SHETAB_HPS_INTEGRATION=true to run the real HPS integration test");
         Assumptions.assumeTrue(Files.exists(CARD_INQUIRY_SAMPLE_PATH),
                 "Sample file does not exist: " + CARD_INQUIRY_SAMPLE_PATH);
 
         List<String> endpoints = endpoints();
-        String pin = requiredEnv("SCM_SHETAB_POYA_PIN");
+        String pin = requiredEnv("SCM_SHETAB_HPS_PIN");
         ShetabResolvedConfig config = config(
                 endpoints,
-                requiredEnv("SCM_SHETAB_POYA_PIN_KEY"),
-                requiredEnv("SCM_SHETAB_POYA_MAC_KEY")
+                requiredEnv("SCM_SHETAB_HPS_PIN_KEY"),
+                requiredEnv("SCM_SHETAB_HPS_MAC_KEY")
         );
 
         Map<String, Object> requestBody = readRequest1100(CARD_INQUIRY_SAMPLE_PATH);
@@ -91,8 +91,8 @@ class ShetabPoyaCardInquiryIntegrationTest {
     }
 
     private List<String> endpoints() {
-        String endpointText = env("SCM_SHETAB_POYA_ENDPOINTS", env("SCM_SHETAB_POYA_ENDPOINT", ""));
-        Assumptions.assumeTrue(!endpointText.isBlank(), "Set SCM_SHETAB_POYA_ENDPOINTS=ip:port[,ip:port...]");
+        String endpointText = env("SCM_SHETAB_HPS_ENDPOINTS", env("SCM_SHETAB_HPS_ENDPOINT", ""));
+        Assumptions.assumeTrue(!endpointText.isBlank(), "Set SCM_SHETAB_HPS_ENDPOINTS=ip:port[,ip:port...]");
         return Arrays.stream(endpointText.split(","))
                 .map(String::trim)
                 .filter(value -> !value.isBlank())
@@ -100,12 +100,12 @@ class ShetabPoyaCardInquiryIntegrationTest {
     }
 
     private ShetabResolvedConfig config(List<String> endpoints, String pinKey, String macKey) {
-        int responseTimeoutMs = Integer.parseInt(env("SCM_SHETAB_POYA_RESPONSE_TIMEOUT_MS", "10000"));
-        int socketTimeoutMs = Integer.parseInt(env("SCM_SHETAB_POYA_SOCKET_TIMEOUT_MS", "1000"));
+        int responseTimeoutMs = Integer.parseInt(env("SCM_SHETAB_HPS_RESPONSE_TIMEOUT_MS", "10000"));
+        int socketTimeoutMs = Integer.parseInt(env("SCM_SHETAB_HPS_SOCKET_TIMEOUT_MS", "1000"));
         return new ShetabResolvedConfig(
-                "poya",
+                "hps",
                 endpoints,
-                env("SCM_SHETAB_POYA_PACKAGER", "Shetab7AsciiXAPackager"),
+                env("SCM_SHETAB_HPS_PACKAGER", "Shetab7AsciiXAPackager"),
                 null,
                 3000,
                 socketTimeoutMs,
@@ -178,7 +178,7 @@ class ShetabPoyaCardInquiryIntegrationTest {
 
     private String requiredEnv(String name) {
         String value = env(name, "");
-        Assumptions.assumeTrue(!value.isBlank(), "Set " + name + " to run the real Poya integration test");
+        Assumptions.assumeTrue(!value.isBlank(), "Set " + name + " to run the real HPS integration test");
         return value;
     }
 

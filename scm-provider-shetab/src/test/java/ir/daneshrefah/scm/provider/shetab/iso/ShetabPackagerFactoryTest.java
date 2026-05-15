@@ -31,7 +31,7 @@ class ShetabPackagerFactoryTest {
 
     private static ShetabResolvedConfig config(String packagerClass, String packagerXml) {
         return new ShetabResolvedConfig(
-                "poya",
+                "hps",
                 List.of("10.10.10.10:9000"),
                 packagerClass,
                 packagerXml,

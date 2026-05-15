@@ -45,8 +45,8 @@ class ShetabCardInquiryLeaseFromCacheTest {
 
     private static final String TEST_RUNTIME_CACHE = "shetab-test-runtime-cache";
     private static final String TEST_HPS_ADDRESS_CACHE = "shetab-test-hps-address-cache";
-    private static final String TEST_HPS_ADDRESS_CACHE_KEY = "provider:poya:hps-addresses";
-    private static final String TEST_HPS_LEASE_POOL = "shetab-hps-endpoint::poya";
+    private static final String TEST_HPS_ADDRESS_CACHE_KEY = "provider:hps:hps-addresses";
+    private static final String TEST_HPS_LEASE_POOL = "shetab-hps-endpoint::hps";
 
     private static final String CACHE_ADDRESS_KEY = "cache.address";
     private static final String MAC_KEY_CACHE_KEY = "security.mac-key";
