@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.provider.shetab.tcp;
 
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
+import ir.daneshrefah.scm.provider.shetab.iso.log.SafeIsoLogFormatter;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLease;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
@@ -13,8 +14,7 @@ import org.jpos.iso.channel.ASCIIChannel;
 
 import java.net.SocketTimeoutException;
 import java.net.SocketException;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +33,7 @@ public class ShetabIsoChannelClient {
     private final ShetabEndpointLeaseManager endpointLeaseManager;
     private final ShetabProviderMetrics.CounterSet metrics;
     private final ArrayBlockingQueue<PendingRequest> sendQueue;
-    private final Map<String, CompletableFuture<ISOMsg>> responseMap = new ConcurrentHashMap<>();
+    private final Map<String, ResponseTracker> responseMap = new ConcurrentHashMap<>();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Object connectionLock = new Object();
 
@@ -74,42 +74,51 @@ public class ShetabIsoChannelClient {
         if (!running.compareAndSet(true, false)) {
             return;
         }
-        closeChannel();
         if (senderThread != null) {
             senderThread.interrupt();
         }
         if (receiverThread != null) {
             receiverThread.interrupt();
         }
-        responseMap.forEach((key, future) -> future.completeExceptionally(new IllegalStateException("Shetab client stopped")));
+        synchronized (connectionLock) {
+            closeChannel();
+        }
+        responseMap.forEach((key, tracker) -> tracker.future().completeExceptionally(new IllegalStateException("Shetab client stopped")));
         responseMap.clear();
+        joinQuietly(senderThread);
+        joinQuietly(receiverThread);
         log.info("Stopped Shetab ISOChannel client provider={}", config.provider());
     }
 
     public ISOMsg request(ISOMsg msg, int timeoutMs) {
         metrics.submitted();
-        String key = correlationKey(msg);
+        List<String> keys = correlationKeys(msg);
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("Shetab request must contain field 11 (STAN) or field 37 (RRN) provider=" + config.provider());
+        }
+        String key = keys.getFirst();
         CompletableFuture<ISOMsg> future = new CompletableFuture<>();
-        responseMap.put(key, future);
+        ResponseTracker tracker = new ResponseTracker(future, keys);
+        registerTracker(tracker);
 
         try {
-            boolean accepted = sendQueue.offer(new PendingRequest(key, msg), config.sendTimeoutMs(), TimeUnit.MILLISECONDS);
+            boolean accepted = sendQueue.offer(new PendingRequest(key, msg, 0), config.sendTimeoutMs(), TimeUnit.MILLISECONDS);
             if (!accepted) {
-                responseMap.remove(key);
+                removeTracker(tracker);
                 metrics.queueRejected();
                 throw new RejectedExecutionException("Shetab send queue is full provider=" + config.provider());
             }
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            responseMap.remove(key);
+            removeTracker(tracker);
             throw new IllegalStateException("Interrupted while waiting Shetab response provider=" + config.provider(), e);
         } catch (TimeoutException e) {
-            responseMap.remove(key);
+            removeTracker(tracker);
             metrics.timedOut();
             throw new IllegalStateException("Shetab response timed out provider=" + config.provider() + " key=" + key, e);
         } catch (ExecutionException e) {
-            responseMap.remove(key);
+            removeTracker(tracker);
             metrics.failed();
             throw new IllegalStateException("Shetab request failed provider=" + config.provider() + " key=" + key, e.getCause());
         }
@@ -117,22 +126,38 @@ public class ShetabIsoChannelClient {
 
     private void senderLoop() {
         while (running.get()) {
+            PendingRequest pending = null;
+            ISOMsg request = null;
             try {
-                PendingRequest pending = sendQueue.take();
+                pending = sendQueue.take();
+                if (!responseMap.containsKey(pending.key())) {
+                    log.warn("Not exist pending response for key={}", pending.key());
+                    continue;
+                }
                 ensureConnected();
-                channel.send(pending.msg());
+                ISOChannel currentChannel = channel;
+                if (currentChannel == null || !currentChannel.isConnected()) {
+                    throw new SocketException("Shetab channel is not connected");
+                }
+                request = pending.msg();
+                currentChannel.send(request);
                 metrics.sent();
-                log.info("Shetab SEND provider={} key={} mti={} stan={} rrn={} queueSize={}",
-                        config.provider(), pending.key(), safeMti(pending.msg()), safeField(pending.msg(), 11),
-                        safeField(pending.msg(), 37), sendQueue.size());
+                log.info("Shetab sent provider={}, requestMsg={}", config.provider(), SafeIsoLogFormatter.format(request));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             } catch (Exception e) {
+
+                if (!running.get()) {
+                    log.debug("Shetab sender stopped provider={}, pendingMsg={}", config.provider(), SafeIsoLogFormatter.format(request), e);
+                    return;
+                }
                 metrics.failed();
-                log.error("Shetab sender error provider={}", config.provider(), e);
-                failAll(e);
+                log.error("Shetab sender error provider={}, pendingMsg={}", config.provider(), SafeIsoLogFormatter.format(request), e);
                 markDisconnected(e, false);
+                if (pending != null) {
+                    retryOrFail(pending, e);
+                }
             }
         }
     }
@@ -142,29 +167,29 @@ public class ShetabIsoChannelClient {
             try {
                 ensureConnected();
                 ISOMsg response = channel.receive();
-                String key = correlationKey(response);
-                CompletableFuture<ISOMsg> future = responseMap.remove(key);
-                if (future != null) {
-                    future.complete(response);
+                log.info("Shetab receive provider={}, responseMsg={}", config.provider(), SafeIsoLogFormatter.format(response));
+                List<String> keys = correlationKeys(response);
+                ResponseTracker tracker = findTracker(keys);
+                if (tracker != null) {
+                    removeTracker(tracker);
+                    tracker.future().complete(response);
                     metrics.received();
-                    log.info("Shetab RECEIVE provider={} key={} mti={} stan={} rrn={}",
-                            config.provider(), key, safeMti(response), safeField(response, 11), safeField(response, 37));
+                    log.info("Shetab receive provider={} keys={} mti={} stan={} rrn={}",
+                            config.provider(), keys, safeMti(response), safeField(response, 11), safeField(response, 37));
                 } else {
-                    log.warn("Shetab RECEIVE unmatched provider={} key={} mti={} stan={} rrn={}",
-                            config.provider(), key, safeMti(response), safeField(response, 11), safeField(response, 37));
+                    log.warn("Shetab receive unmatched provider={} keys={} mti={} stan={} rrn={}",
+                            config.provider(), keys, safeMti(response), safeField(response, 11), safeField(response, 37));
                 }
             } catch (SocketTimeoutException e) {
                 log.debug("Shetab receiver socket timeout provider={}", config.provider());
             } catch (SocketException e) {
                 if (running.get()) {
                     log.warn("Shetab receiver socket error provider={}", config.provider(), e);
-                    failAll(e);
                     markDisconnected(e, false);
                 }
             } catch (Exception e) {
                 if (running.get()) {
                     log.warn("Shetab receiver error provider={}", config.provider(), e);
-                    failAll(e);
                     markDisconnected(e, false);
                 }
             }
@@ -172,10 +197,16 @@ public class ShetabIsoChannelClient {
     }
 
     private void ensureConnected() {
+        if (!running.get()) {
+            throw new IllegalStateException("Shetab client is stopped provider=" + config.provider());
+        }
         if (connected && channel != null && channel.isConnected()) {
             return;
         }
         synchronized (connectionLock) {
+            if (!running.get()) {
+                throw new IllegalStateException("Shetab client is stopped provider=" + config.provider());
+            }
             if (connected && channel != null && channel.isConnected()) {
                 return;
             }
@@ -185,6 +216,7 @@ public class ShetabIsoChannelClient {
 
     private void connect() {
         while (running.get()) {
+            ISOChannel newChannel = null;
             try {
                 if (isEmptyLease(leasedEndpoint)) {
                     leasedEndpoint = endpointLeaseManager.acquire(config);
@@ -193,8 +225,13 @@ public class ShetabIsoChannelClient {
                             config.provider(), leasedEndpoint.endpoint());
                 }
                 closeSocket();
-                channel = createChannel(leasedEndpoint);
-                channel.connect();
+                newChannel = createChannel(leasedEndpoint);
+                newChannel.connect();
+                if (!running.get()) {
+                    disconnectQuietly(newChannel);
+                    return;
+                }
+                channel = newChannel;
                 connected = true;
                 lastConnectionFailure = null;
                 sameEndpointFailureCount = 0;
@@ -202,6 +239,10 @@ public class ShetabIsoChannelClient {
                         config.provider(), leasedEndpoint.endpoint());
                 return;
             } catch (Exception e) {
+                disconnectQuietly(newChannel);
+                if (!running.get()) {
+                    return;
+                }
                 connected = false;
                 lastConnectionFailure = e;
                 sameEndpointFailureCount++;
@@ -254,11 +295,16 @@ public class ShetabIsoChannelClient {
         connected = false;
         ISOChannel current = channel;
         channel = null;
-        if (current != null) {
-            try {
-                current.disconnect();
-            } catch (Exception ignored) {
-            }
+        disconnectQuietly(current);
+    }
+
+    private void disconnectQuietly(ISOChannel current) {
+        if (current == null) {
+            return;
+        }
+        try {
+            current.disconnect();
+        } catch (Exception ignored) {
         }
     }
 
@@ -284,18 +330,72 @@ public class ShetabIsoChannelClient {
         return Math.max(1, config.sameEndpointReconnectAttempts());
     }
 
-    private void failAll(Throwable error) {
-        responseMap.forEach((key, future) -> future.completeExceptionally(error));
-        responseMap.clear();
+    private void retryOrFail(PendingRequest pending, Throwable error) {
+        ResponseTracker tracker = responseMap.get(pending.key());
+        if (tracker == null || tracker.future().isDone()) {
+            return;
+        }
+        if (!running.get() || pending.sendAttempts() >= maxSameEndpointReconnectAttempts()) {
+            removeTracker(tracker);
+            tracker.future().completeExceptionally(error);
+            return;
+        }
+        PendingRequest retry = new PendingRequest(pending.key(), pending.msg(), pending.sendAttempts() + 1);
+        if (!sendQueue.offer(retry)) {
+            removeTracker(tracker);
+            metrics.queueRejected();
+            tracker.future().completeExceptionally(new RejectedExecutionException("Shetab send queue is full provider=" + config.provider()));
+            return;
+        }
+        log.warn("Requeued Shetab request after send failure provider={} key={} attempt={}/{}",
+                config.provider(), pending.key(), retry.sendAttempts(), maxSameEndpointReconnectAttempts());
     }
 
-    private String correlationKey(ISOMsg msg) {
-        String stan = safeField(msg, 11);
-        String rrn = safeField(msg, 37);
-        if (rrn != null && !rrn.isBlank()) {
-            return stan + "|" + rrn.trim();
+    private ResponseTracker findTracker(List<String> keys) {
+        for (String key : keys) {
+            ResponseTracker tracker = responseMap.get(key);
+            if (tracker != null) {
+                return tracker;
+            }
         }
-        return stan == null ? "" : stan;
+        return null;
+    }
+
+    private void removeTracker(ResponseTracker tracker) {
+        tracker.keys().forEach(key -> responseMap.remove(key, tracker));
+    }
+
+    private void registerTracker(ResponseTracker tracker) {
+        for (String key : tracker.keys()) {
+            ResponseTracker existing = responseMap.putIfAbsent(key, tracker);
+            if (existing != null) {
+                removeTracker(tracker);
+                throw new IllegalStateException("Duplicate Shetab request correlation key provider=" + config.provider() + " key=" + key);
+            }
+        }
+    }
+
+    private List<String> correlationKeys(ISOMsg msg) {
+        String stan = cleanField(safeField(msg, 11));
+        String rrn = cleanField(safeField(msg, 37));
+        List<String> keys = new ArrayList<>(3);
+        if (stan != null && rrn != null) {
+            keys.add(stan + "|" + rrn);
+        }
+        if (stan != null) {
+            keys.add(stan);
+        }
+        if (rrn != null) {
+            keys.add("rrn:" + rrn);
+        }
+        return List.copyOf(keys);
+    }
+
+    private String cleanField(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private String safeField(ISOMsg msg, int field) {
@@ -328,6 +428,20 @@ public class ShetabIsoChannelClient {
         }
     }
 
-    private record PendingRequest(String key, ISOMsg msg) {
+    private void joinQuietly(Thread thread) {
+        if (thread == null || thread == Thread.currentThread()) {
+            return;
+        }
+        try {
+            thread.join(Math.max(1_000L, config.connectTimeoutMs() + config.socketTimeoutMs() + 500L));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private record PendingRequest(String key, ISOMsg msg, int sendAttempts) {
+    }
+
+    private record ResponseTracker(CompletableFuture<ISOMsg> future, List<String> keys) {
     }
 }

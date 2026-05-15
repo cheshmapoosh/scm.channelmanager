@@ -93,7 +93,7 @@ class ShetabMessageSecurityProcessorTest {
 
     private ShetabResolvedConfig config(boolean pinEnabled, boolean macEnabled) {
         return new ShetabResolvedConfig(
-                "poya",
+                "hps",
                 List.of("127.0.0.1:9000"),
                 "Shetab7AsciiXAPackager",
                 null,
@@ -111,5 +111,17 @@ class ShetabMessageSecurityProcessorTest {
                         new ShetabResolvedConfig.Mac(macEnabled, "0123456789ABCDEF", 128, false, "AAAAAAAAAAAAAAAA", 16)
                 )
         );
+    }
+
+    @Test
+    void rawPinComesFromOperationBodyAndProviderGeneratesPinBlockWithConfiguredKey() throws Exception {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of("pin", "1234"));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        processor.protectRequest(config(false, false), requestBody, request);
+
+        assertTrue(request.hasField(52));
+        assertEquals(16, request.getString(52).length());
     }
 }

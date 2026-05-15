@@ -5,7 +5,7 @@ Shetab/HPS provider module for ISO8583 over TCP.
 The operation route should use `OperationType.PROVIDER` and point to a provider URI:
 
 ```text
-shetab:request?provider=poya
+shetab:request?provider=hps
 ```
 
 The provider receives a `Map` body in this shape:
@@ -45,19 +45,19 @@ scm:
           enabled: true
           ttl-ms: 30000
       providers:
-        poya:
+        hps:
           endpoints: [10.10.10.10:9000, 10.10.10.11:9000, 10.10.10.12:9000]
           packager-class: Shetab7AsciiXAPackager
           security:
             pin:
               enabled: true
-              key: ${SCM_SHETAB_POYA_PIN_KEY}
+              key: ${SCM_SHETAB_HPS_PIN_KEY}
             mac:
               enabled: true
-              key: ${SCM_SHETAB_POYA_MAC_KEY}
+              key: ${SCM_SHETAB_HPS_MAC_KEY}
           rate-limit:
             enabled: true
-            bucket: shetab-poya
+            bucket: shetab-hps
 ```
 
 Rate-limit bucket definitions are read from `scm-config` via `scm-rate-limit.config.definitions`.
@@ -83,13 +83,13 @@ Built-in packager classes are `Shetab7AsciiXAPackager` and `Shetab7BinaryXAPacka
 }
 ```
 
-Run the real Poya card-inquiry test explicitly:
+Run the real HPS card-inquiry test explicitly:
 
 ```bash
-SCM_SHETAB_POYA_INTEGRATION=true \
-SCM_SHETAB_POYA_ENDPOINTS=10.10.10.10:9000 \
-SCM_SHETAB_POYA_PIN=1234 \
-SCM_SHETAB_POYA_PIN_KEY=0123456789ABCDEF \
-SCM_SHETAB_POYA_MAC_KEY=0123456789ABCDEF \
-./gradlew :scm-provider-shetab:test --tests '*ShetabPoyaCardInquiryIntegrationTest'
+SCM_SHETAB_HPS_INTEGRATION=true \
+SCM_SHETAB_HPS_ENDPOINTS=10.10.10.10:9000 \
+SCM_SHETAB_HPS_PIN=1234 \
+SCM_SHETAB_HPS_PIN_KEY=0123456789ABCDEF \
+SCM_SHETAB_HPS_MAC_KEY=0123456789ABCDEF \
+./gradlew :scm-provider-shetab:test --tests '*ShetabHpsCardInquiryIntegrationTest'
 ```
