@@ -123,6 +123,10 @@ public class ShetabConfigResolver {
         ShetabProperties.Pin instancePin = instanceSecurity.getPin() == null ? new ShetabProperties.Pin() : instanceSecurity.getPin();
         ShetabProperties.Mac defaultMac = defaultSecurity.getMac() == null ? new ShetabProperties.Mac() : defaultSecurity.getMac();
         ShetabProperties.Mac instanceMac = instanceSecurity.getMac() == null ? new ShetabProperties.Mac() : instanceSecurity.getMac();
+        ShetabProperties.Expiry defaultExpiry = defaultSecurity.getExpiry() == null ? new ShetabProperties.Expiry() : defaultSecurity.getExpiry();
+        ShetabProperties.Expiry instanceExpiry = instanceSecurity.getExpiry() == null ? new ShetabProperties.Expiry() : instanceSecurity.getExpiry();
+        ShetabProperties.Cvv2 defaultCvv2 = defaultSecurity.getCvv2() == null ? new ShetabProperties.Cvv2() : defaultSecurity.getCvv2();
+        ShetabProperties.Cvv2 instanceCvv2 = instanceSecurity.getCvv2() == null ? new ShetabProperties.Cvv2() : instanceSecurity.getCvv2();
 
         ShetabResolvedConfig.Pin pin = new ShetabResolvedConfig.Pin(
                 Boolean.TRUE.equals(first(instancePin.getEnabled(), defaultPin.getEnabled())),
@@ -138,7 +142,19 @@ public class ShetabConfigResolver {
                 value(first(instanceMac.getPlaceholder(), defaultMac.getPlaceholder()), "AAAAAAAAAAAAAAAA"),
                 value(first(instanceMac.getPackedLengthBytes(), defaultMac.getPackedLengthBytes()), 16)
         );
-        return new ShetabResolvedConfig.Security(pin, mac);
+        ShetabResolvedConfig.Expiry expiry = new ShetabResolvedConfig.Expiry(
+                Boolean.TRUE.equals(first(instanceExpiry.getEnabled(), defaultExpiry.getEnabled())),
+                value(first(instanceExpiry.getField(), defaultExpiry.getField()), 14)
+        );
+        ShetabResolvedConfig.Cvv2 cvv2 = new ShetabResolvedConfig.Cvv2(
+                Boolean.TRUE.equals(first(instanceCvv2.getEnabled(), defaultCvv2.getEnabled())),
+                value(first(instanceCvv2.getField(), defaultCvv2.getField()), 48),
+                value(first(instanceCvv2.getTag(), defaultCvv2.getTag()), "P92"),
+                value(first(instanceCvv2.getLengthDigits(), defaultCvv2.getLengthDigits()), 3),
+                value(first(instanceCvv2.getMinLength(), defaultCvv2.getMinLength()), 3),
+                value(first(instanceCvv2.getMaxLength(), defaultCvv2.getMaxLength()), 4)
+        );
+        return new ShetabResolvedConfig.Security(pin, mac, expiry, cvv2);
     }
 
     private static <T> T first(T value, T fallback) {

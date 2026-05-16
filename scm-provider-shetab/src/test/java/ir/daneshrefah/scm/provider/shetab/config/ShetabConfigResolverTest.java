@@ -27,6 +27,9 @@ class ShetabConfigResolverTest {
         ShetabProperties properties = new ShetabProperties();
         properties.getDefaults().getSecurity().getPin().setEnabled(true);
         properties.getDefaults().getSecurity().getPin().setKey("0123456789ABCDEF");
+        properties.getDefaults().getSecurity().getExpiry().setField(14);
+        properties.getDefaults().getSecurity().getCvv2().setField(48);
+        properties.getDefaults().getSecurity().getCvv2().setTag("P92");
 
         ShetabProperties.Instance hps = new ShetabProperties.Instance();
         hps.setEndpoints(List.of("10.10.10.10:9000"));
@@ -36,5 +39,8 @@ class ShetabConfigResolverTest {
 
         assertEquals(true, config.security().pin().enabled());
         assertEquals("0123456789ABCDEF", config.security().pin().key());
+        assertEquals(14, config.security().expiry().field());
+        assertEquals(48, config.security().cvv2().field());
+        assertEquals("P92", config.security().cvv2().tag());
     }
 }

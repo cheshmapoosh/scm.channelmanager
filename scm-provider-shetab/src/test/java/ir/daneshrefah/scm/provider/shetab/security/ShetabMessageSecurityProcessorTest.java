@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,14 +115,91 @@ class ShetabMessageSecurityProcessorTest {
     }
 
     @Test
-    void rawPinComesFromOperationBodyAndProviderGeneratesPinBlockWithConfiguredKey() throws Exception {
+    void rawPinDoesNotGeneratePinBlockWhenPinIsNotRequired() throws Exception {
         Map<String, Object> requestBody = requestBody();
-        requestBody.put("security", Map.of("pin", "1234"));
+        requestBody.put("security", Map.of(
+                "pin", "1234",
+                "pinRequired", false
+        ));
 
         ISOMsg request = converter.toIsoMsg(requestBody);
         processor.protectRequest(config(false, false), requestBody, request);
 
-        assertTrue(request.hasField(52));
-        assertEquals(16, request.getString(52).length());
+        assertFalse(request.hasField(52));
+    }
+
+    @Test
+    void mapsExpiryAndCvv2FromSecurityAndRebuildsP92Tag() {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of(
+                "expiryDate", "2907",
+                "cvv2", "639",
+                "expiryRequired", true,
+                "cvv2Required", true
+        ));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        processor.protectRequest(config(false, false), requestBody, request);
+
+        assertEquals("2907", request.getString(14));
+        assertEquals("DST0165894631240207217P92003639", request.getString(48));
+    }
+
+    @Test
+    void removesCallerSuppliedP92WhenSecurityCvv2IsMissing() {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of(
+                "expiryDate", "2907",
+                "expiryRequired", true
+        ));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        processor.protectRequest(config(false, false), requestBody, request);
+
+        assertEquals("2907", request.getString(14));
+        assertEquals("DST0165894631240207217", request.getString(48));
+    }
+
+    @Test
+    void securityValuesAreIgnoredWhenNotRequired() {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of(
+                "pin", "1234",
+                "pinRequired", false,
+                "expiryDate", "2907",
+                "expiryRequired", false,
+                "cvv2", "639",
+                "cvv2Required", false
+        ));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        processor.protectRequest(config(false, false), requestBody, request);
+
+        assertFalse(request.hasField(52));
+        assertFalse(request.hasField(14));
+        assertEquals("DST0165894631240207217", request.getString(48));
+    }
+
+    @Test
+    void pinRequiredIsDrivenByRequestNotProviderInstanceFlag() {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of("pinRequired", true));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> processor.protectRequest(config(false, false), requestBody, request));
+        assertTrue(exception.getMessage().contains("Raw PIN is required"));
+    }
+
+    @Test
+    void macRequiredIsDrivenByRequestNotProviderInstanceFlag() {
+        Map<String, Object> requestBody = requestBody();
+        requestBody.put("security", Map.of("macRequired", true));
+
+        ISOMsg request = converter.toIsoMsg(requestBody);
+        processor.protectRequest(config(false, false), requestBody, request);
+
+        assertTrue(request.hasField(128));
+        assertEquals(16, request.getString(128).length());
     }
 }

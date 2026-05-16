@@ -55,6 +55,8 @@ public class ShetabProperties {
     public static class Security {
         private Pin pin = new Pin();
         private Mac mac = new Mac();
+        private Expiry expiry = new Expiry();
+        private Cvv2 cvv2 = new Cvv2();
     }
 
     @Getter
@@ -75,5 +77,23 @@ public class ShetabProperties {
         private Boolean verifyResponse;
         private String placeholder = "AAAAAAAAAAAAAAAA";
         private Integer packedLengthBytes = 16;
+    }
+
+    @Getter
+    @Setter
+    public static class Expiry {
+        private Boolean enabled;
+        private Integer field = 14;
+    }
+
+    @Getter
+    @Setter
+    public static class Cvv2 {
+        private Boolean enabled;
+        private Integer field = 48;
+        private String tag = "P92";
+        private Integer lengthDigits = 3;
+        private Integer minLength = 3;
+        private Integer maxLength = 4;
     }
 }

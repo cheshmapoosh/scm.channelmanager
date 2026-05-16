@@ -48,10 +48,10 @@ public final class SafeIsoLogFormatter {
         StringBuilder out = new StringBuilder(512);
 
         out.append("mti=").append(safeMti(msg));
-        out.append(" pc=").append(safeGetString(msg, 3, "-"));
-        out.append(" stan=").append(safeGetString(msg, 11, "-"));
-        out.append(" rrn=").append(safeGetString(msg, 37, "-"));
-        out.append(" rc=").append(safeGetString(msg, 39, "-"));
+        out.append(" pc=").append(safeGetString(msg, 3));
+        out.append(" stan=").append(safeGetString(msg, 11));
+        out.append(" rrn=").append(safeGetString(msg, 37));
+        out.append(" rc=").append(safeGetString(msg, 39));
 
         if (elapsedMs >= 0) {
             out.append(" elapsedMs=").append(elapsedMs);
@@ -113,6 +113,9 @@ public final class SafeIsoLogFormatter {
         if (MASKED_FIELDS.contains(field)) {
             return maskField(field, textValue);
         }
+        if (field == 48) {
+            return maskField48(textValue);
+        }
 
         return limit(textValue);
     }
@@ -134,24 +137,13 @@ public final class SafeIsoLogFormatter {
             return "null";
         }
 
-        switch (field) {
-            case 2:
-                return maskPan(value);
-
-            case 35:
-            case 45:
-                return maskTrackData(value);
-
-            case 14:
-                return "**/**";
-
-            case 102:
-            case 103:
-                return maskAccount(value);
-
-            default:
-                return "[MASKED]";
-        }
+        return switch (field) {
+            case 2 -> maskPan(value);
+            case 35, 45 -> maskTrackData(value);
+            case 14 -> "**/**";
+            case 102, 103 -> maskAccount(value);
+            default -> "[MASKED]";
+        };
     }
 
     private static String maskPan(String pan) {
@@ -168,7 +160,7 @@ public final class SafeIsoLogFormatter {
     }
 
     private static String maskTrackData(String track) {
-        if (track == null || track.length() == 0) {
+        if (track == null || track.isEmpty()) {
             return "";
         }
 
@@ -197,15 +189,67 @@ public final class SafeIsoLogFormatter {
         return "****" + account.substring(account.length() - 4);
     }
 
+    private static String maskField48(String value) {
+        if (value == null || value.isBlank()) {
+            return value == null ? "null" : "";
+        }
+
+        StringBuilder rebuilt = new StringBuilder(value.length());
+        boolean masked = false;
+        int index = 0;
+
+        while (index + 6 <= value.length()) {
+            String tag = value.substring(index, index + 3);
+            String lengthText = value.substring(index + 3, index + 6);
+            if (!isNumeric(lengthText)) {
+                break;
+            }
+
+            int segmentLength = Integer.parseInt(lengthText);
+            int valueStart = index + 6;
+            int valueEnd = valueStart + segmentLength;
+            if (valueEnd > value.length()) {
+                break;
+            }
+
+            rebuilt.append(tag).append(lengthText);
+            if ("P92".equals(tag)) {
+                rebuilt.append("[CVV2_MASKED,len=").append(segmentLength).append("]");
+                masked = true;
+            } else {
+                rebuilt.append(value, valueStart, valueEnd);
+            }
+            index = valueEnd;
+        }
+
+        if (index < value.length()) {
+            rebuilt.append(value.substring(index));
+        }
+
+        return limit(masked ? rebuilt.toString() : value);
+    }
+
+    private static boolean isNumeric(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        for (int index = 0; index < value.length(); index++) {
+            if (!Character.isDigit(value.charAt(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static String limit(String value) {
         if (value == null) {
             return "null";
         }
 
         String normalized = value
-                .replace('\n', ' ')
-                .replace('\r', ' ')
-                .replace('\t', ' ');
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
 
         if (normalized.length() <= MAX_FIELD_VALUE_LENGTH) {
             return normalized;
@@ -223,12 +267,12 @@ public final class SafeIsoLogFormatter {
         }
     }
 
-    private static String safeGetString(ISOMsg msg, int field, String defaultValue) {
+    private static String safeGetString(ISOMsg msg, int field) {
         try {
             String value = msg.getString(field);
-            return value != null ? value : defaultValue;
+            return value != null ? value : "-";
         } catch (Exception e) {
-            return defaultValue;
+            return "-";
         }
     }
 }

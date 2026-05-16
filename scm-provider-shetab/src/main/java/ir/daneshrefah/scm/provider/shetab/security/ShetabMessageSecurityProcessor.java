@@ -21,7 +21,7 @@ public class ShetabMessageSecurityProcessor {
 
     public void protectRequest(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
         request.setPackager(packagerFactory.create(config));
-        applyPin(config, requestBody, request);
+        applyCardSecurity(config, requestBody, request);
         applyMac(config, requestBody, request);
     }
 
@@ -46,17 +46,23 @@ public class ShetabMessageSecurityProcessor {
         }
     }
 
+    private void applyCardSecurity(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
+        applyExpiryDate(config, requestBody, request);
+        applyCvv2Tag(config, requestBody, request);
+        applyPin(config, requestBody, request);
+    }
+
     private void applyPin(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
         ShetabResolvedConfig.Pin pin = security(config).pin();
         String rawPin = rawPin(requestBody);
-        boolean pinRequired = pin != null && pin.enabled() || booleanSecurity(requestBody, "pinRequired");
+        boolean pinRequired = booleanSecurity(requestBody, "pinRequired");
 
         if (pin != null && request.hasField(pin.field())) {
             request.unset(pin.field());
             log.warn("Ignoring caller supplied Shetab PIN block field. provider={} field={}", config.provider(), pin.field());
         }
 
-        if (!pinRequired && StringUtils.isBlank(rawPin)) {
+        if (!pinRequired) {
             return;
         }
         if (pin == null || StringUtils.isBlank(pin.key())) {
@@ -71,9 +77,68 @@ public class ShetabMessageSecurityProcessor {
         request.set(pin.field(), pinBlock);
     }
 
+
+    private void applyExpiryDate(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
+        ShetabResolvedConfig.Expiry expiry = security(config).expiry();
+        int expiryField = expiry != null ? expiry.field() : 14;
+        boolean expiryRequired = booleanSecurity(requestBody, "expiryRequired")
+                || booleanSecurity(requestBody, "expRequired")
+                || booleanSecurity(requestBody, "expirationRequired");
+        if (request.hasField(expiryField)) {
+            request.unset(expiryField);
+            log.warn("Ignoring caller supplied Shetab expiry field. provider={} field={}", config.provider(), expiryField);
+        }
+        if (!expiryRequired) {
+            return;
+        }
+        String expiryDate = expiryDate(requestBody);
+        if (StringUtils.isBlank(expiryDate)) {
+            throw new IllegalArgumentException("Shetab security expiryDate is required for provider=" + config.provider());
+        }
+        if (!expiryDate.matches("\\d{4}")) {
+            throw new IllegalArgumentException("Shetab security expiryDate must be 4 digits (YYMM)");
+        }
+        request.set(expiryField, expiryDate);
+    }
+
+    private void applyCvv2Tag(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
+        ShetabResolvedConfig.Cvv2 cvv2Config = security(config).cvv2();
+        int cvv2Field = cvv2Config != null ? cvv2Config.field() : 48;
+        String cvv2Tag = cvv2Config != null ? cvv2Config.tag() : "P92";
+        int lengthDigits = cvv2Config != null ? cvv2Config.lengthDigits() : 3;
+        int minLength = cvv2Config != null ? cvv2Config.minLength() : 3;
+        int maxLength = cvv2Config != null ? cvv2Config.maxLength() : 4;
+        boolean cvv2Required = booleanSecurity(requestBody, "cvv2Required") || booleanSecurity(requestBody, "cvvRequired");
+
+        String originalFieldValue = StringUtils.defaultString(safeField(request, cvv2Field));
+        TagRemovalResult cleanedField = removeTagSegment(originalFieldValue, cvv2Tag, lengthDigits);
+        if (cleanedField.removed()) {
+            log.warn("Ignoring caller supplied Shetab CVV2 tag in field {} ({}) for provider={}",
+                    cvv2Field, cvv2Tag, config.provider());
+        }
+
+        if (!cvv2Required) {
+            setField(request, cvv2Field, cleanedField.value());
+            return;
+        }
+
+        String cvv2 = cvv2(requestBody);
+        if (StringUtils.isBlank(cvv2)) {
+            throw new IllegalArgumentException("Shetab security cvv2 is required for provider=" + config.provider());
+        }
+        if (!cvv2.matches("\\d+")) {
+            throw new IllegalArgumentException("Shetab security cvv2 must be numeric");
+        }
+        if (cvv2.length() < Math.max(1, minLength) || cvv2.length() > Math.max(minLength, maxLength)) {
+            throw new IllegalArgumentException("Shetab security cvv2 length is invalid for provider=" + config.provider());
+        }
+        String rebuiltFieldValue = cleanedField.value() + buildTagSegment(cvv2Tag, cvv2, lengthDigits);
+        setField(request, cvv2Field, rebuiltFieldValue);
+    }
+
     private void applyMac(ShetabResolvedConfig config, Map<String, Object> requestBody, ISOMsg request) {
         ShetabResolvedConfig.Mac mac = security(config).mac();
-        boolean macRequired = mac != null && mac.enabled() || booleanSecurity(requestBody, "macRequired");
+        boolean macRequired = booleanSecurity(requestBody, "macRequired");
 
         if (mac != null && request.hasField(mac.field())) {
             request.unset(mac.field());
@@ -112,7 +177,9 @@ public class ShetabMessageSecurityProcessor {
         }
         return new ShetabResolvedConfig.Security(
                 new ShetabResolvedConfig.Pin(false, null, 52, 2),
-                new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16)
+                new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16),
+                new ShetabResolvedConfig.Expiry(false, 14),
+                new ShetabResolvedConfig.Cvv2(false, 48, "P92", 3, 3, 4)
         );
     }
 
@@ -127,6 +194,73 @@ public class ShetabMessageSecurityProcessor {
 
     private String rawPin(Map<String, Object> requestBody) {
         return firstNonBlank(stringSecurity(requestBody, "pin"), stringValue(requestBody == null ? null : requestBody.get("pin")));
+    }
+
+    private String expiryDate(Map<String, Object> requestBody) {
+        return firstNonBlank(
+                stringSecurity(requestBody, "expiryDate"),
+                firstNonBlank(stringSecurity(requestBody, "expirationDate"), stringValue(requestBody == null ? null : requestBody.get("expiryDate")))
+        );
+    }
+
+    private String cvv2(Map<String, Object> requestBody) {
+        return firstNonBlank(
+                stringSecurity(requestBody, "cvv2"),
+                firstNonBlank(stringSecurity(requestBody, "cvv"), stringValue(requestBody == null ? null : requestBody.get("cvv2")))
+        );
+    }
+
+    private void setField(ISOMsg request, int field, String value) {
+        if (StringUtils.isBlank(value)) {
+            request.unset(field);
+            return;
+        }
+        request.set(field, value);
+    }
+
+    private TagRemovalResult removeTagSegment(String source, String targetTag, int lengthDigits) {
+        if (StringUtils.isBlank(source)) {
+            return new TagRemovalResult("", false);
+        }
+
+        StringBuilder rebuilt = new StringBuilder(source.length());
+        boolean removed = false;
+        int index = 0;
+        int safeLengthDigits = Math.max(1, lengthDigits);
+        int headerLength = 3 + safeLengthDigits;
+        while (index + headerLength <= source.length()) {
+            String tag = source.substring(index, index + 3);
+            String lengthText = source.substring(index + 3, index + headerLength);
+            if (!StringUtils.isNumeric(lengthText)) {
+                break;
+            }
+            int valueLength = Integer.parseInt(lengthText);
+            int valueStart = index + headerLength;
+            int valueEnd = valueStart + valueLength;
+            if (valueEnd > source.length()) {
+                break;
+            }
+            if (targetTag.equals(tag)) {
+                removed = true;
+            } else {
+                rebuilt.append(tag).append(lengthText).append(source, valueStart, valueEnd);
+            }
+            index = valueEnd;
+        }
+        if (index < source.length()) {
+            rebuilt.append(source.substring(index));
+        }
+        return new TagRemovalResult(rebuilt.toString(), removed);
+    }
+
+    private String buildTagSegment(String tag, String value, int lengthDigits) {
+        int safeLengthDigits = Math.max(1, lengthDigits);
+        int maxValueLength = (int) Math.pow(10, safeLengthDigits) - 1;
+        if (value.length() > maxValueLength) {
+            throw new IllegalArgumentException("Shetab CVV2 value length exceeds configured lengthDigits");
+        }
+        String format = "%0" + safeLengthDigits + "d";
+        return tag + String.format(format, value.length()) + value;
     }
 
     private boolean booleanSecurity(Map<String, Object> requestBody, String key) {
@@ -155,5 +289,8 @@ public class ShetabMessageSecurityProcessor {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private record TagRemovalResult(String value, boolean removed) {
     }
 }

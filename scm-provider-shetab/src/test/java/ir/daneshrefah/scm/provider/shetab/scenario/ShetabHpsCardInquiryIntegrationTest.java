@@ -20,6 +20,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +54,9 @@ class ShetabHpsCardInquiryIntegrationTest {
                 "Sample file does not exist: " + CARD_INQUIRY_SAMPLE_PATH);
 
         List<String> endpoints = endpoints();
-        String pin = requiredEnv("SCM_SHETAB_HPS_PIN");
+        String exp = env("SCM_SHETAB_HPS_EXP", null);
+        String cvv2 = env("SCM_SHETAB_HPS_CVV2", "");
+        String pin = env("SCM_SHETAB_HPS_PIN", "");
         ShetabResolvedConfig config = config(
                 endpoints,
                 requiredEnv("SCM_SHETAB_HPS_PIN_KEY"),
@@ -62,11 +65,16 @@ class ShetabHpsCardInquiryIntegrationTest {
 
         Map<String, Object> requestBody = readRequest1100(CARD_INQUIRY_SAMPLE_PATH);
         prepareDynamicFields(requestBody);
-        requestBody.put("security", Map.of(
+        Map<String, Serializable> security = Map.of(
+                "expiryDate", exp,
+                "cvv2", cvv2,
                 "pin", pin,
+                "expiryRequired", false,
+                "cvv2Required",  true,
                 "pinRequired", true,
                 "macRequired", true
-        ));
+        );
+        requestBody.put("security", security);
 
         ISOMsg request = converter.toIsoMsg(requestBody);
         securityProcessor.protectRequest(config, requestBody, request);
