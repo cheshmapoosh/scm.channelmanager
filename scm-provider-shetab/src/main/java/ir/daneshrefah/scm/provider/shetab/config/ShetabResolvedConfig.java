@@ -33,8 +33,13 @@ public record ShetabResolvedConfig(
 
     public record Security(
             Pin pin,
-            Mac mac
+            Mac mac,
+            Expiry expiry,
+            Cvv2 cvv2
     ) {
+        public Security(Pin pin, Mac mac) {
+            this(pin, mac, new Expiry(false, 14), new Cvv2(false, 48, "P92", 3, 3, 4));
+        }
     }
 
     public record Pin(
@@ -52,6 +57,22 @@ public record ShetabResolvedConfig(
             boolean verifyResponse,
             String placeholder,
             int packedLengthBytes
+    ) {
+    }
+
+    public record Expiry(
+            boolean enabled,
+            int field
+    ) {
+    }
+
+    public record Cvv2(
+            boolean enabled,
+            int field,
+            String tag,
+            int lengthDigits,
+            int minLength,
+            int maxLength
     ) {
     }
 }

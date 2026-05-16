@@ -151,9 +151,14 @@ public class ShetabProducer extends DefaultProducer {
         }
         String normalized = key.replace("-", "").replace("_", "").toLowerCase();
         return "52".equals(key)
+                || "14".equals(key)
+                || "48".equals(key)
                 || "128".equals(key)
                 || normalized.contains("pin")
-                || normalized.contains("mac");
+                || normalized.contains("mac")
+                || normalized.contains("cvv")
+                || normalized.contains("expiry")
+                || normalized.contains("expire");
     }
 
     private <T> T first(T value, T fallback) {

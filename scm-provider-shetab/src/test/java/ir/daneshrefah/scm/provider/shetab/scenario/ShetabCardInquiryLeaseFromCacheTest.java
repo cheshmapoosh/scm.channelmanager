@@ -137,15 +137,15 @@ class ShetabCardInquiryLeaseFromCacheTest {
         ISOMsg responseIso = isoMapConverter.toIsoMsg(response1110);
 
         assertEquals("1100", requestIso.getMTI());
-        assertEquals("5894631159226349", requestIso.getString(2));
-        assertEquals("330000", requestIso.getString(3));
-        assertEquals("261655", requestIso.getString(11));
-        assertEquals("691199261655", requestIso.getString(37));
+        assertEquals(field(request1100, "2"), requestIso.getString(2));
+        assertEquals(field(request1100, "3"), requestIso.getString(3));
+        assertEquals(field(request1100, "11"), requestIso.getString(11));
+        assertEquals(field(request1100, "37"), requestIso.getString(37));
 
         assertEquals("1110", responseIso.getMTI());
-        assertEquals("118", responseIso.getString(39));
-        assertEquals("261655", responseIso.getString(11));
-        assertEquals("691199261655", responseIso.getString(37));
+        assertEquals(field(response1110, "39"), responseIso.getString(39));
+        assertEquals(field(response1110, "11"), responseIso.getString(11));
+        assertEquals(field(response1110, "37"), responseIso.getString(37));
     }
 
     private CacheClientProperties.CacheDefinition localCacheDefinition() {
@@ -211,6 +211,12 @@ class ShetabCardInquiryLeaseFromCacheTest {
             }
         }
         throw new IllegalStateException("Could not find ISO body with MTI=" + mti);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String field(Map<String, Object> body, String id) {
+        Map<String, String> fields = (Map<String, String>) body.get("fields");
+        return fields.get(id);
     }
 
     private EndpointParts parseEndpoint(String endpoint) {

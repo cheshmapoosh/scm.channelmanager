@@ -50,11 +50,21 @@ scm:
           packager-class: Shetab7AsciiXAPackager
           security:
             pin:
-              enabled: true
               key: ${SCM_SHETAB_HPS_PIN_KEY}
+              field: 52
+              pan-field: 2
+            expiry:
+              field: 14
+            cvv2:
+              field: 48
+              tag: P92
+              length-digits: 3
+              min-length: 3
+              max-length: 4
             mac:
-              enabled: true
               key: ${SCM_SHETAB_HPS_MAC_KEY}
+              field: 128
+              verify-response: false
           rate-limit:
             enabled: true
             bucket: shetab-hps
@@ -64,7 +74,14 @@ Rate-limit bucket definitions are read from `scm-config` via `scm-rate-limit.con
 HPS endpoint leases use `ResourceLeaseUtility` from `scm-cache-client` (`utilities.resource-lease=remote` for distributed mode).
 Built-in packager classes are `Shetab7AsciiXAPackager` and `Shetab7BinaryXAPackager` (legacy `CardSystem...` class names are also accepted).
 
-`fields.52` and `fields.128` are provider-owned. Operation transformers should pass normal ISO fields plus optional security metadata:
+`fields.52` and `fields.128` are provider-owned.
+Card security metadata should be passed in the `security` object:
+
+- `security.expiryDate` (or `security.expirationDate`): `YYMM`, mapped to field `14` by provider.
+- `security.cvv2`: numeric `3..4` digits, mapped to field `48` tag `P92` as `P92 + len(3 digits) + cvv2`.
+- If caller already sends `P92` inside `fields.48`, provider removes it first and then rebuilds it from `security.cvv2`.
+- Required flags are request-driven (not provider-instance driven): `pinRequired`, `expiryRequired`, `cvv2Required`, `macRequired`.
+- If a value exists but its `*Required` flag is `false`, provider does not send that security field.
 
 ```json
 {
@@ -73,15 +90,21 @@ Built-in packager classes are `Shetab7AsciiXAPackager` and `Shetab7BinaryXAPacka
     "2": "5894631159226349",
     "3": "330000",
     "11": "261655",
-    "37": "691199261655"
+    "37": "691199261655",
+    "48": "DST0165894631240207217"
   },
   "security": {
+    "expiryDate": "2907",
+    "cvv2": "639",
     "pin": "1234",
     "pinRequired": true,
     "macRequired": true
   }
 }
 ```
+
+Human-readable request/response logs are written in `ShetabIsoChannelClient` via `SafeIsoLogFormatter`.
+Sensitive values are masked/hidden in logs (for example `PAN`, `field 14`, `PIN block`, `MAC`, and `P92` CVV2 segment in `field 48`).
 
 Run the real HPS card-inquiry test explicitly:
 
