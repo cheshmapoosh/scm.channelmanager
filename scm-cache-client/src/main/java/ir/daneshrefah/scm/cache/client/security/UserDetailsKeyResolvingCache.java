@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.cache.client.security;
 
 import ir.daneshrefah.scm.cache.client.config.properties.CacheClientProperties;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.expression.Expression;
@@ -23,42 +24,44 @@ public class UserDetailsKeyResolvingCache implements Cache {
     private final ExpressionParser expressionParser = new SpelExpressionParser();
 
     @Override
+    @NonNull
     public String getName() {
         return delegate.getName();
     }
 
     @Override
+    @NonNull
     public Object getNativeCache() {
         return delegate.getNativeCache();
     }
 
     @Override
-    public ValueWrapper get(Object key) {
+    public ValueWrapper get(@NonNull Object key) {
         return delegate.get(key);
     }
 
     @Override
-    public <T> T get(Object key, Class<T> type) {
+    public <T> T get(@NonNull Object key, Class<T> type) {
         return delegate.get(key, type);
     }
 
     @Override
-    public <T> T get(Object key, Callable<T> valueLoader) {
+    public <T> T get(@NonNull Object key, @NonNull Callable<T> valueLoader) {
         return delegate.get(key, valueLoader);
     }
 
     @Override
-    public void put(Object key, Object value) {
+    public void put(@NonNull Object key, Object value) {
         delegate.put(resolveWriteKey(key, value), value);
     }
 
     @Override
-    public ValueWrapper putIfAbsent(Object key, Object value) {
+    public ValueWrapper putIfAbsent(@NonNull Object key, Object value) {
         return delegate.putIfAbsent(resolveWriteKey(key, value), value);
     }
 
     @Override
-    public void evict(Object key) {
+    public void evict(@NonNull Object key) {
         delegate.evict(key);
     }
 
