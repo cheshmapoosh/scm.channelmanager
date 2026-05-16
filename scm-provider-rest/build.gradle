@@ -7,6 +7,7 @@ dependencies {
 
     implementation project(':scm-cache-client')
     implementation project(':scm-common')
+    implementation project(':scm-logging-client')
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.apache.commons:commons-lang3'
