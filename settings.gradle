@@ -27,3 +27,4 @@ include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 
 include ('scm-jmeter', 'scm-plugin-camel-components')
 include ('scm-common-log')
 include ('scm-provider-shetab')
+include ('scm-provider-rest')

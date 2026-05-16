@@ -65,14 +65,20 @@ public class ShetabProducer extends DefaultProducer {
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
         securityProcessor.protectRequest(config, requestMap, request);
 
-        log.info("Shetab provider request provider={} operation={} body={}", config.provider(), operationName, maskSensitive(requestMap));
+        if (log.isDebugEnabled()) {
+            log.debug("Shetab provider request provider={} operation={} body={}",
+                    config.provider(), operationName, maskSensitive(requestMap));
+        }
         ISOMsg response = traceSupport.clientSpan(exchange, config, request, () -> {
             rateLimiter.acquire(config, operationName);
             return clientRegistry.request(config, request);
         });
         securityProcessor.verifyResponse(config, response);
         Map<String, Object> responseMap = isoMapConverter.toMap(response);
-        log.info("Shetab provider response provider={} operation={} body={}", config.provider(), operationName, maskSensitive(responseMap));
+        if (log.isDebugEnabled()) {
+            log.debug("Shetab provider response provider={} operation={} body={}",
+                    config.provider(), operationName, maskSensitive(responseMap));
+        }
         exchange.getMessage().setBody(responseMap);
     }
 

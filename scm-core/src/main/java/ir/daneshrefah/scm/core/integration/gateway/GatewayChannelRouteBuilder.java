@@ -100,25 +100,23 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                         route.setProperty(Message.SERVICE, constant(service));
                         route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
                         route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
-                        route.setProperty(Message.GATEWAY_CHANNEL,constant(gatewayChannel));
-                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
-                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL,constant(gatewayChannel.getProtocolType()));
+                        route.setProperty(Message.GATEWAY_CHANNEL, constant(gatewayChannel));
+                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(gatewayChannel.getProtocolType()));
                         defineExceptionHandler(route);
-                        log.info(">>> exception handler defined successfully");
                         applyMetrics(route, service);
                         applyTracing(route, service);
 
                         List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
                                 channelServiceAccess.getService(),
                                 PluginPhase.BEFORE);
-                        applyBeforePlugins(route, orderedBeforePluginDetails);
+                        applyBeforePlugins(route, orderedBeforePluginDetails, service);
 
                         buildTarget(route, service);
 
                         List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
                                 channelServiceAccess.getService(),
                                 PluginPhase.AFTER);
-                        applyAfterPlugins(route, orderedAfterPluginDetails);
+                        applyAfterPlugins(route, orderedAfterPluginDetails, service);
                         route.to(Routes.GLOBAL_RESPONSE_HANDLER);
                     });
                 });
@@ -288,13 +286,14 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     }
 
-    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
+    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Service service) {
         if (orderedBeforePluginDetails == null) {
             return;
         }
 
         orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
+            PluginHandler pluginHandler = resolvePluginHandler(definition);
+            pluginHandler.init(route, definition, Map.of(Message.SERVICE, service));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
             });
@@ -302,17 +301,26 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Service service) {
         if (orderedBeforePluginDetails == null) {
             return;
         }
 
         orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
+            PluginHandler pluginHandler = resolvePluginHandler(definition);
+            pluginHandler.init(route, definition, Map.of(Message.SERVICE, service));
             route.process(exchange -> {
                 pluginHandler.handle(exchange, definition);
             });
         });
+    }
+
+    private PluginHandler resolvePluginHandler(PluginDetail definition) {
+        PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+        if (pluginHandler == null) {
+            throw new IllegalArgumentException("Plugin handler not found: " + definition.getName());
+        }
+        return pluginHandler;
     }
 
 }

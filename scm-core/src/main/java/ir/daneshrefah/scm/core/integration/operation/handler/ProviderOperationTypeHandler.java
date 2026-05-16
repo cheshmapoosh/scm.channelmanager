@@ -29,42 +29,51 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
 
     @Override
     public void config(RouteDefinition route, Operation operation) {
+        validateProvider(operation);
         route.process(exchange -> {
-            if (operation.getProvider() != null) {
-                exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
-                exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, operation.getProvider().getUri());
-            }
+            exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
+            exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, operation.getProvider().getUri());
             exchange.getMessage().setBody(toMap(exchange.getMessage().getBody()));
         });
 
         route.to(resolveTargetUri(operation));
     }
 
+    private void validateProvider(Operation operation) {
+        if (operation.getProvider() == null) {
+            throw new IllegalArgumentException("Provider operation must be bound to a provider instance: " + operation.getName());
+        }
+        if (!Boolean.TRUE.equals(operation.getProvider().getActive())) {
+            throw new IllegalArgumentException("Provider operation is bound to an inactive provider: " + operation.getName());
+        }
+    }
+
     private Map<String, Object> toMap(Object body) {
-        if (body == null) {
-            return Map.of();
-        }
-        if (body instanceof Map<?, ?> map) {
-            return objectMapper.convertValue(map, MAP_TYPE);
-        }
-        if (body instanceof String text) {
-            if (StringUtils.isBlank(text)) {
+        switch (body) {
+            case null -> {
                 return Map.of();
             }
-            try {
-                return objectMapper.readValue(text, MAP_TYPE);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Provider operation body must be a JSON object", e);
+            case Map<?, ?> map -> {
+                return objectMapper.convertValue(map, MAP_TYPE);
+            }
+            case String text -> {
+                if (StringUtils.isBlank(text)) {
+                    return Map.of();
+                }
+                try {
+                    return objectMapper.readValue(text, MAP_TYPE);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("Provider operation body must be a JSON object", e);
+                }
+            }
+            default -> {
             }
         }
         return objectMapper.convertValue(body, MAP_TYPE);
     }
 
     private String resolveTargetUri(Operation operation) {
-        String uri = StringUtils.trimToNull(operation.getPath());
-        if (uri == null && operation.getProvider() != null) {
-            uri = StringUtils.trimToNull(operation.getProvider().getUri());
-        }
+        String uri = StringUtils.trimToNull(operation.getProvider().getUri());
         if (uri == null) {
             throw new IllegalArgumentException("Provider operation target URI is empty for operation " + operation.getName());
         }
