@@ -134,7 +134,9 @@ public class DefinitionServiceImpl implements DefinitionService {
                     request.setName(JAVA_PREFIX + upperCaseName);
                 }
             }
-            default -> throw new IllegalArgumentException("Unsupported type: " + type);
+            default -> {
+                // Other definition types are referenced by exact name from service and operation configuration.
+            }
         }
     }
 
@@ -150,8 +152,11 @@ public class DefinitionServiceImpl implements DefinitionService {
             case JAVA:
                 targetClass = JavaDefinitionDetail.class;
                 break;
+            case MULTIPLE_ROUTE_CONFIG:
+                targetClass = JavaMultiRouteDefinitionDetail.class;
+                break;
             default:
-                targetClass = DefinitionDetail.class;
+                return;
         }
         try {
             ObjectMapper mapper = objectMapper.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);

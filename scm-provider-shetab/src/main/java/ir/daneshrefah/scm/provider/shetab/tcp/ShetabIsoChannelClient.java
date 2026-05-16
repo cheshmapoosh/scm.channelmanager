@@ -142,14 +142,16 @@ public class ShetabIsoChannelClient {
                 request = pending.msg();
                 currentChannel.send(request);
                 metrics.sent();
-                log.info("Shetab sent provider={}, requestMsg={}", config.provider(), SafeIsoLogFormatter.format(request));
+                logWireDebug("sent", request);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             } catch (Exception e) {
 
                 if (!running.get()) {
-                    log.debug("Shetab sender stopped provider={}, pendingMsg={}", config.provider(), SafeIsoLogFormatter.format(request), e);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Shetab sender stopped provider={}, pendingMsg={}", config.provider(), SafeIsoLogFormatter.format(request), e);
+                    }
                     return;
                 }
                 metrics.failed();
@@ -167,7 +169,7 @@ public class ShetabIsoChannelClient {
             try {
                 ensureConnected();
                 ISOMsg response = channel.receive();
-                log.info("Shetab receive provider={}, responseMsg={}", config.provider(), SafeIsoLogFormatter.format(response));
+                logWireDebug("received", response);
                 List<String> keys = correlationKeys(response);
                 ResponseTracker tracker = findTracker(keys);
                 if (tracker != null) {
@@ -437,6 +439,17 @@ public class ShetabIsoChannelClient {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void logWireDebug(String direction, ISOMsg msg) {
+        logWireDebug(direction, msg, -1L);
+    }
+
+    private void logWireDebug(String direction, ISOMsg msg, long elapsedMs) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        log.debug("Shetab {} provider={}, message={}", direction, config.provider(), SafeIsoLogFormatter.format(msg, elapsedMs));
     }
 
     private record PendingRequest(String key, ISOMsg msg, int sendAttempts) {

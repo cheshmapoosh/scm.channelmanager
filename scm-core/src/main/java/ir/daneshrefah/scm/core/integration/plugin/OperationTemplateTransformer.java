@@ -177,7 +177,8 @@ public class OperationTemplateTransformer implements PluginHandler {
             Map<String, Object> context = templateContextBuilder.buildContext(variables, exchange);
             String templateText = definition.getDetails();
             String body = templateEngine.render(definition.getName(), templateText, context);
-            log.info("Template engin is [{}] and definition id is [{}] and before plugin rendered  [{}]", templateEngine.getTemplateEngineType(), definition.getId(), body);
+            log.debug("Template engine is [{}] and definition id is [{}] and before plugin rendered [{}]",
+                    templateEngine.getTemplateEngineType(), definition.getId(), body);
             exchange.getIn().setHeader(HttpConstants.HTTP_HEADER_CONTENT_TYPE, HttpConstants.HTTP_HEADER_CONTENT_TYPE_JSON);
             exchange.getIn().setBody(body);
         } else {
@@ -186,7 +187,8 @@ public class OperationTemplateTransformer implements PluginHandler {
             Map<String, Object> context = mapper.convertValue(response, new TypeReference<>() {});
             String templateText = definition.getDetails();
             String render =  templateEngine.render(definition.getName(), templateText, context);
-            log.info("Template engin is [{}] and definition id is [{}] and after plugin rendered  [{}]", templateEngine.getTemplateEngineType(), definition.getId(), render);
+            log.debug("Template engine is [{}] and definition id is [{}] and after plugin rendered [{}]",
+                    templateEngine.getTemplateEngineType(), definition.getId(), render);
             JsonNode jsonNode = mapper.readTree(render);
             String statusHandlerName = JsonPathFinder.defaultAsText(jsonNode, "statusHandler");
             if (statusHandlerName != null) {

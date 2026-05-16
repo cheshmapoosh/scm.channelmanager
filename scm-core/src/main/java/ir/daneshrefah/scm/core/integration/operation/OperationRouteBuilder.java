@@ -6,7 +6,6 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.token.OpenBankingToken;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
@@ -34,11 +33,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     @Override
     public void configure() {
         List<Operation> operations = operationService.getAllOperations();
-        operations.stream().filter(Operation::getActive).forEach(operation -> {
-            if(operation.getName().trim().equals("PROCUREMENT_CORPORATE_BY_NATIONAL")){
-                System.out.println("");
-            }
-
+        operations.stream().filter(operation -> Boolean.TRUE.equals(operation.getActive())).forEach(operation -> {
             String routeId = "route-" + operation.getName();
             String fromUri = resolveFromUri(operation);
             RouteDefinition route = from(fromUri)
@@ -47,12 +42,6 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             defineExceptionHandler(route);
             applyMetrics(route, operation);
-
-            route.process(exchange -> {
-                if(operation.getName().trim().equals("XFER_COMMISSION")){
-                    exchange.getIn().setHeader("commissionType", "31");
-                }
-            });
 
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
@@ -88,7 +77,7 @@ public class OperationRouteBuilder extends RouteBuilder {
         }
 
         orderedBeforePluginDetails.forEach(detail -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            PluginHandler handler = resolvePluginHandler(detail);
             handler.init(route, detail, properties);
             route.process(exchange -> {
                 handler.handle(exchange, detail);
@@ -99,7 +88,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     private void buildTarget(RouteDefinition route, Operation operation) {
         OperationTypeHandler handler = operationTypeHandlers.stream()
                 .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type not found"));
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type handler not found for operation " + operation.getName()));
         handler.internalConfig(route, operation);
     }
 
@@ -109,11 +98,19 @@ public class OperationRouteBuilder extends RouteBuilder {
         }
 
         orderedAfterPluginDetails.forEach(detail -> {
-            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            PluginHandler handler = resolvePluginHandler(detail);
             handler.init(route, detail, properties);
             route.process(exchange -> {
                 handler.handle(exchange, detail);
             });
         });
+    }
+
+    private PluginHandler resolvePluginHandler(PluginDetail detail) {
+        PluginHandler handler = pluginHandlers.get(detail.getName());
+        if (handler == null) {
+            throw new IllegalArgumentException("Plugin handler not found: " + detail.getName());
+        }
+        return handler;
     }
 }
