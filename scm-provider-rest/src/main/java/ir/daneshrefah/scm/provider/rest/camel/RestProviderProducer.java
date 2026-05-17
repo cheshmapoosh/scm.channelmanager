@@ -45,6 +45,8 @@ public class RestProviderProducer extends DefaultProducer {
             "content-length",
             "transfer-encoding",
             "connection",
+            "authorization",
+            "proxy-authorization",
             "restprovider",
             "restprovidermethod",
             "restproviderurl",
@@ -109,12 +111,22 @@ public class RestProviderProducer extends DefaultProducer {
             exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, response.getStatusCode().value());
             exchange.getMessage().setBody(result);
 
-            logResponse(config, operationName, response, result);
+            logResponse(config, operationName, requestSpec, response, result, elapsedMs);
         } catch (RuntimeException e) {
             providerMetrics.failed();
             if (isTimeout(e)) {
                 providerMetrics.timedOut();
             }
+            long elapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
+            log.warn(
+                    "REST ERROR provider={} operation={} method={} url={} elapsedMs={} message={}",
+                    config.provider(),
+                    operationName,
+                    requestSpec.method(),
+                    requestSpec.uri(),
+                    elapsedMs,
+                    e.getMessage()
+            );
             throw e;
         }
     }
@@ -171,7 +183,11 @@ public class RestProviderProducer extends DefaultProducer {
         headers.putAll(config.defaultHeaders());
         headers.putAll(extractInboundHeaders(exchange.getMessage().getHeaders()));
         headers.putAll(stringMap(envelope.getHeaders()));
-        applyAuth(headers, config, envelope.getAuth());
+        removeRequestAuthHeaders(headers, config.provider());
+        if (envelope.getAuth() != null) {
+            log.warn("Ignoring request-level auth override for REST provider. provider={}", config.provider());
+        }
+        applyAuth(headers, config);
         ensureContentType(headers, envelope.getBody());
 
         Object requestBody = envelope.getBody();
@@ -214,8 +230,8 @@ public class RestProviderProducer extends DefaultProducer {
         builder.queryParam(key, value);
     }
 
-    private void applyAuth(Map<String, String> headers, RestProviderResolvedConfig config, RestProviderRequestEnvelope.Auth requestAuth) {
-        RestProviderResolvedConfig.Auth auth = mergeAuth(config.auth(), requestAuth);
+    private void applyAuth(Map<String, String> headers, RestProviderResolvedConfig config) {
+        RestProviderResolvedConfig.Auth auth = config.auth();
         if (auth == null) {
             return;
         }
@@ -254,41 +270,6 @@ public class RestProviderProducer extends DefaultProducer {
         return type == RestProviderResolvedConfig.AuthType.BEARER
                 || type == RestProviderResolvedConfig.AuthType.JWT
                 || type == RestProviderResolvedConfig.AuthType.API_KEY;
-    }
-
-    private RestProviderResolvedConfig.Auth mergeAuth(RestProviderResolvedConfig.Auth configAuth, RestProviderRequestEnvelope.Auth requestAuth) {
-        RestProviderResolvedConfig.Auth baseAuth = configAuth != null
-                ? configAuth
-                : new RestProviderResolvedConfig.Auth(
-                RestProviderResolvedConfig.AuthType.NONE,
-                HttpHeaders.AUTHORIZATION,
-                null,
-                null,
-                null,
-                null,
-                true
-        );
-        if (requestAuth == null) {
-            return baseAuth;
-        }
-        RestProviderResolvedConfig.AuthType authType = baseAuth.type();
-        String requestedType = StringUtils.trimToNull(requestAuth.getType());
-        if (requestedType != null) {
-            try {
-                authType = RestProviderResolvedConfig.AuthType.valueOf(requestedType.trim().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unsupported REST request auth type: " + requestedType, e);
-            }
-        }
-        return new RestProviderResolvedConfig.Auth(
-                authType,
-                first(requestAuth.getHeaderName(), baseAuth.headerName()),
-                first(requestAuth.getPrefix(), baseAuth.prefix()),
-                first(requestAuth.getToken(), baseAuth.token()),
-                first(requestAuth.getUsername(), baseAuth.username()),
-                first(requestAuth.getPassword(), baseAuth.password()),
-                first(requestAuth.getBasicBase64(), baseAuth.basicBase64())
-        );
     }
 
     private String resolveAuthHeaderValue(RestProviderResolvedConfig.Auth auth) {
@@ -394,7 +375,7 @@ public class RestProviderProducer extends DefaultProducer {
             return;
         }
         log.debug(
-                "REST provider request provider={} operation={} method={} url={} headers={} body={}",
+                "REST SEND provider={} operation={} method={} url={} headers={} body={}",
                 config.provider(),
                 operationName,
                 requestSpec.method(),
@@ -407,8 +388,10 @@ public class RestProviderProducer extends DefaultProducer {
     private void logResponse(
             RestProviderResolvedConfig config,
             String operationName,
+            RestProviderRequestSpec requestSpec,
             ResponseEntity<String> response,
-            Map<String, Object> responsePayload
+            Map<String, Object> responsePayload,
+            long elapsedMs
     ) {
         if (!log.isDebugEnabled()) {
             return;
@@ -421,10 +404,13 @@ public class RestProviderProducer extends DefaultProducer {
             safeBody = logSanitizer.sanitizeBody(body, config.security());
         }
         log.debug(
-                "REST provider response provider={} operation={} status={} headers={} body={}",
+                "REST RECEIVE provider={} operation={} method={} url={} status={} elapsedMs={} headers={} body={}",
                 config.provider(),
                 operationName,
+                requestSpec.method(),
+                requestSpec.uri(),
                 response.getStatusCode().value(),
+                elapsedMs,
                 logSanitizer.sanitizeHeaders(flattenHeaders(response.getHeaders()), config.security()),
                 safeBody
         );
@@ -536,6 +522,33 @@ public class RestProviderProducer extends DefaultProducer {
             result.put(key, String.valueOf(value));
         });
         return result;
+    }
+
+    private void removeRequestAuthHeaders(Map<String, String> headers, String provider) {
+        if (headers == null || headers.isEmpty()) {
+            return;
+        }
+        boolean removedAuthorization = removeHeaderIgnoreCase(headers, HttpHeaders.AUTHORIZATION);
+        boolean removedProxyAuthorization = removeHeaderIgnoreCase(headers, HttpHeaders.PROXY_AUTHORIZATION);
+        if (removedAuthorization || removedProxyAuthorization) {
+            log.warn("Ignoring request-level authorization headers for REST provider. provider={}", provider);
+        }
+    }
+
+    private boolean removeHeaderIgnoreCase(Map<String, String> headers, String headerName) {
+        String target = headerName.toLowerCase(Locale.ROOT);
+        String keyToRemove = null;
+        for (String key : headers.keySet()) {
+            if (key != null && key.toLowerCase(Locale.ROOT).equals(target)) {
+                keyToRemove = key;
+                break;
+            }
+        }
+        if (keyToRemove == null) {
+            return false;
+        }
+        headers.remove(keyToRemove);
+        return true;
     }
 
     private boolean hasHeader(Map<String, String> headers, String headerName) {
