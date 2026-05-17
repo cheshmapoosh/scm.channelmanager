@@ -96,8 +96,7 @@ public class RestProviderTokenManager {
         HttpMethod method = resolveMethod(tokenConfig.method());
         URI uri = resolveUri(config.baseUrl(), tokenConfig.url(), tokenConfig.path(), tokenConfig.query());
 
-        Map<String, String> headers = new LinkedHashMap<>();
-        headers.putAll(tokenConfig.headers());
+        Map<String, String> headers = new LinkedHashMap<>(tokenConfig.headers());
         applyAuth(headers, tokenConfig.auth());
 
         Object body = resolveTokenRequestBody(tokenConfig, headers);
@@ -145,11 +144,31 @@ public class RestProviderTokenManager {
             headers.putIfAbsent(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
             return encodeForm(tokenConfig.form());
         }
-        if (tokenConfig.body() != null && !tokenConfig.body().isEmpty()) {
+        Object body = tokenConfig.body();
+        if (hasBody(body)) {
             headers.putIfAbsent(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-            return tokenConfig.body();
+            return body;
         }
         return null;
+    }
+
+    private boolean hasBody(Object body) {
+        if (body == null) {
+            return false;
+        }
+        if (body instanceof String text) {
+            return StringUtils.isNotBlank(text);
+        }
+        if (body instanceof Map<?, ?> map) {
+            return !map.isEmpty();
+        }
+        if (body instanceof Iterable<?> iterable) {
+            return iterable.iterator().hasNext();
+        }
+        if (body.getClass().isArray()) {
+            return java.lang.reflect.Array.getLength(body) > 0;
+        }
+        return true;
     }
 
     private String encodeForm(Map<String, String> form) {

@@ -14,10 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,29 +26,26 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
-class RestProviderHpsGeneralWsIntegrationTest {
+class RestProviderHpsCardInquiryIntegrationTest {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     @Test
-    void invokesRealHpsGeneralWsService() {
+    void sendsCardInquiryToRealHpsService() {
         Assumptions.assumeTrue(
                 Boolean.parseBoolean(env("SCM_REST_HPS_INTEGRATION", "false")),
                 "Set SCM_REST_HPS_INTEGRATION=true to run the real HPS REST integration test"
         );
 
-        String baseUrl = env("SCM_REST_HPS_BASE_URL", "http://localhost:9677");
+        String baseUrl = env("SCM_REST_HPS_BASE_URL", "http://10.15.1.61:9677");
         String username = env("SCM_REST_HPS_USERNAME", "user01");
         String password = env("SCM_REST_HPS_PASSWORD", "pass01");
         String endpointPath = env("SCM_REST_HPS_PATH", "/general/ws/do");
 
         Map<String, Object> requestBody = sampleRequestBody();
-        Map<String, String> headers = Map.of(
-                HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE,
-                HttpHeaders.AUTHORIZATION, basicAuthHeader(username, password)
-        );
+        Map<String, String> headers = Map.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
-        RestProviderResolvedConfig config = config(baseUrl);
+        RestProviderResolvedConfig config = config(baseUrl, username, password);
         URI uri = URI.create(baseUrl + endpointPath);
         RestProviderRequestSpec requestSpec = new RestProviderRequestSpec(HttpMethod.POST, uri, headers, requestBody);
 
@@ -63,7 +58,7 @@ class RestProviderHpsGeneralWsIntegrationTest {
             ResponseEntity<String> response = clientRegistry.exchange(config, requestSpec);
 
             assertTrue(response.getStatusCode().is2xxSuccessful(),
-                    "Expected 2xx status from HPS general/ws/do, but got " + response.getStatusCode().value());
+                    "Expected 2xx status from HPS card inquiry endpoint, but got " + response.getStatusCode().value());
             assertFalse(response.getBody() == null || response.getBody().isBlank(),
                     "HPS response body should not be blank");
         }
@@ -94,7 +89,7 @@ class RestProviderHpsGeneralWsIntegrationTest {
         return payload;
     }
 
-    private RestProviderResolvedConfig config(String baseUrl) {
+    private RestProviderResolvedConfig config(String baseUrl, String username, String password) {
         return new RestProviderResolvedConfig(
                 "hpsRest",
                 baseUrl,
@@ -107,12 +102,12 @@ class RestProviderHpsGeneralWsIntegrationTest {
                 Map.of(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
                 new RestProviderResolvedConfig.Auth(
-                        RestProviderResolvedConfig.AuthType.NONE,
+                        RestProviderResolvedConfig.AuthType.BASIC,
                         HttpHeaders.AUTHORIZATION,
                         null,
                         null,
-                        null,
-                        null,
+                        username,
+                        password,
                         true
                 ),
                 new RestProviderResolvedConfig.Security(
@@ -149,12 +144,6 @@ class RestProviderHpsGeneralWsIntegrationTest {
                         "Bearer"
                 )
         );
-    }
-
-    private String basicAuthHeader(String username, String password) {
-        String raw = username + ":" + password;
-        String encoded = Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-        return "Basic " + encoded;
     }
 
     private String env(String key, String defaultValue) {
