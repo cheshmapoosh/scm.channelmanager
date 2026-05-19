@@ -14,5 +14,6 @@ public class TaskResponse {
     private TaskStatusEnum taskStatus;
     private String statusName;
     private boolean global;
+    private boolean signer;
     private ProcessInstanceResponse processInstance;
 }
