@@ -1,0 +1,45 @@
+<isomsg>
+    <field id="0" value="1100" />
+    <field id="2" value="5894631204245054" />
+    <field id="3" value="330000" />
+    <field id="4" value="000000000000" />
+    <field id="6" value="000000000000" />
+    <field id="7" value="0513140402" />
+    <field id="11" value="261655" />
+    <field id="12" value="260513140402" />
+    <field id="14" value="1106" />
+    <field id="22" value="61051061314C" />
+    <field id="24" value="113" />
+    <field id="26" value="6012" />
+    <field id="32" value="589463" />
+    <field id="33" value="589463" />
+    <field id="37" value="691199261655" />
+    <field id="41" value="67777777" />
+    <field id="42" value="   777777777600" />
+    <field id="43" value="Refah Bank            Tehran       THRIR010010157171371502184852851" />
+    <field id="48" value="P92003879DST0165894631240208033" />
+    <field id="49" value="364" />
+    <field id="52" value="*****" />
+    <field id="128" value="CD83D959AEFBEA8A" />
+</isomsg>
+
+
+<isomsg>
+    <field id="0" value="1110" />
+    <field id="2" value="5894631159226349" />
+    <field id="3" value="330000" />
+    <field id="4" value="000000000000" />
+    <field id="7" value="0513140402" />
+    <field id="11" value="261655" />
+    <field id="12" value="260513140402" />
+    <field id="15" value="240819" />
+    <field id="32" value="589463" />
+    <field id="33" value="589463" />
+    <field id="37" value="691199261655" />
+    <field id="39" value="118" />
+    <field id="41" value="67777777" />
+    <field id="43" value="Refah Bank            Tehran       THRIR010010157171371502184852851" />
+    <field id="44" value="" />
+    <field id="49" value="364" />
+    <field id="128" value="0000000000000000" />
+</isomsg>
