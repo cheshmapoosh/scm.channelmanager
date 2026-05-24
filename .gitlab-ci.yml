@@ -56,11 +56,11 @@ docker_build:
     - docker build --build-arg VERSION=$VERSION --build-arg SPRING_APPLICATION_NAME=scm-web -t $REGISTRY_URL/$IMAGE_NAME:$VERSION .
 
     - mkdir images
-    - docker save $REGISTRY_URL/$IMAGE_NAME:$VERSION -o images/scm-all-$VERSION.tar
+    - docker save $REGISTRY_URL/$IMAGE_NAME:$VERSION -o images/scm-app-$VERSION.tar
 
   artifacts:
     paths:
-      - images/scm-all-*.tar
+      - images/scm-app-*.tar
     expire_in: 1 days
 
 docker_push:
@@ -88,7 +88,7 @@ docker_push:
   script:
     - export VERSION=$(echo "$CI_COMMIT_TAG" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
     - echo "Pushing Single Image VERSION=$VERSION"
-    - docker load -i images/scm-all-$VERSION.tar
+    - docker load -i images/scm-app-$VERSION.tar
     - docker push $REGISTRY_URL/$IMAGE_NAME:$VERSION
 
 
