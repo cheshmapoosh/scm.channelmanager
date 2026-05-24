@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "scm.provider.rest")
+@ConfigurationProperties(prefix = "scm.provider.rest-provider")
 public class RestProviderProperties {
     private boolean enabled = true;
     private Instance defaults = new Instance();
