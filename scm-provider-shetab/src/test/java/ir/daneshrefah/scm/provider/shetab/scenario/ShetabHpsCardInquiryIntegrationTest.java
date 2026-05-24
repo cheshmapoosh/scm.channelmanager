@@ -110,7 +110,7 @@ class ShetabHpsCardInquiryIntegrationTest {
     }
 
     private List<String> endpoints() {
-        String endpointText = env("SCM_SHETAB_HPS_ENDPOINTS", env("SCM_SHETAB_HPS_ENDPOINT", ""));
+        String endpointText = env("SCM_SHETAB_HPS_ENDPOINTS", env("SCM_SHETAB_HPS_ENDPOINT", "10.15.1.61:32001"));
         Assumptions.assumeTrue(!endpointText.isBlank(), "Set SCM_SHETAB_HPS_ENDPOINTS=ip:port[,ip:port...]");
         return Arrays.stream(endpointText.split(","))
                 .map(String::trim)
