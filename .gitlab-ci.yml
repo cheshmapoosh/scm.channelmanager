@@ -5,7 +5,7 @@ stages:
 
 variables:
   REGISTRY_URL: "reg.daneshrefah.ir/modern-banking"
-  IMAGE_NAME: "scm-all-in-one"
+  IMAGE_NAME: "scm-app"
   KUBE_NAMESPACE: "scm"
 
 build_jars:
