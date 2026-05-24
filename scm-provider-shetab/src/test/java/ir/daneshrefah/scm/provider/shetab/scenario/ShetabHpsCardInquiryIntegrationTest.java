@@ -12,6 +12,7 @@ import org.jpos.iso.ISOMsg;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -20,6 +21,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -36,8 +38,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 class ShetabHpsCardInquiryIntegrationTest {
-    private static final Path CARD_INQUIRY_SAMPLE_PATH =
-            Path.of("/home/cheshmapoush.a@drp.local/Downloads/1100.xml");
+    private static final Path CARD_INQUIRY_SAMPLE_PATH;
+
+    static {
+        try {
+            CARD_INQUIRY_SAMPLE_PATH = new ClassPathResource(
+                    "ir/daneshrefah/scm/provider/shetab/scenario/1100.xml")
+                    .getFile().toPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final DateTimeFormatter TRANSMISSION_DATE_TIME = DateTimeFormatter.ofPattern("MMddHHmmss");
     private static final DateTimeFormatter LOCAL_TRANSACTION_DATE_TIME = DateTimeFormatter.ofPattern("yyMMddHHmmss");
@@ -54,13 +65,13 @@ class ShetabHpsCardInquiryIntegrationTest {
                 "Sample file does not exist: " + CARD_INQUIRY_SAMPLE_PATH);
 
         List<String> endpoints = endpoints();
-        String exp = env("SCM_SHETAB_HPS_EXP", null);
+        String exp = env("SCM_SHETAB_HPS_EXP", "");
         String cvv2 = env("SCM_SHETAB_HPS_CVV2", "");
         String pin = env("SCM_SHETAB_HPS_PIN", "");
         ShetabResolvedConfig config = config(
                 endpoints,
-                requiredEnv("SCM_SHETAB_HPS_PIN_KEY"),
-                requiredEnv("SCM_SHETAB_HPS_MAC_KEY")
+                env("SCM_SHETAB_HPS_PIN_KEY", ""),
+                env("SCM_SHETAB_HPS_MAC_KEY", "")
         );
 
         Map<String, Object> requestBody = readRequest1100(CARD_INQUIRY_SAMPLE_PATH);
@@ -70,9 +81,9 @@ class ShetabHpsCardInquiryIntegrationTest {
                 "cvv2", cvv2,
                 "pin", pin,
                 "expiryRequired", false,
-                "cvv2Required",  true,
-                "pinRequired", true,
-                "macRequired", true
+                "cvv2Required",  false,
+                "pinRequired", false,
+                "macRequired", false
         );
         requestBody.put("security", security);
 

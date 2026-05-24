@@ -114,16 +114,16 @@ public final class SafeIsoLogFormatter {
             return "[COMPOSITE_MSG]";
         }
 
+
+        if (MASKED_FIELDS.contains(field)) {
+            return maskField(field, component);
+        }
         String textValue;
 
         if (value instanceof byte[]) {
             textValue = ISOUtil.hexString((byte[]) value);
         } else {
             textValue = String.valueOf(value);
-        }
-
-        if (MASKED_FIELDS.contains(field)) {
-            return maskField(field, textValue);
         }
         if (field == 48) {
             return maskField48(textValue);
@@ -160,10 +160,10 @@ public final class SafeIsoLogFormatter {
         }
 
         return switch (field) {
-            case 2 -> maskPan(value);
-            case 35, 45 -> maskTrackData(value);
+            case 2 -> maskPan(textValue);
+            case 35, 45 -> maskTrackData(textValue);
             case 14 -> "**/**";
-            case 102, 103 -> maskAccount(value);
+            case 102, 103 -> maskAccount(textValue);
             default -> "[MASKED]";
         };
     }
