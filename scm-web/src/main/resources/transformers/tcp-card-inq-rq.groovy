@@ -4,7 +4,8 @@ import javax.swing.GroupLayout
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-def fundTransfer = exchange.in.body
+def body = exchange.in.body
+def fundTransfer = body.fundTransfer
 //println("tcp rq:" + body)
 
 //def fundTransfer = body.fundTransfer
@@ -13,7 +14,7 @@ def fundTransfer = exchange.in.body
 //def date = fundTransfer.date
 def srcCard = fundTransfer.sourceCardNumber
 def destCard = fundTransfer.destinationCardNumber
-def padZeroLeft = { character, str, length ->
+def padZeroLeft = { str, length ->
     {
         if (str.isEmpty()) {
             return "";
@@ -24,7 +25,7 @@ def padZeroLeft = { character, str, length ->
         return str;
     }
 }
-def field48 = "DST" + padZeroLeft(" ", destCard.length() + "", 3) + destCard
+def field48 = "DST" + padZeroLeft(destCard.length() + "", 3) + destCard
 println("field48" + field48)
 
 //def srcAcc = fundTransfer.sourceAccountNumber
