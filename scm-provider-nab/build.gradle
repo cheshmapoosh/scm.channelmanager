@@ -1,0 +1,19 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+dependencies {
+    api 'org.apache.camel:camel-core'
+
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.apache.commons:commons-pool2:2.12.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

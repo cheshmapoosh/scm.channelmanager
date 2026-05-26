@@ -371,10 +371,10 @@ public class RestProviderProducer extends DefaultProducer {
     }
 
     private void logRequest(RestProviderResolvedConfig config, String operationName, RestProviderRequestSpec requestSpec) {
-        if (!log.isDebugEnabled()) {
+        if (!log.isInfoEnabled()) {
             return;
         }
-        log.debug(
+        log.info(
                 "REST SEND provider={} operation={} method={} url={} headers={} body={}",
                 config.provider(),
                 operationName,
@@ -393,7 +393,7 @@ public class RestProviderProducer extends DefaultProducer {
             Map<String, Object> responsePayload,
             long elapsedMs
     ) {
-        if (!log.isDebugEnabled()) {
+        if (!log.isInfoEnabled()) {
             return;
         }
         Object body = responsePayload.get("body");
@@ -403,7 +403,7 @@ public class RestProviderProducer extends DefaultProducer {
         } else {
             safeBody = logSanitizer.sanitizeBody(body, config.security());
         }
-        log.debug(
+        log.info(
                 "REST RECEIVE provider={} operation={} method={} url={} status={} elapsedMs={} headers={} body={}",
                 config.provider(),
                 operationName,
