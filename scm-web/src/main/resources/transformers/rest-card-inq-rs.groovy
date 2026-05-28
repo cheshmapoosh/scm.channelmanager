@@ -20,10 +20,9 @@ if (!(statusCode >= 200 && statusCode < 300)) {
 def bodyResponse = body.get("body")
 def out = bodyResponse.get("outData")
 
-if(out == null && bodyResponse.get("errorCode") != null){
+if (out == null && bodyResponse.get("errorCode") != null) {
     throw new RuntimeException(bodyResponse.get("errorDescription"))
 }
-
 
 println("out cardInq rs : " + out)
 println("rest cardInquiry rs transformer end transformed body : " + body)

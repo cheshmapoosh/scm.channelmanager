@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 def body = exchange.in.body
+println("rest card inquiry rq body : " + body)
 def stan = sprintf("%06d", System.currentTimeMillis() % 1_000_000)
 def dateAndTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
 

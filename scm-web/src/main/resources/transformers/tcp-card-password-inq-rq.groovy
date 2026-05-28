@@ -22,21 +22,21 @@ requestTypeProcessCodeHashMap.put("DYNAMIC_PIN", "92")
 
 def body = exchange.in.body
 println("card password inq rq : " + body)
-def fundTransfer = body.fundTransfer
+def card = body.card
 def trk2EquivData = body.trk2EquivData
 def additionalInformation = body.additionalInformation
 def pin = trk2EquivData == null ? null : trk2EquivData.pin
 def cvv2 = trk2EquivData == null ? null : trk2EquivData.cvv2
 def cardExpirationYearMonth = trk2EquivData == null ? null : trk2EquivData.cardExpirationYearMonth
 def PIN_KEY = "hps_pin_key";
-def srcCard = fundTransfer.sourceCardNumber
-def reqType = fundTransfer.requestType
+def srcCard = card.sourceCardNumber
+def reqType = body.requestType
 def transmissionDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
 def captureDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMdd"))
 def localTransactionDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss"))
 def stan = sprintf("%06d", System.currentTimeMillis() % 1_000_000)
 def rrn = sprintf("%012d", System.currentTimeMillis() % 1_000_000_000_000L);
-def amount = fundTransfer.amount
+def amount = body.amount
 
 
 def fixSize = { str, len ->
@@ -550,67 +550,65 @@ def fillAdditionalInformation = {
 
 
 def req = [:]
-def field = [:]
-def security = [:]
+//def field = [:]
+//def security = [:]
 
-req.put("mti", "1100");
-
-field.put("2", srcCard);
-field.put("3", "320000");
-field.put("7", transmissionDateTime);
-field.put("11", stan);
-field.put("12", localTransactionDateTime);
-field.put("26", "6012");
-field.put("17", captureDate);
-field.put("32", "589463");
-field.put("19", "364");
-field.put("22", "61051061314C");
-field.put("24", reqType == "DYNAMIC_PIN" ? "101" : "260");
-field.put("33", srcCard[0..5]);
-field.put("37", rrn);
-field.put("41", "67777777"); // baraye mb (too nbk (nib) y chi digas)
-field.put("42", "   777777777600");
-field.put("43", "Refah Bank            Tehran       THRIR010010157171371502184852851");
-field.put("100", "589463");
-field.put("49", "364");
+req.put("0", "1100");
+req.put("2", srcCard);
+req.put("3", "320000");
+req.put("7", transmissionDateTime);
+req.put("11", stan);
+req.put("12", localTransactionDateTime);
+req.put("26", "6012");
+req.put("17", captureDate);
+req.put("32", "589463");
+req.put("19", "364");
+req.put("22", "61051061314C");
+req.put("24", reqType == "DYNAMIC_PIN" ? "101" : "260");
+req.put("33", srcCard[0..5]);
+req.put("37", rrn);
+req.put("41", "67777777"); // baraye mb (too nbk (nib) y chi digas)
+req.put("42", "   777777777600");
+req.put("43", "Refah Bank            Tehran       THRIR010010157171371502184852851");
+req.put("100", "589463");
+req.put("49", "364");
 
 def additionalPrivateData = "";
 if (pin != null && !pin.isEmpty()) {
-    field.put("52", "");//?????????encript pin
+    req.put("52", "");//?????????encript pin
 } else {
     additionalPrivateData = fillAdditionalInformation();
 }
 
 if (amount != null) {
-    field.put("4", amount)
-    field.put("6", amount)
+    req.put("4", amount)
+    req.put("6", amount)
 }
 
 if (!additionalPrivateData.toString().isEmpty()) {
-    field.put("48", additionalPrivateData)
+    req.put("48", additionalPrivateData)
 }
 
 def channelCode = exchange.getProperty('scmChannelCode')
 if (channelCode == 'IVR') {
-    field.put("14", "0000")
+    req.put("14", "0000")
 } else {
-    field.put("14", trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
+    req.put("14", trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
 }
 
 
-req.put("fields", field)
+//req.put("fields", field)
 
-security.put("expiryDate", "");
-security.put("cvv2", "");
-security.put("pin", "");
-security.put("expiryRequired", false);
-security.put("cvv2Required", false);
-security.put("pinRequired", false);
-security.put("macRequired", false);
+//security.put("expiryDate", "");
+//security.put("cvv2", "");
+//security.put("pin", "");
+//security.put("expiryRequired", false);
+//security.put("cvv2Required", false);
+//security.put("pinRequired", false);
+//security.put("macRequired", false);
+//req.put("security", security)
 
-req.put("security", security)
-
-println("tcp card inq rq: " + req)
-println("tcp card inq rq json: " + JsonOutput.toJson(req))
+//println("tcp card inq rq: " + req)
+//println("tcp card inq rq json: " + JsonOutput.toJson(req))
 
 return JsonOutput.toJson(req)
