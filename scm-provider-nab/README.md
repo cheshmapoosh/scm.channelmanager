@@ -203,16 +203,34 @@ scm:
         connect-timeout-ms: 3000
         socket-timeout-ms: 1000
         response-timeout-ms: 6000
-        response-idle-timeout-ms: 100
         ack-length-bytes: 5
         charset: windows-1252
         default-service-code: "99"
         rq-uid:
           length: 16
           type: NUMERIC
-        header-fields-by-protocol:
-          ATPI:
-            - { name: "nabProtocol", length: 4, required: true }
+        character-normalization:
+          enabled: true
+          replacements:
+            "ي": "ی"
+            "ك": "ک"
+      providers:
+        atps:
+          protocol: ATPS
+          endpoint: 10.10.10.10:3080
+          user-id: "999998"
+          password: "${NAB_PASSWORD}"
+          rate-limit:
+            enabled: true
+            bucket: "nab-atps"
+            key: "provider-operation"
+        atpi:
+          protocol: ATPI
+          endpoint: 10.10.10.11:3080
+          user-id: "999998"
+          password: "${NAB_PASSWORD}"
+          header-fields:
+            - { name: "protocol", length: 4, required: true }
             - { name: "clientAddress", length: 64, required: true }
             - { name: "command", length: 2, required: true }
             - { name: "serviceCode", length: 2, required: true }
@@ -220,31 +238,13 @@ scm:
             - { name: "userId", length: 10, required: true }
             - { name: "password", length: 10, required: true }
             - { name: "rqUid", length: 16, required: true }
-        connection-pool:
-          enabled: true
-          max-total: 16
-          min-idle: 0
-          max-idle: 16
-          max-wait-ms: 1000
-          min-evictable-idle-time-ms: 60000
-          soft-min-evictable-idle-time-ms: 60000
-          time-between-eviction-runs-ms: 30000
-          max-life-time-ms: 300000
-          test-on-borrow: true
-          test-on-return: false
-          test-while-idle: true
-          block-when-exhausted: true
-          lifo: true
-          prefill: false
-        character-normalization:
-          enabled: true
-          replacements:
-            "ي": "ی"
-            "ك": "ک"
-      providers:
-        core:
-          endpoints:
-            - 10.10.10.10:3080
+          rate-limit:
+            enabled: true
+            bucket: "nab-atpi"
+            key: "provider"
+        mirs:
+          protocol: MIRS
+          endpoint: 10.10.10.12:3080
           user-id: "999998"
           password: "${NAB_PASSWORD}"
           service-codes-by-terminal-type:
@@ -254,44 +254,40 @@ scm:
             MOBILE: "03"
 ```
 
+`header-fields` باید زیر همان provider instance تعریف شود (`providers.<instance>`). تعریف آن زیر `defaults` اعمال نمی‌شود.
+
+برای سازگاری با نسخه‌های قبلی، `header-fields-by-protocol` هنوز پشتیبانی می‌شود؛ اما اگر هر دو تعریف شوند، `header-fields` اولویت دارد.
+
 نکته encoding: مقدار پیش‌فرض طبق درخواست فعلی `windows-1252` است، اما اگر response یا request واقعا متن فارسی کامل دارد، باید با نمونه byte-level از NAB بررسی شود که charset درست `windows-1252` است یا `windows-1256`. این مقدار در config قابل تغییر است.
 
-## Connection Pool
+## Connection Strategy
 
-برای throughput بالا، provider به صورت پیش‌فرض از `Apache Commons Pool2` استفاده می‌کند. هر request یک connection را از pool می‌گیرد، کل چرخه زیر را به صورت blocking روی همان connection انجام می‌دهد، و بعد connection را به pool برمی‌گرداند:
+با توجه به رفتار NAB (هر connection فقط یک command)، provider برای هر request یک socket جدید باز می‌کند و پس از دریافت response آن را می‌بندد:
 
 ```text
-borrow connection
+open socket
 send protocol
-read ack
+read ack frame (5 bytes length + ack payload)
 send request body
-read response
-return connection
+read response frame (5 bytes length + response payload)
+close socket
 ```
 
-تا وقتی یک request روی connection در حال اجرا است، request دیگری از همان connection استفاده نمی‌کند. بنابراین ترتیب request/response روی هر socket حفظ می‌شود.
+برای response لیستی، provider چند frame پشت سر هم را می‌خواند:
 
-پارامترهای pool:
+- هر frame رکورد با `actionCode=10000` شروع می‌شود.
+- frame خاتمه لیست برابر `00005 + 00000` است (یعنی payload فقط `00000`).
+- خروجی این frameها به صورت line-based در parser ارسال می‌شود.
 
-- `enabled`: اگر `false` شود، هر request یک socket جدید باز و بعد close می‌کند.
-- `max-total`: بیشترین تعداد connection همزمان برای یک provider instance.
-- `min-idle`: حداقل connection idle که pool تلاش می‌کند نگه دارد.
-- `max-idle`: بیشترین connection idle که بعد از برگشت به pool نگه داشته می‌شود.
-- `max-wait-ms`: حداکثر زمان انتظار برای گرفتن connection از pool. اگر همه connectionها مشغول باشند و زمان تمام شود، request خطا می‌گیرد.
-- `min-evictable-idle-time-ms`: اگر connection بیش از این زمان idle بماند، eviction thread می‌تواند آن را ببندد.
-- `soft-min-evictable-idle-time-ms`: eviction نرم‌تر که با حفظ `min-idle` کار می‌کند.
-- `time-between-eviction-runs-ms`: فاصله اجرای eviction thread.
-- `max-life-time-ms`: بیشترین عمر یک connection. بعد از این زمان connection بازنشسته می‌شود.
-- `test-on-borrow`: قبل از borrow وضعیت socket و عمر connection بررسی می‌شود. validation غیرمخرب است و پیام probe به NAB نمی‌فرستد.
-- `test-on-return`: هنگام برگشت connection به pool validate انجام می‌شود.
-- `test-while-idle`: connectionهای idle در eviction run validate می‌شوند.
-- `block-when-exhausted`: اگر pool پر بود، request تا `max-wait-ms` منتظر می‌ماند.
-- `lifo`: اگر `true` باشد آخرین connection برگشتی زودتر دوباره استفاده می‌شود.
-- `prefill`: اگر `true` باشد، در زمان ساخت pool به اندازه `min-idle` connection ساخته می‌شود. اگر NAB در زمان startup در دسترس نباشد، بهتر است `false` بماند.
+برای کنترل load در چند پاد Kubernetes، rate limit توزیع‌شده را فعال کنید:
 
-برای شروع production، `max-total` را برابر حداکثر concurrency مجاز سمت NAB بگذارید، نه صرفا تعداد threadهای برنامه. virtual thread می‌تواند درخواست‌های زیادی بسازد، اما pool باید فشار روی NAB را کنترل کند.
+- `rate-limit.enabled`
+- `rate-limit.bucket`
+- `rate-limit.key` (`provider`, `operation`, `provider-operation`)
 
-برای سازگاری با نسخه اولیه provider، نام‌های قدیمی `max-size`، `borrow-timeout-ms`، `max-idle-time-ms` و `validation-enabled` هنوز به عنوان alias خوانده می‌شوند؛ برای config جدید از نام‌های بالا استفاده کنید.
+کلیدهای override در endpoint/header نیز در دسترس هستند: `NabRateLimitEnabled`, `NabRateLimitBucket`, `NabRateLimitKey`.
+
+`ack-length-bytes` طول prefix پیام NAB است (پیش‌فرض: `5`) و برای هر دو `ack` و `response` استفاده می‌شود.
 
 ## لاگ‌ها
 
@@ -316,3 +312,27 @@ scm.provider.nab.providers.core.wire-log-enabled: false
 ```
 
 تست `NabProviderServiceTcpIntegrationTest` یک NAB fake روی TCP بالا می‌آورد و مسیر واقعی protocol، ack، body و response را اجرا می‌کند.
+
+برای فراخوانی واقعی NAB تست زیر اضافه شده است:
+
+`ir.daneshrefah.scm.provider.nab.scenario.NabActiveAccountsInqRealIntegrationTest`
+
+اجرای نمونه:
+
+```bash
+SCM_NAB_INTEGRATION=true \
+SCM_NAB_ACTIVE_ACCOUNTS_CUSTOMER_ID=123456 \
+./gradlew :scm-provider-nab:test --tests 'ir.daneshrefah.scm.provider.nab.scenario.NabActiveAccountsInqRealIntegrationTest'
+```
+
+متغیرهای مهم:
+
+- `SCM_NAB_ENDPOINT` (پیش‌فرض: `10.15.27.12:3080`)
+- `SCM_NAB_USER_ID` (پیش‌فرض: `999998`)
+- `SCM_NAB_PASSWORD` (پیش‌فرض: `1234567890`)
+- `SCM_NAB_TERMINAL_TYPE` (پیش‌فرض: `ATM`)
+- `SCM_NAB_CHANNEL_CODE` (پیش‌فرض: `MOBILE`)
+- `SCM_NAB_CLIENT_ADDRESS` (پیش‌فرض: `127.0.0.1`)
+- `SCM_NAB_ACTIVE_ACCOUNTS_GENERAL_ACCOUNT` (اختیاری)
+
+نکته: property اصلی از این نسخه `endpoint` است. property قدیمی `endpoints` فقط برای سازگاری خوانده می‌شود و باید دقیقا یک مقدار داشته باشد؛ اگر بیشتر از یک endpoint بدهید خطا می‌گیرید.

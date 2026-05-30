@@ -5,56 +5,46 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
-import java.time.Clock;
 
 @Slf4j
 final class NabPooledConnection implements AutoCloseable {
+    private static final String NAB_SUCCESS_CODE = "00000";
+    private static final String NAB_SUCCESS_LIST_CODE = "10000";
+
     private final NabEndpointAddress endpoint;
     private final Charset charset;
-    private final Clock clock;
-    private final long createdAtMs;
     private final Socket socket;
     private final BufferedInputStream input;
     private final BufferedOutputStream output;
-    private volatile long lastUsedAtMs;
 
     private NabPooledConnection(
             NabEndpointAddress endpoint,
             Charset charset,
-            Clock clock,
-            long createdAtMs,
             Socket socket,
             BufferedInputStream input,
             BufferedOutputStream output
     ) {
         this.endpoint = endpoint;
         this.charset = charset;
-        this.clock = clock;
-        this.createdAtMs = createdAtMs;
         this.socket = socket;
         this.input = input;
         this.output = output;
-        this.lastUsedAtMs = createdAtMs;
     }
 
-    static NabPooledConnection open(NabEndpointAddress endpoint, NabResolvedConfig config, Charset charset, Clock clock) {
+    static NabPooledConnection open(NabEndpointAddress endpoint, NabResolvedConfig config, Charset charset) {
         try {
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(endpoint.host(), endpoint.port()), config.connectTimeoutMs());
             socket.setSoTimeout(config.socketTimeoutMs());
-            long now = clock.millis();
-            log.info("Opened NAB pooled connection provider={} endpoint={}", config.provider(), endpoint.value());
+            log.info("Opened NAB connection provider={} endpoint={}", config.provider(), endpoint.value());
             return new NabPooledConnection(
                     endpoint,
                     charset,
-                    clock,
-                    now,
                     socket,
                     new BufferedInputStream(socket.getInputStream()),
                     new BufferedOutputStream(socket.getOutputStream())
@@ -67,14 +57,13 @@ final class NabPooledConnection implements AutoCloseable {
     String request(NabResolvedConfig config, String protocol, String body) {
         try {
             write(protocol);
-            String ack = readFixed(config.ackLengthBytes());
+            String ack = readAck(config);
             logWire(config, "received-ack", ack);
-            if (!ack.endsWith("00000")) {
+            if (!ack.endsWith(NAB_SUCCESS_CODE)) {
                 throw new IllegalStateException("NAB dispatcher acknowledge is not successful: " + ack);
             }
             write(body);
             String response = readResponse(config);
-            markUsed();
             return response;
         } catch (SocketTimeoutException e) {
             throw new IllegalStateException("NAB response timed out provider=" + config.provider()
@@ -85,28 +74,8 @@ final class NabPooledConnection implements AutoCloseable {
         }
     }
 
-    boolean reusable(NabResolvedConfig config) {
-        if (socket.isClosed() || !socket.isConnected() || socket.isInputShutdown() || socket.isOutputShutdown()) {
-            return false;
-        }
-        long now = clock.millis();
-        return now - createdAtMs <= config.connectionPool().maxLifeTimeMs();
-    }
-
-    boolean stale(NabResolvedConfig config) {
-        return !reusable(config);
-    }
-
     String endpointValue() {
         return endpoint.value();
-    }
-
-    long idleForMs() {
-        return clock.millis() - lastUsedAtMs;
-    }
-
-    long ageMs() {
-        return clock.millis() - createdAtMs;
     }
 
     private void write(String value) throws Exception {
@@ -122,33 +91,92 @@ final class NabPooledConnection implements AutoCloseable {
         return new String(bytes, charset);
     }
 
-    private String readResponse(NabResolvedConfig config) throws Exception {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] chunk = new byte[1024];
-        socket.setSoTimeout(config.responseTimeoutMs());
-        int read = input.read(chunk);
-        if (read < 0) {
-            return "";
-        }
-        buffer.write(chunk, 0, read);
-
-        socket.setSoTimeout(config.responseIdleTimeoutMs());
-        while (true) {
-            try {
-                read = input.read(chunk);
-                if (read < 0) {
-                    break;
-                }
-                buffer.write(chunk, 0, read);
-            } catch (SocketTimeoutException e) {
-                break;
-            }
-        }
-        return buffer.toString(charset);
+    private String readAck(NabResolvedConfig config) throws Exception {
+        return readFramePayload(config.ackLengthBytes(), config.socketTimeoutMs());
     }
 
-    private void markUsed() {
-        lastUsedAtMs = clock.millis();
+    private String readResponse(NabResolvedConfig config) throws Exception {
+        int lengthBytes = config.ackLengthBytes();
+        String firstFramePayload = readFramePayload(lengthBytes, config.responseTimeoutMs());
+        if (!isListFrame(firstFramePayload)) {
+            return firstFramePayload;
+        }
+
+        StringBuilder listPayload = new StringBuilder(firstFramePayload);
+        while (true) {
+            String nextFramePayload = readFramePayload(lengthBytes, nextFrameTimeout(config));
+            if (nextFramePayload.isEmpty()) {
+                continue;
+            }
+            if (isListTerminatorFrame(nextFramePayload)) {
+                return listPayload.toString();
+            }
+            if (!isListFrame(nextFramePayload)) {
+                throw new IllegalStateException("NAB list response expected actionCode " + NAB_SUCCESS_LIST_CODE
+                        + " or terminator " + NAB_SUCCESS_CODE + " but got frame: " + nextFramePayload);
+            }
+            listPayload.append('\n').append(nextFramePayload);
+        }
+    }
+
+    private int nextFrameTimeout(NabResolvedConfig config) {
+        int idleTimeout = config.responseIdleTimeoutMs();
+        return idleTimeout > 0 ? idleTimeout : config.responseTimeoutMs();
+    }
+
+    private boolean isListFrame(String payload) {
+        return payload != null && payload.startsWith(NAB_SUCCESS_LIST_CODE);
+    }
+
+    private boolean isListTerminatorFrame(String payload) {
+        return NAB_SUCCESS_CODE.equals(payload);
+    }
+
+    private String readFramePayload(int lengthBytes, int timeoutMs) throws Exception {
+        if (lengthBytes < 1) {
+            throw new IllegalStateException("NAB length prefix bytes must be positive. length=" + lengthBytes);
+        }
+        if (timeoutMs < 1) {
+            throw new IllegalStateException("NAB frame timeout must be positive. timeoutMs=" + timeoutMs);
+        }
+        socket.setSoTimeout(timeoutMs);
+
+        String lengthPrefix = readFixed(lengthBytes);
+        int payloadLength = parseLength(lengthPrefix, lengthBytes);
+        if (log.isTraceEnabled()) {
+            log.trace("NAB frame header endpoint={} lengthPrefix={} payloadLength={}",
+                    endpoint.value(), lengthPrefix, payloadLength);
+        }
+        if (payloadLength == 0) {
+            return "";
+        }
+
+        byte[] payload = input.readNBytes(payloadLength);
+        if (payload.length < payloadLength) {
+            throw new EOFException("Expected " + payloadLength + " bytes but received " + payload.length);
+        }
+        return new String(payload, charset);
+    }
+
+    private int parseLength(String prefix, int lengthBytes) {
+        if (prefix == null || prefix.length() != lengthBytes) {
+            throw new IllegalStateException("NAB length prefix has invalid size: " + prefix);
+        }
+        for (int i = 0; i < prefix.length(); i++) {
+            if (!Character.isDigit(prefix.charAt(i))) {
+                throw new IllegalStateException("NAB length prefix contains non-digit characters: " + prefix);
+            }
+        }
+        try {
+            int length = Integer.parseInt(prefix);
+            if (length < 0) {
+                throw new IllegalStateException("NAB length prefix is negative: " + prefix);
+            }
+            return length;
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("NAB length prefix is invalid: " + prefix
+                    + " (expected " + lengthBytes + " digits)", e);
+        }
     }
 
     private void logWire(NabResolvedConfig config, String direction, String content) {

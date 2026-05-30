@@ -7,16 +7,22 @@ import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
 import ir.daneshrefah.scm.provider.nab.config.NabEndpointOverrides;
 import ir.daneshrefah.scm.provider.nab.config.NabHeaders;
 import ir.daneshrefah.scm.provider.nab.config.NabResolvedConfig;
+import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
+import ir.daneshrefah.scm.provider.nab.ratelimit.NabRateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class NabProducer extends DefaultProducer {
     private final NabEndpoint endpoint;
     private NabConfigResolver configResolver;
     private NabProviderService providerService;
+    private NabRateLimiter rateLimiter;
+    private NabProviderMetrics metrics;
     private ObjectMapper objectMapper;
 
     public NabProducer(NabEndpoint endpoint) {
@@ -29,6 +35,8 @@ public class NabProducer extends DefaultProducer {
         super.doStart();
         configResolver = bean(NabConfigResolver.class);
         providerService = bean(NabProviderService.class);
+        rateLimiter = bean(NabRateLimiter.class);
+        metrics = bean(NabProviderMetrics.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -37,17 +45,35 @@ public class NabProducer extends DefaultProducer {
         String provider = resolveProvider(exchange);
         NabResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
         JsonNode input = bodyAsJsonNode(exchange.getMessage().getBody());
+        String operation = operationName(input);
+        NabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
+        long startedAt = System.nanoTime();
 
         log.info("NAB provider call started provider={}", config.provider());
         if (log.isDebugEnabled()) {
             log.debug("NAB provider input provider={} body={}", config.provider(), input);
         }
-        JsonNode output = providerService.execute(input, config);
-        if (log.isDebugEnabled()) {
-            log.debug("NAB provider output provider={} body={}", config.provider(), output);
+        providerMetrics.submitted();
+        try {
+            rateLimiter.acquire(config, operation);
+            JsonNode output = providerService.execute(input, config);
+            if (log.isDebugEnabled()) {
+                log.debug("NAB provider output provider={} body={}", config.provider(), output);
+            }
+            exchange.getMessage().setBody(output);
+            providerMetrics.succeeded();
+            log.info("NAB provider call finished provider={} operation={}", config.provider(), operation);
+        } catch (RuntimeException e) {
+            if (isTimedOut(e)) {
+                providerMetrics.timedOut();
+            } else {
+                providerMetrics.failed();
+            }
+            log.error("NAB provider call failed provider={} operation={}", config.provider(), operation, e);
+            throw e;
+        } finally {
+            providerMetrics.addLatency(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
         }
-        exchange.getMessage().setBody(output);
-        log.info("NAB provider call finished provider={}", config.provider());
     }
 
     private String resolveProvider(Exchange exchange) {
@@ -72,7 +98,34 @@ public class NabProducer extends DefaultProducer {
     private NabEndpointOverrides overrides(Exchange exchange) {
         Integer timeout = first(exchange.getMessage().getHeader(NabHeaders.TIMEOUT_MS, Integer.class), endpoint.getTimeoutMs());
         String charset = first(exchange.getMessage().getHeader(NabHeaders.CHARSET, String.class), endpoint.getCharset());
-        return new NabEndpointOverrides(timeout, charset);
+        Boolean rateLimitEnabled = first(exchange.getMessage().getHeader(NabHeaders.RATE_LIMIT_ENABLED, Boolean.class), endpoint.getRateLimitEnabled());
+        String rateLimitBucket = first(exchange.getMessage().getHeader(NabHeaders.RATE_LIMIT_BUCKET, String.class), endpoint.getRateLimitBucket());
+        String rateLimitKey = first(exchange.getMessage().getHeader(NabHeaders.RATE_LIMIT_KEY, String.class), endpoint.getRateLimitKey());
+        return new NabEndpointOverrides(timeout, charset, rateLimitEnabled, rateLimitBucket, rateLimitKey);
+    }
+
+    private String operationName(JsonNode input) {
+        if (input == null || !input.isObject()) {
+            return "default";
+        }
+        String code = StringUtils.trimToEmpty(input.path("command").path("code").asText());
+        String protocol = StringUtils.trimToEmpty(input.path("command").path("protocol").asText());
+        if (code.isEmpty() && protocol.isEmpty()) {
+            return "default";
+        }
+        return protocol + ":" + code;
+    }
+
+    private boolean isTimedOut(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.toLowerCase().contains("timed out")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private JsonNode bodyAsJsonNode(Object body) {

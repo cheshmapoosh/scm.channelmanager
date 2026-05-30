@@ -40,7 +40,6 @@ public class NabHeaderResolver {
         require("rqUid", rqUid);
 
         ObjectNode headerData = JsonNodeFactory.instance.objectNode();
-        headerData.put("nabProtocol", commandSpec.protocol().name());
         headerData.put("protocol", commandSpec.protocol().name());
         headerData.put("clientAddress", clientAddress);
         headerData.put("command", commandSpec.code());

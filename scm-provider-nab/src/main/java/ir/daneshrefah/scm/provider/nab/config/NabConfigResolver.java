@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.provider.nab.domain.NabFieldType;
 import ir.daneshrefah.scm.provider.nab.domain.NabOverflowPolicy;
 import ir.daneshrefah.scm.provider.nab.domain.NabPadding;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class NabConfigResolver {
     private final NabProperties properties;
@@ -28,22 +30,14 @@ public class NabConfigResolver {
 
         NabProperties.Instance instance = findProvider(providerName);
         NabProperties.Instance defaults = properties.getDefaults();
-        List<String> endpoints = nonNullList(instance.getEndpoints()).isEmpty()
-                ? nonNullList(defaults.getEndpoints())
-                : nonNullList(instance.getEndpoints());
-        if (endpoints.isEmpty()) {
-            throw new IllegalArgumentException("NAB provider " + providerName + " must define at least one endpoint (host:port)");
-        }
+        String endpoint = resolveEndpoint(providerName, defaults, instance);
 
         NabProperties.RqUid rqUid = mergeRqUid(defaults.getRqUid(), instance.getRqUid());
         NabProperties.CharacterNormalization normalization = mergeNormalization(
                 defaults.getCharacterNormalization(),
                 instance.getCharacterNormalization()
         );
-        NabProperties.ConnectionPool connectionPool = mergeConnectionPool(
-                defaults.getConnectionPool(),
-                instance.getConnectionPool()
-        );
+        NabProperties.RateLimit rateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
         String charset = overrides != null && StringUtils.isNotBlank(overrides.charset())
                 ? overrides.charset()
                 : first(instance.getCharset(), defaults.getCharset());
@@ -51,18 +45,12 @@ public class NabConfigResolver {
                 ? overrides.timeoutMs()
                 : value(first(instance.getResponseTimeoutMs(), defaults.getResponseTimeoutMs()), 6000);
         int rqUidLength = value(rqUid.getLength(), 16);
-        int poolMaxTotal = positive(first(connectionPool.getMaxTotal(), connectionPool.getMaxSize()), 16);
-        int poolMaxIdle = Math.min(poolMaxTotal, positive(connectionPool.getMaxIdle(), poolMaxTotal));
-        int poolMinIdle = Math.min(poolMaxIdle, nonNegative(connectionPool.getMinIdle(), 0));
-        int poolMaxWaitMs = positive(first(connectionPool.getMaxWaitMs(), connectionPool.getBorrowTimeoutMs()), 1000);
-        long minEvictableIdleTimeMs = positive(
-                first(connectionPool.getMinEvictableIdleTimeMs(), connectionPool.getMaxIdleTimeMs()),
-                60_000L
-        );
+        String configuredProtocol = resolvedProtocol(instance, defaults);
 
         return new NabResolvedConfig(
                 providerName,
-                endpoints,
+                endpoint,
+                configuredProtocol,
                 value(first(instance.getConnectTimeoutMs(), defaults.getConnectTimeoutMs()), 3000),
                 value(first(instance.getSocketTimeoutMs(), defaults.getSocketTimeoutMs()), 1000),
                 responseTimeoutMs,
@@ -74,7 +62,8 @@ public class NabConfigResolver {
                 StringUtils.defaultIfBlank(first(instance.getDefaultServiceCode(), defaults.getDefaultServiceCode()), "99"),
                 mergeMap(defaults.getServiceCodesByTerminalType(), instance.getServiceCodesByTerminalType()),
                 mergeMap(defaults.getServiceCodesByChannelCode(), instance.getServiceCodesByChannelCode()),
-                resolveHeaderFields(defaults, instance, rqUidLength),
+                resolveHeaderFields(defaults, instance, rqUidLength, configuredProtocol),
+                resolvedRateLimit(rateLimit, overrides),
                 new NabResolvedConfig.RqUid(
                         rqUidLength,
                         StringUtils.defaultIfBlank(rqUid.getType(), "NUMERIC")
@@ -83,25 +72,38 @@ public class NabConfigResolver {
                         Boolean.TRUE.equals(normalization.getEnabled()),
                         Map.copyOf(nonNullMap(normalization.getReplacements()))
                 ),
-                new NabResolvedConfig.ConnectionPool(
-                        booleanValue(connectionPool.getEnabled(), true),
-                        poolMaxTotal,
-                        poolMinIdle,
-                        poolMaxIdle,
-                        poolMaxWaitMs,
-                        minEvictableIdleTimeMs,
-                        positive(connectionPool.getSoftMinEvictableIdleTimeMs(), minEvictableIdleTimeMs),
-                        positive(connectionPool.getTimeBetweenEvictionRunsMs(), 30_000L),
-                        positive(connectionPool.getMaxLifeTimeMs(), 300_000L),
-                        booleanValue(first(connectionPool.getTestOnBorrow(), connectionPool.getValidationEnabled()), true),
-                        booleanValue(connectionPool.getTestOnReturn(), false),
-                        booleanValue(connectionPool.getTestWhileIdle(), true),
-                        booleanValue(connectionPool.getBlockWhenExhausted(), true),
-                        booleanValue(connectionPool.getLifo(), true),
-                        booleanValue(connectionPool.getPrefill(), false)
-                ),
                 booleanValue(first(instance.getWireLogEnabled(), defaults.getWireLogEnabled()), true)
         );
+    }
+
+    private String resolvedProtocol(NabProperties.Instance instance, NabProperties.Instance defaults) {
+        String protocol = first(instance.getProtocol(), defaults.getProtocol());
+        protocol = StringUtils.trimToNull(protocol);
+        return protocol == null ? null : protocol.toUpperCase(Locale.ROOT);
+    }
+
+    private String resolveEndpoint(String providerName, NabProperties.Instance defaults, NabProperties.Instance instance) {
+        String instanceEndpoint = endpointFromInstance(instance, "providers." + providerName);
+        if (StringUtils.isNotBlank(instanceEndpoint)) {
+            return instanceEndpoint;
+        }
+        String defaultEndpoint = endpointFromInstance(defaults, "defaults");
+        if (StringUtils.isNotBlank(defaultEndpoint)) {
+            return defaultEndpoint;
+        }
+        throw new IllegalArgumentException("NAB provider " + providerName + " must define endpoint (host:port)");
+    }
+
+    private String endpointFromInstance(NabProperties.Instance instance, String owner) {
+        String endpoint = StringUtils.trimToNull(instance.getEndpoint());
+        List<String> endpoints = nonBlankValues(nonNullList(instance.getEndpoints()));
+        if (endpoints.size() > 1) {
+            throw new IllegalArgumentException("NAB " + owner + ".endpoints supports only one value; use endpoint instead");
+        }
+        if (endpoint != null) {
+            return endpoint;
+        }
+        return endpoints.isEmpty() ? null : endpoints.getFirst();
     }
 
     private String normalizeProviderName(String provider) {
@@ -156,54 +158,61 @@ public class NabConfigResolver {
         return result;
     }
 
-    private NabProperties.ConnectionPool mergeConnectionPool(
-            NabProperties.ConnectionPool defaults,
-            NabProperties.ConnectionPool instance
-    ) {
-        NabProperties.ConnectionPool result = new NabProperties.ConnectionPool();
-        NabProperties.ConnectionPool safeDefaults = defaults == null ? new NabProperties.ConnectionPool() : defaults;
-        NabProperties.ConnectionPool safeInstance = instance == null ? new NabProperties.ConnectionPool() : instance;
+    private NabResolvedConfig.RateLimit resolvedRateLimit(NabProperties.RateLimit rateLimit, NabEndpointOverrides overrides) {
+        boolean enabled = Boolean.TRUE.equals(rateLimit.getEnabled());
+        String bucket = StringUtils.defaultIfBlank(rateLimit.getBucket(), "nab-default");
+        String key = StringUtils.defaultIfBlank(rateLimit.getKey(), "provider");
+        if (overrides != null) {
+            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
+            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
+            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
+        }
+        return new NabResolvedConfig.RateLimit(enabled, bucket, key);
+    }
+
+    private NabProperties.RateLimit mergeRateLimit(NabProperties.RateLimit defaults, NabProperties.RateLimit instance) {
+        NabProperties.RateLimit result = new NabProperties.RateLimit();
+        NabProperties.RateLimit safeDefaults = defaults == null ? new NabProperties.RateLimit() : defaults;
+        NabProperties.RateLimit safeInstance = instance == null ? new NabProperties.RateLimit() : instance;
         result.setEnabled(first(safeInstance.getEnabled(), safeDefaults.getEnabled()));
-        result.setMaxTotal(first(safeInstance.getMaxTotal(), safeDefaults.getMaxTotal()));
-        result.setMaxSize(first(safeInstance.getMaxSize(), safeDefaults.getMaxSize()));
-        result.setMinIdle(first(safeInstance.getMinIdle(), safeDefaults.getMinIdle()));
-        result.setMaxIdle(first(safeInstance.getMaxIdle(), safeDefaults.getMaxIdle()));
-        result.setMaxWaitMs(first(safeInstance.getMaxWaitMs(), safeDefaults.getMaxWaitMs()));
-        result.setBorrowTimeoutMs(first(safeInstance.getBorrowTimeoutMs(), safeDefaults.getBorrowTimeoutMs()));
-        result.setMaxIdleTimeMs(first(safeInstance.getMaxIdleTimeMs(), safeDefaults.getMaxIdleTimeMs()));
-        result.setMinEvictableIdleTimeMs(first(safeInstance.getMinEvictableIdleTimeMs(), safeDefaults.getMinEvictableIdleTimeMs()));
-        result.setSoftMinEvictableIdleTimeMs(first(safeInstance.getSoftMinEvictableIdleTimeMs(), safeDefaults.getSoftMinEvictableIdleTimeMs()));
-        result.setTimeBetweenEvictionRunsMs(first(safeInstance.getTimeBetweenEvictionRunsMs(), safeDefaults.getTimeBetweenEvictionRunsMs()));
-        result.setMaxLifeTimeMs(first(safeInstance.getMaxLifeTimeMs(), safeDefaults.getMaxLifeTimeMs()));
-        result.setValidationEnabled(first(safeInstance.getValidationEnabled(), safeDefaults.getValidationEnabled()));
-        result.setTestOnBorrow(first(safeInstance.getTestOnBorrow(), safeDefaults.getTestOnBorrow()));
-        result.setTestOnReturn(first(safeInstance.getTestOnReturn(), safeDefaults.getTestOnReturn()));
-        result.setTestWhileIdle(first(safeInstance.getTestWhileIdle(), safeDefaults.getTestWhileIdle()));
-        result.setBlockWhenExhausted(first(safeInstance.getBlockWhenExhausted(), safeDefaults.getBlockWhenExhausted()));
-        result.setLifo(first(safeInstance.getLifo(), safeDefaults.getLifo()));
-        result.setPrefill(first(safeInstance.getPrefill(), safeDefaults.getPrefill()));
+        result.setBucket(first(safeInstance.getBucket(), safeDefaults.getBucket()));
+        result.setKey(first(safeInstance.getKey(), safeDefaults.getKey()));
         return result;
     }
 
     private Map<String, List<NabFieldSpec>> resolveHeaderFields(
             NabProperties.Instance defaults,
             NabProperties.Instance instance,
-            int rqUidLength
+            int rqUidLength,
+            String configuredProtocol
     ) {
         Map<String, List<NabFieldSpec>> result = defaultHeaderFieldsByProtocol(rqUidLength);
-        Map<String, List<NabProperties.Field>> configured = mergeMap(
-                defaults.getHeaderFieldsByProtocol(),
-                instance.getHeaderFieldsByProtocol()
-        );
+        if (!nonNullList(defaults.getHeaderFields()).isEmpty()) {
+            log.warn("NAB defaults.header-fields is ignored. Configure header-fields under each provider instance.");
+        }
+        if (!nonNullMap(defaults.getHeaderFieldsByProtocol()).isEmpty()) {
+            log.warn("NAB defaults.header-fields-by-protocol is ignored. Configure header-fields-by-protocol under each provider instance.");
+        }
+        Map<String, List<NabProperties.Field>> configured = nonNullMap(instance.getHeaderFieldsByProtocol());
         configured.forEach((protocol, fields) ->
                 result.put(protocol.toUpperCase(Locale.ROOT), toFieldSpecs(fields, "header." + protocol)));
+        List<NabProperties.Field> instanceHeaderFields = nonNullList(instance.getHeaderFields());
+        if (!instanceHeaderFields.isEmpty()) {
+            if (configuredProtocol == null) {
+                throw new IllegalArgumentException("NAB provider must set fixed protocol when header-fields is configured");
+            }
+            if (!configured.isEmpty()) {
+                log.warn("NAB provider defines both header-fields and header-fields-by-protocol; header-fields has priority for protocol {}", configuredProtocol);
+            }
+            result.put(configuredProtocol, toFieldSpecs(instanceHeaderFields, "header"));
+        }
         return Map.copyOf(result);
     }
 
     private Map<String, List<NabFieldSpec>> defaultHeaderFieldsByProtocol(int rqUidLength) {
         Map<String, List<NabFieldSpec>> result = new LinkedHashMap<>();
         result.put("ATPS", List.of(
-                field("nabProtocol", 4),
+                field("protocol", 4),
                 field("command", 2),
                 field("serviceCode", 2),
                 field("dateTime", 14),
@@ -212,7 +221,7 @@ public class NabConfigResolver {
                 field("rqUid", rqUidLength)
         ));
         result.put("ATPI", List.of(
-                field("nabProtocol", 4),
+                field("protocol", 4),
                 field("clientAddress", 64),
                 field("command", 2),
                 field("serviceCode", 2),
@@ -279,24 +288,19 @@ public class NabConfigResolver {
         return value != null ? value : fallback;
     }
 
-    private static int positive(Integer value, int fallback) {
-        return value != null && value > 0 ? value : fallback;
-    }
-
-    private static long positive(Long value, long fallback) {
-        return value != null && value > 0 ? value : fallback;
-    }
-
-    private static int nonNegative(Integer value, int fallback) {
-        return value != null && value >= 0 ? value : fallback;
-    }
-
     private static boolean booleanValue(Boolean value, boolean fallback) {
         return value != null ? value : fallback;
     }
 
     private static <T> List<T> nonNullList(List<T> value) {
         return value == null ? List.of() : List.copyOf(value);
+    }
+
+    private static List<String> nonBlankValues(List<String> values) {
+        return values.stream()
+                .map(StringUtils::trimToNull)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private static <K, V> Map<K, V> nonNullMap(Map<K, V> value) {

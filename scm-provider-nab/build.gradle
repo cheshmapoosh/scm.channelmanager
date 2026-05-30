@@ -5,9 +5,9 @@ plugins {
 dependencies {
     api 'org.apache.camel:camel-core'
 
+    implementation project(':scm-cache-client')
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.apache.commons:commons-lang3'
-    implementation 'org.apache.commons:commons-pool2:2.12.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

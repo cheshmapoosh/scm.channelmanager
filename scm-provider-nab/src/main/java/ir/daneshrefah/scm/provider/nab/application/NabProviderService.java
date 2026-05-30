@@ -41,6 +41,7 @@ public class NabProviderService {
         }
 
         NabCommandSpec commandSpec = commandSpecReader.read(input);
+        validateProviderProtocol(config, commandSpec);
         List<NabFieldSpec> requestFields = fieldSpecReader.readFields(input.path("request").path("fields"), "request");
         NabResponseSpec responseSpec = responseSpecReader.read(input);
         JsonNode data = input.path("data");
@@ -60,5 +61,18 @@ public class NabProviderService {
         response.put("command", commandSpec.code());
         response.put("protocol", commandSpec.protocol().name());
         return response;
+    }
+
+    private void validateProviderProtocol(NabResolvedConfig config, NabCommandSpec commandSpec) {
+        String fixedProtocol = config.protocol();
+        if (fixedProtocol == null || fixedProtocol.isBlank()) {
+            return;
+        }
+        String requestProtocol = commandSpec.protocol().name();
+        if (!fixedProtocol.equalsIgnoreCase(requestProtocol)) {
+            throw new IllegalArgumentException("NAB provider " + config.provider()
+                    + " is configured for protocol " + fixedProtocol
+                    + " but request protocol is " + requestProtocol);
+        }
     }
 }

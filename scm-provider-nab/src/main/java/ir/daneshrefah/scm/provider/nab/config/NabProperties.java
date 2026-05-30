@@ -20,7 +20,9 @@ public class NabProperties {
     @Getter
     @Setter
     public static class Instance {
+        private String endpoint;
         private List<String> endpoints = new ArrayList<>();
+        private String protocol;
         private Integer connectTimeoutMs;
         private Integer socketTimeoutMs;
         private Integer responseTimeoutMs;
@@ -32,11 +34,21 @@ public class NabProperties {
         private String defaultServiceCode;
         private Map<String, String> serviceCodesByTerminalType = new LinkedHashMap<>();
         private Map<String, String> serviceCodesByChannelCode = new LinkedHashMap<>();
+        private List<Field> headerFields = new ArrayList<>();
         private Map<String, List<Field>> headerFieldsByProtocol = new LinkedHashMap<>();
+        private RateLimit rateLimit = new RateLimit();
         private RqUid rqUid = new RqUid();
         private CharacterNormalization characterNormalization = new CharacterNormalization();
         private ConnectionPool connectionPool = new ConnectionPool();
         private Boolean wireLogEnabled;
+    }
+
+    @Getter
+    @Setter
+    public static class RateLimit {
+        private Boolean enabled = false;
+        private String bucket = "nab-default";
+        private String key = "provider";
     }
 
     @Getter

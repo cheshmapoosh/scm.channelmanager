@@ -6,7 +6,8 @@ import ir.daneshrefah.scm.provider.nab.domain.NabFieldSpec;
 
 public record NabResolvedConfig(
         String provider,
-        List<String> endpoints,
+        String endpoint,
+        String protocol,
         int connectTimeoutMs,
         int socketTimeoutMs,
         int responseTimeoutMs,
@@ -19,11 +20,18 @@ public record NabResolvedConfig(
         Map<String, String> serviceCodesByTerminalType,
         Map<String, String> serviceCodesByChannelCode,
         Map<String, List<NabFieldSpec>> headerFieldsByProtocol,
+        RateLimit rateLimit,
         RqUid rqUid,
         CharacterNormalization characterNormalization,
-        ConnectionPool connectionPool,
         boolean wireLogEnabled
 ) {
+    public record RateLimit(
+            boolean enabled,
+            String bucket,
+            String key
+    ) {
+    }
+
     public record RqUid(
             int length,
             String type
@@ -33,25 +41,6 @@ public record NabResolvedConfig(
     public record CharacterNormalization(
             boolean enabled,
             Map<String, String> replacements
-    ) {
-    }
-
-    public record ConnectionPool(
-            boolean enabled,
-            int maxTotal,
-            int minIdle,
-            int maxIdle,
-            int maxWaitMs,
-            long minEvictableIdleTimeMs,
-            long softMinEvictableIdleTimeMs,
-            long timeBetweenEvictionRunsMs,
-            long maxLifeTimeMs,
-            boolean testOnBorrow,
-            boolean testOnReturn,
-            boolean testWhileIdle,
-            boolean blockWhenExhausted,
-            boolean lifo,
-            boolean prefill
     ) {
     }
 }
