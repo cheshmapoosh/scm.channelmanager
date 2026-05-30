@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.provider.rest.log.RestProviderLogSanitizer;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestEnvelope;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
+import ir.daneshrefah.scm.provider.rest.ratelimit.RestProviderRateLimiter;
 import ir.daneshrefah.scm.provider.rest.token.RestProviderTokenManager;
 import ir.daneshrefah.scm.provider.rest.trace.RestProviderTraceSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,9 @@ public class RestProviderProducer extends DefaultProducer {
             "restproviderurl",
             "restproviderpath",
             "restprovidertimeoutms",
+            "restproviderratelimitenabled",
+            "restproviderratelimitbucket",
+            "restproviderratelimitkey",
             "scmoperationprovidername",
             "scmoperationprovideruri"
     );
@@ -60,6 +64,7 @@ public class RestProviderProducer extends DefaultProducer {
     private RestProviderConfigResolver configResolver;
     private RestProviderClientRegistry clientRegistry;
     private RestProviderMetrics metrics;
+    private RestProviderRateLimiter rateLimiter;
     private RestProviderTraceSupport traceSupport;
     private RestProviderLogSanitizer logSanitizer;
     private RestProviderTokenManager tokenManager;
@@ -76,6 +81,7 @@ public class RestProviderProducer extends DefaultProducer {
         configResolver = bean(RestProviderConfigResolver.class);
         clientRegistry = bean(RestProviderClientRegistry.class);
         metrics = bean(RestProviderMetrics.class);
+        rateLimiter = bean(RestProviderRateLimiter.class);
         traceSupport = bean(RestProviderTraceSupport.class);
         logSanitizer = bean(RestProviderLogSanitizer.class);
         tokenManager = bean(RestProviderTokenManager.class);
@@ -92,11 +98,10 @@ public class RestProviderProducer extends DefaultProducer {
 
         RestProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         providerMetrics.submitted();
-
-        logRequest(config, operationName, requestSpec);
-
         long startedAt = System.nanoTime();
         try {
+            rateLimiter.acquire(config, operationName);
+            logRequest(config, operationName, requestSpec);
             ResponseEntity<String> response = traceSupport.clientSpan(
                     exchange,
                     config,
@@ -155,7 +160,12 @@ public class RestProviderProducer extends DefaultProducer {
                 exchange.getMessage().getHeader(RestProviderHeaders.TIMEOUT_MS, Integer.class),
                 endpoint.getTimeoutMs()
         );
-        return new RestProviderEndpointOverrides(timeout);
+        return new RestProviderEndpointOverrides(
+                timeout,
+                first(exchange.getMessage().getHeader(RestProviderHeaders.RATE_LIMIT_ENABLED, Boolean.class), endpoint.getRateLimitEnabled()),
+                first(exchange.getMessage().getHeader(RestProviderHeaders.RATE_LIMIT_BUCKET, String.class), endpoint.getRateLimitBucket()),
+                first(exchange.getMessage().getHeader(RestProviderHeaders.RATE_LIMIT_KEY, String.class), endpoint.getRateLimitKey())
+        );
     }
 
     private RestProviderRequestSpec buildRequestSpec(Exchange exchange, RestProviderResolvedConfig config) {

@@ -20,6 +20,7 @@ public class RestProviderProperties {
     @Getter
     @Setter
     public static class Instance {
+        private String endpoint;
         private String baseUrl;
         private Integer connectTimeoutMs = 3000;
         private Integer responseTimeoutMs = 6000;
@@ -28,10 +29,19 @@ public class RestProviderProperties {
         private String followRedirects = "NORMAL";
         private String defaultMethod = "POST";
         private Map<String, String> headers = new HashMap<>();
+        private RateLimit rateLimit = new RateLimit();
         private Proxy proxy = new Proxy();
         private Auth auth = new Auth();
         private Security security = new Security();
         private Token token = new Token();
+    }
+
+    @Getter
+    @Setter
+    public static class RateLimit {
+        private Boolean enabled;
+        private String bucket;
+        private String key;
     }
 
     @Getter
@@ -46,49 +56,33 @@ public class RestProviderProperties {
     @Getter
     @Setter
     public static class Auth {
-        private String type = "NONE";
-        private String headerName = "Authorization";
+        private String type;
+        private String headerName;
         private String prefix;
         private String token;
         private String username;
         private String password;
-        private Boolean basicBase64 = true;
+        private Boolean basicBase64;
     }
 
     @Getter
     @Setter
     public static class Security {
-        private List<String> sensitiveHeaders = new ArrayList<>(List.of(
-                "authorization",
-                "proxy-authorization",
-                "cookie",
-                "set-cookie",
-                "x-api-key",
-                "api-key"
-        ));
-        private List<String> sensitiveBodyKeys = new ArrayList<>(List.of(
-                "password",
-                "token",
-                "secret",
-                "pin",
-                "cvv",
-                "pan",
-                "card",
-                "authorization"
-        ));
-        private Integer maxBodyLogLength = 400;
+        private List<String> sensitiveHeaders = new ArrayList<>();
+        private List<String> sensitiveBodyKeys = new ArrayList<>();
+        private Integer maxBodyLogLength;
     }
 
     @Getter
     @Setter
     public static class Token {
-        private Boolean enabled = false;
-        private String cacheName = "rest_provider_token_cache";
-        private String cacheKey = "access-token";
-        private String lockName = "rest-provider-token";
-        private Integer earlyRefreshSeconds = 30;
-        private Integer defaultExpiresInSeconds = 300;
-        private String method = "POST";
+        private Boolean enabled;
+        private String cacheName;
+        private String cacheKey;
+        private String lockName;
+        private Integer earlyRefreshSeconds;
+        private Integer defaultExpiresInSeconds;
+        private String method;
         private String url;
         private String path;
         private Map<String, String> headers = new HashMap<>();
@@ -96,9 +90,9 @@ public class RestProviderProperties {
         private Map<String, String> form = new HashMap<>();
         private Map<String, Object> body = new HashMap<>();
         private Auth auth = new Auth();
-        private String responseTokenField = "access_token";
-        private String responseExpiresInField = "expires_in";
-        private String responseTokenTypeField = "token_type";
-        private String defaultTokenType = "Bearer";
+        private String responseTokenField;
+        private String responseExpiresInField;
+        private String responseTokenTypeField;
+        private String defaultTokenType;
     }
 }

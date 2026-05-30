@@ -20,6 +20,7 @@ public class ShetabProperties {
     @Getter
     @Setter
     public static class Instance {
+        private String endpoint;
         private List<String> endpoints = new ArrayList<>();
         private String packagerClass;
         private String packagerXml;

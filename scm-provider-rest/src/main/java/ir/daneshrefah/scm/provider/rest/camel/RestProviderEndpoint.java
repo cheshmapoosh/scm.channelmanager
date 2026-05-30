@@ -33,6 +33,15 @@ public class RestProviderEndpoint extends DefaultEndpoint {
     @UriParam
     private String method;
 
+    @UriParam
+    private Boolean rateLimitEnabled;
+
+    @UriParam
+    private String rateLimitBucket;
+
+    @UriParam
+    private String rateLimitKey;
+
     public RestProviderEndpoint(String endpointUri, Component component, String remaining) {
         super(endpointUri, component);
         this.remaining = remaining;

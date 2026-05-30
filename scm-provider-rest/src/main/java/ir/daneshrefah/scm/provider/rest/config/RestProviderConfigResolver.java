@@ -13,6 +13,25 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 public class RestProviderConfigResolver {
+    private static final List<String> DEFAULT_SENSITIVE_HEADERS = List.of(
+            "authorization",
+            "proxy-authorization",
+            "cookie",
+            "set-cookie",
+            "x-api-key",
+            "api-key"
+    );
+    private static final List<String> DEFAULT_SENSITIVE_BODY_KEYS = List.of(
+            "password",
+            "token",
+            "secret",
+            "pin",
+            "cvv",
+            "pan",
+            "card",
+            "authorization"
+    );
+
     private final RestProviderProperties properties;
 
     public RestProviderResolvedConfig resolve(String provider, RestProviderEndpointOverrides overrides) {
@@ -24,9 +43,14 @@ public class RestProviderConfigResolver {
         RestProviderProperties.Instance instance = findProvider(providerName);
         RestProviderProperties.Instance defaults = nonNull(properties.getDefaults(), new RestProviderProperties.Instance());
 
-        String baseUrl = StringUtils.trimToNull(first(instance.getBaseUrl(), defaults.getBaseUrl()));
+        String baseUrl = StringUtils.trimToNull(first(
+                instance.getBaseUrl(),
+                instance.getEndpoint(),
+                defaults.getBaseUrl(),
+                defaults.getEndpoint()
+        ));
         if (baseUrl == null) {
-            throw new IllegalArgumentException("REST provider " + providerName + " must define baseUrl");
+            throw new IllegalArgumentException("REST provider " + providerName + " must define baseUrl (or endpoint)");
         }
 
         int connectTimeoutMs = value(first(instance.getConnectTimeoutMs(), defaults.getConnectTimeoutMs()), 3000);
@@ -51,6 +75,7 @@ public class RestProviderConfigResolver {
         RestProviderProperties.Auth mergedAuth = mergeAuth(defaults.getAuth(), instance.getAuth());
         RestProviderProperties.Security mergedSecurity = mergeSecurity(defaults.getSecurity(), instance.getSecurity());
         RestProviderProperties.Token mergedToken = mergeToken(defaults.getToken(), instance.getToken());
+        RestProviderProperties.RateLimit mergedRateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
 
         Map<String, String> headers = mergeHeaders(defaults.getHeaders(), instance.getHeaders());
         RestProviderProperties.Auth mergedTokenAuth = nonNull(mergedToken.getAuth(), new RestProviderProperties.Auth());
@@ -81,8 +106,8 @@ public class RestProviderConfigResolver {
                         Boolean.TRUE.equals(first(mergedAuth.getBasicBase64(), Boolean.TRUE))
                 ),
                 new RestProviderResolvedConfig.Security(
-                        listOf(mergedSecurity.getSensitiveHeaders()),
-                        listOf(mergedSecurity.getSensitiveBodyKeys()),
+                        listOf(nonEmpty(mergedSecurity.getSensitiveHeaders(), DEFAULT_SENSITIVE_HEADERS)),
+                        listOf(nonEmpty(mergedSecurity.getSensitiveBodyKeys(), DEFAULT_SENSITIVE_BODY_KEYS)),
                         value(mergedSecurity.getMaxBodyLogLength(), 400)
                 ),
                 new RestProviderResolvedConfig.Token(
@@ -112,7 +137,8 @@ public class RestProviderConfigResolver {
                         value(mergedToken.getResponseExpiresInField(), "expires_in"),
                         value(mergedToken.getResponseTokenTypeField(), "token_type"),
                         value(mergedToken.getDefaultTokenType(), "Bearer")
-                )
+                ),
+                resolvedRateLimit(mergedRateLimit, overrides)
         );
     }
 
@@ -229,6 +255,31 @@ public class RestProviderConfigResolver {
         return result;
     }
 
+    private RestProviderProperties.RateLimit mergeRateLimit(RestProviderProperties.RateLimit defaults, RestProviderProperties.RateLimit instance) {
+        RestProviderProperties.RateLimit fallback = nonNull(defaults, new RestProviderProperties.RateLimit());
+        RestProviderProperties.RateLimit item = nonNull(instance, new RestProviderProperties.RateLimit());
+        RestProviderProperties.RateLimit result = new RestProviderProperties.RateLimit();
+        result.setEnabled(first(item.getEnabled(), fallback.getEnabled()));
+        result.setBucket(first(item.getBucket(), fallback.getBucket()));
+        result.setKey(first(item.getKey(), fallback.getKey()));
+        return result;
+    }
+
+    private RestProviderResolvedConfig.RateLimit resolvedRateLimit(
+            RestProviderProperties.RateLimit rateLimit,
+            RestProviderEndpointOverrides overrides
+    ) {
+        boolean enabled = Boolean.TRUE.equals(first(rateLimit.getEnabled(), Boolean.FALSE));
+        String bucket = value(rateLimit.getBucket(), "rest-default");
+        String key = value(rateLimit.getKey(), "provider");
+        if (overrides != null) {
+            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
+            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
+            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
+        }
+        return new RestProviderResolvedConfig.RateLimit(enabled, bucket, key);
+    }
+
     private Map<String, Object> mergeBody(Map<String, Object> defaults, Map<String, Object> instance) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.putAll(nonNull(defaults, Map.of()));
@@ -247,6 +298,19 @@ public class RestProviderConfigResolver {
 
     private static <T> T first(T value, T fallback) {
         return Objects.nonNull(value) ? value : fallback;
+    }
+
+    @SafeVarargs
+    private static <T> T first(T... values) {
+        if (values == null) {
+            return null;
+        }
+        for (T value : values) {
+            if (Objects.nonNull(value)) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static <T> T nonNull(T value, T fallback) {
