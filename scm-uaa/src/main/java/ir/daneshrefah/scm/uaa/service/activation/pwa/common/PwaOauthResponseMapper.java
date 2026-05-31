@@ -21,7 +21,7 @@ public class PwaOauthResponseMapper {
         if (exception instanceof GeneralPwaOauthException generalException) {
             PwaOauthMessage exceptionMessage = generalException.getExceptionMessage();
             if (PwaOauthMessage.REACHED_LOGIN_LIMIT.equals(exceptionMessage)) {
-                return getMessage(PwaOauthMessage.CLIENT_NOT_FOUND);
+                return getMessage(PwaOauthMessage.REACHED_LOGIN_LIMIT);
             }
             return getMessage(generalException.getExceptionMessage());
         } else {
