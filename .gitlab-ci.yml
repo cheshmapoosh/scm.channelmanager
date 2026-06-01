@@ -7,6 +7,8 @@ variables:
   REGISTRY_URL: "reg.daneshrefah.ir/modern-banking"
   IMAGE_NAME: "scm-app"
   KUBE_NAMESPACE: "scm"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  LOCAL_GRADLE_HOME: "$CI_PROJECT_DIR/.gradle/gradle-home"
 
 build_jars:
   stage: build
@@ -18,11 +20,21 @@ build_jars:
     key: gradle-cache
     policy: pull-push
     paths:
-      - .gradle/wrapper
       - .gradle/caches
+  before_script:
+    - |
+      if command -v gradle >/dev/null 2>&1; then
+        SOURCE_GRADLE_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v gradle)")")")"
+      else
+        SOURCE_GRADLE_HOME="/opt/gradle"
+      fi
+
+      rm -rf "$LOCAL_GRADLE_HOME"
+      mkdir -p "$GRADLE_USER_HOME"
+      cp -a "$SOURCE_GRADLE_HOME" "$LOCAL_GRADLE_HOME"
+      "$LOCAL_GRADLE_HOME/bin/gradle" --version
   script:
-    - chmod +x gradlew
-    - ./gradlew clean :scm-config:bootJar :scm-cache:bootJar :scm-uaa:bootJar :scm-web:bootJar :scm-logging:bootJar --parallel --max-workers=4 -x test
+    - '"$LOCAL_GRADLE_HOME/bin/gradle" clean :scm-config:bootJar :scm-cache:bootJar :scm-uaa:bootJar :scm-web:bootJar :scm-logging:bootJar --parallel --max-workers=4 -x test'
   artifacts:
     paths:
       - "**/build/libs/*.jar"
@@ -43,7 +55,6 @@ docker_build:
       artifacts: true
   variables:
     DOCKER_TLS_CERTDIR: ""
-    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
   before_script:
     - docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
