@@ -16,6 +16,7 @@ import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +33,15 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
 
     @Override
     public void configure() {
-        from(Routes.GLOBAL_RESPONSE_HANDLER)
-                .process(exchange -> {
+        RouteDefinition route = from(Routes.GLOBAL_RESPONSE_HANDLER);
+        route.onCompletion()
+                .process(exchange -> scmExchangeMdc.clear())
+                .end();
+        route.process(exchange -> {
                     if (exchange.getProperty(Message.GATEWAY_CHANNEL_PROTOCOL) != ProtocolType.REST) {
-                        throw new IllegalStateException("Unsupported protocol type");
+                        // CMNEW-119 currently has a REST client-contract surface only.
+                        // TODO Add SOAP/TCP contract encoders before routing those protocols here.
+                        throw new IllegalStateException("Unsupported protocol type for gateway response contract encoding");
                     }
 
                     scmExchangeMdc.put(exchange);

@@ -1,8 +1,10 @@
 package ir.daneshrefah.scm.core.integration.runtime;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +35,8 @@ class DefaultRuntimeRoutePlanProviderTest {
             accessService,
             definitionService,
             operationRepository,
-            operationMapper);
+            operationMapper,
+            new ObjectMapper());
 
     @Test
     void channelPlanLoadsServicesFromChannelAccess() {
@@ -60,7 +65,7 @@ class DefaultRuntimeRoutePlanProviderTest {
     void domainPlanLoadsServicesFromGatewayDefinitions() {
         GatewayChannel gatewayChannel = gateway("domain.card");
         ChannelServiceAccess access = activeAccess();
-        ChannelServiceDefinition definition = definition(access);
+        ChannelServiceDefinition definition = definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "definition-1");
         ServiceOperationEntity operationEntity = new ServiceOperationEntity();
         ServiceOperation serviceOperation = new ServiceOperation();
         serviceOperation.setOperationName("CARD_INQUIRY");
@@ -77,6 +82,64 @@ class DefaultRuntimeRoutePlanProviderTest {
         assertEquals(access.getId(), plan.servicePlans().getFirst().channelServiceAccess().getId());
     }
 
+    @Test
+    void domainPlanFailsWhenGatewayDefinitionsDoNotIncludeMembership() {
+        GatewayChannel gatewayChannel = gateway("domain.card");
+        ChannelServiceAccess access = activeAccess();
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
+                definition(access, ChannelServiceDefinitionType.INBOUND_ROUTE, "route-1"),
+                definition(access, ChannelServiceDefinitionType.API_DOCUMENTATION, "api-doc-1")));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> provider.provide(gatewayChannel));
+
+        assertTrue(exception.getMessage().contains("No SERVICE_DOMAIN_MEMBER definitions"));
+    }
+
+    @Test
+    void domainPlanCollapsesMembershipsByServiceAndKeepsRouteDefinitions() {
+        GatewayChannel gatewayChannel = gateway("domain.card");
+        ChannelServiceAccess mobileAccess = activeAccess(100L, "mb", "card", (short) 10);
+        ChannelServiceAccess internetAccess = activeAccess(101L, "ib", "card", (short) 10);
+        ChannelServiceDefinition mobileMember = definition(
+                mobileAccess,
+                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                "member-mb");
+        ChannelServiceDefinition internetMember = definition(
+                internetAccess,
+                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                "member-ib");
+        ChannelServiceDefinition routeDefinition = definition(
+                mobileAccess,
+                ChannelServiceDefinitionType.INBOUND_ROUTE,
+                "route-card");
+        ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+        ServiceOperation serviceOperation = new ServiceOperation();
+        serviceOperation.setOperationName("CARD_INQUIRY");
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
+                mobileMember,
+                internetMember,
+                routeDefinition,
+                definition(mobileAccess, ChannelServiceDefinitionType.API_DOCUMENTATION, "api-doc-1")));
+        when(operationRepository.findAllByService_Id((short) 10)).thenReturn(List.of(operationEntity));
+        when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
+
+        RuntimeRoutePlan plan = provider.provide(gatewayChannel);
+
+        assertEquals(1, plan.servicePlans().size());
+        RuntimeServicePlan servicePlan = plan.servicePlans().getFirst();
+        assertEquals("card", servicePlan.service().getCode());
+        assertEquals(List.of(100L, 101L), servicePlan.channelServiceAccesses().stream()
+                .map(ChannelServiceAccess::getId)
+                .toList());
+        assertEquals(List.of(routeDefinition), servicePlan.routeDefinitions());
+    }
+
     private GatewayChannel gateway(String name) {
         Channel channel = new Channel();
         channel.setId((short) 1);
@@ -91,18 +154,22 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     private ChannelServiceAccess activeAccess() {
+        return activeAccess(100L, "mb", "card", (short) 10);
+    }
+
+    private ChannelServiceAccess activeAccess(Long id, String channelCode, String serviceCode, short serviceId) {
         Channel channel = new Channel();
         channel.setId((short) 1);
-        channel.setCode("mb");
+        channel.setCode(channelCode);
 
         Service service = new Service();
-        service.setId((short) 10);
-        service.setCode("card");
+        service.setId(serviceId);
+        service.setCode(serviceCode);
         service.setPublish(true);
         service.setRoutingStrategy(RoutingStrategy.FIRST);
 
         ChannelServiceAccess access = new ChannelServiceAccess();
-        access.setId(100L);
+        access.setId(id);
         access.setActive(true);
         access.setChannel(channel);
         access.setService(service);
@@ -110,9 +177,16 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     private ChannelServiceDefinition definition(ChannelServiceAccess access) {
+        return definition(access, null, "definition-1");
+    }
+
+    private ChannelServiceDefinition definition(ChannelServiceAccess access,
+                                                ChannelServiceDefinitionType type,
+                                                String id) {
         ChannelServiceDefinition definition = new ChannelServiceDefinition();
-        definition.setId("definition-1");
+        definition.setId(id);
         definition.setChannelServiceAccess(access);
+        definition.setType(type);
         return definition;
     }
 }

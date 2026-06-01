@@ -13,10 +13,21 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class ScmExchangeMdc {
+    private static final List<String> MDC_KEYS = List.of(
+            "traceId",
+            "spanId",
+            "correlationId",
+            "gatewayName",
+            "channelCode",
+            "serviceCode",
+            "operationName",
+            "routeId",
+            "exchangeId");
 
     public Map<String, String> put(Exchange exchange) {
         Map<String, String> fields = fields(exchange);
@@ -29,6 +40,10 @@ public class ScmExchangeMdc {
         exchange.setProperty(Message.SPAN_ID, fields.get("spanId"));
         exchange.setProperty(Message.CORRELATION_ID, fields.get("correlationId"));
         return fields;
+    }
+
+    public void clear() {
+        MDC_KEYS.forEach(MDC::remove);
     }
 
     public Map<String, String> fields(Exchange exchange) {

@@ -4,7 +4,9 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.exception.AccessDeniedException;
 import ir.daneshrefah.scm.common.model.gateway.Channel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import org.apache.camel.Exchange;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.support.DefaultExchange;
 import org.junit.jupiter.api.Test;
@@ -19,7 +21,8 @@ class RuntimeChannelGuardTest {
         RuntimeChannelProperties properties = new RuntimeChannelProperties();
         properties.setEnabled(false);
 
-        new RuntimeChannelGuard(properties).check(new DefaultExchange(new DefaultCamelContext()), servicePlan("ib"));
+        new RuntimeChannelGuard(properties, new IncomingChannelCodeResolver())
+                .check(new DefaultExchange(new DefaultCamelContext()), servicePlan("ib"));
     }
 
     @Test
@@ -28,10 +31,12 @@ class RuntimeChannelGuardTest {
         properties.setEnabled(true);
         properties.setAllowedChannelCodes(List.of("mb"));
 
-        RuntimeChannelGuard guard = new RuntimeChannelGuard(properties);
+        RuntimeChannelGuard guard = new RuntimeChannelGuard(properties, new IncomingChannelCodeResolver());
+        Exchange exchange = new DefaultExchange(new DefaultCamelContext());
+        exchange.setProperty(Message.CHANNEL_CODE, "ib");
 
         assertThrows(AccessDeniedException.class,
-                () -> guard.check(new DefaultExchange(new DefaultCamelContext()), servicePlan("ib")));
+                () -> guard.check(exchange, servicePlan("mb")));
     }
 
     private RuntimeServicePlan servicePlan(String channelCode) {

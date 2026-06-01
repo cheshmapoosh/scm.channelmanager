@@ -1,7 +1,10 @@
 package ir.daneshrefah.scm.core.integration.runtime;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
@@ -30,6 +33,7 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
     private final ChannelServiceDefinitionService channelServiceDefinitionService;
     private final ServiceOperationRepository serviceOperationRepository;
     private final ServiceOperationMapper serviceOperationMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     public RuntimeRoutePlan provide(GatewayChannel gatewayChannel) {
@@ -73,24 +77,100 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
     }
 
     private List<RuntimeServicePlan> createDomainPlan(GatewayChannel gatewayChannel) {
-        List<ChannelServiceDefinition> definitions = channelServiceDefinitionService.findDefinitions(gatewayChannel);
-        Map<Long, List<ChannelServiceDefinition>> definitionsByAccessId = definitions.stream()
+        List<ChannelServiceDefinition> definitions = Optional
+                .ofNullable(channelServiceDefinitionService.findDefinitions(gatewayChannel))
+                .orElse(List.of());
+        List<ChannelServiceDefinition> membershipDefinitions = definitions.stream()
+                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER)
                 .filter(definition -> definition.getChannelServiceAccess() != null)
                 .filter(definition -> definition.getChannelServiceAccess().getId() != null)
+                .peek(this::warnIgnoredMembershipContract)
+                .toList();
+
+        if (membershipDefinitions.isEmpty()) {
+            throw new IllegalStateException("No SERVICE_DOMAIN_MEMBER definitions found for domain runtime "
+                    + gatewayChannel.getName());
+        }
+
+        Map<String, List<ChannelServiceDefinition>> membershipsByService = membershipDefinitions.stream()
                 .collect(Collectors.groupingBy(
-                        definition -> definition.getChannelServiceAccess().getId(),
+                        definition -> serviceKey(definition.getChannelServiceAccess()),
                         LinkedHashMap::new,
                         Collectors.toList()));
 
-        return definitionsByAccessId.values()
+        Map<String, List<ChannelServiceDefinition>> routeDefinitionsByService = definitions.stream()
+                .filter(this::isInboundRouteDefinition)
+                .filter(definition -> definition.getChannelServiceAccess() != null)
+                .filter(definition -> definition.getChannelServiceAccess().getId() != null)
+                .collect(Collectors.groupingBy(
+                        definition -> serviceKey(definition.getChannelServiceAccess()),
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
+        return membershipsByService.entrySet()
                 .stream()
-                .map(groupedDefinitions -> {
-                    ChannelServiceAccess access = withServiceOperations(groupedDefinitions.getFirst().getChannelServiceAccess());
-                    return new RuntimeServicePlan(gatewayChannel, access, access.getService(), groupedDefinitions);
+                .map(entry -> {
+                    List<ChannelServiceAccess> memberAccesses = entry.getValue()
+                            .stream()
+                            .map(ChannelServiceDefinition::getChannelServiceAccess)
+                            .map(this::withServiceOperations)
+                            .filter(this::isActiveServiceAccess)
+                            .filter(this::hasServiceOperations)
+                            .collect(Collectors.collectingAndThen(
+                                    Collectors.toMap(
+                                            ChannelServiceAccess::getId,
+                                            access -> access,
+                                            (first, second) -> first,
+                                            LinkedHashMap::new),
+                                    accessById -> List.copyOf(accessById.values())));
+                    if (memberAccesses.isEmpty()) {
+                        return null;
+                    }
+                    ChannelServiceAccess representativeAccess = memberAccesses.getFirst();
+                    return new RuntimeServicePlan(
+                            gatewayChannel,
+                            representativeAccess,
+                            representativeAccess.getService(),
+                            memberAccesses,
+                            routeDefinitionsByService.getOrDefault(entry.getKey(), List.of()));
                 })
-                .filter(plan -> isActiveServiceAccess(plan.channelServiceAccess()))
-                .filter(plan -> hasServiceOperations(plan.channelServiceAccess()))
+                .filter(Objects::nonNull)
                 .toList();
+    }
+
+    private boolean isInboundRouteDefinition(ChannelServiceDefinition definition) {
+        return definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE
+                || definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP
+                || definition.getType() == ChannelServiceDefinitionType.REST
+                || definition.getType() == ChannelServiceDefinitionType.REST_MULTIPLE;
+    }
+
+    private String serviceKey(ChannelServiceAccess access) {
+        if (access == null || access.getService() == null) {
+            throw new IllegalStateException("ChannelServiceAccess service is required for domain runtime planning.");
+        }
+        if (access.getService().getId() != null) {
+            return "id:" + access.getService().getId();
+        }
+        if (access.getService().getCode() != null) {
+            return "code:" + access.getService().getCode();
+        }
+        throw new IllegalStateException("Service id or code is required for domain runtime planning.");
+    }
+
+    private void warnIgnoredMembershipContract(ChannelServiceDefinition definition) {
+        if (definition.getDefinition() == null || definition.getDefinition().getDetails() == null) {
+            return;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(definition.getDefinition().getDetails());
+            if (root.hasNonNull("contract")) {
+                log.warn("ClientContract under SERVICE_DOMAIN_MEMBER definition {} is ignored. "
+                                + "Define contracts on INBOUND_ROUTE or INBOUND_ROUTE_GROUP.",
+                        definition.getId());
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private ChannelServiceAccess withServiceOperations(ChannelServiceAccess access) {

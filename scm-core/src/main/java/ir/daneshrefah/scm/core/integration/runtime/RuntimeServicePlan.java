@@ -11,5 +11,18 @@ public record RuntimeServicePlan(
         GatewayChannel gatewayChannel,
         ChannelServiceAccess channelServiceAccess,
         Service service,
+        List<ChannelServiceAccess> channelServiceAccesses,
         List<ChannelServiceDefinition> routeDefinitions) {
+
+    public RuntimeServicePlan(GatewayChannel gatewayChannel,
+                              ChannelServiceAccess channelServiceAccess,
+                              Service service,
+                              List<ChannelServiceDefinition> routeDefinitions) {
+        this(
+                gatewayChannel,
+                channelServiceAccess,
+                service,
+                channelServiceAccess != null ? List.of(channelServiceAccess) : List.of(),
+                routeDefinitions);
+    }
 }

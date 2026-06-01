@@ -63,7 +63,10 @@ public class OperationRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    TraceUtils.getInstance().traceException(exchange,exception);
+                    TraceUtils traceUtils = TraceUtils.getInstance();
+                    if (traceUtils != null) {
+                        traceUtils.traceException(exchange, exception);
+                    }
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
                     if (Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class))) {
                         // CMNEW-119: service-layer direct calls must receive SCMFault, not protocol-specific gateway output.

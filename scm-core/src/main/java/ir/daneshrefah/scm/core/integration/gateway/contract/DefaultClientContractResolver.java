@@ -2,15 +2,18 @@ package ir.daneshrefah.scm.core.integration.gateway.contract;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DefaultClientContractResolver implements ClientContractResolver {
     private static final ClientContract MODERN_REST_DEFAULT = new ClientContract(
             "modern-rest-v1",
@@ -43,6 +46,12 @@ public class DefaultClientContractResolver implements ClientContractResolver {
             JsonNode root = objectMapper.readTree(routeDefinition.getDefinition().getDetails());
             JsonNode contract = root.path("contract");
             if (contract.isMissingNode() || contract.isNull()) {
+                return null;
+            }
+            if (routeDefinition.getType() == ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER) {
+                log.warn("Ignoring ClientContract under SERVICE_DOMAIN_MEMBER definition {}. "
+                                + "Contracts belong to INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions.",
+                        routeDefinition.getId());
                 return null;
             }
             return new ClientContract(

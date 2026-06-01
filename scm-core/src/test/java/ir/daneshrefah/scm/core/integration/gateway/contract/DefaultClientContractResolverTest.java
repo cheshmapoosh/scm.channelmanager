@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.gateway.contract;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,25 @@ class DefaultClientContractResolverTest {
         assertEquals("jsonScmRequestDecoder", contract.requestDecoder());
         assertEquals("jsonScmResponseEncoder", contract.responseEncoder());
         assertEquals("restProblemDetailFaultEncoder", contract.faultEncoder());
+    }
+
+    @Test
+    void ignoresContractUnderServiceDomainMember() {
+        ChannelServiceDefinition membershipDefinition = routeDefinition("""
+                {
+                  "contract": {
+                    "name": "ignored",
+                    "requestDecoder": "ignoredDecoder",
+                    "responseEncoder": "ignoredEncoder",
+                    "faultEncoder": "ignoredFaultEncoder"
+                  }
+                }
+                """);
+        membershipDefinition.setType(ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER);
+
+        ClientContract contract = resolver.resolve(restGateway(), membershipDefinition);
+
+        assertEquals("modern-rest-v1", contract.name());
     }
 
     private GatewayChannel restGateway() {

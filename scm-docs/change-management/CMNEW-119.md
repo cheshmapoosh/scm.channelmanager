@@ -34,12 +34,14 @@ Database:
 - `ChannelServiceDefinitionType` column length must allow v9 values such as `SERVICE_DOMAIN_MEMBER`.
 
 Config Server:
-- `scm.app-name` must point to the v9 runtime key, for example `channel.mb` or `domain.card`.
+- Preferred runtime key is `scm.runtime.gateway-name`, for example `channel.mb` or `domain.card`.
+- `scm.app-name` remains as a legacy fallback only and should be retired from new config.
 - Optional runtime channel affinity:
 
 ```yaml
 scm:
   runtime:
+    gateway-name: channel.mb
     channel-affinity:
       enabled: false
       allowed-channel-codes:
@@ -57,6 +59,7 @@ Logging/Elastic:
 
 Audit:
 - Service audit is available as a service plugin through `auditPluginHandler`.
+- The service route also writes a final `SERVICE` audit event for overall service success or failure.
 - Default audit file path is configurable with `scm.audit.output-path`.
 - Audit output is JSON Lines and is suitable for Filebeat or Elastic Agent collection.
 - Sensitive payloads are not written by default.
@@ -75,9 +78,11 @@ Metrics:
 
 `domain.*`:
 - Load definitions from `TBL_SCM_CHN_SVC_DEFINITION` for the selected `GatewayChannel`.
-- Extract distinct `ChannelServiceAccess` records from those definitions.
-- Extract services from `ChannelServiceAccess`.
-- This represents services explicitly associated with the domain runtime.
+- Only `SERVICE_DOMAIN_MEMBER` definitions create domain membership.
+- `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never create domain membership.
+- Domain service routes are unique by `Service`; multiple member channels for the same service are collapsed into one service route and preserved as membership metadata.
+- If a domain runtime has no `SERVICE_DOMAIN_MEMBER` definitions, startup fails fast.
+- `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` definitions may still define inbound REST routes and contracts for a member service.
 
 Invalid `GatewayChannel.name` values fail fast. Protocol is always read from `GatewayChannel.protocolType`, never inferred from name.
 
@@ -104,6 +109,11 @@ Legacy enum values remain temporarily in Java for v8 compatibility. v9 `channel.
 ## Client Contract
 
 Client contract is resolved per inbound route from `Definition.details.contract`.
+
+Contract ownership:
+- `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` can define client contracts.
+- `SERVICE_DOMAIN_MEMBER` is membership metadata only. Any `contract` stored there is ignored and logged as a warning.
+- Current request/response contract encoders are REST-only. SOAP/TCP require protocol-specific contract decoders/encoders before they can use `GLOBAL_RESPONSE_HANDLER`.
 
 Fallback:
 1. Route definition contract.
@@ -150,6 +160,8 @@ Audit records contain:
 - `routeId`
 - `exchangeId`
 
+`phase=SERVICE` records describe the final service outcome. Plugin audit records still describe plugin execution points and must not be treated as final service success.
+
 ## Elastic Search Guidance
 
 Find application logs and audit records by trace:
@@ -175,26 +187,28 @@ channelCode:"mb" AND correlationId:"<correlation-id>"
 
 1. Deploy database change that removes the old `CHANNEL_ID + PROTOCOL_TYPE` uniqueness and allows longer definition type values.
 2. Add v9 `GatewayChannel` records named `channel.*` or `domain.*`.
-3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types.
-4. Add route contracts in `Definition.details` where legacy/modern behavior differs.
+3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types. Use `SERVICE_DOMAIN_MEMBER` only for domain membership.
+4. Add route contracts in `Definition.details` on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` where legacy/modern behavior differs.
 5. Configure audit output path and Filebeat or Elastic Agent collection.
 6. Deploy application.
 7. Smoke test gateway routes by channel and domain runtime names.
 
 ## Validation and Smoke Tests
 
-- Start app with `scm.app-name=channel.mb`; verify a channel service route is created.
-- Start app with `scm.app-name=domain.card`; verify only domain-member services are routed.
+- Start app with `scm.runtime.gateway-name=channel.mb`; verify a channel service route is created.
+- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SERVICE_DOMAIN_MEMBER` definitions are routed.
+- Verify the legacy fallback still works with `scm.app-name=channel.mb` until config migration is complete.
 - Call a modern REST route and verify ProblemDetail faults.
 - Call a legacy REST route and verify the legacy fault encoder path.
+- Verify request channel is taken from the exchange/header and the service route resolves `CHANNEL_SERVICE_ACCESS` dynamically.
 - Verify service plugins run in the service route, not in the gateway route.
-- Verify audit JSON Lines contain `traceId` and `spanId`.
+- Verify audit JSON Lines contain `traceId` and `spanId`, including a final `phase=SERVICE` success/failure event.
 - Verify logs can be searched in Elastic by `traceId` and `spanId`.
 - Verify metrics still use Actuator/Micrometer flow and no metric file is created.
 
 ## Rollback Plan
 
-1. Repoint `scm.app-name` to the previous v8 gateway runtime.
+1. Repoint `scm.runtime.gateway-name` or legacy `scm.app-name` to the previous v8 gateway runtime.
 2. Disable new v9 `channel.*` or `domain.*` records without deleting v8 records.
 3. Keep audit files for investigation; do not replay them into application state.
 4. Roll back the application artifact.

@@ -16,13 +16,19 @@ import static ir.daneshrefah.scm.common.model.error.ErrorCodes.ERROR_CODE_ACCESS
 @Slf4j
 public class RuntimeChannelGuard {
     private final RuntimeChannelProperties properties;
+    private final IncomingChannelCodeResolver incomingChannelCodeResolver;
 
     public void check(Exchange exchange, RuntimeServicePlan servicePlan) {
-        String channelCode = servicePlan.channelServiceAccess().getChannel().getCode();
         if (!properties.isEnabled()) {
-            log.debug("RuntimeChannelGuard allowed channel={} reason=disabled", channelCode);
+            log.debug("RuntimeChannelGuard allowed channel={} reason=disabled",
+                    incomingChannelCodeResolver.resolve(exchange).orElse(null));
             return;
         }
+        String channelCode = incomingChannelCodeResolver.resolve(exchange)
+                .orElseThrow(() -> new AccessDeniedException(
+                        "runtimeChannelGuard",
+                        ERROR_CODE_ACCESS_DENIED,
+                        "Incoming channel code is required."));
 
         List<String> allowedChannelCodes = properties.getAllowedChannelCodes();
         if (allowedChannelCodes == null || allowedChannelCodes.contains("*") || allowedChannelCodes.contains(channelCode)) {

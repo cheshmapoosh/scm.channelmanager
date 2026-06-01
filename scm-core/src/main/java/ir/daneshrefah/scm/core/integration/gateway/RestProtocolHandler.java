@@ -57,7 +57,7 @@ public class RestProtocolHandler implements ProtocolHandler {
             Service service = servicePlan.service();
             List<ChannelServiceDefinition> channelServiceDefinitions = servicePlan.routeDefinitions();
             if (channelServiceDefinitions == null || channelServiceDefinitions.isEmpty()) {
-                return createRestRouteDefinition(service, null);
+                return createDefaultRouteDefinitionIfAllowed(servicePlan, service);
             }
             channelServiceDefinitions.forEach(channelServiceDefinition -> {
                 if (channelServiceDefinition.getType() == null) {
@@ -67,14 +67,25 @@ public class RestProtocolHandler implements ProtocolHandler {
                         switch (channelServiceDefinition.getType()) {
                             case INBOUND_ROUTE, REST -> createRestRouteDefinition(service, (RestChannelServiceDefinition) channelServiceDefinition);
                             case INBOUND_ROUTE_GROUP, REST_MULTIPLE -> createRestMultipleRouteDefinition(service, (RestMultipleChannelServiceDefinition) channelServiceDefinition);
+                            // SERVICE_DOMAIN_MEMBER is membership metadata only; it must never create an inbound route.
                             default -> Collections.emptyList();
                         }
                 );
             });
             if (routeDefinitions.isEmpty()) {
-                return createRestRouteDefinition(service, null);
+                return createDefaultRouteDefinitionIfAllowed(servicePlan, service);
             }
             return routeDefinitions;
+        }
+
+        private List<InboundRouteDefinition> createDefaultRouteDefinitionIfAllowed(RuntimeServicePlan servicePlan, Service service) {
+            String gatewayName = servicePlan.gatewayChannel() != null ? servicePlan.gatewayChannel().getName() : null;
+            if (StringUtils.startsWith(gatewayName, "domain.")) {
+                log.warn("No INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions found for domain runtime service {}. "
+                        + "No REST route will be created from SERVICE_DOMAIN_MEMBER records.", service.getCode());
+                return Collections.emptyList();
+            }
+            return createRestRouteDefinition(service, null);
         }
 
         private List<InboundRouteDefinition> createRestMultipleRouteDefinition(Service service, RestMultipleChannelServiceDefinition definition) {

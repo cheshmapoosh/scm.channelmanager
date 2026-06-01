@@ -414,3 +414,15 @@ Gateway را تغییر نده.
 - business routing/provider logic را در gateway layer نگذار.
 - operation layer را بی‌دلیل تغییر نده.
 ```
+
+---
+
+## CMNEW-119 Runtime Clarifications
+
+- New deployments should use `scm.runtime.gateway-name` as the runtime key. `scm.app-name` is still read only as a legacy fallback.
+- For `domain.*` runtimes, only `SERVICE_DOMAIN_MEMBER` rows define membership. `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never add a service to a domain.
+- A domain runtime creates one service route per `Service`. If several `SERVICE_DOMAIN_MEMBER` rows point at the same service for different channels, the runtime keeps those member `ChannelServiceAccess` records as metadata and still builds only one service route.
+- Client contracts belong on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP`. A `contract` under `SERVICE_DOMAIN_MEMBER` is ignored and logged as a warning.
+- The current client-contract response path is REST-only. SOAP/TCP need protocol-specific request and response encoders before they can share the global response contract route.
+- `RuntimeChannelGuard` and `ChannelServiceAccessGuard` use the incoming channel code from the exchange/header. `ChannelServiceAccessGuard` resolves the current `ChannelServiceAccess` from the service access repository and stores it in `Message.CHANNEL_SERVICE_ACCESS`.
+- Audit plugin entries show plugin execution points. The service route also writes a final `phase=SERVICE` audit event for the service success or failure outcome.
