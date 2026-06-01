@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RuntimeChannelGuardTest {
@@ -37,6 +38,32 @@ class RuntimeChannelGuardTest {
 
         assertThrows(AccessDeniedException.class,
                 () -> guard.check(exchange, servicePlan("mb")));
+    }
+
+    @Test
+    void enabledGuardAllowsLowercaseIncomingWhenConfiguredUppercase() {
+        RuntimeChannelProperties properties = new RuntimeChannelProperties();
+        properties.setEnabled(true);
+        properties.setAllowedChannelCodes(List.of("MB"));
+
+        RuntimeChannelGuard guard = new RuntimeChannelGuard(properties, new IncomingChannelCodeResolver());
+        Exchange exchange = new DefaultExchange(new DefaultCamelContext());
+        exchange.setProperty(Message.CHANNEL_CODE, "mb");
+
+        assertDoesNotThrow(() -> guard.check(exchange, servicePlan("mb")));
+    }
+
+    @Test
+    void enabledGuardAllowsUppercaseIncomingWhenConfiguredLowercase() {
+        RuntimeChannelProperties properties = new RuntimeChannelProperties();
+        properties.setEnabled(true);
+        properties.setAllowedChannelCodes(List.of("mb"));
+
+        RuntimeChannelGuard guard = new RuntimeChannelGuard(properties, new IncomingChannelCodeResolver());
+        Exchange exchange = new DefaultExchange(new DefaultCamelContext());
+        exchange.setProperty(Message.CHANNEL_CODE, "MB");
+
+        assertDoesNotThrow(() -> guard.check(exchange, servicePlan("mb")));
     }
 
     private RuntimeServicePlan servicePlan(String channelCode) {

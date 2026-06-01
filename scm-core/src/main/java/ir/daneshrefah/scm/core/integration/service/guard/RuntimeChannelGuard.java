@@ -31,7 +31,7 @@ public class RuntimeChannelGuard {
                         "Incoming channel code is required."));
 
         List<String> allowedChannelCodes = properties.getAllowedChannelCodes();
-        if (allowedChannelCodes == null || allowedChannelCodes.contains("*") || allowedChannelCodes.contains(channelCode)) {
+        if (isAllowed(allowedChannelCodes, channelCode)) {
             log.debug("RuntimeChannelGuard allowed channel={}", channelCode);
             return;
         }
@@ -42,5 +42,14 @@ public class RuntimeChannelGuard {
                 "runtimeChannelGuard",
                 ERROR_CODE_ACCESS_DENIED,
                 "Runtime instance does not accept channel " + channelCode);
+    }
+
+    private boolean isAllowed(List<String> allowedChannelCodes, String channelCode) {
+        if (allowedChannelCodes == null) {
+            return true;
+        }
+        return allowedChannelCodes.stream()
+                .map(incomingChannelCodeResolver::normalize)
+                .anyMatch(allowed -> "*".equals(allowed) || channelCode.equals(allowed));
     }
 }

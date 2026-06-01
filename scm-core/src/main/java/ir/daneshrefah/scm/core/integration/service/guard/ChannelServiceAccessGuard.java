@@ -66,7 +66,7 @@ public class ChannelServiceAccessGuard {
         Set<Long> runtimeMembershipIds = runtimeMembershipIds(servicePlan);
         return accesses.stream()
                 .filter(access -> access.getChannel() != null)
-                .filter(access -> channelCode.equals(access.getChannel().getCode()))
+                .filter(access -> channelCode.equals(incomingChannelCodeResolver.normalize(access.getChannel().getCode())))
                 .filter(access -> runtimeMembershipIds.isEmpty() || runtimeMembershipIds.contains(access.getId()))
                 .filter(access -> Boolean.TRUE.equals(access.getActive()))
                 .filter(access -> access.getService() != null)

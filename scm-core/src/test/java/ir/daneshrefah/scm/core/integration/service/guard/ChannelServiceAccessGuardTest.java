@@ -31,7 +31,7 @@ class ChannelServiceAccessGuardTest {
     void resolvesIncomingChannelAccessAndStoresItOnExchange() {
         Service service = service();
         ChannelServiceAccess mobileAccess = access(100L, "mb", service);
-        ChannelServiceAccess internetAccess = access(101L, "ib", service);
+        ChannelServiceAccess internetAccess = access(101L, "IB", service);
         RuntimeServicePlan servicePlan = servicePlan(service, mobileAccess, internetAccess);
         Exchange exchange = exchange(service, "ib");
 

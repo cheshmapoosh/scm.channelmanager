@@ -82,7 +82,13 @@ Metrics:
 - `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never create domain membership.
 - Domain service routes are unique by `Service`; multiple member channels for the same service are collapsed into one service route and preserved as membership metadata.
 - If a domain runtime has no `SERVICE_DOMAIN_MEMBER` definitions, startup fails fast.
+- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SERVICE_DOMAIN_MEMBER` is membership only and `API_DOCUMENTATION` does not expose a route.
 - `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` definitions may still define inbound REST routes and contracts for a member service.
+
+Runtime guards normalize channel codes before comparison:
+- incoming exchange/header channel code is trimmed and lower-cased with `Locale.ROOT`
+- `scm.runtime.channel-affinity.allowed-channel-codes` values are normalized the same way
+- `CHANNEL_SERVICE_ACCESS.channel.code` is normalized before access checks
 
 Invalid `GatewayChannel.name` values fail fast. Protocol is always read from `GatewayChannel.protocolType`, never inferred from name.
 
@@ -196,7 +202,8 @@ channelCode:"mb" AND correlationId:"<correlation-id>"
 ## Validation and Smoke Tests
 
 - Start app with `scm.runtime.gateway-name=channel.mb`; verify a channel service route is created.
-- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SERVICE_DOMAIN_MEMBER` definitions are routed.
+- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SERVICE_DOMAIN_MEMBER` definitions and `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure are routed.
+- Verify domain member services with only `API_DOCUMENTATION` fail startup validation.
 - Verify the legacy fallback still works with `scm.app-name=channel.mb` until config migration is complete.
 - Call a modern REST route and verify ProblemDetail faults.
 - Call a legacy REST route and verify the legacy fault encoder path.

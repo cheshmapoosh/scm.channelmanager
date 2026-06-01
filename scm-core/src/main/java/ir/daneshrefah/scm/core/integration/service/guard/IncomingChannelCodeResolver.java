@@ -5,6 +5,7 @@ import org.apache.camel.Exchange;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Component
@@ -22,11 +23,16 @@ public class IncomingChannelCodeResolver {
 
     private Optional<String> firstNonBlank(String... values) {
         for (String value : values) {
-            String normalized = StringUtils.trimToNull(value);
+            String normalized = normalize(value);
             if (normalized != null) {
                 return Optional.of(normalized);
             }
         }
         return Optional.empty();
+    }
+
+    public String normalize(String value) {
+        String normalized = StringUtils.trimToNull(value);
+        return normalized != null ? normalized.toLowerCase(Locale.ROOT) : null;
     }
 }

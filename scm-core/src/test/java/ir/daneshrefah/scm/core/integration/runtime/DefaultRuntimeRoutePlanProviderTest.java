@@ -62,16 +62,44 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     @Test
+    void channelPlanAllowsMissingExplicitRouteDefinitions() {
+        GatewayChannel gatewayChannel = gateway("channel.mb");
+        ChannelServiceAccess access = activeAccess();
+        ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+        ServiceOperation serviceOperation = new ServiceOperation();
+        serviceOperation.setOperationName("CARD_INQUIRY");
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.CHANNEL);
+        when(accessService.findAllByChannel(gatewayChannel.getChannel())).thenReturn(List.of(access));
+        when(definitionService.findDefinitions(access, gatewayChannel)).thenReturn(List.of());
+        when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
+        when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
+
+        RuntimeRoutePlan plan = provider.provide(gatewayChannel);
+
+        assertEquals(RuntimeTargetKind.CHANNEL, plan.targetKind());
+        assertEquals(1, plan.servicePlans().size());
+        assertEquals(List.of(), plan.servicePlans().getFirst().routeDefinitions());
+    }
+
+    @Test
     void domainPlanLoadsServicesFromGatewayDefinitions() {
         GatewayChannel gatewayChannel = gateway("domain.card");
         ChannelServiceAccess access = activeAccess();
-        ChannelServiceDefinition definition = definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "definition-1");
+        ChannelServiceDefinition memberDefinition = definition(
+                access,
+                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                "member-1");
+        ChannelServiceDefinition routeDefinition = definition(
+                access,
+                ChannelServiceDefinitionType.INBOUND_ROUTE,
+                "route-1");
         ServiceOperationEntity operationEntity = new ServiceOperationEntity();
         ServiceOperation serviceOperation = new ServiceOperation();
         serviceOperation.setOperationName("CARD_INQUIRY");
 
         when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
-        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(definition));
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(memberDefinition, routeDefinition));
         when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
         when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
 
@@ -80,6 +108,34 @@ class DefaultRuntimeRoutePlanProviderTest {
         assertEquals(RuntimeTargetKind.SERVICE_DOMAIN, plan.targetKind());
         assertEquals(1, plan.servicePlans().size());
         assertEquals(access.getId(), plan.servicePlans().getFirst().channelServiceAccess().getId());
+        assertEquals(List.of(routeDefinition), plan.servicePlans().getFirst().routeDefinitions());
+    }
+
+    @Test
+    void domainPlanLoadsServiceWithInboundRouteGroupExposure() {
+        GatewayChannel gatewayChannel = gateway("domain.card");
+        ChannelServiceAccess access = activeAccess();
+        ChannelServiceDefinition memberDefinition = definition(
+                access,
+                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                "member-1");
+        ChannelServiceDefinition routeGroupDefinition = definition(
+                access,
+                ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP,
+                "route-group-1");
+        ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+        ServiceOperation serviceOperation = new ServiceOperation();
+        serviceOperation.setOperationName("CARD_INQUIRY");
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(memberDefinition, routeGroupDefinition));
+        when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
+        when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
+
+        RuntimeRoutePlan plan = provider.provide(gatewayChannel);
+
+        assertEquals(1, plan.servicePlans().size());
+        assertEquals(List.of(routeGroupDefinition), plan.servicePlans().getFirst().routeDefinitions());
     }
 
     @Test
@@ -97,6 +153,52 @@ class DefaultRuntimeRoutePlanProviderTest {
                 () -> provider.provide(gatewayChannel));
 
         assertTrue(exception.getMessage().contains("No SERVICE_DOMAIN_MEMBER definitions"));
+    }
+
+    @Test
+    void domainPlanFailsWhenMemberServiceHasNoInboundRouteExposure() {
+        GatewayChannel gatewayChannel = gateway("domain.card");
+        ChannelServiceAccess access = activeAccess();
+        ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+        ServiceOperation serviceOperation = new ServiceOperation();
+        serviceOperation.setOperationName("CARD_INQUIRY");
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
+                definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "member-1")));
+        when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
+        when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> provider.provide(gatewayChannel));
+
+        assertTrue(exception.getMessage().contains("gatewayName=domain.card"));
+        assertTrue(exception.getMessage().contains("serviceCode=card"));
+        assertTrue(exception.getMessage().contains("missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP"));
+        assertTrue(exception.getMessage().contains("SERVICE_DOMAIN_MEMBER is membership only"));
+    }
+
+    @Test
+    void domainPlanFailsWhenMemberServiceOnlyHasApiDocumentation() {
+        GatewayChannel gatewayChannel = gateway("domain.card");
+        ChannelServiceAccess access = activeAccess();
+        ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+        ServiceOperation serviceOperation = new ServiceOperation();
+        serviceOperation.setOperationName("CARD_INQUIRY");
+
+        when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
+        when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
+                definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "member-1"),
+                definition(access, ChannelServiceDefinitionType.API_DOCUMENTATION, "api-doc-1")));
+        when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
+        when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> provider.provide(gatewayChannel));
+
+        assertTrue(exception.getMessage().contains("missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP"));
     }
 
     @Test

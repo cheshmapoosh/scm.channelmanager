@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
 import ir.daneshrefah.scm.common.service.ChannelServiceDefinitionService;
@@ -127,12 +128,15 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                         return null;
                     }
                     ChannelServiceAccess representativeAccess = memberAccesses.getFirst();
+                    List<ChannelServiceDefinition> routeDefinitions = routeDefinitionsByService
+                            .getOrDefault(entry.getKey(), List.of());
+                    validateDomainExposure(gatewayChannel, representativeAccess, routeDefinitions);
                     return new RuntimeServicePlan(
                             gatewayChannel,
                             representativeAccess,
                             representativeAccess.getService(),
                             memberAccesses,
-                            routeDefinitionsByService.getOrDefault(entry.getKey(), List.of()));
+                            routeDefinitions);
                 })
                 .filter(Objects::nonNull)
                 .toList();
@@ -156,6 +160,23 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
             return "code:" + access.getService().getCode();
         }
         throw new IllegalStateException("Service id or code is required for domain runtime planning.");
+    }
+
+    private void validateDomainExposure(GatewayChannel gatewayChannel,
+                                        ChannelServiceAccess access,
+                                        List<ChannelServiceDefinition> routeDefinitions) {
+        if (CollectionUtils.isNotEmpty(routeDefinitions)) {
+            return;
+        }
+        Service service = access.getService();
+        String serviceRef = service.getCode() != null
+                ? "serviceCode=" + service.getCode()
+                : "serviceId=" + service.getId();
+        throw new IllegalStateException("Invalid domain runtime exposure gatewayName="
+                + gatewayChannel.getName()
+                + " "
+                + serviceRef
+                + ": missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP. SERVICE_DOMAIN_MEMBER is membership only.");
     }
 
     private void warnIgnoredMembershipContract(ChannelServiceDefinition definition) {
