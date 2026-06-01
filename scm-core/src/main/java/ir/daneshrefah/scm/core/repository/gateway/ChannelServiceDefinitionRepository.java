@@ -14,6 +14,8 @@ import java.util.List;
 public interface ChannelServiceDefinitionRepository extends JpaRepository<ChannelServiceDefinitionEntity, String> {
     List<ChannelServiceDefinitionEntity> findByChannelServiceAccess_IdAndGatewayChannel_Id(Long channelServiceAccessId, @Size(max = 36) String gatewayChannelId);
 
+    List<ChannelServiceDefinitionEntity> findByGatewayChannel_Id(@Size(max = 36) String gatewayChannelId);
+
     Page<ChannelServiceDefinitionEntity> findAllByTypeIn(List<ChannelServiceDefinitionType> types, Pageable pageable);
 
     List<ChannelServiceDefinitionEntity> findByChannelServiceAccess_Id(Long channelServiceAccessId);

@@ -55,11 +55,16 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
                         gatewayChannel.getId())
                 .stream()
                 .map(channelServiceDefinitionMapper::toModel)
-                .peek(model -> {
-                    if (model instanceof RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
-                        enrichRestDefinition(restMultipleChannelServiceDefinition);
-                    }
-                })
+                .peek(this::enrichDefinition)
+                .toList();
+    }
+
+    @Override
+    public List<ChannelServiceDefinition> findDefinitions(GatewayChannel gatewayChannel) {
+        return channelServiceDefinitionRepository.findByGatewayChannel_Id(gatewayChannel.getId())
+                .stream()
+                .map(channelServiceDefinitionMapper::toModel)
+                .peek(this::enrichDefinition)
                 .toList();
     }
 
@@ -91,20 +96,21 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
         DefinitionEntity definitionEntity = null;
 
         if (service.getRoutingStrategy().equals(RoutingStrategy.FIRST)) {
-            if (!request.getType().equals(ChannelServiceDefinitionType.REST)) {
-                throw new IllegalArgumentException("For FIRST type, only REST type is allowed");
+            if (!isInboundRoute(request.getType())) {
+                throw new IllegalArgumentException("For FIRST type, only INBOUND_ROUTE type is allowed");
             }
-            channelServiceDefinitionEntity.setType(ChannelServiceDefinitionType.REST);
+            channelServiceDefinitionEntity.setType(ChannelServiceDefinitionType.INBOUND_ROUTE);
             if (request.getOperationNames().size() > 1) {
-                throw new IllegalArgumentException("For REST type, only one definitionId is allowed");
+                throw new IllegalArgumentException("For INBOUND_ROUTE type, only one definitionId is allowed");
             }
             DefinitionResponse definitionResponse = definitionService.findByName(request.getOperationNames().get(0));
             definitionEntity = definitionMapper.toEntity(definitionResponse);
         }
         if (service.getRoutingStrategy().equals(RoutingStrategy.MULTI_OPERATION)) {
-            if (request.getType() == ChannelServiceDefinitionType.REST_MULTIPLE) {
-                throw new IllegalArgumentException("For MULTI_OPERATION type, only JAVA_MULTIPLE_ROUTE type is allowed");
+            if (!isInboundRouteGroup(request.getType())) {
+                throw new IllegalArgumentException("For MULTI_OPERATION type, only INBOUND_ROUTE_GROUP type is allowed");
             }
+            channelServiceDefinitionEntity.setType(ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP);
             ValidationUtils.checkEmptyString(request.getContextPath(), () -> new MissingRequiredInputException("contextPath"));
             List<MultiRouteDetail> multiRouteDetails = new ArrayList<>();
             request.getOperationNames().forEach(operationName -> {
@@ -137,11 +143,25 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
                         RestChannelServiceDefinition serviceDefinition = new RestChannelServiceDefinition();
                         BeanUtils.copyProperties(restMultipleChannelServiceDefinition, serviceDefinition);
                         serviceDefinition.setDefinition(definitionMapper.toModel(definition));
-                        serviceDefinition.setType(ChannelServiceDefinitionType.REST);
+                        serviceDefinition.setType(ChannelServiceDefinitionType.INBOUND_ROUTE);
                         channelServiceDefinitionMapper.enrichRestChannelServiceDefinition(serviceDefinition);
                         multiRouteDetail.setDefinition(serviceDefinition);
                     });
                 });
+    }
+
+    private void enrichDefinition(ChannelServiceDefinition model) {
+        if (model instanceof RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
+            enrichRestDefinition(restMultipleChannelServiceDefinition);
+        }
+    }
+
+    private boolean isInboundRoute(ChannelServiceDefinitionType type) {
+        return type == ChannelServiceDefinitionType.INBOUND_ROUTE || type == ChannelServiceDefinitionType.REST;
+    }
+
+    private boolean isInboundRouteGroup(ChannelServiceDefinitionType type) {
+        return type == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP || type == ChannelServiceDefinitionType.REST_MULTIPLE;
     }
 
 }

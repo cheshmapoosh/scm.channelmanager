@@ -4,8 +4,8 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.RouteDefinition;
 
 import java.util.List;
 
@@ -14,6 +14,16 @@ public interface ProtocolHandler {
     ProtocolConfigurer config(GatewayChannel gatewayChannel, RouteBuilder builder);
 
     interface ProtocolConfigurer {
-        List<RouteDefinition> routeDefinition(ChannelServiceAccess channelServiceAccess, List<ChannelServiceDefinition> channelServiceDefinitions);
+        List<InboundRouteDefinition> routeDefinition(RuntimeServicePlan servicePlan);
+
+        @Deprecated(forRemoval = false)
+        default List<InboundRouteDefinition> routeDefinition(ChannelServiceAccess channelServiceAccess,
+                                                            List<ChannelServiceDefinition> channelServiceDefinitions) {
+            return routeDefinition(new RuntimeServicePlan(
+                    null,
+                    channelServiceAccess,
+                    channelServiceAccess.getService(),
+                    channelServiceDefinitions));
+        }
     }
 }

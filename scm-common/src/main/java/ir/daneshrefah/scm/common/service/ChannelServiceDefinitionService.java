@@ -12,6 +12,8 @@ import java.util.List;
 public interface ChannelServiceDefinitionService {
     List<ChannelServiceDefinition> findDefinitions(ChannelServiceAccess channelServiceAccess, GatewayChannel gatewayChannel);
 
+    List<ChannelServiceDefinition> findDefinitions(GatewayChannel gatewayChannel);
+
     List<ChannelServiceDefinitionResponse> findDefinitionsByChannelServiceAccess(ChannelServiceDefinitionRequest request);
 
     ChannelServiceDefinitionResponse create(ChannelServiceDefinitionCreateRequest request);

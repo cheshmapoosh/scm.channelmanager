@@ -96,7 +96,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
         SCM_REQ_RESP.set(span);
-        MDC.put("traceId",span.getSpanContext().getTraceId());
+        putTraceMdc(span);
     }
 
     public void traceScmResponse(Exchange exchange,Service service) {
@@ -117,7 +117,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, operation, span);
-        MDC.put("traceId",span.getSpanContext().getTraceId());
+        putTraceMdc(span);
     }
 
 
@@ -135,8 +135,14 @@ public class TraceUtils {
         apply(exchange, span -> {
             recordExceptionTrace(exception, span);
             span.setStatus(StatusCode.ERROR);
-            MDC.put("traceId",span.getSpanContext().getTraceId());
+            putTraceMdc(span);
         },true);
+    }
+
+    private void putTraceMdc(Span span) {
+        SpanContext spanContext = span.getSpanContext();
+        MDC.put("traceId", spanContext.getTraceId());
+        MDC.put("spanId", spanContext.getSpanId());
     }
 
     private void trace(Exchange exchange, Service service, Span span) {
