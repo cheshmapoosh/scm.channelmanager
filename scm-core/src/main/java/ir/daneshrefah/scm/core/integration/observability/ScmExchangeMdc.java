@@ -25,6 +25,7 @@ public class ScmExchangeMdc {
             "gatewayName",
             "channelCode",
             "serviceCode",
+            "serviceVersion",
             "operationName",
             "routeId",
             "exchangeId");
@@ -55,6 +56,7 @@ public class ScmExchangeMdc {
         fields.put("gatewayName", gatewayName(exchange));
         fields.put("channelCode", channelCode(exchange));
         fields.put("serviceCode", serviceCode(exchange));
+        fields.put("serviceVersion", property(exchange, Message.SERVICE_VERSION));
         fields.put("operationName", operationName(exchange));
         fields.put("routeId", exchange.getFromRouteId());
         fields.put("exchangeId", exchange.getExchangeId());

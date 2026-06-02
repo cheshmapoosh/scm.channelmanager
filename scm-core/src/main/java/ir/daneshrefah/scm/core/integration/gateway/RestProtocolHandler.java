@@ -4,8 +4,9 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
+import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractVersionResolver;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
-import ir.daneshrefah.scm.core.utils.RouteUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
@@ -22,8 +23,11 @@ import java.util.List;
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class RestProtocolHandler implements ProtocolHandler {
+    private final ClientContractVersionResolver clientContractVersionResolver;
+
     @Override
     public ProtocolType getProtocol() {
         return ProtocolType.REST;
@@ -45,12 +49,13 @@ public class RestProtocolHandler implements ProtocolHandler {
         if (StringUtils.isNotEmpty(host)) {
             restConfigurationDefinition.host(host);
         }
-        return new RestProtocolConfigurer(gatewayChannel, routeBuilder);
+        return new RestProtocolConfigurer(gatewayChannel, routeBuilder, clientContractVersionResolver);
     }
 
     private record RestProtocolConfigurer(
             GatewayChannel gatewayChannel,
-            RouteBuilder routeBuilder) implements ProtocolConfigurer {
+            RouteBuilder routeBuilder,
+            ClientContractVersionResolver clientContractVersionResolver) implements ProtocolConfigurer {
         @Override
         public List<InboundRouteDefinition> routeDefinition(RuntimeServicePlan servicePlan) {
             List<InboundRouteDefinition> routeDefinitions = new ArrayList<>();
@@ -94,15 +99,19 @@ public class RestProtocolHandler implements ProtocolHandler {
                 return routeDefinitions;
             }
             definition.getMultiRouteDetails().forEach(multiRouteDetail ->
-                    routeDefinitions.addAll(createRestRouteDefinition(service, definition.getContextPath(), multiRouteDetail)));
+                    routeDefinitions.addAll(createRestRouteDefinition(service, definition, multiRouteDetail)));
             return routeDefinitions;
         }
 
 
-        private List<InboundRouteDefinition> createRestRouteDefinition(Service service, String contextPath, RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
+        private List<InboundRouteDefinition> createRestRouteDefinition(Service service,
+                                                                       RestMultipleChannelServiceDefinition parentDefinition,
+                                                                       RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
             String serviceCode = service.getCode().trim();
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             RestChannelServiceDefinition definition = multiRouteDetail.getDefinition();
+            String contextPath = parentDefinition != null ? parentDefinition.getContextPath() : null;
+            String serviceVersion = clientContractVersionResolver.resolve(definition, parentDefinition, contextPath);
             if (definition != null) {
                 if (definition.getMethod() != null) {
                     uri.setScheme("rest:" + definition.getMethod().getValue().toLowerCase());
@@ -111,15 +120,20 @@ public class RestProtocolHandler implements ProtocolHandler {
             }
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
-                    .routeId(serviceCode + "-route-" + RouteUtils.getInstance().generateRouteUniqId(multiRouteDetail.getOperationCode()));
+                    .routeId(GatewayRouteIdFactory.groupRouteId(
+                            serviceCode,
+                            serviceVersion,
+                            multiRouteDetail.getOperationCode()));
+            routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
             routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
-            return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition));
+            return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition, serviceVersion));
         }
 
 
         private List<InboundRouteDefinition> createRestRouteDefinition(Service service, RestChannelServiceDefinition definition) {
             String serviceCode = service.getCode().trim();
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
+            String serviceVersion = clientContractVersionResolver.resolve(definition);
             if (definition != null) {
                 if (definition.getMethod() != null) {
                     uri.setScheme("rest:" + definition.getMethod().getValue().toLowerCase());
@@ -128,9 +142,10 @@ public class RestProtocolHandler implements ProtocolHandler {
             }
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
-                    .routeId(serviceCode + "-route");
+                    .routeId(GatewayRouteIdFactory.singleRouteId(serviceCode, serviceVersion));
+            routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
             routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
-            return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition));
+            return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition, serviceVersion));
         }
 
         private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {

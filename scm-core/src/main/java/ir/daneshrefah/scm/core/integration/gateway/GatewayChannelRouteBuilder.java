@@ -84,6 +84,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         route.setProperty(Message.GATEWAY_NAME, constant(servicePlan.gatewayChannel().getName()));
         route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
         route.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
+        route.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
 
         defineExceptionHandler(route);
         route.onCompletion()
@@ -96,10 +97,11 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
             if (traceUtils != null) {
                 traceUtils.traceScmRequest(exchange, service);
             }
-            log.info("Gateway inbound received gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+            log.info("Gateway inbound received gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     service.getCode(),
+                    serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId());
         });
@@ -107,24 +109,27 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         route.process(exchange -> {
             ClientContract contract = clientContractResolver.resolve(
                     servicePlan.gatewayChannel(),
-                    inboundRoute.channelServiceDefinition());
+                    inboundRoute.channelServiceDefinition(),
+                    inboundRoute.serviceVersion());
             exchange.setProperty(Message.CLIENT_CONTRACT, contract);
             RequestContractDecoder decoder = resolveRequestDecoder(contract);
             decoder.decode(exchange, contract);
             scmExchangeMdc.put(exchange);
-            log.info("Gateway request decoded gatewayName={} channelCode={} serviceCode={} contract={} routeId={} exchangeId={}",
+            log.info("Gateway request decoded gatewayName={} channelCode={} serviceCode={} serviceVersion={} contract={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     service.getCode(),
+                    serviceVersion(exchange),
                     contract.name(),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId());
         });
 
-        route.process(exchange -> log.info("Gateway dispatching to service gatewayName={} channelCode={} serviceCode={} targetUri={} routeId={} exchangeId={}",
+        route.process(exchange -> log.info("Gateway dispatching to service gatewayName={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={}",
                 servicePlan.gatewayChannel().getName(),
                 channelCode(exchange, servicePlan),
                 service.getCode(),
+                serviceVersion(exchange),
                 serviceRouteUriResolver.resolve(service),
                 exchange.getFromRouteId(),
                 exchange.getExchangeId()));
@@ -142,7 +147,8 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                     if (traceUtils != null) {
                         traceUtils.traceException(exchange, exception);
                     }
-                    log.warn("Gateway route failed routeId={} exchangeId={}",
+                    log.warn("Gateway route failed serviceVersion={} routeId={} exchangeId={}",
+                            serviceVersion(exchange),
                             exchange.getFromRouteId(),
                             exchange.getExchangeId(),
                             exception);
@@ -200,5 +206,9 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
 
     private String channelCode(ChannelServiceAccess access) {
         return access != null && access.getChannel() != null ? access.getChannel().getCode() : null;
+    }
+
+    private String serviceVersion(Exchange exchange) {
+        return exchange.getProperty(Message.SERVICE_VERSION, String.class);
     }
 }

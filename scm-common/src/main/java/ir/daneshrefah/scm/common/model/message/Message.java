@@ -32,6 +32,7 @@ public class Message implements Serializable {
     public final static String ORIGINAL_BODY = "scmOriginalBody";
     public final static String ORIGINAL_HEADERS = "scmOriginalHeaders";
     public static final String SERVICE = "scmService";
+    public static final String SERVICE_VERSION = "scmServiceVersion";
     public static final String OPERATION = "scmOperation";
     public static final String CHANNEL_CODE = "scmChannelCode";
     public static final String CHANNEL_SERVICE_ACCESS = "scmChannelServiceAccess";

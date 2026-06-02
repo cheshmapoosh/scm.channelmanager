@@ -15,28 +15,29 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class DefaultClientContractResolver implements ClientContractResolver {
-    private static final ClientContract MODERN_REST_DEFAULT = new ClientContract(
-            "modern-rest-v1",
-            "jsonScmRequestDecoder",
-            "jsonScmResponseEncoder",
-            "restProblemDetailFaultEncoder");
-
     private final ObjectMapper objectMapper;
+    private final ClientContractVersionResolver clientContractVersionResolver;
 
     @Override
-    public ClientContract resolve(GatewayChannel gatewayChannel, ChannelServiceDefinition routeDefinition) {
-        ClientContract routeContract = resolveRouteContract(routeDefinition);
+    public ClientContract resolve(GatewayChannel gatewayChannel,
+                                  ChannelServiceDefinition routeDefinition,
+                                  String serviceVersion) {
+        String resolvedVersion = clientContractVersionResolver.validate(serviceVersion);
+        if (resolvedVersion == null) {
+            resolvedVersion = clientContractVersionResolver.resolve(routeDefinition);
+        }
+        ClientContract routeContract = resolveRouteContract(routeDefinition, resolvedVersion);
         if (routeContract != null) {
             return routeContract;
         }
         if (gatewayChannel != null && gatewayChannel.getProtocolType() == ProtocolType.REST) {
-            return MODERN_REST_DEFAULT;
+            return defaultRestContract(resolvedVersion);
         }
         throw new IllegalStateException("No default client contract configured for protocol "
                 + (gatewayChannel != null ? gatewayChannel.getProtocolType() : null));
     }
 
-    private ClientContract resolveRouteContract(ChannelServiceDefinition routeDefinition) {
+    private ClientContract resolveRouteContract(ChannelServiceDefinition routeDefinition, String serviceVersion) {
         if (routeDefinition == null
                 || routeDefinition.getDefinition() == null
                 || StringUtils.isBlank(routeDefinition.getDefinition().getDetails())) {
@@ -58,7 +59,8 @@ public class DefaultClientContractResolver implements ClientContractResolver {
                     required(contract, "name"),
                     required(contract, "requestDecoder"),
                     required(contract, "responseEncoder"),
-                    required(contract, "faultEncoder"));
+                    required(contract, "faultEncoder"),
+                    serviceVersion);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid client contract details for route definition "
                     + routeDefinition.getId(), e);
@@ -71,5 +73,14 @@ public class DefaultClientContractResolver implements ClientContractResolver {
             throw new IllegalArgumentException("Client contract field '" + fieldName + "' is required.");
         }
         return value;
+    }
+
+    private ClientContract defaultRestContract(String serviceVersion) {
+        return new ClientContract(
+                "rest-default",
+                "jsonScmRequestDecoder",
+                "jsonScmResponseEncoder",
+                "restProblemDetailFaultEncoder",
+                serviceVersion);
     }
 }

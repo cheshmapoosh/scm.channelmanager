@@ -246,7 +246,7 @@ SWAGGER        -> API_DOCUMENTATION
 Protocol != Client Contract
 ```
 
-مثلاً REST بودن الزاماً به معنی خروجی مدرن نیست. ممکن است یک client قدیمی با REST کار کند ولی فرمت legacy بخواهد.
+SCM نباید client را با برچسب‌هایی مثل legacy یا modern بشناسد. SCM فقط نسخه بیرونی Client Contract را می‌شناسد.
 
 `ClientContract` مشخص می‌کند:
 
@@ -262,37 +262,78 @@ Protocol != Client Contract
 TBL_SCM_CHN_SVC_DEFINITION -> Definition.details
 ```
 
-مثال modern REST:
+قانون نسخه contract:
+
+```text
+/card/inquiry      -> v1
+/v1/card/inquiry   -> v1
+/v2/card/inquiry   -> v2
+/v3/card/inquiry   -> v3
+```
+
+اگر `version` در `Definition.details` تعریف شده باشد و معتبر باشد، همان مقدار استفاده می‌شود. اگر `version` وجود نداشته باشد، gateway نسخه را از segment اول path با الگوی `/vN/` می‌خواند. اگر path نسخه نداشته باشد، نسخه پیش‌فرض `v1` است.
+
+`v1` می‌تواند رفتار client-facing قدیمی CM را نگه دارد تا clientهای CM بدون حس کردن تغییر به SCM منتقل شوند:
+
+```text
+- همان URL
+- همان request payload format
+- همان response payload format
+- همان error format
+- همان HTTP status behavior، اگر برای protocol معنی داشته باشد
+```
+
+مثال ClientContractVersion v1:
 
 ```json
 {
+  "version": "v1",
   "method": "POST",
-  "path": "/cards/inquiry",
+  "path": "/card/inquiry",
   "contract": {
-    "name": "modern-rest-v1",
-    "requestDecoder": "jsonScmRequestDecoder",
-    "responseEncoder": "jsonScmResponseEncoder",
-    "faultEncoder": "restProblemDetailFaultEncoder"
+    "name": "card-inquiry-v1",
+    "requestDecoder": "cardInquiryV1RequestDecoder",
+    "responseEncoder": "cardInquiryV1ResponseEncoder",
+    "faultEncoder": "cardInquiryV1FaultEncoder"
   }
 }
 ```
 
-مثال legacy REST:
+مثال ClientContractVersion v2:
 
 ```json
 {
+  "version": "v2",
   "method": "POST",
-  "path": "/legacy/cards/inquiry",
+  "path": "/v2/card/inquiry",
   "contract": {
-    "name": "legacy-mb-card-v1",
-    "requestDecoder": "legacyMbCardRequestDecoder",
-    "responseEncoder": "legacyMbCardResponseEncoder",
-    "faultEncoder": "legacyMbCardFaultEncoder"
+    "name": "card-inquiry-v2",
+    "requestDecoder": "cardInquiryV2RequestDecoder",
+    "responseEncoder": "cardInquiryV2ResponseEncoder",
+    "faultEncoder": "cardInquiryV2FaultEncoder"
   }
 }
+```
+
+`ContractStyle` عمداً بخشی از SCM نیست، چون SCM نباید legacy یا modern بودن client را بداند. `versionSelector` هم در مدل path-based فعلی لازم نیست، چون path و `Definition.details.version` نسخه contract را مشخص می‌کنند.
+
+`routeId` gateway باید version را داشته باشد تا دو route برای یک service با نسخه‌های مختلف collision ندهند:
+
+```text
+card-inquiry-v1-route
+card-inquiry-v2-route
 ```
 
 Service layer نباید ClientContract را بشناسد. این تبدیل‌ها متعلق به gateway layer هستند.
+
+Service route به صورت پیش‌فرض version-aware نیست:
+
+```text
+/card/inquiry     -> contract v1 -> direct:scm.service.card-inquiry
+/v2/card/inquiry  -> contract v2 -> direct:scm.service.card-inquiry
+```
+
+Service layer فقط زمانی باید version-aware شود که رفتار business، operation یا provider واقعاً متفاوت باشد.
 
 ---
 
@@ -348,6 +389,7 @@ correlationId
 gatewayName
 channelCode
 serviceCode
+serviceVersion
 operationName
 routeId
 exchangeId
@@ -387,12 +429,22 @@ Metrics مربوط به pluginهای service باید شامل count, duration �
 3. رکوردهای definition باید service/accessهای عضو domain را مشخص کنند.
 ```
 
-اگر خواستی فرمت client قدیمی را پشتیبانی کنی:
+اگر خواستی رفتار client-facing قدیمی CM را پشتیبانی کنی:
 
 ```text
-1. ClientContract را در Definition.details همان route تعریف کن.
-2. decoder/encoder/faultEncoder مناسب legacy را معرفی کن.
-3. service layer را تغییر نده.
+1. ClientContractVersion v1 را در Definition.details همان INBOUND_ROUTE یا INBOUND_ROUTE_GROUP تعریف کن.
+2. path بدون version مثل /card/inquiry را برای v1 نگه دار.
+3. decoder/encoder/faultEncoder سازگار با CM قدیمی را معرفی کن.
+4. service layer را تغییر نده.
+```
+
+اگر خواستی نسخه جدید client contract اضافه کنی:
+
+```text
+1. route جدید با path مثل /v2/card/inquiry بساز.
+2. version همان route را v2 بگذار.
+3. routeId باید version داشته باشد تا با v1 تداخل نکند.
+4. service layer را تغییر نده.
 ```
 
 اگر خواستی routing strategy یا provider call را تغییر بدهی:
@@ -424,6 +476,9 @@ Gateway را تغییر نده.
 - A domain runtime creates one service route per `Service`. If several `SERVICE_DOMAIN_MEMBER` rows point at the same service for different channels, the runtime keeps those member `ChannelServiceAccess` records as metadata and still builds only one service route.
 - Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SERVICE_DOMAIN_MEMBER` is membership only, and `API_DOCUMENTATION` does not expose a gateway route.
 - Client contracts belong on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP`. A `contract` under `SERVICE_DOMAIN_MEMBER` is ignored and logged as a warning.
+- Client contract version is path-based. A route without `/vN/` is `v1`; a route that starts with `/v2/` is `v2`; explicit `Definition.details.version` wins when valid.
+- `ContractStyle` is intentionally not part of SCM, and `versionSelector` is not required in the current path-based phase.
+- Gateway route IDs include the contract version, while service route URIs stay version-agnostic by default.
 - The current client-contract response path is REST-only. SOAP/TCP need protocol-specific request and response encoders before they can share the global response contract route.
 - `RuntimeChannelGuard` and `ChannelServiceAccessGuard` use the incoming channel code from the exchange/header. Channel codes are trimmed and lower-cased with `Locale.ROOT` before runtime guard comparisons. `ChannelServiceAccessGuard` resolves the current `ChannelServiceAccess` from the service access repository and stores it in `Message.CHANNEL_SERVICE_ACCESS`.
 - Audit plugin entries show plugin execution points. The service route also writes a final `phase=SERVICE` audit event for the service success or failure outcome.

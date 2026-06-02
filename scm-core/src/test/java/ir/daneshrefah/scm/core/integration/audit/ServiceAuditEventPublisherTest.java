@@ -32,6 +32,7 @@ class ServiceAuditEventPublisherTest {
         assertEquals("SERVICE", event.phase());
         assertEquals("SUCCESS", event.status());
         assertEquals("card", event.serviceCode());
+        assertEquals("v2", event.serviceVersion());
         assertEquals("mb", event.channelCode());
     }
 
@@ -56,6 +57,7 @@ class ServiceAuditEventPublisherTest {
         service.setCode("card");
         exchange.setProperty(Message.SERVICE, service);
         exchange.setProperty(Message.CHANNEL_CODE, "mb");
+        exchange.setProperty(Message.SERVICE_VERSION, "v2");
         exchange.setProperty(Message.GATEWAY_NAME, "channel.mb");
         exchange.setProperty(Message.OPERATION_NAME, "CARD_INQUIRY");
         return exchange;
