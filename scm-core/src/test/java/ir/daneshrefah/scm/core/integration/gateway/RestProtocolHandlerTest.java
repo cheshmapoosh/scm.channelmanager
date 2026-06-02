@@ -1,12 +1,8 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
-import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
-import ir.daneshrefah.scm.common.model.gateway.RestChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RestMultipleChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.gateway.*;
+import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractVersionResolver;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
@@ -18,11 +14,37 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RestProtocolHandlerTest {
     private final RestProtocolHandler handler = new RestProtocolHandler(
             new ClientContractVersionResolver(new ObjectMapper()));
+
+    @Test
+    void createsRouteFromInbound() throws Exception {
+        InboundChannelServiceDefinition routeDefinition = restRoute("route-1", "/v2/card/inquiry");
+
+        List<InboundRouteDefinition> routes = routeDefinitions(
+                gateway("domain.card"),
+                servicePlan("domain.card", List.of(routeDefinition)));
+
+        assertEquals(1, routes.size());
+        assertEquals("card-inquiry-v2-route", routes.getFirst().route().getRouteId());
+        assertEquals("v2", routes.getFirst().serviceVersion());
+    }
+
+    @Test
+    void doesNotCreateRoutesFromApiDoc() throws Exception {
+        ChannelServiceDefinition apiDocDefinition = new ChannelServiceDefinition();
+        apiDocDefinition.setType(ChannelServiceDefinitionType.API_DOC);
+
+        List<InboundRouteDefinition> routes = routeDefinitions(
+                gateway("domain.card"),
+                servicePlan("domain.card", List.of(apiDocDefinition)));
+
+        assertTrue(routes.isEmpty());
+    }
 
     @Test
     void doesNotCreateRoutesFromSvcDomainMember() throws Exception {
@@ -37,37 +59,27 @@ class RestProtocolHandlerTest {
     }
 
     @Test
-    void createsRoutesFromInboundRoute() throws Exception {
-        RestChannelServiceDefinition routeDefinition = restRoute("/v2/card/inquiry");
-
+    void doesNotCreateDefaultRouteWhenInboundIsMissing() throws Exception {
         List<InboundRouteDefinition> routes = routeDefinitions(
-                gateway("domain.card"),
-                servicePlan("domain.card", List.of(routeDefinition)));
+                gateway("channel.mb"),
+                servicePlan("channel.mb", List.of()));
 
-        assertEquals(1, routes.size());
-        assertEquals("card-inquiry-v2-route", routes.getFirst().route().getRouteId());
-        assertEquals("v2", routes.getFirst().serviceVersion());
+        assertTrue(routes.isEmpty());
     }
 
     @Test
-    void createsRoutesFromInboundRouteGroup() throws Exception {
-        RestMultipleChannelServiceDefinition groupDefinition = new RestMultipleChannelServiceDefinition();
-        groupDefinition.setType(ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP);
-        groupDefinition.setContextPath("/v2/card");
-
-        RestMultipleChannelServiceDefinition.MultiRouteDetail routeDetail =
-                new RestMultipleChannelServiceDefinition.MultiRouteDetail();
-        routeDetail.setOperationCode("CARD_INQUIRY");
-        routeDetail.setDefinition(restRoute("/inquiry"));
-        groupDefinition.setMultiRouteDetails(List.of(routeDetail));
+    void duplicateServiceVersionInboundRoutesReceiveUniqueRouteIds() throws Exception {
+        InboundChannelServiceDefinition inquiry = restRoute("route-1", "/v2/card/inquiry");
+        InboundChannelServiceDefinition status = restRoute("route-2", "/v2/card/status");
 
         List<InboundRouteDefinition> routes = routeDefinitions(
                 gateway("domain.card"),
-                servicePlan("domain.card", List.of(groupDefinition)));
+                servicePlan("domain.card", List.of(inquiry, status)));
 
-        assertEquals(1, routes.size());
-        assertTrue(routes.getFirst().route().getRouteId().startsWith("card-inquiry-v2-route-"));
-        assertEquals("v2", routes.getFirst().serviceVersion());
+        assertEquals(2, routes.size());
+        assertEquals("card-inquiry-v2-route", routes.get(0).route().getRouteId());
+        assertTrue(routes.get(1).route().getRouteId().startsWith("card-inquiry-v2-route-"));
+        assertNotEquals(routes.get(0).route().getRouteId(), routes.get(1).route().getRouteId());
     }
 
     private List<InboundRouteDefinition> routeDefinitions(GatewayChannel gatewayChannel,
@@ -101,9 +113,10 @@ class RestProtocolHandlerTest {
         return service;
     }
 
-    private RestChannelServiceDefinition restRoute(String path) {
-        RestChannelServiceDefinition routeDefinition = new RestChannelServiceDefinition();
-        routeDefinition.setType(ChannelServiceDefinitionType.INBOUND_ROUTE);
+    private InboundChannelServiceDefinition restRoute(String id, String path) {
+        InboundChannelServiceDefinition routeDefinition = new InboundChannelServiceDefinition();
+        routeDefinition.setId(id);
+        routeDefinition.setType(ChannelServiceDefinitionType.INBOUND);
         routeDefinition.setMethod(HttpMethod.POST);
         routeDefinition.setPath(path);
         return routeDefinition;

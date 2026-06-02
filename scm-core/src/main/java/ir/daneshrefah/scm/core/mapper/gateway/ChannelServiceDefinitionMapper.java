@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.ReportingPolicy.IGNORE;
@@ -41,9 +40,8 @@ public abstract class ChannelServiceDefinitionMapper {
     @Named("toModel")
     public ChannelServiceDefinition toModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
         return switch (channelServiceDefinitionEntity.getType()) {
-            case INBOUND_ROUTE -> toRest(channelServiceDefinitionEntity);
-            case INBOUND_ROUTE_GROUP -> toRestMultiple(channelServiceDefinitionEntity);
-            case API_DOCUMENTATION -> toSwagger(channelServiceDefinitionEntity);
+            case INBOUND -> toRest(channelServiceDefinitionEntity);
+            case API_DOC -> toApiDoc(channelServiceDefinitionEntity);
             case SVC_DOMAIN_MEMBER -> channelServiceDefinitionEntityToModel(channelServiceDefinitionEntity);
         };
     }
@@ -52,66 +50,36 @@ public abstract class ChannelServiceDefinitionMapper {
 
     public abstract ChannelServiceDefinitionResponse toChannelServiceDefinition(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
-    @Named("toRestMultiple")
-    public abstract RestMultipleChannelServiceDefinition toRestMultiple(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
-
     @Named("toRest")
-    public abstract RestChannelServiceDefinition toRest(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
+    public abstract InboundChannelServiceDefinition toRest(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
-    @Named("toSwagger")
-    public abstract SwggerChannelServiceDefinition toSwagger(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
-
-    @AfterMapping
-    protected void afterMapping(@MappingTarget RestChannelServiceDefinition restChannelServiceDefinition) {
-        enrichRestChannelServiceDefinition(restChannelServiceDefinition);
-    }
+    @Named("toApiDoc")
+    public abstract ApiDocChannelServiceDefinition toApiDoc(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     @AfterMapping
-    public void afterMapping(@MappingTarget RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
-        enrichRestMultipleChannelServiceDefinition(restMultipleChannelServiceDefinition);
+    protected void afterMapping(@MappingTarget InboundChannelServiceDefinition inboundChannelServiceDefinition) {
+        enrichRestChannelServiceDefinition(inboundChannelServiceDefinition);
     }
 
-    public void enrichRestMultipleChannelServiceDefinition(RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
+    public void enrichRestChannelServiceDefinition(InboundChannelServiceDefinition inboundChannelServiceDefinition) {
         JsonNode dtoNode;
         try {
-            dtoNode = dtoReader.readTree(restMultipleChannelServiceDefinition.getDefinition().getDetails());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        String contextPath = JsonPathFinder.defaultAsText(dtoNode, "contextPath");
-        restMultipleChannelServiceDefinition.setContextPath(contextPath);
-        JsonNode definitionsNode = JsonPathFinder.defaultNode(dtoNode, "multiRouteDetails");
-        List<RestMultipleChannelServiceDefinition.MultiRouteDetail> multiRouteDetails = new ArrayList<>();
-        if (Objects.nonNull(definitionsNode) && definitionsNode.isArray()) {
-            for (JsonNode defNode : definitionsNode) {
-                RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail = new RestMultipleChannelServiceDefinition.MultiRouteDetail();
-                multiRouteDetail.setDefinitionId(defNode.get("definitionId").asText());
-                multiRouteDetail.setOperationCode(defNode.get("operationCode").asText());
-                multiRouteDetails.add(multiRouteDetail);
-            }
-        }
-        restMultipleChannelServiceDefinition.setMultiRouteDetails(multiRouteDetails);
-    }
-
-    public void enrichRestChannelServiceDefinition(RestChannelServiceDefinition restChannelServiceDefinition) {
-        JsonNode dtoNode;
-        try {
-            dtoNode = dtoReader.readTree(restChannelServiceDefinition.getDefinition().getDetails());
+            dtoNode = dtoReader.readTree(inboundChannelServiceDefinition.getDefinition().getDetails());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
         // path
         String path = JsonPathFinder.defaultAsText(dtoNode, "path");
-        restChannelServiceDefinition.setPath(path);
+        inboundChannelServiceDefinition.setPath(path);
 
         // method
         String method = JsonPathFinder.defaultAsText(dtoNode, "method");
-        restChannelServiceDefinition.setMethod(HttpMethod.fromValue(method));
+        inboundChannelServiceDefinition.setMethod(HttpMethod.fromValue(method));
 
         // checkLoginAuthentication
         Boolean checkLoginAuthentication = JsonPathFinder.defaultAsBoolean(dtoNode, "checkLoginAuthentication");
-        restChannelServiceDefinition.setCheckLoginAuthentication(
+        inboundChannelServiceDefinition.setCheckLoginAuthentication(
                 checkLoginAuthentication != null ? checkLoginAuthentication : false
         );
 
@@ -146,9 +114,9 @@ public abstract class ChannelServiceDefinitionMapper {
             authorizationConfig.setAuthorities(authorities);
 
 
-            restChannelServiceDefinition.setAuthorizationConfig(authorizationConfig);
+            inboundChannelServiceDefinition.setAuthorizationConfig(authorizationConfig);
         } else {
-            restChannelServiceDefinition.setAuthorizationConfig(null);
+            inboundChannelServiceDefinition.setAuthorizationConfig(null);
         }
     }
 }

@@ -15,7 +15,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "TBL_SCM_CHN_SVC_DEFINITION", schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_GTW_ON_PTC_CHN", columnNames = {"CHANNEL_SERVICE_ACCESS_ID", "GATEWAY_CHANNEL_ID", "TYPE"})
+                @UniqueConstraint(name = "UC_GTW_ON_PTC_CHN_DEF", columnNames = {"CHANNEL_SERVICE_ACCESS_ID", "GATEWAY_CHANNEL_ID", "TYPE", "DEFINITION_ID"})
         })
 public class ChannelServiceDefinitionEntity extends AbstractAuditableEntity<String> {
     @Size(max = 36)

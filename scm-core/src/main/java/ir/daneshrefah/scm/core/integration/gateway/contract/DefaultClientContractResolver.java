@@ -49,10 +49,10 @@ public class DefaultClientContractResolver implements ClientContractResolver {
             if (contract.isMissingNode() || contract.isNull()) {
                 return null;
             }
-            if (routeDefinition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER) {
-                log.warn("Ignoring ClientContract under SVC_DOMAIN_MEMBER definition {}. "
-                        + "Contracts belong to INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions.",
-                        routeDefinition.getId());
+            if (routeDefinition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER
+                    || routeDefinition.getType() == ChannelServiceDefinitionType.API_DOC) {
+                log.warn("Ignoring ClientContract under {} definition {}. Contracts belong to INBOUND definitions.",
+                        routeDefinition.getType(), routeDefinition.getId());
                 return null;
             }
             return new ClientContract(

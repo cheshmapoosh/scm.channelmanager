@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
-import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
@@ -18,7 +17,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
@@ -62,17 +63,20 @@ public class RestProtocolHandler implements ProtocolHandler {
             Service service = servicePlan.service();
             List<ChannelServiceDefinition> channelServiceDefinitions = servicePlan.routeDefinitions();
             if (channelServiceDefinitions == null || channelServiceDefinitions.isEmpty()) {
-                return createDefaultChannelRouteDefinitionIfAllowed(servicePlan, service);
+                return routeDefinitions;
             }
+            Set<String> usedRouteIds = new HashSet<>();
             channelServiceDefinitions.forEach(channelServiceDefinition -> {
                 if (channelServiceDefinition.getType() == null) {
                     return;
                 }
                 routeDefinitions.addAll(
                         switch (channelServiceDefinition.getType()) {
-                            case INBOUND_ROUTE -> createRestRouteDefinition(service, (RestChannelServiceDefinition) channelServiceDefinition);
-                            case INBOUND_ROUTE_GROUP -> createRestMultipleRouteDefinition(service, (RestMultipleChannelServiceDefinition) channelServiceDefinition);
-                            // SVC_DOMAIN_MEMBER is membership metadata only; it must never create an inbound route.
+                            case INBOUND -> createRestRouteDefinition(
+                                    service,
+                                    (InboundChannelServiceDefinition) channelServiceDefinition,
+                                    usedRouteIds);
+                            // API_DOC and SVC_DOMAIN_MEMBER are metadata only; they must never create inbound routes.
                             default -> Collections.emptyList();
                         }
                 );
@@ -80,54 +84,9 @@ public class RestProtocolHandler implements ProtocolHandler {
             return routeDefinitions;
         }
 
-        private List<InboundRouteDefinition> createDefaultChannelRouteDefinitionIfAllowed(RuntimeServicePlan servicePlan, Service service) {
-            String gatewayName = servicePlan.gatewayChannel() != null ? servicePlan.gatewayChannel().getName() : null;
-            if (StringUtils.startsWith(gatewayName, "domain.")) {
-                log.warn("No INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions found for domain runtime service {}. "
-                        + "No REST route will be created from SVC_DOMAIN_MEMBER records.", service.getCode());
-                return Collections.emptyList();
-            }
-            return createRestRouteDefinition(service, null);
-        }
-
-        private List<InboundRouteDefinition> createRestMultipleRouteDefinition(Service service, RestMultipleChannelServiceDefinition definition) {
-            List<InboundRouteDefinition> routeDefinitions = new ArrayList<>();
-            if (definition.getMultiRouteDetails() == null) {
-                return routeDefinitions;
-            }
-            definition.getMultiRouteDetails().forEach(multiRouteDetail ->
-                    routeDefinitions.addAll(createRestRouteDefinition(service, definition, multiRouteDetail)));
-            return routeDefinitions;
-        }
-
-
         private List<InboundRouteDefinition> createRestRouteDefinition(Service service,
-                                                                       RestMultipleChannelServiceDefinition parentDefinition,
-                                                                       RestMultipleChannelServiceDefinition.MultiRouteDetail multiRouteDetail) {
-            String serviceCode = service.getCode().trim();
-            URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
-            RestChannelServiceDefinition definition = multiRouteDetail.getDefinition();
-            String contextPath = parentDefinition != null ? parentDefinition.getContextPath() : null;
-            String serviceVersion = clientContractVersionResolver.resolve(definition, parentDefinition, contextPath);
-            if (definition != null) {
-                if (definition.getMethod() != null) {
-                    uri.setScheme("rest:" + definition.getMethod().getValue().toLowerCase());
-                }
-                applyRestPath(uri, gatewayChannel.getPath(), contextPath, definition.getPath());
-            }
-
-            RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
-                    .routeId(GatewayRouteIdFactory.groupRouteId(
-                            serviceCode,
-                            serviceVersion,
-                            multiRouteDetail.getOperationCode()));
-            routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
-            routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
-            return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition, serviceVersion));
-        }
-
-
-        private List<InboundRouteDefinition> createRestRouteDefinition(Service service, RestChannelServiceDefinition definition) {
+                                                                       InboundChannelServiceDefinition definition,
+                                                                       Set<String> usedRouteIds) {
             String serviceCode = service.getCode().trim();
             URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
             String serviceVersion = clientContractVersionResolver.resolve(definition);
@@ -139,10 +98,27 @@ public class RestProtocolHandler implements ProtocolHandler {
             }
 
             RouteDefinition routeDefinition = routeBuilder.from(uri.toString())
-                    .routeId(GatewayRouteIdFactory.singleRouteId(serviceCode, serviceVersion));
+                    .routeId(uniqueRouteId(serviceCode, serviceVersion, definition, usedRouteIds));
             routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
             routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
             return Collections.singletonList(new InboundRouteDefinition(routeDefinition, definition, serviceVersion));
+        }
+
+        private String uniqueRouteId(String serviceCode,
+                                     String serviceVersion,
+                                     InboundChannelServiceDefinition definition,
+                                     Set<String> usedRouteIds) {
+            String routeId = GatewayRouteIdFactory.singleRouteId(serviceCode, serviceVersion);
+            if (usedRouteIds.add(routeId)) {
+                return routeId;
+            }
+            routeId = GatewayRouteIdFactory.inboundRouteId(serviceCode, serviceVersion, definition);
+            int sequence = 2;
+            String candidate = routeId;
+            while (!usedRouteIds.add(candidate)) {
+                candidate = routeId + "-" + sequence++;
+            }
+            return candidate;
         }
 
         private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {

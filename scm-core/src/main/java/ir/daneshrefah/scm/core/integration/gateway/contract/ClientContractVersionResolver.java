@@ -3,8 +3,7 @@ package ir.daneshrefah.scm.core.integration.gateway.contract;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RestChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RestMultipleChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -92,11 +91,8 @@ public class ClientContractVersionResolver {
     }
 
     private String routePath(ChannelServiceDefinition definition) {
-        if (definition instanceof RestChannelServiceDefinition restDefinition) {
+        if (definition instanceof InboundChannelServiceDefinition restDefinition) {
             return restDefinition.getPath();
-        }
-        if (definition instanceof RestMultipleChannelServiceDefinition restMultipleDefinition) {
-            return restMultipleDefinition.getContextPath();
         }
         JsonNode root = details(definition);
         return root != null ? StringUtils.trimToNull(root.path("path").asText(null)) : null;

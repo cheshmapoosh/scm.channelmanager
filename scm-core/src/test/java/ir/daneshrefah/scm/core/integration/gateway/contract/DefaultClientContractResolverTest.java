@@ -95,6 +95,25 @@ class DefaultClientContractResolverTest {
         assertEquals("rest-default", contract.name());
     }
 
+    @Test
+    void ignoresContractUnderApiDoc() {
+        ChannelServiceDefinition apiDocDefinition = routeDefinition("""
+                {
+                  "contract": {
+                    "name": "ignored",
+                    "requestDecoder": "ignoredDecoder",
+                    "responseEncoder": "ignoredEncoder",
+                    "faultEncoder": "ignoredFaultEncoder"
+                  }
+                }
+                """);
+        apiDocDefinition.setType(ChannelServiceDefinitionType.API_DOC);
+
+        ClientContract contract = resolver.resolve(restGateway(), apiDocDefinition);
+
+        assertEquals("rest-default", contract.name());
+    }
+
     private GatewayChannel restGateway() {
         GatewayChannel gatewayChannel = new GatewayChannel();
         gatewayChannel.setProtocolType(ProtocolType.REST);
@@ -106,6 +125,7 @@ class DefaultClientContractResolverTest {
         definition.setDetails(details);
         ChannelServiceDefinition channelServiceDefinition = new ChannelServiceDefinition();
         channelServiceDefinition.setId("definition-1");
+        channelServiceDefinition.setType(ChannelServiceDefinitionType.INBOUND);
         channelServiceDefinition.setDefinition(definition);
         return channelServiceDefinition;
     }

@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
+import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,8 +24,12 @@ class GatewayRouteIdFactoryTest {
     }
 
     @Test
-    void routeGroupIdKeepsVersionAndOperationHash() {
-        String routeId = GatewayRouteIdFactory.groupRouteId("card-inquiry", "v2", "CARD_INQUIRY");
+    void duplicateInboundRouteIdKeepsVersionAndStableSuffix() {
+        InboundChannelServiceDefinition definition = new InboundChannelServiceDefinition();
+        definition.setMethod(HttpMethod.POST);
+        definition.setPath("/v2/card/status");
+
+        String routeId = GatewayRouteIdFactory.inboundRouteId("card-inquiry", "v2", definition);
 
         assertTrue(routeId.startsWith("card-inquiry-v2-route-"));
     }

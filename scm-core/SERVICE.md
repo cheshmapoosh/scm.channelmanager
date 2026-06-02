@@ -211,28 +211,28 @@ GatewayChannel.protocolType
 مقادیر نهایی نسخه 9:
 
 ```text
-INBOUND_ROUTE
-INBOUND_ROUTE_GROUP
-API_DOCUMENTATION
+INBOUND
+API_DOC
 SVC_DOMAIN_MEMBER
 ```
 
 معنی هر کدام:
 
 ```text
-INBOUND_ROUTE          -> تعریف یک route ورودی
-INBOUND_ROUTE_GROUP    -> تعریف چند route ورودی برای یک service
-API_DOCUMENTATION      -> مستند API مثل Swagger/OpenAPI/WSDL/spec
-SVC_DOMAIN_MEMBER      -> عضویت یک ChannelServiceAccess در domain runtime
+INBOUND            -> one inbound gateway route for a service
+API_DOC            -> API documentation/spec metadata
+SVC_DOMAIN_MEMBER  -> ChannelServiceAccess membership in domain runtime
 ```
 
 مقادیر قدیمی نسخه 8 فقط به عنوان داده تاریخی مطرح هستند و دیگر در enum جاوا برای runtime نسخه 9 وجود ندارند. Mapping مفهومی historical:
 
 ```text
-REST           -> INBOUND_ROUTE
-REST_MULTIPLE  -> INBOUND_ROUTE_GROUP
-SWAGGER        -> API_DOCUMENTATION
+REST           -> INBOUND
+REST_MULTIPLE  -> historical multi-route container only; v9 uses multiple INBOUND rows
+SWAGGER        -> API_DOC
 ```
+
+Multiple gateway routes are modeled as multiple `INBOUND` definitions. The v9 runtime model has no group/container definition for inbound routes.
 
 رکوردهای قدیمی نسخه 8 نباید تغییر کنند، اما runtime نسخه 9 باید با رکوردهای جدید مثل `channel.*` و `domain.*` و مقدارهای enum نهایی کار کند.
 
@@ -432,7 +432,7 @@ Metrics مربوط به pluginهای service باید شامل count, duration �
 اگر خواستی رفتار client-facing قدیمی CM را پشتیبانی کنی:
 
 ```text
-1. ClientContractVersion v1 را در Definition.details همان INBOUND_ROUTE یا INBOUND_ROUTE_GROUP تعریف کن.
+1. ClientContractVersion v1 را در Definition.details همان INBOUND تعریف کن.
 2. path بدون version مثل /card/inquiry را برای v1 نگه دار.
 3. decoder/encoder/faultEncoder سازگار با CM قدیمی را معرفی کن.
 4. service layer را تغییر نده.
@@ -472,10 +472,11 @@ Gateway را تغییر نده.
 ## CMNEW-119 Runtime Clarifications
 
 - New deployments should use `scm.runtime.gateway-name` as the runtime key. `scm.app-name` is still read only as a legacy fallback.
-- For `domain.*` runtimes, only `SVC_DOMAIN_MEMBER` rows define membership. `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never add a service to a domain.
+- For `domain.*` runtimes, only `SVC_DOMAIN_MEMBER` rows define membership. `INBOUND` and `API_DOC` never add a service to a domain.
 - A domain runtime creates one service route per `Service`. If several `SVC_DOMAIN_MEMBER` rows point at the same service for different channels, the runtime keeps those member `ChannelServiceAccess` records as metadata and still builds only one service route.
-- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SVC_DOMAIN_MEMBER` is membership only, and `API_DOCUMENTATION` does not expose a gateway route.
-- Client contracts belong on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP`. A `contract` under `SVC_DOMAIN_MEMBER` is ignored and logged as a warning.
+- Every active `channel.*` and `domain.*` service plan must have at least one `INBOUND` definition and at least one `API_DOC` definition. `SVC_DOMAIN_MEMBER` is membership only, and `API_DOC` does not expose a gateway route.
+- Multiple gateway routes for the same service are modeled as multiple `INBOUND` definitions.
+- Client contracts belong on `INBOUND`. A `contract` under `SVC_DOMAIN_MEMBER` or `API_DOC` is ignored and logged as a warning.
 - Client contract version is path-based. A route without `/vN/` is `v1`; a route that starts with `/v2/` is `v2`; explicit `Definition.details.version` wins when valid.
 - `ContractStyle` is intentionally not part of SCM, and `versionSelector` is not required in the current path-based phase.
 - Gateway route IDs include the contract version, while service route URIs stay version-agnostic by default.
