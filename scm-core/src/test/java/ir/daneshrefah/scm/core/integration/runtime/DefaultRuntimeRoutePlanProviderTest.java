@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,18 @@ class DefaultRuntimeRoutePlanProviderTest {
             operationRepository,
             operationMapper,
             new ObjectMapper());
+
+    @Test
+    void channelServiceDefinitionTypeContainsOnlyFinalV9Values() {
+        assertArrayEquals(
+                new ChannelServiceDefinitionType[]{
+                        ChannelServiceDefinitionType.INBOUND_ROUTE,
+                        ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP,
+                        ChannelServiceDefinitionType.API_DOCUMENTATION,
+                        ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER
+                },
+                ChannelServiceDefinitionType.values());
+    }
 
     @Test
     void channelPlanLoadsServicesFromChannelAccess() {
@@ -88,7 +101,7 @@ class DefaultRuntimeRoutePlanProviderTest {
         ChannelServiceAccess access = activeAccess();
         ChannelServiceDefinition memberDefinition = definition(
                 access,
-                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER,
                 "member-1");
         ChannelServiceDefinition routeDefinition = definition(
                 access,
@@ -117,7 +130,7 @@ class DefaultRuntimeRoutePlanProviderTest {
         ChannelServiceAccess access = activeAccess();
         ChannelServiceDefinition memberDefinition = definition(
                 access,
-                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER,
                 "member-1");
         ChannelServiceDefinition routeGroupDefinition = definition(
                 access,
@@ -152,7 +165,7 @@ class DefaultRuntimeRoutePlanProviderTest {
                 IllegalStateException.class,
                 () -> provider.provide(gatewayChannel));
 
-        assertTrue(exception.getMessage().contains("No SERVICE_DOMAIN_MEMBER definitions"));
+        assertTrue(exception.getMessage().contains("No SVC_DOMAIN_MEMBER definitions"));
     }
 
     @Test
@@ -165,7 +178,7 @@ class DefaultRuntimeRoutePlanProviderTest {
 
         when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
         when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
-                definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "member-1")));
+                definition(access, ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER, "member-1")));
         when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
         when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
 
@@ -176,7 +189,7 @@ class DefaultRuntimeRoutePlanProviderTest {
         assertTrue(exception.getMessage().contains("gatewayName=domain.card"));
         assertTrue(exception.getMessage().contains("serviceCode=card"));
         assertTrue(exception.getMessage().contains("missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP"));
-        assertTrue(exception.getMessage().contains("SERVICE_DOMAIN_MEMBER is membership only"));
+        assertTrue(exception.getMessage().contains("SVC_DOMAIN_MEMBER is membership only"));
     }
 
     @Test
@@ -189,7 +202,7 @@ class DefaultRuntimeRoutePlanProviderTest {
 
         when(kindResolver.resolve(gatewayChannel)).thenReturn(RuntimeTargetKind.SERVICE_DOMAIN);
         when(definitionService.findDefinitions(gatewayChannel)).thenReturn(List.of(
-                definition(access, ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER, "member-1"),
+                definition(access, ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER, "member-1"),
                 definition(access, ChannelServiceDefinitionType.API_DOCUMENTATION, "api-doc-1")));
         when(operationRepository.findAllByService_Id(access.getService().getId())).thenReturn(List.of(operationEntity));
         when(operationMapper.toModel(operationEntity)).thenReturn(serviceOperation);
@@ -208,11 +221,11 @@ class DefaultRuntimeRoutePlanProviderTest {
         ChannelServiceAccess internetAccess = activeAccess(101L, "ib", "card", (short) 10);
         ChannelServiceDefinition mobileMember = definition(
                 mobileAccess,
-                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER,
                 "member-mb");
         ChannelServiceDefinition internetMember = definition(
                 internetAccess,
-                ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER,
+                ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER,
                 "member-ib");
         ChannelServiceDefinition routeDefinition = definition(
                 mobileAccess,

@@ -157,11 +157,11 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
     }
 
     private boolean isInboundRoute(ChannelServiceDefinitionType type) {
-        return type == ChannelServiceDefinitionType.INBOUND_ROUTE || type == ChannelServiceDefinitionType.REST;
+        return type == ChannelServiceDefinitionType.INBOUND_ROUTE;
     }
 
     private boolean isInboundRouteGroup(ChannelServiceDefinitionType type) {
-        return type == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP || type == ChannelServiceDefinitionType.REST_MULTIPLE;
+        return type == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP;
     }
 
 }

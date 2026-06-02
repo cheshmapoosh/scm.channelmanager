@@ -82,14 +82,14 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                 .ofNullable(channelServiceDefinitionService.findDefinitions(gatewayChannel))
                 .orElse(List.of());
         List<ChannelServiceDefinition> membershipDefinitions = definitions.stream()
-                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER)
+                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER)
                 .filter(definition -> definition.getChannelServiceAccess() != null)
                 .filter(definition -> definition.getChannelServiceAccess().getId() != null)
                 .peek(this::warnIgnoredMembershipContract)
                 .toList();
 
         if (membershipDefinitions.isEmpty()) {
-            throw new IllegalStateException("No SERVICE_DOMAIN_MEMBER definitions found for domain runtime "
+            throw new IllegalStateException("No SVC_DOMAIN_MEMBER definitions found for domain runtime "
                     + gatewayChannel.getName());
         }
 
@@ -144,9 +144,7 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
 
     private boolean isInboundRouteDefinition(ChannelServiceDefinition definition) {
         return definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE
-                || definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP
-                || definition.getType() == ChannelServiceDefinitionType.REST
-                || definition.getType() == ChannelServiceDefinitionType.REST_MULTIPLE;
+                || definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP;
     }
 
     private String serviceKey(ChannelServiceAccess access) {
@@ -176,7 +174,7 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                 + gatewayChannel.getName()
                 + " "
                 + serviceRef
-                + ": missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP. SERVICE_DOMAIN_MEMBER is membership only.");
+                + ": missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP. SVC_DOMAIN_MEMBER is membership only.");
     }
 
     private void warnIgnoredMembershipContract(ChannelServiceDefinition definition) {
@@ -186,7 +184,7 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         try {
             JsonNode root = objectMapper.readTree(definition.getDefinition().getDetails());
             if (root.hasNonNull("contract")) {
-                log.warn("ClientContract under SERVICE_DOMAIN_MEMBER definition {} is ignored. "
+                log.warn("ClientContract under SVC_DOMAIN_MEMBER definition {} is ignored. "
                                 + "Define contracts on INBOUND_ROUTE or INBOUND_ROUTE_GROUP.",
                         definition.getId());
             }

@@ -31,7 +31,8 @@ Database:
 - v9 uses new `GatewayChannel.name` values: `channel.*` and `domain.*`.
 - v9 requires removing the old unique constraint on `CHANNEL_ID + PROTOCOL_TYPE`.
 - `GatewayChannel.name` remains the unique runtime key.
-- `ChannelServiceDefinitionType` column length must allow v9 values such as `SERVICE_DOMAIN_MEMBER`.
+- `SVC_DOMAIN_MEMBER` is the final domain-membership enum name because of database size constraints.
+- The v9 Java `ChannelServiceDefinitionType` enum no longer contains the old `REST`, `REST_MULTIPLE` or `SWAGGER` values.
 
 Config Server:
 - Preferred runtime key is `scm.runtime.gateway-name`, for example `channel.mb` or `domain.card`.
@@ -78,11 +79,11 @@ Metrics:
 
 `domain.*`:
 - Load definitions from `TBL_SCM_CHN_SVC_DEFINITION` for the selected `GatewayChannel`.
-- Only `SERVICE_DOMAIN_MEMBER` definitions create domain membership.
+- Only `SVC_DOMAIN_MEMBER` definitions create domain membership.
 - `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never create domain membership.
 - Domain service routes are unique by `Service`; multiple member channels for the same service are collapsed into one service route and preserved as membership metadata.
-- If a domain runtime has no `SERVICE_DOMAIN_MEMBER` definitions, startup fails fast.
-- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SERVICE_DOMAIN_MEMBER` is membership only and `API_DOCUMENTATION` does not expose a route.
+- If a domain runtime has no `SVC_DOMAIN_MEMBER` definitions, startup fails fast.
+- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SVC_DOMAIN_MEMBER` is membership only and `API_DOCUMENTATION` does not expose a route.
 - `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` definitions may still define inbound REST routes and contracts for a member service.
 
 Runtime guards normalize channel codes before comparison:
@@ -94,23 +95,23 @@ Invalid `GatewayChannel.name` values fail fast. Protocol is always read from `Ga
 
 ## Enum Note
 
-v8 values:
+Historical v8 database values:
 - `REST`
 - `REST_MULTIPLE`
 - `SWAGGER`
 
-v9 values:
+Final v9 Java enum values:
 - `INBOUND_ROUTE`
 - `INBOUND_ROUTE_GROUP`
 - `API_DOCUMENTATION`
-- `SERVICE_DOMAIN_MEMBER`
+- `SVC_DOMAIN_MEMBER`
 
-Compatibility mapping:
+Historical mapping only:
 - `REST -> INBOUND_ROUTE`
 - `REST_MULTIPLE -> INBOUND_ROUTE_GROUP`
 - `SWAGGER -> API_DOCUMENTATION`
 
-Legacy enum values remain temporarily in Java for v8 compatibility. v9 `channel.*` and `domain.*` runtimes should use the purpose-based v9 values.
+Old v8 DB rows may still contain historical values, but v9 `channel.*` and `domain.*` runtimes must use new records with the final purpose-based enum values. The v9 Java enum does not keep the old values.
 
 ## Client Contract
 
@@ -118,7 +119,7 @@ Client contract is resolved per inbound route from `Definition.details.contract`
 
 Contract ownership:
 - `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` can define client contracts.
-- `SERVICE_DOMAIN_MEMBER` is membership metadata only. Any `contract` stored there is ignored and logged as a warning.
+- `SVC_DOMAIN_MEMBER` is membership metadata only. Any `contract` stored there is ignored and logged as a warning.
 - Current request/response contract encoders are REST-only. SOAP/TCP require protocol-specific contract decoders/encoders before they can use `GLOBAL_RESPONSE_HANDLER`.
 
 Versioning:
@@ -216,7 +217,7 @@ channelCode:"mb" AND correlationId:"<correlation-id>"
 
 1. Deploy database change that removes the old `CHANNEL_ID + PROTOCOL_TYPE` uniqueness and allows longer definition type values.
 2. Add v9 `GatewayChannel` records named `channel.*` or `domain.*`.
-3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types. Use `SERVICE_DOMAIN_MEMBER` only for domain membership.
+3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types. Use `SVC_DOMAIN_MEMBER` only for domain membership.
 4. Add route contracts and `version` in `Definition.details` on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` where client contract versions differ.
 5. Configure audit output path and Filebeat or Elastic Agent collection.
 6. Deploy application.
@@ -225,7 +226,7 @@ channelCode:"mb" AND correlationId:"<correlation-id>"
 ## Validation and Smoke Tests
 
 - Start app with `scm.runtime.gateway-name=channel.mb`; verify a channel service route is created.
-- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SERVICE_DOMAIN_MEMBER` definitions and `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure are routed.
+- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SVC_DOMAIN_MEMBER` definitions and `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure are routed.
 - Verify domain member services with only `API_DOCUMENTATION` fail startup validation.
 - Verify the legacy fallback still works with `scm.app-name=channel.mb` until config migration is complete.
 - Call `/card/inquiry` and verify it uses the v1 client contract.

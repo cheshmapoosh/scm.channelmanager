@@ -214,7 +214,7 @@ GatewayChannel.protocolType
 INBOUND_ROUTE
 INBOUND_ROUTE_GROUP
 API_DOCUMENTATION
-SERVICE_DOMAIN_MEMBER
+SVC_DOMAIN_MEMBER
 ```
 
 معنی هر کدام:
@@ -223,10 +223,10 @@ SERVICE_DOMAIN_MEMBER
 INBOUND_ROUTE          -> تعریف یک route ورودی
 INBOUND_ROUTE_GROUP    -> تعریف چند route ورودی برای یک service
 API_DOCUMENTATION      -> مستند API مثل Swagger/OpenAPI/WSDL/spec
-SERVICE_DOMAIN_MEMBER  -> عضویت یک ChannelServiceAccess در domain runtime
+SVC_DOMAIN_MEMBER      -> عضویت یک ChannelServiceAccess در domain runtime
 ```
 
-Mapping مفهومی از نسخه 8 به نسخه 9:
+مقادیر قدیمی نسخه 8 فقط به عنوان داده تاریخی مطرح هستند و دیگر در enum جاوا برای runtime نسخه 9 وجود ندارند. Mapping مفهومی historical:
 
 ```text
 REST           -> INBOUND_ROUTE
@@ -234,7 +234,7 @@ REST_MULTIPLE  -> INBOUND_ROUTE_GROUP
 SWAGGER        -> API_DOCUMENTATION
 ```
 
-رکوردهای قدیمی نسخه 8 نباید تغییر کنند. نسخه 9 باید با رکوردهای جدید مثل `channel.*` و `domain.*` کار کند.
+رکوردهای قدیمی نسخه 8 نباید تغییر کنند، اما runtime نسخه 9 باید با رکوردهای جدید مثل `channel.*` و `domain.*` و مقدارهای enum نهایی کار کند.
 
 ---
 
@@ -472,10 +472,10 @@ Gateway را تغییر نده.
 ## CMNEW-119 Runtime Clarifications
 
 - New deployments should use `scm.runtime.gateway-name` as the runtime key. `scm.app-name` is still read only as a legacy fallback.
-- For `domain.*` runtimes, only `SERVICE_DOMAIN_MEMBER` rows define membership. `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never add a service to a domain.
-- A domain runtime creates one service route per `Service`. If several `SERVICE_DOMAIN_MEMBER` rows point at the same service for different channels, the runtime keeps those member `ChannelServiceAccess` records as metadata and still builds only one service route.
-- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SERVICE_DOMAIN_MEMBER` is membership only, and `API_DOCUMENTATION` does not expose a gateway route.
-- Client contracts belong on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP`. A `contract` under `SERVICE_DOMAIN_MEMBER` is ignored and logged as a warning.
+- For `domain.*` runtimes, only `SVC_DOMAIN_MEMBER` rows define membership. `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never add a service to a domain.
+- A domain runtime creates one service route per `Service`. If several `SVC_DOMAIN_MEMBER` rows point at the same service for different channels, the runtime keeps those member `ChannelServiceAccess` records as metadata and still builds only one service route.
+- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SVC_DOMAIN_MEMBER` is membership only, and `API_DOCUMENTATION` does not expose a gateway route.
+- Client contracts belong on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP`. A `contract` under `SVC_DOMAIN_MEMBER` is ignored and logged as a warning.
 - Client contract version is path-based. A route without `/vN/` is `v1`; a route that starts with `/v2/` is `v2`; explicit `Definition.details.version` wins when valid.
 - `ContractStyle` is intentionally not part of SCM, and `versionSelector` is not required in the current path-based phase.
 - Gateway route IDs include the contract version, while service route URIs stay version-agnostic by default.

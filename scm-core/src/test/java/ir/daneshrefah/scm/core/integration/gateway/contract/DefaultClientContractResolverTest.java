@@ -77,7 +77,7 @@ class DefaultClientContractResolverTest {
     }
 
     @Test
-    void ignoresContractUnderServiceDomainMember() {
+    void ignoresContractUnderSvcDomainMember() {
         ChannelServiceDefinition membershipDefinition = routeDefinition("""
                 {
                   "contract": {
@@ -88,7 +88,7 @@ class DefaultClientContractResolverTest {
                   }
                 }
                 """);
-        membershipDefinition.setType(ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER);
+        membershipDefinition.setType(ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER);
 
         ClientContract contract = resolver.resolve(restGateway(), membershipDefinition);
 

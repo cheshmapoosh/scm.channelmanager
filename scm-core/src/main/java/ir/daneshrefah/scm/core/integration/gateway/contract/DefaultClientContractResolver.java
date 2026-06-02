@@ -49,9 +49,9 @@ public class DefaultClientContractResolver implements ClientContractResolver {
             if (contract.isMissingNode() || contract.isNull()) {
                 return null;
             }
-            if (routeDefinition.getType() == ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER) {
-                log.warn("Ignoring ClientContract under SERVICE_DOMAIN_MEMBER definition {}. "
-                                + "Contracts belong to INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions.",
+            if (routeDefinition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER) {
+                log.warn("Ignoring ClientContract under SVC_DOMAIN_MEMBER definition {}. "
+                        + "Contracts belong to INBOUND_ROUTE or INBOUND_ROUTE_GROUP definitions.",
                         routeDefinition.getId());
                 return null;
             }
