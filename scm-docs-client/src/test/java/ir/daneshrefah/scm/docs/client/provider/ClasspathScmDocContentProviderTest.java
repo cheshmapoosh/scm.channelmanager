@@ -2,11 +2,13 @@ package ir.daneshrefah.scm.docs.client.provider;
 
 import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
+import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmDocType;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +33,30 @@ class ClasspathScmDocContentProviderTest {
         ClasspathScmDocContentProvider provider = provider(propertiesWithDocument("missing", "missing.md"));
 
         assertThat(provider.findById("missing")).isEmpty();
+    }
+
+    @Test
+    void usesGlobalModuleCodeWhenDocumentModuleCodeIsMissing() {
+        ScmDocsProperties properties = propertiesWithDocument("sample", "sample.md");
+        properties.setModuleCode("scm-web");
+
+        Collection<ScmDocDescriptor> documents = provider(properties).findAll();
+
+        assertThat(documents)
+                .extracting(ScmDocDescriptor::moduleCode)
+                .containsExactly("scm-web");
+    }
+
+    @Test
+    void fallsBackToScmWhenDocumentAndGlobalModuleCodesAreMissing() {
+        ScmDocsProperties properties = propertiesWithDocument("sample", "sample.md");
+        properties.setModuleCode(null);
+
+        Collection<ScmDocDescriptor> documents = provider(properties).findAll();
+
+        assertThat(documents)
+                .extracting(ScmDocDescriptor::moduleCode)
+                .containsExactly("scm");
     }
 
     @Test

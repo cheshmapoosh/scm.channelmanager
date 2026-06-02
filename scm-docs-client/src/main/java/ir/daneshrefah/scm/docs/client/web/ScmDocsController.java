@@ -69,10 +69,29 @@ public class ScmDocsController {
     private ResponseEntity<byte[]> toContentResponse(ScmDocContent content) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(content.mediaType()));
-        if (hasText(content.fileName())) {
-            headers.setContentDisposition(ContentDisposition.inline().filename(content.fileName()).build());
+        String safeFileName = safeFileName(content.fileName());
+        if (hasText(safeFileName)) {
+            headers.setContentDisposition(ContentDisposition.inline().filename(safeFileName).build());
         }
         return new ResponseEntity<>(content.body(), headers, HttpStatus.OK);
+    }
+
+    static String safeFileName(String fileName) {
+        if (!hasText(fileName)) {
+            return null;
+        }
+        String safeValue = fileName.trim()
+                .replace('\0', '_')
+                .replace('\r', '_')
+                .replace('\n', '_')
+                .replace('/', '_')
+                .replace('\\', '_');
+        while (safeValue.contains("..")) {
+            safeValue = safeValue.replace("..", "_");
+        }
+        safeValue = safeValue.replaceAll("_+", "_");
+        safeValue = trimUnsafeEdges(safeValue);
+        return hasText(safeValue) ? safeValue : null;
     }
 
     private List<ScmDocDescriptor> descriptorsWithHref() {
@@ -93,7 +112,18 @@ public class ScmDocsController {
         return locale == null ? null : locale.toLanguageTag();
     }
 
-    private boolean hasText(String value) {
+    private static String trimUnsafeEdges(String value) {
+        String trimmed = value;
+        while (trimmed.startsWith("_") || trimmed.startsWith(".")) {
+            trimmed = trimmed.substring(1);
+        }
+        while (trimmed.endsWith("_") || trimmed.endsWith(".")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private static boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
 }

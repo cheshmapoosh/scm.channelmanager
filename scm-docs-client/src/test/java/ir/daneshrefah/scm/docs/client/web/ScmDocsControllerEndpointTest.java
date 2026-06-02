@@ -42,7 +42,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "scm.docs.documents[1].category=API",
                 "scm.docs.documents[1].classpath-location=openapi.json",
                 "scm.docs.documents[1].file-name=openapi.json",
-                "scm.docs.documents[1].order=20"
+                "scm.docs.documents[1].order=20",
+                "scm.docs.documents[2].id=unsafe-file",
+                "scm.docs.documents[2].module-code=scm-web",
+                "scm.docs.documents[2].title.en=Unsafe File",
+                "scm.docs.documents[2].type=MARKDOWN",
+                "scm.docs.documents[2].category=GUIDE",
+                "scm.docs.documents[2].classpath-location=sample.md",
+                "scm.docs.documents[2].file-name=../unsafe.md",
+                "scm.docs.documents[2].order=30"
         }
 )
 @AutoConfigureMockMvc
@@ -91,6 +99,13 @@ class ScmDocsControllerEndpointTest {
                 .andExpect(header().string("Content-Disposition", "inline; filename=\"openapi.json\""))
                 .andExpect(jsonPath("$.openapi").value("3.0.0"))
                 .andExpect(jsonPath("$.descriptor").doesNotExist());
+    }
+
+    @Test
+    void sanitizesUnsafeFileNameInContentDisposition() throws Exception {
+        mockMvc.perform(get("/docs/api/unsafe-file"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "inline; filename=\"unsafe.md\""));
     }
 
     @Test

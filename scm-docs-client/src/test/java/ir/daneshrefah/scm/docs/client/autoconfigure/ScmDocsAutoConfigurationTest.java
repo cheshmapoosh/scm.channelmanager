@@ -30,6 +30,15 @@ class ScmDocsAutoConfigurationTest {
     }
 
     @Test
+    void createsExpectedBeansWhenEnabled() {
+        contextRunner
+                .withPropertyValues("scm.docs.enabled=true")
+                .run(context -> assertThat(context)
+                        .hasSingleBean(ScmDocsController.class)
+                        .hasSingleBean(ScmDocsRegistry.class));
+    }
+
+    @Test
     void backsOffWhenDisabled() {
         contextRunner
                 .withPropertyValues("scm.docs.enabled=false")
