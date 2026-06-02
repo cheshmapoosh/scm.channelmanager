@@ -3,12 +3,15 @@ package ir.daneshrefah.scm.docs.client.provider;
 import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
+import ir.daneshrefah.scm.docs.client.model.ScmDocType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -56,13 +59,18 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
 
         try {
             ScmDocDescriptor descriptor = toDescriptor(document);
+            byte[] body;
+            try (InputStream inputStream = resource.getInputStream()) {
+                body = inputStream.readAllBytes();
+            }
             return Optional.of(new ScmDocContent(
                     descriptor,
-                    resource.getContentAsString(StandardCharsets.UTF_8),
-                    descriptor.type().getContentType()
+                    body,
+                    descriptor.mediaType(),
+                    descriptor.fileName()
             ));
         } catch (IOException exception) {
-            throw new UncheckedIOException("Could not read SCM documentation resource " + resourceLocation, exception);
+            throw new UncheckedIOException("Could not read SCM documentation resource", exception);
         }
     }
 
@@ -79,12 +87,20 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
     }
 
     private ScmDocDescriptor toDescriptor(ScmDocsProperties.Document document) {
+        ScmDocType type = document.getType() == null ? ScmDocType.MARKDOWN : document.getType();
         return new ScmDocDescriptor(
                 document.getId(),
+                firstText(document.getModuleCode(), properties.getModuleCode()),
+                document.getServiceCode(),
+                document.getVersion(),
+                document.getCategory(),
+                type,
                 document.getTitle(),
                 document.getDescription(),
-                document.getType(),
-                document.getCategory()
+                document.getMediaType(),
+                document.getFileName(),
+                firstText(document.getHref(), hrefFor(document.getId())),
+                document.getOrder()
         );
     }
 
@@ -92,7 +108,8 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
         String root = normalizePath(properties.getClasspathRoot(), "classpathRoot");
         String location = document.getClasspathLocation();
         if (!StringUtils.hasText(location)) {
-            location = document.getId() + toDescriptor(document).type().getDefaultExtension();
+            ScmDocType type = document.getType() == null ? ScmDocType.MARKDOWN : document.getType();
+            location = document.getId() + type.getDefaultExtension();
         }
         location = removeClasspathPrefix(location.trim());
         rejectUnsafePathSegments(location.replace('\\', '/'), "classpathLocation");
@@ -100,7 +117,7 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
         Path rootPath = Path.of(root).normalize();
         Path resolvedPath = rootPath.resolve(location.replace('\\', '/')).normalize();
         if (!resolvedPath.startsWith(rootPath)) {
-            throw new IllegalArgumentException("Classpath documentation location must stay under " + root);
+            throw new IllegalArgumentException("Classpath documentation location must stay under configured root");
         }
 
         String resolved = resolvedPath.toString().replace('\\', '/');
@@ -149,7 +166,7 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
             throw new IllegalArgumentException(name + " contains an unsafe null byte");
         }
         String normalized = value.replace('\\', '/');
-        if (normalized.startsWith("/") || normalized.contains("//")) {
+        if (normalized.startsWith("/") || normalized.matches("^[A-Za-z]:/.*") || normalized.contains("//")) {
             throw new IllegalArgumentException(name + " must be a relative classpath path");
         }
         for (String segment : normalized.split("/")) {
@@ -157,5 +174,20 @@ public class ClasspathScmDocContentProvider implements ScmDocCatalogProvider, Sc
                 throw new IllegalArgumentException(name + " must not contain path traversal segments");
             }
         }
+    }
+
+    private String hrefFor(String docId) {
+        return properties.normalizedBasePath() + "/api/" + urlEncode(docId);
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private String firstText(String first, String second) {
+        if (StringUtils.hasText(first)) {
+            return first.trim();
+        }
+        return StringUtils.hasText(second) ? second.trim() : null;
     }
 }

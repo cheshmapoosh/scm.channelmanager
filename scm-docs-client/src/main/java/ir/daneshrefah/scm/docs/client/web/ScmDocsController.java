@@ -2,7 +2,10 @@ package ir.daneshrefah.scm.docs.client.web;
 
 import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
+import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
 import ir.daneshrefah.scm.docs.client.registry.ScmDocsRegistry;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -32,25 +39,61 @@ public class ScmDocsController {
     }
 
     @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
-    public String docs() {
-        return htmlRenderer.render(properties.getTitle(), properties.normalizedBasePath(), registry.findAll());
+    public String docs(Locale locale) {
+        return htmlRenderer.render(
+                properties.getTitle(),
+                languageFrom(locale),
+                properties.normalizedBasePath(),
+                descriptorsWithHref()
+        );
     }
 
     @GetMapping(path = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> apiIndex() {
-        return Map.of("documents", registry.findAll());
+        return Map.of("documents", descriptorsWithHref());
     }
 
-    @GetMapping(path = "/api/{docId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ScmDocContent> apiContent(@PathVariable String docId) {
+    @GetMapping(path = "/api/{docId}")
+    public ResponseEntity<byte[]> apiContent(@PathVariable String docId) {
         return registry.findById(docId)
-                .map(ResponseEntity::ok)
+                .map(this::toContentResponse)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> invalidRequest(IllegalArgumentException exception) {
-        return Map.of("error", exception.getMessage());
+        return Map.of("error", "Invalid documentation request");
+    }
+
+    private ResponseEntity<byte[]> toContentResponse(ScmDocContent content) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(content.mediaType()));
+        if (hasText(content.fileName())) {
+            headers.setContentDisposition(ContentDisposition.inline().filename(content.fileName()).build());
+        }
+        return new ResponseEntity<>(content.body(), headers, HttpStatus.OK);
+    }
+
+    private List<ScmDocDescriptor> descriptorsWithHref() {
+        return registry.findAll().stream()
+                .map(descriptor -> descriptor.withHref(hrefFor(descriptor.id())))
+                .toList();
+    }
+
+    private String hrefFor(String docId) {
+        return properties.normalizedBasePath() + "/api/" + urlEncode(docId);
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private String languageFrom(Locale locale) {
+        return locale == null ? null : locale.toLanguageTag();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

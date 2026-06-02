@@ -1,22 +1,27 @@
 package ir.daneshrefah.scm.docs.client.model;
 
 public enum ScmDocType {
-    MARKDOWN("text/markdown", ".md"),
-    HTML("text/html", ".html"),
-    TEXT("text/plain", ".txt"),
-    JSON("application/json", ".json");
+    OPENAPI_JSON("application/json", ".json"),
+    WSDL("application/xml", ".wsdl"),
+    ISO8583_SCHEMA("application/json", ".json"),
+    MARKDOWN("text/markdown; charset=UTF-8", ".md"),
+    HTML("text/html; charset=UTF-8", ".html");
 
-    private final String contentType;
+    private final String defaultMediaType;
 
     private final String defaultExtension;
 
-    ScmDocType(String contentType, String defaultExtension) {
-        this.contentType = contentType;
+    ScmDocType(String defaultMediaType, String defaultExtension) {
+        this.defaultMediaType = defaultMediaType;
         this.defaultExtension = defaultExtension;
     }
 
+    public String getDefaultMediaType() {
+        return defaultMediaType;
+    }
+
     public String getContentType() {
-        return contentType;
+        return defaultMediaType;
     }
 
     public String getDefaultExtension() {

@@ -6,7 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @ConfigurationProperties(prefix = "scm.docs")
 public class ScmDocsProperties {
@@ -15,7 +17,9 @@ public class ScmDocsProperties {
 
     private String basePath = "/docs";
 
-    private String title = "SCM Documentation";
+    private String moduleCode = "scm";
+
+    private final Map<String, String> title = new LinkedHashMap<>(Map.of("en", "SCM Documentation"));
 
     private String classpathRoot = "scm-docs";
 
@@ -37,12 +41,23 @@ public class ScmDocsProperties {
         this.basePath = basePath;
     }
 
-    public String getTitle() {
+    public String getModuleCode() {
+        return moduleCode;
+    }
+
+    public void setModuleCode(String moduleCode) {
+        this.moduleCode = moduleCode;
+    }
+
+    public Map<String, String> getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setTitle(Map<String, String> title) {
+        this.title.clear();
+        if (title != null) {
+            this.title.putAll(title);
+        }
     }
 
     public String getClasspathRoot() {
@@ -75,13 +90,27 @@ public class ScmDocsProperties {
 
         private String id;
 
-        private String title;
+        private String moduleCode;
 
-        private String description;
+        private String serviceCode;
+
+        private String version;
+
+        private ScmDocCategory category = ScmDocCategory.GUIDE;
 
         private ScmDocType type = ScmDocType.MARKDOWN;
 
-        private ScmDocCategory category = ScmDocCategory.GENERAL;
+        private final Map<String, String> title = new LinkedHashMap<>();
+
+        private final Map<String, String> description = new LinkedHashMap<>();
+
+        private String mediaType;
+
+        private String fileName;
+
+        private String href;
+
+        private int order;
 
         private String classpathLocation;
 
@@ -93,20 +122,36 @@ public class ScmDocsProperties {
             this.id = id;
         }
 
-        public String getTitle() {
-            return title;
+        public String getModuleCode() {
+            return moduleCode;
         }
 
-        public void setTitle(String title) {
-            this.title = title;
+        public void setModuleCode(String moduleCode) {
+            this.moduleCode = moduleCode;
         }
 
-        public String getDescription() {
-            return description;
+        public String getServiceCode() {
+            return serviceCode;
         }
 
-        public void setDescription(String description) {
-            this.description = description;
+        public void setServiceCode(String serviceCode) {
+            this.serviceCode = serviceCode;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public ScmDocCategory getCategory() {
+            return category;
+        }
+
+        public void setCategory(ScmDocCategory category) {
+            this.category = category;
         }
 
         public ScmDocType getType() {
@@ -117,12 +162,58 @@ public class ScmDocsProperties {
             this.type = type;
         }
 
-        public ScmDocCategory getCategory() {
-            return category;
+        public Map<String, String> getTitle() {
+            return title;
         }
 
-        public void setCategory(ScmDocCategory category) {
-            this.category = category;
+        public void setTitle(Map<String, String> title) {
+            this.title.clear();
+            if (title != null) {
+                this.title.putAll(title);
+            }
+        }
+
+        public Map<String, String> getDescription() {
+            return description;
+        }
+
+        public void setDescription(Map<String, String> description) {
+            this.description.clear();
+            if (description != null) {
+                this.description.putAll(description);
+            }
+        }
+
+        public String getMediaType() {
+            return mediaType;
+        }
+
+        public void setMediaType(String mediaType) {
+            this.mediaType = mediaType;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String getHref() {
+            return href;
+        }
+
+        public void setHref(String href) {
+            this.href = href;
+        }
+
+        public int getOrder() {
+            return order;
+        }
+
+        public void setOrder(int order) {
+            this.order = order;
         }
 
         public String getClasspathLocation() {

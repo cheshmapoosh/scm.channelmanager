@@ -6,11 +6,13 @@ import org.springframework.util.StringUtils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 public class ScmDocsHtmlRenderer {
 
-    public String render(String title, String basePath, List<ScmDocDescriptor> documents) {
-        String pageTitle = StringUtils.hasText(title) ? title : "SCM Documentation";
+    public String render(Map<String, String> title, String language, String basePath, List<ScmDocDescriptor> documents) {
+        Map<String, String> pageTitleValues = ScmDocDescriptor.normalizeMap(title, Map.of("en", "SCM Documentation"));
+        String pageTitle = ScmDocDescriptor.localizedValue(pageTitleValues, language, "SCM Documentation");
         String normalizedBasePath = normalizeBasePath(basePath);
         StringBuilder html = new StringBuilder(2048);
         html.append("""
@@ -48,18 +50,19 @@ public class ScmDocsHtmlRenderer {
                         <tbody>
                     """);
             for (ScmDocDescriptor document : documents) {
+                String href = StringUtils.hasText(document.href())
+                        ? document.href()
+                        : normalizedBasePath + "/api/" + urlEncode(document.id());
                 html.append("    <tr><td><a href=\"")
-                        .append(escapeHtml(normalizedBasePath))
-                        .append("/api/")
-                        .append(urlEncode(document.id()))
+                        .append(escapeHtml(href))
                         .append("\">")
-                        .append(escapeHtml(document.title()))
+                        .append(escapeHtml(document.titleFor(language)))
                         .append("</a></td><td>")
                         .append(escapeHtml(document.category().name()))
                         .append("</td><td>")
                         .append(escapeHtml(document.type().name()))
                         .append("</td><td>")
-                        .append(escapeHtml(document.description()))
+                        .append(escapeHtml(document.descriptionFor(language)))
                         .append("</td></tr>\n");
             }
             html.append("""

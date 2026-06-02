@@ -1,10 +1,9 @@
 package ir.daneshrefah.scm.docs.client.model;
 
 public enum ScmDocCategory {
-    GENERAL,
     API,
-    OPERATIONS,
+    GUIDE,
     CHANGE_MANAGEMENT,
-    RELEASE_NOTES,
-    SECURITY
+    RELEASE_NOTE,
+    PLATFORM
 }

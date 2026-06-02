@@ -31,8 +31,9 @@ public class ScmDocsRegistry {
         }
         return descriptorsById.values().stream()
                 .sorted(Comparator
-                        .comparing(ScmDocDescriptor::category)
-                        .thenComparing(ScmDocDescriptor::title)
+                        .comparingInt(ScmDocDescriptor::order)
+                        .thenComparing(ScmDocDescriptor::category)
+                        .thenComparing(document -> document.titleFor("en"))
                         .thenComparing(ScmDocDescriptor::id))
                 .toList();
     }
