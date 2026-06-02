@@ -1,8 +1,17 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-
+import ir.daneshrefah.scm.common.constant.TerminalType
+import ir.daneshrefah.scm.common.model.customer.Card
+import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
+import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
+import ir.daneshrefah.scm.utils.string.StringUtils;
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
+import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
+import ir.daneshrefah.scm.provider.shetab.iso.util.RequestType
+import ir.daneshrefah.scm.provider.shetab.iso.util.ProcessCode
 
 def requestTypeProcessCodeHashMap = [:]
 requestTypeProcessCodeHashMap.put("FUND_TRANSFER", "40")
@@ -28,7 +37,6 @@ def additionalInformation = body.additionalInformation
 def pin = trk2EquivData == null ? null : trk2EquivData.pin
 def cvv2 = trk2EquivData == null ? null : trk2EquivData.cvv2
 def cardExpirationYearMonth = trk2EquivData == null ? null : trk2EquivData.cardExpirationYearMonth
-def PIN_KEY = "hps_pin_key";
 def srcCard = card.sourceCardNumber
 def reqType = body.requestType
 def transmissionDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
@@ -37,7 +45,6 @@ def localTransactionDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPa
 def stan = sprintf("%06d", System.currentTimeMillis() % 1_000_000)
 def rrn = sprintf("%012d", System.currentTimeMillis() % 1_000_000_000_000L);
 def amount = body.amount
-
 
 def fixSize = { str, len ->
     {
@@ -49,408 +56,18 @@ def fixSize = { str, len ->
     }
 }
 
-def padZeroLeft = { str, length ->
-    {
-        if (str.isEmpty()) {
-            return "";
-        }
-        while (str.length() < length) {
-            str = " " + str;
-        }
-        return str;
-    }
-}
+//def padZeroLeft = { str, length ->
+//    {
+//        if (str.isEmpty()) {
+//            return "";
+//        }
+//        while (str.length() < length) {
+//            str = " " + str;
+//        }
+//        return str;
+//    }
+//}
 
-def cvrtUTFToAscii1256Encoding = { src ->
-    {
-        def dest = "";
-
-        for (def index = 0; index < src.length(); ++index) {
-            switch (src.charAt(index)) {
-                case '،':
-                    dest = dest + '¡';
-                    break;
-                case '؛':
-                    dest = dest + 'º';
-                    break;
-                case '؟':
-                    dest = dest + '¿';
-                    break;
-                case 'ء':
-                    dest = dest + 'Á';
-                    break;
-                case 'آ':
-                    dest = dest + 'Â';
-                    break;
-                case 'أ':
-                    dest = dest + 'Ã';
-                    break;
-                case 'ؤ':
-                    dest = dest + 'Ä';
-                    break;
-                case 'إ':
-                    dest = dest + 'Å';
-                    break;
-                case 'ئ':
-                    dest = dest + 'Æ';
-                    break;
-                case 'ا':
-                    dest = dest + 'Ç';
-                    break;
-                case 'ب':
-                    dest = dest + 'È';
-                    break;
-                case 'ت':
-                    dest = dest + 'Ê';
-                    break;
-                case 'ث':
-                    dest = dest + 'Ë';
-                    break;
-                case 'ج':
-                    dest = dest + 'Ì';
-                    break;
-                case 'ح':
-                    dest = dest + 'Í';
-                    break;
-                case 'خ':
-                    dest = dest + 'Î';
-                    break;
-                case 'د':
-                    dest = dest + 'Ï';
-                    break;
-                case 'ذ':
-                    dest = dest + 'Ð';
-                    break;
-                case 'ر':
-                    dest = dest + 'Ñ';
-                    break;
-                case 'ز':
-                    dest = dest + 'Ò';
-                    break;
-                case 'س':
-                    dest = dest + 'Ó';
-                    break;
-                case 'ش':
-                    dest = dest + 'Ô';
-                    break;
-                case 'ص':
-                    dest = dest + 'Õ';
-                    break;
-                case 'ض':
-                    dest = dest + 'Ö';
-                    break;
-                case 'ط':
-                    dest = dest + 'Ø';
-                    break;
-                case 'ظ':
-                    dest = dest + 'Ù';
-                    break;
-                case 'ع':
-                    dest = dest + 'Ú';
-                    break;
-                case 'غ':
-                    dest = dest + 'Û';
-                    break;
-                case 'ف':
-                    dest = dest + 'Ý';
-                    break;
-                case 'ق':
-                    dest = dest + 'Þ';
-                    break;
-                case 'ك':
-                    dest = dest + 'ß';
-                    break;
-                case 'ل':
-                    dest = dest + 'á';
-                    break;
-                case 'م':
-                    dest = dest + 'ã';
-                    break;
-                case 'ن':
-                    dest = dest + 'ä';
-                    break;
-                case 'ه':
-                    dest = dest + 'å';
-                    break;
-                case 'و':
-                    dest = dest + 'æ';
-                    break;
-                case 'ى':
-                    dest = dest + 'ì';
-                    break;
-                case 'ي':
-                    dest = dest + 'í';
-                    break;
-                case '٠':
-                    dest = dest + '0';
-                    break;
-                case '١':
-                    dest = dest + '1';
-                    break;
-                case '٢':
-                    dest = dest + '2';
-                    break;
-                case '٣':
-                    dest = dest + '3';
-                    break;
-                case '٤':
-                    dest = dest + '4';
-                    break;
-                case '٥':
-                    dest = dest + '5';
-                    break;
-                case '٦':
-                    dest = dest + '6';
-                    break;
-                case '٧':
-                    dest = dest + '7';
-                    break;
-                case '٨':
-                    dest = dest + '8';
-                    break;
-                case '٩':
-                    dest = dest + '9';
-                    break;
-                case '٪':
-                    dest = dest + '%';
-                    break;
-                case 'ٸ':
-                    dest = dest + '+';
-                    break;
-                case 'پ':
-                    dest = dest + '\u0081';
-                    break;
-                case 'چ':
-                    dest = dest + '\u008d';
-                    break;
-                case 'ژ':
-                    dest = dest + '\u008e';
-                    break;
-                case 'ک':
-                    dest = dest + '\u0098';
-                    break;
-                case 'ڪ':
-                    dest = dest + 'ß';
-                    break;
-                case 'گ':
-                    dest = dest + '\u0090';
-                    break;
-                case 'ھ':
-                    dest = dest + 'À';
-                    break;
-                case 'ی':
-                    dest = dest + 'í';
-                    break;
-                case 'ۙ':
-                    dest = dest + 'á';
-                    break;
-                case '۰':
-                    dest = dest + '0';
-                    break;
-                case '۱':
-                    dest = dest + '1';
-                    break;
-                case '۲':
-                    dest = dest + '2';
-                    break;
-                case '۳':
-                    dest = dest + '3';
-                    break;
-                case '۴':
-                    dest = dest + '4';
-                    break;
-                case '۵':
-                    dest = dest + '5';
-                    break;
-                case '۶':
-                    dest = dest + '6';
-                    break;
-                case '۷':
-                    dest = dest + '7';
-                    break;
-                case '۸':
-                    dest = dest + '8';
-                    break;
-                case '۹':
-                    dest = dest + '9';
-                    break;
-                case '؍':
-                case '؎':
-                case '؏':
-                case 'ؐ':
-                case 'ؑ':
-                case 'ؒ':
-                case 'ؓ':
-                case 'ؔ':
-                case 'ؕ':
-                case 'ؖ':
-                case 'ؗ':
-                case 'ؘ':
-                case 'ؙ':
-                case 'ؚ':
-                case '\u061c':
-                case '؝':
-                case '؞':
-                case 'ؠ':
-                case 'ة':
-                case 'ػ':
-                case 'ؼ':
-                case 'ؽ':
-                case 'ؾ':
-                case 'ؿ':
-                case 'ـ':
-                case 'ً':
-                case 'ٌ':
-                case 'ٍ':
-                case 'َ':
-                case 'ُ':
-                case 'ِ':
-                case 'ّ':
-                case 'ْ':
-                case 'ٓ':
-                case 'ٔ':
-                case 'ٕ':
-                case 'ٖ':
-                case 'ٗ':
-                case '٘':
-                case 'ٙ':
-                case 'ٚ':
-                case 'ٛ':
-                case 'ٜ':
-                case 'ٝ':
-                case 'ٞ':
-                case 'ٟ':
-                case '٫':
-                case '٬':
-                case '٭':
-                case 'ٮ':
-                case 'ٯ':
-                case 'ٰ':
-                case 'ٱ':
-                case 'ٲ':
-                case 'ٳ':
-                case 'ٴ':
-                case 'ٵ':
-                case 'ٶ':
-                case 'ٷ':
-                case 'ٹ':
-                case 'ٺ':
-                case 'ٻ':
-                case 'ټ':
-                case 'ٽ':
-                case 'ٿ':
-                case 'ڀ':
-                case 'ځ':
-                case 'ڂ':
-                case 'ڃ':
-                case 'ڄ':
-                case 'څ':
-                case 'ڇ':
-                case 'ڈ':
-                case 'ډ':
-                case 'ڊ':
-                case 'ڋ':
-                case 'ڌ':
-                case 'ڍ':
-                case 'ڎ':
-                case 'ڏ':
-                case 'ڐ':
-                case 'ڑ':
-                case 'ڒ':
-                case 'ړ':
-                case 'ڔ':
-                case 'ڕ':
-                case 'ږ':
-                case 'ڗ':
-                case 'ڙ':
-                case 'ښ':
-                case 'ڛ':
-                case 'ڜ':
-                case 'ڝ':
-                case 'ڞ':
-                case 'ڟ':
-                case 'ڠ':
-                case 'ڡ':
-                case 'ڢ':
-                case 'ڣ':
-                case 'ڤ':
-                case 'ڥ':
-                case 'ڦ':
-                case 'ڧ':
-                case 'ڨ':
-                case 'ګ':
-                case 'ڬ':
-                case 'ڭ':
-                case 'ڮ':
-                case 'ڰ':
-                case 'ڱ':
-                case 'ڲ':
-                case 'ڳ':
-                case 'ڴ':
-                case 'ڵ':
-                case 'ڶ':
-                case 'ڷ':
-                case 'ڸ':
-                case 'ڹ':
-                case 'ں':
-                case 'ڻ':
-                case 'ڼ':
-                case 'ڽ':
-                case 'ڿ':
-                case 'ۀ':
-                case 'ہ':
-                case 'ۂ':
-                case 'ۃ':
-                case 'ۄ':
-                case 'ۅ':
-                case 'ۆ':
-                case 'ۇ':
-                case 'ۈ':
-                case 'ۉ':
-                case 'ۊ':
-                case 'ۋ':
-                case 'ۍ':
-                case 'ێ':
-                case 'ۏ':
-                case 'ې':
-                case 'ۑ':
-                case 'ے':
-                case 'ۓ':
-                case '۔':
-                case 'ە':
-                case 'ۖ':
-                case 'ۗ':
-                case 'ۘ':
-                case 'ۚ':
-                case 'ۛ':
-                case 'ۜ':
-                case '\u06dd':
-                case '۞':
-                case '۟':
-                case '۠':
-                case 'ۡ':
-                case 'ۢ':
-                case 'ۣ':
-                case 'ۤ':
-                case 'ۥ':
-                case 'ۦ':
-                case 'ۧ':
-                case 'ۨ':
-                case '۩':
-                case '۪':
-                case '۫':
-                case '۬':
-                case 'ۭ':
-                case 'ۮ':
-                case 'ۯ':
-                default:
-                    dest = dest + src.charAt(index);
-                    break;
-            }
-        }
-        return dest;
-    }
-}
 
 def computeBillType = { billId ->
     {
@@ -463,7 +80,7 @@ def computeBillType = { billId ->
         }
 
         def billTypeNumber = billId[billId.length() - 2..billId.length() - 2];
-        def originalBillType = padZeroLeft(billTypeNumber, 2);
+        def originalBillType = StringUtils.leftPad(String.valueOf(billTypeNumber), 2, ' ')
 
         if (originalBillType.equals("01")) {
             return "قبض آب";
@@ -489,62 +106,67 @@ def computeBillType = { billId ->
     }
 }
 
+
 def fillAdditionalInformation = {
     def additionalPrivateData = "";
     def processCode = requestTypeProcessCodeHashMap.get(reqType)
-    def tailoredCVV2 = trk2EquivData != null && !cvv2.isEmpty() ? fixSize(cvv2, 4) : "";
+    def tailoredCVV2 = trk2EquivData != null && cvv2 != null && !cvv2.isEmpty() ? fixSize(cvv2, 4) : "";
+    println("---step 1---")
     if (!tailoredCVV2.isEmpty()) {
+        println("---step 12---")
         additionalPrivateData = "P92" + cvv2 + tailoredCVV2
-        additionalPrivateData += "PRC" + padZeroLeft(processCode + "", 3) + processCode
+        println("---step 13---")
+        println("process code : " + processCode)
+        println("pad left : " + StringUtils.leftPadEmpty(String.valueOf(processCode), 3.intValue()))
+        additionalPrivateData += "PRC" + StringUtils.leftPadEmpty(String.valueOf(processCode), 3.intValue()) + processCode
     }
+    println("---step 14---")
 
-    def parse = null;
-    if (additionalInformation != null && !additionalInformation.isEmpty()) {
-        parse = new JsonSlurper().parseText(additionalInformation);
-    }
-    if (parse != null && (parse.containsKey("billId") || parse.containsKey("destinationCardNumber"))) {
-        if (reqType == "FUND_TRANSFER") {
-            def destinationCardNumber = parse.get("destinationCardNumber");
+    if (additionalInformation != null && !additionalInformation.isEmpty()
+            && (additionalInformation.containsKey("billId") || additionalInformation.containsKey("destinationCardNumber"))) {
+        if (reqType == RequestType.FUND_TRANSFER) {
+            def destinationCardNumber = additionalInformation.get("destinationCardNumber");
             if (destinationCardNumber != null && !destinationCardNumber.isEmpty()) {
-                additionalPrivateData += "CAD" + padZeroLeft(destinationCardNumber.length() + "", 3) + cvrtUTFToAscii1256Encoding(destinationCardNumber);
-            } else if (reqType == "PAYMENT" || reqType == "BILL_PAYMENT") {
-                def billId = parse.get("billId");
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(destinationCardNumber.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(destinationCardNumber);
+            } else if (reqType == RequestType.PAYMENT || reqType == RequestType.BILL_PAYMENT) {
+                def billId = additionalInformation.get("billId");
                 if (billId == null || billId.isEmpty()) {
                     throw new RuntimeException("Error in processing billID with data: <<" + billId + ">>");
                 }
                 def billType = computeBillType(billId);
-                additionalPrivateData += "CAD" + padZeroLeft(billType.length() + "", 3) + cvrtUTFToAscii1256Encoding(billType)
-            } else if (reqType == "GET_BALANCE") {
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(billType.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(billType)
+            } else if (reqType == RequestType.GET_BALANCE) {
                 def message = "مانده گیری"
-                additionalPrivateData += "CAD" + padZeroLeft(message.length() + "", 3) + cvrtUTFToAscii1256Encoding(message);
-            } else if (reqType == "MINI_STATEMENT") {
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
+            } else if (reqType == RequestType.MINI_STATEMENT) {
                 def message = "گردش حساب"
-                additionalPrivateData += "CAD" + padZeroLeft(message.length() + "", 3) + cvrtUTFToAscii1256Encoding(message);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
             }
         }
     } else {
         def billType;
         def message;
         switch (reqType) {
-            case "PAYMENT":
-            case "BILL_PAYMENT":
+            case RequestType.PAYMENT:
+            case RequestType.BILL_PAYMENT:
                 billType = computeBillType("");
-                additionalPrivateData += "CAD" + padZeroLeft(billType.length() + "", 3) + cvrtUTFToAscii1256Encoding(billType);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(billType.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(billType);
                 break;
-            case "MINI_STATEMENT":
+            case RequestType.MINI_STATEMENT:
                 message = "گردش حساب"
-                additionalPrivateData += "CAD" + padZeroLeft(message.length() + "", 3) + cvrtUTFToAscii1256Encoding(message);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
                 break;
-            case "FUND_TRANSFER":
+            case RequestType.FUND_TRANSFER:
                 billType = computeBillType("11");
-                additionalPrivateData += "CAD" + padZeroLeft(billType.length() + "", 3) + cvrtUTFToAscii1256Encoding(billType);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(billType.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(billType);
                 break;
-            case "GET_BALANCE":
+            case RequestType.GET_BALANCE:
                 message = "مانده گیری"
-                additionalPrivateData += "CAD" + padZeroLeft(message.length() + "", 3) + cvrtUTFToAscii1256Encoding(message);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.padlength()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
                 break;
         }
     }
+    println("additionalPrivateData : " + additionalPrivateData.toString())
     return additionalPrivateData.toString();
 }
 
@@ -553,62 +175,54 @@ def req = [:]
 //def field = [:]
 //def security = [:]
 
-req.put("0", "1100");
-req.put("2", srcCard);
-req.put("3", "320000");
-req.put("7", transmissionDateTime);
-req.put("11", stan);
-req.put("12", localTransactionDateTime);
-req.put("26", "6012");
-req.put("17", captureDate);
-req.put("32", "589463");
-req.put("19", "364");
-req.put("22", "61051061314C");
-req.put("24", reqType == "DYNAMIC_PIN" ? "101" : "260");
-req.put("33", srcCard[0..5]);
-req.put("37", rrn);
-req.put("41", "67777777"); // baraye mb (too nbk (nib) y chi digas)
-req.put("42", "   777777777600");
-req.put("43", "Refah Bank            Tehran       THRIR010010157171371502184852851");
-req.put("100", "589463");
-req.put("49", "364");
+req.put("mti", MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode());
+req.put(ISOField.PAN.getPosition(), srcCard);
+req.put(ISOField.PROCESSING_CODE.getPosition(), ProcessCode.CARD_PASSWORD_NOTIFICATION.getCode());
+req.put(ISOField.TRANSMISSON_DATE_TIME.getPosition(), transmissionDateTime);
+req.put(ISOField.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(), stan);
+req.put(ISOField.LOCAL_TRANSACTION_DATE_TIME.getProperties(), localTransactionDateTime);
+req.put(ISOField.CARD_ACCEPTOR_BUSINESS_CODE.getPosition(), CardConstant.CARD_ACCEPTOR_BUSINESS_CODE);
+req.put(ISOField.CAPTURE_DATE.getPosition(), captureDate);
+req.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
+req.put(ISOField.ACQUIRE_COUNTRY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
+req.put(ISOField.POINT_OF_SERVICE_DATA_CODE.getPosition(), CardConstant.DEFAULT_IB_POINT_OF_SERVICE_DATA);
+req.put(ISOField.FUNCTION_CODE.getPosition(), reqType == RequestType.DYNAMIC_PIN ? CardConstant.DYNAMIC_PIN_FUNCTION_CODE : CardConstant.FUNCTION_CODE);
+req.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), srcCard[0..5]);
+req.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn);
+
+def channelCode = exchange.getProperty('scmChannelCode')
+def isNBKChannel = TerminalType.NBK.getTerminalCode().equalsIgnoreCase(channelCode);
+if (isNBKChannel && Objects.equals(RequestType.BILL_PAYMENT, reqType)) {
+    req.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.BPG_CARD_ACCEPT_TERMINAL_ID);
+} else {
+    req.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID);
+}
+req.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE);
+req.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION);
+req.put(ISOField.ACQUIRE_INSTITUTE_CODE.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
+req.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
 
 def additionalPrivateData = "";
 if (pin != null && !pin.isEmpty()) {
-    req.put("52", "");//?????????encript pin
+    req.put(ISOField.PIN_DATA.getPosition(), CardSystemSecurityUtil.encryptPin(pin, srcCard));
 } else {
     additionalPrivateData = fillAdditionalInformation();
 }
-
 if (amount != null) {
-    req.put("4", amount)
-    req.put("6", amount)
+    req.put(ISOField.TRANSACTION_AMOUNT.getPosition(), amount)
+    req.put(ISOField.TRANSACTION_FEE_AMOUNT.getPosition(), amount)
 }
 
 if (!additionalPrivateData.toString().isEmpty()) {
-    req.put("48", additionalPrivateData)
+    req.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), additionalPrivateData)
 }
 
-def channelCode = exchange.getProperty('scmChannelCode')
-if (channelCode == 'IVR') {
-    req.put("14", "0000")
+if (channelCode == TerminalType.IVR.getTerminalCode()) {
+    req.put(ISOField.EXPIRY_DATE.getPosition(), "0000")
 } else {
-    req.put("14", trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
+    req.put(ISOField.EXPIRY_DATE.getPosition(), trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
 }
 
-
-//req.put("fields", field)
-
-//security.put("expiryDate", "");
-//security.put("cvv2", "");
-//security.put("pin", "");
-//security.put("expiryRequired", false);
-//security.put("cvv2Required", false);
-//security.put("pinRequired", false);
-//security.put("macRequired", false);
-//req.put("security", security)
-
-//println("tcp card inq rq: " + req)
-//println("tcp card inq rq json: " + JsonOutput.toJson(req))
+println("card pass inq rq :  " + req)
 
 return JsonOutput.toJson(req)

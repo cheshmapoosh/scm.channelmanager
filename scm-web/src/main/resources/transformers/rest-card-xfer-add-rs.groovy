@@ -1,6 +1,3 @@
-import ir.daneshrefah.scm.common.exception.CardError
-import ir.daneshrefah.scm.common.exception.NabError
-
 def body = exchange.in.body
 println("rest cardXferAdd rs transformer start provider body : " + body)
 

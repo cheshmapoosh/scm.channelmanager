@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.common.transformerUtil;
 
 import org.jpos.iso.ISOUtil;
-import org.springframework.beans.factory.annotation.Value;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -21,7 +20,7 @@ public class CardSystemSecurityUtil {
     private static final int SHORT_DES_LENGTH = 64;
     private static final int DOUBLE_DES_LENGTH = 128;
     private static final int TRIPLE_DES_LENGTH = 192;
-    private static String pinKey = "1C1C1C1C1C1C1C1C";
+    private static String pinKey = "1C1C1C1C1C1C1C1C";//////////////??????????????????
 
     public static String encryptPin(String pin, String cardNo) {
         return genPIN(pin, cardNo, pinKey);

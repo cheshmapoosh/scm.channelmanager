@@ -1,26 +1,50 @@
+import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
+import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
+
 import java.time.format.DateTimeFormatter
+import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
+import ir.daneshrefah.scm.utils.string.StringUtils
 
 def body = exchange.in.body
+if (!body instanceof Map) {
+    return
+}
+
+def mti = body.get("mti")
+println("tcp card inq rs mti : " + mti)
+if (!mti.toString().trim().equals(MTI.TRANSFER_RESPONSE_COMMAND.getCode())) {
+    throw new RuntimeException("tcp card inq rs : mti is null")
+}
+
 def fields = body.get("fields")
+println("tcp card inq rs fields : " + fields)
+if (fields == null) {
+    throw new RuntimeException("tcp card inq rs : fields is null")
+}
+
+println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
+if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
+    throw new RuntimeException("tcp card inq rs action code : " + fields["39"].toString())
+}
 
 def balance = fields["54"]
 def availableBalance = null
 def ledgerBalance = null
 def depositableAmount = null
 
-def unpadZero = { srcStr, pattern ->
-    {
-        if (!srcStr.isEmpty() && !pattern.isEmpty()) {
-            def destStr;
-            for (destStr = srcStr; destStr.length() >= pattern.length() && destStr[0..pattern.length() - 1] == pattern; destStr = destStr[pattern.length()..-1]) {
-            }
-
-            return destStr;
-        } else {
-            return srcStr;
-        }
-    }
-}
+//def unpadZero = { srcStr, pattern ->
+//    {
+//        if (!srcStr.isEmpty() && !pattern.isEmpty()) {
+//            def destStr;
+//            for (destStr = srcStr; destStr.length() >= pattern.length() && destStr[0..pattern.length() - 1] == pattern; destStr = destStr[pattern.length()..-1]) {
+//            }
+//
+//            return destStr;
+//        } else {
+//            return srcStr;
+//        }
+//    }
+//}
 
 def createBalance = {
     if (balance.isEmpty()) {
@@ -29,13 +53,13 @@ def createBalance = {
     availableBalance = balance.length() >= 40 ? balance[8..19] : null;
     ledgerBalance = balance.length() >= 40 ? balance[28..39] : null;
     try {
-        depositableAmount = unpadZero(availableBalance, "0")
+        depositableAmount = StringUtils.unPadZero(availableBalance, "0")
     }
     catch (Exception ex) {
         depositableAmount = Double.valueOf(0)
     }
     try {
-        ledgerBalance = unpadZero(ledgerBalance, "0")
+        ledgerBalance = StringUtils.unPadZero(ledgerBalance, "0")
     }
     catch (Exception ex) {
         ledgerBalance = Double.valueOf(0);
@@ -45,19 +69,19 @@ def createBalance = {
 createBalance()
 
 def date = fields["12"].format(DateTimeFormatter.ofPattern("yyMMddHHmmss"))
-def amount = !fields["4"].isEmpty() ? unpadZero(fields["4"], "0") : null
+def amount = !fields["4"].isEmpty() ? StringUtils.unPadZero(fields["4"], "0") : null
 
 return [
         "fundTransfer"       : [
-                "sourceAccountNumber"  : "308957404",
-                "sourceCardNumber"     : fields["2"],
-                "destinationCardNumber": "5047061044402697",
+                "sourceAccountNumber"  : "?",
+                "sourceCardNumber"     : fields[ISOField.PAN.getPosition()],
+                "destinationCardNumber": "?",
                 "amount"               : amount,
                 "customerCount"        : 0,
-                "followupCode"         : "MB07097751214300",
+                "followupCode"         : "?",
                 "personName"           : [
-                        "firstName": "میررضا",
-                        "lastName" : "موسوی "
+                        "firstName": "?",
+                        "lastName" : "?"
                 ],
                 "date"                 : date
         ],
@@ -65,7 +89,7 @@ return [
                 "ledgerBalance"    : ledgerBalance,
                 "depositableAmount": depositableAmount
         ],
-        "serverResponseCode" : fields["39"],
-        "processCode"        : fields["3"],
-        "destinationBankName": "بانك شهر"
+        "serverResponseCode" : fields[ISOField.ACTION_CODE.getPosition()],
+        "processCode"        : fields[ISOField.PROCESSING_CODE.getPosition()],
+        "destinationBankName": "?"
 ]
