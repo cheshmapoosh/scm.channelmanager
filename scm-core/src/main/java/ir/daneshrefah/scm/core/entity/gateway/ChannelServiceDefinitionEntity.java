@@ -35,8 +35,8 @@ public class ChannelServiceDefinitionEntity extends AbstractAuditableEntity<Stri
     private GatewayChannelEntity gatewayChannel;
 
     @Enumerated(EnumType.STRING)
-    @Size(max = 20)
-    @Column(nullable = false, length = 20)
+    @Size(max = 32)
+    @Column(nullable = false, length = 32)
     private ChannelServiceDefinitionType type;
 
     @ManyToOne

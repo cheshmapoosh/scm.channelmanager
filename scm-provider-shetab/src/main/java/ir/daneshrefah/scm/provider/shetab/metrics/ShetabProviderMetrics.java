@@ -19,10 +19,12 @@ public class ShetabProviderMetrics {
         private final AtomicLong rateLimited = new AtomicLong();
         private final AtomicLong rateLimitWaits = new AtomicLong();
         private final AtomicLong queueRejected = new AtomicLong();
+        private final AtomicLong succeeded = new AtomicLong();
         private final AtomicLong sent = new AtomicLong();
         private final AtomicLong received = new AtomicLong();
         private final AtomicLong failed = new AtomicLong();
         private final AtomicLong timedOut = new AtomicLong();
+        private final AtomicLong totalLatencyMs = new AtomicLong();
 
         public void submitted() {
             submitted.incrementAndGet();
@@ -40,6 +42,10 @@ public class ShetabProviderMetrics {
             queueRejected.incrementAndGet();
         }
 
+        public void succeeded() {
+            succeeded.incrementAndGet();
+        }
+
         public void sent() {
             sent.incrementAndGet();
         }
@@ -54,6 +60,12 @@ public class ShetabProviderMetrics {
 
         public void timedOut() {
             timedOut.incrementAndGet();
+        }
+
+        public void addLatency(long elapsedMs) {
+            if (elapsedMs > 0) {
+                totalLatencyMs.addAndGet(elapsedMs);
+            }
         }
 
         public long submittedCount() {
@@ -74,6 +86,10 @@ public class ShetabProviderMetrics {
 
         public long failedCount() {
             return failed.get();
+        }
+
+        public long succeededCount() {
+            return succeeded.get();
         }
     }
 }

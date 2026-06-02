@@ -16,7 +16,8 @@ public record RestProviderResolvedConfig(
         Proxy proxy,
         Auth auth,
         Security security,
-        Token token
+        Token token,
+        RateLimit rateLimit
 ) {
     public enum HttpRedirect {
         NEVER,
@@ -77,6 +78,13 @@ public record RestProviderResolvedConfig(
             String responseExpiresInField,
             String responseTokenTypeField,
             String defaultTokenType
+    ) {
+    }
+
+    public record RateLimit(
+            boolean enabled,
+            String bucket,
+            String key
     ) {
     }
 }

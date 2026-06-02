@@ -43,4 +43,17 @@ class ShetabConfigResolverTest {
         assertEquals(48, config.security().cvv2().field());
         assertEquals("P92", config.security().cvv2().tag());
     }
+
+    @Test
+    void endpointAliasCanBeUsedInsteadOfEndpointsList() {
+        ShetabProperties properties = new ShetabProperties();
+        ShetabProperties.Instance hps = new ShetabProperties.Instance();
+        hps.setEndpoint("10.10.10.10:9000");
+        hps.setPackagerClass("Shetab7AsciiXAPackager");
+        properties.getProviders().put("hps", hps);
+
+        ShetabResolvedConfig config = new ShetabConfigResolver(properties).resolve("hps", null);
+
+        assertEquals(List.of("10.10.10.10:9000"), config.endpoints());
+    }
 }

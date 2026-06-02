@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
@@ -29,6 +30,7 @@ public class OperationRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final Map<String, PluginHandler> pluginHandlers;
     private final List<OperationTypeHandler> operationTypeHandlers;
+    private final GlobalErrorHandler globalErrorHandler;
 
     @Override
     public void configure() {
@@ -61,10 +63,21 @@ public class OperationRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    TraceUtils.getInstance().traceException(exchange,exception);
+                    TraceUtils traceUtils = TraceUtils.getInstance();
+                    if (traceUtils != null) {
+                        traceUtils.traceException(exchange, exception);
+                    }
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
-                    exchange.getIn().setBody(exception);
-                }).to(Routes.GLOBAL_ERROR_HANDLER);
+                    if (Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class))) {
+                        // CMNEW-119: service-layer direct calls must receive SCMFault, not protocol-specific gateway output.
+                        globalErrorHandler.handle(exchange);
+                    } else {
+                        exchange.getIn().setBody(exception);
+                    }
+                })
+                .filter(exchange -> !Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class)))
+                .to(Routes.GLOBAL_ERROR_HANDLER)
+                .end();
     }
 
     private void applyMetrics(RouteDefinition route, Operation operation) {

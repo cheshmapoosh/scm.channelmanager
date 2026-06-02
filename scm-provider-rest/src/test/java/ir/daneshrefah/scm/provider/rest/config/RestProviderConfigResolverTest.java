@@ -28,7 +28,7 @@ class RestProviderConfigResolverTest {
         properties.getProviders().put("hps", hps);
 
         RestProviderResolvedConfig config = new RestProviderConfigResolver(properties)
-                .resolve("rest-provider:hps", new RestProviderEndpointOverrides(7000));
+                .resolve("rest-provider:hps", new RestProviderEndpointOverrides(7000, null, null, null));
 
         assertEquals("hps", config.provider());
         assertEquals("https://hps.example", config.baseUrl());
@@ -71,5 +71,40 @@ class RestProviderConfigResolverTest {
         assertTrue(config.token().enabled());
         assertEquals("/oauth/token", config.token().path());
         assertEquals("token", config.token().responseTokenField());
+    }
+
+    @Test
+    void rateLimitCanBeConfiguredAndOverriddenLikeNab() {
+        RestProviderProperties properties = new RestProviderProperties();
+        properties.getDefaults().setBaseUrl("https://default.example");
+        properties.getDefaults().getRateLimit().setEnabled(false);
+        properties.getDefaults().getRateLimit().setBucket("rest-default");
+        properties.getDefaults().getRateLimit().setKey("provider");
+
+        RestProviderProperties.Instance hps = new RestProviderProperties.Instance();
+        hps.setBaseUrl("https://hps.example");
+        hps.getRateLimit().setEnabled(true);
+        hps.getRateLimit().setBucket("rest-hps");
+        hps.getRateLimit().setKey("provider-operation");
+        properties.getProviders().put("hps", hps);
+
+        RestProviderEndpointOverrides overrides = new RestProviderEndpointOverrides(6000, true, "rest-override", "operation");
+        RestProviderResolvedConfig config = new RestProviderConfigResolver(properties).resolve("hps", overrides);
+
+        assertEquals(true, config.rateLimit().enabled());
+        assertEquals("rest-override", config.rateLimit().bucket());
+        assertEquals("operation", config.rateLimit().key());
+    }
+
+    @Test
+    void endpointAliasCanBeUsedInsteadOfBaseUrl() {
+        RestProviderProperties properties = new RestProviderProperties();
+        RestProviderProperties.Instance hps = new RestProviderProperties.Instance();
+        hps.setEndpoint("https://hps.example");
+        properties.getProviders().put("hps", hps);
+
+        RestProviderResolvedConfig config = new RestProviderConfigResolver(properties).resolve("hps", null);
+
+        assertEquals("https://hps.example", config.baseUrl());
     }
 }

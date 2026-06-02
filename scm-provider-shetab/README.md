@@ -1,14 +1,16 @@
 # scm-provider-shetab
 
-Shetab/HPS provider module for ISO8583 over TCP.
+ماژول `scm-provider-shetab` برای ارتباط ISO8583 روی TCP استفاده می‌شود و مخصوص سناریوهای `OperationType.PROVIDER` است.
 
-The operation route should use `OperationType.PROVIDER` and point to a provider URI:
+URI نمونه:
 
 ```text
-shetab:request?provider=hps
+shetab:request?provider=shetab7
 ```
 
-The provider receives a `Map` body in this shape:
+## قرارداد ورودی/خروجی
+
+ورودی provider یک `Map` یا JSON object است:
 
 ```json
 {
@@ -18,11 +20,25 @@ The provider receives a `Map` body in this shape:
     "3": "330000",
     "11": "123456",
     "37": "123456789012"
+  },
+  "security": {
+    "pin": "1234",
+    "pinRequired": true,
+    "expiryDate": "2907",
+    "cvv2": "639",
+    "macRequired": true
   }
 }
 ```
 
-Provider instance configuration:
+خروجی provider یک `Map` با `mti` و `fields` است.
+
+## ساختار یکدست کانفیگ
+
+مانند `scm-provider-nab`:
+
+- `defaults` برای مقدارهای پایه
+- `providers.<instance>` برای override هر instance
 
 ```yaml
 scm:
@@ -45,14 +61,22 @@ scm:
           enabled: true
           ttl-ms: 30000
       providers:
-        hps:
-          endpoints: [10.10.10.10:9000, 10.10.10.11:9000, 10.10.10.12:9000]
+        shetab7:
+          endpoint: 10.10.10.10:9000
           packager-class: Shetab7AsciiXAPackager
+          rate-limit:
+            enabled: true
+            bucket: shetab7
+            key: provider-operation
           security:
             pin:
-              key: ${SCM_SHETAB_HPS_PIN_KEY}
+              key: ${SCM_SHETAB7_PIN_KEY}
               field: 52
               pan-field: 2
+            mac:
+              key: ${SCM_SHETAB7_MAC_KEY}
+              field: 128
+              verify-response: false
             expiry:
               field: 14
             cvv2:
@@ -61,52 +85,81 @@ scm:
               length-digits: 3
               min-length: 3
               max-length: 4
-            mac:
-              key: ${SCM_SHETAB_HPS_MAC_KEY}
-              field: 128
-              verify-response: false
+
+        shetab8:
+          endpoints:
+            - 10.10.10.20:9000
+            - 10.10.10.21:9000
+          packager-class: Shetab7BinaryXAPackager
           rate-limit:
             enabled: true
-            bucket: shetab-hps
+            bucket: shetab8
+            key: provider
 ```
 
-Rate-limit bucket definitions are read from `scm-config` via `scm-rate-limit.config.definitions`.
-HPS endpoint leases use `ResourceLeaseUtility` from `scm-cache-client` (`utilities.resource-lease=remote` for distributed mode).
-Built-in packager classes are `Shetab7AsciiXAPackager` and `Shetab7BinaryXAPackager` (legacy `CardSystem...` class names are also accepted).
+### نکته endpoint
 
-`fields.52` and `fields.128` are provider-owned.
-Card security metadata should be passed in the `security` object:
+برای یکدستی با NAB:
 
-- `security.expiryDate` (or `security.expirationDate`): `YYMM`, mapped to field `14` by provider.
-- `security.cvv2`: numeric `3..4` digits, mapped to field `48` tag `P92` as `P92 + len(3 digits) + cvv2`.
-- If caller already sends `P92` inside `fields.48`, provider removes it first and then rebuilds it from `security.cvv2`.
-- Required flags are request-driven (not provider-instance driven): `pinRequired`, `expiryRequired`, `cvv2Required`, `macRequired`.
-- If a value exists but its `*Required` flag is `false`, provider does not send that security field.
+- `endpoint` (تکی) پشتیبانی می‌شود.
+- `endpoints` (لیست) هم پشتیبانی می‌شود.
+- اگر هر دو تعریف شوند، ابتدا `endpoint` و سپس مقادیر `endpoints` استفاده می‌شوند.
 
-```json
-{
-  "mti": "1100",
-  "fields": {
-    "2": "5894631159226349",
-    "3": "330000",
-    "11": "261655",
-    "37": "691199261655",
-    "48": "DST0165894631240207217"
-  },
-  "security": {
-    "expiryDate": "2907",
-    "cvv2": "639",
-    "pin": "1234",
-    "pinRequired": true,
-    "macRequired": true
-  }
-}
+## Rate Limit (مشابه NAB)
+
+در هر provider instance:
+
+- `rate-limit.enabled`
+- `rate-limit.bucket`
+- `rate-limit.key` (`provider`, `operation`, `provider-operation`)
+
+Override در runtime:
+
+- Header: `ShetabRateLimitEnabled`
+- Header: `ShetabRateLimitBucket`
+- Header: `ShetabRateLimitKey`
+- URI param: `rateLimitEnabled`
+- URI param: `rateLimitBucket`
+- URI param: `rateLimitKey`
+
+نمونه:
+
+```text
+shetab:request?provider=shetab7&rateLimitEnabled=true&rateLimitBucket=shetab7
 ```
 
-Human-readable request/response logs are written in `ShetabIsoChannelClient` via `SafeIsoLogFormatter`.
-Sensitive values are masked/hidden in logs (for example `PAN`, `field 14`, `PIN block`, `MAC`, and `P92` CVV2 segment in `field 48`).
+## متریک‌ها
 
-Run the real HPS card-inquiry test explicitly:
+متریک‌های in-memory per provider:
+
+- `submitted`
+- `succeeded`
+- `failed`
+- `timedOut`
+- `rateLimited`
+- `rateLimitWaits`
+- `queueRejected`
+- `sent`
+- `received`
+- `totalLatencyMs`
+
+## لاگ‌ها
+
+- `INFO`: شروع/پایان درخواست، اتصال/قطع اتصال، وضعیت lease endpoint
+- `DEBUG`: محتوای request/response به‌صورت mask شده
+- `WARN`: خطاهای تطبیقی، rate limit reject، unmatched response
+- `ERROR`: خطاهای send/connect/request
+
+`SafeIsoLogFormatter` برای ماسک‌کردن اطلاعات حساس استفاده می‌شود (PAN، PIN، MAC، CVV2، Expiry).
+
+## امنیت فیلدها
+
+- `fields.52` و `fields.128` متعلق به provider است.
+- `security.expiryDate` به فیلد `14` نگاشت می‌شود.
+- `security.cvv2` در `field 48` با tag `P92` ساخته می‌شود.
+- اگر caller در `fields.48` مقدار `P92` داده باشد، provider آن را بازسازی می‌کند.
+
+## اجرای تست integration واقعی
 
 ```bash
 SCM_SHETAB_HPS_INTEGRATION=true \
@@ -116,3 +169,13 @@ SCM_SHETAB_HPS_PIN_KEY=0123456789ABCDEF \
 SCM_SHETAB_HPS_MAC_KEY=0123456789ABCDEF \
 ./gradlew :scm-provider-shetab:test --tests '*ShetabHpsCardInquiryIntegrationTest'
 ```
+
+## پیش‌نیاز deployment توزیع‌شده
+
+- برای rate limit توزیع‌شده: `RateLimiterUtility` از `scm-cache-client`
+- برای lease توزیع‌شده endpoint: `ResourceLeaseUtility` از `scm-cache-client`
+
+در صورت نبود این utilityها:
+
+- rate limit به حالت noop می‌رود (با WARN)
+- endpoint lease به حالت local fallback می‌رود (با WARN)

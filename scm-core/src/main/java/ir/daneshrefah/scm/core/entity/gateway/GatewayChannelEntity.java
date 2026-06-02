@@ -17,7 +17,6 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "TBL_SCM_GATEWAY_CHANNEL",
         schema = "REF",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UC_GTW_CHN_ON_PTC_CHN", columnNames = {"CHANNEL_ID", "PROTOCOL_TYPE"}),
                 @UniqueConstraint(name = "UC_GTW_CHN_ON_NAME", columnNames = {"NAME"})
         })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)

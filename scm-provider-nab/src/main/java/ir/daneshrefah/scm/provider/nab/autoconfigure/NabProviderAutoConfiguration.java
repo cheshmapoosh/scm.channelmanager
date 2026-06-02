@@ -1,0 +1,52 @@
+package ir.daneshrefah.scm.provider.nab.autoconfigure;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.provider.nab.camel.NabComponent;
+import ir.daneshrefah.scm.provider.nab.config.NabProperties;
+import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
+import ir.daneshrefah.scm.provider.nab.ratelimit.CacheClientNabRateLimiter;
+import ir.daneshrefah.scm.provider.nab.ratelimit.NabRateLimiter;
+import ir.daneshrefah.scm.provider.nab.ratelimit.NoopNabRateLimiter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@Slf4j
+@ConditionalOnClass(CamelContext.class)
+@EnableConfigurationProperties(NabProperties.class)
+@ConditionalOnProperty(prefix = "scm.provider.nab", name = "enabled", havingValue = "true", matchIfMissing = true)
+public class NabProviderAutoConfiguration {
+
+    @Bean("nab")
+    @ConditionalOnMissingBean(name = "nab")
+    public NabComponent nabComponent(CamelContext camelContext) {
+        NabComponent component = new NabComponent();
+        component.setCamelContext(camelContext);
+        return component;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public NabRateLimiter nabRateLimiter(ObjectProvider<RateLimiterUtility> rateLimiterUtility, NabProviderMetrics metrics) {
+        RateLimiterUtility utility = rateLimiterUtility.getIfAvailable();
+        if (utility == null) {
+            log.warn("RateLimiterUtility not found; NAB rate limiter falls back to noop. Runtime deployments should enable scm-cache-client rate-limit.");
+            return new NoopNabRateLimiter();
+        }
+        return new CacheClientNabRateLimiter(utility, metrics);
+    }
+}

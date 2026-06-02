@@ -12,7 +12,7 @@ public class RestChannelServiceDefinition extends BaseChannelServiceDefinition {
     private String path;
     @Override
     public ChannelServiceDefinitionType getType() {
-        return ChannelServiceDefinitionType.REST;
+        return ChannelServiceDefinitionType.INBOUND_ROUTE;
     }
 
 

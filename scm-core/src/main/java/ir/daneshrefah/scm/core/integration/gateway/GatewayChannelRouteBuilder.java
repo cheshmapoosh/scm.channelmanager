@@ -1,34 +1,29 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
-import io.opentelemetry.api.baggage.Baggage;
-import io.opentelemetry.api.baggage.BaggageEntryMetadata;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
-import ir.daneshrefah.scm.common.handler.PluginHandler;
-import ir.daneshrefah.scm.common.model.gateway.*;
+import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
-import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
-import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
-import ir.daneshrefah.scm.common.service.ChannelServiceDefinitionService;
 import ir.daneshrefah.scm.common.service.GatewayService;
-import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
-import ir.daneshrefah.scm.core.utils.RouteUtils;
+import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
+import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
+import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
+import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
+import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
+import ir.daneshrefah.scm.core.integration.service.ServiceRouteUriResolver;
+import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
 import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.MulticastDefinition;
-import org.apache.camel.model.ProcessorDefinition;
-import org.apache.camel.model.Resilience4jConfigurationDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -40,237 +35,101 @@ import java.util.Objects;
 @Slf4j
 public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final GatewayService gatewayService;
-    private final ChannelServiceAccessService channelServiceAccessService;
-    private final ChannelServiceDefinitionService channelServiceDefinitionService;
-    private final Resilience4jConfigurationDefinition defaultBreaker;
+    private final RuntimeRoutePlanProvider runtimeRoutePlanProvider;
     private final List<ProtocolHandler> protocolHandlers;
-    private final PluginResolverService pluginResolverService;
-    private final Map<String, PluginHandler> pluginHandlers;
-    private final Tracer tracer;
-
-    @Value("${scm.app-name}")
-    private String name;
-
-//    private final Tracer tracer = GlobalOpenTelemetry.getTracer("gateway-channel");
-//    private final Meter meter = GlobalOpenTelemetry.getMeter("gateway-channel");
-//    private final LongCounter requestCounter = meter.counterBuilder("gateway_requests_total")
-//            .setDescription("Total number of processed gateway requests")
-//            .setUnit("1")
-//            .build();
+    private final ClientContractResolver clientContractResolver;
+    private final Map<String, RequestContractDecoder> requestContractDecoders;
+    private final ServiceRouteUriResolver serviceRouteUriResolver;
+    private final ScmExchangeMdc scmExchangeMdc;
+    private final IncomingChannelCodeResolver incomingChannelCodeResolver;
+    private final ScmRuntimeProperties scmRuntimeProperties;
 
     @Override
-    public void configure() throws Exception {
+    public void configure() {
         if (CollectionUtils.isEmpty(protocolHandlers)) {
-            log.error("No any handler found");
-            throw new IllegalStateException("No any handler found");
+            log.error("No protocol handler found");
+            throw new IllegalStateException("No protocol handler found");
         }
+        String name = scmRuntimeProperties.gatewayName();
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
         if (gatewayChannel == null) {
-            log.error("Gateway channel '" + name + "' not found");
+            log.error("Gateway channel '{}' not found", name);
             throw new IllegalStateException("Gateway channel '" + name + "' not found");
         }
 
-        List<ChannelServiceAccess> channelServiceAccesses = channelServiceAccessService.findAllByChannel(gatewayChannel.getChannel());
-
-        if (CollectionUtils.isEmpty(channelServiceAccesses)) {
-            throw new IllegalStateException("No any service found for channel " + gatewayChannel.getChannel().getCode() + " in " + gatewayChannel.getName() + " gateway");
-        }
-
+        RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
         ProtocolHandler protocolHandler = protocolHandlers.stream()
                 .filter(h -> Objects.equals(gatewayChannel.getProtocolType(), h.getProtocol()))
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalStateException("No handler for " + gatewayChannel.getName() + " gateway" +
-                                " with " + gatewayChannel.getProtocolType() + " protocol"));
+                        new IllegalStateException("No handler for " + gatewayChannel.getName()
+                                + " gateway with " + gatewayChannel.getProtocolType() + " protocol"));
+
         ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
-
-        List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
-
-        channelServiceAccesses.stream()
-                .filter(channelServiceAccess -> CollectionUtils.isNotEmpty(channelServiceAccess.getService().getServiceOperations()))
-                .forEach(channelServiceAccess -> {
-                    Service service = channelServiceAccess.getService();
-
-
-                    List<ChannelServiceDefinition> definitions =
-                            channelServiceDefinitionService.findDefinitions(channelServiceAccess, gatewayChannel);
-                    List<RouteDefinition> routes = protocolConfigurer.routeDefinition(channelServiceAccess, definitions);
-                    routes.forEach(route -> {
-
-                        route.setProperty(Message.SERVICE, constant(service));
-                        route.setProperty(Message.CHANNEL_CODE, constant(channelServiceAccess.getChannel().getCode()));
-                        route.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(channelServiceAccess));
-                        route.setProperty(Message.GATEWAY_CHANNEL, constant(gatewayChannel));
-                        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(gatewayChannel.getProtocolType()));
-                        defineExceptionHandler(route);
-                        applyMetrics(route, service);
-                        applyTracing(route, service);
-
-                        List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                                channelServiceAccess.getService(),
-                                PluginPhase.BEFORE);
-                        applyBeforePlugins(route, orderedBeforePluginDetails, service);
-
-                        buildTarget(route, service);
-
-                        List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails,
-                                channelServiceAccess.getService(),
-                                PluginPhase.AFTER);
-                        applyAfterPlugins(route, orderedAfterPluginDetails, service);
-                        route.to(Routes.GLOBAL_RESPONSE_HANDLER);
-                    });
-                });
+        routePlan.servicePlans().forEach(servicePlan ->
+                protocolConfigurer.routeDefinition(servicePlan)
+                        .forEach(inboundRoute -> configureGatewayRoute(routePlan, servicePlan, inboundRoute)));
     }
 
-    private void applyMetrics(ProcessorDefinition<?> route, Service service) {
-//        return route.process(exchange -> {
-//            requestCounter.add(1, io.opentelemetry.api.common.Attributes.of(
-//                    io.opentelemetry.api.common.AttributeKey.stringKey("service.id"), service.getCode()
-//            ));
-//            System.out.println("[Metrics] Counted request for " + service.getCode());
-//        });
-    }
+    private void configureGatewayRoute(RuntimeRoutePlan routePlan,
+                                       RuntimeServicePlan servicePlan,
+                                       InboundRouteDefinition inboundRoute) {
+        RouteDefinition route = inboundRoute.route();
+        Service service = servicePlan.service();
 
-    private void applyTracing(ProcessorDefinition<?> route, Service service) {
+        route.setProperty(Message.RUNTIME_ROUTE_PLAN, constant(routePlan));
+        route.setProperty(Message.RUNTIME_SERVICE_PLAN, constant(servicePlan));
+        route.setProperty(Message.SERVICE, constant(service));
+        route.setProperty(Message.GATEWAY_CHANNEL, constant(servicePlan.gatewayChannel()));
+        route.setProperty(Message.GATEWAY_NAME, constant(servicePlan.gatewayChannel().getName()));
+        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
+        route.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
+
+        defineExceptionHandler(route);
+        route.onCompletion()
+                .process(exchange -> scmExchangeMdc.clear())
+                .end();
         route.process(exchange -> {
-            TraceUtils.getInstance().traceScmRequest(exchange, service);
-        });
-    }
-
-    private Processor addTraceHeadersWithBaggage() {
-        return exchange -> {
-            Span span = (Span) exchange.getProperty("otelSpan");
-            if (span != null) {
-                exchange.getIn().setHeader("traceparent", "00-" + span.getSpanContext().getTraceId() + "-" + span.getSpanContext().getSpanId() + "-01");
-
-                // Add example custom baggage
-                Baggage baggage = Baggage.current().toBuilder()
-                        .put("gateway-id", "gateway-channel", BaggageEntryMetadata.create("propagation=unlimited"))
-                        .build();
-
-                baggage.forEach((key, entry) -> {
-                    exchange.getIn().setHeader("baggage-" + key, entry.getValue());
-                });
+            applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
+            scmExchangeMdc.put(exchange);
+            TraceUtils traceUtils = TraceUtils.getInstance();
+            if (traceUtils != null) {
+                traceUtils.traceScmRequest(exchange, service);
             }
-        };
-    }
+            log.info("Gateway inbound received gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+                    servicePlan.gatewayChannel().getName(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId());
+        });
 
+        route.process(exchange -> {
+            ClientContract contract = clientContractResolver.resolve(
+                    servicePlan.gatewayChannel(),
+                    inboundRoute.channelServiceDefinition());
+            exchange.setProperty(Message.CLIENT_CONTRACT, contract);
+            RequestContractDecoder decoder = resolveRequestDecoder(contract);
+            decoder.decode(exchange, contract);
+            scmExchangeMdc.put(exchange);
+            log.info("Gateway request decoded gatewayName={} channelCode={} serviceCode={} contract={} routeId={} exchangeId={}",
+                    servicePlan.gatewayChannel().getName(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    contract.name(),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId());
+        });
 
-    private void applyAuthentication(ProcessorDefinition<?> route, Service service) {
-//        route.process(exchange -> {
-//            Authentication auth = exchange.getIn().getHeader("org.springframework.security.core.Authentication", Authentication.class);
-//            if (auth == null || !auth.isAuthenticated()) {
-//                log.error("Unauthenticated request for {}", service.getCode());
-//                throw new SecurityException("Unauthenticated request");
-//            }
-//            log.error("[Auth] Authenticated principal: {}", auth.getName());
-//        });
-    }
-
-    private void applyAuthorization(ProcessorDefinition<?> route, Service service) {
-//        route.process(exchange -> {
-//            Authentication auth = exchange.getIn().getHeader("org.springframework.security.core.Authentication", Authentication.class);
-//            boolean authorized = auth.getAuthorities().stream()
-//                    .anyMatch(granted -> granted.getAuthority().equals("ROLE_ADMIN"));
-//
-//            if (!authorized) {
-//                log.error("[AuthZ] access to service: {}", service.getCode());
-//                throw new SecurityException("Unauthorized access to service: " + service.getCode());
-//            }
-//            log.debug("[AuthZ] Authorized user: {}", auth.getName());
-//        });
-    }
-
-
-    private void buildTarget(RouteDefinition route, Service service) {
-//        Resilience4jConfigurationDefinition resilience4jConfigurationDefinition = new Resilience4jConfigurationDefinition();
-//        resilience4jConfigurationDefinition.setFailureRateThreshold("50");
-
-        if (Objects.equals(RoutingStrategy.FIRST, service .getRoutingStrategy())) {
-            ServiceOperation serviceOperation = resolveFirstServiceOperation(service);
-            route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
-            String operationName = serviceOperation.getOperationName();
-            String url = resolveOperationUrl(operationName);
-//            if (service.useCircuitBreaker()) {
-//                route
-//                        .circuitBreaker()
-//                        .resilience4jConfiguration(resilience4jConfigurationDefinition)
-//                        .to(url)
-//                        .onFallback()
-//                        .setBody(constant("{\"error\":\"fallback\"}"))
-//                        .end();
-//            } else {
-                route.to(url);
-//            }
-            return;
-        }
-
-        if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
-            /*
-                ALL MULTIPLE ROUTES NAME ENDS WITH MDF OF OPERATION CODE
-                SEE  routeDefinition() METHOD IN RestProtocolHandler CLASS
-             */
-            List<ServiceOperation> serviceOperations = service.getServiceOperations();
-            String[] splitRouteName = route.getRouteId().split("-");
-            ServiceOperation serviceOperation = serviceOperations
-                    .stream()
-                    .filter(o -> RouteUtils.getInstance().generateRouteUniqId(o.getOperationName()).equals(splitRouteName[splitRouteName.length - 1]))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No route found for " + route.getRouteId()));
-            route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
-            String operationName = serviceOperation.getOperationName();
-            String url = resolveOperationUrl(operationName);
-            route.to(url);
-            return;
-        }
-
-        if (Objects.equals(RoutingStrategy.FAIL_OVER, service.getRoutingStrategy())) {
-            MulticastDefinition multicast = route.multicast()
-                    .parallelProcessing(false)
-                    .stopOnException("false");
-            service.getServiceOperations().forEach(serviceOperation -> {
-
-                String operationName = serviceOperation.getOperationName();
-                String url = resolveOperationUrl(operationName);
-//                if (service.useCircuitBreaker()) {
-//                    multicast
-//                            .circuitBreaker()
-//                            .resilience4jConfiguration(resilience4jConfigurationDefinition)
-//                            .to(url)
-//                            .onFallback()
-//                            .setBody(model("{\"error\":\"fallback\"}"))
-//                            .end();
-//                } else {
-                    multicast.to(url).end();
-//                }
-
-            });
-            return;
-        }
-
-        throw new IllegalArgumentException("Unsupported routing strategy: " + service.getRoutingStrategy());
-    }
-
-    private ServiceOperation resolveFirstServiceOperation(Service service) {
-        List<ServiceOperation> activeOperations = service.getServiceOperations()
-                .stream()
-                .filter(operation -> Boolean.TRUE.equals(operation.getActive()))
-                .toList();
-
-        if (activeOperations.isEmpty()) {
-            throw new IllegalStateException("No active operation found for service " + service.getCode());
-        }
-        if (activeOperations.size() > 1) {
-            throw new IllegalStateException("FIRST routing requires exactly one active operation for service " + service.getCode());
-        }
-        return activeOperations.getFirst();
-    }
-
-    private String resolveOperationUrl(String operationName) {
-        if (StringUtils.contains(operationName, ':')) {
-            return operationName;
-        }
-        return "direct:" + operationName;
+        route.process(exchange -> log.info("Gateway dispatching to service gatewayName={} channelCode={} serviceCode={} targetUri={} routeId={} exchangeId={}",
+                servicePlan.gatewayChannel().getName(),
+                channelCode(exchange, servicePlan),
+                service.getCode(),
+                serviceRouteUriResolver.resolve(service),
+                exchange.getFromRouteId(),
+                exchange.getExchangeId()));
+        route.to(serviceRouteUriResolver.resolve(service));
+        route.to(Routes.GLOBAL_RESPONSE_HANDLER);
     }
 
     private void defineExceptionHandler(RouteDefinition route) {
@@ -278,49 +137,68 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                 .handled(true)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-                    String routeId = exchange.getFromRouteId();
-                    log.debug("[Error Handler] Route {} threw: {}", routeId, exception.getMessage());
-                    TraceUtils.getInstance().traceException(exchange, exception);
+                    scmExchangeMdc.put(exchange);
+                    TraceUtils traceUtils = TraceUtils.getInstance();
+                    if (traceUtils != null) {
+                        traceUtils.traceException(exchange, exception);
+                    }
+                    log.warn("Gateway route failed routeId={} exchangeId={}",
+                            exchange.getFromRouteId(),
+                            exchange.getExchangeId(),
+                            exception);
                 })
                 .to(Routes.GLOBAL_ERROR_HANDLER);
-
     }
 
-    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Service service) {
-        if (orderedBeforePluginDetails == null) {
-            return;
+    private RequestContractDecoder resolveRequestDecoder(ClientContract contract) {
+        RequestContractDecoder decoder = requestContractDecoders.get(contract.requestDecoder());
+        if (decoder == null) {
+            throw new IllegalStateException("Request decoder not found: " + contract.requestDecoder());
         }
-
-        orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = resolvePluginHandler(definition);
-            pluginHandler.init(route, definition, Map.of(Message.SERVICE, service));
-            route.process(exchange -> {
-                pluginHandler.handle(exchange, definition);
-            });
-        });
-
+        return decoder;
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Service service) {
-        if (orderedBeforePluginDetails == null) {
-            return;
+    private void applyIncomingChannel(Exchange exchange,
+                                      RuntimeRoutePlan routePlan,
+                                      RuntimeServicePlan servicePlan,
+                                      InboundRouteDefinition inboundRoute) {
+        String channelCode = incomingChannelCodeResolver.resolve(exchange)
+                .orElseGet(() -> fallbackChannelCode(routePlan, servicePlan, inboundRoute));
+        if (channelCode != null) {
+            exchange.setProperty(Message.CHANNEL_CODE, channelCode);
         }
-
-        orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = resolvePluginHandler(definition);
-            pluginHandler.init(route, definition, Map.of(Message.SERVICE, service));
-            route.process(exchange -> {
-                pluginHandler.handle(exchange, definition);
-            });
-        });
-    }
-
-    private PluginHandler resolvePluginHandler(PluginDetail definition) {
-        PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
-        if (pluginHandler == null) {
-            throw new IllegalArgumentException("Plugin handler not found: " + definition.getName());
+        ChannelServiceAccess access = fallbackAccess(routePlan, servicePlan, inboundRoute);
+        if (access != null) {
+            exchange.setProperty(Message.CHANNEL_SERVICE_ACCESS, access);
         }
-        return pluginHandler;
     }
 
+    private String channelCode(Exchange exchange, RuntimeServicePlan servicePlan) {
+        return incomingChannelCodeResolver.resolve(exchange)
+                .orElseGet(() -> channelCode(servicePlan.channelServiceAccess()));
+    }
+
+    private String fallbackChannelCode(RuntimeRoutePlan routePlan,
+                                       RuntimeServicePlan servicePlan,
+                                       InboundRouteDefinition inboundRoute) {
+        ChannelServiceAccess access = fallbackAccess(routePlan, servicePlan, inboundRoute);
+        return channelCode(access);
+    }
+
+    private ChannelServiceAccess fallbackAccess(RuntimeRoutePlan routePlan,
+                                                RuntimeServicePlan servicePlan,
+                                                InboundRouteDefinition inboundRoute) {
+        if (routePlan.targetKind() != RuntimeTargetKind.CHANNEL) {
+            return null;
+        }
+        if (inboundRoute.channelServiceDefinition() != null
+                && inboundRoute.channelServiceDefinition().getChannelServiceAccess() != null) {
+            return inboundRoute.channelServiceDefinition().getChannelServiceAccess();
+        }
+        return servicePlan.channelServiceAccess();
+    }
+
+    private String channelCode(ChannelServiceAccess access) {
+        return access != null && access.getChannel() != null ? access.getChannel().getCode() : null;
+    }
 }

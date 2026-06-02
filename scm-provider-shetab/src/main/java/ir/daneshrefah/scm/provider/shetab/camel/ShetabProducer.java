@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.provider.shetab.config.ShetabEndpointOverrides;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabHeaders;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabIsoMapConverter;
+import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.ShetabRateLimiter;
 import ir.daneshrefah.scm.provider.shetab.security.ShetabMessageSecurityProcessor;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabClientRegistry;
@@ -21,6 +22,7 @@ import org.jpos.iso.ISOMsg;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ShetabProducer extends DefaultProducer {
@@ -32,6 +34,7 @@ public class ShetabProducer extends DefaultProducer {
     private ShetabIsoMapConverter isoMapConverter;
     private ShetabClientRegistry clientRegistry;
     private ShetabRateLimiter rateLimiter;
+    private ShetabProviderMetrics metrics;
     private ShetabMessageSecurityProcessor securityProcessor;
     private ShetabTraceSupport traceSupport;
     private ObjectMapper objectMapper;
@@ -48,6 +51,7 @@ public class ShetabProducer extends DefaultProducer {
         isoMapConverter = bean(ShetabIsoMapConverter.class);
         clientRegistry = bean(ShetabClientRegistry.class);
         rateLimiter = bean(ShetabRateLimiter.class);
+        metrics = bean(ShetabProviderMetrics.class);
         securityProcessor = bean(ShetabMessageSecurityProcessor.class);
         traceSupport = bean(ShetabTraceSupport.class);
         objectMapper = bean(ObjectMapper.class);
@@ -60,26 +64,39 @@ public class ShetabProducer extends DefaultProducer {
         ShetabResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
         Operation operation = exchange.getProperty(ir.daneshrefah.scm.common.model.message.Message.OPERATION, Operation.class);
         String operationName = operation != null ? operation.getName() : "";
+        ShetabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
         securityProcessor.protectRequest(config, requestMap, request);
 
+        log.info("Shetab provider start provider={} operation={} mti={}", config.provider(), operationName, requestMap.get("mti"));
         if (log.isDebugEnabled()) {
             log.debug("Shetab provider request provider={} operation={} body={}",
                     config.provider(), operationName, maskSensitive(requestMap));
         }
-        ISOMsg response = traceSupport.clientSpan(exchange, config, request, () -> {
-            rateLimiter.acquire(config, operationName);
-            return clientRegistry.request(config, request);
-        });
-        securityProcessor.verifyResponse(config, response);
-        Map<String, Object> responseMap = isoMapConverter.toMap(response);
-        if (log.isDebugEnabled()) {
-            log.debug("Shetab provider response provider={} operation={} body={}",
-                    config.provider(), operationName, maskSensitive(responseMap));
+        long startedAt = System.nanoTime();
+        try {
+            ISOMsg response = traceSupport.clientSpan(exchange, config, request, () -> {
+                rateLimiter.acquire(config, operationName);
+                return clientRegistry.request(config, request);
+            });
+            securityProcessor.verifyResponse(config, response);
+            Map<String, Object> responseMap = isoMapConverter.toMap(response);
+            providerMetrics.succeeded();
+            providerMetrics.addLatency(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+            if (log.isDebugEnabled()) {
+                log.debug("Shetab provider response provider={} operation={} body={}",
+                        config.provider(), operationName, maskSensitive(responseMap));
+            }
+            exchange.getMessage().setBody(responseMap);
+            log.info("Shetab provider done provider={} operation={} elapsedMs={}",
+                    config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+        } catch (RuntimeException e) {
+            log.error("Shetab provider error provider={} operation={} elapsedMs={} message={}",
+                    config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt), e.getMessage(), e);
+            throw e;
         }
-        exchange.getMessage().setBody(responseMap);
     }
 
     private String resolveProvider(Exchange exchange) {

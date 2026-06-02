@@ -41,11 +41,14 @@ public abstract class ChannelServiceDefinitionMapper {
     @Named("toModel")
     public ChannelServiceDefinition toModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
         return switch (channelServiceDefinitionEntity.getType()) {
-            case REST -> toRest(channelServiceDefinitionEntity);
-            case SWAGGER -> toSwagger(channelServiceDefinitionEntity);
-            case REST_MULTIPLE -> toRestMultiple(channelServiceDefinitionEntity);
+            case INBOUND_ROUTE, REST -> toRest(channelServiceDefinitionEntity);
+            case INBOUND_ROUTE_GROUP, REST_MULTIPLE -> toRestMultiple(channelServiceDefinitionEntity);
+            case API_DOCUMENTATION, SWAGGER -> toSwagger(channelServiceDefinitionEntity);
+            case SERVICE_DOMAIN_MEMBER -> channelServiceDefinitionEntityToModel(channelServiceDefinitionEntity);
         };
     }
+
+    public abstract ChannelServiceDefinition channelServiceDefinitionEntityToModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 
     public abstract ChannelServiceDefinitionResponse toChannelServiceDefinition(ChannelServiceDefinitionEntity channelServiceDefinitionEntity);
 

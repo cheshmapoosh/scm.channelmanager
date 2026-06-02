@@ -16,7 +16,7 @@ public class RestMultipleChannelServiceDefinition extends BaseChannelServiceDefi
 
     @Override
     public ChannelServiceDefinitionType getType() {
-        return ChannelServiceDefinitionType.REST_MULTIPLE;
+        return ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP;
     }
 
     @Getter

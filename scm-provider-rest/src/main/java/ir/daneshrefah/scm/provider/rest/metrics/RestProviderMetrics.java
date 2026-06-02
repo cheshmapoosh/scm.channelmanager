@@ -21,6 +21,8 @@ public class RestProviderMetrics {
         private final AtomicLong clientErrors = new AtomicLong();
         private final AtomicLong serverErrors = new AtomicLong();
         private final AtomicLong timedOut = new AtomicLong();
+        private final AtomicLong rateLimited = new AtomicLong();
+        private final AtomicLong rateLimitWaits = new AtomicLong();
         private final AtomicLong totalLatencyMs = new AtomicLong();
         private final AtomicLong tokenCacheHits = new AtomicLong();
         private final AtomicLong tokenRefreshes = new AtomicLong();
@@ -48,6 +50,14 @@ public class RestProviderMetrics {
 
         public void timedOut() {
             timedOut.incrementAndGet();
+        }
+
+        public void rateLimited() {
+            rateLimited.incrementAndGet();
+        }
+
+        public void rateLimitWait() {
+            rateLimitWaits.incrementAndGet();
         }
 
         public void addLatency(long elapsedMs) {
@@ -78,6 +88,10 @@ public class RestProviderMetrics {
 
         public long failedCount() {
             return failed.get();
+        }
+
+        public long rateLimitedCount() {
+            return rateLimited.get();
         }
     }
 }

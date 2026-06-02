@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -22,11 +23,9 @@ public class ShetabConfigResolver {
 
         ShetabProperties.Instance instance = findProvider(providerName);
         ShetabProperties.Instance defaults = properties.getDefaults();
-        List<String> endpoints = nonNullList(instance.getEndpoints()).isEmpty()
-                ? nonNullList(defaults.getEndpoints())
-                : nonNullList(instance.getEndpoints());
+        List<String> endpoints = resolveEndpoints(defaults, instance);
         if (endpoints.isEmpty()) {
-            throw new IllegalArgumentException("Shetab provider " + providerName + " must define at least one endpoint (ip:port)");
+            throw new IllegalArgumentException("Shetab provider " + providerName + " must define at least one endpoint (endpoint or endpoints)");
         }
 
         ShetabProperties.RateLimit rateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
@@ -53,6 +52,25 @@ public class ShetabConfigResolver {
                 ),
                 security
         );
+    }
+
+    private List<String> resolveEndpoints(ShetabProperties.Instance defaults, ShetabProperties.Instance instance) {
+        List<String> instanceEndpoints = mergedEndpoints(instance.getEndpoint(), instance.getEndpoints());
+        if (!instanceEndpoints.isEmpty()) {
+            return instanceEndpoints;
+        }
+        return mergedEndpoints(defaults.getEndpoint(), defaults.getEndpoints());
+    }
+
+    private List<String> mergedEndpoints(String endpoint, List<String> endpoints) {
+        return Stream.concat(
+                        Stream.of(endpoint),
+                        nonNullList(endpoints).stream()
+                )
+                .map(StringUtils::trimToNull)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     private String normalizeProviderName(String provider) {
