@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.docs.client.web;
 
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.net.URLEncoder;
@@ -10,10 +12,14 @@ import java.util.Map;
 
 public class ScmDocsHtmlRenderer {
 
+    private static final Logger log = LoggerFactory.getLogger(ScmDocsHtmlRenderer.class);
+
     public String render(Map<String, String> title, String language, String basePath, List<ScmDocDescriptor> documents) {
         Map<String, String> pageTitleValues = ScmDocDescriptor.normalizeMap(title, Map.of("en", "SCM Documentation"));
         String pageTitle = ScmDocDescriptor.localizedValue(pageTitleValues, language, "SCM Documentation");
         String normalizedBasePath = normalizeBasePath(basePath);
+        log.debug("SCM docs HTML render started language={} basePath={} documentCount={}",
+                language, normalizedBasePath, documents.size());
         StringBuilder html = new StringBuilder(2048);
         html.append("""
                 <!doctype html>
