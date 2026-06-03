@@ -421,7 +421,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .contains("API_DOC_CACHE_BYPASSED")
                 .contains("API_DOC_CACHE_UNAVAILABLE")
                 .contains("API_DOC_CACHE_LOAD_FAILED")
-                .contains("cacheKey={}")
+                .contains("cacheName={}")
                 .contains("runtimeMode={}")
                 .contains("gatewayNames={}")
                 .contains("cacheKey={}")
@@ -457,7 +457,10 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
         ScmWebRuntimeApiDocCatalogProvider multiTargetProvider = provider(multiTargetEnvironment);
 
-        arrangeScopedDefinitions();
+        when(repository.findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb", "domain.card")))
+                .thenReturn(List.of());
 
         multiTargetProvider.findApiDocGroups();
 
