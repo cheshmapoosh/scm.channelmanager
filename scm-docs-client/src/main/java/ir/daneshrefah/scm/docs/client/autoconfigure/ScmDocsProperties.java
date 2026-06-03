@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.docs.client.model.ScmDocType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -98,6 +99,8 @@ public class ScmDocsProperties {
 
         private boolean failFast = false;
 
+        private final Cache cache = new Cache();
+
         public boolean isEnabled() {
             return enabled;
         }
@@ -112,6 +115,43 @@ public class ScmDocsProperties {
 
         public void setFailFast(boolean failFast) {
             this.failFast = failFast;
+        }
+
+        public Cache getCache() {
+            return cache;
+        }
+    }
+
+    public static class Cache {
+
+        private boolean enabled = true;
+
+        private Duration ttl = Duration.ofSeconds(60);
+
+        private long maximumSize = 128;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Duration getTtl() {
+            return ttl;
+        }
+
+        public void setTtl(Duration ttl) {
+            this.ttl = ttl;
+        }
+
+        public long getMaximumSize() {
+            return maximumSize;
+        }
+
+        public void setMaximumSize(long maximumSize) {
+            this.maximumSize = maximumSize;
         }
     }
 

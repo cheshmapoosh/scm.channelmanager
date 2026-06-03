@@ -3,12 +3,15 @@
  */
 package ir.daneshrefah.scm.web;
 
+import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(scanBasePackages = {"ir.daneshrefah"})
 @ComponentScan(basePackages = "ir.daneshrefah.scm")
+@EnableConfigurationProperties(ScmDocsProperties.class)
 public class App {
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);

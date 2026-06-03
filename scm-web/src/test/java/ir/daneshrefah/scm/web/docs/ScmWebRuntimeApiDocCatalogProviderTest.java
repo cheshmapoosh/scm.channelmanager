@@ -13,12 +13,15 @@ import ir.daneshrefah.scm.docs.client.model.ScmApiDocGroupDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmApiDocItemDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocType;
+import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,9 +49,9 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void apiDocsCanBeDisabled() {
-        MockEnvironment disabledEnvironment = runtimeEnvironment()
-                .withProperty("scm.docs.api.enabled", "false");
-        ScmWebRuntimeApiDocCatalogProvider disabledProvider = provider(disabledEnvironment);
+        ScmDocsProperties disabledProperties = docsProperties();
+        disabledProperties.getApi().setEnabled(false);
+        ScmWebRuntimeApiDocCatalogProvider disabledProvider = provider(runtimeEnvironment(), disabledProperties);
 
         assertThat(disabledProvider.findApiDocGroups()).isEmpty();
         assertThat(disabledProvider.findById("scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"))
@@ -85,6 +89,84 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     }
 
     @Test
+    void detailsRefClasspathReadsExternalDetailsAndBuildsGroup() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
+                .thenReturn(classpathResource(validDetailsWithThreeDocuments()));
+
+        List<ScmApiDocGroupDescriptor> groups = provider.findApiDocGroups().stream().toList();
+
+        assertThat(groups).hasSize(1);
+        assertThat(groups.getFirst().version()).isEqualTo("v1");
+        assertThat(groups.getFirst().documents())
+                .extracting(ScmApiDocItemDescriptor::id)
+                .containsExactly(
+                        "scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json",
+                        "scm-web.channel-mb.100.card-inquiry.v1.WSDL.card-inquiry-wsdl",
+                        "scm-web.channel-mb.100.card-inquiry.v1.MARKDOWN.guide-md"
+                );
+    }
+
+    @Test
+    void missingDetailsRefIsSkippedWhenFailFastFalse() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
+                .thenReturn(missingResource());
+
+        assertThat(provider.findApiDocGroups()).isEmpty();
+    }
+
+    @Test
+    void missingDetailsRefFailsWhenFailFastTrue() {
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
+                .thenReturn(missingResource());
+
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("detailsRef resource is missing or unreadable");
+    }
+
+    @Test
+    void unsafeDetailsRefPathIsSkippedWhenFailFastFalse() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/../api-docs.json")));
+
+        assertThat(provider.findApiDocGroups()).isEmpty();
+    }
+
+    @Test
+    void unsafeDetailsRefPathFailsWhenFailFastTrue() {
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/../api-docs.json")));
+
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must not contain path traversal");
+    }
+
+    @Test
+    void invalidDetailsRefJsonIsSkippedWhenFailFastFalse() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
+                .thenReturn(classpathResource("{"));
+
+        assertThat(provider.findApiDocGroups()).isEmpty();
+    }
+
+    @Test
+    void invalidDetailsRefJsonFailsWhenFailFastTrue() {
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
+                .thenReturn(classpathResource("{"));
+
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("detailsRef resource must be valid JSON");
+    }
+
+    @Test
     void loadsClasspathContentByDocumentItemId() {
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
         when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/openapi/openapi.json"))
@@ -114,9 +196,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void invalidDocumentItemFailsWhenFailFastTrue() {
-        MockEnvironment failFastEnvironment = runtimeEnvironment()
-                .withProperty("scm.docs.api.fail-fast", "true");
-        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(failFastEnvironment);
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsWithOneValidAndOneInvalidDocument()));
 
         assertThatThrownBy(failFastProvider::findApiDocGroups)
@@ -133,9 +213,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void invalidGroupFailsWhenFailFastTrue() {
-        MockEnvironment failFastEnvironment = runtimeEnvironment()
-                .withProperty("scm.docs.api.fail-fast", "true");
-        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(failFastEnvironment);
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", "{\"version\":\"v1\"}"));
 
         assertThatThrownBy(failFastProvider::findApiDocGroups)
@@ -211,9 +289,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void duplicateItemIdInsideSameGroupFailsWhenFailFastTrue() {
-        MockEnvironment failFastEnvironment = runtimeEnvironment()
-                .withProperty("scm.docs.api.fail-fast", "true");
-        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(failFastEnvironment);
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsWithDuplicateDocumentItems()));
 
         assertThatThrownBy(failFastProvider::findApiDocGroups)
@@ -221,13 +297,96 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .hasMessageContaining("duplicate runtime API doc item id");
     }
 
+    @Test
+    void cacheEnabledQueriesRepositoryOnceForRepeatedGroupLookups() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
+
+        provider.findApiDocGroups();
+        provider.findApiDocGroups();
+
+        verify(repository, times(1)).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void findByIdUsesCachedCatalogAfterGroupLookup() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
+        when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/openapi/openapi.json"))
+                .thenReturn(classpathResource("{\"openapi\":\"3.0.0\"}"));
+
+        provider.findApiDocGroups();
+        Optional<ScmDocContent> content = provider.findById(
+                "scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json");
+
+        assertThat(content).isPresent();
+        verify(repository, times(1)).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void cacheDisabledQueriesRepositoryOnEachLookup() {
+        ScmWebRuntimeApiDocCatalogProvider noCacheProvider = provider(runtimeEnvironment(), cacheDisabledProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
+
+        noCacheProvider.findApiDocGroups();
+        noCacheProvider.findApiDocGroups();
+
+        verify(repository, times(2)).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void invalidFailFastCatalogIsNotCached() {
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", "{\"version\":\"v1\"}"));
+
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class);
+        verify(repository, times(2)).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void providerDoesNotInjectEnvironmentForDocsApiConfiguration() {
+        assertThat(Arrays.stream(ScmWebRuntimeApiDocCatalogProvider.class.getDeclaredFields())
+                .map(field -> field.getType().getName())
+                .toList())
+                .doesNotContain("org.springframework.core.env.Environment");
+    }
+
     private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment) {
+        return provider(environment, docsProperties());
+    }
+
+    private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment, ScmDocsProperties docsProperties) {
         return new ScmWebRuntimeApiDocCatalogProvider(
                 repository,
                 new ObjectMapper(),
                 resourceLoader,
                 new ScmRuntimeProperties(environment),
-                environment);
+                docsProperties);
+    }
+
+    private ScmDocsProperties docsProperties() {
+        return new ScmDocsProperties();
+    }
+
+    private ScmDocsProperties failFastProperties() {
+        ScmDocsProperties properties = docsProperties();
+        properties.getApi().setFailFast(true);
+        return properties;
+    }
+
+    private ScmDocsProperties cacheDisabledProperties() {
+        ScmDocsProperties properties = docsProperties();
+        properties.getApi().getCache().setEnabled(false);
+        return properties;
     }
 
     private MockEnvironment runtimeEnvironment() {
@@ -240,6 +399,17 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 ChannelServiceDefinitionType.API_DOC,
                 List.of("channel.mb")))
                 .thenReturn(List.of(definitions));
+    }
+
+    private Resource classpathResource(String content) {
+        return new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Resource missingResource() {
+        Resource resource = mock(Resource.class);
+        when(resource.exists()).thenReturn(false);
+        when(resource.isReadable()).thenReturn(false);
+        return resource;
     }
 
     private ChannelServiceDefinitionEntity apiDocDefinition(String id, String details) {
@@ -275,6 +445,17 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         apiDocDefinition.setChannelServiceAccess(access);
         apiDocDefinition.setGatewayChannel(gatewayChannel);
         return apiDocDefinition;
+    }
+
+    private String detailsRef(String path) {
+        return """
+                {
+                  "detailsRef": {
+                    "type": "CLASSPATH",
+                    "path": "%s"
+                  }
+                }
+                """.formatted(path);
     }
 
     private String validDetailsWithThreeDocuments() {

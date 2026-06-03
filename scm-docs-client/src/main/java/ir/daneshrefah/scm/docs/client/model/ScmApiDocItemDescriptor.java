@@ -10,7 +10,6 @@ public record ScmApiDocItemDescriptor(
         String mediaType,
         String fileName,
         String href,
-        String downloadUrl,
         int order
 ) {
 
@@ -22,10 +21,9 @@ public record ScmApiDocItemDescriptor(
         mediaType = hasText(mediaType) ? mediaType.trim() : docType.getDefaultMediaType();
         fileName = hasText(fileName) ? fileName.trim() : id + docType.getDefaultExtension();
         href = trimToNull(href);
-        downloadUrl = trimToNull(downloadUrl);
     }
 
-    public ScmApiDocItemDescriptor withDownloadUrl(String downloadUrl) {
+    public ScmApiDocItemDescriptor withHref(String href) {
         return new ScmApiDocItemDescriptor(
                 id,
                 docType,
@@ -33,8 +31,7 @@ public record ScmApiDocItemDescriptor(
                 description,
                 mediaType,
                 fileName,
-                downloadUrl,
-                downloadUrl,
+                href,
                 order
         );
     }

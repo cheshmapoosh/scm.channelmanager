@@ -82,14 +82,11 @@ class ScmDocsControllerEndpointTest {
         mockMvc.perform(get("/docs/api"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
-                .andExpect(jsonPath("$.documents[0].id").value("sample"))
-                .andExpect(jsonPath("$.documents[0].moduleCode").value("scm-web"))
-                .andExpect(jsonPath("$.documents[0].title.en").value("Sample Guide"))
-                .andExpect(jsonPath("$.documents[0].category").value("GUIDE"))
-                .andExpect(jsonPath("$.documents[0].href").value("/docs/api/sample"))
+                .andExpect(jsonPath("$.documents").doesNotExist())
                 .andExpect(jsonPath("$.groups[0].id").value("scm-web.channel-mb.100.card-inquiry.v1"))
                 .andExpect(jsonPath("$.groups[0].documents[0].id").value("scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"))
-                .andExpect(jsonPath("$.groups[0].documents[0].downloadUrl").value("/docs/api/scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"));
+                .andExpect(jsonPath("$.groups[0].documents[0].href").value("/docs/api/scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"))
+                .andExpect(jsonPath("$.groups[0].documents[0].downloadUrl").doesNotExist());
     }
 
     @Test
@@ -153,7 +150,6 @@ class ScmDocsControllerEndpointTest {
                             Map.of(),
                             "application/json",
                             "openapi.json",
-                            null,
                             null,
                             10
                     )),

@@ -244,11 +244,13 @@ public class GatewayLayerRouteBuilder {
                         traceUtils.traceException(exchange, exception);
                     }
                     Map<String, String> fields = scmExchangeMdc.fields(exchange);
-                    log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                    log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
                             RouteLogEvents.GATEWAY_REQUEST_FAILED,
                             RouteLogSupport.gatewayName(exchange),
                             RouteLogSupport.targetKind(exchange),
                             RouteLogSupport.protocol(exchange),
+                            failureChannelCode(exchange),
+                            failureServiceCode(exchange),
                             serviceVersion(exchange),
                             exchange.getFromRouteId(),
                             exchange.getExchangeId(),
@@ -313,6 +315,24 @@ public class GatewayLayerRouteBuilder {
 
     private String channelCode(ChannelServiceAccess access) {
         return access != null && access.getChannel() != null ? access.getChannel().getCode() : null;
+    }
+
+    private String failureChannelCode(Exchange exchange) {
+        String channelCode = exchange.getProperty(Message.CHANNEL_CODE, String.class);
+        if (channelCode != null) {
+            return channelCode;
+        }
+        RuntimeServicePlan servicePlan = exchange.getProperty(Message.RUNTIME_SERVICE_PLAN, RuntimeServicePlan.class);
+        return RouteLogSupport.channelCode(servicePlan);
+    }
+
+    private String failureServiceCode(Exchange exchange) {
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        if (service != null) {
+            return service.getCode();
+        }
+        RuntimeServicePlan servicePlan = exchange.getProperty(Message.RUNTIME_SERVICE_PLAN, RuntimeServicePlan.class);
+        return RouteLogSupport.serviceCode(servicePlan);
     }
 
     private String serviceVersion(Exchange exchange) {

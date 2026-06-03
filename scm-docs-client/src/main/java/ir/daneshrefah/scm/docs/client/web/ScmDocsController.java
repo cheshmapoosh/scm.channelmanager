@@ -57,10 +57,9 @@ public class ScmDocsController {
 
     @GetMapping(path = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> apiIndex() {
-        List<ScmDocDescriptor> documents = descriptorsWithHref();
-        List<ScmApiDocGroupDescriptor> groups = apiDocGroupsWithDownloadUrls();
-        log.debug("SCM docs API index requested groupCount={} documentCount={}", groups.size(), documents.size());
-        return Map.of("groups", groups, "documents", documents);
+        List<ScmApiDocGroupDescriptor> groups = apiDocGroupsWithHref();
+        log.debug("SCM docs API index requested groupCount={}", groups.size());
+        return Map.of("groups", groups);
     }
 
     @GetMapping(path = "/api/{docId}")
@@ -119,16 +118,16 @@ public class ScmDocsController {
                 .toList();
     }
 
-    private List<ScmApiDocGroupDescriptor> apiDocGroupsWithDownloadUrls() {
+    private List<ScmApiDocGroupDescriptor> apiDocGroupsWithHref() {
         return registry.findApiDocGroups().stream()
                 .map(group -> group.withDocuments(group.documents().stream()
-                        .map(this::withDownloadUrl)
+                        .map(this::withHref)
                         .toList()))
                 .toList();
     }
 
-    private ScmApiDocItemDescriptor withDownloadUrl(ScmApiDocItemDescriptor item) {
-        return item.withDownloadUrl(hrefFor(item.id()));
+    private ScmApiDocItemDescriptor withHref(ScmApiDocItemDescriptor item) {
+        return item.withHref(hrefFor(item.id()));
     }
 
     private String hrefFor(String docId) {
