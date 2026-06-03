@@ -34,6 +34,7 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
     implementation project(':scm-gateway')
+    implementation project(':scm-docs-client')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
