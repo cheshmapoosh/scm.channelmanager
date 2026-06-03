@@ -4,6 +4,13 @@ spring:
   application:
     name: ${SCM_APPLICATION_NAME}
 scm:
+  cache:
+    client:
+      caches:
+        scm-web-api-doc-catalog:
+          type: local
+          ttl: 60s
+          maximum-size: 128
   application:
     version: 8.6.0
     build:  0521T1030

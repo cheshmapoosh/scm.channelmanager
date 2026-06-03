@@ -15,12 +15,20 @@ import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocType;
 import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +42,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ScmWebRuntimeApiDocCatalogProviderTest {
+
+    private static final String API_DOC_CATALOG_CACHE_NAME = "scm-web-api-doc-catalog";
 
     private final ChannelServiceDefinitionRepository repository = mock(ChannelServiceDefinitionRepository.class);
     private final ResourceLoader resourceLoader = mock(ResourceLoader.class);
@@ -142,7 +152,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
         assertThatThrownBy(failFastProvider::findApiDocGroups)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("must not contain path traversal");
+                .hasMessageContaining("API_DOC detailsRef.path must not contain path traversal");
     }
 
     @Test
@@ -164,6 +174,27 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         assertThatThrownBy(failFastProvider::findApiDocGroups)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("detailsRef resource must be valid JSON");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"version", "title", "description", "order", "documents"})
+    void detailsRefWithInlineMetadataIsSkippedWhenFailFastFalse(String inlineField) {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRefWithInlineField(inlineField)));
+
+        assertThat(provider.findApiDocGroups()).isEmpty();
+        verify(resourceLoader, never()).getResource("classpath:services/card/card-inquiry/v1/api-docs.json");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"version", "title", "description", "order", "documents"})
+    void detailsRefWithInlineMetadataFailsWhenFailFastTrue(String inlineField) {
+        ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRefWithInlineField(inlineField)));
+
+        assertThatThrownBy(failFastProvider::findApiDocGroups)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("detailsRef must not be combined with inline API doc fields");
+        verify(resourceLoader, never()).getResource("classpath:services/card/card-inquiry/v1/api-docs.json");
     }
 
     @Test
@@ -326,8 +357,24 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     }
 
     @Test
-    void cacheDisabledQueriesRepositoryOnEachLookup() {
-        ScmWebRuntimeApiDocCatalogProvider noCacheProvider = provider(runtimeEnvironment(), cacheDisabledProperties());
+    void missingCacheManagerQueriesRepositoryOnEachLookup() {
+        ScmWebRuntimeApiDocCatalogProvider noCacheProvider = providerWithoutCacheManager(runtimeEnvironment(), docsProperties());
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
+
+        noCacheProvider.findApiDocGroups();
+        noCacheProvider.findApiDocGroups();
+
+        verify(repository, times(2)).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void missingCacheNameQueriesRepositoryOnEachLookup() {
+        ScmWebRuntimeApiDocCatalogProvider noCacheProvider = provider(
+                runtimeEnvironment(),
+                docsProperties(),
+                new ConcurrentMapCacheManager("other-cache"));
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetailsWithThreeDocuments()));
 
         noCacheProvider.findApiDocGroups();
@@ -360,17 +407,86 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .doesNotContain("org.springframework.core.env.Environment");
     }
 
+    @Test
+    void providerDeclaresStructuredSpringCacheEvents() throws IOException {
+        String source = Files.readString(moduleRoot().resolve(
+                "src/main/java/ir/daneshrefah/scm/web/docs/ScmWebRuntimeApiDocCatalogProvider.java"));
+
+        assertThat(source)
+                .contains("scm-web-api-doc-catalog")
+                .contains("API_DOC_CACHE_LOOKUP_STARTED")
+                .contains("API_DOC_CACHE_HIT")
+                .contains("API_DOC_CACHE_MISS")
+                .contains("API_DOC_CACHE_PUT")
+                .contains("API_DOC_CACHE_BYPASSED")
+                .contains("API_DOC_CACHE_UNAVAILABLE")
+                .contains("API_DOC_CACHE_LOAD_FAILED")
+                .contains("cacheName={}")
+                .contains("runtimeMode={}")
+                .contains("gatewayNames={}")
+                .contains("failFast={}")
+                .contains("apiDocsEnabled={}")
+                .contains("cacheKey={}")
+                .contains("groupCount={}")
+                .contains("itemCount={}")
+                .contains("failureType={}")
+                .contains("failureMessage={}");
+    }
+
+    @Test
+    void providerDoesNotImportCaffeineDirectly() throws IOException {
+        assertThat(Arrays.stream(ScmWebRuntimeApiDocCatalogProvider.class.getDeclaredFields())
+                .map(field -> field.getType().getName())
+                .toList())
+                .noneMatch(typeName -> typeName.contains("caffeine"));
+
+        String source = Files.readString(moduleRoot().resolve(
+                "src/main/java/ir/daneshrefah/scm/web/docs/ScmWebRuntimeApiDocCatalogProvider.java"));
+        assertThat(source)
+                .doesNotContain("com.github.benmanes.caffeine")
+                .doesNotContain("Caffeine.newBuilder")
+                .doesNotContain("expireAfterWrite")
+                .doesNotContain("maximumSize");
+    }
+
     private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment) {
         return provider(environment, docsProperties());
     }
 
+    private Path moduleRoot() {
+        Path current = Path.of("").toAbsolutePath();
+        Path nestedModule = current.resolve("scm-web");
+        if (Files.exists(nestedModule.resolve("build.gradle"))) {
+            return nestedModule;
+        }
+        return current;
+    }
+
     private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment, ScmDocsProperties docsProperties) {
+        return provider(environment, docsProperties, new ConcurrentMapCacheManager(API_DOC_CATALOG_CACHE_NAME));
+    }
+
+    private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment,
+                                                        ScmDocsProperties docsProperties,
+                                                        CacheManager cacheManager) {
         return new ScmWebRuntimeApiDocCatalogProvider(
                 repository,
                 new ObjectMapper(),
                 resourceLoader,
                 new ScmRuntimeProperties(environment),
-                docsProperties);
+                docsProperties,
+                cacheManagerProvider(cacheManager));
+    }
+
+    private ScmWebRuntimeApiDocCatalogProvider providerWithoutCacheManager(MockEnvironment environment,
+                                                                           ScmDocsProperties docsProperties) {
+        return new ScmWebRuntimeApiDocCatalogProvider(
+                repository,
+                new ObjectMapper(),
+                resourceLoader,
+                new ScmRuntimeProperties(environment),
+                docsProperties,
+                cacheManagerProvider(null));
     }
 
     private ScmDocsProperties docsProperties() {
@@ -383,10 +499,11 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         return properties;
     }
 
-    private ScmDocsProperties cacheDisabledProperties() {
-        ScmDocsProperties properties = docsProperties();
-        properties.getApi().getCache().setEnabled(false);
-        return properties;
+    @SuppressWarnings("unchecked")
+    private ObjectProvider<CacheManager> cacheManagerProvider(CacheManager cacheManager) {
+        ObjectProvider<CacheManager> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(cacheManager);
+        return provider;
     }
 
     private MockEnvironment runtimeEnvironment() {
@@ -456,6 +573,26 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                   }
                 }
                 """.formatted(path);
+    }
+
+    private String detailsRefWithInlineField(String inlineField) {
+        String inlineJson = switch (inlineField) {
+            case "version" -> "\"version\": \"v1\"";
+            case "title" -> "\"title\": {\"en\": \"Card Inquiry API Docs\"}";
+            case "description" -> "\"description\": {\"en\": \"Card inquiry contract documents\"}";
+            case "order" -> "\"order\": 10";
+            case "documents" -> "\"documents\": []";
+            default -> throw new IllegalArgumentException("Unsupported inline field " + inlineField);
+        };
+        return """
+                {
+                  "detailsRef": {
+                    "type": "CLASSPATH",
+                    "path": "services/card/card-inquiry/v1/api-docs.json"
+                  },
+                  %s
+                }
+                """.formatted(inlineJson);
     }
 
     private String validDetailsWithThreeDocuments() {

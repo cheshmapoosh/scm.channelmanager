@@ -106,10 +106,6 @@ scm:
     api:
       enabled: true
       fail-fast: false
-      cache:
-        enabled: true
-        ttl: 60s
-        maximum-size: 128
     documents:
       - id: scm-provider-hps-shetab.card-inquiry-guide
         module-code: scm-provider-hps-shetab
@@ -140,10 +136,9 @@ scm:
 | `scm.docs.classpath-root` | `scm-docs` | ریشه‌ی فایل‌های مستند در classpath |
 | `scm.docs.api.enabled` | `true` | فعال یا غیرفعال‌کردن catalog مستندات API runtime |
 | `scm.docs.api.fail-fast` | `false` | اگر `true` باشد، خطای تعریف API_DOC باعث exception می‌شود؛ اگر `false` باشد، مورد خراب warn و skip می‌شود |
-| `scm.docs.api.cache.enabled` | `true` | فعال یا غیرفعال‌کردن cache متادیتای API docs |
-| `scm.docs.api.cache.ttl` | `60s` | زمان ماندگاری cache catalog |
-| `scm.docs.api.cache.maximum-size` | `128` | حداکثر تعداد entryهای cache catalog |
 | `scm.docs.documents` | خالی | لیست مستندات static قابل انتشار |
+
+`scm-docs-client` خودش cache policy، cache implementation و dependency به `scm-cache-client` ندارد. تنظیمات `scm.docs.api.*` فقط رفتار API docs را کنترل می‌کنند. اگر provider یک ماژول به cache نیاز داشته باشد، cache باید در همان ماژول و با زیرساخت همان runtime تعریف شود.
 
 ---
 
@@ -610,8 +605,44 @@ ScmDocContentProvider
 3. parse کردن JSON داخل `details` یا فایل معرفی‌شده در `detailsRef`
 4. ساختن یک گروه API doc برای هر exposure
 5. ساختن یک descriptor برای هر آیتم داخل `documents[]`
-6. نگه‌داشتن mapping متادیتا و مسیر منبع در cache محلی
+6. استفاده از Spring `CacheManager` برای cache کردن catalog metadata
 7. load کردن فایل‌ها از classpath هنگام درخواست content
+
+### 11.3. cache catalog در `scm-web`
+
+`scm-web` به `scm-cache-client` وابسته است و cache مربوط به catalog مستندات API را از طریق Spring `CacheManager` دریافت می‌کند. این cache متعلق به implementation در `scm-web` است و بخشی از `scm-docs-client` نیست.
+
+نام cache ثابت است:
+
+```text
+scm-web-api-doc-catalog
+```
+
+تنظیم پیشنهادی در `scm-web`:
+
+```yaml
+scm:
+  cache:
+    client:
+      caches:
+        scm-web-api-doc-catalog:
+          type: local
+          ttl: 60s
+          maximum-size: 128
+```
+
+`ScmWebRuntimeApiDocCatalogProvider` به‌صورت optional از `ObjectProvider<CacheManager>` استفاده می‌کند. اگر `CacheManager` وجود نداشته باشد یا cache با نام `scm-web-api-doc-catalog` تعریف نشده باشد، provider با log ساخت‌یافته warning می‌دهد و بدون cache اجرا می‌شود.
+
+cache key شامل این مقادیر است:
+
+```text
+runtimeMode
+active runtime gatewayNames
+failFast
+apiDocsEnabled
+```
+
+فقط `RuntimeApiDocCatalog` cache می‌شود. محتوای فایل‌های مستند cache نمی‌شود و در زمان درخواست content از classpath خوانده می‌شود.
 
 ---
 
@@ -695,6 +726,22 @@ scm-web/src/main/resources/services/card/card-inquiry/v1/api-docs.json
 ```
 
 در فاز فعلی، `detailsRef.type` فقط می‌تواند `CLASSPATH` باشد.
+
+وقتی `detailsRef` استفاده می‌شود، `Definition.details` نباید هم‌زمان فیلدهای inline مربوط به API doc را هم داشته باشد. یعنی این فیلدها باید فقط داخل فایل external باشند:
+
+```text
+version
+title
+description
+order
+documents
+```
+
+در صورت ترکیب `detailsRef` با این فیلدها، خطای validation باید این متن را داشته باشد:
+
+```text
+API_DOC detailsRef must not be combined with inline API doc fields: version, title, description, order, documents
+```
 
 ### 12.2. توضیح فیلدهای `details`
 
@@ -964,10 +1011,6 @@ scm:
     api:
       enabled: true
       fail-fast: false
-      cache:
-        enabled: true
-        ttl: 60s
-        maximum-size: 128
 ```
 
 پیش‌فرض‌ها:
@@ -975,12 +1018,22 @@ scm:
 ```text
 enabled=true
 fail-fast=false
-cache.enabled=true
-cache.ttl=60s
-cache.maximum-size=128
 ```
 
-cache فقط catalog metadata و mapping بین `docId` و مسیر classpath را نگه می‌دارد. محتوای فایل‌ها cache نمی‌شود. اگر `fail-fast=true` باشد و catalog نامعتبر exception بدهد، آن exception در cache ذخیره نمی‌شود. اگر `fail-fast=false` باشد، catalog نهایی با skip شدن موارد خراب می‌تواند cache شود.
+برای `scm-web`، cache catalog از مسیر `scm-cache-client` و Spring `CacheManager` تنظیم می‌شود:
+
+```yaml
+scm:
+  cache:
+    client:
+      caches:
+        scm-web-api-doc-catalog:
+          type: local
+          ttl: 60s
+          maximum-size: 128
+```
+
+این cache فقط catalog metadata و mapping بین `docId` و مسیر classpath را نگه می‌دارد. محتوای فایل‌ها cache نمی‌شود. اگر `fail-fast=true` باشد و catalog نامعتبر exception بدهد، آن exception در cache ذخیره نمی‌شود. اگر `fail-fast=false` باشد، catalog نهایی با skip شدن موارد خراب می‌تواند cache شود.
 
 ---
 

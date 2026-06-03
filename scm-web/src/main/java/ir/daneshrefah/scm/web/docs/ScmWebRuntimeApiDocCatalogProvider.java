@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.web.docs;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +24,9 @@ import ir.daneshrefah.scm.docs.client.provider.ScmApiDocGroupCatalogProvider;
 import ir.daneshrefah.scm.docs.client.provider.ScmDocContentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
@@ -37,7 +38,6 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -59,8 +59,8 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     private static final String SERVICES_PREFIX = "services/";
     private static final String LEGACY_DOCS_PREFIX = "scm-docs/";
     private static final String UNVERSIONED = "unversioned";
-    private static final Duration DEFAULT_CACHE_TTL = Duration.ofSeconds(60);
-    private static final long DEFAULT_CACHE_MAXIMUM_SIZE = 128;
+    private static final int MAX_FAILURE_MESSAGE_LENGTH = 300;
+    private static final String API_DOC_CATALOG_CACHE_NAME = "scm-web-api-doc-catalog";
 
     private static final String API_DOC_CATALOG_RESOLUTION_STARTED = "API_DOC_CATALOG_RESOLUTION_STARTED";
     private static final String API_DOC_CATALOG_RESOLVED = "API_DOC_CATALOG_RESOLVED";
@@ -76,28 +76,33 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     private static final String API_DOC_DETAILS_REF_LOAD_STARTED = "API_DOC_DETAILS_REF_LOAD_STARTED";
     private static final String API_DOC_DETAILS_REF_LOADED = "API_DOC_DETAILS_REF_LOADED";
     private static final String API_DOC_DETAILS_REF_LOAD_FAILED = "API_DOC_DETAILS_REF_LOAD_FAILED";
+    private static final String API_DOC_CACHE_LOOKUP_STARTED = "API_DOC_CACHE_LOOKUP_STARTED";
+    private static final String API_DOC_CACHE_HIT = "API_DOC_CACHE_HIT";
+    private static final String API_DOC_CACHE_MISS = "API_DOC_CACHE_MISS";
+    private static final String API_DOC_CACHE_PUT = "API_DOC_CACHE_PUT";
+    private static final String API_DOC_CACHE_BYPASSED = "API_DOC_CACHE_BYPASSED";
+    private static final String API_DOC_CACHE_UNAVAILABLE = "API_DOC_CACHE_UNAVAILABLE";
+    private static final String API_DOC_CACHE_LOAD_FAILED = "API_DOC_CACHE_LOAD_FAILED";
 
     private final ChannelServiceDefinitionRepository channelServiceDefinitionRepository;
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
     private final ScmRuntimeProperties scmRuntimeProperties;
     private final ScmDocsProperties docsProperties;
-    private final Cache<RuntimeApiDocCatalogCacheKey, RuntimeApiDocCatalog> catalogCache;
+    private final CacheManager cacheManager;
 
     public ScmWebRuntimeApiDocCatalogProvider(ChannelServiceDefinitionRepository channelServiceDefinitionRepository,
                                               ObjectMapper objectMapper,
                                               ResourceLoader resourceLoader,
                                               ScmRuntimeProperties scmRuntimeProperties,
-                                              ScmDocsProperties docsProperties) {
+                                              ScmDocsProperties docsProperties,
+                                              ObjectProvider<CacheManager> cacheManagerProvider) {
         this.channelServiceDefinitionRepository = channelServiceDefinitionRepository;
         this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
         this.scmRuntimeProperties = scmRuntimeProperties;
         this.docsProperties = docsProperties;
-        this.catalogCache = Caffeine.newBuilder()
-                .expireAfterWrite(cacheTtl())
-                .maximumSize(cacheMaximumSize())
-                .build();
+        this.cacheManager = cacheManagerProvider.getIfAvailable();
     }
 
     @Override
@@ -120,7 +125,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         boolean failFast = failFast();
         RuntimeApiDocument document = runtimeCatalog().documentsById().get(safeDocId);
         if (document == null) {
-            log.warn("event={} moduleCode={} docItemId={} failFast={} reason=catalog-miss",
+            log.warn("event={} moduleCode={} docItemId={} failFast={} outcome=skipped reason=catalog-miss",
                     API_DOC_CONTENT_NOT_FOUND, MODULE_CODE, safeDocId, failFast);
             return Optional.empty();
         }
@@ -141,7 +146,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
 
         Resource resource = resourceLoader.getResource(CLASSPATH_PREFIX + document.sourcePath());
         if (!resource.exists() || !resource.isReadable()) {
-            log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason=resource-missing-or-unreadable",
+            log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=skipped reason=resource-missing-or-unreadable",
                     API_DOC_CONTENT_NOT_FOUND,
                     MODULE_CODE,
                     document.group().descriptor().gatewayName(),
@@ -201,10 +206,30 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
 
     private RuntimeApiDocCatalog runtimeCatalog() {
         RuntimeApiDocCatalogCacheKey cacheKey = catalogCacheKey();
-        if (!cacheEnabled()) {
+        Optional<Cache> cache = resolveCatalogCache(cacheKey);
+        if (cache.isEmpty()) {
+            logCacheEvent(API_DOC_CACHE_BYPASSED, cacheKey, null, "skipped", "cache-unavailable", null, null);
             return loadRuntimeCatalog(cacheKey);
         }
-        return catalogCache.get(cacheKey, this::loadRuntimeCatalog);
+        logCacheEvent(API_DOC_CACHE_LOOKUP_STARTED, cacheKey, null, "started", null, null, null);
+        Cache catalogCache = cache.get();
+        Cache.ValueWrapper cachedValue = catalogCache.get(cacheKey);
+        if (cachedValue != null && cachedValue.get() instanceof RuntimeApiDocCatalog catalog) {
+            logCacheEvent(API_DOC_CACHE_HIT, cacheKey, catalog, "success", null, null, null);
+            return catalog;
+        }
+
+        logCacheEvent(API_DOC_CACHE_MISS, cacheKey, null, "success", null, null, null);
+        try {
+            RuntimeApiDocCatalog catalog = loadRuntimeCatalog(cacheKey);
+            catalogCache.put(cacheKey, catalog);
+            logCacheEvent(API_DOC_CACHE_PUT, cacheKey, catalog, "success", null, null, null);
+            return catalog;
+        } catch (RuntimeException exception) {
+            logCacheEvent(API_DOC_CACHE_LOAD_FAILED, cacheKey, null, "failed", "catalog-load-failed",
+                    exception.getClass().getSimpleName(), safeFailureMessage(exception));
+            throw exception;
+        }
     }
 
     private RuntimeApiDocCatalog loadRuntimeCatalog(RuntimeApiDocCatalogCacheKey cacheKey) {
@@ -374,13 +399,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                 parsedDocuments.stream()
                         .map(document -> document.withGroup(groupRef))
                         .toList());
-        log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} failFast={} documentCount={} outcome=success",
+        log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} definitionId={} docGroupId={} failFast={} documentCount={} outcome=success",
                 API_DOC_GROUP_PARSED,
                 MODULE_CODE,
                 gatewayName,
                 channelServiceAccessId,
                 serviceCode,
                 version,
+                safeDefinitionId(apiDocDefinition),
                 groupId,
                 failFast,
                 parsedDocuments.size());
@@ -487,11 +513,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                 itemDescriptor.order()
         );
         RuntimeApiDocument apiDocument = new RuntimeApiDocument(null, contentDescriptor, itemDescriptor, sourceType, sourcePath);
-        log.info("event={} moduleCode={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=success",
+        log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} definitionId={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=success",
                 API_DOC_ITEM_PARSED,
                 MODULE_CODE,
+                safeGatewayName(apiDocDefinition),
+                safeChannelServiceAccessId(apiDocDefinition),
                 serviceCode,
                 version,
+                safeDefinitionId(apiDocDefinition),
                 groupId,
                 itemId,
                 docType,
@@ -514,12 +543,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
 
     private Map<String, RuntimeApiDocGroup> sortedGroups(Map<String, RuntimeApiDocGroup> groupsById) {
         Map<String, RuntimeApiDocGroup> sorted = new LinkedHashMap<>();
+        Comparator<RuntimeApiDocGroup> groupComparator = Comparator
+                .comparingInt((RuntimeApiDocGroup group) -> group.descriptor().order())
+                .thenComparing(group -> nullSafe(group.descriptor().serviceCode()))
+                .thenComparing(group -> nullSafe(group.descriptor().version()))
+                .thenComparing(group -> nullSafe(group.descriptor().gatewayName()))
+                .thenComparing(group -> group.descriptor().id());
         groupsById.values().stream()
-                .sorted(Comparator.<RuntimeApiDocGroup>comparingInt(group -> group.descriptor().order())
-                        .thenComparing(group -> nullSafe(group.descriptor().serviceCode()))
-                        .thenComparing(group -> nullSafe(group.descriptor().version()))
-                        .thenComparing(group -> nullSafe(group.descriptor().gatewayName()))
-                        .thenComparing(group -> group.descriptor().id()))
+                .sorted(groupComparator)
                 .forEach(group -> sorted.put(group.descriptor().id(), group));
         return sorted;
     }
@@ -553,6 +584,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             }
             JsonNode detailsRef = details.get("detailsRef");
             if (detailsRef != null && !detailsRef.isNull()) {
+                validateDetailsRefHasNoInlineFields(apiDocDefinition, details);
                 return readDetailsRef(apiDocDefinition, definition, details, detailsRef, failFast);
             }
             return details;
@@ -576,7 +608,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             sourceType = requiredDetailsRefText(apiDocDefinition, detailsRef, "type").toUpperCase(Locale.ROOT);
             String rawSourcePath = requiredDetailsRefText(apiDocDefinition, detailsRef, "path");
             sourcePath = rawSourcePath.trim().replace('\\', '/');
-            sourcePath = validateSourcePath(apiDocDefinition, rawSourcePath);
+            sourcePath = validateSourcePath(apiDocDefinition, rawSourcePath, "detailsRef.path");
             if (!SOURCE_TYPE_CLASSPATH.equals(sourceType)) {
                 throw invalidDefinition(apiDocDefinition, "unsupported API_DOC detailsRef.type " + sourceType);
             }
@@ -609,6 +641,16 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         }
     }
 
+    private void validateDetailsRefHasNoInlineFields(ChannelServiceDefinitionEntity apiDocDefinition, JsonNode details) {
+        List<String> inlineFields = List.of("version", "title", "description", "order", "documents");
+        boolean hasInlineField = inlineFields.stream()
+                .anyMatch(fieldName -> details.has(fieldName) && !details.get(fieldName).isNull());
+        if (hasInlineField) {
+            throw invalidDefinition(apiDocDefinition,
+                    "API_DOC detailsRef must not be combined with inline API doc fields: version, title, description, order, documents");
+        }
+    }
+
     private ScmDocType docType(ChannelServiceDefinitionEntity apiDocDefinition, String value) {
         try {
             return ScmDocType.valueOf(value.toUpperCase(Locale.ROOT));
@@ -618,27 +660,31 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     }
 
     private String validateSourcePath(ChannelServiceDefinitionEntity apiDocDefinition, String rawPath) {
+        return validateSourcePath(apiDocDefinition, rawPath, "source.path");
+    }
+
+    private String validateSourcePath(ChannelServiceDefinitionEntity apiDocDefinition, String rawPath, String fieldName) {
         String sourcePath = rawPath.trim().replace('\\', '/');
-        rejectUnsafePath(apiDocDefinition, sourcePath);
+        rejectUnsafePath(apiDocDefinition, sourcePath, fieldName);
         if (sourcePath.startsWith(LEGACY_DOCS_PREFIX)) {
-            throw invalidDefinition(apiDocDefinition, "API_DOC source.path must not start with scm-docs/");
+            throw invalidDefinition(apiDocDefinition, "API_DOC " + fieldName + " must not start with scm-docs/");
         }
         if (!sourcePath.startsWith(SERVICES_PREFIX)) {
-            throw invalidDefinition(apiDocDefinition, "API_DOC source.path must start with services/");
+            throw invalidDefinition(apiDocDefinition, "API_DOC " + fieldName + " must start with services/");
         }
         return sourcePath;
     }
 
-    private void rejectUnsafePath(ChannelServiceDefinitionEntity apiDocDefinition, String sourcePath) {
+    private void rejectUnsafePath(ChannelServiceDefinitionEntity apiDocDefinition, String sourcePath, String fieldName) {
         if (sourcePath.indexOf('\0') >= 0) {
-            throw invalidDefinition(apiDocDefinition, "API_DOC source.path must not contain null bytes");
+            throw invalidDefinition(apiDocDefinition, "API_DOC " + fieldName + " must not contain null bytes");
         }
         if (sourcePath.startsWith("/") || sourcePath.matches("^[A-Za-z]:/.*") || sourcePath.contains("//")) {
-            throw invalidDefinition(apiDocDefinition, "API_DOC source.path must be a relative classpath path");
+            throw invalidDefinition(apiDocDefinition, "API_DOC " + fieldName + " must be a relative classpath path");
         }
         for (String segment : sourcePath.split("/")) {
             if (!StringUtils.hasText(segment) || ".".equals(segment) || "..".equals(segment)) {
-                throw invalidDefinition(apiDocDefinition, "API_DOC source.path must not contain path traversal");
+                throw invalidDefinition(apiDocDefinition, "API_DOC " + fieldName + " must not contain path traversal");
             }
         }
     }
@@ -788,21 +834,68 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         return docsProperties.getApi().isFailFast();
     }
 
-    private boolean cacheEnabled() {
-        return docsProperties.getApi().getCache().isEnabled();
-    }
-
-    private Duration cacheTtl() {
-        Duration configured = docsProperties.getApi().getCache().getTtl();
-        if (configured == null || configured.isNegative() || configured.isZero()) {
-            return DEFAULT_CACHE_TTL;
+    private Optional<Cache> resolveCatalogCache(RuntimeApiDocCatalogCacheKey cacheKey) {
+        if (cacheManager == null) {
+            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
+                    "cache-manager-missing", null, null);
+            return Optional.empty();
         }
-        return configured;
+        if (!cacheManager.getCacheNames().contains(API_DOC_CATALOG_CACHE_NAME)) {
+            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
+                    "cache-not-found", null, null);
+            return Optional.empty();
+        }
+        Cache cache = cacheManager.getCache(API_DOC_CATALOG_CACHE_NAME);
+        if (cache == null) {
+            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
+                    "cache-not-found", null, null);
+            return Optional.empty();
+        }
+        return Optional.of(cache);
     }
 
-    private long cacheMaximumSize() {
-        long configured = docsProperties.getApi().getCache().getMaximumSize();
-        return configured > 0 ? configured : DEFAULT_CACHE_MAXIMUM_SIZE;
+    private void logCacheEvent(String event,
+                               RuntimeApiDocCatalogCacheKey cacheKey,
+                               RuntimeApiDocCatalog catalog,
+                               String outcome,
+                               String reason,
+                               String failureType,
+                               String failureMessage) {
+        int groupCount = catalog != null ? catalog.groupsById().size() : 0;
+        int itemCount = catalog != null ? catalog.documentsById().size() : 0;
+        if (API_DOC_CACHE_LOAD_FAILED.equals(event) || API_DOC_CACHE_UNAVAILABLE.equals(event)) {
+            log.warn("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} failFast={} apiDocsEnabled={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+                    event,
+                    MODULE_CODE,
+                    API_DOC_CATALOG_CACHE_NAME,
+                    cacheKey.runtimeMode(),
+                    cacheKey.gatewayNames(),
+                    cacheKey.failFast(),
+                    cacheKey.apiDocsEnabled(),
+                    cacheKey,
+                    groupCount,
+                    itemCount,
+                    outcome,
+                    reason,
+                    failureType,
+                    failureMessage);
+            return;
+        }
+        log.info("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} failFast={} apiDocsEnabled={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+                event,
+                MODULE_CODE,
+                API_DOC_CATALOG_CACHE_NAME,
+                cacheKey.runtimeMode(),
+                cacheKey.gatewayNames(),
+                cacheKey.failFast(),
+                cacheKey.apiDocsEnabled(),
+                cacheKey,
+                groupCount,
+                itemCount,
+                outcome,
+                reason,
+                failureType,
+                failureMessage);
     }
 
     private void logDetailsRefEvent(String event,
@@ -857,12 +950,13 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                                  boolean failFast,
                                  String reason,
                                  Exception exception) {
-        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} failFast={} reason={} failureType={} failureMessage={}",
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} definitionId={} failFast={} outcome=skipped reason={} failureType={} failureMessage={}",
                 API_DOC_GROUP_SKIPPED,
                 MODULE_CODE,
                 safeGatewayName(apiDocDefinition),
                 safeChannelServiceAccessId(apiDocDefinition),
                 safeServiceCode(apiDocDefinition),
+                safeDefinitionId(apiDocDefinition),
                 failFast,
                 reason,
                 exception.getClass().getSimpleName(),
@@ -877,7 +971,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                                 String reason,
                                 Exception exception) {
         ScmApiDocGroupDescriptor groupDescriptor = group != null ? group.descriptor() : null;
-        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason={} failureType={} failureMessage={}",
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=skipped reason={} failureType={} failureMessage={}",
                 API_DOC_ITEM_SKIPPED,
                 MODULE_CODE,
                 groupDescriptor != null ? groupDescriptor.gatewayName() : null,
@@ -904,13 +998,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                                 boolean failFast,
                                 String reason,
                                 Exception exception) {
-        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason={} failureType={} failureMessage={}",
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} definitionId={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=skipped reason={} failureType={} failureMessage={}",
                 API_DOC_ITEM_SKIPPED,
                 MODULE_CODE,
                 safeGatewayName(apiDocDefinition),
                 safeChannelServiceAccessId(apiDocDefinition),
                 safeServiceCode(apiDocDefinition),
                 version,
+                safeDefinitionId(apiDocDefinition),
                 groupId,
                 itemDescriptor != null ? itemDescriptor.id() : null,
                 itemDescriptor != null ? itemDescriptor.docType() : null,
@@ -938,13 +1033,24 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         return service != null ? service.getCode() : null;
     }
 
+    private String safeDefinitionId(ChannelServiceDefinitionEntity apiDocDefinition) {
+        DefinitionEntity definition = apiDocDefinition != null ? apiDocDefinition.getDefinition() : null;
+        return definition != null ? definition.getId() : null;
+    }
+
     private String safeFailureMessage(Exception exception) {
         if (exception.getMessage() == null) {
             return null;
         }
-        return exception.getMessage()
+        String message = exception.getMessage()
                 .replace('\r', ' ')
-                .replace('\n', ' ');
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        if (message.length() > MAX_FAILURE_MESSAGE_LENGTH) {
+            return message.substring(0, MAX_FAILURE_MESSAGE_LENGTH);
+        }
+        return message;
     }
 
     private String nullSafe(String value) {
