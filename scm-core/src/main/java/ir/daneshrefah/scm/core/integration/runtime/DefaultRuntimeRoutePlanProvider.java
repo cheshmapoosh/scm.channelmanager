@@ -46,6 +46,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         }
 
         RuntimeTargetKind targetKind = runtimeTargetKindResolver.resolve(gatewayChannel);
+        log.info("Runtime route planning started gatewayName={} targetKind={}",
+                gatewayChannel.getName(), targetKind);
         List<RuntimeServicePlan> servicePlans = switch (targetKind) {
             case CHANNEL -> createChannelPlan(gatewayChannel);
             case SERVICE_DOMAIN -> createDomainPlan(gatewayChannel);
@@ -64,6 +66,10 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         List<ChannelServiceAccess> accesses = Optional
                 .ofNullable(channelServiceAccessService.findAllByChannel(gatewayChannel.getChannel()))
                 .orElse(List.of());
+        log.debug("Channel runtime planning loaded channel services gatewayName={} channelCode={} accessCount={}",
+                gatewayChannel.getName(),
+                gatewayChannel.getChannel() != null ? gatewayChannel.getChannel().getCode() : null,
+                accesses.size());
 
         return accesses.stream()
                 .filter(this::isActiveServiceAccess)
@@ -73,6 +79,10 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                     List<ChannelServiceDefinition> definitions = Optional
                             .ofNullable(channelServiceDefinitionService.findDefinitions(access, gatewayChannel))
                             .orElse(List.of());
+                    log.debug("Channel runtime service definitions loaded gatewayName={} serviceCode={} definitionCount={}",
+                            gatewayChannel.getName(),
+                            access.getService() != null ? access.getService().getCode() : null,
+                            definitions.size());
                     validateServiceDefinitions(gatewayChannel, RuntimeTargetKind.CHANNEL, access, definitions);
                     return new RuntimeServicePlan(
                             gatewayChannel,
@@ -87,6 +97,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         List<ChannelServiceDefinition> definitions = Optional
                 .ofNullable(channelServiceDefinitionService.findDefinitions(gatewayChannel))
                 .orElse(List.of());
+        log.debug("Service-domain runtime definitions loaded gatewayName={} definitionCount={}",
+                gatewayChannel.getName(), definitions.size());
         List<ChannelServiceDefinition> membershipDefinitions = definitions.stream()
                 .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER)
                 .filter(definition -> definition.getChannelServiceAccess() != null)
@@ -95,6 +107,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                 .toList();
 
         if (membershipDefinitions.isEmpty()) {
+            log.warn("Service-domain runtime planning skipped gatewayName={} reason=missing-membership-definition",
+                    gatewayChannel.getName());
             throw new IllegalStateException("Invalid runtime service definition gatewayName="
                     + gatewayChannel.getName()
                     + " targetKind="
@@ -130,6 +144,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         return membershipsByService.entrySet()
                 .stream()
                 .map(entry -> {
+                    log.debug("Service-domain membership planning started gatewayName={} serviceKey={} membershipCount={}",
+                            gatewayChannel.getName(), entry.getKey(), entry.getValue().size());
                     List<ChannelServiceAccess> memberAccesses = entry.getValue()
                             .stream()
                             .map(ChannelServiceDefinition::getChannelServiceAccess)
@@ -144,6 +160,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                                             LinkedHashMap::new),
                                     accessById -> List.copyOf(accessById.values())));
                     if (memberAccesses.isEmpty()) {
+                        log.warn("Service-domain membership skipped gatewayName={} serviceKey={} reason=no-active-service-access",
+                                gatewayChannel.getName(), entry.getKey());
                         return null;
                     }
                     ChannelServiceAccess representativeAccess = memberAccesses.getFirst();

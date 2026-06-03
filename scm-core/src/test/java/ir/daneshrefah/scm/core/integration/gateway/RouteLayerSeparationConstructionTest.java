@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolv
 import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.core.integration.service.ServiceLayerRouteBuilder;
 import ir.daneshrefah.scm.core.integration.service.ServiceRouteUriResolver;
@@ -41,7 +42,8 @@ class RouteLayerSeparationConstructionTest {
                 mock(RuntimeRoutePlanProvider.class),
                 List.of(mock(ProtocolHandler.class)),
                 mock(ScmRuntimeProperties.class),
-                gatewayLayerRouteBuilder);
+                gatewayLayerRouteBuilder,
+                mock(RuntimeRouteActivation.class));
 
         ServiceLayerRouteBuilder serviceLayerRouteBuilder = new ServiceLayerRouteBuilder(
                 mock(GatewayService.class),
@@ -57,7 +59,8 @@ class RouteLayerSeparationConstructionTest {
                 mock(ServicePluginMetrics.class),
                 mock(ServiceAuditEventPublisher.class),
                 mock(IncomingChannelCodeResolver.class),
-                mock(ScmRuntimeProperties.class));
+                mock(ScmRuntimeProperties.class),
+                mock(RuntimeRouteActivation.class));
 
         assertThat(gatewayLayerRouteBuilder).isNotNull();
         assertThat(gatewayChannelRouteBuilder).isNotNull();

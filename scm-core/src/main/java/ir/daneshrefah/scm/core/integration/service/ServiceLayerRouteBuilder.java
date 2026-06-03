@@ -14,7 +14,10 @@ import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.core.integration.service.guard.ChannelServiceAccessGuard;
 import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
@@ -52,18 +55,26 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private final ServiceAuditEventPublisher serviceAuditEventPublisher;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
     private final ScmRuntimeProperties scmRuntimeProperties;
+    private final RuntimeRouteActivation runtimeRouteActivation;
 
     @Override
     public void configure() {
         String name = scmRuntimeProperties.gatewayName();
-        log.info("Service route construction started gatewayName={}", name);
+        RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
+        log.info("Service route construction started gatewayName={} runtimeMode={}", name, runtimeMode);
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
         if (gatewayChannel == null) {
             log.error("Service route construction failed gateway channel not found gatewayName={}", name);
             throw new IllegalStateException("Gateway channel '" + name + "' not found");
         }
+        RuntimeTargetKind targetKind = runtimeRouteActivation.resolveTargetKind(gatewayChannel);
+        if (!runtimeRouteActivation.shouldBuildServiceRoutes(runtimeMode, targetKind)) {
+            log.warn("Service route construction skipped gatewayName={} runtimeMode={} targetKind={}",
+                    gatewayChannel.getName(), runtimeMode, targetKind);
+            return;
+        }
 
-        RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
+        RuntimeRoutePlan routePlan = resolveRoutePlan(gatewayChannel, runtimeMode);
         log.info("Service route plan resolved gatewayName={} protocol={} targetKind={} serviceCount={}",
                 gatewayChannel.getName(), gatewayChannel.getProtocolType(), routePlan.targetKind(), routePlan.servicePlans().size());
         if (routePlan.servicePlans().isEmpty()) {
@@ -82,6 +93,16 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         });
         log.info("Service route construction completed gatewayName={} serviceCount={}",
                 gatewayChannel.getName(), routePlan.servicePlans().size());
+    }
+
+    private RuntimeRoutePlan resolveRoutePlan(GatewayChannel gatewayChannel, RuntimeMode runtimeMode) {
+        try {
+            return runtimeRoutePlanProvider.provide(gatewayChannel);
+        } catch (RuntimeException exception) {
+            log.error("Service route planning failed gatewayName={} runtimeMode={} protocol={}",
+                    gatewayChannel.getName(), runtimeMode, gatewayChannel.getProtocolType(), exception);
+            throw exception;
+        }
     }
 
     private void buildServiceRoute(RuntimeRoutePlan routePlan,
