@@ -38,14 +38,8 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -90,6 +84,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     private final ScmRuntimeProperties scmRuntimeProperties;
     private final ScmDocsProperties docsProperties;
     private final CacheManager cacheManager;
+    private final Set<String> cacheUnavailableWarnings = ConcurrentHashMap.newKeySet();
 
     public ScmWebRuntimeApiDocCatalogProvider(ChannelServiceDefinitionRepository channelServiceDefinitionRepository,
                                               ObjectMapper objectMapper,
@@ -206,30 +201,48 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
 
     private RuntimeApiDocCatalog runtimeCatalog() {
         RuntimeApiDocCatalogCacheKey cacheKey = catalogCacheKey();
-        Optional<Cache> cache = resolveCatalogCache(cacheKey);
+        String cacheKeyValue = catalogCacheKeyValue(cacheKey);
+
+        Optional<Cache> cache = resolveCatalogCache(cacheKey, cacheKeyValue);
         if (cache.isEmpty()) {
-            logCacheEvent(API_DOC_CACHE_BYPASSED, cacheKey, null, "skipped", "cache-unavailable", null, null);
+            logCacheEvent(API_DOC_CACHE_BYPASSED, cacheKey, cacheKeyValue, null,
+                    "skipped", "cache-unavailable", null, null, false);
             return loadRuntimeCatalog(cacheKey);
         }
-        logCacheEvent(API_DOC_CACHE_LOOKUP_STARTED, cacheKey, null, "started", null, null, null);
+
+        logCacheEvent(API_DOC_CACHE_LOOKUP_STARTED, cacheKey, cacheKeyValue, null,
+                "started", null, null, null, false);
+
         Cache catalogCache = cache.get();
-        Cache.ValueWrapper cachedValue = catalogCache.get(cacheKey);
+        Cache.ValueWrapper cachedValue = catalogCache.get(cacheKeyValue);
+
         if (cachedValue != null && cachedValue.get() instanceof RuntimeApiDocCatalog catalog) {
-            logCacheEvent(API_DOC_CACHE_HIT, cacheKey, catalog, "success", null, null, null);
+            logCacheEvent(API_DOC_CACHE_HIT, cacheKey, cacheKeyValue, catalog,
+                    "success", null, null, null, false);
             return catalog;
         }
 
-        logCacheEvent(API_DOC_CACHE_MISS, cacheKey, null, "success", null, null, null);
+        logCacheEvent(API_DOC_CACHE_MISS, cacheKey, cacheKeyValue, null,
+                "success", null, null, null, false);
+
         try {
             RuntimeApiDocCatalog catalog = loadRuntimeCatalog(cacheKey);
-            catalogCache.put(cacheKey, catalog);
-            logCacheEvent(API_DOC_CACHE_PUT, cacheKey, catalog, "success", null, null, null);
+            catalogCache.put(cacheKeyValue, catalog);
+            logCacheEvent(API_DOC_CACHE_PUT, cacheKey, cacheKeyValue, catalog,
+                    "success", null, null, null, false);
             return catalog;
         } catch (RuntimeException exception) {
-            logCacheEvent(API_DOC_CACHE_LOAD_FAILED, cacheKey, null, "failed", "catalog-load-failed",
-                    exception.getClass().getSimpleName(), safeFailureMessage(exception));
+            logCacheEvent(API_DOC_CACHE_LOAD_FAILED, cacheKey, cacheKeyValue, null,
+                    "failed", "catalog-load-failed",
+                    exception.getClass().getSimpleName(),
+                    safeFailureMessage(exception),
+                    true);
             throw exception;
         }
+    }
+
+    private String catalogCacheKeyValue(RuntimeApiDocCatalogCacheKey cacheKey) {
+        return cacheKey.runtimeMode() + "|" + String.join(",", cacheKey.gatewayNames());
     }
 
     private RuntimeApiDocCatalog loadRuntimeCatalog(RuntimeApiDocCatalogCacheKey cacheKey) {
@@ -562,7 +575,10 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                 .filter(RuntimeTargetProperties::enabled)
                 .filter(runtimeTarget -> runtimeMode.accepts(runtimeTarget.targetKind()))
                 .flatMap(runtimeTarget -> runtimeTarget.gatewayNames().stream())
+                .filter(StringUtils::hasText)
+                .map(String::trim)
                 .distinct()
+                .sorted()
                 .toList();
     }
 
@@ -834,45 +850,65 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         return docsProperties.getApi().isFailFast();
     }
 
-    private Optional<Cache> resolveCatalogCache(RuntimeApiDocCatalogCacheKey cacheKey) {
+    private Optional<Cache> resolveCatalogCache(RuntimeApiDocCatalogCacheKey cacheKey, String cacheKeyValue) {
         if (cacheManager == null) {
-            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
-                    "cache-manager-missing", null, null);
+            logCacheUnavailableOnce(cacheKey, cacheKeyValue, "cache-manager-missing");
             return Optional.empty();
         }
+
         if (!cacheManager.getCacheNames().contains(API_DOC_CATALOG_CACHE_NAME)) {
-            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
-                    "cache-not-found", null, null);
+            logCacheUnavailableOnce(cacheKey, cacheKeyValue, "cache-not-found");
             return Optional.empty();
         }
+
         Cache cache = cacheManager.getCache(API_DOC_CATALOG_CACHE_NAME);
         if (cache == null) {
-            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, null, "skipped",
-                    "cache-not-found", null, null);
+            logCacheUnavailableOnce(cacheKey, cacheKeyValue, "cache-not-found");
             return Optional.empty();
         }
+
         return Optional.of(cache);
+    }
+
+    private void logCacheUnavailableOnce(RuntimeApiDocCatalogCacheKey cacheKey,
+                                         String cacheKeyValue,
+                                         String reason) {
+        if (cacheUnavailableWarnings.add(reason)) {
+            logCacheEvent(API_DOC_CACHE_UNAVAILABLE, cacheKey, cacheKeyValue, null,
+                    "skipped", reason, null, null, true);
+            return;
+        }
+
+        log.debug("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} outcome=skipped reason={}",
+                API_DOC_CACHE_UNAVAILABLE,
+                MODULE_CODE,
+                API_DOC_CATALOG_CACHE_NAME,
+                cacheKey.runtimeMode(),
+                cacheKey.gatewayNames(),
+                cacheKeyValue,
+                reason);
     }
 
     private void logCacheEvent(String event,
                                RuntimeApiDocCatalogCacheKey cacheKey,
+                               String cacheKeyValue,
                                RuntimeApiDocCatalog catalog,
                                String outcome,
                                String reason,
                                String failureType,
-                               String failureMessage) {
+                               String failureMessage,
+                               boolean warn) {
         int groupCount = catalog != null ? catalog.groupsById().size() : 0;
         int itemCount = catalog != null ? catalog.documentsById().size() : 0;
-        if (API_DOC_CACHE_LOAD_FAILED.equals(event) || API_DOC_CACHE_UNAVAILABLE.equals(event)) {
-            log.warn("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} failFast={} apiDocsEnabled={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+
+        if (warn) {
+            log.warn("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                     event,
                     MODULE_CODE,
                     API_DOC_CATALOG_CACHE_NAME,
                     cacheKey.runtimeMode(),
                     cacheKey.gatewayNames(),
-                    cacheKey.failFast(),
-                    cacheKey.apiDocsEnabled(),
-                    cacheKey,
+                    cacheKeyValue,
                     groupCount,
                     itemCount,
                     outcome,
@@ -881,15 +917,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                     failureMessage);
             return;
         }
-        log.info("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} failFast={} apiDocsEnabled={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+
+        log.info("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                 event,
                 MODULE_CODE,
                 API_DOC_CATALOG_CACHE_NAME,
                 cacheKey.runtimeMode(),
                 cacheKey.gatewayNames(),
-                cacheKey.failFast(),
-                cacheKey.apiDocsEnabled(),
-                cacheKey,
+                cacheKeyValue,
                 groupCount,
                 itemCount,
                 outcome,

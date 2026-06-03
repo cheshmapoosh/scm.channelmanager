@@ -421,11 +421,9 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .contains("API_DOC_CACHE_BYPASSED")
                 .contains("API_DOC_CACHE_UNAVAILABLE")
                 .contains("API_DOC_CACHE_LOAD_FAILED")
-                .contains("cacheName={}")
+                .contains("cacheKey={}")
                 .contains("runtimeMode={}")
                 .contains("gatewayNames={}")
-                .contains("failFast={}")
-                .contains("apiDocsEnabled={}")
                 .contains("cacheKey={}")
                 .contains("groupCount={}")
                 .contains("itemCount={}")
@@ -447,6 +445,25 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .doesNotContain("Caffeine.newBuilder")
                 .doesNotContain("expireAfterWrite")
                 .doesNotContain("maximumSize");
+    }
+
+    @Test
+    void activeRuntimeGatewayNamesAreSortedForStableCacheKey() {
+        MockEnvironment multiTargetEnvironment = new MockEnvironment()
+                .withProperty("scm.runtime.targets.service-domain.enabled", "true")
+                .withProperty("scm.runtime.targets.service-domain.gateway-names[0]", "domain.card")
+                .withProperty("scm.runtime.targets.channel.enabled", "true")
+                .withProperty("scm.runtime.targets.channel.gateway-names[0]", "channel.mb");
+
+        ScmWebRuntimeApiDocCatalogProvider multiTargetProvider = provider(multiTargetEnvironment);
+
+        arrangeScopedDefinitions();
+
+        multiTargetProvider.findApiDocGroups();
+
+        verify(repository).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb", "domain.card"));
     }
 
     private ScmWebRuntimeApiDocCatalogProvider provider(MockEnvironment environment) {
