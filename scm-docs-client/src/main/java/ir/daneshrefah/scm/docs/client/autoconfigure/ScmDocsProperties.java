@@ -23,6 +23,8 @@ public class ScmDocsProperties {
 
     private String classpathRoot = "scm-docs";
 
+    private final Api api = new Api();
+
     private final List<Document> documents = new ArrayList<>();
 
     public boolean isEnabled() {
@@ -68,6 +70,10 @@ public class ScmDocsProperties {
         this.classpathRoot = classpathRoot;
     }
 
+    public Api getApi() {
+        return api;
+    }
+
     public List<Document> getDocuments() {
         return documents;
     }
@@ -84,6 +90,29 @@ public class ScmDocsProperties {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         return normalized;
+    }
+
+    public static class Api {
+
+        private boolean enabled = true;
+
+        private boolean failFast = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isFailFast() {
+            return failFast;
+        }
+
+        public void setFailFast(boolean failFast) {
+            this.failFast = failFast;
+        }
     }
 
     public static class Document {

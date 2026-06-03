@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.docs.client.autoconfigure;
 
 import ir.daneshrefah.scm.docs.client.provider.ClasspathScmDocContentProvider;
+import ir.daneshrefah.scm.docs.client.provider.ScmApiDocGroupCatalogProvider;
 import ir.daneshrefah.scm.docs.client.provider.ScmDocCatalogProvider;
 import ir.daneshrefah.scm.docs.client.provider.ScmDocContentProvider;
 import ir.daneshrefah.scm.docs.client.registry.ScmDocsRegistry;
@@ -40,12 +41,14 @@ public class ScmDocsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ScmDocsRegistry scmDocsRegistry(ObjectProvider<ScmDocCatalogProvider> catalogProviders,
-                                           ObjectProvider<ScmDocContentProvider> contentProviders) {
+                                           ObjectProvider<ScmDocContentProvider> contentProviders,
+                                           ObjectProvider<ScmApiDocGroupCatalogProvider> apiDocGroupCatalogProviders) {
         var catalogProviderList = catalogProviders.orderedStream().toList();
         var contentProviderList = contentProviders.orderedStream().toList();
-        log.info("SCM docs client registry initialized catalogProviders={} contentProviders={}",
-                catalogProviderList.size(), contentProviderList.size());
-        return new ScmDocsRegistry(catalogProviderList, contentProviderList);
+        var apiDocGroupCatalogProviderList = apiDocGroupCatalogProviders.orderedStream().toList();
+        log.info("SCM docs client registry initialized catalogProviders={} contentProviders={} apiDocGroupCatalogProviders={}",
+                catalogProviderList.size(), contentProviderList.size(), apiDocGroupCatalogProviderList.size());
+        return new ScmDocsRegistry(catalogProviderList, contentProviderList, apiDocGroupCatalogProviderList);
     }
 
     @Bean

@@ -176,13 +176,11 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                             ChannelServiceDefinitionType.INBOUND,
                             CollectionUtils.isNotEmpty(inboundDefinitions),
                             "INBOUND creates gateway route exposure.");
-                    validateDefinitionPresent(
+                    warnOptionalApiDocMissing(
                             gatewayChannel,
                             RuntimeTargetKind.SERVICE_DOMAIN,
                             representativeAccess,
-                            ChannelServiceDefinitionType.API_DOC,
-                            CollectionUtils.isNotEmpty(apiDocDefinitions),
-                            "API_DOC is required API documentation metadata and does not create a route.");
+                            CollectionUtils.isNotEmpty(apiDocDefinitions));
                     return new RuntimeServicePlan(
                             gatewayChannel,
                             representativeAccess,
@@ -235,13 +233,11 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                 ChannelServiceDefinitionType.INBOUND,
                 definitions.stream().anyMatch(this::isInboundDefinition),
                 "INBOUND creates gateway route exposure.");
-        validateDefinitionPresent(
+        warnOptionalApiDocMissing(
                 gatewayChannel,
                 targetKind,
                 access,
-                ChannelServiceDefinitionType.API_DOC,
-                definitions.stream().anyMatch(this::isApiDocDefinition),
-                "API_DOC is required API documentation metadata and does not create a route.");
+                definitions.stream().anyMatch(this::isApiDocDefinition));
     }
 
     private void validateDefinitionPresent(GatewayChannel gatewayChannel,
@@ -291,6 +287,19 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
             }
         } catch (Exception ignored) {
         }
+    }
+
+    private void warnOptionalApiDocMissing(GatewayChannel gatewayChannel,
+                                           RuntimeTargetKind targetKind,
+                                           ChannelServiceAccess access,
+                                           boolean present) {
+        if (present) {
+            return;
+        }
+        log.warn("Optional API_DOC metadata is missing gatewayName={} targetKind={} {}",
+                gatewayChannel.getName(),
+                targetKind,
+                serviceRef(access));
     }
 
     private ChannelServiceAccess withServiceOperations(ChannelServiceAccess access) {

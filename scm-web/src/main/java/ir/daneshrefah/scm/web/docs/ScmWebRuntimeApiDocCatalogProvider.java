@@ -9,20 +9,23 @@ import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.core.entity.gateway.GatewayChannelEntity;
-import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
+import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocGroupDescriptor;
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocItemDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmDocCategory;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmDocType;
-import ir.daneshrefah.scm.docs.client.provider.ScmDocCatalogProvider;
+import ir.daneshrefah.scm.docs.client.provider.ScmApiDocGroupCatalogProvider;
 import ir.daneshrefah.scm.docs.client.provider.ScmDocContentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -34,16 +37,16 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider, ScmDocContentProvider {
+public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalogProvider, ScmDocContentProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ScmWebRuntimeApiDocCatalogProvider.class);
 
@@ -53,147 +56,368 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
     private static final String SERVICES_PREFIX = "services/";
     private static final String LEGACY_DOCS_PREFIX = "scm-docs/";
     private static final String UNVERSIONED = "unversioned";
+    private static final String API_DOC_ENABLED_PROPERTY = "scm.docs.api.enabled";
+    private static final String API_DOC_FAIL_FAST_PROPERTY = "scm.docs.api.fail-fast";
+
+    private static final String API_DOC_CATALOG_RESOLUTION_STARTED = "API_DOC_CATALOG_RESOLUTION_STARTED";
+    private static final String API_DOC_CATALOG_RESOLVED = "API_DOC_CATALOG_RESOLVED";
+    private static final String API_DOC_GROUP_PARSED = "API_DOC_GROUP_PARSED";
+    private static final String API_DOC_GROUP_SKIPPED = "API_DOC_GROUP_SKIPPED";
+    private static final String API_DOC_ITEM_PARSED = "API_DOC_ITEM_PARSED";
+    private static final String API_DOC_ITEM_SKIPPED = "API_DOC_ITEM_SKIPPED";
+    private static final String API_DOC_CONTENT_LOAD_STARTED = "API_DOC_CONTENT_LOAD_STARTED";
+    private static final String API_DOC_CONTENT_LOADED = "API_DOC_CONTENT_LOADED";
+    private static final String API_DOC_CONTENT_NOT_FOUND = "API_DOC_CONTENT_NOT_FOUND";
+    private static final String API_DOC_CONTENT_LOAD_FAILED = "API_DOC_CONTENT_LOAD_FAILED";
 
     private final ChannelServiceDefinitionRepository channelServiceDefinitionRepository;
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
     private final ScmRuntimeProperties scmRuntimeProperties;
+    private final Environment environment;
 
     public ScmWebRuntimeApiDocCatalogProvider(ChannelServiceDefinitionRepository channelServiceDefinitionRepository,
                                               ObjectMapper objectMapper,
                                               ResourceLoader resourceLoader,
-                                              ScmRuntimeProperties scmRuntimeProperties) {
+                                              ScmRuntimeProperties scmRuntimeProperties,
+                                              Environment environment) {
         this.channelServiceDefinitionRepository = channelServiceDefinitionRepository;
         this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
         this.scmRuntimeProperties = scmRuntimeProperties;
+        this.environment = environment;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<ScmDocDescriptor> findAll() {
-        return runtimeDocumentsById().values().stream()
-                .map(RuntimeApiDocument::descriptor)
+    public Collection<ScmApiDocGroupDescriptor> findApiDocGroups() {
+        return runtimeCatalog().groupsById().values().stream()
+                .map(RuntimeApiDocGroup::descriptor)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<ScmDocContent> findById(String docId) {
-        String safeDocId = requireSafeDocId(docId);
-        RuntimeApiDocument document = runtimeDocumentsById().get(safeDocId);
-        if (document == null) {
-            log.debug("SCM web runtime API doc not found docId={}", safeDocId);
+        if (!apiDocsEnabled()) {
+            log.debug("SCM web runtime API doc content lookup skipped because API docs are disabled docId={}", docId);
             return Optional.empty();
         }
 
-        Resource resource = resourceLoader.getResource(CLASSPATH_PREFIX + document.sourcePath());
-        if (!resource.exists()) {
-            log.warn("SCM web runtime API doc resource missing docId={} sourceType={} serviceCode={} version={}",
-                    document.descriptor().id(), document.sourceType(), document.descriptor().serviceCode(),
-                    document.descriptor().version());
+        String safeDocId = requireSafeDocId(docId);
+        boolean failFast = failFast();
+        RuntimeApiDocument document = runtimeCatalog().documentsById().get(safeDocId);
+        if (document == null) {
+            log.warn("event={} moduleCode={} docItemId={} failFast={} reason=catalog-miss",
+                    API_DOC_CONTENT_NOT_FOUND, MODULE_CODE, safeDocId, failFast);
             return Optional.empty();
         }
-        if (!resource.isReadable()) {
-            log.warn("SCM web runtime API doc resource unreadable docId={} sourceType={} serviceCode={} version={}",
-                    document.descriptor().id(), document.sourceType(), document.descriptor().serviceCode(),
-                    document.descriptor().version());
+
+        log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=started",
+                API_DOC_CONTENT_LOAD_STARTED,
+                MODULE_CODE,
+                document.group().descriptor().gatewayName(),
+                document.group().descriptor().channelServiceAccessId(),
+                document.group().descriptor().serviceCode(),
+                document.group().descriptor().version(),
+                document.group().descriptor().id(),
+                document.contentDescriptor().id(),
+                document.contentDescriptor().type(),
+                document.sourceType(),
+                document.sourcePath(),
+                failFast);
+
+        Resource resource = resourceLoader.getResource(CLASSPATH_PREFIX + document.sourcePath());
+        if (!resource.exists() || !resource.isReadable()) {
+            log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason=resource-missing-or-unreadable",
+                    API_DOC_CONTENT_NOT_FOUND,
+                    MODULE_CODE,
+                    document.group().descriptor().gatewayName(),
+                    document.group().descriptor().channelServiceAccessId(),
+                    document.group().descriptor().serviceCode(),
+                    document.group().descriptor().version(),
+                    document.group().descriptor().id(),
+                    document.contentDescriptor().id(),
+                    document.contentDescriptor().type(),
+                    document.sourceType(),
+                    document.sourcePath(),
+                    failFast);
             return Optional.empty();
         }
 
         try (InputStream inputStream = resource.getInputStream()) {
-            return Optional.of(new ScmDocContent(
-                    document.descriptor(),
+            ScmDocContent content = new ScmDocContent(
+                    document.contentDescriptor(),
                     inputStream.readAllBytes(),
-                    document.descriptor().mediaType(),
-                    document.descriptor().fileName()
-            ));
+                    document.contentDescriptor().mediaType(),
+                    document.contentDescriptor().fileName()
+            );
+            log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=success",
+                    API_DOC_CONTENT_LOADED,
+                    MODULE_CODE,
+                    document.group().descriptor().gatewayName(),
+                    document.group().descriptor().channelServiceAccessId(),
+                    document.group().descriptor().serviceCode(),
+                    document.group().descriptor().version(),
+                    document.group().descriptor().id(),
+                    document.contentDescriptor().id(),
+                    document.contentDescriptor().type(),
+                    document.sourceType(),
+                    document.sourcePath(),
+                    failFast);
+            return Optional.of(content);
         } catch (IOException exception) {
-            log.error("SCM web runtime API doc resource load failed docId={} sourceType={} serviceCode={} version={}",
-                    document.descriptor().id(), document.sourceType(), document.descriptor().serviceCode(),
-                    document.descriptor().version(), exception);
+            log.error("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=failed failureType={} failureMessage={}",
+                    API_DOC_CONTENT_LOAD_FAILED,
+                    MODULE_CODE,
+                    document.group().descriptor().gatewayName(),
+                    document.group().descriptor().channelServiceAccessId(),
+                    document.group().descriptor().serviceCode(),
+                    document.group().descriptor().version(),
+                    document.group().descriptor().id(),
+                    document.contentDescriptor().id(),
+                    document.contentDescriptor().type(),
+                    document.sourceType(),
+                    document.sourcePath(),
+                    failFast,
+                    exception.getClass().getSimpleName(),
+                    safeFailureMessage(exception),
+                    exception);
             throw new UncheckedIOException("Could not read SCM web runtime API documentation resource", exception);
         }
     }
 
-    private Map<String, RuntimeApiDocument> runtimeDocumentsById() {
-        List<String> gatewayNames = activeRuntimeGatewayNames();
-        if (gatewayNames.isEmpty()) {
-            log.debug("SCM web runtime API doc catalog skipped because no runtime target gateway names are active");
-            return Map.of();
+    private RuntimeApiDocCatalog runtimeCatalog() {
+        boolean failFast = failFast();
+        if (!apiDocsEnabled()) {
+            log.debug("event={} moduleCode={} failFast={} reason=api-docs-disabled",
+                    API_DOC_CATALOG_RESOLVED, MODULE_CODE, failFast);
+            return RuntimeApiDocCatalog.empty();
         }
+
+        List<String> gatewayNames = activeRuntimeGatewayNames();
+        log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} outcome=started",
+                API_DOC_CATALOG_RESOLUTION_STARTED,
+                MODULE_CODE,
+                scmRuntimeProperties.runtimeMode(),
+                gatewayNames,
+                failFast);
+        if (gatewayNames.isEmpty()) {
+            log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} groupCount=0 itemCount=0 outcome=success",
+                    API_DOC_CATALOG_RESOLVED,
+                    MODULE_CODE,
+                    scmRuntimeProperties.runtimeMode(),
+                    gatewayNames,
+                    failFast);
+            return RuntimeApiDocCatalog.empty();
+        }
+
         List<ChannelServiceDefinitionEntity> apiDocDefinitions = channelServiceDefinitionRepository
                 .findByTypeAndGatewayChannel_NameIn(ChannelServiceDefinitionType.API_DOC, gatewayNames);
-        validateSingleApiDocRowPerExposure(apiDocDefinitions);
+        RuntimeApiDocCatalog catalog = parseCatalog(apiDocDefinitions, failFast);
+        log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} apiDocDefinitions={} groupCount={} itemCount={} outcome=success",
+                API_DOC_CATALOG_RESOLVED,
+                MODULE_CODE,
+                scmRuntimeProperties.runtimeMode(),
+                gatewayNames,
+                failFast,
+                apiDocDefinitions.size(),
+                catalog.groupsById().size(),
+                catalog.documentsById().size());
+        return catalog;
+    }
 
+    private RuntimeApiDocCatalog parseCatalog(List<ChannelServiceDefinitionEntity> apiDocDefinitions, boolean failFast) {
+        Map<String, ChannelServiceDefinitionEntity> definitionsByExposure = new LinkedHashMap<>();
+        Map<String, RuntimeApiDocGroup> groupsById = new LinkedHashMap<>();
         Map<String, RuntimeApiDocument> documentsById = new LinkedHashMap<>();
+
         for (ChannelServiceDefinitionEntity apiDocDefinition : apiDocDefinitions) {
-            for (RuntimeApiDocument document : parseDocuments(apiDocDefinition)) {
-                RuntimeApiDocument existing = documentsById.putIfAbsent(document.descriptor().id(), document);
-                if (existing != null && !existing.sameContentAs(document)) {
-                    throw invalidDefinition(apiDocDefinition, "duplicate runtime API doc id " + document.descriptor().id());
+            if (!registerExposure(definitionsByExposure, apiDocDefinition, failFast)) {
+                continue;
+            }
+
+            RuntimeApiDocGroup group = parseGroupSafely(apiDocDefinition, failFast);
+            if (group == null) {
+                continue;
+            }
+            RuntimeApiDocGroup existingGroup = groupsById.putIfAbsent(group.descriptor().id(), group);
+            if (existingGroup != null) {
+                IllegalStateException exception = invalidDefinition(apiDocDefinition,
+                        "duplicate runtime API doc group id " + group.descriptor().id());
+                if (failFast) {
+                    throw exception;
                 }
+                logGroupSkipped(apiDocDefinition, failFast, "duplicate-doc-group-id", exception);
+                continue;
+            }
+
+            for (RuntimeApiDocument document : group.documents()) {
+                RuntimeApiDocument existing = documentsById.putIfAbsent(document.contentDescriptor().id(), document);
                 if (existing != null) {
-                    log.debug("Duplicate SCM web runtime API doc descriptor ignored docId={} serviceCode={} version={}",
-                            document.descriptor().id(), document.descriptor().serviceCode(), document.descriptor().version());
+                    IllegalStateException exception = invalidDefinition(apiDocDefinition,
+                            "duplicate runtime API doc item id " + document.contentDescriptor().id());
+                    if (failFast) {
+                        throw exception;
+                    }
+                    logItemSkipped(group, document.itemDescriptor(), document.sourceType(), document.sourcePath(),
+                            failFast, "duplicate-doc-item-id", exception);
                 }
             }
         }
-        log.debug("SCM web runtime API doc catalog resolved runtimeMode={} gatewayNames={} apiDocDefinitions={} documents={}",
-                scmRuntimeProperties.runtimeMode(), gatewayNames, apiDocDefinitions.size(), documentsById.size());
-        return documentsById;
+
+        return new RuntimeApiDocCatalog(sortedGroups(groupsById), documentsById);
     }
 
-    private List<String> activeRuntimeGatewayNames() {
-        RuntimeMode runtimeMode = scmRuntimeProperties.runtimeMode();
-        return scmRuntimeProperties.runtimeTargets()
-                .stream()
-                .filter(RuntimeTargetProperties::enabled)
-                .filter(runtimeTarget -> runtimeMode.accepts(runtimeTarget.targetKind()))
-                .flatMap(runtimeTarget -> runtimeTarget.gatewayNames().stream())
-                .distinct()
-                .toList();
-    }
-
-    private void validateSingleApiDocRowPerExposure(List<ChannelServiceDefinitionEntity> apiDocDefinitions) {
-        Map<String, ChannelServiceDefinitionEntity> definitionsByExposure = new LinkedHashMap<>();
-        for (ChannelServiceDefinitionEntity apiDocDefinition : apiDocDefinitions) {
+    private boolean registerExposure(Map<String, ChannelServiceDefinitionEntity> definitionsByExposure,
+                                     ChannelServiceDefinitionEntity apiDocDefinition,
+                                     boolean failFast) {
+        try {
             String exposureKey = exposureKey(apiDocDefinition);
             ChannelServiceDefinitionEntity existing = definitionsByExposure.putIfAbsent(exposureKey, apiDocDefinition);
-            if (existing != null) {
-                throw invalidDefinition(apiDocDefinition,
-                        "at most one API_DOC definition is allowed for each gateway/channel-service-access exposure");
+            if (existing == null) {
+                return true;
             }
+            throw invalidDefinition(apiDocDefinition,
+                    "at most one API_DOC definition is allowed for each gateway/channel-service-access exposure");
+        } catch (IllegalStateException exception) {
+            if (failFast) {
+                throw exception;
+            }
+            logGroupSkipped(apiDocDefinition, failFast, "invalid-exposure", exception);
+            return false;
         }
     }
 
-    private List<RuntimeApiDocument> parseDocuments(ChannelServiceDefinitionEntity apiDocDefinition) {
+    private RuntimeApiDocGroup parseGroupSafely(ChannelServiceDefinitionEntity apiDocDefinition, boolean failFast) {
+        try {
+            return parseGroup(apiDocDefinition, failFast);
+        } catch (IllegalStateException exception) {
+            if (failFast) {
+                throw exception;
+            }
+            logGroupSkipped(apiDocDefinition, failFast, "invalid-api-doc-group", exception);
+            return null;
+        }
+    }
+
+    private RuntimeApiDocGroup parseGroup(ChannelServiceDefinitionEntity apiDocDefinition, boolean failFast) {
         DefinitionEntity definition = requireDefinition(apiDocDefinition);
         JsonNode details = readDetails(apiDocDefinition, definition);
         JsonNode documents = details.get("documents");
         if (documents == null || !documents.isArray()) {
             throw invalidDefinition(apiDocDefinition, "API_DOC details must contain documents[]");
         }
-        if (documents.size() == 0) {
+        if (documents.isEmpty()) {
             throw invalidDefinition(apiDocDefinition, "API_DOC details documents[] must not be empty");
         }
 
         String version = optionalText(details, "version");
-        return parseDocumentItems(apiDocDefinition, documents, version);
+        String serviceCode = serviceCode(apiDocDefinition);
+        String gatewayName = gatewayName(apiDocDefinition);
+        Long channelServiceAccessId = channelServiceAccessId(apiDocDefinition);
+        String groupId = groupId(gatewayName, channelServiceAccessId, serviceCode, version);
+        List<RuntimeApiDocument> parsedDocuments = parseDocumentItems(
+                apiDocDefinition,
+                documents,
+                groupId,
+                serviceCode,
+                version,
+                failFast);
+        if (parsedDocuments.isEmpty()) {
+            throw invalidDefinition(apiDocDefinition, "API_DOC details documents[] produced no valid document items");
+        }
+
+        ScmApiDocGroupDescriptor descriptor = new ScmApiDocGroupDescriptor(
+                groupId,
+                MODULE_CODE,
+                gatewayName,
+                channelServiceAccessId,
+                serviceCode,
+                version,
+                textMap(apiDocDefinition, details.get("title"), "title"),
+                textMap(apiDocDefinition, details.get("description"), "description"),
+                sortedItemDescriptors(parsedDocuments),
+                order(details)
+        );
+        RuntimeApiDocGroup groupRef = new RuntimeApiDocGroup(descriptor, List.of());
+        RuntimeApiDocGroup group = new RuntimeApiDocGroup(
+                descriptor,
+                parsedDocuments.stream()
+                        .map(document -> document.withGroup(groupRef))
+                        .toList());
+        log.info("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} failFast={} documentCount={} outcome=success",
+                API_DOC_GROUP_PARSED,
+                MODULE_CODE,
+                gatewayName,
+                channelServiceAccessId,
+                serviceCode,
+                version,
+                groupId,
+                failFast,
+                parsedDocuments.size());
+        return group;
     }
 
     private List<RuntimeApiDocument> parseDocumentItems(ChannelServiceDefinitionEntity apiDocDefinition,
                                                         JsonNode documents,
-                                                        String version) {
+                                                        String groupId,
+                                                        String serviceCode,
+                                                        String version,
+                                                        boolean failFast) {
         List<RuntimeApiDocument> parsedDocuments = new ArrayList<>();
-        documents.elements().forEachRemaining(document ->
-                parsedDocuments.add(parseDocument(apiDocDefinition, document, version)));
+        Map<String, RuntimeApiDocument> documentsById = new LinkedHashMap<>();
+        documents.elements().forEachRemaining(document -> {
+            RuntimeApiDocument parsed = parseDocumentSafely(
+                    apiDocDefinition,
+                    document,
+                    groupId,
+                    serviceCode,
+                    version,
+                    failFast);
+            if (parsed == null) {
+                return;
+            }
+            RuntimeApiDocument existing = documentsById.putIfAbsent(parsed.contentDescriptor().id(), parsed);
+            if (existing != null) {
+                IllegalStateException exception = invalidDefinition(apiDocDefinition,
+                        "duplicate runtime API doc item id " + parsed.contentDescriptor().id());
+                if (failFast) {
+                    throw exception;
+                }
+                logItemSkipped(apiDocDefinition, groupId, version, parsed.itemDescriptor(), parsed.sourceType(), parsed.sourcePath(),
+                        failFast, "duplicate-doc-item-id", exception);
+                return;
+            }
+            parsedDocuments.add(parsed);
+        });
         return parsedDocuments;
+    }
+
+    private RuntimeApiDocument parseDocumentSafely(ChannelServiceDefinitionEntity apiDocDefinition,
+                                                   JsonNode document,
+                                                   String groupId,
+                                                   String serviceCode,
+                                                   String version,
+                                                   boolean failFast) {
+        try {
+            return parseDocument(apiDocDefinition, document, groupId, serviceCode, version, failFast);
+        } catch (IllegalStateException exception) {
+            if (failFast) {
+                throw exception;
+            }
+            logItemSkipped(apiDocDefinition, groupId, version, null, null, null,
+                    failFast, "invalid-api-doc-item", exception);
+            return null;
+        }
     }
 
     private RuntimeApiDocument parseDocument(ChannelServiceDefinitionEntity apiDocDefinition,
                                              JsonNode document,
-                                             String version) {
+                                             String groupId,
+                                             String serviceCode,
+                                             String version,
+                                             boolean failFast) {
         if (!document.isObject()) {
             throw invalidDefinition(apiDocDefinition, "each API_DOC documents[] item must be an object");
         }
@@ -209,23 +433,79 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
             throw invalidDefinition(apiDocDefinition, "unsupported API_DOC source.type " + sourceType);
         }
         String sourcePath = validateSourcePath(apiDocDefinition, requiredText(apiDocDefinition, source, "path"));
-        String serviceCode = serviceCode(apiDocDefinition);
-        String docId = docId(apiDocDefinition, serviceCode, version, docType, name);
-        ScmDocDescriptor descriptor = new ScmDocDescriptor(
-                docId,
-                MODULE_CODE,
-                serviceCode,
-                version,
-                ScmDocCategory.API,
+        String itemId = itemId(groupId, docType, name);
+        ScmApiDocItemDescriptor itemDescriptor = new ScmApiDocItemDescriptor(
+                itemId,
                 docType,
                 textMap(apiDocDefinition, document.get("title"), "title"),
                 textMap(apiDocDefinition, document.get("description"), "description"),
                 optionalText(document, "mediaType"),
                 name,
                 null,
+                null,
                 order(document)
         );
-        return new RuntimeApiDocument(descriptor, sourceType, sourcePath);
+        ScmDocDescriptor contentDescriptor = new ScmDocDescriptor(
+                itemId,
+                MODULE_CODE,
+                serviceCode,
+                version,
+                ScmDocCategory.API,
+                docType,
+                itemDescriptor.title(),
+                itemDescriptor.description(),
+                itemDescriptor.mediaType(),
+                itemDescriptor.fileName(),
+                null,
+                itemDescriptor.order()
+        );
+        RuntimeApiDocument apiDocument = new RuntimeApiDocument(null, contentDescriptor, itemDescriptor, sourceType, sourcePath);
+        log.info("event={} moduleCode={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} outcome=success",
+                API_DOC_ITEM_PARSED,
+                MODULE_CODE,
+                serviceCode,
+                version,
+                groupId,
+                itemId,
+                docType,
+                sourceType,
+                sourcePath,
+                failFast);
+        return apiDocument;
+    }
+
+    private List<ScmApiDocItemDescriptor> sortedItemDescriptors(List<RuntimeApiDocument> documents) {
+        return documents.stream()
+                .map(RuntimeApiDocument::itemDescriptor)
+                .sorted(Comparator
+                        .comparingInt(ScmApiDocItemDescriptor::order)
+                        .thenComparing(item -> item.docType().name())
+                        .thenComparing(item -> nullSafe(item.fileName()))
+                        .thenComparing(ScmApiDocItemDescriptor::id))
+                .toList();
+    }
+
+    private Map<String, RuntimeApiDocGroup> sortedGroups(Map<String, RuntimeApiDocGroup> groupsById) {
+        Map<String, RuntimeApiDocGroup> sorted = new LinkedHashMap<>();
+        groupsById.values().stream()
+                .sorted(Comparator.<RuntimeApiDocGroup>comparingInt(group -> group.descriptor().order())
+                        .thenComparing(group -> nullSafe(group.descriptor().serviceCode()))
+                        .thenComparing(group -> nullSafe(group.descriptor().version()))
+                        .thenComparing(group -> nullSafe(group.descriptor().gatewayName()))
+                        .thenComparing(group -> group.descriptor().id()))
+                .forEach(group -> sorted.put(group.descriptor().id(), group));
+        return sorted;
+    }
+
+    private List<String> activeRuntimeGatewayNames() {
+        RuntimeMode runtimeMode = scmRuntimeProperties.runtimeMode();
+        return scmRuntimeProperties.runtimeTargets()
+                .stream()
+                .filter(RuntimeTargetProperties::enabled)
+                .filter(runtimeTarget -> runtimeMode.accepts(runtimeTarget.targetKind()))
+                .flatMap(runtimeTarget -> runtimeTarget.gatewayNames().stream())
+                .distinct()
+                .toList();
     }
 
     private DefinitionEntity requireDefinition(ChannelServiceDefinitionEntity apiDocDefinition) {
@@ -282,20 +562,20 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
         }
     }
 
-    private String docId(ChannelServiceDefinitionEntity apiDocDefinition,
-                         String serviceCode,
-                         String version,
-                         ScmDocType docType,
-                         String name) {
+    private String groupId(String gatewayName, Long channelServiceAccessId, String serviceCode, String version) {
         return MODULE_CODE
                 + "."
-                + normalizeSegment(gatewayName(apiDocDefinition))
+                + normalizeSegment(gatewayName)
                 + "."
-                + channelServiceAccessId(apiDocDefinition)
+                + channelServiceAccessId
                 + "."
                 + normalizeSegment(serviceCode)
                 + "."
-                + normalizeVersion(version)
+                + normalizeVersion(version);
+    }
+
+    private String itemId(String groupId, ScmDocType docType, String name) {
+        return groupId
                 + "."
                 + docType.name()
                 + "."
@@ -409,6 +689,112 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
         return safeDocId;
     }
 
+    private boolean apiDocsEnabled() {
+        return environment.getProperty(API_DOC_ENABLED_PROPERTY, Boolean.class, true);
+    }
+
+    private boolean failFast() {
+        return environment.getProperty(API_DOC_FAIL_FAST_PROPERTY, Boolean.class, false);
+    }
+
+    private void logGroupSkipped(ChannelServiceDefinitionEntity apiDocDefinition,
+                                 boolean failFast,
+                                 String reason,
+                                 Exception exception) {
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} failFast={} reason={} failureType={} failureMessage={}",
+                API_DOC_GROUP_SKIPPED,
+                MODULE_CODE,
+                safeGatewayName(apiDocDefinition),
+                safeChannelServiceAccessId(apiDocDefinition),
+                safeServiceCode(apiDocDefinition),
+                failFast,
+                reason,
+                exception.getClass().getSimpleName(),
+                safeFailureMessage(exception));
+    }
+
+    private void logItemSkipped(RuntimeApiDocGroup group,
+                                ScmApiDocItemDescriptor itemDescriptor,
+                                String sourceType,
+                                String sourcePath,
+                                boolean failFast,
+                                String reason,
+                                Exception exception) {
+        ScmApiDocGroupDescriptor groupDescriptor = group != null ? group.descriptor() : null;
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason={} failureType={} failureMessage={}",
+                API_DOC_ITEM_SKIPPED,
+                MODULE_CODE,
+                groupDescriptor != null ? groupDescriptor.gatewayName() : null,
+                groupDescriptor != null ? groupDescriptor.channelServiceAccessId() : null,
+                groupDescriptor != null ? groupDescriptor.serviceCode() : null,
+                groupDescriptor != null ? groupDescriptor.version() : null,
+                groupDescriptor != null ? groupDescriptor.id() : null,
+                itemDescriptor != null ? itemDescriptor.id() : null,
+                itemDescriptor != null ? itemDescriptor.docType() : null,
+                sourceType,
+                sourcePath,
+                failFast,
+                reason,
+                exception.getClass().getSimpleName(),
+                safeFailureMessage(exception));
+    }
+
+    private void logItemSkipped(ChannelServiceDefinitionEntity apiDocDefinition,
+                                String groupId,
+                                String version,
+                                ScmApiDocItemDescriptor itemDescriptor,
+                                String sourceType,
+                                String sourcePath,
+                                boolean failFast,
+                                String reason,
+                                Exception exception) {
+        log.warn("event={} moduleCode={} gatewayName={} channelServiceAccessId={} serviceCode={} version={} docGroupId={} docItemId={} docType={} sourceType={} sourcePath={} failFast={} reason={} failureType={} failureMessage={}",
+                API_DOC_ITEM_SKIPPED,
+                MODULE_CODE,
+                safeGatewayName(apiDocDefinition),
+                safeChannelServiceAccessId(apiDocDefinition),
+                safeServiceCode(apiDocDefinition),
+                version,
+                groupId,
+                itemDescriptor != null ? itemDescriptor.id() : null,
+                itemDescriptor != null ? itemDescriptor.docType() : null,
+                sourceType,
+                sourcePath,
+                failFast,
+                reason,
+                exception.getClass().getSimpleName(),
+                safeFailureMessage(exception));
+    }
+
+    private String safeGatewayName(ChannelServiceDefinitionEntity apiDocDefinition) {
+        GatewayChannelEntity gatewayChannel = apiDocDefinition != null ? apiDocDefinition.getGatewayChannel() : null;
+        return gatewayChannel != null ? gatewayChannel.getName() : null;
+    }
+
+    private Long safeChannelServiceAccessId(ChannelServiceDefinitionEntity apiDocDefinition) {
+        ChannelServiceAccessEntity access = apiDocDefinition != null ? apiDocDefinition.getChannelServiceAccess() : null;
+        return access != null ? access.getId() : null;
+    }
+
+    private String safeServiceCode(ChannelServiceDefinitionEntity apiDocDefinition) {
+        ChannelServiceAccessEntity access = apiDocDefinition != null ? apiDocDefinition.getChannelServiceAccess() : null;
+        ServiceEntity service = access != null ? access.getService() : null;
+        return service != null ? service.getCode() : null;
+    }
+
+    private String safeFailureMessage(Exception exception) {
+        if (exception.getMessage() == null) {
+            return null;
+        }
+        return exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ');
+    }
+
+    private String nullSafe(String value) {
+        return value != null ? value : "";
+    }
+
     private IllegalStateException invalidDefinition(ChannelServiceDefinitionEntity apiDocDefinition, String reason) {
         return invalidDefinition(apiDocDefinition, reason, null);
     }
@@ -424,17 +810,33 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
         return cause == null ? new IllegalStateException(message) : new IllegalStateException(message, cause);
     }
 
+    private record RuntimeApiDocCatalog(
+            Map<String, RuntimeApiDocGroup> groupsById,
+            Map<String, RuntimeApiDocument> documentsById
+    ) {
+        private static RuntimeApiDocCatalog empty() {
+            return new RuntimeApiDocCatalog(Map.of(), Map.of());
+        }
+    }
+
+    private record RuntimeApiDocGroup(
+            ScmApiDocGroupDescriptor descriptor,
+            List<RuntimeApiDocument> documents
+    ) {
+        private RuntimeApiDocGroup {
+            documents = documents == null ? List.of() : List.copyOf(documents);
+        }
+    }
+
     private record RuntimeApiDocument(
-            ScmDocDescriptor descriptor,
+            RuntimeApiDocGroup group,
+            ScmDocDescriptor contentDescriptor,
+            ScmApiDocItemDescriptor itemDescriptor,
             String sourceType,
             String sourcePath
     ) {
-        private boolean sameContentAs(RuntimeApiDocument other) {
-            return descriptor.type() == other.descriptor.type()
-                    && Objects.equals(descriptor.fileName(), other.descriptor.fileName())
-                    && Objects.equals(descriptor.mediaType(), other.descriptor.mediaType())
-                    && sourceType.equals(other.sourceType)
-                    && sourcePath.equals(other.sourcePath);
+        private RuntimeApiDocument withGroup(RuntimeApiDocGroup group) {
+            return new RuntimeApiDocument(group, contentDescriptor, itemDescriptor, sourceType, sourcePath);
         }
     }
 }

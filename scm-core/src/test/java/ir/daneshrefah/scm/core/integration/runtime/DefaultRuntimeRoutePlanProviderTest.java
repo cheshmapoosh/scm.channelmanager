@@ -51,7 +51,7 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     @Test
-    void channelPlanRequiresInboundAndApiDocDefinitions() {
+    void channelPlanRequiresInboundAndAllowsOptionalApiDocDefinition() {
         GatewayChannel gatewayChannel = gateway("channel.mb");
         ChannelServiceAccess access = activeAccess();
         ChannelServiceDefinition inbound = definition(access, ChannelServiceDefinitionType.INBOUND, "route-1");
@@ -81,21 +81,21 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     @Test
-    void channelPlanFailsWhenApiDocDefinitionIsMissing() {
+    void channelPlanDoesNotFailWhenApiDocDefinitionIsMissing() {
         GatewayChannel gatewayChannel = gateway("channel.mb");
         ChannelServiceAccess access = activeAccess();
+        ChannelServiceDefinition inbound = definition(access, ChannelServiceDefinitionType.INBOUND, "route-1");
         arrangeChannelAccess(gatewayChannel, access, List.of(
-                definition(access, ChannelServiceDefinitionType.INBOUND, "route-1")));
+                inbound));
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> provider.provide(gatewayChannel));
+        RuntimeRoutePlan plan = provider.provide(gatewayChannel);
 
-        assertInvalidDefinitionMessage(exception, "channel.mb", RuntimeTargetKind.CHANNEL, "card", "API_DOC");
+        assertEquals(RuntimeTargetKind.CHANNEL, plan.targetKind());
+        assertEquals(List.of(inbound), plan.servicePlans().getFirst().routeDefinitions());
     }
 
     @Test
-    void domainPlanRequiresMembershipInboundAndApiDocDefinitions() {
+    void domainPlanRequiresMembershipInboundAndAllowsOptionalApiDocDefinition() {
         GatewayChannel gatewayChannel = gateway("domain.card");
         ChannelServiceAccess access = activeAccess();
         ChannelServiceDefinition member = definition(access, ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER, "member-1");
@@ -146,18 +146,18 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     @Test
-    void domainPlanFailsWhenMemberServiceHasNoApiDocDefinition() {
+    void domainPlanDoesNotFailWhenMemberServiceHasNoApiDocDefinition() {
         GatewayChannel gatewayChannel = gateway("domain.card");
         ChannelServiceAccess access = activeAccess();
+        ChannelServiceDefinition inbound = definition(access, ChannelServiceDefinitionType.INBOUND, "route-1");
         arrangeDomainDefinitions(gatewayChannel, access, List.of(
                 definition(access, ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER, "member-1"),
-                definition(access, ChannelServiceDefinitionType.INBOUND, "route-1")));
+                inbound));
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> provider.provide(gatewayChannel));
+        RuntimeRoutePlan plan = provider.provide(gatewayChannel);
 
-        assertInvalidDefinitionMessage(exception, "domain.card", RuntimeTargetKind.SERVICE_DOMAIN, "card", "API_DOC");
+        assertEquals(RuntimeTargetKind.SERVICE_DOMAIN, plan.targetKind());
+        assertEquals(List.of(inbound), plan.servicePlans().getFirst().routeDefinitions());
     }
 
     @Test

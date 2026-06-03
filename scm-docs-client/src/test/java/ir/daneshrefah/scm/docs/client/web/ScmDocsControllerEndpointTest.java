@@ -1,12 +1,20 @@
 package ir.daneshrefah.scm.docs.client.web;
 
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocGroupDescriptor;
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocItemDescriptor;
+import ir.daneshrefah.scm.docs.client.model.ScmDocType;
+import ir.daneshrefah.scm.docs.client.provider.ScmApiDocGroupCatalogProvider;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -78,7 +86,10 @@ class ScmDocsControllerEndpointTest {
                 .andExpect(jsonPath("$.documents[0].moduleCode").value("scm-web"))
                 .andExpect(jsonPath("$.documents[0].title.en").value("Sample Guide"))
                 .andExpect(jsonPath("$.documents[0].category").value("GUIDE"))
-                .andExpect(jsonPath("$.documents[0].href").value("/docs/api/sample"));
+                .andExpect(jsonPath("$.documents[0].href").value("/docs/api/sample"))
+                .andExpect(jsonPath("$.groups[0].id").value("scm-web.channel-mb.100.card-inquiry.v1"))
+                .andExpect(jsonPath("$.groups[0].documents[0].id").value("scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"))
+                .andExpect(jsonPath("$.groups[0].documents[0].downloadUrl").value("/docs/api/scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json"));
     }
 
     @Test
@@ -124,5 +135,30 @@ class ScmDocsControllerEndpointTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     static class TestApplication {
+        @Bean
+        ScmApiDocGroupCatalogProvider apiDocGroupCatalogProvider() {
+            return () -> List.of(new ScmApiDocGroupDescriptor(
+                    "scm-web.channel-mb.100.card-inquiry.v1",
+                    "scm-web",
+                    "channel.mb",
+                    100L,
+                    "card-inquiry",
+                    "v1",
+                    Map.of("en", "Card Inquiry API Docs"),
+                    Map.of(),
+                    List.of(new ScmApiDocItemDescriptor(
+                            "scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json",
+                            ScmDocType.OPENAPI_JSON,
+                            Map.of("en", "Card Inquiry OpenAPI"),
+                            Map.of(),
+                            "application/json",
+                            "openapi.json",
+                            null,
+                            null,
+                            10
+                    )),
+                    10
+            ));
+        }
     }
 }

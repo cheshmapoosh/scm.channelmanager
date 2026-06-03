@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.docs.client.web;
 
 import ir.daneshrefah.scm.docs.client.autoconfigure.ScmDocsProperties;
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocGroupDescriptor;
+import ir.daneshrefah.scm.docs.client.model.ScmApiDocItemDescriptor;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
 import ir.daneshrefah.scm.docs.client.registry.ScmDocsRegistry;
@@ -56,8 +58,9 @@ public class ScmDocsController {
     @GetMapping(path = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> apiIndex() {
         List<ScmDocDescriptor> documents = descriptorsWithHref();
-        log.debug("SCM docs API index requested documentCount={}", documents.size());
-        return Map.of("documents", documents);
+        List<ScmApiDocGroupDescriptor> groups = apiDocGroupsWithDownloadUrls();
+        log.debug("SCM docs API index requested groupCount={} documentCount={}", groups.size(), documents.size());
+        return Map.of("groups", groups, "documents", documents);
     }
 
     @GetMapping(path = "/api/{docId}")
@@ -114,6 +117,18 @@ public class ScmDocsController {
         return registry.findAll().stream()
                 .map(descriptor -> descriptor.withHref(hrefFor(descriptor.id())))
                 .toList();
+    }
+
+    private List<ScmApiDocGroupDescriptor> apiDocGroupsWithDownloadUrls() {
+        return registry.findApiDocGroups().stream()
+                .map(group -> group.withDocuments(group.documents().stream()
+                        .map(this::withDownloadUrl)
+                        .toList()))
+                .toList();
+    }
+
+    private ScmApiDocItemDescriptor withDownloadUrl(ScmApiDocItemDescriptor item) {
+        return item.withDownloadUrl(hrefFor(item.id()));
     }
 
     private String hrefFor(String docId) {
