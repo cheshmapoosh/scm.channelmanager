@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -14,6 +16,10 @@ public class RuntimeRouteActivation {
 
     public RuntimeMode runtimeMode() {
         return scmRuntimeProperties.runtimeMode();
+    }
+
+    public List<RuntimeTargetProperties> runtimeTargets() {
+        return scmRuntimeProperties.runtimeTargets();
     }
 
     public RuntimeTargetKind resolveTargetKind(GatewayChannel gatewayChannel) {

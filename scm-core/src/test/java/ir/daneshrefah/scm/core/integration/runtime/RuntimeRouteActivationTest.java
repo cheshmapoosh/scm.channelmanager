@@ -31,10 +31,10 @@ class RuntimeRouteActivationTest {
     }
 
     @Test
-    void bothModeBuildsGatewayAndServiceRoutesForBothTargetKinds() {
+    void bothModeBuildsChannelGatewayRoutesAndAllServiceRoutes() {
         assertTrue(activation.shouldBuildGatewayRoutes(RuntimeMode.CHANNEL_AND_SERVICE_DOMAIN, RuntimeTargetKind.CHANNEL));
         assertTrue(activation.shouldBuildServiceRoutes(RuntimeMode.CHANNEL_AND_SERVICE_DOMAIN, RuntimeTargetKind.CHANNEL));
-        assertTrue(activation.shouldBuildGatewayRoutes(RuntimeMode.CHANNEL_AND_SERVICE_DOMAIN, RuntimeTargetKind.SERVICE_DOMAIN));
+        assertFalse(activation.shouldBuildGatewayRoutes(RuntimeMode.CHANNEL_AND_SERVICE_DOMAIN, RuntimeTargetKind.SERVICE_DOMAIN));
         assertTrue(activation.shouldBuildServiceRoutes(RuntimeMode.CHANNEL_AND_SERVICE_DOMAIN, RuntimeTargetKind.SERVICE_DOMAIN));
     }
 

@@ -8,6 +8,8 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
 import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
@@ -42,9 +44,11 @@ public class GatewayLayerRouteBuilder {
         RouteDefinition route = inboundRoute.route();
         Service service = servicePlan.service();
 
-        log.info("Gateway route registration started routeId={} gatewayName={} channelCode={} serviceCode={} serviceVersion={} protocol={}",
+        log.info("event={} layer=gateway routeId={} gatewayName={} targetKind={} channelCode={} serviceCode={} serviceVersion={} protocol={} outcome=started",
+                RouteLogEvents.GATEWAY_ROUTE_REGISTRATION_STARTED,
                 route.getRouteId(),
                 servicePlan.gatewayChannel().getName(),
+                routePlan.targetKind(),
                 channelCode(servicePlan.channelServiceAccess()),
                 service.getCode(),
                 inboundRoute.serviceVersion(),
@@ -64,54 +68,165 @@ public class GatewayLayerRouteBuilder {
                 .process(exchange -> scmExchangeMdc.clear())
                 .end();
         route.process(exchange -> {
+            exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
             applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
-            scmExchangeMdc.put(exchange);
+            Map<String, String> fields = scmExchangeMdc.put(exchange);
             TraceUtils traceUtils = TraceUtils.getInstance();
             if (traceUtils != null) {
                 traceUtils.traceScmRequest(exchange, service);
             }
-            log.info("Gateway inbound received gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
+                    RouteLogEvents.GATEWAY_REQUEST_RECEIVED,
                     servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
                     service.getCode(),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
-                    exchange.getExchangeId());
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
         });
 
         route.process(exchange -> {
+            Map<String, String> fields = scmExchangeMdc.put(exchange);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
+                    RouteLogEvents.GATEWAY_CONTRACT_RESOLUTION_STARTED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
             ClientContract contract = clientContractResolver.resolve(
                     servicePlan.gatewayChannel(),
                     inboundRoute.channelServiceDefinition(),
                     inboundRoute.serviceVersion());
             exchange.setProperty(Message.CLIENT_CONTRACT, contract);
-            RequestContractDecoder decoder = resolveRequestDecoder(contract);
-            decoder.decode(exchange, contract);
-            scmExchangeMdc.put(exchange);
-            log.info("Gateway request decoded gatewayName={} channelCode={} serviceCode={} serviceVersion={} contract={} routeId={} exchangeId={}",
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} contractName={} requestDecoder={} routeId={} exchangeId={} correlationId={} outcome=success",
+                    RouteLogEvents.GATEWAY_CONTRACT_RESOLVED,
                     servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
                     service.getCode(),
                     serviceVersion(exchange),
                     contract.name(),
+                    contract.requestDecoder(),
                     exchange.getFromRouteId(),
-                    exchange.getExchangeId());
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+            RequestContractDecoder decoder = resolveRequestDecoder(contract);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} contractName={} requestDecoder={} routeId={} exchangeId={} correlationId={} outcome=started",
+                    RouteLogEvents.GATEWAY_REQUEST_DECODE_STARTED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    contract.name(),
+                    contract.requestDecoder(),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+            decoder.decode(exchange, contract);
+            fields = scmExchangeMdc.put(exchange);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} contractName={} requestDecoder={} routeId={} exchangeId={} correlationId={} outcome=success",
+                    RouteLogEvents.GATEWAY_REQUEST_DECODED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    contract.name(),
+                    contract.requestDecoder(),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
         });
 
-        String targetUri = serviceRouteUriResolver.resolve(service);
-        route.process(exchange -> log.info("Gateway dispatching to service gatewayName={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={}",
-                servicePlan.gatewayChannel().getName(),
-                channelCode(exchange, servicePlan),
-                service.getCode(),
-                serviceVersion(exchange),
-                targetUri,
-                exchange.getFromRouteId(),
-                exchange.getExchangeId()));
+        String targetUri = serviceRouteUriResolver.resolve(routePlan, servicePlan);
+        route.process(exchange -> {
+            Map<String, String> fields = scmExchangeMdc.fields(exchange);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=started",
+                    RouteLogEvents.GATEWAY_DISPATCH_STARTED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    targetUri,
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+        });
         route.to(targetUri);
+        route.process(exchange -> {
+            Map<String, String> fields = scmExchangeMdc.fields(exchange);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",
+                    RouteLogEvents.GATEWAY_DISPATCH_FINISHED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    targetUri,
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
+                    RouteLogEvents.GATEWAY_RESPONSE_HANDLER_STARTED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+        });
         route.to(Routes.GLOBAL_RESPONSE_HANDLER);
-        log.info("Gateway route registered routeId={} gatewayName={} channelCode={} serviceCode={} serviceVersion={} targetUri={}",
+        route.process(exchange -> {
+            Map<String, String> fields = scmExchangeMdc.fields(exchange);
+            long durationMs = RouteLogSupport.durationMs(exchange, RouteLogSupport.GATEWAY_START_NANOS);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
+                    RouteLogEvents.GATEWAY_RESPONSE_HANDLER_FINISHED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"),
+                    durationMs);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
+                    RouteLogEvents.GATEWAY_REQUEST_SUCCEEDED,
+                    servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
+                    servicePlan.gatewayChannel().getProtocolType(),
+                    channelCode(exchange, servicePlan),
+                    service.getCode(),
+                    serviceVersion(exchange),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"),
+                    durationMs);
+        });
+        log.info("event={} layer=gateway routeId={} gatewayName={} targetKind={} channelCode={} serviceCode={} serviceVersion={} targetUri={} outcome=success",
+                RouteLogEvents.GATEWAY_ROUTE_REGISTERED,
                 route.getRouteId(),
                 servicePlan.gatewayChannel().getName(),
+                routePlan.targetKind(),
                 channelCode(servicePlan.channelServiceAccess()),
                 service.getCode(),
                 inboundRoute.serviceVersion(),
@@ -128,10 +243,19 @@ public class GatewayLayerRouteBuilder {
                     if (traceUtils != null) {
                         traceUtils.traceException(exchange, exception);
                     }
-                    log.warn("Gateway route failed serviceVersion={} routeId={} exchangeId={}",
+                    Map<String, String> fields = scmExchangeMdc.fields(exchange);
+                    log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                            RouteLogEvents.GATEWAY_REQUEST_FAILED,
+                            RouteLogSupport.gatewayName(exchange),
+                            RouteLogSupport.targetKind(exchange),
+                            RouteLogSupport.protocol(exchange),
                             serviceVersion(exchange),
                             exchange.getFromRouteId(),
                             exchange.getExchangeId(),
+                            fields.get("correlationId"),
+                            RouteLogSupport.durationMs(exchange, RouteLogSupport.GATEWAY_START_NANOS),
+                            RouteLogSupport.failureType(exception),
+                            RouteLogSupport.failureMessage(exception),
                             exception);
                 })
                 .to(Routes.GLOBAL_ERROR_HANDLER);

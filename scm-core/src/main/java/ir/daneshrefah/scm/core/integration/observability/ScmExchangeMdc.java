@@ -18,6 +18,8 @@ import java.util.Map;
 
 @Component
 public class ScmExchangeMdc {
+    private static final String X_CORRELATION_ID = "X-Correlation-Id";
+
     private static final List<String> MDC_KEYS = List.of(
             "traceId",
             "spanId",
@@ -73,7 +75,10 @@ public class ScmExchangeMdc {
     }
 
     private String correlationId(Exchange exchange) {
-        String correlationId = exchange.getMessage().getHeader(Constants.SCM_PARAMETER_CORRELATION_ID, String.class);
+        String correlationId = exchange.getMessage().getHeader(X_CORRELATION_ID, String.class);
+        if (correlationId == null) {
+            correlationId = exchange.getMessage().getHeader(Constants.SCM_PARAMETER_CORRELATION_ID, String.class);
+        }
         if (correlationId == null) {
             correlationId = exchange.getMessage().getHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID, String.class);
         }

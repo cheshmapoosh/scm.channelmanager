@@ -5,12 +5,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class ScmRuntimeProperties {
     public static final String GATEWAY_NAME_PROPERTY = "scm.runtime.gateway-name";
     public static final String LEGACY_APP_NAME_PROPERTY = "scm.app-name";
     public static final String RUNTIME_MODE_PROPERTY = "scm.runtime.mode";
+    public static final String RUNTIME_TARGETS_PROPERTY = "scm.runtime.targets";
 
     private final Environment environment;
 
@@ -38,5 +45,100 @@ public class ScmRuntimeProperties {
             throw new IllegalArgumentException("Invalid " + RUNTIME_MODE_PROPERTY + " '" + runtimeMode
                     + "'. Expected CHANNEL, SERVICE_DOMAIN, or CHANNEL_AND_SERVICE_DOMAIN.", exception);
         }
+    }
+
+    public List<RuntimeTargetProperties> runtimeTargets() {
+        RuntimeTargetConfiguration configuredTargets = configuredRuntimeTargets();
+        if (configuredTargets.present()) {
+            return configuredTargets.targets();
+        }
+
+        String legacyGatewayName = gatewayName();
+        return List.of(new RuntimeTargetProperties(
+                targetKindFromGatewayName(legacyGatewayName),
+                true,
+                List.of(legacyGatewayName)));
+    }
+
+    public Map<RuntimeTargetKind, List<String>> gatewayNamesByTargetKind() {
+        Map<RuntimeTargetKind, List<String>> gatewayNamesByKind = new EnumMap<>(RuntimeTargetKind.class);
+        for (RuntimeTargetProperties runtimeTarget : runtimeTargets()) {
+            if (!runtimeTarget.enabled()) {
+                continue;
+            }
+            gatewayNamesByKind.computeIfAbsent(runtimeTarget.targetKind(), ignored -> new ArrayList<>())
+                    .addAll(runtimeTarget.gatewayNames());
+        }
+        gatewayNamesByKind.replaceAll((ignored, gatewayNames) -> List.copyOf(gatewayNames));
+        return Map.copyOf(gatewayNamesByKind);
+    }
+
+    private RuntimeTargetConfiguration configuredRuntimeTargets() {
+        List<RuntimeTargetProperties> runtimeTargets = new ArrayList<>();
+        boolean configured = false;
+        configured |= addConfiguredTarget(runtimeTargets, RuntimeTargetKind.CHANNEL, "channel");
+        configured |= addConfiguredTarget(runtimeTargets, RuntimeTargetKind.SERVICE_DOMAIN, "service-domain");
+        return new RuntimeTargetConfiguration(configured, List.copyOf(runtimeTargets));
+    }
+
+    private boolean addConfiguredTarget(List<RuntimeTargetProperties> runtimeTargets,
+                                        RuntimeTargetKind targetKind,
+                                        String propertyName) {
+        String prefix = RUNTIME_TARGETS_PROPERTY + "." + propertyName;
+        List<String> gatewayNames = gatewayNames(prefix + ".gateway-names");
+        Boolean enabled = environment.getProperty(prefix + ".enabled", Boolean.class);
+        boolean configured = enabled != null || !gatewayNames.isEmpty();
+        boolean targetEnabled = enabled != null ? enabled : !gatewayNames.isEmpty();
+
+        if (!targetEnabled) {
+            return configured;
+        }
+        if (gatewayNames.isEmpty()) {
+            throw new IllegalStateException("Runtime target " + targetKind
+                    + " is enabled but no gateway names are configured under "
+                    + prefix + ".gateway-names.");
+        }
+        runtimeTargets.add(new RuntimeTargetProperties(targetKind, true, gatewayNames));
+        return true;
+    }
+
+    private List<String> gatewayNames(String propertyName) {
+        LinkedHashSet<String> gatewayNames = new LinkedHashSet<>();
+        String commaSeparated = environment.getProperty(propertyName);
+        if (StringUtils.isNotBlank(commaSeparated)) {
+            for (String gatewayName : commaSeparated.split(",")) {
+                String normalized = StringUtils.trimToNull(gatewayName);
+                if (normalized != null) {
+                    gatewayNames.add(normalized);
+                }
+            }
+        }
+
+        for (int index = 0; ; index++) {
+            String gatewayName = StringUtils.trimToNull(environment.getProperty(propertyName + "[" + index + "]"));
+            if (gatewayName == null) {
+                break;
+            }
+            gatewayNames.add(gatewayName);
+        }
+        return List.copyOf(gatewayNames);
+    }
+
+    private RuntimeTargetKind targetKindFromGatewayName(String gatewayName) {
+        String normalizedGatewayName = StringUtils.trimToNull(gatewayName);
+        if (normalizedGatewayName == null) {
+            throw new IllegalStateException("Runtime gateway name is required.");
+        }
+        if (normalizedGatewayName.startsWith("channel.")) {
+            return RuntimeTargetKind.CHANNEL;
+        }
+        if (normalizedGatewayName.startsWith("domain.")) {
+            return RuntimeTargetKind.SERVICE_DOMAIN;
+        }
+        throw new IllegalArgumentException("Invalid runtime gateway name '" + normalizedGatewayName
+                + "'. Expected channel.<code> or domain.<code>.");
+    }
+
+    private record RuntimeTargetConfiguration(boolean present, List<RuntimeTargetProperties> targets) {
     }
 }

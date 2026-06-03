@@ -2,13 +2,15 @@ package ir.daneshrefah.scm.core.integration.gateway;
 
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.service.GatewayService;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
-import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
@@ -25,39 +27,92 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     private final GatewayService gatewayService;
     private final RuntimeRoutePlanProvider runtimeRoutePlanProvider;
     private final List<ProtocolHandler> protocolHandlers;
-    private final ScmRuntimeProperties scmRuntimeProperties;
     private final GatewayLayerRouteBuilder gatewayLayerRouteBuilder;
     private final RuntimeRouteActivation runtimeRouteActivation;
 
     @Override
     public void configure() {
-        String name = scmRuntimeProperties.gatewayName();
         RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
-        log.info("Gateway route construction started gatewayName={} runtimeMode={}", name, runtimeMode);
-        if (runtimeMode == RuntimeMode.SERVICE_DOMAIN) {
-            log.info("Gateway route construction skipped gatewayName={} runtimeMode={} reason=service-domain-only",
-                    name, runtimeMode);
-            return;
-        }
+        List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
+        log.info("event={} layer=gateway runtimeMode={} targetCount={} outcome=started",
+                RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_STARTED, runtimeMode, runtimeTargets.size());
         if (CollectionUtils.isEmpty(protocolHandlers)) {
-            log.error("No protocol handler found");
+            log.error("event={} layer=gateway runtimeMode={} outcome=failed failureType={} failureMessage={}",
+                    RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
+                    runtimeMode,
+                    IllegalStateException.class.getSimpleName(),
+                    "No protocol handler found");
             throw new IllegalStateException("No protocol handler found");
         }
-        GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
-        if (gatewayChannel == null) {
-            log.error("Gateway channel '{}' not found", name);
-            throw new IllegalStateException("Gateway channel '" + name + "' not found");
+        runtimeTargets.forEach(runtimeTarget ->
+                runtimeTarget.gatewayNames().forEach(gatewayName ->
+                        configureGatewayTarget(runtimeMode, runtimeTarget, gatewayName)));
+        log.info("event={} layer=gateway runtimeMode={} targetCount={} outcome=success",
+                RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_COMPLETED, runtimeMode, runtimeTargets.size());
+    }
+
+    private void configureGatewayTarget(RuntimeMode runtimeMode,
+                                        RuntimeTargetProperties runtimeTarget,
+                                        String gatewayName) {
+        long startNanos = System.nanoTime();
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} configuredTargetKind={} outcome=started",
+                RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_STARTED,
+                gatewayName,
+                runtimeMode,
+                runtimeTarget.targetKind());
+        try {
+            configureGatewayTargetSafely(runtimeMode, runtimeTarget, gatewayName, startNanos);
+        } catch (RuntimeException exception) {
+            log.error("event={} layer=gateway gatewayName={} runtimeMode={} configuredTargetKind={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                    RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
+                    gatewayName,
+                    runtimeMode,
+                    runtimeTarget.targetKind(),
+                    RouteLogSupport.elapsedMs(startNanos),
+                    RouteLogSupport.failureType(exception),
+                    RouteLogSupport.failureMessage(exception),
+                    exception);
+            throw exception;
         }
+    }
+
+    private void configureGatewayTargetSafely(RuntimeMode runtimeMode,
+                                              RuntimeTargetProperties runtimeTarget,
+                                              String gatewayName,
+                                              long startNanos) {
+        GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
+        if (gatewayChannel == null) {
+            throw new IllegalStateException("Gateway channel '" + gatewayName + "' not found");
+        }
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} protocol={} outcome=success",
+                RouteLogEvents.GATEWAY_CHANNEL_RESOLVED,
+                gatewayChannel.getName(),
+                runtimeMode,
+                gatewayChannel.getProtocolType());
         RuntimeTargetKind targetKind = runtimeRouteActivation.resolveTargetKind(gatewayChannel);
+        validateConfiguredTargetKind(runtimeTarget, gatewayChannel, targetKind);
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} outcome=success",
+                RouteLogEvents.GATEWAY_TARGET_KIND_RESOLVED,
+                gatewayChannel.getName(),
+                runtimeMode,
+                targetKind,
+                gatewayChannel.getProtocolType());
         if (!runtimeRouteActivation.shouldBuildGatewayRoutes(runtimeMode, targetKind)) {
-            log.warn("Gateway route construction skipped gatewayName={} runtimeMode={} targetKind={}",
-                    gatewayChannel.getName(), runtimeMode, targetKind);
+            log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} durationMs={} outcome=skipped reason=runtime-mode",
+                    RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_SKIPPED,
+                    gatewayChannel.getName(),
+                    runtimeMode,
+                    targetKind,
+                    gatewayChannel.getProtocolType(),
+                    RouteLogSupport.elapsedMs(startNanos));
             return;
         }
 
         RuntimeRoutePlan routePlan = resolveRoutePlan(gatewayChannel, runtimeMode);
-        log.info("Gateway route plan resolved gatewayName={} protocol={} targetKind={} serviceCount={}",
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} protocol={} targetKind={} serviceCount={} outcome=success",
+                RouteLogEvents.GATEWAY_ROUTE_PLAN_RESOLVED,
                 gatewayChannel.getName(),
+                runtimeMode,
                 gatewayChannel.getProtocolType(),
                 routePlan.targetKind(),
                 routePlan.servicePlans().size());
@@ -65,30 +120,56 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                 .filter(h -> Objects.equals(gatewayChannel.getProtocolType(), h.getProtocol()))
                 .findFirst()
                 .orElseThrow(() -> {
-                    log.error("No protocol handler found gatewayName={} protocol={}",
-                            gatewayChannel.getName(), gatewayChannel.getProtocolType());
                     return new IllegalStateException("No handler for " + gatewayChannel.getName()
                             + " gateway with " + gatewayChannel.getProtocolType() + " protocol");
                 });
 
         ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
-        log.info("Gateway route construction using protocol handler gatewayName={} protocol={} handler={}",
-                gatewayChannel.getName(), gatewayChannel.getProtocolType(), protocolHandler.getClass().getSimpleName());
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} handler={} outcome=success",
+                RouteLogEvents.GATEWAY_PROTOCOL_HANDLER_RESOLVED,
+                gatewayChannel.getName(),
+                runtimeMode,
+                routePlan.targetKind(),
+                gatewayChannel.getProtocolType(),
+                protocolHandler.getClass().getSimpleName());
         routePlan.servicePlans().forEach(servicePlan ->
                 protocolConfigurer.routeDefinition(servicePlan)
                         .forEach(inboundRoute -> configureGatewayRoute(routePlan, servicePlan, inboundRoute)));
-        log.info("Gateway route construction completed gatewayName={} serviceCount={}",
-                gatewayChannel.getName(), routePlan.servicePlans().size());
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} serviceCount={} durationMs={} outcome=success",
+                RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_COMPLETED,
+                gatewayChannel.getName(),
+                runtimeMode,
+                routePlan.targetKind(),
+                gatewayChannel.getProtocolType(),
+                routePlan.servicePlans().size(),
+                RouteLogSupport.elapsedMs(startNanos));
     }
 
     private RuntimeRoutePlan resolveRoutePlan(GatewayChannel gatewayChannel, RuntimeMode runtimeMode) {
         try {
             return runtimeRoutePlanProvider.provide(gatewayChannel);
         } catch (RuntimeException exception) {
-            log.error("Gateway route planning failed gatewayName={} runtimeMode={} protocol={}",
-                    gatewayChannel.getName(), runtimeMode, gatewayChannel.getProtocolType(), exception);
+            log.error("event={} layer=gateway gatewayName={} runtimeMode={} protocol={} outcome=failed failureType={} failureMessage={}",
+                    RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
+                    gatewayChannel.getName(),
+                    runtimeMode,
+                    gatewayChannel.getProtocolType(),
+                    RouteLogSupport.failureType(exception),
+                    RouteLogSupport.failureMessage(exception),
+                    exception);
             throw exception;
         }
+    }
+
+    private void validateConfiguredTargetKind(RuntimeTargetProperties runtimeTarget,
+                                              GatewayChannel gatewayChannel,
+                                              RuntimeTargetKind targetKind) {
+        if (runtimeTarget.targetKind() == targetKind) {
+            return;
+        }
+        throw new IllegalStateException("Configured runtime target " + runtimeTarget.targetKind()
+                + " contains gateway '" + gatewayChannel.getName()
+                + "' resolved as " + targetKind + ".");
     }
 
     private void configureGatewayRoute(RuntimeRoutePlan routePlan,
@@ -97,11 +178,15 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         try {
             gatewayLayerRouteBuilder.configureGatewayRoute(new ChannelRouteBuildContext(routePlan, servicePlan), inboundRoute);
         } catch (RuntimeException exception) {
-            log.error("Gateway route construction failed routeId={} gatewayName={} serviceCode={} serviceVersion={}",
+            log.error("event={} layer=gateway routeId={} gatewayName={} targetKind={} serviceCode={} serviceVersion={} outcome=failed failureType={} failureMessage={}",
+                    RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
                     inboundRoute.route().getRouteId(),
                     servicePlan.gatewayChannel().getName(),
+                    routePlan.targetKind(),
                     servicePlan.service().getCode(),
                     inboundRoute.serviceVersion(),
+                    RouteLogSupport.failureType(exception),
+                    RouteLogSupport.failureMessage(exception),
                     exception);
             throw exception;
         }

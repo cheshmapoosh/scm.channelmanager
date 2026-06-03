@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.core.entity.gateway.GatewayChannelEntity;
+import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
@@ -14,6 +15,7 @@ import ir.daneshrefah.scm.docs.client.model.ScmDocType;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,21 +35,22 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     private final ScmWebRuntimeApiDocCatalogProvider provider = new ScmWebRuntimeApiDocCatalogProvider(
             repository,
             new ObjectMapper(),
-            resourceLoader
+            resourceLoader,
+            new ScmRuntimeProperties(new MockEnvironment()
+                    .withProperty("scm.runtime.gateway-name", "channel.mb"))
     );
 
     @Test
     void createsOneDescriptorPerDocumentItemFromSingleApiDocDefinition() {
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", validDetails())));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetails()));
 
         List<ScmDocDescriptor> documents = provider.findAll().stream().toList();
 
         assertThat(documents)
                 .extracting(ScmDocDescriptor::id)
                 .containsExactly(
-                        "scm-web.card-inquiry.v1.OPENAPI_JSON.openapi-json",
-                        "scm-web.card-inquiry.v1.WSDL.card-inquiry-wsdl"
+                        "scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json",
+                        "scm-web.channel-mb.100.card-inquiry.v1.WSDL.card-inquiry-wsdl"
                 );
         assertThat(documents)
                 .extracting(ScmDocDescriptor::type)
@@ -60,12 +64,11 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void loadsClasspathContentByStableDocumentId() {
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", validDetails())));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetails()));
         when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/openapi/openapi.json"))
                 .thenReturn(new ByteArrayResource("{\"openapi\":\"3.0.0\"}".getBytes(StandardCharsets.UTF_8)));
 
-        Optional<ScmDocContent> content = provider.findById("scm-web.card-inquiry.v1.OPENAPI_JSON.openapi-json");
+        Optional<ScmDocContent> content = provider.findById("scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json");
 
         assertThat(content).isPresent();
         assertThat(new String(content.get().body(), StandardCharsets.UTF_8)).isEqualTo("{\"openapi\":\"3.0.0\"}");
@@ -78,7 +81,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     void rejectsMultipleApiDocRowsForSameGatewayAndAccessExposure() {
         ChannelServiceDefinitionEntity first = apiDocDefinition("api-doc-1", validDetails());
         ChannelServiceDefinitionEntity second = apiDocDefinition("api-doc-2", validDetails());
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC)).thenReturn(List.of(first, second));
+        arrangeScopedDefinitions(first, second);
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -87,8 +90,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void rejectsMissingDocumentsArray() {
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", "{\"version\":\"v1\"}")));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", "{\"version\":\"v1\"}"));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -97,8 +99,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
 
     @Test
     void rejectsEmptyDocumentsArray() {
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", "{\"version\":\"v1\",\"documents\":[]}")));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", "{\"version\":\"v1\",\"documents\":[]}"));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -121,8 +122,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                   ]
                 }
                 """;
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", details)));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", details));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -132,8 +132,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     @Test
     void rejectsUnsupportedSourceTypeInPhaseOne() {
         String details = validDetails().replace("\"type\": \"CLASSPATH\"", "\"type\": \"HTTP\"");
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", details)));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", details));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -145,8 +144,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         String details = validDetails().replace(
                 "services/card/card-inquiry/v1/openapi/openapi.json",
                 "other/card/openapi.json");
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", details)));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", details));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -158,8 +156,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         String details = validDetails().replace(
                 "services/card/card-inquiry/v1/openapi/openapi.json",
                 "scm-docs/card/openapi.json");
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", details)));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", details));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -171,8 +168,7 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         String details = validDetails().replace(
                 "services/card/card-inquiry/v1/openapi/openapi.json",
                 "services/card/../openapi.json");
-        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
-                .thenReturn(List.of(apiDocDefinition("api-doc-1", details)));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", details));
 
         assertThatThrownBy(provider::findAll)
                 .isInstanceOf(IllegalStateException.class)
@@ -186,7 +182,70 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
                 .hasMessageContaining("unsafe path characters");
     }
 
+    @Test
+    void queriesOnlyCurrentRuntimeGatewayNames() {
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetails()));
+
+        provider.findAll();
+
+        verify(repository).findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb"));
+    }
+
+    @Test
+    void duplicateDocumentNamesAcrossExposuresDoNotCollide() {
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("scm.runtime.targets.channel.enabled", "true")
+                .withProperty("scm.runtime.targets.channel.gateway-names[0]", "channel.mb")
+                .withProperty("scm.runtime.targets.service-domain.enabled", "true")
+                .withProperty("scm.runtime.targets.service-domain.gateway-names[0]", "domain.card");
+        ScmWebRuntimeApiDocCatalogProvider provider = new ScmWebRuntimeApiDocCatalogProvider(
+                repository,
+                new ObjectMapper(),
+                resourceLoader,
+                new ScmRuntimeProperties(environment));
+        when(repository.findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb", "domain.card")))
+                .thenReturn(List.of(
+                        apiDocDefinition("api-doc-channel", "channel.mb", 100L, validDetails()),
+                        apiDocDefinition("api-doc-domain", "domain.card", 200L, validDetails())));
+
+        List<String> docIds = provider.findAll().stream()
+                .map(ScmDocDescriptor::id)
+                .toList();
+
+        assertThat(docIds).contains(
+                "scm-web.channel-mb.100.card-inquiry.v1.OPENAPI_JSON.openapi-json",
+                "scm-web.domain-card.200.card-inquiry.v1.OPENAPI_JSON.openapi-json");
+    }
+
+    @Test
+    void brokenApiDocOutsideRuntimeTargetIsIgnored() {
+        when(repository.findByType(ChannelServiceDefinitionType.API_DOC))
+                .thenThrow(new IllegalStateException("broken API_DOC outside runtime target"));
+        arrangeScopedDefinitions(apiDocDefinition("api-doc-1", validDetails()));
+
+        assertThat(provider.findAll()).hasSize(2);
+        verify(repository, never()).findByType(ChannelServiceDefinitionType.API_DOC);
+    }
+
+    private void arrangeScopedDefinitions(ChannelServiceDefinitionEntity... definitions) {
+        when(repository.findByTypeAndGatewayChannel_NameIn(
+                ChannelServiceDefinitionType.API_DOC,
+                List.of("channel.mb")))
+                .thenReturn(List.of(definitions));
+    }
+
     private ChannelServiceDefinitionEntity apiDocDefinition(String id, String details) {
+        return apiDocDefinition(id, "channel.mb", 100L, details);
+    }
+
+    private ChannelServiceDefinitionEntity apiDocDefinition(String id,
+                                                            String gatewayName,
+                                                            Long channelServiceAccessId,
+                                                            String details) {
         DefinitionEntity definition = new DefinitionEntity();
         definition.setId("definition-" + id);
         definition.setName(id);
@@ -198,12 +257,12 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
         service.setCode("card-inquiry");
 
         ChannelServiceAccessEntity access = new ChannelServiceAccessEntity();
-        access.setId(100L);
+        access.setId(channelServiceAccessId);
         access.setService(service);
 
         GatewayChannelEntity gatewayChannel = new GatewayChannelEntity();
-        gatewayChannel.setId("gateway-1");
-        gatewayChannel.setName("channel.mb");
+        gatewayChannel.setId("gateway-" + gatewayName);
+        gatewayChannel.setName(gatewayName);
 
         ChannelServiceDefinitionEntity apiDocDefinition = new ChannelServiceDefinitionEntity();
         apiDocDefinition.setId(id);

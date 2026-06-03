@@ -33,10 +33,7 @@ public enum RuntimeMode {
     }
 
     public boolean channelGatewayRoutesEnabled(RuntimeTargetKind targetKind) {
-        if (this == SERVICE_DOMAIN) {
-            return false;
-        }
-        return accepts(targetKind);
+        return targetKind == RuntimeTargetKind.CHANNEL && accepts(targetKind);
     }
 
     public boolean serviceExecutionRoutesEnabled(RuntimeTargetKind targetKind) {

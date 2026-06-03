@@ -20,6 +20,10 @@ public interface ChannelServiceDefinitionRepository extends JpaRepository<Channe
     @EntityGraph(attributePaths = {"channelServiceAccess", "channelServiceAccess.service", "gatewayChannel", "definition"})
     List<ChannelServiceDefinitionEntity> findByType(ChannelServiceDefinitionType type);
 
+    @EntityGraph(attributePaths = {"channelServiceAccess", "channelServiceAccess.service", "gatewayChannel", "definition"})
+    List<ChannelServiceDefinitionEntity> findByTypeAndGatewayChannel_NameIn(ChannelServiceDefinitionType type,
+                                                                            List<String> gatewayNames);
+
     Page<ChannelServiceDefinitionEntity> findAllByTypeIn(List<ChannelServiceDefinitionType> types, Pageable pageable);
 
     List<ChannelServiceDefinitionEntity> findByChannelServiceAccess_Id(Long channelServiceAccessId);

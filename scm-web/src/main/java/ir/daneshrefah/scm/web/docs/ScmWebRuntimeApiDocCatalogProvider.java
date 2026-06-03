@@ -10,6 +10,9 @@ import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.core.entity.gateway.GatewayChannelEntity;
 import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
+import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.docs.client.model.ScmDocCategory;
 import ir.daneshrefah.scm.docs.client.model.ScmDocContent;
 import ir.daneshrefah.scm.docs.client.model.ScmDocDescriptor;
@@ -35,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Component
@@ -53,13 +57,16 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
     private final ChannelServiceDefinitionRepository channelServiceDefinitionRepository;
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
+    private final ScmRuntimeProperties scmRuntimeProperties;
 
     public ScmWebRuntimeApiDocCatalogProvider(ChannelServiceDefinitionRepository channelServiceDefinitionRepository,
                                               ObjectMapper objectMapper,
-                                              ResourceLoader resourceLoader) {
+                                              ResourceLoader resourceLoader,
+                                              ScmRuntimeProperties scmRuntimeProperties) {
         this.channelServiceDefinitionRepository = channelServiceDefinitionRepository;
         this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
+        this.scmRuntimeProperties = scmRuntimeProperties;
     }
 
     @Override
@@ -110,8 +117,13 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
     }
 
     private Map<String, RuntimeApiDocument> runtimeDocumentsById() {
+        List<String> gatewayNames = activeRuntimeGatewayNames();
+        if (gatewayNames.isEmpty()) {
+            log.debug("SCM web runtime API doc catalog skipped because no runtime target gateway names are active");
+            return Map.of();
+        }
         List<ChannelServiceDefinitionEntity> apiDocDefinitions = channelServiceDefinitionRepository
-                .findByType(ChannelServiceDefinitionType.API_DOC);
+                .findByTypeAndGatewayChannel_NameIn(ChannelServiceDefinitionType.API_DOC, gatewayNames);
         validateSingleApiDocRowPerExposure(apiDocDefinitions);
 
         Map<String, RuntimeApiDocument> documentsById = new LinkedHashMap<>();
@@ -127,9 +139,20 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
                 }
             }
         }
-        log.debug("SCM web runtime API doc catalog resolved apiDocDefinitions={} documents={}",
-                apiDocDefinitions.size(), documentsById.size());
+        log.debug("SCM web runtime API doc catalog resolved runtimeMode={} gatewayNames={} apiDocDefinitions={} documents={}",
+                scmRuntimeProperties.runtimeMode(), gatewayNames, apiDocDefinitions.size(), documentsById.size());
         return documentsById;
+    }
+
+    private List<String> activeRuntimeGatewayNames() {
+        RuntimeMode runtimeMode = scmRuntimeProperties.runtimeMode();
+        return scmRuntimeProperties.runtimeTargets()
+                .stream()
+                .filter(RuntimeTargetProperties::enabled)
+                .filter(runtimeTarget -> runtimeMode.accepts(runtimeTarget.targetKind()))
+                .flatMap(runtimeTarget -> runtimeTarget.gatewayNames().stream())
+                .distinct()
+                .toList();
     }
 
     private void validateSingleApiDocRowPerExposure(List<ChannelServiceDefinitionEntity> apiDocDefinitions) {
@@ -187,7 +210,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
         }
         String sourcePath = validateSourcePath(apiDocDefinition, requiredText(apiDocDefinition, source, "path"));
         String serviceCode = serviceCode(apiDocDefinition);
-        String docId = docId(serviceCode, version, docType, name);
+        String docId = docId(apiDocDefinition, serviceCode, version, docType, name);
         ScmDocDescriptor descriptor = new ScmDocDescriptor(
                 docId,
                 MODULE_CODE,
@@ -259,8 +282,16 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
         }
     }
 
-    private String docId(String serviceCode, String version, ScmDocType docType, String name) {
+    private String docId(ChannelServiceDefinitionEntity apiDocDefinition,
+                         String serviceCode,
+                         String version,
+                         ScmDocType docType,
+                         String name) {
         return MODULE_CODE
+                + "."
+                + normalizeSegment(gatewayName(apiDocDefinition))
+                + "."
+                + channelServiceAccessId(apiDocDefinition)
                 + "."
                 + normalizeSegment(serviceCode)
                 + "."
@@ -278,6 +309,22 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
             throw invalidDefinition(apiDocDefinition, "API_DOC service code is required");
         }
         return service.getCode().trim();
+    }
+
+    private String gatewayName(ChannelServiceDefinitionEntity apiDocDefinition) {
+        GatewayChannelEntity gatewayChannel = apiDocDefinition.getGatewayChannel();
+        if (gatewayChannel == null || !StringUtils.hasText(gatewayChannel.getName())) {
+            throw invalidDefinition(apiDocDefinition, "API_DOC gateway name is required");
+        }
+        return gatewayChannel.getName().trim();
+    }
+
+    private Long channelServiceAccessId(ChannelServiceDefinitionEntity apiDocDefinition) {
+        ChannelServiceAccessEntity access = apiDocDefinition.getChannelServiceAccess();
+        if (access == null || access.getId() == null) {
+            throw invalidDefinition(apiDocDefinition, "API_DOC channel service access is required");
+        }
+        return access.getId();
     }
 
     private String exposureKey(ChannelServiceDefinitionEntity apiDocDefinition) {
@@ -384,8 +431,8 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmDocCatalogProvider
     ) {
         private boolean sameContentAs(RuntimeApiDocument other) {
             return descriptor.type() == other.descriptor.type()
-                    && descriptor.fileName().equals(other.descriptor.fileName())
-                    && descriptor.mediaType().equals(other.descriptor.mediaType())
+                    && Objects.equals(descriptor.fileName(), other.descriptor.fileName())
+                    && Objects.equals(descriptor.mediaType(), other.descriptor.mediaType())
                     && sourceType.equals(other.sourceType)
                     && sourcePath.equals(other.sourcePath);
         }
