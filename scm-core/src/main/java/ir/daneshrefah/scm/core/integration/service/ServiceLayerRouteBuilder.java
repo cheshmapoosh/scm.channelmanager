@@ -14,7 +14,10 @@ import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.core.integration.service.guard.ChannelServiceAccessGuard;
 import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
@@ -52,18 +55,54 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private final ServiceAuditEventPublisher serviceAuditEventPublisher;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
     private final ScmRuntimeProperties scmRuntimeProperties;
+    private final RuntimeRouteActivation runtimeRouteActivation;
 
     @Override
     public void configure() {
         String name = scmRuntimeProperties.gatewayName();
+        RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
+        log.info("Service route construction started gatewayName={} runtimeMode={}", name, runtimeMode);
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
         if (gatewayChannel == null) {
+            log.error("Service route construction failed gateway channel not found gatewayName={}", name);
             throw new IllegalStateException("Gateway channel '" + name + "' not found");
         }
+        RuntimeTargetKind targetKind = runtimeRouteActivation.resolveTargetKind(gatewayChannel);
+        if (!runtimeRouteActivation.shouldBuildServiceRoutes(runtimeMode, targetKind)) {
+            log.warn("Service route construction skipped gatewayName={} runtimeMode={} targetKind={}",
+                    gatewayChannel.getName(), runtimeMode, targetKind);
+            return;
+        }
 
-        RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
+        RuntimeRoutePlan routePlan = resolveRoutePlan(gatewayChannel, runtimeMode);
+        log.info("Service route plan resolved gatewayName={} protocol={} targetKind={} serviceCount={}",
+                gatewayChannel.getName(), gatewayChannel.getProtocolType(), routePlan.targetKind(), routePlan.servicePlans().size());
+        if (routePlan.servicePlans().isEmpty()) {
+            log.warn("Service route construction skipped because route plan has no services gatewayName={}",
+                    gatewayChannel.getName());
+        }
         List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
-        routePlan.servicePlans().forEach(servicePlan -> buildServiceRoute(routePlan, servicePlan, channelPluginDetails));
+        routePlan.servicePlans().forEach(servicePlan -> {
+            try {
+                buildServiceRoute(routePlan, servicePlan, channelPluginDetails);
+            } catch (RuntimeException exception) {
+                log.error("Service route construction failed gatewayName={} serviceCode={}",
+                        gatewayChannel.getName(), servicePlan.service().getCode(), exception);
+                throw exception;
+            }
+        });
+        log.info("Service route construction completed gatewayName={} serviceCount={}",
+                gatewayChannel.getName(), routePlan.servicePlans().size());
+    }
+
+    private RuntimeRoutePlan resolveRoutePlan(GatewayChannel gatewayChannel, RuntimeMode runtimeMode) {
+        try {
+            return runtimeRoutePlanProvider.provide(gatewayChannel);
+        } catch (RuntimeException exception) {
+            log.error("Service route planning failed gatewayName={} runtimeMode={} protocol={}",
+                    gatewayChannel.getName(), runtimeMode, gatewayChannel.getProtocolType(), exception);
+            throw exception;
+        }
     }
 
     private void buildServiceRoute(RuntimeRoutePlan routePlan,
@@ -72,6 +111,12 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         Service service = servicePlan.service();
         String serviceUri = serviceRouteUriResolver.resolve(service);
         String routeId = "scm-service-" + serviceRouteUriResolver.normalizeServiceCode(service.getCode());
+        log.info("Service route registration started routeId={} gatewayName={} channelCode={} serviceCode={} targetUri={}",
+                routeId,
+                servicePlan.gatewayChannel().getName(),
+                channelCode(servicePlan.channelServiceAccess()),
+                service.getCode(),
+                serviceUri);
         RouteDefinition route = from(serviceUri)
                 .routeId(routeId)
                 .setProperty(Message.RUNTIME_ROUTE_PLAN, constant(routePlan))
@@ -94,17 +139,19 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 PluginPhase.BEFORE);
         applyPlugins(route, beforePlugins, servicePlan);
 
-        route.process(exchange -> log.info("Target routing started gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+        route.process(exchange -> log.info("Target routing started gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                 servicePlan.gatewayChannel().getName(),
                 channelCode(exchange, servicePlan),
                 service.getCode(),
+                serviceVersion(exchange),
                 exchange.getFromRouteId(),
                 exchange.getExchangeId()));
         serviceTargetRouter.buildTarget(route, service);
-        route.process(exchange -> log.info("Target routing finished gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+        route.process(exchange -> log.info("Target routing finished gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                 servicePlan.gatewayChannel().getName(),
                 channelCode(exchange, servicePlan),
                 service.getCode(),
+                serviceVersion(exchange),
                 exchange.getFromRouteId(),
                 exchange.getExchangeId()));
 
@@ -114,6 +161,12 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 PluginPhase.AFTER);
         applyPlugins(route, afterPlugins, servicePlan);
         applyServiceSuccess(route, servicePlan);
+        log.info("Service route registered routeId={} gatewayName={} channelCode={} serviceCode={} targetUri={}",
+                routeId,
+                servicePlan.gatewayChannel().getName(),
+                channelCode(servicePlan.channelServiceAccess()),
+                service.getCode(),
+                serviceUri);
     }
 
     private void applyServiceStart(ProcessorDefinition<?> route, RuntimeServicePlan servicePlan) {
@@ -122,10 +175,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
             scmExchangeMdc.put(exchange);
             runtimeChannelGuard.check(exchange, servicePlan);
             channelServiceAccessGuard.check(exchange, servicePlan);
-            log.info("Service route started gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+            log.info("Service route started gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     servicePlan.service().getCode(),
+                    serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId());
         });
@@ -152,10 +206,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         long startNanos = System.nanoTime();
         String operationName = exchange.getProperty(Message.OPERATION_NAME, String.class);
         try {
-            log.info("Service plugin started gatewayName={} channelCode={} serviceCode={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
+            log.info("Service plugin started gatewayName={} channelCode={} serviceCode={} serviceVersion={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     servicePlan.service().getCode(),
+                    serviceVersion(exchange),
                     detail.getName(),
                     detail.getPhase(),
                     exchange.getFromRouteId(),
@@ -170,10 +225,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     detail.getPhase(),
                     System.nanoTime() - startNanos,
                     true);
-            log.info("Service plugin finished gatewayName={} channelCode={} serviceCode={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
+            log.info("Service plugin finished gatewayName={} channelCode={} serviceCode={} serviceVersion={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     servicePlan.service().getCode(),
+                    serviceVersion(exchange),
                     detail.getName(),
                     detail.getPhase(),
                     exchange.getFromRouteId(),
@@ -188,10 +244,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     detail.getPhase(),
                     System.nanoTime() - startNanos,
                     false);
-            log.warn("Service plugin failed gatewayName={} channelCode={} serviceCode={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
+            log.warn("Service plugin failed gatewayName={} channelCode={} serviceCode={} serviceVersion={} pluginName={} pluginPhase={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     servicePlan.service().getCode(),
+                    serviceVersion(exchange),
                     detail.getName(),
                     detail.getPhase(),
                     exchange.getFromRouteId(),
@@ -212,10 +269,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     durationNanos,
                     true);
             serviceAuditEventPublisher.recordSuccess(exchange);
-            log.info("Service route succeeded gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+            log.info("Service route succeeded gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                     servicePlan.gatewayChannel().getName(),
                     channelCode(exchange, servicePlan),
                     servicePlan.service().getCode(),
+                    serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId());
         });
@@ -240,10 +298,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                             serviceDuration(exchange),
                             false);
                     serviceAuditEventPublisher.recordFailure(exchange, exception);
-                    log.warn("Service route failed gatewayName={} channelCode={} serviceCode={} routeId={} exchangeId={}",
+                    log.warn("Service route failed gatewayName={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={}",
                             servicePlan.gatewayChannel().getName(),
                             channelCode(exchange, servicePlan),
                             servicePlan.service().getCode(),
+                            serviceVersion(exchange),
                             exchange.getFromRouteId(),
                             exchange.getExchangeId(),
                             exception);
@@ -265,6 +324,14 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                         && servicePlan.channelServiceAccess().getChannel() != null
                         ? servicePlan.channelServiceAccess().getChannel().getCode()
                         : null);
+    }
+
+    private String channelCode(ChannelServiceAccess access) {
+        return access != null && access.getChannel() != null ? access.getChannel().getCode() : null;
+    }
+
+    private String serviceVersion(Exchange exchange) {
+        return exchange.getProperty(Message.SERVICE_VERSION, String.class);
     }
 
     private PluginHandler resolvePluginHandler(PluginDetail detail) {

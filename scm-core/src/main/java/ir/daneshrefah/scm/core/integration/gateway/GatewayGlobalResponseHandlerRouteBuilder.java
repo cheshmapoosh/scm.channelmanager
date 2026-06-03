@@ -52,13 +52,13 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                     if (body instanceof ScmFault fault) {
                         FaultContractEncoder faultEncoder = resolveFaultEncoder(contract);
                         encodedBody = faultEncoder.encode(exchange, fault, contract);
-                        log.info("Gateway fault encoded contract={} routeId={} exchangeId={}",
-                                contract.name(), exchange.getFromRouteId(), exchange.getExchangeId());
+                        log.info("Gateway fault encoded contract={} serviceVersion={} routeId={} exchangeId={}",
+                                contract.name(), serviceVersion(exchange), exchange.getFromRouteId(), exchange.getExchangeId());
                     } else {
                         ResponseContractEncoder responseEncoder = resolveResponseEncoder(contract);
                         encodedBody = responseEncoder.encode(exchange, contract);
-                        log.info("Gateway response encoded contract={} routeId={} exchangeId={}",
-                                contract.name(), exchange.getFromRouteId(), exchange.getExchangeId());
+                        log.info("Gateway response encoded contract={} serviceVersion={} routeId={} exchangeId={}",
+                                contract.name(), serviceVersion(exchange), exchange.getFromRouteId(), exchange.getExchangeId());
                     }
                     exchange.getMessage().setBody(encodedBody);
                 })
@@ -75,9 +75,13 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         ChannelServiceDefinition routeDefinition = exchange.getProperty(
                 Message.CHANNEL_SERVICE_DEFINITION,
                 ChannelServiceDefinition.class);
-        contract = clientContractResolver.resolve(gatewayChannel, routeDefinition);
+        contract = clientContractResolver.resolve(gatewayChannel, routeDefinition, serviceVersion(exchange));
         exchange.setProperty(Message.CLIENT_CONTRACT, contract);
         return contract;
+    }
+
+    private String serviceVersion(org.apache.camel.Exchange exchange) {
+        return exchange.getProperty(Message.SERVICE_VERSION, String.class);
     }
 
     private ResponseContractEncoder resolveResponseEncoder(ClientContract contract) {

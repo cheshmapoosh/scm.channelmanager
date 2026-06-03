@@ -30,8 +30,11 @@ Database:
 - Existing v8 records remain unchanged.
 - v9 uses new `GatewayChannel.name` values: `channel.*` and `domain.*`.
 - v9 requires removing the old unique constraint on `CHANNEL_ID + PROTOCOL_TYPE`.
+- v9 channel-service definitions must allow multiple `INBOUND` rows for the same channel/service/gateway when they point at different definitions.
 - `GatewayChannel.name` remains the unique runtime key.
-- `ChannelServiceDefinitionType` column length must allow v9 values such as `SERVICE_DOMAIN_MEMBER`.
+- `SVC_DOMAIN_MEMBER` is the final domain-membership enum name because of database size constraints.
+- The v9 Java `ChannelServiceDefinitionType` enum no longer contains the old `REST`, `REST_MULTIPLE` or `SWAGGER` values.
+- The v9 Java enum also no longer contains the intermediate route/group/API-documentation names from earlier CMNEW-119 drafts.
 
 Config Server:
 - Preferred runtime key is `scm.runtime.gateway-name`, for example `channel.mb` or `domain.card`.
@@ -54,7 +57,7 @@ Provider:
 - If a provider requires new commands, mappings, endpoints or config for a v9 service, document it in the provider module change note before deployment.
 
 Logging/Elastic:
-- Gateway and service logs include searchable fields where available: `traceId`, `spanId`, `correlationId`, `gatewayName`, `channelCode`, `serviceCode`, `operationName`, `routeId`, `exchangeId`.
+- Gateway and service logs include searchable fields where available: `traceId`, `spanId`, `correlationId`, `gatewayName`, `channelCode`, `serviceCode`, `serviceVersion`, `operationName`, `routeId`, `exchangeId`.
 - `TraceUtils` now places both `traceId` and `spanId` into MDC.
 
 Audit:
@@ -75,15 +78,16 @@ Metrics:
 - Load services from `GatewayChannel.channel -> CHANNEL_SERVICE_ACCESS -> Service`.
 - Filter inactive channel-service access records and unpublished services.
 - This represents all services available to the channel.
+- Every active service plan must have at least one `INBOUND` definition and at least one `API_DOC` definition.
 
 `domain.*`:
 - Load definitions from `TBL_SCM_CHN_SVC_DEFINITION` for the selected `GatewayChannel`.
-- Only `SERVICE_DOMAIN_MEMBER` definitions create domain membership.
-- `INBOUND_ROUTE`, `INBOUND_ROUTE_GROUP` and `API_DOCUMENTATION` never create domain membership.
+- Only `SVC_DOMAIN_MEMBER` definitions create domain membership.
+- `INBOUND` and `API_DOC` never create domain membership.
 - Domain service routes are unique by `Service`; multiple member channels for the same service are collapsed into one service route and preserved as membership metadata.
-- If a domain runtime has no `SERVICE_DOMAIN_MEMBER` definitions, startup fails fast.
-- Every active domain member service must also have `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure. `SERVICE_DOMAIN_MEMBER` is membership only and `API_DOCUMENTATION` does not expose a route.
-- `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` definitions may still define inbound REST routes and contracts for a member service.
+- If a domain runtime has no `SVC_DOMAIN_MEMBER` definitions, startup fails fast.
+- Every active domain member service must also have at least one `INBOUND` definition and at least one `API_DOC` definition. `SVC_DOMAIN_MEMBER` is membership only and `API_DOC` does not expose a route.
+- Multiple gateway routes are modeled as multiple `INBOUND` definitions. There is no group definition in the v9 runtime model.
 
 Runtime guards normalize channel codes before comparison:
 - incoming exchange/header channel code is trimmed and lower-cased with `Locale.ROOT`
@@ -94,57 +98,77 @@ Invalid `GatewayChannel.name` values fail fast. Protocol is always read from `Ga
 
 ## Enum Note
 
-v8 values:
+Historical v8 database values:
 - `REST`
 - `REST_MULTIPLE`
 - `SWAGGER`
 
-v9 values:
-- `INBOUND_ROUTE`
-- `INBOUND_ROUTE_GROUP`
-- `API_DOCUMENTATION`
-- `SERVICE_DOMAIN_MEMBER`
+Final v9 Java enum values:
+- `INBOUND`
+- `API_DOC`
+- `SVC_DOMAIN_MEMBER`
 
-Compatibility mapping:
-- `REST -> INBOUND_ROUTE`
-- `REST_MULTIPLE -> INBOUND_ROUTE_GROUP`
-- `SWAGGER -> API_DOCUMENTATION`
+Historical mapping only:
+- `REST -> INBOUND`
+- `REST_MULTIPLE -> historical multi-route container only; v9 uses multiple INBOUND rows`
+- `SWAGGER -> API_DOC`
 
-Legacy enum values remain temporarily in Java for v8 compatibility. v9 `channel.*` and `domain.*` runtimes should use the purpose-based v9 values.
+Old v8 DB rows may still contain historical values, but v9 `channel.*` and `domain.*` runtimes must use new records with the final purpose-based enum values. The v9 Java enum does not keep the old values.
 
 ## Client Contract
 
-Client contract is resolved per inbound route from `Definition.details.contract`.
+Client contract is resolved per inbound route from `Definition.details.contract` and the path-based Client Contract Version.
 
 Contract ownership:
-- `INBOUND_ROUTE` and `INBOUND_ROUTE_GROUP` can define client contracts.
-- `SERVICE_DOMAIN_MEMBER` is membership metadata only. Any `contract` stored there is ignored and logged as a warning.
+- `INBOUND` can define client contracts.
+- `SVC_DOMAIN_MEMBER` is membership metadata only. Any `contract` stored there is ignored and logged as a warning. Contracts under `API_DOC` are also ignored with a warning.
 - Current request/response contract encoders are REST-only. SOAP/TCP require protocol-specific contract decoders/encoders before they can use `GLOBAL_RESPONSE_HANDLER`.
+
+Versioning:
+- `Definition.details.version` defines the external Client Contract Version when present and valid.
+- If `version` is missing, a path that starts with `/vN/` resolves to `vN`.
+- A path without a version segment resolves to `v1`.
+- `/card/inquiry` and `/v1/card/inquiry` are both `v1`; `/v2/card/inquiry` is `v2`.
+- `v1` can represent old CM-compatible client behavior: same URL, payloads, error format and HTTP status behavior where applicable.
+- `ContractStyle` is intentionally not part of SCM. SCM should not know whether a client is legacy or modern.
+- `versionSelector` is intentionally not required in this path-based phase.
+- Gateway `routeId` values include the version, for example `card-inquiry-v1-route` and `card-inquiry-v2-route`.
+- Service route URIs remain version-agnostic by default, for example both v1 and v2 dispatch to `direct:scm.service.card-inquiry` unless business/provider behavior truly differs.
 
 Fallback:
 1. Route definition contract.
 2. Gateway/protocol default.
 3. Fail fast when no default exists.
 
-Default REST contract:
+Example v1 REST contract:
 
 ```json
 {
-  "name": "modern-rest-v1",
-  "requestDecoder": "jsonScmRequestDecoder",
-  "responseEncoder": "jsonScmResponseEncoder",
-  "faultEncoder": "restProblemDetailFaultEncoder"
+  "version": "v1",
+  "method": "POST",
+  "path": "/card/inquiry",
+  "contract": {
+    "name": "card-inquiry-v1",
+    "requestDecoder": "cardInquiryV1RequestDecoder",
+    "responseEncoder": "cardInquiryV1ResponseEncoder",
+    "faultEncoder": "cardInquiryV1FaultEncoder"
+  }
 }
 ```
 
-Legacy REST example:
+Example v2 REST contract:
 
 ```json
 {
-  "name": "legacy-mb-card-v1",
-  "requestDecoder": "legacyMbCardRequestDecoder",
-  "responseEncoder": "legacyMbCardResponseEncoder",
-  "faultEncoder": "legacyMbCardFaultEncoder"
+  "version": "v2",
+  "method": "POST",
+  "path": "/v2/card/inquiry",
+  "contract": {
+    "name": "card-inquiry-v2",
+    "requestDecoder": "cardInquiryV2RequestDecoder",
+    "responseEncoder": "cardInquiryV2ResponseEncoder",
+    "faultEncoder": "cardInquiryV2FaultEncoder"
+  }
 }
 ```
 
@@ -158,6 +182,7 @@ Audit records contain:
 - `gatewayName`
 - `channelCode`
 - `serviceCode`
+- `serviceVersion`
 - `operationName`
 - `phase`
 - `status`
@@ -186,31 +211,32 @@ Common filters:
 
 ```text
 gatewayName:"channel.mb" AND serviceCode:"card"
+serviceCode:"card" AND serviceVersion:"v2"
 channelCode:"mb" AND correlationId:"<correlation-id>"
 ```
 
 ## Deployment Order
 
-1. Deploy database change that removes the old `CHANNEL_ID + PROTOCOL_TYPE` uniqueness and allows longer definition type values.
+1. Deploy database change that removes the old `CHANNEL_ID + PROTOCOL_TYPE` uniqueness, allows longer definition type values and allows multiple `INBOUND` rows for one channel/service/gateway when definitions differ.
 2. Add v9 `GatewayChannel` records named `channel.*` or `domain.*`.
-3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types. Use `SERVICE_DOMAIN_MEMBER` only for domain membership.
-4. Add route contracts in `Definition.details` on `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` where legacy/modern behavior differs.
+3. Add v9 `TBL_SCM_CHN_SVC_DEFINITION` rows with purpose-based definition types. Use `SVC_DOMAIN_MEMBER` only for domain membership.
+4. Add route contracts and `version` in `Definition.details` on `INBOUND` where client contract versions differ.
 5. Configure audit output path and Filebeat or Elastic Agent collection.
 6. Deploy application.
 7. Smoke test gateway routes by channel and domain runtime names.
 
 ## Validation and Smoke Tests
 
-- Start app with `scm.runtime.gateway-name=channel.mb`; verify a channel service route is created.
-- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SERVICE_DOMAIN_MEMBER` definitions and `INBOUND_ROUTE` or `INBOUND_ROUTE_GROUP` exposure are routed.
-- Verify domain member services with only `API_DOCUMENTATION` fail startup validation.
+- Start app with `scm.runtime.gateway-name=channel.mb`; verify channel services without `INBOUND` or `API_DOC` fail fast and valid services create routes from `INBOUND`.
+- Start app with `scm.runtime.gateway-name=domain.card`; verify only services with `SVC_DOMAIN_MEMBER`, `INBOUND` and `API_DOC` definitions are routed.
+- Verify services with only `API_DOC` fail startup validation because `INBOUND` is required.
 - Verify the legacy fallback still works with `scm.app-name=channel.mb` until config migration is complete.
-- Call a modern REST route and verify ProblemDetail faults.
-- Call a legacy REST route and verify the legacy fault encoder path.
+- Call `/card/inquiry` and verify it uses the v1 client contract.
+- Call `/v2/card/inquiry` and verify it uses the v2 client contract while dispatching to the same service route by default.
 - Verify request channel is taken from the exchange/header and the service route resolves `CHANNEL_SERVICE_ACCESS` dynamically.
 - Verify service plugins run in the service route, not in the gateway route.
-- Verify audit JSON Lines contain `traceId` and `spanId`, including a final `phase=SERVICE` success/failure event.
-- Verify logs can be searched in Elastic by `traceId` and `spanId`.
+- Verify audit JSON Lines contain `traceId`, `spanId` and `serviceVersion`, including a final `phase=SERVICE` success/failure event.
+- Verify logs can be searched in Elastic by `traceId`, `spanId` and `serviceVersion`.
 - Verify metrics still use Actuator/Micrometer flow and no metric file is created.
 
 ## Rollback Plan
@@ -223,6 +249,6 @@ channelCode:"mb" AND correlationId:"<correlation-id>"
 
 ## Assumptions
 
-- Exact legacy payload/frame formats are not fully defined in this branch; placeholder legacy encoders preserve the existing response envelope extension point.
+- Exact old CM-compatible payload/frame formats are not fully defined in this branch; v1 contract encoders preserve the response envelope extension point.
 - Micrometer-specific service plugin metrics can be wired later behind `ServicePluginMetrics`.
 - Provider routes do not need changes for this feature unless a provider-specific command/config is introduced by a concrete service rollout.

@@ -22,6 +22,8 @@ public class ServiceTargetRouter {
 
     public void buildTarget(RouteDefinition route, Service service) {
         if (Objects.equals(RoutingStrategy.FIRST, service.getRoutingStrategy())) {
+            log.debug("Building FIRST service target routeId={} serviceCode={}",
+                    route.getRouteId(), service.getCode());
             ServiceOperation serviceOperation = resolveFirstServiceOperation(service);
             route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
             route.setProperty(Message.OPERATION_NAME, constant(serviceOperation.getOperationName()));
@@ -30,6 +32,8 @@ public class ServiceTargetRouter {
         }
 
         if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
+            log.debug("Building MULTI_OPERATION service target routeId={} serviceCode={}",
+                    route.getRouteId(), service.getCode());
             ServiceOperation serviceOperation = resolveMultiOperation(route, service);
             route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
             route.setProperty(Message.OPERATION_NAME, constant(serviceOperation.getOperationName()));
@@ -38,6 +42,8 @@ public class ServiceTargetRouter {
         }
 
         if (Objects.equals(RoutingStrategy.FAIL_OVER, service.getRoutingStrategy())) {
+            log.debug("Building FAIL_OVER service target routeId={} serviceCode={} operationCount={}",
+                    route.getRouteId(), service.getCode(), service.getServiceOperations().size());
             MulticastDefinition multicast = route.multicast()
                     .parallelProcessing(false)
                     .stopOnException("false");
@@ -48,6 +54,8 @@ public class ServiceTargetRouter {
             return;
         }
 
+        log.warn("Unsupported service routing strategy routeId={} serviceCode={} routingStrategy={}",
+                route.getRouteId(), service.getCode(), service.getRoutingStrategy());
         throw new IllegalArgumentException("Unsupported routing strategy: " + service.getRoutingStrategy());
     }
 
@@ -58,9 +66,12 @@ public class ServiceTargetRouter {
                 .toList();
 
         if (activeOperations.isEmpty()) {
+            log.warn("No active operation found for FIRST service routing serviceCode={}", service.getCode());
             throw new IllegalStateException("No active operation found for service " + service.getCode());
         }
         if (activeOperations.size() > 1) {
+            log.warn("FIRST service routing has more than one active operation serviceCode={} activeOperationCount={}",
+                    service.getCode(), activeOperations.size());
             throw new IllegalStateException("FIRST routing requires exactly one active operation for service " + service.getCode());
         }
         return activeOperations.getFirst();
@@ -73,7 +84,11 @@ public class ServiceTargetRouter {
                 .filter(o -> RouteUtils.getInstance().generateRouteUniqId(o.getOperationName())
                         .equals(splitRouteName[splitRouteName.length - 1]))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No route found for " + route.getRouteId()));
+                .orElseThrow(() -> {
+                    log.warn("No matching operation found for MULTI_OPERATION service routing routeId={} serviceCode={}",
+                            route.getRouteId(), service.getCode());
+                    return new IllegalStateException("No route found for " + route.getRouteId());
+                });
     }
 
     private String resolveOperationUrl(String operationName) {

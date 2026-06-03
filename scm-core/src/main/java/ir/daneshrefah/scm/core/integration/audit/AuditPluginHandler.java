@@ -41,6 +41,7 @@ public class AuditPluginHandler implements PluginHandler {
                     fields.get("gatewayName"),
                     fields.get("channelCode"),
                     fields.get("serviceCode"),
+                    fields.get("serviceVersion"),
                     fields.get("operationName"),
                     pluginDetail.getPhase() != null ? pluginDetail.getPhase().name() : null,
                     "SUCCESS",

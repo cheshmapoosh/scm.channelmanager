@@ -6,13 +6,13 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class RestChannelServiceDefinition extends BaseChannelServiceDefinition {
+public class InboundChannelServiceDefinition extends BaseChannelServiceDefinition {
 
     private HttpMethod method;
     private String path;
     @Override
     public ChannelServiceDefinitionType getType() {
-        return ChannelServiceDefinitionType.INBOUND_ROUTE;
+        return ChannelServiceDefinitionType.INBOUND;
     }
 
 

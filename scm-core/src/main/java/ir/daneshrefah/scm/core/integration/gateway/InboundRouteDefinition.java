@@ -5,5 +5,11 @@ import org.apache.camel.model.RouteDefinition;
 
 public record InboundRouteDefinition(
         RouteDefinition route,
-        ChannelServiceDefinition channelServiceDefinition) {
+        ChannelServiceDefinition channelServiceDefinition,
+        String serviceVersion) {
+
+    public InboundRouteDefinition(RouteDefinition route,
+                                  ChannelServiceDefinition channelServiceDefinition) {
+        this(route, channelServiceDefinition, "v1");
+    }
 }

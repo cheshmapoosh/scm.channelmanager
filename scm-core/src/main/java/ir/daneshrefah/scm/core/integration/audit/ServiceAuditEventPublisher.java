@@ -42,6 +42,7 @@ public class ServiceAuditEventPublisher {
                     fields.get("gatewayName"),
                     fields.get("channelCode"),
                     fields.get("serviceCode"),
+                    fields.get("serviceVersion"),
                     fields.get("operationName"),
                     SERVICE_PHASE,
                     status,

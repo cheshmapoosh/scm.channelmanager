@@ -32,6 +32,7 @@ class FileAuditEventWriterTest {
                 "channel.mb",
                 "mb",
                 "card",
+                "v2",
                 "CARD_INQUIRY",
                 "BEFORE",
                 "SUCCESS",
@@ -44,6 +45,7 @@ class FileAuditEventWriterTest {
         assertEquals(1, Files.readAllLines(auditFile).size());
         assertTrue(line.contains("\"traceId\":\"trace-1\""));
         assertTrue(line.contains("\"spanId\":\"span-1\""));
+        assertTrue(line.contains("\"serviceVersion\":\"v2\""));
         assertTrue(line.endsWith(System.lineSeparator()));
     }
 }

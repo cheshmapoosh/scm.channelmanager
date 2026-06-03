@@ -46,6 +46,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         }
 
         RuntimeTargetKind targetKind = runtimeTargetKindResolver.resolve(gatewayChannel);
+        log.info("Runtime route planning started gatewayName={} targetKind={}",
+                gatewayChannel.getName(), targetKind);
         List<RuntimeServicePlan> servicePlans = switch (targetKind) {
             case CHANNEL -> createChannelPlan(gatewayChannel);
             case SERVICE_DOMAIN -> createDomainPlan(gatewayChannel);
@@ -64,16 +66,30 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         List<ChannelServiceAccess> accesses = Optional
                 .ofNullable(channelServiceAccessService.findAllByChannel(gatewayChannel.getChannel()))
                 .orElse(List.of());
+        log.debug("Channel runtime planning loaded channel services gatewayName={} channelCode={} accessCount={}",
+                gatewayChannel.getName(),
+                gatewayChannel.getChannel() != null ? gatewayChannel.getChannel().getCode() : null,
+                accesses.size());
 
         return accesses.stream()
                 .filter(this::isActiveServiceAccess)
                 .map(this::withServiceOperations)
                 .filter(this::hasServiceOperations)
-                .map(access -> new RuntimeServicePlan(
-                        gatewayChannel,
-                        access,
-                        access.getService(),
-                        channelServiceDefinitionService.findDefinitions(access, gatewayChannel)))
+                .map(access -> {
+                    List<ChannelServiceDefinition> definitions = Optional
+                            .ofNullable(channelServiceDefinitionService.findDefinitions(access, gatewayChannel))
+                            .orElse(List.of());
+                    log.debug("Channel runtime service definitions loaded gatewayName={} serviceCode={} definitionCount={}",
+                            gatewayChannel.getName(),
+                            access.getService() != null ? access.getService().getCode() : null,
+                            definitions.size());
+                    validateServiceDefinitions(gatewayChannel, RuntimeTargetKind.CHANNEL, access, definitions);
+                    return new RuntimeServicePlan(
+                            gatewayChannel,
+                            access,
+                            access.getService(),
+                            inboundDefinitions(definitions));
+                })
                 .toList();
     }
 
@@ -81,16 +97,23 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         List<ChannelServiceDefinition> definitions = Optional
                 .ofNullable(channelServiceDefinitionService.findDefinitions(gatewayChannel))
                 .orElse(List.of());
+        log.debug("Service-domain runtime definitions loaded gatewayName={} definitionCount={}",
+                gatewayChannel.getName(), definitions.size());
         List<ChannelServiceDefinition> membershipDefinitions = definitions.stream()
-                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER)
+                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER)
                 .filter(definition -> definition.getChannelServiceAccess() != null)
                 .filter(definition -> definition.getChannelServiceAccess().getId() != null)
-                .peek(this::warnIgnoredMembershipContract)
+                .peek(this::warnIgnoredNonInboundContract)
                 .toList();
 
         if (membershipDefinitions.isEmpty()) {
-            throw new IllegalStateException("No SERVICE_DOMAIN_MEMBER definitions found for domain runtime "
-                    + gatewayChannel.getName());
+            log.warn("Service-domain runtime planning skipped gatewayName={} reason=missing-membership-definition",
+                    gatewayChannel.getName());
+            throw new IllegalStateException("Invalid runtime service definition gatewayName="
+                    + gatewayChannel.getName()
+                    + " targetKind="
+                    + RuntimeTargetKind.SERVICE_DOMAIN
+                    + ": missing SVC_DOMAIN_MEMBER definition. Domain runtime membership must be declared explicitly.");
         }
 
         Map<String, List<ChannelServiceDefinition>> membershipsByService = membershipDefinitions.stream()
@@ -99,10 +122,20 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                         LinkedHashMap::new,
                         Collectors.toList()));
 
-        Map<String, List<ChannelServiceDefinition>> routeDefinitionsByService = definitions.stream()
-                .filter(this::isInboundRouteDefinition)
+        Map<String, List<ChannelServiceDefinition>> inboundDefinitionsByService = definitions.stream()
+                .filter(this::isInboundDefinition)
                 .filter(definition -> definition.getChannelServiceAccess() != null)
                 .filter(definition -> definition.getChannelServiceAccess().getId() != null)
+                .collect(Collectors.groupingBy(
+                        definition -> serviceKey(definition.getChannelServiceAccess()),
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
+        Map<String, List<ChannelServiceDefinition>> apiDocDefinitionsByService = definitions.stream()
+                .filter(this::isApiDocDefinition)
+                .filter(definition -> definition.getChannelServiceAccess() != null)
+                .filter(definition -> definition.getChannelServiceAccess().getId() != null)
+                .peek(this::warnIgnoredNonInboundContract)
                 .collect(Collectors.groupingBy(
                         definition -> serviceKey(definition.getChannelServiceAccess()),
                         LinkedHashMap::new,
@@ -111,6 +144,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         return membershipsByService.entrySet()
                 .stream()
                 .map(entry -> {
+                    log.debug("Service-domain membership planning started gatewayName={} serviceKey={} membershipCount={}",
+                            gatewayChannel.getName(), entry.getKey(), entry.getValue().size());
                     List<ChannelServiceAccess> memberAccesses = entry.getValue()
                             .stream()
                             .map(ChannelServiceDefinition::getChannelServiceAccess)
@@ -125,28 +160,52 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                                             LinkedHashMap::new),
                                     accessById -> List.copyOf(accessById.values())));
                     if (memberAccesses.isEmpty()) {
+                        log.warn("Service-domain membership skipped gatewayName={} serviceKey={} reason=no-active-service-access",
+                                gatewayChannel.getName(), entry.getKey());
                         return null;
                     }
                     ChannelServiceAccess representativeAccess = memberAccesses.getFirst();
-                    List<ChannelServiceDefinition> routeDefinitions = routeDefinitionsByService
+                    List<ChannelServiceDefinition> inboundDefinitions = inboundDefinitionsByService
                             .getOrDefault(entry.getKey(), List.of());
-                    validateDomainExposure(gatewayChannel, representativeAccess, routeDefinitions);
+                    List<ChannelServiceDefinition> apiDocDefinitions = apiDocDefinitionsByService
+                            .getOrDefault(entry.getKey(), List.of());
+                    validateDefinitionPresent(
+                            gatewayChannel,
+                            RuntimeTargetKind.SERVICE_DOMAIN,
+                            representativeAccess,
+                            ChannelServiceDefinitionType.INBOUND,
+                            CollectionUtils.isNotEmpty(inboundDefinitions),
+                            "INBOUND creates gateway route exposure.");
+                    validateDefinitionPresent(
+                            gatewayChannel,
+                            RuntimeTargetKind.SERVICE_DOMAIN,
+                            representativeAccess,
+                            ChannelServiceDefinitionType.API_DOC,
+                            CollectionUtils.isNotEmpty(apiDocDefinitions),
+                            "API_DOC is required API documentation metadata and does not create a route.");
                     return new RuntimeServicePlan(
                             gatewayChannel,
                             representativeAccess,
                             representativeAccess.getService(),
                             memberAccesses,
-                            routeDefinitions);
+                            inboundDefinitions);
                 })
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private boolean isInboundRouteDefinition(ChannelServiceDefinition definition) {
-        return definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE
-                || definition.getType() == ChannelServiceDefinitionType.INBOUND_ROUTE_GROUP
-                || definition.getType() == ChannelServiceDefinitionType.REST
-                || definition.getType() == ChannelServiceDefinitionType.REST_MULTIPLE;
+    private List<ChannelServiceDefinition> inboundDefinitions(List<ChannelServiceDefinition> definitions) {
+        return definitions.stream()
+                .filter(this::isInboundDefinition)
+                .toList();
+    }
+
+    private boolean isInboundDefinition(ChannelServiceDefinition definition) {
+        return definition.getType() == ChannelServiceDefinitionType.INBOUND;
+    }
+
+    private boolean isApiDocDefinition(ChannelServiceDefinition definition) {
+        return definition.getType() == ChannelServiceDefinitionType.API_DOC;
     }
 
     private String serviceKey(ChannelServiceAccess access) {
@@ -162,33 +221,73 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         throw new IllegalStateException("Service id or code is required for domain runtime planning.");
     }
 
-    private void validateDomainExposure(GatewayChannel gatewayChannel,
-                                        ChannelServiceAccess access,
-                                        List<ChannelServiceDefinition> routeDefinitions) {
-        if (CollectionUtils.isNotEmpty(routeDefinitions)) {
-            return;
-        }
-        Service service = access.getService();
-        String serviceRef = service.getCode() != null
-                ? "serviceCode=" + service.getCode()
-                : "serviceId=" + service.getId();
-        throw new IllegalStateException("Invalid domain runtime exposure gatewayName="
-                + gatewayChannel.getName()
-                + " "
-                + serviceRef
-                + ": missing INBOUND_ROUTE / INBOUND_ROUTE_GROUP. SERVICE_DOMAIN_MEMBER is membership only.");
+    private void validateServiceDefinitions(GatewayChannel gatewayChannel,
+                                            RuntimeTargetKind targetKind,
+                                            ChannelServiceAccess access,
+                                            List<ChannelServiceDefinition> definitions) {
+        definitions.stream()
+                .filter(definition -> definition.getType() != ChannelServiceDefinitionType.INBOUND)
+                .forEach(this::warnIgnoredNonInboundContract);
+        validateDefinitionPresent(
+                gatewayChannel,
+                targetKind,
+                access,
+                ChannelServiceDefinitionType.INBOUND,
+                definitions.stream().anyMatch(this::isInboundDefinition),
+                "INBOUND creates gateway route exposure.");
+        validateDefinitionPresent(
+                gatewayChannel,
+                targetKind,
+                access,
+                ChannelServiceDefinitionType.API_DOC,
+                definitions.stream().anyMatch(this::isApiDocDefinition),
+                "API_DOC is required API documentation metadata and does not create a route.");
     }
 
-    private void warnIgnoredMembershipContract(ChannelServiceDefinition definition) {
+    private void validateDefinitionPresent(GatewayChannel gatewayChannel,
+                                           RuntimeTargetKind targetKind,
+                                           ChannelServiceAccess access,
+                                           ChannelServiceDefinitionType missingType,
+                                           boolean present,
+                                           String explanation) {
+        if (present) {
+            return;
+        }
+        throw new IllegalStateException("Invalid runtime service definition gatewayName="
+                + gatewayChannel.getName()
+                + " targetKind="
+                + targetKind
+                + " "
+                + serviceRef(access)
+                + ": missing "
+                + missingType
+                + " definition. "
+                + explanation);
+    }
+
+    private String serviceRef(ChannelServiceAccess access) {
+        if (access == null || access.getService() == null) {
+            return "serviceId=<unknown>";
+        }
+        Service service = access.getService();
+        if (service.getCode() != null) {
+            return "serviceCode=" + service.getCode();
+        }
+        if (service.getId() != null) {
+            return "serviceId=" + service.getId();
+        }
+        return "channelServiceAccessId=" + access.getId();
+    }
+
+    private void warnIgnoredNonInboundContract(ChannelServiceDefinition definition) {
         if (definition.getDefinition() == null || definition.getDefinition().getDetails() == null) {
             return;
         }
         try {
             JsonNode root = objectMapper.readTree(definition.getDefinition().getDetails());
             if (root.hasNonNull("contract")) {
-                log.warn("ClientContract under SERVICE_DOMAIN_MEMBER definition {} is ignored. "
-                                + "Define contracts on INBOUND_ROUTE or INBOUND_ROUTE_GROUP.",
-                        definition.getId());
+                log.warn("ClientContract under {} definition {} is ignored. Define contracts on INBOUND.",
+                        definition.getType(), definition.getId());
             }
         } catch (Exception ignored) {
         }

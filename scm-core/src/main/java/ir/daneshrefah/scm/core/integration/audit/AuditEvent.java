@@ -10,6 +10,7 @@ public record AuditEvent(
         String gatewayName,
         String channelCode,
         String serviceCode,
+        String serviceVersion,
         String operationName,
         String phase,
         String status,

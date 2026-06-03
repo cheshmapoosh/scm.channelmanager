@@ -11,41 +11,73 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DefaultClientContractResolverTest {
-    private final DefaultClientContractResolver resolver = new DefaultClientContractResolver(new ObjectMapper());
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ClientContractVersionResolver versionResolver = new ClientContractVersionResolver(objectMapper);
+    private final DefaultClientContractResolver resolver = new DefaultClientContractResolver(objectMapper, versionResolver);
 
     @Test
     void resolvesContractFromRouteDefinitionDetails() {
         ClientContract contract = resolver.resolve(restGateway(), routeDefinition("""
                 {
                   "method": "POST",
-                  "path": "/legacy/cards/inquiry",
+                  "path": "/card/inquiry",
                   "contract": {
-                    "name": "legacy-mb-card-v1",
-                    "requestDecoder": "legacyMbCardRequestDecoder",
-                    "responseEncoder": "legacyMbCardResponseEncoder",
-                    "faultEncoder": "legacyMbCardFaultEncoder"
+                    "name": "card-inquiry-v1",
+                    "requestDecoder": "cardInquiryV1RequestDecoder",
+                    "responseEncoder": "cardInquiryV1ResponseEncoder",
+                    "faultEncoder": "cardInquiryV1FaultEncoder"
                   }
                 }
                 """));
 
-        assertEquals("legacy-mb-card-v1", contract.name());
-        assertEquals("legacyMbCardRequestDecoder", contract.requestDecoder());
-        assertEquals("legacyMbCardResponseEncoder", contract.responseEncoder());
-        assertEquals("legacyMbCardFaultEncoder", contract.faultEncoder());
+        assertEquals("card-inquiry-v1", contract.name());
+        assertEquals("cardInquiryV1RequestDecoder", contract.requestDecoder());
+        assertEquals("cardInquiryV1ResponseEncoder", contract.responseEncoder());
+        assertEquals("cardInquiryV1FaultEncoder", contract.faultEncoder());
+        assertEquals("v1", contract.version());
     }
 
     @Test
-    void fallsBackToModernRestContract() {
+    void resolvesContractWithExplicitVersion() {
+        ClientContract contract = resolver.resolve(restGateway(), routeDefinition("""
+                {
+                  "version": "v2",
+                  "method": "POST",
+                  "path": "/v2/cards/inquiry",
+                  "contract": {
+                    "name": "card-inquiry-v2",
+                    "requestDecoder": "cardInquiryV2RequestDecoder",
+                    "responseEncoder": "cardInquiryV2ResponseEncoder",
+                    "faultEncoder": "cardInquiryV2FaultEncoder"
+                  }
+                }
+                """));
+
+        assertEquals("card-inquiry-v2", contract.name());
+        assertEquals("v2", contract.version());
+    }
+
+    @Test
+    void fallsBackToDefaultRestContract() {
         ClientContract contract = resolver.resolve(restGateway(), null);
 
-        assertEquals("modern-rest-v1", contract.name());
+        assertEquals("rest-default", contract.name());
         assertEquals("jsonScmRequestDecoder", contract.requestDecoder());
         assertEquals("jsonScmResponseEncoder", contract.responseEncoder());
         assertEquals("restProblemDetailFaultEncoder", contract.faultEncoder());
+        assertEquals("v1", contract.version());
     }
 
     @Test
-    void ignoresContractUnderServiceDomainMember() {
+    void fallbackContractKeepsSuppliedServiceVersion() {
+        ClientContract contract = resolver.resolve(restGateway(), null, "v2");
+
+        assertEquals("rest-default", contract.name());
+        assertEquals("v2", contract.version());
+    }
+
+    @Test
+    void ignoresContractUnderSvcDomainMember() {
         ChannelServiceDefinition membershipDefinition = routeDefinition("""
                 {
                   "contract": {
@@ -56,11 +88,30 @@ class DefaultClientContractResolverTest {
                   }
                 }
                 """);
-        membershipDefinition.setType(ChannelServiceDefinitionType.SERVICE_DOMAIN_MEMBER);
+        membershipDefinition.setType(ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER);
 
         ClientContract contract = resolver.resolve(restGateway(), membershipDefinition);
 
-        assertEquals("modern-rest-v1", contract.name());
+        assertEquals("rest-default", contract.name());
+    }
+
+    @Test
+    void ignoresContractUnderApiDoc() {
+        ChannelServiceDefinition apiDocDefinition = routeDefinition("""
+                {
+                  "contract": {
+                    "name": "ignored",
+                    "requestDecoder": "ignoredDecoder",
+                    "responseEncoder": "ignoredEncoder",
+                    "faultEncoder": "ignoredFaultEncoder"
+                  }
+                }
+                """);
+        apiDocDefinition.setType(ChannelServiceDefinitionType.API_DOC);
+
+        ClientContract contract = resolver.resolve(restGateway(), apiDocDefinition);
+
+        assertEquals("rest-default", contract.name());
     }
 
     private GatewayChannel restGateway() {
@@ -74,6 +125,7 @@ class DefaultClientContractResolverTest {
         definition.setDetails(details);
         ChannelServiceDefinition channelServiceDefinition = new ChannelServiceDefinition();
         channelServiceDefinition.setId("definition-1");
+        channelServiceDefinition.setType(ChannelServiceDefinitionType.INBOUND);
         channelServiceDefinition.setDefinition(definition);
         return channelServiceDefinition;
     }
