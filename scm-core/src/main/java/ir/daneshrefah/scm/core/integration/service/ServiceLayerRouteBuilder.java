@@ -56,14 +56,32 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     @Override
     public void configure() {
         String name = scmRuntimeProperties.gatewayName();
+        log.info("Service route construction started gatewayName={}", name);
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(name);
         if (gatewayChannel == null) {
+            log.error("Service route construction failed gateway channel not found gatewayName={}", name);
             throw new IllegalStateException("Gateway channel '" + name + "' not found");
         }
 
         RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
+        log.info("Service route plan resolved gatewayName={} protocol={} targetKind={} serviceCount={}",
+                gatewayChannel.getName(), gatewayChannel.getProtocolType(), routePlan.targetKind(), routePlan.servicePlans().size());
+        if (routePlan.servicePlans().isEmpty()) {
+            log.warn("Service route construction skipped because route plan has no services gatewayName={}",
+                    gatewayChannel.getName());
+        }
         List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
-        routePlan.servicePlans().forEach(servicePlan -> buildServiceRoute(routePlan, servicePlan, channelPluginDetails));
+        routePlan.servicePlans().forEach(servicePlan -> {
+            try {
+                buildServiceRoute(routePlan, servicePlan, channelPluginDetails);
+            } catch (RuntimeException exception) {
+                log.error("Service route construction failed gatewayName={} serviceCode={}",
+                        gatewayChannel.getName(), servicePlan.service().getCode(), exception);
+                throw exception;
+            }
+        });
+        log.info("Service route construction completed gatewayName={} serviceCount={}",
+                gatewayChannel.getName(), routePlan.servicePlans().size());
     }
 
     private void buildServiceRoute(RuntimeRoutePlan routePlan,
@@ -72,6 +90,12 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         Service service = servicePlan.service();
         String serviceUri = serviceRouteUriResolver.resolve(service);
         String routeId = "scm-service-" + serviceRouteUriResolver.normalizeServiceCode(service.getCode());
+        log.info("Service route registration started routeId={} gatewayName={} channelCode={} serviceCode={} targetUri={}",
+                routeId,
+                servicePlan.gatewayChannel().getName(),
+                channelCode(servicePlan.channelServiceAccess()),
+                service.getCode(),
+                serviceUri);
         RouteDefinition route = from(serviceUri)
                 .routeId(routeId)
                 .setProperty(Message.RUNTIME_ROUTE_PLAN, constant(routePlan))
@@ -116,6 +140,12 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 PluginPhase.AFTER);
         applyPlugins(route, afterPlugins, servicePlan);
         applyServiceSuccess(route, servicePlan);
+        log.info("Service route registered routeId={} gatewayName={} channelCode={} serviceCode={} targetUri={}",
+                routeId,
+                servicePlan.gatewayChannel().getName(),
+                channelCode(servicePlan.channelServiceAccess()),
+                service.getCode(),
+                serviceUri);
     }
 
     private void applyServiceStart(ProcessorDefinition<?> route, RuntimeServicePlan servicePlan) {
@@ -273,6 +303,10 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                         && servicePlan.channelServiceAccess().getChannel() != null
                         ? servicePlan.channelServiceAccess().getChannel().getCode()
                         : null);
+    }
+
+    private String channelCode(ChannelServiceAccess access) {
+        return access != null && access.getChannel() != null ? access.getChannel().getCode() : null;
     }
 
     private String serviceVersion(Exchange exchange) {
