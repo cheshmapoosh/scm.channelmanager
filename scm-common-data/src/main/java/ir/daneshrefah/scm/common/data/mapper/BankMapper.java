@@ -7,8 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = {})
 public interface BankMapper {
-    @Mapping(target = "cardPrefixes", ignore = true)
-    @Mapping(target = "removeCardPrefix", ignore = true)
+    @Mapping(target = "name", ignore = true)
     BankEntity toEntity(BankDto bankDTO);
 
     BankDto toDto(BankEntity bankEntity);

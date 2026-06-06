@@ -1,5 +1,6 @@
 package transformers
 
+import ir.daneshrefah.scm.common.data.dto.bank.BankDto
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
 
 def body = exchange.in.body
@@ -21,6 +22,7 @@ if (!(statusCode >= 200 && statusCode < 300)) {
 
 def bodyResponse = body.get("body")
 def out = bodyResponse.get("outData")
+println("out clas  : " + out.getClass())
 
 if (out == null && bodyResponse.get("errorCode") != null) {
     throw new RuntimeException(bodyResponse.get("errorDescription"))
@@ -29,8 +31,19 @@ if (out == null && bodyResponse.get("errorCode") != null) {
 println("out cardInq rs : " + out)
 println("rest cardInquiry rs transformer end transformed body : " + body)
 
+def destCardNumber = exchange.property("")
+
+def detection = exchange.context.registry.lookupByName("bankListLoader")
+BankDto bank = detection.getBank("589463")
+println("bank name : " + bank.getName())
+
 return [
-        "destName" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(out["destName"].toString())),
-        "reference": out["reference"],
-        "transBind": out["transBind"]
+        "card": [
+                "destinationBankName": bank.getName().trim(),
+                "imageUrl": ""
+        ],
+        "customerName": [
+                "firstName": PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(out["destName"].toString())),
+                "lastName" : ""
+        ]
 ]

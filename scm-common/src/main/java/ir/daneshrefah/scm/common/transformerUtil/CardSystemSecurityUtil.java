@@ -1,15 +1,21 @@
 package ir.daneshrefah.scm.common.transformerUtil;
 
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.Base64;
 import org.jpos.iso.ISOUtil;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.Provider;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import org.jpos.security.SMException;
 import org.jpos.security.jceadapter.JCEHandlerException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.json.simple.JSONObject;
 
+@Slf4j
 public class CardSystemSecurityUtil {
 
     private static final String ALG_DES = "DES";
@@ -121,5 +127,30 @@ public class CardSystemSecurityUtil {
         }
         return bytesLength;
     }
+
+    public static JSONObject decrypt(JSONObject params) {
+        Map<String, String> map = new HashMap<>();
+        Cipher borrowed = null;
+        try {
+            System.out.println(CipherPoolManager.class.getClassLoader());
+            System.out.println(CipherPoolManager.getInstance());
+            borrowed = CipherPoolManager.getInstance().borrow();
+            for (Object key : params.keySet()) {
+                String s = String.valueOf(params.get(key));
+                byte[] decode = Base64.decode(s.getBytes());
+                byte[] bytes = borrowed.doFinal(decode);
+                String b = new String(bytes);
+                map.put(String.valueOf(key), b);
+            }
+        } catch (Exception e) {
+            log.error("could not decrypt params ", e);
+        } finally {
+            if (Objects.nonNull(borrowed)) {
+                CipherPoolManager.getInstance().giveBack(borrowed);
+            }
+        }
+        return new JSONObject(map);
+    }
+
 
 }
