@@ -57,7 +57,6 @@ scm:
             lock:
               key-prefix: provider-token-refresh-lock
               wait-timeout: 3s
-              lease-time: 10s
               retry-delay: 100ms
             apply:
               location: header
@@ -79,8 +78,8 @@ Rules:
 - Missing required fields fail fast.
 - If `message-customizers` is missing or empty, no customizer runs.
 - No customizer is enabled by default.
-
-`endpoint` is still accepted as a compatibility alias for `base-url`, but `base-url` is preferred.
+- Provider-level auth/token/cache/lock/apply settings are not part of the primary model.
+- REST authentication must be configured through `message-customizers`.
 
 ## Request And Response
 
@@ -150,7 +149,8 @@ How it works:
 3. `config` is bound to the factory `configType()`.
 4. The factory returns an immutable runtime `ProviderMessageCustomizer` instance.
 5. `order` from YAML overrides the factory default order when present.
-6. The producer executes only the configured provider instance pipeline.
+6. The provider resolver builds the pipeline once for the resolved provider instance.
+7. The producer executes only that configured provider instance pipeline.
 
 Do not put Spring bean names or factory class names in YAML.
 
@@ -210,7 +210,7 @@ public record OutletProviderMessageCustomizer(String name, String value)
 
 ## REST Auth URL
 
-REST auth URL is configured only as customizer type `rest-auth-url`. Do not configure auth URL under provider-level `auth`, `token`, `cache`, `lock`, or `apply` in the primary model.
+REST auth URL is configured only as customizer type `rest-auth-url`. Do not configure auth URL under provider-level `auth`, `token`, `cache`, `lock`, or `apply`.
 
 The customizer:
 
@@ -233,6 +233,24 @@ Token cache and lock algorithm:
 10. If no token appears, throw provider auth fault.
 
 No local-only fallback is used when centralized cache is configured.
+
+## REST Static Auth
+
+Static REST authentication is configured only as customizer type `rest-static-auth`:
+
+```yaml
+message-customizers:
+  - type: rest-static-auth
+    config:
+      type: BASIC
+      header-name: Authorization
+      prefix: Basic
+      username: ${REST_USERNAME}
+      password: ${REST_PASSWORD}
+      basic-base64: true
+```
+
+Supported types are `BASIC`, `BEARER`, `JWT`, and `API_KEY`. The customizer supports custom header names and is not enabled unless it is listed in `message-customizers`.
 
 ## REST Has No MAC
 
@@ -279,7 +297,3 @@ Never log or trace tokens, username/password, client secret, PIN, PIN block, MAC
 - Token not refreshed: check cache key components, `refresh-skew`, and auth response `expires-in-field`.
 - Lock timeout: verify `LockUtility` and centralized cache are available across nodes.
 - Centralized cache unavailable: configure `scm-cache-client` and the cache named by `rest-auth-url.cache.name`.
-
-## Deprecated Legacy Compatibility
-
-`scm.provider.rest.defaults/providers`, `customizers.authentication`, and provider-level `token.*` are deprecated. They may be mapped internally for one release, but new configuration and README examples must use `scm.providers` and explicit `message-customizers`.

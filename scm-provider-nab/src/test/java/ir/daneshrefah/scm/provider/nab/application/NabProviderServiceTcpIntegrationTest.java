@@ -14,8 +14,10 @@ import ir.daneshrefah.scm.provider.nab.codec.NabRqUidGenerator;
 import ir.daneshrefah.scm.provider.nab.codec.NabTextNormalizer;
 import ir.daneshrefah.scm.provider.nab.codec.NabValueConverterRegistry;
 import ir.daneshrefah.scm.provider.nab.codec.PersianDateFormatter;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
-import ir.daneshrefah.scm.provider.nab.config.NabProperties;
 import ir.daneshrefah.scm.provider.nab.config.NabResolvedConfig;
 import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
 import ir.daneshrefah.scm.provider.nab.tcp.NabPooledTcpClient;
@@ -28,7 +30,9 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +55,7 @@ class NabProviderServiceTcpIntegrationTest {
         );
 
         try (FakeNabServer server = new FakeNabServer(charset, 134, responseFrames)) {
-            NabResolvedConfig config = config(server.endpoint());
+            NabResolvedConfig config = config(server.endpoint(), "ATPI");
             ObjectNode result = providerService().execute(request(), config);
 
             server.await();
@@ -71,7 +75,7 @@ class NabProviderServiceTcpIntegrationTest {
 
         try (FakeNabServer server = new FakeNabServer(charset, 134, response, 2)) {
             NabProviderService providerService = providerService();
-            NabResolvedConfig config = config(server.endpoint());
+            NabResolvedConfig config = config(server.endpoint(), "ATPI");
             ObjectNode first = providerService.execute(request(), config);
             ObjectNode second = providerService.execute(request(), config);
 
@@ -101,10 +105,11 @@ class NabProviderServiceTcpIntegrationTest {
                 List.of("00000"),
                 2)) {
             NabProviderService providerService = providerService();
-            NabResolvedConfig config = config(server.endpoint());
+            NabResolvedConfig atpsConfig = config(server.endpoint(), "ATPS");
+            NabResolvedConfig atpiConfig = config(server.endpoint(), "ATPI");
 
-            ObjectNode atpsResult = providerService.execute(atpsSampleRequest(), config);
-            ObjectNode atpiResult = providerService.execute(request(), config);
+            ObjectNode atpsResult = providerService.execute(atpsSampleRequest(), atpsConfig);
+            ObjectNode atpiResult = providerService.execute(request(), atpiConfig);
 
             server.await();
             assertEquals(2, server.acceptedSockets());
@@ -122,7 +127,7 @@ class NabProviderServiceTcpIntegrationTest {
     void atpiRequiresClientAddressHeader() throws Exception {
         ObjectNode input = request();
         ((ObjectNode) input.get("header")).remove("clientAddress");
-        NabResolvedConfig config = config("127.0.0.1:1");
+        NabResolvedConfig config = config("127.0.0.1:1", "ATPI");
 
         assertThrows(IllegalArgumentException.class, () -> providerService().execute(input, config));
     }
@@ -148,7 +153,7 @@ class NabProviderServiceTcpIntegrationTest {
                 + "        ";
 
         try (FakeNabServer server = new FakeNabServer(charset, expectedBody.length(), response)) {
-            NabResolvedConfig config = config(server.endpoint());
+            NabResolvedConfig config = config(server.endpoint(), "ATPS");
             ObjectNode result = providerService().execute(atpsSampleRequest(), config);
 
             server.await();
@@ -225,24 +230,58 @@ class NabProviderServiceTcpIntegrationTest {
     }
 
     private NabResolvedConfig config(String endpoint) {
-        return config(endpoint, null);
+        return config(endpoint, "ATPI");
     }
 
     private NabResolvedConfig config(String endpoint, String protocol) {
-        NabProperties properties = new NabProperties();
-        properties.getDefaults().setCharset("windows-1252");
-        properties.getDefaults().setResponseTimeoutMs(2000);
-        properties.getDefaults().setResponseIdleTimeoutMs(50);
-        properties.getDefaults().getServiceCodesByTerminalType().put("ATM", "01");
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        registry.put("core", providerConfig(endpoint, protocol == null ? "ATPI" : protocol));
+        return new NabConfigResolver(registry, new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of()))).resolve("core", null);
+    }
 
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint(endpoint);
-        core.setProtocol(protocol);
-        core.setUserId("999998");
-        core.setPassword("1234567890");
-        properties.getProviders().put("core", core);
+    private Map<String, Object> providerConfig(String endpoint, String protocol) {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("type", "nab");
+        config.put("protocol", protocol);
+        config.put("endpoint", endpoint);
+        config.put("charset", "windows-1252");
+        config.put("response-timeout-ms", 2000);
+        config.put("response-idle-timeout-ms", 50);
+        config.put("user-id", "999998");
+        config.put("password", "1234567890");
+        config.put("default-service-code", "99");
+        config.put("service-codes-by-terminal-type", Map.of("ATM", "01"));
+        config.put("header-fields-by-protocol", headerFieldsByProtocol());
+        return config;
+    }
 
-        return new NabConfigResolver(properties).resolve("core", null);
+    private Map<String, Object> headerFieldsByProtocol() {
+        return Map.of(
+                "ATPI", List.of(
+                        field("protocol", 4, true),
+                        field("clientAddress", 64, true),
+                        field("command", 2, true),
+                        field("serviceCode", 2, true),
+                        field("dateTime", 14, true),
+                        field("userId", 10, true),
+                        field("password", 10, true),
+                        field("rqUid", 16, true)
+                ),
+                "ATPS", List.of(
+                        field("protocol", 4, true),
+                        field("command", 2, true),
+                        field("serviceCode", 2, true),
+                        field("dateTime", 14, true),
+                        field("userId", 10, true),
+                        field("password", 10, true),
+                        field("rqUid", 16, true)
+                )
+        );
+    }
+
+    private Map<String, Object> field(String name, int length, boolean required) {
+        return Map.of("name", name, "length", length, "required", required);
     }
 
     private NabProviderService providerService() {

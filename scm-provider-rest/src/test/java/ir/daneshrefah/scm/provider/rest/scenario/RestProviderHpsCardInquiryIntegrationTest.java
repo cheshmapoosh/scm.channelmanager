@@ -2,12 +2,16 @@ package ir.daneshrefah.scm.provider.rest.scenario;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.OpenTelemetry;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
+import ir.daneshrefah.scm.provider.rest.customizer.RestStaticAuthProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
 import ir.daneshrefah.scm.provider.rest.camel.RestProviderComponent;
 import ir.daneshrefah.scm.provider.rest.camel.RestProviderEndpoint;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderHeaders;
-import ir.daneshrefah.scm.provider.rest.config.RestProviderProperties;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
 import ir.daneshrefah.scm.provider.rest.log.RestProviderLogSanitizer;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
@@ -31,7 +35,6 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,8 +97,13 @@ class RestProviderHpsCardInquiryIntegrationTest {
 
     private CamelContext createCamelContext(String baseUrl, String username, String password, ExecutorService executor) {
         ObjectMapper objectMapper = new ObjectMapper();
-        RestProviderProperties properties = properties(baseUrl, username, password);
-        RestProviderConfigResolver configResolver = new RestProviderConfigResolver(properties);
+        ProviderRegistryProperties properties = properties(baseUrl, username, password);
+        RestProviderConfigResolver configResolver = new RestProviderConfigResolver(
+                properties,
+                new ProviderMessageCustomizerPipelineFactory(new ProviderMessageCustomizerFactoryRegistry(
+                        java.util.List.of(new RestStaticAuthProviderMessageCustomizerFactory())
+                ))
+        );
 
         DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
         beanFactory.registerSingleton("restProviderVirtualThreadExecutor", executor);
@@ -132,35 +140,34 @@ class RestProviderHpsCardInquiryIntegrationTest {
         return camelContext;
     }
 
-    private RestProviderProperties properties(String baseUrl, String username, String password) {
-        RestProviderProperties properties = new RestProviderProperties();
+    private ProviderRegistryProperties properties(String baseUrl, String username, String password) {
+        ProviderRegistryProperties properties = new ProviderRegistryProperties();
 
-        RestProviderProperties.Instance instance = new RestProviderProperties.Instance();
-        instance.setBaseUrl(baseUrl);
-        instance.setConnectTimeoutMs(Integer.parseInt(env("SCM_REST_HPS_CONNECT_TIMEOUT_MS", "3000")));
-        instance.setResponseTimeoutMs(Integer.parseInt(env("SCM_REST_HPS_RESPONSE_TIMEOUT_MS", "10000")));
-        instance.setDefaultMethod("POST");
-        instance.setHeaders(Map.of());
+        Map<String, Object> instance = new LinkedHashMap<>();
+        instance.put("type", "rest");
+        instance.put("base-url", baseUrl);
+        instance.put("connect-timeout-ms", Integer.parseInt(env("SCM_REST_HPS_CONNECT_TIMEOUT_MS", "3000")));
+        instance.put("response-timeout-ms", Integer.parseInt(env("SCM_REST_HPS_RESPONSE_TIMEOUT_MS", "10000")));
+        instance.put("default-method", "POST");
+        instance.put("headers", Map.of());
+        instance.put("security", Map.of(
+                "sensitive-headers", java.util.List.of("authorization", "proxy-authorization", "cookie", "set-cookie"),
+                "sensitive-body-keys", java.util.List.of("password", "token", "secret", "pin", "cvv", "pan", "card"),
+                "max-body-log-length", 400
+        ));
 
-        RestProviderProperties.Auth auth = new RestProviderProperties.Auth();
-        auth.setType("BASIC");
-        auth.setHeaderName(HttpHeaders.AUTHORIZATION);
-        auth.setUsername(username);
-        auth.setPassword(password);
-        auth.setBasicBase64(true);
-        instance.setAuth(auth);
+        ProviderMessageCustomizerDefinition auth = new ProviderMessageCustomizerDefinition();
+        auth.setType("rest-static-auth");
+        auth.setConfig(Map.of(
+                "type", "BASIC",
+                "header-name", HttpHeaders.AUTHORIZATION,
+                "username", username,
+                "password", password,
+                "basic-base64", true
+        ));
+        instance.put("message-customizers", java.util.List.of(auth));
 
-        RestProviderProperties.Security security = new RestProviderProperties.Security();
-        security.setSensitiveHeaders(List.of("authorization", "proxy-authorization", "cookie", "set-cookie"));
-        security.setSensitiveBodyKeys(List.of("password", "token", "secret", "pin", "cvv", "pan", "card"));
-        security.setMaxBodyLogLength(400);
-        instance.setSecurity(security);
-
-        RestProviderProperties.Token token = new RestProviderProperties.Token();
-        token.setEnabled(false);
-        instance.setToken(token);
-
-        properties.getProviders().put("hpsRest", instance);
+        properties.put("hpsRest", instance);
         return properties;
     }
 

@@ -5,13 +5,11 @@ import io.opentelemetry.api.OpenTelemetry;
 import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
 import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
-import ir.daneshrefah.scm.provider.rest.config.RestProviderProperties;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
 import ir.daneshrefah.scm.provider.rest.log.RestProviderLogSanitizer;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
@@ -35,7 +33,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class RestProviderProducerCustomizerTest {
 
@@ -63,7 +60,6 @@ class RestProviderProducerCustomizerTest {
         assertEquals(List.of("before-first", "before-second", "transport", "after-first", "after-second"), events);
         assertEquals("first,second", clientRegistry.requestSpec.headers().get("X-Customizer-Order"));
         assertEquals(4, metrics.provider("hps").customizerExecutionCount());
-        assertFalse(clientRegistry.requestSpec.skipProviderAuth());
     }
 
     @Test
@@ -107,20 +103,19 @@ class RestProviderProducerCustomizerTest {
     ) {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleRegistry registry = new SimpleRegistry();
-        registry.bind("restProviderConfigResolver", new RestProviderConfigResolver(providerRegistryProperties, new RestProviderProperties()));
+        List<ProviderMessageCustomizerFactory<?>> factories = List.of(
+                new CountingCustomizerFactory("first", 100, events),
+                new CountingCustomizerFactory("second", 200, events)
+        );
+        ProviderMessageCustomizerPipelineFactory pipelineFactory = new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(factories));
+        registry.bind("restProviderConfigResolver", new RestProviderConfigResolver(providerRegistryProperties, pipelineFactory));
         registry.bind("restProviderClientRegistry", clientRegistry);
         registry.bind("restProviderMetrics", metrics);
         registry.bind("restProviderRateLimiter", new NoopRestProviderRateLimiter());
         registry.bind("restProviderTraceSupport", new RestProviderTraceSupport(OpenTelemetry.noop().getTracer("scm-provider-rest-test")));
         registry.bind("restProviderLogSanitizer", new RestProviderLogSanitizer(objectMapper));
         registry.bind("objectMapper", objectMapper);
-        List<ProviderMessageCustomizerFactory<?>> factories = List.of(
-                new CountingCustomizerFactory("first", 100, events),
-                new CountingCustomizerFactory("second", 200, events)
-        );
-        registry.bind("providerMessageCustomizerFactoryRegistry", new ProviderMessageCustomizerFactoryRegistry(factories));
-        registry.bind("providerMessageCustomizerPipelineFactory", new ProviderMessageCustomizerPipelineFactory(
-                new ProviderMessageCustomizerFactoryRegistry(factories), objectMapper));
         registry.bind("unconfiguredGlobalCustomizer", new FailingGlobalCustomizer());
 
         DefaultCamelContext camelContext = new DefaultCamelContext(registry);
@@ -130,21 +125,17 @@ class RestProviderProducerCustomizerTest {
 
     private ProviderRegistryProperties properties(boolean withCustomizers) {
         ProviderRegistryProperties properties = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider instance = new ProviderRegistryProperties.Provider();
-        instance.setType("rest");
-        instance.setBaseUrl("https://provider.example");
+        Map<String, Object> instance = new java.util.LinkedHashMap<>();
+        instance.put("type", "rest");
+        instance.put("base-url", "https://provider.example");
         if (withCustomizers) {
-            instance.getMessageCustomizers().add(definition("second"));
-            instance.getMessageCustomizers().add(definition("first"));
+            instance.put("message-customizers", List.of(
+                    Map.of("type", "second", "config", Map.of()),
+                    Map.of("type", "first", "config", Map.of())
+            ));
         }
-        properties.getProviders().put("hps", instance);
+        properties.put("hps", instance);
         return properties;
-    }
-
-    private ProviderMessageCustomizerDefinition definition(String type) {
-        ProviderMessageCustomizerDefinition definition = new ProviderMessageCustomizerDefinition();
-        definition.setType(type);
-        return definition;
     }
 
     private ObjectProvider<ExecutorService> executorProvider() {
@@ -201,7 +192,7 @@ class RestProviderProducerCustomizerTest {
         }
     }
 
-    private static final class Config {
+    public static final class Config {
     }
 
     private record CountingCustomizer(String name, int order, List<String> events) implements ProviderMessageCustomizer {

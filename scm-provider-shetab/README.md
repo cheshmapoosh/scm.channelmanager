@@ -18,7 +18,9 @@ scm:
     hps-shetab7:
       type: shetab
       enabled: true
-      endpoint: 10.10.10.10:9000
+      endpoints:
+        - 10.10.10.11:9000
+        - 10.10.10.12:9000
       packager-class: Shetab7AsciiXAPackager
       connect-timeout-ms: 3000
       socket-timeout-ms: 1000
@@ -70,10 +72,38 @@ scm:
 Rules:
 
 - There is no defaults block in the primary model.
-- Every provider instance must explicitly configure endpoint, packager, timeouts, rate-limit/lease if needed, and message customizers.
+- Every provider instance must explicitly configure `endpoints`, packager, timeouts, rate-limit/lease if needed, and message customizers.
+- `endpoints` is the preferred primary Shetab endpoint configuration.
+- `endpoint` may be used only as a single-endpoint convenience alias.
 - No customizer is enabled by default.
 - If `message-customizers` is missing or empty, no message mutation runs.
-- Provider-level `security.pin`, `security.mac`, `security.expiry`, and `security.cvv2` are not part of the primary model.
+- Provider-level security mutation is not supported in the primary model. PIN block, MAC, expiry, and CVV2 are configured only as message customizers.
+
+## Endpoint Lease
+
+Shetab supports multiple provider endpoints. In distributed deployments, configure all available addresses under `endpoints` and enable `endpoint-lease` so each running pod/instance reserves one endpoint before opening the ISO channel:
+
+```yaml
+scm:
+  providers:
+    hps-shetab7:
+      type: shetab
+      endpoints:
+        - 10.10.10.11:9000
+        - 10.10.10.12:9000
+      endpoint-lease:
+        enabled: true
+        ttl-ms: 30000
+```
+
+Lease behavior:
+
+- The lease pool includes the `providerCode`.
+- Each endpoint value is passed as a lease candidate.
+- The cache-client lease key is built as `shetab-endpoint-lease::<providerCode>::<endpoint>`.
+- If `endpoint-lease.enabled=true` and more than one endpoint is configured, a distributed `ResourceLeaseUtility` must be available.
+- If no endpoint can be leased, the existing connection retry policy retries acquisition; without a distributed lease utility, multi-endpoint leased config fails instead of silently using the first endpoint.
+- If lease is disabled, the first configured endpoint is used.
 
 ## Request And Response
 
@@ -101,6 +131,8 @@ Output is a `Map` with `mti` and `fields`.
 ## ProviderMessageCustomizer
 
 `ProviderMessageCustomizerFactory` is the Spring bean extension point. YAML uses stable customizer `type` values, not bean names. The factory binds typed config and returns an immutable runtime `ProviderMessageCustomizer` instance.
+
+The provider resolver builds the customizer pipeline once for the resolved Shetab provider instance. The producer executes only the configured pipeline for that instance.
 
 Order convention:
 
@@ -138,12 +170,9 @@ Logs include provider, operation, and trace/correlation context when available. 
 
 Never log or trace PIN, PIN block, MAC, PAN, CVV2, expiry, password, token, or account number.
 
-## Deprecated Legacy Compatibility
-
-`scm.provider.shetab.defaults/providers` and provider-level `security.*` are deprecated. They may be resolved for compatibility, but new provider instances must use `scm.providers.<provider-code>.type=shetab` and explicit `message-customizers`.
-
 ## Distributed Deployment
 
 - Distributed rate limit uses `RateLimiterUtility` from `scm-cache-client`.
 - Endpoint lease uses `ResourceLeaseUtility` from `scm-cache-client`.
-- Without those utilities, rate limit falls back to noop and endpoint lease falls back to local behavior with WARN logs.
+- Without `RateLimiterUtility`, rate limit falls back to noop with a WARN log.
+- Without `ResourceLeaseUtility`, only single-endpoint Shetab configs can run; multi-endpoint configs with `endpoint-lease.enabled=true` fail instead of assigning the same endpoint to every pod.

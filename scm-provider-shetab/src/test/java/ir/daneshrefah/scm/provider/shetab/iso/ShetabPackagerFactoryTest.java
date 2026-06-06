@@ -43,11 +43,7 @@ class ShetabPackagerFactoryTest {
                 3,
                 1000,
                 new ShetabResolvedConfig.RateLimit(false, "unused", "provider"),
-                new ShetabResolvedConfig.EndpointLease(false, 30_000L),
-                new ShetabResolvedConfig.Security(
-                        new ShetabResolvedConfig.Pin(false, null, 52, 2),
-                        new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16)
-                )
+                new ShetabResolvedConfig.EndpointLease(false, 30_000L)
         );
     }
 }

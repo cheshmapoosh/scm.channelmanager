@@ -1,9 +1,10 @@
 package ir.daneshrefah.scm.provider.shetab.config;
 
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public record ShetabResolvedConfig(
         String provider,
@@ -19,11 +20,18 @@ public record ShetabResolvedConfig(
         int sameEndpointReconnectAttempts,
         int queueCapacity,
         Map<String, Object> providerConfig,
-        List<ProviderMessageCustomizerDefinition> messageCustomizers,
+        ProviderMessageCustomizerPipeline messageCustomizerPipeline,
         RateLimit rateLimit,
-        EndpointLease endpointLease,
-        Security security
+        EndpointLease endpointLease
 ) {
+    public ShetabResolvedConfig {
+        endpoints = endpoints == null ? List.of() : List.copyOf(endpoints);
+        providerConfig = providerConfig == null ? Map.of() : Map.copyOf(providerConfig);
+        messageCustomizerPipeline = messageCustomizerPipeline == null
+                ? ProviderMessageCustomizerPipeline.empty()
+                : messageCustomizerPipeline;
+    }
+
     public ShetabResolvedConfig(
             String provider,
             List<String> endpoints,
@@ -37,12 +45,35 @@ public record ShetabResolvedConfig(
             int sameEndpointReconnectAttempts,
             int queueCapacity,
             RateLimit rateLimit,
-            EndpointLease endpointLease,
-            Security security
+            EndpointLease endpointLease
     ) {
         this(provider, "shetab", endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs,
                 responseTimeoutMs, sendTimeoutMs, reconnectDelayMs, sameEndpointReconnectAttempts, queueCapacity,
-                Map.of(), List.of(), rateLimit, endpointLease, security);
+                Map.of(), ProviderMessageCustomizerPipeline.empty(), rateLimit, endpointLease);
+    }
+
+    public ShetabResolvedConfig withOverrides(ShetabEndpointOverrides overrides) {
+        if (overrides == null) {
+            return this;
+        }
+        int resolvedResponseTimeoutMs = overrides.timeoutMs() == null ? responseTimeoutMs : overrides.timeoutMs();
+        boolean rateLimitEnabled = overrides.rateLimitEnabled() == null ? rateLimit.enabled() : overrides.rateLimitEnabled();
+        String rateLimitBucket = overrides.rateLimitBucket() == null || overrides.rateLimitBucket().isBlank()
+                ? rateLimit.bucket()
+                : overrides.rateLimitBucket();
+        String rateLimitKey = overrides.rateLimitKey() == null || overrides.rateLimitKey().isBlank()
+                ? rateLimit.key()
+                : overrides.rateLimitKey();
+        if (resolvedResponseTimeoutMs == responseTimeoutMs
+                && rateLimitEnabled == rateLimit.enabled()
+                && Objects.equals(rateLimitBucket, rateLimit.bucket())
+                && Objects.equals(rateLimitKey, rateLimit.key())) {
+            return this;
+        }
+        return new ShetabResolvedConfig(provider, providerType, endpoints, packagerClass, packagerXml, connectTimeoutMs,
+                socketTimeoutMs, resolvedResponseTimeoutMs, sendTimeoutMs, reconnectDelayMs,
+                sameEndpointReconnectAttempts, queueCapacity, providerConfig, messageCustomizerPipeline,
+                new RateLimit(rateLimitEnabled, rateLimitBucket, rateLimitKey), endpointLease);
     }
 
     public record RateLimit(
@@ -55,51 +86,6 @@ public record ShetabResolvedConfig(
     public record EndpointLease(
             boolean enabled,
             long ttlMs
-    ) {
-    }
-
-    public record Security(
-            Pin pin,
-            Mac mac,
-            Expiry expiry,
-            Cvv2 cvv2
-    ) {
-        public Security(Pin pin, Mac mac) {
-            this(pin, mac, new Expiry(false, 14), new Cvv2(false, 48, "P92", 3, 3, 4));
-        }
-    }
-
-    public record Pin(
-            boolean enabled,
-            String key,
-            int field,
-            int panField
-    ) {
-    }
-
-    public record Mac(
-            boolean enabled,
-            String key,
-            int field,
-            boolean verifyResponse,
-            String placeholder,
-            int packedLengthBytes
-    ) {
-    }
-
-    public record Expiry(
-            boolean enabled,
-            int field
-    ) {
-    }
-
-    public record Cvv2(
-            boolean enabled,
-            int field,
-            String tag,
-            int lengthDigits,
-            int minLength,
-            int maxLength
     ) {
     }
 }

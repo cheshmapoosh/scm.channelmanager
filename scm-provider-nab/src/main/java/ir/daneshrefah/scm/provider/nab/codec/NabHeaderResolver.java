@@ -24,8 +24,8 @@ public class NabHeaderResolver {
         String channelCode = firstText(header, data, root, "channelCode");
         String serviceCode = firstNonBlank(
                 text(header, "serviceCode"),
-                config.serviceCodesByTerminalType().get(terminalType),
-                config.serviceCodesByChannelCode().get(channelCode),
+                configuredValue(config.serviceCodesByTerminalType(), terminalType),
+                configuredValue(config.serviceCodesByChannelCode(), channelCode),
                 config.defaultServiceCode()
         );
         String userId = firstNonBlank(text(header, "userId"), config.userId());
@@ -66,6 +66,13 @@ public class NabHeaderResolver {
             }
         }
         return null;
+    }
+
+    private String configuredValue(java.util.Map<String, String> values, String key) {
+        if (values == null || StringUtils.isBlank(key)) {
+            return null;
+        }
+        return values.get(key);
     }
 
     private void require(String name, String value) {

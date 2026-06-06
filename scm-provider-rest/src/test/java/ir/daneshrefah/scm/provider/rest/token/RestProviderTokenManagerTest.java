@@ -65,7 +65,6 @@ class RestProviderTokenManagerTest {
         assertEquals(1, client.calls);
         assertEquals(1, lockUtility.calls);
         assertEquals("provider-token-refresh-lock:hps:default:mb:credential-a", lockUtility.lockName);
-        assertTrue(client.requestSpec.skipProviderAuth());
         assertEquals(1, metrics.provider("hps").tokenCacheMissCount());
         assertEquals(1, metrics.provider("hps").tokenLockAcquiredCount());
         assertEquals(1, metrics.provider("hps").tokenRefreshCount());
@@ -222,9 +221,8 @@ class RestProviderTokenManagerTest {
                 "POST",
                 Map.of(),
                 Map.of(),
-                java.util.List.of(),
+                ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline.empty(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
-                new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
                 new RestProviderResolvedConfig.Security(java.util.List.of("authorization"), java.util.List.of("token"), 400),
                 new RestProviderResolvedConfig.RateLimit(false, "rest-default", "provider")
         );
@@ -242,7 +240,6 @@ class RestProviderTokenManagerTest {
         config.getCache().setTtlSkew(java.time.Duration.ofSeconds(5));
         config.getLock().setKeyPrefix("provider-token-refresh-lock");
         config.getLock().setWaitTimeout(java.time.Duration.ofMillis(20));
-        config.getLock().setLeaseTime(java.time.Duration.ofSeconds(10));
         config.getLock().setRetryDelay(java.time.Duration.ofMillis(1));
         config.getApply().setLocation("header");
         config.getApply().setName("Authorization");

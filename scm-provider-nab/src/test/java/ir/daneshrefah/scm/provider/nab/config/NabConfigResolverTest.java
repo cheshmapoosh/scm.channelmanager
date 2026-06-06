@@ -1,234 +1,134 @@
 package ir.daneshrefah.scm.provider.nab.config;
 
 import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NabConfigResolverTest {
 
-
     @Test
     void resolvesUnifiedNabProviderWithoutDefaults() {
-        ProviderRegistryProperties registry = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider core = new ProviderRegistryProperties.Provider();
-        core.setType("nab");
-        core.setProtocol("ATPS");
-        core.setEndpoint("127.0.0.1:9999");
-        core.setUserId("999998");
-        core.setPassword("secret");
-        core.getRqUid().setLength(16);
-        ProviderRegistryProperties.Field protocol = new ProviderRegistryProperties.Field();
-        protocol.setName("protocol");
-        protocol.setLength(4);
-        protocol.setRequired(true);
-        ProviderRegistryProperties.Field command = new ProviderRegistryProperties.Field();
-        command.setName("command");
-        command.setLength(2);
-        command.setRequired(true);
-        core.setHeaderFields(List.of(protocol, command));
-        registry.getProviders().put("nab-atps", core);
+        ProviderRegistryProperties registry = registry("nab-atps", baseConfig());
 
-        NabResolvedConfig config = new NabConfigResolver(registry, new NabProperties()).resolve("nab-atps", null);
+        NabResolvedConfig config = resolver(registry).resolve("nab-atps", null);
 
         assertEquals("nab-atps", config.provider());
         assertEquals("nab", config.providerType());
         assertEquals("ATPS", config.protocol());
+        assertEquals("127.0.0.1:9999", config.endpoint());
         assertEquals(2, config.headerFieldsByProtocol().get("ATPS").size());
+        assertTrue(config.messageCustomizerPipeline().isEmpty());
     }
 
     @Test
     void unifiedNabProviderRequiresInstanceHeaderFields() {
-        ProviderRegistryProperties registry = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider core = new ProviderRegistryProperties.Provider();
-        core.setType("nab");
-        core.setProtocol("ATPS");
-        core.setEndpoint("127.0.0.1:9999");
-        core.setUserId("999998");
-        core.setPassword("secret");
-        registry.getProviders().put("nab-atps", core);
+        Map<String, Object> config = baseConfig();
+        config.remove("header-fields");
+        ProviderRegistryProperties registry = registry("nab-atps", config);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new NabConfigResolver(registry, new NabProperties()).resolve("nab-atps", null));
+        assertThrows(IllegalArgumentException.class, () -> resolver(registry).resolve("nab-atps", null));
     }
 
     @Test
-    void resolvesTypedProviderAndMergesDefaults() {
-        NabProperties properties = new NabProperties();
-        properties.getDefaults().setConnectTimeoutMs(1111);
-        properties.getDefaults().setCharset("windows-1256");
-        properties.getDefaults().getServiceCodesByTerminalType().put("ATM", "01");
+    void rejectsNonNabProviderType() {
+        Map<String, Object> config = baseConfig();
+        config.put("type", "rest");
+        ProviderRegistryProperties registry = registry("nab-atps", config);
 
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        core.setUserId("999998");
-        core.setPassword("secret");
-        properties.getProviders().put("core", core);
-
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("nab:core", null);
-
-        assertEquals("core", config.provider());
-        assertEquals("127.0.0.1:9999", config.endpoint());
-        assertEquals(1111, config.connectTimeoutMs());
-        assertEquals("windows-1256", config.charset());
-        assertEquals("01", config.serviceCodesByTerminalType().get("ATM"));
-        assertEquals("999998", config.userId());
+        assertThrows(IllegalArgumentException.class, () -> resolver(registry).resolve("nab-atps", null));
     }
 
     @Test
-    void defaultAtpiHeaderContainsRequiredClientAddressAfterProtocolOnlyForAtpi() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        properties.getProviders().put("core", core);
+    void resolvesTypedProviderNameAndExplicitInstanceSettings() {
+        Map<String, Object> config = baseConfig();
+        config.put("connect-timeout-ms", 1111);
+        config.put("charset", "windows-1256");
+        config.put("service-codes-by-terminal-type", Map.of("ATM", "01"));
+        ProviderRegistryProperties registry = registry("core", config);
 
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
+        NabResolvedConfig resolved = resolver(registry).resolve("nab:core", null);
 
-        assertEquals("protocol", config.headerFieldsByProtocol().get("ATPI").get(0).name());
-        assertEquals("clientAddress", config.headerFieldsByProtocol().get("ATPI").get(1).name());
-        assertEquals(64, config.headerFieldsByProtocol().get("ATPI").get(1).length());
-        assertEquals(true, config.headerFieldsByProtocol().get("ATPI").get(1).required());
-        assertFalse(config.headerFieldsByProtocol().get("ATPS").stream().anyMatch(field -> "clientAddress".equals(field.name())));
-        assertFalse(config.headerFieldsByProtocol().get("MIRS").stream().anyMatch(field -> "clientAddress".equals(field.name())));
+        assertEquals("core", resolved.provider());
+        assertEquals(1111, resolved.connectTimeoutMs());
+        assertEquals("windows-1256", resolved.charset());
+        assertEquals("01", resolved.serviceCodesByTerminalType().get("ATM"));
     }
 
     @Test
     void headerFieldsCanBeConfiguredPerProtocol() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        NabProperties.Field protocol = new NabProperties.Field();
-        protocol.setName("protocol");
-        protocol.setLength(4);
-        protocol.setRequired(true);
-        NabProperties.Field clientAddress = new NabProperties.Field();
-        clientAddress.setName("clientAddress");
-        clientAddress.setLength(20);
-        clientAddress.setRequired(true);
-        core.getHeaderFieldsByProtocol().put("ATPI", List.of(protocol, clientAddress));
-        properties.getProviders().put("core", core);
+        Map<String, Object> config = baseConfig();
+        config.remove("header-fields");
+        config.put("header-fields-by-protocol", Map.of(
+                "ATPI", List.of(
+                        Map.of("name", "protocol", "length", 4, "required", true),
+                        Map.of("name", "clientAddress", "length", 20, "required", true)
+                )
+        ));
+        config.put("protocol", "ATPI");
+        ProviderRegistryProperties registry = registry("core", config);
 
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
+        NabResolvedConfig resolved = resolver(registry).resolve("core", null);
 
-        assertEquals(2, config.headerFieldsByProtocol().get("ATPI").size());
-        assertEquals(20, config.headerFieldsByProtocol().get("ATPI").get(1).length());
+        assertEquals(2, resolved.headerFieldsByProtocol().get("ATPI").size());
+        assertEquals(20, resolved.headerFieldsByProtocol().get("ATPI").get(1).length());
     }
 
     @Test
-    void headerFieldsCanBeConfiguredPerInstanceWithoutProtocolKey() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        core.setProtocol("ATPI");
-        NabProperties.Field protocol = new NabProperties.Field();
-        protocol.setName("protocol");
-        protocol.setLength(4);
-        protocol.setRequired(true);
-        NabProperties.Field clientAddress = new NabProperties.Field();
-        clientAddress.setName("clientAddress");
-        clientAddress.setLength(20);
-        clientAddress.setRequired(true);
-        core.setHeaderFields(List.of(protocol, clientAddress));
-        properties.getProviders().put("core", core);
+    void missingRequiredProviderSpecificConfigFailsFast() {
+        Map<String, Object> config = baseConfig();
+        config.remove("password");
+        ProviderRegistryProperties registry = registry("core", config);
 
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
-
-        assertEquals(2, config.headerFieldsByProtocol().get("ATPI").size());
-        assertEquals(20, config.headerFieldsByProtocol().get("ATPI").get(1).length());
-    }
-
-    @Test
-    void headerFieldsRequiresFixedProtocolInProviderInstance() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        NabProperties.Field protocol = new NabProperties.Field();
-        protocol.setName("protocol");
-        protocol.setLength(4);
-        protocol.setRequired(true);
-        core.setHeaderFields(List.of(protocol));
-        properties.getProviders().put("core", core);
-
-        assertThrows(IllegalArgumentException.class, () -> new NabConfigResolver(properties).resolve("core", null));
-    }
-
-    @Test
-    void headerFieldsByProtocolMustBeDefinedPerProviderInstance() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Field protocol = new NabProperties.Field();
-        protocol.setName("protocol");
-        protocol.setLength(4);
-        protocol.setRequired(true);
-        NabProperties.Field clientAddress = new NabProperties.Field();
-        clientAddress.setName("clientAddress");
-        clientAddress.setLength(20);
-        clientAddress.setRequired(true);
-        properties.getDefaults().getHeaderFieldsByProtocol().put("ATPI", List.of(protocol, clientAddress));
-
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        properties.getProviders().put("core", core);
-
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
-
-        assertEquals(64, config.headerFieldsByProtocol().get("ATPI").get(1).length());
-    }
-
-    @Test
-    void supportsLegacyEndpointsPropertyWithSingleValue() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoints(List.of("127.0.0.1:9999"));
-        properties.getProviders().put("core", core);
-
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
-
-        assertEquals("127.0.0.1:9999", config.endpoint());
-    }
-
-    @Test
-    void rejectsLegacyEndpointsPropertyWithMultipleValues() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoints(List.of("127.0.0.1:9999", "127.0.0.1:9998"));
-        properties.getProviders().put("core", core);
-
-        assertThrows(IllegalArgumentException.class, () -> new NabConfigResolver(properties).resolve("core", null));
-    }
-
-    @Test
-    void resolvesFixedProtocolPerProviderInstance() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        core.setProtocol("atpi");
-        properties.getProviders().put("core", core);
-
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", null);
-
-        assertEquals("ATPI", config.protocol());
+        assertThrows(IllegalArgumentException.class, () -> resolver(registry).resolve("core", null));
     }
 
     @Test
     void resolvesRateLimitAndAppliesOverrides() {
-        NabProperties properties = new NabProperties();
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint("127.0.0.1:9999");
-        core.getRateLimit().setEnabled(false);
-        core.getRateLimit().setBucket("core-default");
-        core.getRateLimit().setKey("provider");
-        properties.getProviders().put("core", core);
+        Map<String, Object> config = baseConfig();
+        config.put("rate-limit", Map.of("enabled", false, "bucket", "core-default", "key", "provider"));
+        ProviderRegistryProperties registry = registry("core", config);
 
         NabEndpointOverrides overrides = new NabEndpointOverrides(1000, "windows-1252", true, "bucket-x", "operation");
-        NabResolvedConfig config = new NabConfigResolver(properties).resolve("core", overrides);
+        NabResolvedConfig resolved = resolver(registry).resolve("core", overrides);
 
-        assertTrue(config.rateLimit().enabled());
-        assertEquals("bucket-x", config.rateLimit().bucket());
-        assertEquals("operation", config.rateLimit().key());
+        assertTrue(resolved.rateLimit().enabled());
+        assertEquals("bucket-x", resolved.rateLimit().bucket());
+        assertEquals("operation", resolved.rateLimit().key());
+        assertEquals(1000, resolved.responseTimeoutMs());
+    }
+
+    private NabConfigResolver resolver(ProviderRegistryProperties registry) {
+        return new NabConfigResolver(registry, new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of())));
+    }
+
+    private ProviderRegistryProperties registry(String providerCode, Map<String, Object> config) {
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        registry.put(providerCode, config);
+        return registry;
+    }
+
+    private Map<String, Object> baseConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("type", "nab");
+        config.put("protocol", "ATPS");
+        config.put("endpoint", "127.0.0.1:9999");
+        config.put("user-id", "999998");
+        config.put("password", "secret");
+        config.put("rq-uid", Map.of("length", 16, "type", "NUMERIC"));
+        config.put("header-fields", List.of(
+                Map.of("name", "protocol", "length", 4, "required", true),
+                Map.of("name", "command", "length", 2, "required", true)
+        ));
+        return config;
     }
 }

@@ -1,12 +1,20 @@
 package ir.daneshrefah.scm.provider.shetab.scenario;
 
 import ir.daneshrefah.scm.cache.client.utility.resourcelease.LocalResourceLeaseUtility;
+import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
+import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
+import ir.daneshrefah.scm.provider.shetab.customizer.ShetabMacProviderMessageCustomizerFactory;
+import ir.daneshrefah.scm.provider.shetab.customizer.ShetabPinBlockProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabIsoMapConverter;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
 import ir.daneshrefah.scm.provider.shetab.lease.CacheClientShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
-import ir.daneshrefah.scm.provider.shetab.security.ShetabMessageSecurityProcessor;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabIsoChannelClient;
 import org.jpos.iso.ISOMsg;
 import org.junit.jupiter.api.Assumptions;
@@ -55,7 +63,6 @@ class ShetabHpsCardInquiryIntegrationTest {
 
     private final ShetabIsoMapConverter converter = new ShetabIsoMapConverter();
     private final ShetabPackagerFactory packagerFactory = new ShetabPackagerFactory(new DefaultResourceLoader());
-    private final ShetabMessageSecurityProcessor securityProcessor = new ShetabMessageSecurityProcessor(packagerFactory);
 
     @Test
     void sendsCardInquiryToHpsAndReceivesNetworkResponse() throws Exception {
@@ -88,7 +95,14 @@ class ShetabHpsCardInquiryIntegrationTest {
         requestBody.put("security", security);
 
         ISOMsg request = converter.toIsoMsg(requestBody);
-        securityProcessor.protectRequest(config, requestBody, request);
+        ProviderRequest providerRequest = new ProviderRequest();
+        providerRequest.body(requestBody);
+        providerRequest.nativeRequest(request);
+        ProviderMessageCustomizerContext context = new ProviderMessageCustomizerContext(
+                config.provider(), config.providerType(), "cardInquiry", "cardInquiry", null, "shetab",
+                Map.of(), config, null, null);
+        ProviderExchange exchange = new ProviderExchange(providerRequest, context);
+        config.messageCustomizerPipeline().customizers().forEach(customizer -> customizer.beforeSend(exchange));
 
         ShetabIsoChannelClient client = new ShetabIsoChannelClient(
                 config,
@@ -121,8 +135,21 @@ class ShetabHpsCardInquiryIntegrationTest {
     private ShetabResolvedConfig config(List<String> endpoints, String pinKey, String macKey) {
         int responseTimeoutMs = Integer.parseInt(env("SCM_SHETAB_HPS_RESPONSE_TIMEOUT_MS", "10000"));
         int socketTimeoutMs = Integer.parseInt(env("SCM_SHETAB_HPS_SOCKET_TIMEOUT_MS", "1000"));
+        ProviderMessageCustomizerPipeline pipeline = new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of(
+                        new ShetabPinBlockProviderMessageCustomizerFactory(),
+                        new ShetabMacProviderMessageCustomizerFactory(packagerFactory)
+                ))
+        ).build(
+                new ProviderMessageCustomizerContext("hps", "shetab", null, null, null, "shetab", Map.of(), null, null, null),
+                List.of(
+                        definition("shetab-pin-block", Map.of("key", pinKey, "field", 52, "pan-field", 2)),
+                        definition("shetab-mac", Map.of("key", macKey, "field", 128, "verify-response", false))
+                )
+        );
         return new ShetabResolvedConfig(
                 "hps",
+                "shetab",
                 endpoints,
                 env("SCM_SHETAB_HPS_PACKAGER", "Shetab7AsciiXAPackager"),
                 null,
@@ -133,13 +160,18 @@ class ShetabHpsCardInquiryIntegrationTest {
                 1000,
                 3,
                 1000,
+                Map.of(),
+                pipeline,
                 new ShetabResolvedConfig.RateLimit(false, "unused", "provider"),
-                new ShetabResolvedConfig.EndpointLease(true, 30_000L),
-                new ShetabResolvedConfig.Security(
-                        new ShetabResolvedConfig.Pin(true, pinKey, 52, 2),
-                        new ShetabResolvedConfig.Mac(true, macKey, 128, false, "AAAAAAAAAAAAAAAA", 16)
-                )
+                new ShetabResolvedConfig.EndpointLease(true, 30_000L)
         );
+    }
+
+    private ProviderMessageCustomizerDefinition definition(String type, Map<String, Object> config) {
+        ProviderMessageCustomizerDefinition definition = new ProviderMessageCustomizerDefinition();
+        definition.setType(type);
+        definition.setConfig(config);
+        return definition;
     }
 
     @SuppressWarnings("unchecked")

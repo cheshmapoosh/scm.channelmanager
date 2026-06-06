@@ -2,13 +2,8 @@ package ir.daneshrefah.scm.provider.shetab.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
-import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
 import ir.daneshrefah.scm.provider.shetab.camel.ShetabComponent;
-import ir.daneshrefah.scm.provider.shetab.config.ShetabProperties;
 import ir.daneshrefah.scm.provider.shetab.lease.CacheClientShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.lease.NoopShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
@@ -21,18 +16,13 @@ import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collection;
 
 @Configuration
 @Slf4j
 @ConditionalOnClass(CamelContext.class)
-@EnableConfigurationProperties({ShetabProperties.class, ProviderRegistryProperties.class})
-@ConditionalOnProperty(prefix = "scm.provider.shetab", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ShetabProviderAutoConfiguration {
 
     @Bean("shetab")
@@ -61,23 +51,6 @@ public class ShetabProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ProviderMessageCustomizerFactoryRegistry providerMessageCustomizerFactoryRegistry(
-            Collection<ProviderMessageCustomizerFactory<?>> factories
-    ) {
-        return new ProviderMessageCustomizerFactoryRegistry(factories);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ProviderMessageCustomizerPipelineFactory providerMessageCustomizerPipelineFactory(
-            ProviderMessageCustomizerFactoryRegistry registry,
-            ObjectMapper objectMapper
-    ) {
-        return new ProviderMessageCustomizerPipelineFactory(registry, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public ShetabRateLimiter shetabRateLimiter(ObjectProvider<RateLimiterUtility> rateLimiterUtility, ShetabProviderMetrics metrics) {
         RateLimiterUtility utility = rateLimiterUtility.getIfAvailable();
         if (utility == null) {
@@ -92,7 +65,7 @@ public class ShetabProviderAutoConfiguration {
     public ShetabEndpointLeaseManager shetabEndpointLeaseManager(ObjectProvider<ResourceLeaseUtility> resourceLeaseUtility) {
         ResourceLeaseUtility utility = resourceLeaseUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease falls back to first configured endpoint. Runtime deployments should enable scm-cache-client resource-lease.");
+            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease supports only single-endpoint providers. Multi-endpoint providers with endpoint-lease.enabled=true will fail until scm-cache-client resource-lease is enabled.");
             return new NoopShetabEndpointLeaseManager();
         }
         return new CacheClientShetabEndpointLeaseManager(utility);

@@ -28,11 +28,10 @@ class ProviderRegistryPropertiesBindingTest {
                 .bind("scm.providers", Bindable.of(ProviderRegistryProperties.class))
                 .orElseThrow(() -> new AssertionError("scm.providers did not bind"));
 
-        assertTrue(properties.getProviders().containsKey("hps-rest"));
-        ProviderRegistryProperties.Provider provider = properties.getProviders().get("hps-rest");
-        assertEquals("rest", provider.getType());
-        assertEquals("https://hps.example.ir", provider.getBaseUrl());
-        assertEquals("hps-rest-outlet", provider.getMessageCustomizers().getFirst().getType());
-        assertEquals("outlet", provider.getMessageCustomizers().getFirst().config().get("name"));
+        assertTrue(properties.containsKey("hps-rest"));
+        Map<String, Object> provider = properties.get("hps-rest");
+        assertEquals("rest", provider.get("type"));
+        assertEquals("https://hps.example.ir", provider.get("base-url"));
+        assertTrue(provider.containsKey("message-customizers"));
     }
 }

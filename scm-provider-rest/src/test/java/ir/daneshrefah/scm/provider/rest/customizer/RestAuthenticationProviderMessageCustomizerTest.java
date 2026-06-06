@@ -106,9 +106,8 @@ class RestAuthenticationProviderMessageCustomizerTest {
                 "POST",
                 Map.of(),
                 Map.of(),
-                List.of(),
+                ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline.empty(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
-                new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
                 new RestProviderResolvedConfig.Security(List.of("authorization"), List.of("token"), 400),
                 new RestProviderResolvedConfig.RateLimit(false, null, "provider-operation")
         );

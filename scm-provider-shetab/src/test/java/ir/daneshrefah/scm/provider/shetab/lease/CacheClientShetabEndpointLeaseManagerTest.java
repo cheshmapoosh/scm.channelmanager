@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CacheClientShetabEndpointLeaseManagerTest {
@@ -24,8 +25,9 @@ class CacheClientShetabEndpointLeaseManagerTest {
         assertEquals("10.10.10.11:5002", lease.endpoint());
         assertEquals("10.10.10.11", lease.remoteHost());
         assertEquals(5002, lease.remotePort());
-        assertEquals("shetab-hps-endpoint::hps", utility.poolName);
+        assertEquals("shetab-endpoint-lease::hps", utility.poolName);
         assertEquals(List.of("10.10.10.10:5001", "10.10.10.11:5002"), utility.candidates);
+        assertEquals("shetab-endpoint-lease::hps::10.10.10.11:5002", utility.leaseKey);
         assertEquals(Duration.ofMillis(30_000L), utility.ttl);
 
         lease.close();
@@ -44,6 +46,14 @@ class CacheClientShetabEndpointLeaseManagerTest {
         assertEquals(5001, lease.remotePort());
     }
 
+    @Test
+    void noopManagerRejectsMultiEndpointProviderWhenLeaseIsEnabled() {
+        NoopShetabEndpointLeaseManager manager = new NoopShetabEndpointLeaseManager();
+
+        assertThrows(IllegalStateException.class,
+                () -> manager.acquire(config(true, List.of("10.10.10.10:5001", "10.10.10.11:5002"))));
+    }
+
     private static ShetabResolvedConfig config(boolean enabled, List<String> endpoints) {
         return new ShetabResolvedConfig(
                 "hps",
@@ -58,11 +68,7 @@ class CacheClientShetabEndpointLeaseManagerTest {
                 3,
                 1000,
                 new ShetabResolvedConfig.RateLimit(false, "unused", "provider"),
-                new ShetabResolvedConfig.EndpointLease(enabled, 30_000L),
-                new ShetabResolvedConfig.Security(
-                        new ShetabResolvedConfig.Pin(false, null, 52, 2),
-                        new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16)
-                )
+                new ShetabResolvedConfig.EndpointLease(enabled, 30_000L)
         );
     }
 
@@ -71,6 +77,7 @@ class CacheClientShetabEndpointLeaseManagerTest {
         private String poolName;
         private List<String> candidates;
         private Duration ttl;
+        private String leaseKey;
         private boolean closed;
 
         private FakeResourceLeaseUtility(String selectedResource) {
@@ -82,6 +89,7 @@ class CacheClientShetabEndpointLeaseManagerTest {
             this.poolName = poolName;
             this.candidates = List.copyOf(candidates);
             this.ttl = ttl;
+            this.leaseKey = poolName + "::" + selectedResource;
             return new ResourceLease() {
                 @Override
                 public String poolName() {

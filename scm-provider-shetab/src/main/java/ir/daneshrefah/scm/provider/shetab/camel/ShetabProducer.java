@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
 import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabConfigResolver;
@@ -45,7 +44,6 @@ public class ShetabProducer extends DefaultProducer {
     private ShetabRateLimiter rateLimiter;
     private ShetabProviderMetrics metrics;
     private ShetabTraceSupport traceSupport;
-    private ProviderMessageCustomizerPipelineFactory customizerPipelineFactory;
     private ObjectMapper objectMapper;
 
     public ShetabProducer(ShetabEndpoint endpoint) {
@@ -62,7 +60,6 @@ public class ShetabProducer extends DefaultProducer {
         rateLimiter = bean(ShetabRateLimiter.class);
         metrics = bean(ShetabProviderMetrics.class);
         traceSupport = bean(ShetabTraceSupport.class);
-        customizerPipelineFactory = bean(ProviderMessageCustomizerPipelineFactory.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -81,7 +78,7 @@ public class ShetabProducer extends DefaultProducer {
         providerRequest.nativeRequest(request);
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
-        ProviderMessageCustomizerPipeline customizerPipeline = customizerPipelineFactory.build(customizerContext, config.messageCustomizers());
+        ProviderMessageCustomizerPipeline customizerPipeline = config.messageCustomizerPipeline();
         logConfiguredCustomizers(customizerContext, customizerPipeline);
         executeCustomizers(exchange, providerExchange, customizerPipeline, true);
 

@@ -9,10 +9,9 @@ public record RestProviderRequestSpec(
         HttpMethod method,
         URI uri,
         Map<String, String> headers,
-        Object body,
-        boolean skipProviderAuth
+        Object body
 ) {
-    public RestProviderRequestSpec(HttpMethod method, URI uri, Map<String, String> headers, Object body) {
-        this(method, uri, headers, body, false);
+    public RestProviderRequestSpec {
+        headers = headers == null ? Map.of() : Map.copyOf(headers);
     }
 }

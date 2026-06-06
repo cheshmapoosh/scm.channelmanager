@@ -2,12 +2,7 @@ package ir.daneshrefah.scm.provider.rest.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
-import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.provider.rest.camel.RestProviderComponent;
-import ir.daneshrefah.scm.provider.rest.config.RestProviderProperties;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.ratelimit.CacheClientRestProviderRateLimiter;
 import ir.daneshrefah.scm.provider.rest.ratelimit.NoopRestProviderRateLimiter;
@@ -17,20 +12,15 @@ import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
 @Slf4j
 @ConditionalOnClass(CamelContext.class)
-@EnableConfigurationProperties({RestProviderProperties.class, ProviderRegistryProperties.class})
-@ConditionalOnProperty(prefix = "scm.provider.rest", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RestProviderAutoConfiguration {
 
     @Bean("rest-provider")
@@ -62,23 +52,6 @@ public class RestProviderAutoConfiguration {
     @ConditionalOnMissingBean
     public RestProviderMetrics restProviderMetrics() {
         return new RestProviderMetrics();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ProviderMessageCustomizerFactoryRegistry providerMessageCustomizerFactoryRegistry(
-            Collection<ProviderMessageCustomizerFactory<?>> factories
-    ) {
-        return new ProviderMessageCustomizerFactoryRegistry(factories);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ProviderMessageCustomizerPipelineFactory providerMessageCustomizerPipelineFactory(
-            ProviderMessageCustomizerFactoryRegistry registry,
-            ObjectMapper objectMapper
-    ) {
-        return new ProviderMessageCustomizerPipelineFactory(registry, objectMapper);
     }
 
     @Bean

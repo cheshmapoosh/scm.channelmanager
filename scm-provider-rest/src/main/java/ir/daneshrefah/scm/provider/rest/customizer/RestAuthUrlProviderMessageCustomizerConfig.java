@@ -193,7 +193,6 @@ public class RestAuthUrlProviderMessageCustomizerConfig {
     public static class Lock {
         private String keyPrefix = "provider-token-refresh-lock";
         private Object waitTimeout = "3s";
-        private Object leaseTime = "10s";
         private Object retryDelay = "100ms";
 
         public void validate(String providerCode) {
@@ -206,10 +205,6 @@ public class RestAuthUrlProviderMessageCustomizerConfig {
             return duration(waitTimeout, Duration.ofSeconds(3));
         }
 
-        public Duration leaseTimeDuration() {
-            return duration(leaseTime, Duration.ofSeconds(10));
-        }
-
         public Duration retryDelayDuration() {
             return duration(retryDelay, Duration.ofMillis(100));
         }
@@ -218,7 +213,6 @@ public class RestAuthUrlProviderMessageCustomizerConfig {
             Lock target = new Lock();
             target.keyPrefix = keyPrefix;
             target.waitTimeout = waitTimeout;
-            target.leaseTime = leaseTime;
             target.retryDelay = retryDelay;
             return target;
         }

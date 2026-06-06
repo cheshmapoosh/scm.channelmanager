@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.provider.nab.application.NabProviderService;
 import ir.daneshrefah.scm.provider.nab.codec.FixedLengthDecoder;
 import ir.daneshrefah.scm.provider.nab.codec.FixedLengthEncoder;
@@ -18,13 +21,16 @@ import ir.daneshrefah.scm.provider.nab.codec.NabTextNormalizer;
 import ir.daneshrefah.scm.provider.nab.codec.NabValueConverterRegistry;
 import ir.daneshrefah.scm.provider.nab.codec.PersianDateFormatter;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
-import ir.daneshrefah.scm.provider.nab.config.NabProperties;
 import ir.daneshrefah.scm.provider.nab.config.NabResolvedConfig;
 import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
 import ir.daneshrefah.scm.provider.nab.tcp.NabPooledTcpClient;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -80,25 +86,43 @@ class NabActiveAccountsInqRealIntegrationTest {
     }
 
     private NabResolvedConfig config() {
-        NabProperties properties = new NabProperties();
-        properties.getDefaults().setCharset("windows-1256");
-        properties.getDefaults().setConnectTimeoutMs(intEnv("SCM_NAB_CONNECT_TIMEOUT_MS", 3000));
-        properties.getDefaults().setSocketTimeoutMs(intEnv("SCM_NAB_SOCKET_TIMEOUT_MS", 1000));
-        properties.getDefaults().setResponseTimeoutMs(intEnv("SCM_NAB_RESPONSE_TIMEOUT_MS", 10000));
-        properties.getDefaults().setResponseIdleTimeoutMs(intEnv("SCM_NAB_RESPONSE_IDLE_TIMEOUT_MS", 200));
-        properties.getDefaults().setDefaultServiceCode("99");
-        properties.getDefaults().setWireLogEnabled(Boolean.parseBoolean(env("SCM_NAB_WIRE_LOG_ENABLED", "true")));
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        registry.put("core", providerConfig());
+        return new NabConfigResolver(registry, new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of()))).resolve("core", null);
+    }
 
-        properties.getDefaults().getServiceCodesByTerminalType().put("ATM", "00");
-        properties.getDefaults().getServiceCodesByChannelCode().put("MB", "03");
+    private Map<String, Object> providerConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("type", "nab");
+        config.put("protocol", "ATPI");
+        config.put("endpoint", endpoint());
+        config.put("charset", "windows-1256");
+        config.put("connect-timeout-ms", intEnv("SCM_NAB_CONNECT_TIMEOUT_MS", 3000));
+        config.put("socket-timeout-ms", intEnv("SCM_NAB_SOCKET_TIMEOUT_MS", 1000));
+        config.put("response-timeout-ms", intEnv("SCM_NAB_RESPONSE_TIMEOUT_MS", 10000));
+        config.put("response-idle-timeout-ms", intEnv("SCM_NAB_RESPONSE_IDLE_TIMEOUT_MS", 200));
+        config.put("default-service-code", "99");
+        config.put("wire-log-enabled", Boolean.parseBoolean(env("SCM_NAB_WIRE_LOG_ENABLED", "true")));
+        config.put("user-id", env("SCM_NAB_USER_ID", DEFAULT_USER_ID));
+        config.put("password", env("SCM_NAB_PASSWORD", DEFAULT_PASSWORD));
+        config.put("service-codes-by-terminal-type", Map.of("ATM", "00"));
+        config.put("service-codes-by-channel-code", Map.of("MB", "03"));
+        config.put("header-fields", List.of(
+                field("protocol", 4, true),
+                field("clientAddress", 64, true),
+                field("command", 2, true),
+                field("serviceCode", 2, true),
+                field("dateTime", 14, true),
+                field("userId", 10, true),
+                field("password", 10, true),
+                field("rqUid", 16, true)
+        ));
+        return config;
+    }
 
-        NabProperties.Instance core = new NabProperties.Instance();
-        core.setEndpoint(endpoint());
-        core.setUserId(env("SCM_NAB_USER_ID", DEFAULT_USER_ID));
-        core.setPassword(env("SCM_NAB_PASSWORD", DEFAULT_PASSWORD));
-        properties.getProviders().put("core", core);
-
-        return new NabConfigResolver(properties).resolve("core", null);
+    private Map<String, Object> field(String name, int length, boolean required) {
+        return Map.of("name", name, "length", length, "required", required);
     }
 
     private String endpoint() {

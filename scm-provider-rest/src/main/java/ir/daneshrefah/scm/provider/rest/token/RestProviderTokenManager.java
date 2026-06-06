@@ -191,7 +191,7 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         Map<String, String> headers = new LinkedHashMap<>(safeStringMap(authConfig.request().getHeaders()));
         applyAuth(headers, authConfig.request().auth());
         Object body = resolveTokenRequestBody(authConfig, headers);
-        RestProviderRequestSpec requestSpec = new RestProviderRequestSpec(method, uri, Map.copyOf(headers), body, true);
+        RestProviderRequestSpec requestSpec = new RestProviderRequestSpec(method, uri, Map.copyOf(headers), body);
 
         ResponseEntity<String> response = clientRegistry.exchange(providerConfig, requestSpec);
         int statusCode = response.getStatusCode().value();

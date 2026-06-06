@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.provider.shetab.customizer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
@@ -23,8 +22,7 @@ class ShetabProviderMessageCustomizerFactoryTest {
     @Test
     void shetabSecurityCustomizersAreOrderedBeforeMac() {
         ProviderMessageCustomizerPipeline pipeline = new ProviderMessageCustomizerPipelineFactory(
-                new ProviderMessageCustomizerFactoryRegistry(factories()),
-                new ObjectMapper()
+                new ProviderMessageCustomizerFactoryRegistry(factories())
         ).build(context("shetab", "shetab"), List.of(
                 definition("shetab-mac", Map.of("key", "0123456789ABCDEF")),
                 definition("shetab-pin-block", Map.of("key", "0123456789ABCDEF")),

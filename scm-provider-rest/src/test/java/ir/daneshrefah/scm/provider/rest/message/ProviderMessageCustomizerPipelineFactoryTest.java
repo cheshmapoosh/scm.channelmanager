@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.provider.rest.message;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
@@ -49,11 +48,52 @@ class ProviderMessageCustomizerPipelineFactoryTest {
         assertEquals(100, pipeline.entries().getFirst().order());
     }
 
+
+    @Test
+    void springBootBinderPreservesBusinessMapKeys() {
+        CapturingRestAuthFactory factory = new CapturingRestAuthFactory();
+        ProviderMessageCustomizerPipelineFactory pipelineFactory = new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of(factory)));
+
+        pipelineFactory.build(context(), List.of(definition("rest-auth-url", null, Map.of(
+                "url", "https://provider/token",
+                "request", Map.of(
+                        "headers", Map.of("Content-Type", "application/x-www-form-urlencoded"),
+                        "form", Map.of(
+                                "grant_type", "client_credentials",
+                                "client_id", "client",
+                                "client_secret", "secret"
+                        )
+                ),
+                "response", Map.of("token-field", "access_token"),
+                "cache", Map.of("name", "token-cache", "auth-profile", "default", "credential-key", "hps"),
+                "apply", Map.of("name", "Authorization")
+        ))));
+
+        assertEquals("access_token", factory.config.response().getTokenField());
+        assertEquals("application/x-www-form-urlencoded", factory.config.request().getHeaders().get("Content-Type"));
+        assertEquals("client_credentials", factory.config.request().getForm().get("grant_type"));
+        assertEquals("client", factory.config.request().getForm().get("client_id"));
+        assertEquals("secret", factory.config.request().getForm().get("client_secret"));
+    }
+
     @Test
     void unknownTypeFailsFast() {
         ProviderMessageCustomizerDefinition definition = definition("missing", null, Map.of());
 
         assertThrows(IllegalArgumentException.class, () -> pipelineFactory().build(context(), List.of(definition)));
+    }
+
+    @Test
+    void invalidCustomizerConfigFailsFastWithTypeInMessage() {
+        ProviderMessageCustomizerPipelineFactory pipelineFactory = new ProviderMessageCustomizerPipelineFactory(
+                new ProviderMessageCustomizerFactoryRegistry(List.of(new NumericFactory())));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> pipelineFactory.build(context(), List.of(
+                        definition("numeric", null, Map.of("timeout-ms", "not-a-number")))));
+
+        assertTrue(exception.getMessage().contains("provider message customizer type numeric"));
     }
 
     @Test
@@ -66,8 +106,7 @@ class ProviderMessageCustomizerPipelineFactoryTest {
                 new ProviderMessageCustomizerFactoryRegistry(List.of(
                         new TestFactory("alpha", 100),
                         new TestFactory("beta", 200)
-                )),
-                new ObjectMapper()
+                ))
         );
     }
 
@@ -118,4 +157,75 @@ class ProviderMessageCustomizerPipelineFactoryTest {
             this.fieldName = fieldName;
         }
     }
+
+    private static final class NumericFactory implements ProviderMessageCustomizerFactory<NumericConfig> {
+        @Override
+        public String type() {
+            return "numeric";
+        }
+
+        @Override
+        public Class<NumericConfig> configType() {
+            return NumericConfig.class;
+        }
+
+        @Override
+        public int defaultOrder() {
+            return 100;
+        }
+
+        @Override
+        public ProviderMessageCustomizer create(ProviderMessageCustomizerFactoryContext context, NumericConfig config) {
+            return new ProviderMessageCustomizer() {
+                @Override
+                public int order() {
+                    return 100;
+                }
+            };
+        }
+    }
+
+    private static final class NumericConfig {
+        private Integer timeoutMs;
+
+        public Integer getTimeoutMs() {
+            return timeoutMs;
+        }
+
+        public void setTimeoutMs(Integer timeoutMs) {
+            this.timeoutMs = timeoutMs;
+        }
+    }
+
+    private static final class CapturingRestAuthFactory implements ProviderMessageCustomizerFactory<ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig> {
+        private ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig config;
+
+        @Override
+        public String type() {
+            return "rest-auth-url";
+        }
+
+        @Override
+        public Class<ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig> configType() {
+            return ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig.class;
+        }
+
+        @Override
+        public int defaultOrder() {
+            return 5000;
+        }
+
+        @Override
+        public ProviderMessageCustomizer create(ProviderMessageCustomizerFactoryContext context,
+                                               ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig config) {
+            this.config = config;
+            return new ProviderMessageCustomizer() {
+                @Override
+                public int order() {
+                    return 5000;
+                }
+            };
+        }
+    }
+
 }

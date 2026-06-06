@@ -1,9 +1,12 @@
 package ir.daneshrefah.scm.provider.rest.config;
 
 import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,24 +15,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RestProviderConfigResolverTest {
 
     @Test
-    void resolvesUnifiedRestProviderWithoutDefaults() {
+    void resolvesRestProviderFromUnifiedRegistryAndBuildsPipeline() {
         ProviderRegistryProperties registry = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider hps = new ProviderRegistryProperties.Provider();
-        hps.setType("rest");
-        hps.setBaseUrl("https://hps.example");
-        hps.setResponseTimeoutMs(9000);
-        hps.getHeaders().put("Accept", "application/json");
-        hps.getHeaders().put("X-Provider", "hps");
-        hps.getRateLimit().setEnabled(true);
-        hps.getRateLimit().setBucket("hps-rest");
-        hps.getRateLimit().setKey("provider-operation");
-        ProviderMessageCustomizerDefinition customizer = new ProviderMessageCustomizerDefinition();
-        customizer.setType("rest-auth-url");
-        customizer.setConfig(Map.of("url", "https://hps.example/token"));
-        hps.getMessageCustomizers().add(customizer);
-        registry.getProviders().put("hps-rest", hps);
+        Map<String, Object> hps = restProvider("https://hps.example");
+        hps.put("response-timeout-ms", 9000);
+        hps.put("headers", Map.of("Accept", "application/json", "X-Provider", "hps"));
+        hps.put("rate-limit", Map.of("enabled", true, "bucket", "hps-rest", "key", "provider-operation"));
+        hps.put("message-customizers", List.of(Map.of(
+                "type", "hps-rest-outlet",
+                "config", Map.of("name", "outlet", "value", "123")
+        )));
+        registry.put("hps-rest", hps);
 
-        RestProviderResolvedConfig config = new RestProviderConfigResolver(registry, new RestProviderProperties())
+        RestProviderResolvedConfig config = new RestProviderConfigResolver(registry, pipelineFactory())
                 .resolve("rest:hps-rest", new RestProviderEndpointOverrides(7000, null, null, null));
 
         assertEquals("hps-rest", config.provider());
@@ -39,48 +37,43 @@ class RestProviderConfigResolverTest {
         assertEquals("application/json", config.defaultHeaders().get("Accept"));
         assertEquals("hps", config.defaultHeaders().get("X-Provider"));
         assertEquals("hps-rest", config.rateLimit().bucket());
-        assertEquals("rest-auth-url", config.messageCustomizers().getFirst().getType());
+        assertEquals("hps-rest-outlet", config.messageCustomizerPipeline().entries().getFirst().type());
     }
 
     @Test
-    void failsFastWhenUnifiedProviderTypeIsNotRest() {
+    void failsFastWhenProviderTypeIsNotRest() {
         ProviderRegistryProperties registry = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider provider = new ProviderRegistryProperties.Provider();
-        provider.setType("shetab");
-        provider.setBaseUrl("https://wrong.example");
-        registry.getProviders().put("wrong", provider);
+        registry.put("wrong", Map.of("type", "shetab", "base-url", "https://wrong.example"));
 
         assertThrows(IllegalArgumentException.class,
-                () -> new RestProviderConfigResolver(registry, new RestProviderProperties()).resolve("wrong", null));
+                () -> new RestProviderConfigResolver(registry, pipelineFactory()).resolve("wrong", null));
     }
 
     @Test
-    void missingUnifiedBaseUrlFailsFast() {
+    void missingBaseUrlFailsFast() {
         ProviderRegistryProperties registry = new ProviderRegistryProperties();
-        ProviderRegistryProperties.Provider provider = new ProviderRegistryProperties.Provider();
-        provider.setType("rest");
-        registry.getProviders().put("missing", provider);
+        registry.put("missing", Map.of("type", "rest"));
 
         assertThrows(IllegalArgumentException.class,
-                () -> new RestProviderConfigResolver(registry, new RestProviderProperties()).resolve("missing", null));
+                () -> new RestProviderConfigResolver(registry, pipelineFactory()).resolve("missing", null));
     }
 
     @Test
-    void legacyTokenConfigMapsToDeprecatedRestAuthUrlCustomizer() {
-        RestProviderProperties legacy = new RestProviderProperties();
-        RestProviderProperties.Instance hps = new RestProviderProperties.Instance();
-        hps.setBaseUrl("https://hps.example");
-        hps.getToken().setEnabled(true);
-        hps.getToken().setPath("/oauth/token");
-        hps.getToken().setCacheName("rest_provider_token_cache");
-        hps.getToken().setAuthProfile("default");
-        hps.getToken().setCredentialKey("hps");
-        legacy.getProviders().put("hps", hps);
+    void missingProviderFailsFast() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new RestProviderConfigResolver(new ProviderRegistryProperties(), pipelineFactory()).resolve("missing", null));
+    }
 
-        RestProviderResolvedConfig config = new RestProviderConfigResolver(new ProviderRegistryProperties(), legacy).resolve("hps", null);
+    private Map<String, Object> restProvider(String baseUrl) {
+        Map<String, Object> provider = new LinkedHashMap<>();
+        provider.put("type", "rest");
+        provider.put("base-url", baseUrl);
+        return provider;
+    }
 
-        assertEquals(1, config.messageCustomizers().size());
-        assertEquals("rest-auth-url", config.messageCustomizers().getFirst().getType());
-        assertEquals("/oauth/token", config.messageCustomizers().getFirst().config().get("path"));
+    private ProviderMessageCustomizerPipelineFactory pipelineFactory() {
+        return new ProviderMessageCustomizerPipelineFactory(new ProviderMessageCustomizerFactoryRegistry(
+                List.of(new ir.daneshrefah.scm.provider.rest.customizer.HpsRestOutletProviderMessageCustomizerFactory())
+        ));
     }
 }

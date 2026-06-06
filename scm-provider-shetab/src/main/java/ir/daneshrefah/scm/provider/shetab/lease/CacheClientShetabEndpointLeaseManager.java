@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CacheClientShetabEndpointLeaseManager implements ShetabEndpointLeaseManager {
 
-    private static final String POOL_PREFIX = "shetab-hps-endpoint";
+    private static final String POOL_PREFIX = "shetab-endpoint-lease";
 
     private final ResourceLeaseUtility resourceLeaseUtility;
 

@@ -52,17 +52,8 @@ class CacheClientRestProviderRateLimiterTest {
                 "POST",
                 Map.of(),
                 Map.of(),
-                java.util.List.of(),
+                ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline.empty(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
-                new RestProviderResolvedConfig.Auth(
-                        RestProviderResolvedConfig.AuthType.NONE,
-                        "Authorization",
-                        null,
-                        null,
-                        null,
-                        null,
-                        true
-                ),
                 new RestProviderResolvedConfig.Security(java.util.List.of(), java.util.List.of(), 400),
                 new RestProviderResolvedConfig.RateLimit(enabled, bucket, key)
         );

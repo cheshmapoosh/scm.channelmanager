@@ -51,6 +51,7 @@ Rules:
 - `header-fields` are provider-instance specific and must not be documented or configured under defaults.
 - Missing required fields fail fast.
 - `type: nab` makes this module own and validate the instance.
+- If `message-customizers` is missing or empty, no customizer pipeline runs.
 
 ## Request Shape
 
@@ -122,10 +123,12 @@ Use provider-instance `rate-limit`:
 
 Runtime overrides are still available through NAB provider headers and endpoint URI params.
 
+## ProviderMessageCustomizer
+
+NAB uses the common factory-based ProviderMessageCustomizer architecture. Factories are Spring beans, YAML uses stable `message-customizers[].type` values, and runtime customizers are immutable instances created per resolved provider.
+
+The NAB resolver builds the provider instance pipeline once. No customizer is enabled by default.
+
 ## Observability And Security
 
 Metrics follow the provider metric style and include provider request counters/latency and rate-limit counters. Logs include provider and operation context. Do not log password, account number, PAN, token, PIN, or other sensitive values.
-
-## Deprecated Legacy Compatibility
-
-`scm.provider.nab.defaults/providers` is deprecated. It may be resolved for compatibility, but new configuration must use `scm.providers.<provider-code>.type=nab`. Header fields under defaults are ignored and must be configured per provider instance.

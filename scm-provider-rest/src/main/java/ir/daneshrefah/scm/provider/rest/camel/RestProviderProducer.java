@@ -75,7 +75,6 @@ public class RestProviderProducer extends DefaultProducer {
     private RestProviderRateLimiter rateLimiter;
     private RestProviderTraceSupport traceSupport;
     private RestProviderLogSanitizer logSanitizer;
-    private ProviderMessageCustomizerPipelineFactory customizerPipelineFactory;
     private ObjectMapper objectMapper;
 
     public RestProviderProducer(RestProviderEndpoint endpoint) {
@@ -92,7 +91,6 @@ public class RestProviderProducer extends DefaultProducer {
         rateLimiter = bean(RestProviderRateLimiter.class);
         traceSupport = bean(RestProviderTraceSupport.class);
         logSanitizer = bean(RestProviderLogSanitizer.class);
-        customizerPipelineFactory = bean(ProviderMessageCustomizerPipelineFactory.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -105,7 +103,7 @@ public class RestProviderProducer extends DefaultProducer {
         ProviderRequest providerRequest = buildProviderRequest(exchange, config);
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
-        ProviderMessageCustomizerPipeline customizerPipeline = customizerPipelineFactory.build(customizerContext, config.messageCustomizers());
+        ProviderMessageCustomizerPipeline customizerPipeline = config.messageCustomizerPipeline();
         logConfiguredCustomizers(customizerContext, customizerPipeline);
 
         RestProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
@@ -235,8 +233,7 @@ public class RestProviderProducer extends DefaultProducer {
         ProviderRequest request = providerExchange.request();
         URI uri = appendCustomizerQueryParameters(request.uri(), request.queryParameters());
         HttpMethod method = resolveMethod(request.method());
-        boolean skipProviderAuth = Boolean.TRUE.equals(providerExchange.getAttribute("rest.auth.applied", Boolean.class));
-        return new RestProviderRequestSpec(method, uri, Map.copyOf(request.headers()), request.body(), skipProviderAuth);
+        return new RestProviderRequestSpec(method, uri, Map.copyOf(request.headers()), request.body());
     }
 
     private URI appendCustomizerQueryParameters(URI uri, Map<String, Object> queryParameters) {
