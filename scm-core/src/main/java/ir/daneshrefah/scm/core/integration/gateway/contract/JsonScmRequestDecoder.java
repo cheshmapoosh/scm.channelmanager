@@ -18,7 +18,7 @@ public class JsonScmRequestDecoder implements RequestContractDecoder {
 
     @Override
     public void decode(Exchange exchange, ClientContract contract) {
-        Object body = exchange.getMessage().getBody();
+        Object body = exchange.getMessage().getBody(JsonNode.class);
         exchange.setProperty(Message.ORIGINAL_BODY, body);
         exchange.setProperty(Message.ORIGINAL_HEADERS, new LinkedHashMap<>(exchange.getMessage().getHeaders()));
         exchange.setProperty(Message.INTERNAL_MESSAGE, Message.builder()
