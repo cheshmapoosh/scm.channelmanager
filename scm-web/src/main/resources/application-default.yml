@@ -1,7 +1,9 @@
-SCM_APPLICATION_NAME: scm-mb
+SCM_APPLICATION_NAME: domain.card
 scm:
-  app-name: scm-mb
+  app-name: domain.card
   channels: MB4TEST
+  runtime:
+    gateway-name: domain.card
   logging:
     datasource:
       enabled: true
