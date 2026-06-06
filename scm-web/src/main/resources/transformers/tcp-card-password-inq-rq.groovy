@@ -2,7 +2,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import ir.daneshrefah.scm.common.constant.TerminalType
 import ir.daneshrefah.scm.common.model.customer.Card
-import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.utils.string.StringUtils;

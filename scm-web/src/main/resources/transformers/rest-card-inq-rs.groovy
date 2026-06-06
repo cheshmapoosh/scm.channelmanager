@@ -1,6 +1,7 @@
 package transformers
 
 import ir.daneshrefah.scm.common.data.dto.bank.BankDto
+import ir.daneshrefah.scm.common.model.message.Message
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
 
 def body = exchange.in.body
@@ -31,15 +32,24 @@ if (out == null && bodyResponse.get("errorCode") != null) {
 println("out cardInq rs : " + out)
 println("rest cardInquiry rs transformer end transformed body : " + body)
 
-def destCardNumber = exchange.property("")
+def originalBody = exchange.getProperty(Message.ORIGINAL_BODY)
+def destCardNumber = originalBody?.fundTransfer?.destinationCardNumber
+if (destCardNumber == null && bodyResponse instanceof Map) {
+    destCardNumber = bodyResponse.get("destCard") ?: bodyResponse.get("destinationCardNumber")
+}
+if (destCardNumber == null && out instanceof Map) {
+    destCardNumber = out.get("destCard") ?: out.get("destinationCardNumber")
+}
+def bankPrefix = destCardNumber == null ? null : destCardNumber.toString()
+bankPrefix = bankPrefix != null && bankPrefix.length() >= 6 ? bankPrefix[0..5] : null
 
 def detection = exchange.context.registry.lookupByName("bankListLoader")
-BankDto bank = detection.getBank("589463")
-println("bank name : " + bank.getName())
+BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
+println("bank name : " + (bank == null ? "" : bank.getName()))
 
 return [
         "card": [
-                "destinationBankName": bank.getName().trim(),
+                "destinationBankName": bank == null ? "" : bank.getName(),
                 "imageUrl": ""
         ],
         "customerName": [

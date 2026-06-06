@@ -1,7 +1,7 @@
 package transformers
 
 import groovy.json.JsonOutput
-import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+
 import ir.daneshrefah.scm.common.transformerUtil.constant.CardServiceName
 import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
 import ir.daneshrefah.scm.utils.string.StringUtils

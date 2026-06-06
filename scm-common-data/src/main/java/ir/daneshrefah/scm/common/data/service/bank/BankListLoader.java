@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class BankListLoader {
     private final BankMapper bankMapper;
     private final CacheManager cacheManager;
 
-    public static final String CACHE_BANK = "cache_bank";
+    public static final String CACHE_BANK = "bank";
 
 
     private Cache bankCache() {
@@ -38,13 +39,19 @@ public class BankListLoader {
         for (BankEntity bank : banks) {
             String[] cardPreFixes = bank.getIin().split(",");
             for (String cardPrefix : cardPreFixes) {
-                bankCache.put(cardPrefix, bankMapper.toDto(bank));
+                if (StringUtils.hasText(cardPrefix)) {
+                    bankCache.put(cardPrefix.trim(), bankMapper.toDto(bank));
+                }
             }
         }
     }
 
     public BankDto getBank(String cardPreFix) {
+        if (!StringUtils.hasText(cardPreFix)) {
+            return null;
+        }
         Cache bankCache = bankCache();
-        return (BankDto) bankCache.get(cardPreFix).get();
+        Cache.ValueWrapper valueWrapper = bankCache.get(cardPreFix.trim());
+        return valueWrapper == null ? null : (BankDto) valueWrapper.get();
     }
 }

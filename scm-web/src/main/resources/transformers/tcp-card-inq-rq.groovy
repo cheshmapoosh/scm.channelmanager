@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ProcessCode
 import ir.daneshrefah.scm.utils.string.StringUtils
-import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+
 import javax.swing.GroupLayout
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

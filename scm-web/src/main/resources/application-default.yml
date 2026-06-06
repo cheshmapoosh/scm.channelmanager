@@ -168,15 +168,18 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://127.0.0.1:8000
+    issuer-uri: http://10.10.4.125:8000
   cache:
     client:
       distributed: true
+      caches:
+        bank:
+          type: local
       config:
         clusterName: dev3
         network-config:
           addresses:
-            - '127.0.0.1:5701'
+            - '10.10.4.125:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
@@ -249,4 +252,3 @@ spring:
       enabled: false
   application:
     name: ${SCM_APPLICATION_NAME}
-

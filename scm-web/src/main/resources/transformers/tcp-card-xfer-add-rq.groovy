@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ProcessCode;
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+
 import ir.daneshrefah.scm.utils.string.StringUtils;
 
 def body = exchange.in.body
