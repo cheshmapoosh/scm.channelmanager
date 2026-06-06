@@ -1,11 +1,13 @@
 package ir.daneshrefah.scm.provider.rest.config;
 
-import java.time.Duration;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+
 import java.util.List;
 import java.util.Map;
 
 public record RestProviderResolvedConfig(
         String provider,
+        String providerType,
         String baseUrl,
         int connectTimeoutMs,
         int responseTimeoutMs,
@@ -15,11 +17,10 @@ public record RestProviderResolvedConfig(
         String defaultMethod,
         Map<String, String> defaultHeaders,
         Map<String, Object> providerConfig,
-        Customizers customizers,
+        List<ProviderMessageCustomizerDefinition> messageCustomizers,
         Proxy proxy,
         Auth auth,
         Security security,
-        Token token,
         RateLimit rateLimit
 ) {
     public enum HttpRedirect {
@@ -60,69 +61,6 @@ public record RestProviderResolvedConfig(
             List<String> sensitiveBodyKeys,
             int maxBodyLogLength
     ) {
-    }
-
-    public record Customizers(
-            boolean authentication
-    ) {
-    }
-
-    public record Token(
-            boolean enabled,
-            String authProfile,
-            String credentialKey,
-            String cacheName,
-            String cacheKey,
-            String lockName,
-            int earlyRefreshSeconds,
-            int defaultExpiresInSeconds,
-            String method,
-            String url,
-            String path,
-            Map<String, String> headers,
-            Map<String, String> query,
-            Object body,
-            Map<String, String> form,
-            Auth auth,
-            String responseTokenField,
-            String responseExpiresInField,
-            String responseTokenTypeField,
-            String defaultTokenType,
-            TokenCache cache,
-            TokenLock lock,
-            TokenApply apply
-    ) {
-    }
-
-    public record TokenCache(
-            boolean enabled,
-            String mode,
-            String keyPrefix,
-            Duration refreshSkew,
-            Duration ttlSkew
-    ) {
-    }
-
-    public record TokenLock(
-            boolean enabled,
-            String keyPrefix,
-            Duration waitTimeout,
-            Duration leaseTime,
-            Duration retryDelay
-    ) {
-    }
-
-    public record TokenApply(
-            TokenApplyLocation location,
-            String name,
-            String format
-    ) {
-    }
-
-    public enum TokenApplyLocation {
-        HEADER,
-        BODY,
-        QUERY
     }
 
     public record RateLimit(

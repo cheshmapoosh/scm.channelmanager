@@ -1,6 +1,11 @@
 package ir.daneshrefah.scm.provider.shetab.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
 import ir.daneshrefah.scm.provider.shetab.camel.ShetabComponent;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabProperties;
@@ -21,19 +26,54 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collection;
+
 @Configuration
 @Slf4j
 @ConditionalOnClass(CamelContext.class)
-@EnableConfigurationProperties(ShetabProperties.class)
+@EnableConfigurationProperties({ShetabProperties.class, ProviderRegistryProperties.class})
 @ConditionalOnProperty(prefix = "scm.provider.shetab", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ShetabProviderAutoConfiguration {
 
     @Bean("shetab")
     @ConditionalOnMissingBean(name = "shetab")
-    public ShetabComponent shetabComponent(CamelContext camelContext) {
+    public ShetabComponent shetabComponent(ObjectProvider<CamelContext> camelContext) {
         ShetabComponent component = new ShetabComponent();
-        component.setCamelContext(camelContext);
+        CamelContext context = camelContext.getIfAvailable();
+        if (context != null) {
+            component.setCamelContext(context);
+        }
         return component;
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ShetabProviderMetrics shetabProviderMetrics() {
+        return new ShetabProviderMetrics();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderMessageCustomizerFactoryRegistry providerMessageCustomizerFactoryRegistry(
+            Collection<ProviderMessageCustomizerFactory<?>> factories
+    ) {
+        return new ProviderMessageCustomizerFactoryRegistry(factories);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderMessageCustomizerPipelineFactory providerMessageCustomizerPipelineFactory(
+            ProviderMessageCustomizerFactoryRegistry registry,
+            ObjectMapper objectMapper
+    ) {
+        return new ProviderMessageCustomizerPipelineFactory(registry, objectMapper);
     }
 
     @Bean

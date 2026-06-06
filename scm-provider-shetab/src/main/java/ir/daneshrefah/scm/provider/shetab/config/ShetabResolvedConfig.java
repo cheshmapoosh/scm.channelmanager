@@ -1,9 +1,13 @@
 package ir.daneshrefah.scm.provider.shetab.config;
 
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+
 import java.util.List;
+import java.util.Map;
 
 public record ShetabResolvedConfig(
         String provider,
+        String providerType,
         List<String> endpoints,
         String packagerClass,
         String packagerXml,
@@ -14,10 +18,33 @@ public record ShetabResolvedConfig(
         int reconnectDelayMs,
         int sameEndpointReconnectAttempts,
         int queueCapacity,
+        Map<String, Object> providerConfig,
+        List<ProviderMessageCustomizerDefinition> messageCustomizers,
         RateLimit rateLimit,
         EndpointLease endpointLease,
         Security security
 ) {
+    public ShetabResolvedConfig(
+            String provider,
+            List<String> endpoints,
+            String packagerClass,
+            String packagerXml,
+            int connectTimeoutMs,
+            int socketTimeoutMs,
+            int responseTimeoutMs,
+            int sendTimeoutMs,
+            int reconnectDelayMs,
+            int sameEndpointReconnectAttempts,
+            int queueCapacity,
+            RateLimit rateLimit,
+            EndpointLease endpointLease,
+            Security security
+    ) {
+        this(provider, "shetab", endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs,
+                responseTimeoutMs, sendTimeoutMs, reconnectDelayMs, sameEndpointReconnectAttempts, queueCapacity,
+                Map.of(), List.of(), rateLimit, endpointLease, security);
+    }
+
     public record RateLimit(
             boolean enabled,
             String bucket,

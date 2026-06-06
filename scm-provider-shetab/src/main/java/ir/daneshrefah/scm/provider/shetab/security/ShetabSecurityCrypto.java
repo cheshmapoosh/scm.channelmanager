@@ -9,12 +9,12 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.GeneralSecurityException;
 
-class ShetabSecurityCrypto {
+public class ShetabSecurityCrypto {
     private static final int DES_KEY_LENGTH_BYTES = 8;
     private static final int DES_BLOCK_LENGTH_BYTES = 8;
     private static final int ISO9797_MAC_LENGTH_BITS = 64;
 
-    String generatePinBlock(String pin, String pan, String hexKey) {
+    public String generatePinBlock(String pin, String pan, String hexKey) {
         validatePin(pin);
         if (pan == null || pan.length() < 13) {
             throw new IllegalArgumentException("PAN must have at least 13 digits to generate ISO-0 PIN block");
@@ -33,7 +33,7 @@ class ShetabSecurityCrypto {
         return ISOUtil.hexString(encryptDes(key, clearPinBlock));
     }
 
-    String generateIso9797Mac(byte[] message, String hexKey) {
+    public String generateIso9797Mac(byte[] message, String hexKey) {
         byte[] key = singleDesKey(hexKey, "MAC");
         DESEngine desEngine = new DESEngine();
         CBCBlockCipherMac mac = new CBCBlockCipherMac(desEngine, ISO9797_MAC_LENGTH_BITS);

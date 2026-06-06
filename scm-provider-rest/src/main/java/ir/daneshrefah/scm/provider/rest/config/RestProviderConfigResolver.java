@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.provider.rest.config;
 
-import lombok.RequiredArgsConstructor;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +12,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
-@RequiredArgsConstructor
+@Slf4j
 public class RestProviderConfigResolver {
     private static final List<String> DEFAULT_SENSITIVE_HEADERS = List.of(
             "authorization",
@@ -33,7 +36,23 @@ public class RestProviderConfigResolver {
             "authorization"
     );
 
-    private final RestProviderProperties properties;
+    private final ProviderRegistryProperties providerRegistryProperties;
+    private final RestProviderProperties legacyProperties;
+    private final AtomicBoolean legacyWarningLogged = new AtomicBoolean();
+
+    public RestProviderConfigResolver(
+            ProviderRegistryProperties providerRegistryProperties,
+            RestProviderProperties legacyProperties
+    ) {
+        this.providerRegistryProperties = providerRegistryProperties == null
+                ? new ProviderRegistryProperties()
+                : providerRegistryProperties;
+        this.legacyProperties = legacyProperties == null ? new RestProviderProperties() : legacyProperties;
+    }
+
+    public RestProviderConfigResolver(RestProviderProperties legacyProperties) {
+        this(new ProviderRegistryProperties(), legacyProperties);
+    }
 
     public RestProviderResolvedConfig resolve(String provider, RestProviderEndpointOverrides overrides) {
         String providerName = normalizeProviderName(provider);
@@ -41,8 +60,72 @@ public class RestProviderConfigResolver {
             throw new IllegalArgumentException("REST provider is required");
         }
 
-        RestProviderProperties.Instance instance = findProvider(providerName);
-        RestProviderProperties.Instance defaults = nonNull(properties.getDefaults(), new RestProviderProperties.Instance());
+        ProviderRegistryProperties.Provider unified = findUnifiedProvider(providerName);
+        if (unified != null) {
+            return resolveUnified(providerName, unified, overrides);
+        }
+        return resolveLegacy(providerName, overrides);
+    }
+
+    private RestProviderResolvedConfig resolveUnified(
+            String providerName,
+            ProviderRegistryProperties.Provider instance,
+            RestProviderEndpointOverrides overrides
+    ) {
+        validateType(providerName, instance.getType());
+        if (Boolean.FALSE.equals(instance.getEnabled())) {
+            throw new IllegalArgumentException("REST provider " + providerName + " is disabled");
+        }
+        String baseUrl = StringUtils.trimToNull(first(instance.getBaseUrl(), instance.getEndpoint()));
+        if (baseUrl == null) {
+            throw new IllegalArgumentException("REST provider " + providerName + " must define base-url");
+        }
+        int responseTimeoutMs = value(instance.getResponseTimeoutMs(), 6000);
+        if (overrides != null && overrides.timeoutMs() != null) {
+            responseTimeoutMs = overrides.timeoutMs();
+        }
+        RestProviderResolvedConfig.RateLimit rateLimit = resolvedRateLimit(instance.getRateLimit(), overrides, providerName);
+        return new RestProviderResolvedConfig(
+                providerName,
+                "rest",
+                baseUrl,
+                value(instance.getConnectTimeoutMs(), 3000),
+                responseTimeoutMs,
+                booleanValue(instance.getVirtualThreadsEnabled(), true),
+                booleanValue(instance.getInsecureSsl(), false),
+                resolveRedirect(instance.getFollowRedirects()),
+                StringUtils.defaultIfBlank(instance.getDefaultMethod(), "POST").trim(),
+                cleanStringMap(instance.getHeaders()),
+                cleanObjectMap(instance.getProviderConfig()),
+                listOf(instance.getMessageCustomizers()),
+                new RestProviderResolvedConfig.Proxy(
+                        trim(instance.getProxy().getHost()),
+                        instance.getProxy().getPort(),
+                        trim(instance.getProxy().getUsername()),
+                        trim(instance.getProxy().getPassword())
+                ),
+                new RestProviderResolvedConfig.Auth(
+                        resolveAuthType(instance.getAuth().getType()),
+                        StringUtils.defaultIfBlank(instance.getAuth().getHeaderName(), "Authorization").trim(),
+                        trim(instance.getAuth().getPrefix()),
+                        trim(instance.getAuth().getToken()),
+                        trim(instance.getAuth().getUsername()),
+                        trim(instance.getAuth().getPassword()),
+                        booleanValue(instance.getAuth().getBasicBase64(), true)
+                ),
+                new RestProviderResolvedConfig.Security(
+                        listOf(nonEmpty(instance.getSecurity().getSensitiveHeaders(), DEFAULT_SENSITIVE_HEADERS)),
+                        listOf(nonEmpty(instance.getSecurity().getSensitiveBodyKeys(), DEFAULT_SENSITIVE_BODY_KEYS)),
+                        value(instance.getSecurity().getMaxBodyLogLength(), 400)
+                ),
+                rateLimit
+        );
+    }
+
+    private RestProviderResolvedConfig resolveLegacy(String providerName, RestProviderEndpointOverrides overrides) {
+        logLegacyWarning();
+        RestProviderProperties.Instance instance = findLegacyProvider(providerName);
+        RestProviderProperties.Instance defaults = nonNull(legacyProperties.getDefaults(), new RestProviderProperties.Instance());
 
         String baseUrl = StringUtils.trimToNull(first(
                 instance.getBaseUrl(),
@@ -54,107 +137,51 @@ public class RestProviderConfigResolver {
             throw new IllegalArgumentException("REST provider " + providerName + " must define baseUrl (or endpoint)");
         }
 
-        int connectTimeoutMs = value(first(instance.getConnectTimeoutMs(), defaults.getConnectTimeoutMs()), 3000);
         int responseTimeoutMs = value(first(instance.getResponseTimeoutMs(), defaults.getResponseTimeoutMs()), 6000);
         if (overrides != null && overrides.timeoutMs() != null) {
             responseTimeoutMs = overrides.timeoutMs();
         }
 
-        boolean virtualThreadsEnabled = Boolean.TRUE.equals(first(
-                instance.getVirtualThreadsEnabled(),
-                defaults.getVirtualThreadsEnabled()
-        ));
-        boolean insecureSsl = Boolean.TRUE.equals(first(instance.getInsecureSsl(), defaults.getInsecureSsl()));
-        RestProviderResolvedConfig.HttpRedirect redirect = resolveRedirect(first(
-                instance.getFollowRedirects(),
-                defaults.getFollowRedirects()
-        ));
-
-        String defaultMethod = StringUtils.defaultIfBlank(first(instance.getDefaultMethod(), defaults.getDefaultMethod()), "POST").trim();
-
         RestProviderProperties.Proxy mergedProxy = mergeProxy(defaults.getProxy(), instance.getProxy());
         RestProviderProperties.Auth mergedAuth = mergeAuth(defaults.getAuth(), instance.getAuth());
         RestProviderProperties.Security mergedSecurity = mergeSecurity(defaults.getSecurity(), instance.getSecurity());
         RestProviderProperties.Token mergedToken = mergeToken(defaults.getToken(), instance.getToken());
-        RestProviderProperties.Customizers mergedCustomizers = mergeCustomizers(defaults.getCustomizers(), instance.getCustomizers());
         RestProviderProperties.RateLimit mergedRateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
-
-        Map<String, String> headers = mergeHeaders(defaults.getHeaders(), instance.getHeaders());
-        Map<String, Object> providerConfig = mergeProviderConfig(defaults.getProviderConfig(), instance.getProviderConfig());
-        RestProviderProperties.Auth mergedTokenAuth = nonNull(mergedToken.getAuth(), new RestProviderProperties.Auth());
-        RestProviderResolvedConfig.Auth resolvedAuth = new RestProviderResolvedConfig.Auth(
-                resolveAuthType(mergedAuth.getType()),
-                StringUtils.defaultIfBlank(mergedAuth.getHeaderName(), "Authorization").trim(),
-                StringUtils.trimToNull(mergedAuth.getPrefix()),
-                StringUtils.trimToNull(mergedAuth.getToken()),
-                StringUtils.trimToNull(mergedAuth.getUsername()),
-                StringUtils.trimToNull(mergedAuth.getPassword()),
-                Boolean.TRUE.equals(first(mergedAuth.getBasicBase64(), Boolean.TRUE))
-        );
-        boolean tokenEnabled = Boolean.TRUE.equals(first(mergedToken.getEnabled(), Boolean.FALSE));
-        boolean authenticationCustomizerEnabled = Boolean.TRUE.equals(first(
-                mergedCustomizers.getAuthentication(),
-                tokenEnabled
-        ));
 
         return new RestProviderResolvedConfig(
                 providerName,
+                "rest",
                 baseUrl,
-                connectTimeoutMs,
+                value(first(instance.getConnectTimeoutMs(), defaults.getConnectTimeoutMs()), 3000),
                 responseTimeoutMs,
-                virtualThreadsEnabled,
-                insecureSsl,
-                redirect,
-                defaultMethod,
-                headers,
-                providerConfig,
-                new RestProviderResolvedConfig.Customizers(authenticationCustomizerEnabled),
+                Boolean.TRUE.equals(first(instance.getVirtualThreadsEnabled(), defaults.getVirtualThreadsEnabled())),
+                Boolean.TRUE.equals(first(instance.getInsecureSsl(), defaults.getInsecureSsl())),
+                resolveRedirect(first(instance.getFollowRedirects(), defaults.getFollowRedirects())),
+                StringUtils.defaultIfBlank(first(instance.getDefaultMethod(), defaults.getDefaultMethod()), "POST").trim(),
+                mergeHeaders(defaults.getHeaders(), instance.getHeaders()),
+                mergeObjectMap(defaults.getProviderConfig(), instance.getProviderConfig()),
+                legacyMessageCustomizers(mergedToken),
                 new RestProviderResolvedConfig.Proxy(
-                        StringUtils.trimToNull(mergedProxy.getHost()),
+                        trim(mergedProxy.getHost()),
                         mergedProxy.getPort(),
-                        StringUtils.trimToNull(mergedProxy.getUsername()),
-                        StringUtils.trimToNull(mergedProxy.getPassword())
+                        trim(mergedProxy.getUsername()),
+                        trim(mergedProxy.getPassword())
                 ),
-                resolvedAuth,
+                new RestProviderResolvedConfig.Auth(
+                        resolveAuthType(mergedAuth.getType()),
+                        StringUtils.defaultIfBlank(mergedAuth.getHeaderName(), "Authorization").trim(),
+                        trim(mergedAuth.getPrefix()),
+                        trim(mergedAuth.getToken()),
+                        trim(mergedAuth.getUsername()),
+                        trim(mergedAuth.getPassword()),
+                        Boolean.TRUE.equals(first(mergedAuth.getBasicBase64(), Boolean.TRUE))
+                ),
                 new RestProviderResolvedConfig.Security(
                         listOf(nonEmpty(mergedSecurity.getSensitiveHeaders(), DEFAULT_SENSITIVE_HEADERS)),
                         listOf(nonEmpty(mergedSecurity.getSensitiveBodyKeys(), DEFAULT_SENSITIVE_BODY_KEYS)),
                         value(mergedSecurity.getMaxBodyLogLength(), 400)
                 ),
-                new RestProviderResolvedConfig.Token(
-                        tokenEnabled,
-                        value(mergedToken.getAuthProfile(), "default"),
-                        value(mergedToken.getCredentialKey(), value(mergedToken.getCacheKey(), "access-token")),
-                        value(mergedToken.getCacheName(), "rest_provider_token_cache"),
-                        value(mergedToken.getCacheKey(), "access-token"),
-                        value(mergedToken.getLockName(), "rest-provider-token"),
-                        value(mergedToken.getEarlyRefreshSeconds(), 30),
-                        value(mergedToken.getDefaultExpiresInSeconds(), 300),
-                        value(mergedToken.getMethod(), "POST"),
-                        StringUtils.trimToNull(mergedToken.getUrl()),
-                        StringUtils.trimToNull(mergedToken.getPath()),
-                        mergeHeaders(Map.of(), mergedToken.getHeaders()),
-                        mergeHeaders(Map.of(), mergedToken.getQuery()),
-                        nonNull(mergedToken.getBody(), Map.of()),
-                        mergeHeaders(Map.of(), mergedToken.getForm()),
-                        new RestProviderResolvedConfig.Auth(
-                                resolveAuthType(mergedTokenAuth.getType()),
-                                StringUtils.defaultIfBlank(mergedTokenAuth.getHeaderName(), "Authorization").trim(),
-                                StringUtils.trimToNull(mergedTokenAuth.getPrefix()),
-                                StringUtils.trimToNull(mergedTokenAuth.getToken()),
-                                StringUtils.trimToNull(mergedTokenAuth.getUsername()),
-                                StringUtils.trimToNull(mergedTokenAuth.getPassword()),
-                                Boolean.TRUE.equals(first(mergedTokenAuth.getBasicBase64(), Boolean.TRUE))
-                        ),
-                        value(mergedToken.getResponseTokenField(), "access_token"),
-                        value(mergedToken.getResponseExpiresInField(), "expires_in"),
-                        value(mergedToken.getResponseTokenTypeField(), "token_type"),
-                        value(mergedToken.getDefaultTokenType(), "Bearer"),
-                        resolveTokenCache(mergedToken),
-                        resolveTokenLock(mergedToken),
-                        resolveTokenApply(mergedToken, resolvedAuth)
-                ),
-                resolvedRateLimit(mergedRateLimit, overrides)
+                resolvedLegacyRateLimit(mergedRateLimit, overrides)
         );
     }
 
@@ -178,8 +205,23 @@ public class RestProviderConfigResolver {
         return name;
     }
 
-    private RestProviderProperties.Instance findProvider(String providerName) {
-        Map<String, RestProviderProperties.Instance> providers = nonNull(properties.getProviders(), Map.of());
+    private ProviderRegistryProperties.Provider findUnifiedProvider(String providerName) {
+        Map<String, ProviderRegistryProperties.Provider> providers = nonNull(providerRegistryProperties.getProviders(), Map.of());
+        ProviderRegistryProperties.Provider exact = providers.get(providerName);
+        if (exact != null) {
+            return exact;
+        }
+        return providers.entrySet()
+                .stream()
+                .filter(entry -> entry.getKey() != null
+                        && entry.getKey().toLowerCase(Locale.ROOT).equals(providerName.toLowerCase(Locale.ROOT)))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private RestProviderProperties.Instance findLegacyProvider(String providerName) {
+        Map<String, RestProviderProperties.Instance> providers = nonNull(legacyProperties.getProviders(), Map.of());
         RestProviderProperties.Instance exact = providers.get(providerName);
         if (exact != null) {
             return exact;
@@ -191,6 +233,16 @@ public class RestProviderConfigResolver {
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("REST provider " + providerName + " is not configured"));
+    }
+
+    private void validateType(String providerName, String type) {
+        String normalized = StringUtils.trimToNull(type);
+        if (normalized == null) {
+            throw new IllegalArgumentException("Provider " + providerName + " must define type=rest");
+        }
+        if (!"rest".equalsIgnoreCase(normalized)) {
+            throw new IllegalArgumentException("Provider " + providerName + " has unsupported REST type: " + type);
+        }
     }
 
     private RestProviderResolvedConfig.HttpRedirect resolveRedirect(String value) {
@@ -209,6 +261,112 @@ public class RestProviderConfigResolver {
         } catch (Exception ignored) {
             throw new IllegalArgumentException("Unsupported auth type: " + value + ". Allowed: NONE, BASIC, BEARER, JWT, API_KEY");
         }
+    }
+
+    private RestProviderResolvedConfig.RateLimit resolvedRateLimit(
+            ProviderRegistryProperties.RateLimit rateLimit,
+            RestProviderEndpointOverrides overrides,
+            String providerName
+    ) {
+        ProviderRegistryProperties.RateLimit safe = rateLimit == null ? new ProviderRegistryProperties.RateLimit() : rateLimit;
+        boolean enabled = Boolean.TRUE.equals(safe.getEnabled());
+        String bucket = StringUtils.trimToNull(safe.getBucket());
+        if (enabled && bucket == null) {
+            throw new IllegalArgumentException("REST provider " + providerName + " rate-limit.bucket is required when rate-limit is enabled");
+        }
+        String key = StringUtils.defaultIfBlank(safe.getKey(), "provider-operation");
+        if (overrides != null) {
+            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
+            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
+            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
+        }
+        return new RestProviderResolvedConfig.RateLimit(enabled, bucket, key);
+    }
+
+    private RestProviderResolvedConfig.RateLimit resolvedLegacyRateLimit(
+            RestProviderProperties.RateLimit rateLimit,
+            RestProviderEndpointOverrides overrides
+    ) {
+        boolean enabled = Boolean.TRUE.equals(first(rateLimit.getEnabled(), Boolean.FALSE));
+        String bucket = StringUtils.trimToNull(rateLimit.getBucket());
+        String key = StringUtils.defaultIfBlank(rateLimit.getKey(), "provider");
+        if (overrides != null) {
+            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
+            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
+            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
+        }
+        return new RestProviderResolvedConfig.RateLimit(enabled, bucket, key);
+    }
+
+    private List<ProviderMessageCustomizerDefinition> legacyMessageCustomizers(RestProviderProperties.Token token) {
+        if (token == null || !Boolean.TRUE.equals(first(token.getEnabled(), Boolean.FALSE))) {
+            return List.of();
+        }
+        ProviderMessageCustomizerDefinition definition = new ProviderMessageCustomizerDefinition();
+        definition.setType("rest-auth-url");
+        definition.setConfig(legacyTokenConfig(token));
+        return List.of(definition);
+    }
+
+    private Map<String, Object> legacyTokenConfig(RestProviderProperties.Token token) {
+        Map<String, Object> config = new LinkedHashMap<>();
+        put(config, "url", token.getUrl());
+        put(config, "path", token.getPath());
+        put(config, "method", token.getMethod());
+
+        Map<String, Object> request = new LinkedHashMap<>();
+        put(request, "headers", cleanStringMap(token.getHeaders()));
+        put(request, "query", cleanStringMap(token.getQuery()));
+        put(request, "form", cleanStringMap(token.getForm()));
+        put(request, "body", cleanObjectMap(token.getBody()));
+        put(request, "auth", legacyAuthConfig(token.getAuth()));
+        put(config, "request", request);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        put(response, "token-field", token.getResponseTokenField());
+        put(response, "expires-in-field", token.getResponseExpiresInField());
+        put(response, "token-type-field", token.getResponseTokenTypeField());
+        put(response, "default-token-type", token.getDefaultTokenType());
+        put(config, "response", response);
+
+        RestProviderProperties.Cache cache = token.getCache() == null ? new RestProviderProperties.Cache() : token.getCache();
+        Map<String, Object> cacheConfig = new LinkedHashMap<>();
+        put(cacheConfig, "name", token.getCacheName());
+        put(cacheConfig, "key-prefix", first(cache.getKeyPrefix(), "provider-token"));
+        put(cacheConfig, "auth-profile", first(token.getAuthProfile(), "default"));
+        put(cacheConfig, "credential-key", first(token.getCredentialKey(), first(token.getCacheKey(), "access-token")));
+        put(cacheConfig, "refresh-skew", first(cache.getRefreshSkew(), Duration.ofSeconds(value(token.getEarlyRefreshSeconds(), 30))));
+        put(cacheConfig, "ttl-skew", first(cache.getTtlSkew(), Duration.ofSeconds(5)));
+        put(config, "cache", cacheConfig);
+
+        RestProviderProperties.Lock lock = token.getLock() == null ? new RestProviderProperties.Lock() : token.getLock();
+        Map<String, Object> lockConfig = new LinkedHashMap<>();
+        put(lockConfig, "key-prefix", first(lock.getKeyPrefix(), first(token.getLockName(), "provider-token-refresh-lock")));
+        put(lockConfig, "wait-timeout", first(lock.getWaitTimeout(), Duration.ofSeconds(3)));
+        put(lockConfig, "lease-time", first(lock.getLeaseTime(), Duration.ofSeconds(10)));
+        put(lockConfig, "retry-delay", first(lock.getRetryDelay(), Duration.ofMillis(100)));
+        put(config, "lock", lockConfig);
+
+        RestProviderProperties.Apply apply = token.getApply() == null ? new RestProviderProperties.Apply() : token.getApply();
+        Map<String, Object> applyConfig = new LinkedHashMap<>();
+        put(applyConfig, "location", first(apply.getLocation(), "header"));
+        put(applyConfig, "name", first(apply.getName(), "Authorization"));
+        put(applyConfig, "format", first(apply.getFormat(), "{tokenType} {accessToken}"));
+        put(config, "apply", applyConfig);
+        return config;
+    }
+
+    private Map<String, Object> legacyAuthConfig(RestProviderProperties.Auth auth) {
+        RestProviderProperties.Auth safe = auth == null ? new RestProviderProperties.Auth() : auth;
+        Map<String, Object> result = new LinkedHashMap<>();
+        put(result, "type", safe.getType());
+        put(result, "header-name", safe.getHeaderName());
+        put(result, "prefix", safe.getPrefix());
+        put(result, "token", safe.getToken());
+        put(result, "username", safe.getUsername());
+        put(result, "password", safe.getPassword());
+        put(result, "basic-base64", safe.getBasicBase64());
+        return result;
     }
 
     private RestProviderProperties.Proxy mergeProxy(RestProviderProperties.Proxy defaults, RestProviderProperties.Proxy instance) {
@@ -246,17 +404,6 @@ public class RestProviderConfigResolver {
         return result;
     }
 
-    private RestProviderProperties.Customizers mergeCustomizers(
-            RestProviderProperties.Customizers defaults,
-            RestProviderProperties.Customizers instance
-    ) {
-        RestProviderProperties.Customizers fallback = nonNull(defaults, new RestProviderProperties.Customizers());
-        RestProviderProperties.Customizers item = nonNull(instance, new RestProviderProperties.Customizers());
-        RestProviderProperties.Customizers result = new RestProviderProperties.Customizers();
-        result.setAuthentication(first(item.getAuthentication(), fallback.getAuthentication()));
-        return result;
-    }
-
     private RestProviderProperties.Token mergeToken(RestProviderProperties.Token defaults, RestProviderProperties.Token instance) {
         RestProviderProperties.Token fallback = nonNull(defaults, new RestProviderProperties.Token());
         RestProviderProperties.Token item = nonNull(instance, new RestProviderProperties.Token());
@@ -275,7 +422,7 @@ public class RestProviderConfigResolver {
         result.setHeaders(mergeHeaders(fallback.getHeaders(), item.getHeaders()));
         result.setQuery(mergeHeaders(fallback.getQuery(), item.getQuery()));
         result.setForm(mergeHeaders(fallback.getForm(), item.getForm()));
-        result.setBody(mergeBody(fallback.getBody(), item.getBody()));
+        result.setBody(mergeObjectMap(fallback.getBody(), item.getBody()));
         result.setAuth(mergeAuth(fallback.getAuth(), item.getAuth()));
         result.setResponseTokenField(first(item.getResponseTokenField(), fallback.getResponseTokenField()));
         result.setResponseExpiresInField(first(item.getResponseExpiresInField(), fallback.getResponseExpiresInField()));
@@ -295,45 +442,6 @@ public class RestProviderConfigResolver {
         result.setBucket(first(item.getBucket(), fallback.getBucket()));
         result.setKey(first(item.getKey(), fallback.getKey()));
         return result;
-    }
-
-    private RestProviderResolvedConfig.RateLimit resolvedRateLimit(
-            RestProviderProperties.RateLimit rateLimit,
-            RestProviderEndpointOverrides overrides
-    ) {
-        boolean enabled = Boolean.TRUE.equals(first(rateLimit.getEnabled(), Boolean.FALSE));
-        String bucket = value(rateLimit.getBucket(), "rest-default");
-        String key = value(rateLimit.getKey(), "provider");
-        if (overrides != null) {
-            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
-            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
-            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
-        }
-        return new RestProviderResolvedConfig.RateLimit(enabled, bucket, key);
-    }
-
-    private Map<String, Object> mergeBody(Map<String, Object> defaults, Map<String, Object> instance) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.putAll(nonNull(defaults, Map.of()));
-        body.putAll(nonNull(instance, Map.of()));
-        body.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
-        return Map.copyOf(body);
-    }
-
-    private Map<String, Object> mergeProviderConfig(Map<String, Object> defaults, Map<String, Object> instance) {
-        Map<String, Object> providerConfig = new LinkedHashMap<>();
-        providerConfig.putAll(nonNull(defaults, Map.of()));
-        providerConfig.putAll(nonNull(instance, Map.of()));
-        providerConfig.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
-        return Map.copyOf(providerConfig);
-    }
-
-    private Map<String, String> mergeHeaders(Map<String, String> defaults, Map<String, String> instance) {
-        Map<String, String> headers = new LinkedHashMap<>();
-        headers.putAll(nonNull(defaults, Map.of()));
-        headers.putAll(nonNull(instance, Map.of()));
-        headers.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
-        return Map.copyOf(headers);
     }
 
     private RestProviderProperties.Cache mergeTokenCache(RestProviderProperties.Cache defaults, RestProviderProperties.Cache instance) {
@@ -370,67 +478,46 @@ public class RestProviderConfigResolver {
         return result;
     }
 
-    private RestProviderResolvedConfig.TokenCache resolveTokenCache(RestProviderProperties.Token token) {
-        RestProviderProperties.Cache cache = nonNull(token.getCache(), new RestProviderProperties.Cache());
-        int earlyRefreshSeconds = value(token.getEarlyRefreshSeconds(), 30);
-        return new RestProviderResolvedConfig.TokenCache(
-                Boolean.TRUE.equals(first(cache.getEnabled(), Boolean.TRUE)),
-                value(cache.getMode(), "centralized").trim().toLowerCase(Locale.ROOT),
-                value(cache.getKeyPrefix(), "provider-token"),
-                first(cache.getRefreshSkew(), Duration.ofSeconds(Math.max(0, earlyRefreshSeconds))),
-                first(cache.getTtlSkew(), Duration.ofSeconds(5))
-        );
-    }
-
-    private RestProviderResolvedConfig.TokenLock resolveTokenLock(RestProviderProperties.Token token) {
-        RestProviderProperties.Lock lock = nonNull(token.getLock(), new RestProviderProperties.Lock());
-        return new RestProviderResolvedConfig.TokenLock(
-                Boolean.TRUE.equals(first(lock.getEnabled(), Boolean.TRUE)),
-                value(lock.getKeyPrefix(), value(token.getLockName(), "provider-token-refresh-lock")),
-                first(lock.getWaitTimeout(), Duration.ofSeconds(3)),
-                first(lock.getLeaseTime(), Duration.ofSeconds(10)),
-                first(lock.getRetryDelay(), Duration.ofMillis(100))
-        );
-    }
-
-    private RestProviderResolvedConfig.TokenApply resolveTokenApply(
-            RestProviderProperties.Token token,
-            RestProviderResolvedConfig.Auth auth
-    ) {
-        RestProviderProperties.Apply apply = nonNull(token.getApply(), new RestProviderProperties.Apply());
-        RestProviderResolvedConfig.TokenApplyLocation location = resolveApplyLocation(apply.getLocation());
-        String name = value(apply.getName(), defaultApplyName(location, auth));
-        String format = value(apply.getFormat(), defaultApplyFormat(auth));
-        return new RestProviderResolvedConfig.TokenApply(location, name, format);
-    }
-
-    private RestProviderResolvedConfig.TokenApplyLocation resolveApplyLocation(String value) {
-        String location = StringUtils.defaultIfBlank(value, "header").trim().toUpperCase(Locale.ROOT);
-        try {
-            return RestProviderResolvedConfig.TokenApplyLocation.valueOf(location);
-        } catch (Exception ignored) {
-            throw new IllegalArgumentException("Unsupported token apply location: " + value + ". Allowed: HEADER, BODY, QUERY");
+    private void logLegacyWarning() {
+        if (legacyWarningLogged.compareAndSet(false, true)) {
+            log.warn("Using deprecated scm.provider.rest configuration. Migrate REST providers to scm.providers.<provider-code>.type=rest.");
         }
     }
 
-    private String defaultApplyName(RestProviderResolvedConfig.TokenApplyLocation location, RestProviderResolvedConfig.Auth auth) {
-        if (location == RestProviderResolvedConfig.TokenApplyLocation.HEADER) {
-            return StringUtils.defaultIfBlank(auth.headerName(), "Authorization");
-        }
-        return "accessToken";
+    private Map<String, String> mergeHeaders(Map<String, String> defaults, Map<String, String> instance) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.putAll(nonNull(defaults, Map.of()));
+        headers.putAll(nonNull(instance, Map.of()));
+        headers.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(headers);
     }
 
-    private String defaultApplyFormat(RestProviderResolvedConfig.Auth auth) {
-        if (auth.type() == RestProviderResolvedConfig.AuthType.API_KEY && StringUtils.isBlank(auth.prefix())) {
-            return "{accessToken}";
+    private Map<String, Object> mergeObjectMap(Map<String, Object> defaults, Map<String, Object> instance) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.putAll(nonNull(defaults, Map.of()));
+        result.putAll(nonNull(instance, Map.of()));
+        result.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(result);
+    }
+
+    private Map<String, String> cleanStringMap(Map<String, String> input) {
+        Map<String, String> result = new LinkedHashMap<>();
+        result.putAll(nonNull(input, Map.of()));
+        result.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(result);
+    }
+
+    private Map<String, Object> cleanObjectMap(Map<String, Object> input) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.putAll(nonNull(input, Map.of()));
+        result.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(result);
+    }
+
+    private void put(Map<String, Object> target, String key, Object value) {
+        if (value != null) {
+            target.put(key, value);
         }
-        if (StringUtils.isNotBlank(auth.prefix())) {
-            return auth.prefix() + " {accessToken}";
-        }
-        if (auth.type() == RestProviderResolvedConfig.AuthType.JWT) {
-            return "{tokenType} {accessToken}";
-        }
-        return "{tokenType} {accessToken}";
     }
 
     private static <T> T first(T value, T fallback) {
@@ -472,7 +559,11 @@ public class RestProviderConfigResolver {
         return value != null ? value : fallback;
     }
 
-    private static String value(String value, String fallback) {
-        return StringUtils.defaultIfBlank(value, fallback);
+    private static boolean booleanValue(Boolean value, boolean fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private static String trim(String value) {
+        return StringUtils.trimToNull(value);
     }
 }

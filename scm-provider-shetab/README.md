@@ -1,16 +1,83 @@
 # scm-provider-shetab
 
-ماژول `scm-provider-shetab` برای ارتباط ISO8583 روی TCP استفاده می‌شود و مخصوص سناریوهای `OperationType.PROVIDER` است.
+`scm-provider-shetab` sends ISO8583 messages over TCP for `OperationType.PROVIDER` routes.
 
-URI نمونه:
+Example URI:
 
 ```text
-shetab:request?provider=shetab7
+shetab:request?provider=hps-shetab7
 ```
 
-## قرارداد ورودی/خروجی
+## Primary Configuration Model
 
-ورودی provider یک `Map` یا JSON object است:
+Provider instances are configured under the unified registry:
+
+```yaml
+scm:
+  providers:
+    hps-shetab7:
+      type: shetab
+      enabled: true
+      endpoint: 10.10.10.10:9000
+      packager-class: Shetab7AsciiXAPackager
+      connect-timeout-ms: 3000
+      socket-timeout-ms: 1000
+      response-timeout-ms: 6000
+      send-timeout-ms: 1000
+      reconnect-delay-ms: 1000
+      queue-capacity: 1000
+      rate-limit:
+        enabled: true
+        bucket: hps-shetab7
+        key: provider-operation
+      endpoint-lease:
+        enabled: true
+        ttl-ms: 30000
+      message-customizers:
+        - type: hps-shetab-outlet
+          config:
+            field: 42
+            value: "123456789012345"
+        - type: hps-shetab-terminal
+          config:
+            field: 41
+            value: "12345678"
+        - type: shetab-expiry
+          config:
+            field: 14
+            source: security.expiryDate
+        - type: shetab-cvv2
+          config:
+            field: 48
+            tag: P92
+            source: security.cvv2
+            length-digits: 3
+            min-length: 3
+            max-length: 4
+        - type: shetab-pin-block
+          config:
+            key: ${SCM_HPS_SHETAB7_PIN_KEY}
+            field: 52
+            pan-field: 2
+            pin-source: security.pin
+        - type: shetab-mac
+          config:
+            key: ${SCM_HPS_SHETAB7_MAC_KEY}
+            field: 128
+            verify-response: false
+```
+
+Rules:
+
+- There is no defaults block in the primary model.
+- Every provider instance must explicitly configure endpoint, packager, timeouts, rate-limit/lease if needed, and message customizers.
+- No customizer is enabled by default.
+- If `message-customizers` is missing or empty, no message mutation runs.
+- Provider-level `security.pin`, `security.mac`, `security.expiry`, and `security.cvv2` are not part of the primary model.
+
+## Request And Response
+
+Input is a `Map` or JSON object:
 
 ```json
 {
@@ -23,175 +90,60 @@ shetab:request?provider=shetab7
   },
   "security": {
     "pin": "1234",
-    "pinRequired": true,
     "expiryDate": "2907",
-    "cvv2": "639",
-    "macRequired": true
+    "cvv2": "639"
   }
 }
 ```
 
-خروجی provider یک `Map` با `mti` و `fields` است.
+Output is a `Map` with `mti` and `fields`.
 
-## ساختار یکدست کانفیگ
+## ProviderMessageCustomizer
 
-مانند `scm-provider-nab`:
+`ProviderMessageCustomizerFactory` is the Spring bean extension point. YAML uses stable customizer `type` values, not bean names. The factory binds typed config and returns an immutable runtime `ProviderMessageCustomizer` instance.
 
-- `defaults` برای مقدارهای پایه
-- `providers.<instance>` برای override هر instance
+Order convention:
 
-```yaml
-scm:
-  provider:
-    shetab:
-      enabled: true
-      defaults:
-        connect-timeout-ms: 3000
-        socket-timeout-ms: 1000
-        response-timeout-ms: 6000
-        send-timeout-ms: 1000
-        reconnect-delay-ms: 1000
-        same-endpoint-reconnect-attempts: 3
-        queue-capacity: 1000
-        rate-limit:
-          enabled: false
-          bucket: shetab-default
-          key: provider
-        endpoint-lease:
-          enabled: true
-          ttl-ms: 30000
-      providers:
-        shetab7:
-          endpoint: 10.10.10.10:9000
-          packager-class: Shetab7AsciiXAPackager
-          rate-limit:
-            enabled: true
-            bucket: shetab7
-            key: provider-operation
-          security:
-            pin:
-              key: ${SCM_SHETAB7_PIN_KEY}
-              field: 52
-              pan-field: 2
-            mac:
-              key: ${SCM_SHETAB7_MAC_KEY}
-              field: 128
-              verify-response: false
-            expiry:
-              field: 14
-            cvv2:
-              field: 48
-              tag: P92
-              length-digits: 3
-              min-length: 3
-              max-length: 4
-
-        shetab8:
-          endpoints:
-            - 10.10.10.20:9000
-            - 10.10.10.21:9000
-          packager-class: Shetab7BinaryXAPackager
-          rate-limit:
-            enabled: true
-            bucket: shetab8
-            key: provider
-```
-
-### نکته endpoint
-
-برای یکدستی با NAB:
-
-- `endpoint` (تکی) پشتیبانی می‌شود.
-- `endpoints` (لیست) هم پشتیبانی می‌شود.
-- اگر هر دو تعریف شوند، ابتدا `endpoint` و سپس مقادیر `endpoints` استفاده می‌شوند.
-
-## Rate Limit (مشابه NAB)
-
-در هر provider instance:
-
-- `rate-limit.enabled`
-- `rate-limit.bucket`
-- `rate-limit.key` (`provider`, `operation`, `provider-operation`)
-
-Override در runtime:
-
-- Header: `ShetabRateLimitEnabled`
-- Header: `ShetabRateLimitBucket`
-- Header: `ShetabRateLimitKey`
-- URI param: `rateLimitEnabled`
-- URI param: `rateLimitBucket`
-- URI param: `rateLimitKey`
-
-نمونه:
-
-```text
-shetab:request?provider=shetab7&rateLimitEnabled=true&rateLimitBucket=shetab7
-```
-
-## متریک‌ها
-
-متریک‌های in-memory per provider:
-
-- `submitted`
-- `succeeded`
-- `failed`
-- `timedOut`
-- `rateLimited`
-- `rateLimitWaits`
-- `queueRejected`
-- `sent`
-- `received`
-- `totalLatencyMs`
-
-## لاگ‌ها
-
-- `INFO`: شروع/پایان درخواست، اتصال/قطع اتصال، وضعیت lease endpoint
-- `DEBUG`: محتوای request/response به‌صورت mask شده
-- `WARN`: خطاهای تطبیقی، rate limit reject، unmatched response
-- `ERROR`: خطاهای send/connect/request
-
-`SafeIsoLogFormatter` برای ماسک‌کردن اطلاعات حساس استفاده می‌شود (PAN، PIN، MAC، CVV2، Expiry).
-
-## امنیت فیلدها
-
-- `fields.52` و `fields.128` متعلق به provider است.
-- `security.expiryDate` به فیلد `14` نگاشت می‌شود.
-- `security.cvv2` در `field 48` با tag `P92` ساخته می‌شود.
-- اگر caller در `fields.48` مقدار `P92` داده باشد، provider آن را بازسازی می‌کند.
-
-## ProviderMessageCustomizer و MAC
-
-قرارداد عمومی `ProviderMessageCustomizer` در SCM برای آماده‌سازی پیام provider قبل از ارسال و enrichment بعد از دریافت response استفاده می‌شود. خود قرارداد Spring-independent است و implementation می‌تواند Spring bean باشد.
-
-Orderهای پیشنهادی:
-
-- `100..999`: field enrichment مثل terminal/merchant/outlet
-- `5000`: authentication
-- `8000`: pin-block
-- `10000`: MAC فقط برای ISO8583/Shetab
+- `100..999`: outlet, terminal, merchant, expiry, CVV2
+- `5000`: authentication if a future ISO provider needs it
+- `8000`: PIN block
+- `10000`: MAC, only for ISO8583/Shetab
 - `20000`: response enrichment
 
-برای Shetab/ISO8583، MAC می‌تواند در آینده به شکل `ProviderMessageCustomizer` پیاده‌سازی شود، اما باید بعد از نهایی‌شدن همه fieldهای request اجرا شود؛ یعنی بعد از enrichment، auth و pin-block. MAC نباید روی مقدارهای خام caller اعتماد کند و نباید PIN/PIN block/MAC را در log یا trace قرار دهد.
+Shetab customizer types currently include:
 
-نکته مهم: REST provider فیلد MAC ندارد. هیچ MAC customizer نباید `transportType=rest` را support کند.
+- `hps-shetab-outlet`
+- `hps-shetab-terminal`
+- `shetab-expiry`
+- `shetab-cvv2`
+- `shetab-pin-block`
+- `shetab-mac`
 
-## اجرای تست integration واقعی
+MAC must run after all request fields are finalized. PIN block must run before MAC. CVV2, expiry, outlet, terminal, and merchant enrichment must run before MAC.
 
-```bash
-SCM_SHETAB_HPS_INTEGRATION=true \
-SCM_SHETAB_HPS_ENDPOINTS=10.10.10.10:9000 \
-SCM_SHETAB_HPS_PIN=1234 \
-SCM_SHETAB_HPS_PIN_KEY=0123456789ABCDEF \
-SCM_SHETAB_HPS_MAC_KEY=0123456789ABCDEF \
-./gradlew :scm-provider-shetab:test --tests '*ShetabHpsCardInquiryIntegrationTest'
-```
+REST provider has no MAC field. `shetab-mac` must never support REST transport.
 
-## پیش‌نیاز deployment توزیع‌شده
+## Observability And Security
 
-- برای rate limit توزیع‌شده: `RateLimiterUtility` از `scm-cache-client`
-- برای lease توزیع‌شده endpoint: `ResourceLeaseUtility` از `scm-cache-client`
+Trace spans/events cover provider call and each configured customizer phase. Safe attributes include providerCode, providerType, serviceCode, operationCode, channelCode, transportType, customizerType, and phase.
 
-در صورت نبود این utilityها:
+Metrics include:
 
-- rate limit به حالت noop می‌رود (با WARN)
-- endpoint lease به حالت local fallback می‌رود (با WARN)
+- `provider.request.duration`
+- `provider.request.error`
+- `provider.customizer.execution`
+- `provider.customizer.error`
+
+Logs include provider, operation, and trace/correlation context when available. Request/response debug bodies are masked.
+
+Never log or trace PIN, PIN block, MAC, PAN, CVV2, expiry, password, token, or account number.
+
+## Deprecated Legacy Compatibility
+
+`scm.provider.shetab.defaults/providers` and provider-level `security.*` are deprecated. They may be resolved for compatibility, but new provider instances must use `scm.providers.<provider-code>.type=shetab` and explicit `message-customizers`.
+
+## Distributed Deployment
+
+- Distributed rate limit uses `RateLimiterUtility` from `scm-cache-client`.
+- Endpoint lease uses `ResourceLeaseUtility` from `scm-cache-client`.
+- Without those utilities, rate limit falls back to noop and endpoint lease falls back to local behavior with WARN logs.

@@ -1,28 +1,96 @@
 package ir.daneshrefah.scm.provider.shetab.config;
 
-import lombok.RequiredArgsConstructor;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 @Component
-@RequiredArgsConstructor
+@Slf4j
 public class ShetabConfigResolver {
-    private final ShetabProperties properties;
+    private final ProviderRegistryProperties providerRegistryProperties;
+    private final ShetabProperties legacyProperties;
+    private final AtomicBoolean legacyWarningLogged = new AtomicBoolean();
+
+    public ShetabConfigResolver(
+            ProviderRegistryProperties providerRegistryProperties,
+            ShetabProperties legacyProperties
+    ) {
+        this.providerRegistryProperties = providerRegistryProperties == null
+                ? new ProviderRegistryProperties()
+                : providerRegistryProperties;
+        this.legacyProperties = legacyProperties == null ? new ShetabProperties() : legacyProperties;
+    }
+
+    public ShetabConfigResolver(ShetabProperties legacyProperties) {
+        this(new ProviderRegistryProperties(), legacyProperties);
+    }
 
     public ShetabResolvedConfig resolve(String provider, ShetabEndpointOverrides overrides) {
         String providerName = normalizeProviderName(provider);
         if (providerName == null) {
             throw new IllegalArgumentException("Shetab provider is required");
         }
+        ProviderRegistryProperties.Provider unified = findUnifiedProvider(providerName);
+        if (unified != null) {
+            return resolveUnified(providerName, unified, overrides);
+        }
+        return resolveLegacy(providerName, overrides);
+    }
 
-        ShetabProperties.Instance instance = findProvider(providerName);
-        ShetabProperties.Instance defaults = properties.getDefaults();
+    private ShetabResolvedConfig resolveUnified(
+            String providerName,
+            ProviderRegistryProperties.Provider instance,
+            ShetabEndpointOverrides overrides
+    ) {
+        validateType(providerName, instance.getType());
+        if (Boolean.FALSE.equals(instance.getEnabled())) {
+            throw new IllegalArgumentException("Shetab provider " + providerName + " is disabled");
+        }
+        List<String> endpoints = mergedEndpoints(instance.getEndpoint(), instance.getEndpoints());
+        if (endpoints.isEmpty()) {
+            throw new IllegalArgumentException("Shetab provider " + providerName + " must define endpoint or endpoints");
+        }
+        if (StringUtils.isBlank(instance.getPackagerClass()) && StringUtils.isBlank(instance.getPackagerXml())) {
+            throw new IllegalArgumentException("Shetab provider " + providerName + " must define packager-class or packager-xml");
+        }
+        int responseTimeout = value(instance.getResponseTimeoutMs(), 6000);
+        return new ShetabResolvedConfig(
+                providerName,
+                "shetab",
+                endpoints,
+                instance.getPackagerClass(),
+                instance.getPackagerXml(),
+                value(instance.getConnectTimeoutMs(), 3000),
+                value(instance.getSocketTimeoutMs(), 1000),
+                overrides != null && overrides.timeoutMs() != null ? overrides.timeoutMs() : responseTimeout,
+                value(instance.getSendTimeoutMs(), 1000),
+                value(instance.getReconnectDelayMs(), 1000),
+                value(instance.getSameEndpointReconnectAttempts(), 3),
+                value(instance.getQueueCapacity(), 1000),
+                cleanObjectMap(instance.getProviderConfig()),
+                listOf(instance.getMessageCustomizers()),
+                resolvedRateLimit(instance.getRateLimit(), overrides, providerName),
+                new ShetabResolvedConfig.EndpointLease(
+                        Boolean.TRUE.equals(first(instance.getEndpointLease().getEnabled(), Boolean.TRUE)),
+                        value(instance.getEndpointLease().getTtlMs(), 30000L)
+                ),
+                emptySecurity()
+        );
+    }
+
+    private ShetabResolvedConfig resolveLegacy(String providerName, ShetabEndpointOverrides overrides) {
+        logLegacyWarning();
+        ShetabProperties.Instance instance = findLegacyProvider(providerName);
+        ShetabProperties.Instance defaults = legacyProperties.getDefaults();
         List<String> endpoints = resolveEndpoints(defaults, instance);
         if (endpoints.isEmpty()) {
             throw new IllegalArgumentException("Shetab provider " + providerName + " must define at least one endpoint (endpoint or endpoints)");
@@ -35,6 +103,7 @@ public class ShetabConfigResolver {
 
         return new ShetabResolvedConfig(
                 providerName,
+                "shetab",
                 endpoints,
                 first(instance.getPackagerClass(), defaults.getPackagerClass()),
                 first(instance.getPackagerXml(), defaults.getPackagerXml()),
@@ -45,7 +114,9 @@ public class ShetabConfigResolver {
                 value(first(instance.getReconnectDelayMs(), defaults.getReconnectDelayMs()), 1000),
                 value(first(instance.getSameEndpointReconnectAttempts(), defaults.getSameEndpointReconnectAttempts()), 3),
                 value(first(instance.getQueueCapacity(), defaults.getQueueCapacity()), 1000),
-                resolvedRateLimit(rateLimit, overrides),
+                Map.of(),
+                List.of(),
+                resolvedLegacyRateLimit(rateLimit, overrides),
                 new ShetabResolvedConfig.EndpointLease(
                         Boolean.TRUE.equals(endpointLease.getEnabled()),
                         value(endpointLease.getTtlMs(), 30000L)
@@ -63,10 +134,7 @@ public class ShetabConfigResolver {
     }
 
     private List<String> mergedEndpoints(String endpoint, List<String> endpoints) {
-        return Stream.concat(
-                        Stream.of(endpoint),
-                        nonNullList(endpoints).stream()
-                )
+        return Stream.concat(Stream.of(endpoint), nonNullList(endpoints).stream())
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -90,8 +158,26 @@ public class ShetabConfigResolver {
         return name;
     }
 
-    private ShetabProperties.Instance findProvider(String providerName) {
-        Map<String, ShetabProperties.Instance> providers = properties.getProviders();
+    private ProviderRegistryProperties.Provider findUnifiedProvider(String providerName) {
+        Map<String, ProviderRegistryProperties.Provider> providers = providerRegistryProperties.getProviders() == null
+                ? Map.of()
+                : providerRegistryProperties.getProviders();
+        ProviderRegistryProperties.Provider exact = providers.get(providerName);
+        if (exact != null) {
+            return exact;
+        }
+        return providers.entrySet().stream()
+                .filter(entry -> entry.getKey() != null
+                        && entry.getKey().toLowerCase(Locale.ROOT).equals(providerName.toLowerCase(Locale.ROOT)))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ShetabProperties.Instance findLegacyProvider(String providerName) {
+        Map<String, ShetabProperties.Instance> providers = legacyProperties.getProviders() == null
+                ? Map.of()
+                : legacyProperties.getProviders();
         ShetabProperties.Instance exact = providers.get(providerName);
         if (exact != null) {
             return exact;
@@ -104,17 +190,41 @@ public class ShetabConfigResolver {
                 .orElseThrow(() -> new IllegalArgumentException("Shetab provider " + providerName + " is not configured"));
     }
 
-    private ShetabResolvedConfig.RateLimit resolvedRateLimit(ShetabProperties.RateLimit rateLimit, ShetabEndpointOverrides overrides) {
-        boolean enabled = Boolean.TRUE.equals(rateLimit.getEnabled());
-        String bucket = value(rateLimit.getBucket(), "shetab-default");
-        String key = value(rateLimit.getKey(), "provider");
+    private void validateType(String providerName, String type) {
+        if (!"shetab".equalsIgnoreCase(StringUtils.trimToEmpty(type))) {
+            throw new IllegalArgumentException("Provider " + providerName + " must define type=shetab");
+        }
+    }
 
+    private ShetabResolvedConfig.RateLimit resolvedRateLimit(
+            ProviderRegistryProperties.RateLimit rateLimit,
+            ShetabEndpointOverrides overrides,
+            String providerName
+    ) {
+        ProviderRegistryProperties.RateLimit safe = rateLimit == null ? new ProviderRegistryProperties.RateLimit() : rateLimit;
+        boolean enabled = Boolean.TRUE.equals(safe.getEnabled());
+        String bucket = StringUtils.trimToNull(safe.getBucket());
+        if (enabled && bucket == null) {
+            throw new IllegalArgumentException("Shetab provider " + providerName + " rate-limit.bucket is required when rate-limit is enabled");
+        }
+        String key = StringUtils.defaultIfBlank(safe.getKey(), "provider-operation");
         if (overrides != null) {
             enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
             bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
             key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
         }
+        return new ShetabResolvedConfig.RateLimit(enabled, bucket, key);
+    }
 
+    private ShetabResolvedConfig.RateLimit resolvedLegacyRateLimit(ShetabProperties.RateLimit rateLimit, ShetabEndpointOverrides overrides) {
+        boolean enabled = Boolean.TRUE.equals(rateLimit.getEnabled());
+        String bucket = value(rateLimit.getBucket(), "shetab-default");
+        String key = value(rateLimit.getKey(), "provider");
+        if (overrides != null) {
+            enabled = overrides.rateLimitEnabled() != null ? overrides.rateLimitEnabled() : enabled;
+            bucket = StringUtils.defaultIfBlank(overrides.rateLimitBucket(), bucket);
+            key = StringUtils.defaultIfBlank(overrides.rateLimitKey(), key);
+        }
         return new ShetabResolvedConfig.RateLimit(enabled, bucket, key);
     }
 
@@ -146,33 +256,58 @@ public class ShetabConfigResolver {
         ShetabProperties.Cvv2 defaultCvv2 = defaultSecurity.getCvv2() == null ? new ShetabProperties.Cvv2() : defaultSecurity.getCvv2();
         ShetabProperties.Cvv2 instanceCvv2 = instanceSecurity.getCvv2() == null ? new ShetabProperties.Cvv2() : instanceSecurity.getCvv2();
 
-        ShetabResolvedConfig.Pin pin = new ShetabResolvedConfig.Pin(
-                Boolean.TRUE.equals(first(instancePin.getEnabled(), defaultPin.getEnabled())),
-                first(instancePin.getKey(), defaultPin.getKey()),
-                value(first(instancePin.getField(), defaultPin.getField()), 52),
-                value(first(instancePin.getPanField(), defaultPin.getPanField()), 2)
+        return new ShetabResolvedConfig.Security(
+                new ShetabResolvedConfig.Pin(
+                        Boolean.TRUE.equals(first(instancePin.getEnabled(), defaultPin.getEnabled())),
+                        first(instancePin.getKey(), defaultPin.getKey()),
+                        value(first(instancePin.getField(), defaultPin.getField()), 52),
+                        value(first(instancePin.getPanField(), defaultPin.getPanField()), 2)
+                ),
+                new ShetabResolvedConfig.Mac(
+                        Boolean.TRUE.equals(first(instanceMac.getEnabled(), defaultMac.getEnabled())),
+                        first(instanceMac.getKey(), defaultMac.getKey()),
+                        value(first(instanceMac.getField(), defaultMac.getField()), 128),
+                        Boolean.TRUE.equals(first(instanceMac.getVerifyResponse(), defaultMac.getVerifyResponse())),
+                        value(first(instanceMac.getPlaceholder(), defaultMac.getPlaceholder()), "AAAAAAAAAAAAAAAA"),
+                        value(first(instanceMac.getPackedLengthBytes(), defaultMac.getPackedLengthBytes()), 16)
+                ),
+                new ShetabResolvedConfig.Expiry(
+                        Boolean.TRUE.equals(first(instanceExpiry.getEnabled(), defaultExpiry.getEnabled())),
+                        value(first(instanceExpiry.getField(), defaultExpiry.getField()), 14)
+                ),
+                new ShetabResolvedConfig.Cvv2(
+                        Boolean.TRUE.equals(first(instanceCvv2.getEnabled(), defaultCvv2.getEnabled())),
+                        value(first(instanceCvv2.getField(), defaultCvv2.getField()), 48),
+                        value(first(instanceCvv2.getTag(), defaultCvv2.getTag()), "P92"),
+                        value(first(instanceCvv2.getLengthDigits(), defaultCvv2.getLengthDigits()), 3),
+                        value(first(instanceCvv2.getMinLength(), defaultCvv2.getMinLength()), 3),
+                        value(first(instanceCvv2.getMaxLength(), defaultCvv2.getMaxLength()), 4)
+                )
         );
-        ShetabResolvedConfig.Mac mac = new ShetabResolvedConfig.Mac(
-                Boolean.TRUE.equals(first(instanceMac.getEnabled(), defaultMac.getEnabled())),
-                first(instanceMac.getKey(), defaultMac.getKey()),
-                value(first(instanceMac.getField(), defaultMac.getField()), 128),
-                Boolean.TRUE.equals(first(instanceMac.getVerifyResponse(), defaultMac.getVerifyResponse())),
-                value(first(instanceMac.getPlaceholder(), defaultMac.getPlaceholder()), "AAAAAAAAAAAAAAAA"),
-                value(first(instanceMac.getPackedLengthBytes(), defaultMac.getPackedLengthBytes()), 16)
+    }
+
+    private ShetabResolvedConfig.Security emptySecurity() {
+        return new ShetabResolvedConfig.Security(
+                new ShetabResolvedConfig.Pin(false, null, 52, 2),
+                new ShetabResolvedConfig.Mac(false, null, 128, false, "AAAAAAAAAAAAAAAA", 16),
+                new ShetabResolvedConfig.Expiry(false, 14),
+                new ShetabResolvedConfig.Cvv2(false, 48, "P92", 3, 3, 4)
         );
-        ShetabResolvedConfig.Expiry expiry = new ShetabResolvedConfig.Expiry(
-                Boolean.TRUE.equals(first(instanceExpiry.getEnabled(), defaultExpiry.getEnabled())),
-                value(first(instanceExpiry.getField(), defaultExpiry.getField()), 14)
-        );
-        ShetabResolvedConfig.Cvv2 cvv2 = new ShetabResolvedConfig.Cvv2(
-                Boolean.TRUE.equals(first(instanceCvv2.getEnabled(), defaultCvv2.getEnabled())),
-                value(first(instanceCvv2.getField(), defaultCvv2.getField()), 48),
-                value(first(instanceCvv2.getTag(), defaultCvv2.getTag()), "P92"),
-                value(first(instanceCvv2.getLengthDigits(), defaultCvv2.getLengthDigits()), 3),
-                value(first(instanceCvv2.getMinLength(), defaultCvv2.getMinLength()), 3),
-                value(first(instanceCvv2.getMaxLength(), defaultCvv2.getMaxLength()), 4)
-        );
-        return new ShetabResolvedConfig.Security(pin, mac, expiry, cvv2);
+    }
+
+    private void logLegacyWarning() {
+        if (legacyWarningLogged.compareAndSet(false, true)) {
+            log.warn("Using deprecated scm.provider.shetab configuration. Migrate Shetab providers to scm.providers.<provider-code>.type=shetab.");
+        }
+    }
+
+    private Map<String, Object> cleanObjectMap(Map<String, Object> input) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (input != null) {
+            result.putAll(input);
+        }
+        result.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(result);
     }
 
     private static <T> T first(T value, T fallback) {
@@ -193,5 +328,9 @@ public class ShetabConfigResolver {
 
     private static <T> List<T> nonNullList(List<T> value) {
         return value == null ? List.of() : List.copyOf(value);
+    }
+
+    private static <T> List<T> listOf(List<T> value) {
+        return value == null || value.isEmpty() ? List.of() : List.copyOf(value);
     }
 }

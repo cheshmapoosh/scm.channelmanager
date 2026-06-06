@@ -5,6 +5,7 @@ import java.util.Optional;
 
 public record ProviderMessageCustomizerContext(
         String providerCode,
+        String providerType,
         String serviceCode,
         String operationCode,
         String channelCode,
@@ -17,6 +18,21 @@ public record ProviderMessageCustomizerContext(
 
     public ProviderMessageCustomizerContext {
         providerConfig = providerConfig == null ? Map.of() : Map.copyOf(providerConfig);
+    }
+
+    public ProviderMessageCustomizerContext(
+            String providerCode,
+            String serviceCode,
+            String operationCode,
+            String channelCode,
+            String transportType,
+            Map<String, Object> providerConfig,
+            Object resolvedProviderConfig,
+            String correlationId,
+            String traceId
+    ) {
+        this(providerCode, null, serviceCode, operationCode, channelCode, transportType,
+                providerConfig, resolvedProviderConfig, correlationId, traceId);
     }
 
     public <T> Optional<T> resolvedProviderConfig(Class<T> type) {

@@ -1,6 +1,11 @@
 package ir.daneshrefah.scm.provider.rest.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryRegistry;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.provider.rest.camel.RestProviderComponent;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderProperties;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
@@ -17,21 +22,25 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
 @Slf4j
 @ConditionalOnClass(CamelContext.class)
-@EnableConfigurationProperties(RestProviderProperties.class)
+@EnableConfigurationProperties({RestProviderProperties.class, ProviderRegistryProperties.class})
 @ConditionalOnProperty(prefix = "scm.provider.rest", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RestProviderAutoConfiguration {
 
     @Bean("rest-provider")
     @ConditionalOnMissingBean(name = "rest-provider")
-    public RestProviderComponent restProviderComponent(CamelContext camelContext) {
+    public RestProviderComponent restProviderComponent(ObjectProvider<CamelContext> camelContext) {
         RestProviderComponent component = new RestProviderComponent();
-        component.setCamelContext(camelContext);
+        CamelContext context = camelContext.getIfAvailable();
+        if (context != null) {
+            component.setCamelContext(context);
+        }
         return component;
     }
 
@@ -39,6 +48,37 @@ public class RestProviderAutoConfiguration {
     @ConditionalOnMissingBean(name = "restProviderVirtualThreadExecutor")
     public ExecutorService restProviderVirtualThreadExecutor() {
         return Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RestProviderMetrics restProviderMetrics() {
+        return new RestProviderMetrics();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderMessageCustomizerFactoryRegistry providerMessageCustomizerFactoryRegistry(
+            Collection<ProviderMessageCustomizerFactory<?>> factories
+    ) {
+        return new ProviderMessageCustomizerFactoryRegistry(factories);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderMessageCustomizerPipelineFactory providerMessageCustomizerPipelineFactory(
+            ProviderMessageCustomizerFactoryRegistry registry,
+            ObjectMapper objectMapper
+    ) {
+        return new ProviderMessageCustomizerPipelineFactory(registry, objectMapper);
     }
 
     @Bean

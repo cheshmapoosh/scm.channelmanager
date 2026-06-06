@@ -1,129 +1,90 @@
 # scm-provider-rest
 
-ماژول `scm-provider-rest` یک provider عمومی برای فراخوانی HTTP/REST در `OperationType.PROVIDER` است.
+`scm-provider-rest` is the reusable REST provider for `OperationType.PROVIDER` routes.
 
-URI نمونه:
+Example URI:
 
 ```text
-rest-provider:request?provider=poba-hps
+rest-provider:request?provider=hps-rest
 ```
 
-## ساختار یکدست کانفیگ
+## Primary Configuration Model
 
-مانند `scm-provider-nab`:
-
-- `defaults` برای تنظیمات پایه
-- `providers.<instance>` برای override
+Provider instances are configured under the unified registry:
 
 ```yaml
 scm:
-  provider:
-    rest:
+  providers:
+    hps-rest:
+      type: rest
       enabled: true
-      defaults:
-        base-url: https://example.com
-        connect-timeout-ms: 3000
-        response-timeout-ms: 6000
-        virtual-threads-enabled: true
-        insecure-ssl: false
-        follow-redirects: NORMAL # NEVER | NORMAL | ALWAYS
-        default-method: POST
-        headers:
-          Accept: application/json
-          Content-Type: application/json
-        customizers:
-          authentication: false
-        rate-limit:
-          enabled: false
-          bucket: rest-default
-          key: provider
-        auth:
-          type: NONE # NONE | BASIC | BEARER | JWT | API_KEY
-          header-name: Authorization
-          prefix: Bearer
-          basic-base64: true
-        token:
-          enabled: false
-          cache-name: rest_provider_token_cache
-          cache-key: access-token
-          lock-name: rest-provider-token
-          early-refresh-seconds: 30
-          default-expires-in-seconds: 300
-          cache:
-            enabled: true
-            mode: centralized
-            key-prefix: provider-token
-            refresh-skew: 30s
-            ttl-skew: 5s
-          lock:
-            enabled: true
-            key-prefix: provider-token-refresh-lock
-            wait-timeout: 3s
-            lease-time: 10s
-            retry-delay: 100ms
-          method: POST
-          path: /oauth/token
-          headers:
-            Content-Type: application/x-www-form-urlencoded
-          form:
-            grant_type: client_credentials
-          response-token-field: access_token
-          response-expires-in-field: expires_in
-          response-token-type-field: token_type
-          default-token-type: Bearer
-          apply:
-            location: header
-            name: Authorization
-            format: "{tokenType} {accessToken}"
-        security:
-          sensitive-headers: [authorization, proxy-authorization, cookie, set-cookie]
-          sensitive-body-keys: [password, token, secret, pin, cvv, pan, card]
-          max-body-log-length: 400
-
-      providers:
-        poba-hps:
-          base-url: https://poba-hps.example.ir
-          customizers:
-            authentication: true
-          auth:
-            type: BEARER
-          token:
-            enabled: true
-            path: /oauth/token
-            form:
-              grant_type: client_credentials
-              client_id: ${POBA_CLIENT_ID}
-              client_secret: ${POBA_CLIENT_SECRET}
-          rate-limit:
-            enabled: true
-            bucket: poba-hps
-            key: provider-operation
-
-        nab-apirepo:
-          endpoint: https://nab-apirepo.example.ir # alias of base-url
-          default-method: POST
-          headers:
-            X-System: SCM
-          rate-limit:
-            enabled: true
-            bucket: nab-apirepo
-            key: provider
+      base-url: https://hps-rest.example.ir
+      connect-timeout-ms: 3000
+      response-timeout-ms: 6000
+      virtual-threads-enabled: true
+      insecure-ssl: false
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      rate-limit:
+        enabled: true
+        bucket: hps-rest
+        key: provider-operation
+      message-customizers:
+        - type: rest-auth-url
+          config:
+            url: https://hps-rest.example.ir/oauth/token
+            method: POST
+            request:
+              headers:
+                Content-Type: application/x-www-form-urlencoded
+              form:
+                grant_type: client_credentials
+                client_id: ${HPS_REST_CLIENT_ID}
+                client_secret: ${HPS_REST_CLIENT_SECRET}
+            response:
+              token-field: access_token
+              expires-in-field: expires_in
+              token-type-field: token_type
+              default-token-type: Bearer
+            cache:
+              name: rest_provider_token_cache
+              key-prefix: provider-token
+              auth-profile: default
+              credential-key: hps-rest
+              refresh-skew: 60s
+              ttl-skew: 5s
+            lock:
+              key-prefix: provider-token-refresh-lock
+              wait-timeout: 3s
+              lease-time: 10s
+              retry-delay: 100ms
+            apply:
+              location: header
+              name: Authorization
+              format: "{tokenType} {accessToken}"
+        - type: hps-rest-outlet
+          config:
+            location: body
+            name: outlet
+            value: "123456789012345"
 ```
 
-### نکته base-url / endpoint
+Rules:
 
-برای یکدستی با سایر providerها:
+- There is no defaults block in the primary model.
+- Every provider instance must be explicitly configured.
+- `provider-code` is the key under `scm.providers`.
+- `type: rest` makes this module own and validate the instance.
+- Missing required fields fail fast.
+- If `message-customizers` is missing or empty, no customizer runs.
+- No customizer is enabled by default.
 
-- `base-url` مقدار اصلی REST است.
-- `endpoint` به‌عنوان alias پشتیبانی می‌شود.
-- اگر هر دو تعریف شوند، `base-url` اولویت دارد.
+`endpoint` is still accepted as a compatibility alias for `base-url`, but `base-url` is preferred.
 
-## قرارداد ورودی
+## Request And Response
 
-body می‌تواند یکی از این دو حالت باشد:
-
-1. payload ساده (کل body همان payload درخواست REST)
-2. envelope با متادیتا:
+Request body can be a direct payload or an envelope:
 
 ```json
 {
@@ -141,7 +102,7 @@ body می‌تواند یکی از این دو حالت باشد:
 }
 ```
 
-## قرارداد خروجی
+Response body:
 
 ```json
 {
@@ -155,79 +116,85 @@ body می‌تواند یکی از این دو حالت باشد:
 }
 ```
 
-## Rate Limit (مشابه NAB)
-
-پشتیبانی کامل برای:
-
-- `rate-limit.enabled`
-- `rate-limit.bucket`
-- `rate-limit.key` (`provider`, `operation`, `provider-operation`)
-
-Override در runtime:
-
-- Header: `RestProviderRateLimitEnabled`
-- Header: `RestProviderRateLimitBucket`
-- Header: `RestProviderRateLimitKey`
-- URI param: `rateLimitEnabled`
-- URI param: `rateLimitBucket`
-- URI param: `rateLimitKey`
-
-## Header/URI Override های runtime
-
-- `RestProvider` (provider name)
-- `RestProviderMethod`
-- `RestProviderUrl`
-- `RestProviderPath`
-- `RestProviderTimeoutMs`
-- `RestProviderRateLimitEnabled`
-- `RestProviderRateLimitBucket`
-- `RestProviderRateLimitKey`
-
 ## ProviderMessageCustomizer
 
-`ProviderMessageCustomizer` قرارداد مشترک آماده‌سازی پیام provider است. خود interface در `scm-common` قرار دارد و Spring-independent است؛ implementationها می‌توانند Spring bean باشند.
-
-Producer REST در این lifecycle آن را اجرا می‌کند:
-
-1. `ProviderExchange` ساخته می‌شود.
-2. customizerها با `supports(context)` فیلتر می‌شوند.
-3. customizerها با `order()` مرتب می‌شوند.
-4. `beforeSend(exchange)` اجرا می‌شود.
-5. درخواست نهایی به transport ارسال می‌شود.
-6. response داخل `ProviderExchange` قرار می‌گیرد.
-7. `afterReceive(exchange)` اجرا می‌شود.
-8. response نهایی به Camel برگردانده می‌شود.
-
-قواعد:
-
-- customizer باید stateless باشد.
-- state مربوط به request فقط داخل `ProviderExchange`, `ProviderMessageCustomizerContext` یا `exchange.attributes()` قرار بگیرد.
-- constructor injection استفاده کنید.
-- REST provider فیلد MAC ندارد. برای REST هیچ MAC customizer فعال نکنید.
-
-Orderهای پیشنهادی:
-
-- `100..999`: field enrichment مثل `outlet`, `terminalId`, `merchantId`
-- `5000`: authentication
-- `8000`: pin-block در providerهایی که نیاز دارند
-- `10000`: MAC فقط برای ISO8583/Shetab، نه REST
-- `20000`: response enrichment
-
-نمونه customizer:
+The runtime contract is Spring-independent:
 
 ```java
-import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
-import org.springframework.stereotype.Component;
+public interface ProviderMessageCustomizer {
+    int order();
 
+    default void beforeSend(ProviderExchange exchange) {
+    }
+
+    default void afterReceive(ProviderExchange exchange) {
+    }
+}
+```
+
+The Spring extension point is the factory:
+
+```java
+public interface ProviderMessageCustomizerFactory<C> {
+    String type();
+    Class<C> configType();
+    int defaultOrder();
+    ProviderMessageCustomizer create(ProviderMessageCustomizerFactoryContext context, C config);
+}
+```
+
+How it works:
+
+1. The provider instance lists `message-customizers` by stable `type`.
+2. The pipeline builder resolves a `ProviderMessageCustomizerFactory` by `type`.
+3. `config` is bound to the factory `configType()`.
+4. The factory returns an immutable runtime `ProviderMessageCustomizer` instance.
+5. `order` from YAML overrides the factory default order when present.
+6. The producer executes only the configured provider instance pipeline.
+
+Do not put Spring bean names or factory class names in YAML.
+
+Recommended order ranges:
+
+- `100..999`: field enrichment such as outlet, terminal, merchant, CVV2, expiry
+- `5000`: authentication
+- `8000`: PIN block
+- `10000`: MAC only for ISO8583/Shetab, never REST
+- `20000`: response enrichment
+
+Example factory-created customizer:
+
+```java
 @Component
-public class OutletProviderMessageCustomizer implements ProviderMessageCustomizer {
+public class OutletProviderMessageCustomizerFactory
+        implements ProviderMessageCustomizerFactory<OutletConfig> {
 
     @Override
-    public boolean supports(ProviderMessageCustomizerContext context) {
-        return context.providerConfig().containsKey("outlet");
+    public String type() {
+        return "hps-rest-outlet";
     }
+
+    @Override
+    public Class<OutletConfig> configType() {
+        return OutletConfig.class;
+    }
+
+    @Override
+    public int defaultOrder() {
+        return 100;
+    }
+
+    @Override
+    public ProviderMessageCustomizer create(
+            ProviderMessageCustomizerFactoryContext context,
+            OutletConfig config
+    ) {
+        return new OutletProviderMessageCustomizer(config.name(), config.value());
+    }
+}
+
+public record OutletProviderMessageCustomizer(String name, String value)
+        implements ProviderMessageCustomizer {
 
     @Override
     public int order() {
@@ -236,182 +203,83 @@ public class OutletProviderMessageCustomizer implements ProviderMessageCustomize
 
     @Override
     public void beforeSend(ProviderExchange exchange) {
-        String outlet = exchange.context()
-                .providerConfig()
-                .get("outlet")
-                .toString();
-
-        exchange.request().putField("outlet", outlet);
+        exchange.request().putField(name, value);
     }
 }
 ```
 
-## REST Authentication Customizer
+## REST Auth URL
 
-`RestAuthenticationProviderMessageCustomizer` جایگزین اجرای مستقیم token داخل producer شده است.
+REST auth URL is configured only as customizer type `rest-auth-url`. Do not configure auth URL under provider-level `auth`, `token`, `cache`, `lock`, or `apply` in the primary model.
 
-این customizer:
+The customizer:
 
-- فقط `transportType=rest` را support می‌کند.
-- فقط وقتی `token.enabled=true` و `customizers.authentication=true` باشد اجرا می‌شود.
-- auth-url را مستقیم صدا نمی‌زند.
-- token را از `ProviderAuthTokenProvider` / `RestProviderTokenManager` می‌گیرد.
-- token را طبق `token.apply` روی header/body/query قرار می‌دهد.
+- Calls `ProviderAuthTokenProvider` / `RestProviderTokenManager` for token resolution.
+- Applies the token according to `apply.location`, `apply.name`, and `apply.format`.
+- Supports header, body field, and query parameter application.
+- Does not hardcode `Authorization`.
 
-نمونه:
+Token cache and lock algorithm:
 
-```yaml
-scm:
-  provider:
-    rest:
-      providers:
-        hps-rest:
-          type: rest
-          transport: rest
-          base-url: http://provider
-          customizers:
-            authentication: true
-          auth:
-            type: BEARER
-            header-name: Authorization
-          token:
-            enabled: true
-            url: http://provider/auth/token
-            method: POST
-            form:
-              grant_type: client_credentials
-              client_id: ${HPS_CLIENT_ID}
-              client_secret: ${HPS_CLIENT_SECRET}
-            cache:
-              enabled: true
-              mode: centralized
-              key-prefix: provider-token
-              refresh-skew: 60s
-              ttl-skew: 5s
-            lock:
-              enabled: true
-              key-prefix: provider-token-refresh-lock
-              wait-timeout: 3s
-              lease-time: 10s
-              retry-delay: 100ms
-            response-token-field: access_token
-            response-expires-in-field: expires_in
-            response-token-type-field: token_type
-            default-token-type: Bearer
-            apply:
-              location: header
-              name: Authorization
-              format: "{tokenType} {accessToken}"
-```
+1. Build cache key: `provider-token:<providerCode>:<authProfile>:<channelCode>:<credentialKey>`.
+2. Check centralized token cache first.
+3. If a valid token exists considering `refresh-skew`, return it.
+4. Acquire distributed lock: `provider-token-refresh-lock:<providerCode>:<authProfile>:<channelCode>:<credentialKey>`.
+5. Check centralized cache again after lock acquisition.
+6. Only the lock owner calls the auth URL.
+7. Store token in centralized cache with TTL based on expiry minus `ttl-skew`.
+8. Release the lock through `LockUtility`.
+9. If lock cannot be acquired, poll centralized cache until `lock.wait-timeout` using `lock.retry-delay`.
+10. If no token appears, throw provider auth fault.
 
-Token apply modes:
+No local-only fallback is used when centralized cache is configured.
 
-- `location: header`, مثل `Authorization` یا `X-Auth-Token`
-- `location: body`, برای providerهایی که token را در body می‌خواهند
-- `location: query`, فقط اگر provider config قبلا چنین رفتاری را پشتیبانی می‌کرده باشد
+## REST Has No MAC
 
-`Authorization` hardcode نشده است. اگر provider از `X-Auth-Token` استفاده می‌کند، `token.apply.name` را همان مقدار بگذارید.
+REST provider has no MAC field. Do not configure or implement MAC for REST. A Shetab/ISO8583 MAC customizer must reject REST transport.
 
-## Centralized Token Cache And Distributed Lock
+## Observability And Security
 
-وقتی `token.enabled=true`:
+Trace spans/events cover:
 
-1. token key با provider/authProfile/channel/credential ساخته می‌شود.
-2. centralized cache اول خوانده می‌شود.
-3. اگر token معتبر باشد و هنوز وارد refresh skew نشده باشد، reuse می‌شود.
-4. اگر token missing/expired باشد، distributed lock گرفته می‌شود.
-5. بعد از گرفتن lock، cache دوباره خوانده می‌شود.
-6. فقط lock owner auth-url را صدا می‌زند.
-7. token جدید با TTL برابر expiry منهای `ttl-skew` در cache ذخیره می‌شود.
-8. lock در utility موجود به‌صورت safe آزاد می‌شود.
-9. اگر lock گرفته نشود، producer تا `lock.wait-timeout` با فاصله `lock.retry-delay` cache را poll می‌کند.
-10. اگر token ظاهر نشود، fault امن مثل `PROVIDER_AUTH_LOCK_TIMEOUT` یا `PROVIDER_AUTH_TOKEN_UNAVAILABLE` پرتاب می‌شود.
+- provider call
+- customizer execution
+- auth token resolution
+- centralized cache lookup
+- distributed lock acquire/wait
+- auth URL call
+- token cache put
 
-Keyهای پیش‌فرض:
+Logs include provider, service, operation, channel, correlation/trace IDs when available. Debug logs include configured customizer type/order and auth cache/lock events.
 
-```text
-provider-token:<providerCode>:<authProfile>:<channelCode>:<credentialKey>
-provider-token-refresh-lock:<providerCode>:<authProfile>:<channelCode>:<credentialKey>
-```
+Metrics include:
 
-Backward compatibility:
+- `provider.request.duration`
+- `provider.request.error`
+- `provider.customizer.execution`
+- `provider.customizer.error`
+- `provider.auth.cache.hit`
+- `provider.auth.cache.miss`
+- `provider.auth.lock.acquired`
+- `provider.auth.lock.timeout`
+- `provider.auth.token.refresh`
+- `provider.auth.token.refresh.error`
+- `provider.auth.request.duration`
 
-- `token.cache-name`, `token.cache-key`, `token.lock-name`, `token.early-refresh-seconds`, `token.default-expires-in-seconds`, `token.response-token-field`, `token.response-expires-in-field`, `token.response-token-type-field` هنوز پشتیبانی می‌شوند.
-- اگر `token.lock-name` صریح تنظیم شده باشد، به عنوان lock prefix استفاده می‌شود.
-- `early-refresh-seconds` به `cache.refresh-skew` نگاشت می‌شود، مگر اینکه `cache.refresh-skew` صریح تنظیم شود.
-- auth endpoint credential باید در `token.auth`, `token.headers`, `token.form` یا `token.body` تنظیم شود. final provider auth به auth-url تزریق نمی‌شود.
+Metric tags are low cardinality: providerCode, providerType, serviceCode, operationCode, channelCode, transportType, customizerType, outcome.
 
-پیش‌نیاز deployment توزیع‌شده:
-
-- `CacheManager` از `scm-cache-client` برای token cache
-- `LockUtility` از `scm-cache-client` برای distributed single-flight
-- `RateLimiterUtility` برای rate limit توزیع‌شده
-
-برای token cache centralized، local-only fallback استفاده نمی‌شود. اگر cache یا lock موجود نباشد، token flow با fault امن fail می‌شود.
-
-## Security Rules
-
-- username/password/client-secret/access-token/refresh-token لاگ نشوند.
-- token، password، client-secret، PIN، PIN block و MAC داخل trace attribute قرار نگیرند.
-- REST provider MAC ندارد؛ MAC را برای REST فعال نکنید.
-- request-level `Authorization` و `Proxy-Authorization` از caller پذیرفته نمی‌شود.
-- header/body با `RestProviderLogSanitizer` sanitize می‌شود.
-
-## Observability
-
-Trace:
-
-- span برای call اصلی provider وجود دارد.
-- هر customizer یک span با `customizerName`, `phase`, `providerCode`, `serviceCode`, `operationCode`, `channelCode`, `transportType` دارد.
-- token manager روی span فعال eventهایی مثل cache hit/miss، lock acquired/timeout، auth request و token refresh ثبت می‌کند.
-- secret/token/PIN/MAC در span ثبت نمی‌شود.
-
-Log:
-
-- `DEBUG`: customizerهای match شده، order اجرا، token cache hit/miss، lock acquire، token refresh
-- `WARN`: rate-limit reject، حذف auth headerهای request-level، lock timeout، fallbackهای غیرایده‌آل
-- `ERROR`: auth-url failure، token parsing failure، cache failure، lock failure
-
-Metric counters/timers موجود در module:
-
-- provider request: `submitted`, `succeeded`, `failed`, `clientErrors`, `serverErrors`, `timedOut`, `totalLatencyMs`
-- rate limit: `rateLimited`, `rateLimitWaits`
-- customizer: `customizerExecutions`, `customizerErrors`
-- auth token: `tokenCacheHits`, `tokenCacheMisses`, `tokenCachePuts`, `tokenLockAcquired`, `tokenLockTimeouts`, `tokenRefreshes`, `tokenRefreshFailures`, `tokenRequestLatencyMs`
-
-در deployment نهایی، این مقادیر باید طبق مسیر استاندارد SCM از Actuator/Micrometer به Prometheus/Grafana expose شوند؛ metric در فایل نوشته نمی‌شود.
+Never log or trace tokens, username/password, client secret, PIN, PIN block, MAC, PAN, account number, CVV2, or raw sensitive body values.
 
 ## Troubleshooting
 
-`auth token not refreshed`
+- Customizer not executed: verify it appears in `scm.providers.<code>.message-customizers` and the `type` matches a registered factory.
+- Unknown customizer type: add the factory Spring bean or fix the YAML `type`.
+- Wrong order: set `message-customizers[].order` or adjust factory `defaultOrder()`.
+- Missing Authorization header: verify `rest-auth-url.apply.location/name/format` and token response paths.
+- Token not refreshed: check cache key components, `refresh-skew`, and auth response `expires-in-field`.
+- Lock timeout: verify `LockUtility` and centralized cache are available across nodes.
+- Centralized cache unavailable: configure `scm-cache-client` and the cache named by `rest-auth-url.cache.name`.
 
-- `token.enabled=true` و `customizers.authentication=true` را بررسی کنید.
-- `token.response-token-field` و `token.response-expires-in-field` را با response واقعی auth-url تطبیق دهید.
-- مطمئن شوید `cache.refresh-skew` از expiry token بزرگ‌تر نیست.
+## Deprecated Legacy Compatibility
 
-`distributed lock timeout`
-
-- `LockUtility` از `scm-cache-client` باید در runtime موجود باشد.
-- `token.lock.wait-timeout` و `token.lock.retry-delay` را بررسی کنید.
-- اگر چند pod دارید، lock backend باید remote باشد، نه local.
-
-`centralized cache unavailable`
-
-- `CacheManager` باید cache name مثل `rest_provider_token_cache` را resolve کند.
-- برای token cache centralized، نبود cache باعث fault می‌شود و local-only fallback نداریم.
-
-`customizer not executed`
-
-- customizer باید Spring bean باشد.
-- `supports(context)` باید `true` برگرداند.
-- برای REST auth، `transportType` باید `rest` باشد و `auth.type` یکی از `BEARER`, `JWT`, `API_KEY`.
-
-`wrong order`
-
-- `order()` را با rangeهای پیشنهادی تنظیم کنید.
-- authentication معمولاً `5000` است و بعد از field enrichment اجرا می‌شود.
-
-`missing Authorization header`
-
-- اگر header می‌خواهید، `token.apply.location=header` و `token.apply.name=Authorization` را تنظیم کنید.
-- اگر provider از `X-Auth-Token` استفاده می‌کند، دنبال `Authorization` نگردید؛ `token.apply.name` همان header نهایی است.
+`scm.provider.rest.defaults/providers`, `customizers.authentication`, and provider-level `token.*` are deprecated. They may be mapped internally for one release, but new configuration and README examples must use `scm.providers` and explicit `message-customizers`.

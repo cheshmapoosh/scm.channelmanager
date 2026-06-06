@@ -42,6 +42,7 @@ class CacheClientRestProviderRateLimiterTest {
     private RestProviderResolvedConfig config(String provider, boolean enabled, String bucket, String key) {
         return new RestProviderResolvedConfig(
                 provider,
+                "rest",
                 "https://example.com",
                 3000,
                 6000,
@@ -51,7 +52,7 @@ class CacheClientRestProviderRateLimiterTest {
                 "POST",
                 Map.of(),
                 Map.of(),
-                new RestProviderResolvedConfig.Customizers(false),
+                java.util.List.of(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
                 new RestProviderResolvedConfig.Auth(
                         RestProviderResolvedConfig.AuthType.NONE,
@@ -62,44 +63,7 @@ class CacheClientRestProviderRateLimiterTest {
                         null,
                         true
                 ),
-                new RestProviderResolvedConfig.Security(
-                        java.util.List.of(),
-                        java.util.List.of(),
-                        400
-                ),
-                new RestProviderResolvedConfig.Token(
-                        false,
-                        "default",
-                        "access-token",
-                        "rest_provider_token_cache",
-                        "access-token",
-                        "rest-provider-token",
-                        30,
-                        300,
-                        "POST",
-                        null,
-                        null,
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        new RestProviderResolvedConfig.Auth(
-                                RestProviderResolvedConfig.AuthType.NONE,
-                                "Authorization",
-                                null,
-                                null,
-                                null,
-                                null,
-                                true
-                        ),
-                        "access_token",
-                        "expires_in",
-                        "token_type",
-                        "Bearer",
-                        new RestProviderResolvedConfig.TokenCache(true, "local", "provider-token", java.time.Duration.ofSeconds(30), java.time.Duration.ofSeconds(5)),
-                        new RestProviderResolvedConfig.TokenLock(true, "provider-token-refresh-lock", java.time.Duration.ofSeconds(3), java.time.Duration.ofSeconds(10), java.time.Duration.ofMillis(100)),
-                        new RestProviderResolvedConfig.TokenApply(RestProviderResolvedConfig.TokenApplyLocation.HEADER, "Authorization", "{tokenType} {accessToken}")
-                ),
+                new RestProviderResolvedConfig.Security(java.util.List.of(), java.util.List.of(), 400),
                 new RestProviderResolvedConfig.RateLimit(enabled, bucket, key)
         );
     }

@@ -1,12 +1,48 @@
 package ir.daneshrefah.scm.provider.shetab.config;
 
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ShetabConfigResolverTest {
+
+
+    @Test
+    void resolvesUnifiedShetabProviderWithoutDefaults() {
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        ProviderRegistryProperties.Provider hps = new ProviderRegistryProperties.Provider();
+        hps.setType("shetab");
+        hps.setEndpoint("10.10.10.10:9000");
+        hps.setPackagerClass("Shetab7AsciiXAPackager");
+        ProviderMessageCustomizerDefinition mac = new ProviderMessageCustomizerDefinition();
+        mac.setType("shetab-mac");
+        hps.getMessageCustomizers().add(mac);
+        registry.getProviders().put("hps-shetab7", hps);
+
+        ShetabResolvedConfig config = new ShetabConfigResolver(registry, new ShetabProperties()).resolve("hps-shetab7", null);
+
+        assertEquals("hps-shetab7", config.provider());
+        assertEquals("shetab", config.providerType());
+        assertEquals(List.of("10.10.10.10:9000"), config.endpoints());
+        assertEquals("shetab-mac", config.messageCustomizers().getFirst().getType());
+    }
+
+    @Test
+    void unifiedShetabProviderFailsWhenPackagerMissing() {
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        ProviderRegistryProperties.Provider hps = new ProviderRegistryProperties.Provider();
+        hps.setType("shetab");
+        hps.setEndpoint("10.10.10.10:9000");
+        registry.getProviders().put("hps", hps);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShetabConfigResolver(registry, new ShetabProperties()).resolve("hps", null));
+    }
 
     @Test
     void resolvesTypedOperationProviderNameToShetabProviderInstance() {

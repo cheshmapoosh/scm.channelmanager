@@ -109,11 +109,7 @@ public class RestProviderClientRegistry {
         String headerName = auth != null
                 ? StringUtils.defaultIfBlank(auth.headerName(), HttpHeaders.AUTHORIZATION)
                 : HttpHeaders.AUTHORIZATION;
-        boolean tokenFlowEnabled = config.token() != null && config.token().enabled();
-        if (tokenFlowEnabled && skipProviderAuth) {
-            return;
-        }
-        if (tokenFlowEnabled && hasHeader(headers, headerName)) {
+        if (skipProviderAuth) {
             return;
         }
 

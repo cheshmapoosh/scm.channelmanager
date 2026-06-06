@@ -6,7 +6,6 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
@@ -78,12 +77,12 @@ public class RestProviderTraceSupport {
     public void customizerSpan(
             Exchange exchange,
             ProviderMessageCustomizerContext context,
-            ProviderMessageCustomizer customizer,
+            String customizerType,
             String phase,
             Runnable action
     ) {
         Span parent = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        Span span = tracer.spanBuilder("provider customizer " + customizer.getClass().getSimpleName())
+        Span span = tracer.spanBuilder("provider customizer " + value(customizerType))
                 .setSpanKind(SpanKind.INTERNAL)
                 .setParent(parent != null ? Context.current().with(parent) : Context.current())
                 .startSpan();
@@ -91,11 +90,12 @@ public class RestProviderTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", value(context.providerCode()));
+            span.setAttribute("scm.provider.type", value(context.providerType()));
             span.setAttribute("scm.provider.service_code", value(context.serviceCode()));
             span.setAttribute("scm.provider.operation_code", value(context.operationCode()));
             span.setAttribute("scm.provider.channel_code", value(context.channelCode()));
             span.setAttribute("scm.provider.transport_type", value(context.transportType()));
-            span.setAttribute("scm.provider.customizer.name", customizer.getClass().getName());
+            span.setAttribute("scm.provider.customizer.type", value(customizerType));
             span.setAttribute("scm.provider.customizer.phase", value(phase));
             action.run();
         } catch (RuntimeException e) {

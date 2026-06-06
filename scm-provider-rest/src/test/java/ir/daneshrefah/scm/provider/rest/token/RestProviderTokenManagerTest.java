@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.cache.client.utility.lock.LockAcquireFailedException;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
+import ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig;
 import ir.daneshrefah.scm.provider.rest.exception.RestProviderAuthException;
 import ir.daneshrefah.scm.provider.rest.exception.RestProviderAuthFault;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
@@ -40,7 +41,7 @@ class RestProviderTokenManagerTest {
         FakeLockUtility lockUtility = new FakeLockUtility();
         RestProviderTokenManager manager = manager(client, cacheManager, lockUtility, metrics);
 
-        ProviderAuthToken token = manager.resolveToken(config("hps"), context("hps", "mb"));
+        ProviderAuthToken token = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
 
         assertEquals("cached-token", token.accessToken());
         assertEquals(0, client.calls);
@@ -56,8 +57,8 @@ class RestProviderTokenManagerTest {
         FakeLockUtility lockUtility = new FakeLockUtility();
         RestProviderTokenManager manager = manager(client, cacheManager, lockUtility, metrics);
 
-        ProviderAuthToken first = manager.resolveToken(config("hps"), context("hps", "mb"));
-        ProviderAuthToken second = manager.resolveToken(config("hps"), context("hps", "mb"));
+        ProviderAuthToken first = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
+        ProviderAuthToken second = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
 
         assertEquals("token-1", first.accessToken());
         assertEquals("token-1", second.accessToken());
@@ -77,7 +78,7 @@ class RestProviderTokenManagerTest {
         CapturingTokenClient client = new CapturingTokenClient();
         RestProviderTokenManager manager = manager(client, cacheManager, new FakeLockUtility(), new RestProviderMetrics());
 
-        ProviderAuthToken token = manager.resolveToken(config("hps"), context("hps", "mb"));
+        ProviderAuthToken token = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
 
         assertEquals("token-1", token.accessToken());
         assertEquals(1, client.calls);
@@ -91,7 +92,7 @@ class RestProviderTokenManagerTest {
         lockUtility.beforeJob = () -> putToken(cacheManager, cacheKey("hps", "mb", "credential-a"), "other-node-token", 300);
         RestProviderTokenManager manager = manager(client, cacheManager, lockUtility, new RestProviderMetrics());
 
-        ProviderAuthToken token = manager.resolveToken(config("hps"), context("hps", "mb"));
+        ProviderAuthToken token = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
 
         assertEquals("other-node-token", token.accessToken());
         assertEquals(0, client.calls);
@@ -108,7 +109,7 @@ class RestProviderTokenManagerTest {
         RestProviderMetrics metrics = new RestProviderMetrics();
         RestProviderTokenManager manager = manager(client, cacheManager, lockUtility, metrics);
 
-        ProviderAuthToken token = manager.resolveToken(config("hps"), context("hps", "mb"));
+        ProviderAuthToken token = manager.resolveToken(config("hps"), authConfig(), context("hps", "mb"));
 
         assertEquals("polled-token", token.accessToken());
         assertEquals(0, client.calls);
@@ -123,7 +124,7 @@ class RestProviderTokenManagerTest {
         RestProviderTokenManager manager = manager(new CapturingTokenClient(), cacheManager, lockUtility, new RestProviderMetrics());
 
         RestProviderAuthException exception = assertThrows(RestProviderAuthException.class,
-                () -> manager.resolveToken(config("hps"), context("hps", "mb")));
+                () -> manager.resolveToken(config("hps"), authConfig(), context("hps", "mb")));
 
         assertEquals(RestProviderAuthFault.PROVIDER_AUTH_LOCK_TIMEOUT, exception.fault());
     }
@@ -133,7 +134,7 @@ class RestProviderTokenManagerTest {
         RestProviderTokenManager manager = manager(new CapturingTokenClient(), null, new FakeLockUtility(), new RestProviderMetrics());
 
         RestProviderAuthException exception = assertThrows(RestProviderAuthException.class,
-                () -> manager.resolveToken(config("hps"), context("hps", "mb")));
+                () -> manager.resolveToken(config("hps"), authConfig(), context("hps", "mb")));
 
         assertEquals(RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR, exception.fault());
     }
@@ -146,7 +147,7 @@ class RestProviderTokenManagerTest {
         RestProviderTokenManager manager = manager(client, cacheManager(), new FakeLockUtility(), metrics);
 
         RestProviderAuthException exception = assertThrows(RestProviderAuthException.class,
-                () -> manager.resolveToken(config("hps"), context("hps", "mb")));
+                () -> manager.resolveToken(config("hps"), authConfig(), context("hps", "mb")));
 
         assertEquals(RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE, exception.fault());
         assertFalse(exception.getMessage().contains("secret-token-value"));
@@ -196,6 +197,7 @@ class RestProviderTokenManagerTest {
         RestProviderResolvedConfig config = config(provider);
         return new ProviderMessageCustomizerContext(
                 provider,
+                "rest",
                 "svc",
                 "op",
                 channel,
@@ -210,6 +212,7 @@ class RestProviderTokenManagerTest {
     private RestProviderResolvedConfig config(String provider) {
         return new RestProviderResolvedConfig(
                 provider,
+                "rest",
                 "https://provider.example",
                 3000,
                 6000,
@@ -219,37 +222,32 @@ class RestProviderTokenManagerTest {
                 "POST",
                 Map.of(),
                 Map.of(),
-                new RestProviderResolvedConfig.Customizers(true),
+                java.util.List.of(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
-                new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.BEARER, "Authorization", null, null, null, null, true),
+                new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
                 new RestProviderResolvedConfig.Security(java.util.List.of("authorization"), java.util.List.of("token"), 400),
-                new RestProviderResolvedConfig.Token(
-                        true,
-                        "default",
-                        "credential-a",
-                        CACHE_NAME,
-                        "access-token",
-                        "rest-provider-token",
-                        30,
-                        300,
-                        "POST",
-                        null,
-                        "/token",
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
-                        "access_token",
-                        "expires_in",
-                        "token_type",
-                        "Bearer",
-                        new RestProviderResolvedConfig.TokenCache(true, "centralized", "provider-token", Duration.ofSeconds(30), Duration.ofSeconds(5)),
-                        new RestProviderResolvedConfig.TokenLock(true, "provider-token-refresh-lock", Duration.ofMillis(20), Duration.ofSeconds(10), Duration.ofMillis(1)),
-                        new RestProviderResolvedConfig.TokenApply(RestProviderResolvedConfig.TokenApplyLocation.HEADER, "Authorization", "{tokenType} {accessToken}")
-                ),
                 new RestProviderResolvedConfig.RateLimit(false, "rest-default", "provider")
         );
+    }
+
+    private RestAuthUrlProviderMessageCustomizerConfig authConfig() {
+        RestAuthUrlProviderMessageCustomizerConfig config = new RestAuthUrlProviderMessageCustomizerConfig();
+        config.setPath("/token");
+        config.setMethod("POST");
+        config.getCache().setName(CACHE_NAME);
+        config.getCache().setKeyPrefix("provider-token");
+        config.getCache().setAuthProfile("default");
+        config.getCache().setCredentialKey("credential-a");
+        config.getCache().setRefreshSkew(java.time.Duration.ofSeconds(30));
+        config.getCache().setTtlSkew(java.time.Duration.ofSeconds(5));
+        config.getLock().setKeyPrefix("provider-token-refresh-lock");
+        config.getLock().setWaitTimeout(java.time.Duration.ofMillis(20));
+        config.getLock().setLeaseTime(java.time.Duration.ofSeconds(10));
+        config.getLock().setRetryDelay(java.time.Duration.ofMillis(1));
+        config.getApply().setLocation("header");
+        config.getApply().setName("Authorization");
+        config.getApply().setFormat("{tokenType} {accessToken}");
+        return config;
     }
 
     private static ObjectProvider<ExecutorService> executorProvider() {

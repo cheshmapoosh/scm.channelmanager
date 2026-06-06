@@ -7,9 +7,9 @@ import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerExecutor;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
 import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
@@ -36,7 +36,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -76,7 +75,7 @@ public class RestProviderProducer extends DefaultProducer {
     private RestProviderRateLimiter rateLimiter;
     private RestProviderTraceSupport traceSupport;
     private RestProviderLogSanitizer logSanitizer;
-    private ProviderMessageCustomizerExecutor customizerExecutor;
+    private ProviderMessageCustomizerPipelineFactory customizerPipelineFactory;
     private ObjectMapper objectMapper;
 
     public RestProviderProducer(RestProviderEndpoint endpoint) {
@@ -93,7 +92,7 @@ public class RestProviderProducer extends DefaultProducer {
         rateLimiter = bean(RestProviderRateLimiter.class);
         traceSupport = bean(RestProviderTraceSupport.class);
         logSanitizer = bean(RestProviderLogSanitizer.class);
-        customizerExecutor = new ProviderMessageCustomizerExecutor(customizerBeans());
+        customizerPipelineFactory = bean(ProviderMessageCustomizerPipelineFactory.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -106,14 +105,14 @@ public class RestProviderProducer extends DefaultProducer {
         ProviderRequest providerRequest = buildProviderRequest(exchange, config);
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
-        List<ProviderMessageCustomizer> matchedCustomizers = customizerExecutor.matchedCustomizers(customizerContext);
-        logMatchedCustomizers(customizerContext, matchedCustomizers);
+        ProviderMessageCustomizerPipeline customizerPipeline = customizerPipelineFactory.build(customizerContext, config.messageCustomizers());
+        logConfiguredCustomizers(customizerContext, customizerPipeline);
 
         RestProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         providerMetrics.submitted();
         long startedAt = System.nanoTime();
         try {
-            executeCustomizers(exchange, providerExchange, matchedCustomizers, true);
+            executeCustomizers(exchange, providerExchange, customizerPipeline, true);
             rateLimiter.acquire(config, operationName);
             RestProviderRequestSpec requestSpec = toRestRequestSpec(providerExchange, config);
             logRequest(config, operationName, requestSpec);
@@ -123,15 +122,18 @@ public class RestProviderProducer extends DefaultProducer {
                     requestSpec,
                     () -> clientRegistry.exchange(config, requestSpec)
             );
-            long elapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
+            Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
+            long elapsedMs = elapsed.toMillis();
             providerMetrics.addLatency(elapsedMs);
             classifyResponse(response.getStatusCode().value(), providerMetrics);
+            providerMetrics.recordProviderRequestDuration(config, customizerContext, elapsed,
+                    response.getStatusCode().is2xxSuccessful() ? "success" : "error");
 
             Map<String, Object> result = buildResponseBody(response);
             ProviderResponse providerResponse = new ProviderResponse(response.getStatusCode().value(), flattenHeaders(response.getHeaders()), result);
             providerResponse.nativeResponse(response);
             providerExchange.response(providerResponse);
-            executeCustomizers(exchange, providerExchange, matchedCustomizers, false);
+            executeCustomizers(exchange, providerExchange, customizerPipeline, false);
 
             exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, response.getStatusCode().value());
             Object finalBody = providerExchange.response() != null ? providerExchange.response().body() : result;
@@ -143,6 +145,7 @@ public class RestProviderProducer extends DefaultProducer {
             if (isTimeout(e)) {
                 providerMetrics.timedOut();
             }
+            providerMetrics.recordProviderRequestError(config, customizerContext);
             long elapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
             log.warn(
                     "REST ERROR provider={} operation={} method={} url={} elapsedMs={} message={}",
@@ -252,6 +255,7 @@ public class RestProviderProducer extends DefaultProducer {
     ) {
         return new ProviderMessageCustomizerContext(
                 config.provider(),
+                config.providerType(),
                 serviceCode(exchange),
                 operationName,
                 channelCode(exchange),
@@ -263,18 +267,19 @@ public class RestProviderProducer extends DefaultProducer {
         );
     }
 
-    private void logMatchedCustomizers(
+    private void logConfiguredCustomizers(
             ProviderMessageCustomizerContext context,
-            List<ProviderMessageCustomizer> matchedCustomizers
+            ProviderMessageCustomizerPipeline pipeline
     ) {
         if (!log.isDebugEnabled()) {
             return;
         }
-        List<String> customizerNames = matchedCustomizers.stream()
-                .map(customizer -> customizer.getClass().getSimpleName() + "#" + customizer.order())
+        List<String> customizerNames = pipeline == null ? List.of() : pipeline.entries().stream()
+                .map(entry -> entry.type() + "#" + entry.order())
                 .toList();
-        log.debug("REST provider customizers matched provider={} service={} operation={} channel={} transport={} customizers={}",
+        log.debug("REST provider customizers configured provider={} type={} service={} operation={} channel={} transport={} customizers={}",
                 context.providerCode(),
+                context.providerType(),
                 context.serviceCode(),
                 context.operationCode(),
                 context.channelCode(),
@@ -285,32 +290,33 @@ public class RestProviderProducer extends DefaultProducer {
     private void executeCustomizers(
             Exchange camelExchange,
             ProviderExchange providerExchange,
-            List<ProviderMessageCustomizer> matchedCustomizers,
+            ProviderMessageCustomizerPipeline pipeline,
             boolean beforeSend
     ) {
-        if (matchedCustomizers == null || matchedCustomizers.isEmpty()) {
+        if (pipeline == null || pipeline.isEmpty()) {
             return;
         }
-        for (ProviderMessageCustomizer customizer : matchedCustomizers) {
+        for (ProviderMessageCustomizerPipeline.Entry entry : pipeline.entries()) {
             try {
-                traceSupport.customizerSpan(camelExchange, providerExchange.context(), customizer,
+                traceSupport.customizerSpan(camelExchange, providerExchange.context(), entry.type(),
                         beforeSend ? "beforeSend" : "afterReceive",
                         () -> {
                             if (beforeSend) {
-                                customizer.beforeSend(providerExchange);
+                                entry.customizer().beforeSend(providerExchange);
                             } else {
-                                customizer.afterReceive(providerExchange);
+                                entry.customizer().afterReceive(providerExchange);
                             }
                         });
-                metrics.provider(providerExchange.context().providerCode()).customizerExecution();
+                metrics.provider(providerExchange.context().providerCode()).customizerExecution(providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
             } catch (RuntimeException e) {
-                metrics.provider(providerExchange.context().providerCode()).customizerError();
-                log.error("REST provider customizer error provider={} service={} operation={} channel={} customizer={} phase={} message={}",
+                metrics.provider(providerExchange.context().providerCode()).customizerError(providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
+                log.error("REST provider customizer error provider={} type={} service={} operation={} channel={} customizer={} phase={} message={}",
                         providerExchange.context().providerCode(),
+                        providerExchange.context().providerType(),
                         providerExchange.context().serviceCode(),
                         providerExchange.context().operationCode(),
                         providerExchange.context().channelCode(),
-                        customizer.getClass().getSimpleName(),
+                        entry.type(),
                         beforeSend ? "beforeSend" : "afterReceive",
                         e.getMessage(),
                         e);
@@ -668,21 +674,6 @@ public class RestProviderProducer extends DefaultProducer {
             return span.getSpanContext().getTraceId();
         }
         return "";
-    }
-
-    private Collection<ProviderMessageCustomizer> customizerBeans() {
-        Collection<ProviderMessageCustomizer> beans = getEndpoint().getCamelContext()
-                .getRegistry()
-                .findByType(ProviderMessageCustomizer.class);
-        if (beans == null || beans.isEmpty()) {
-            return List.of();
-        }
-        return beans.stream()
-                .filter(Objects::nonNull)
-                .sorted(Comparator
-                        .comparingInt(ProviderMessageCustomizer::order)
-                        .thenComparing(customizer -> customizer.getClass().getName()))
-                .toList();
     }
 
     private <T> T bean(Class<T> type) {

@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.provider.nab.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
 import ir.daneshrefah.scm.provider.nab.camel.NabComponent;
 import ir.daneshrefah.scm.provider.nab.config.NabProperties;
 import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
@@ -21,15 +22,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Slf4j
 @ConditionalOnClass(CamelContext.class)
-@EnableConfigurationProperties(NabProperties.class)
+@EnableConfigurationProperties({NabProperties.class, ProviderRegistryProperties.class})
 @ConditionalOnProperty(prefix = "scm.provider.nab", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class NabProviderAutoConfiguration {
 
     @Bean("nab")
     @ConditionalOnMissingBean(name = "nab")
-    public NabComponent nabComponent(CamelContext camelContext) {
+    public NabComponent nabComponent(ObjectProvider<CamelContext> camelContext) {
         NabComponent component = new NabComponent();
-        component.setCamelContext(camelContext);
+        CamelContext context = camelContext.getIfAvailable();
+        if (context != null) {
+            component.setCamelContext(context);
+        }
         return component;
     }
 
@@ -37,6 +41,12 @@ public class NabProviderAutoConfiguration {
     @ConditionalOnMissingBean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public NabProviderMetrics nabProviderMetrics() {
+        return new NabProviderMetrics();
     }
 
     @Bean

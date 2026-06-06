@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.provider.rest.customizer;
 
 import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
@@ -9,109 +10,93 @@ import ir.daneshrefah.scm.provider.rest.token.ProviderAuthTokenProvider;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RestAuthenticationProviderMessageCustomizerTest {
 
     @Test
-    void supportsOnlyRestTransportWithTokenAuthenticationEnabled() {
-        RestAuthenticationProviderMessageCustomizer customizer = new RestAuthenticationProviderMessageCustomizer(new StaticTokenProvider());
+    void factoryCreatesRestAuthUrlCustomizerOnlyForRestProvider() {
+        RestAuthUrlProviderMessageCustomizerFactory factory = new RestAuthUrlProviderMessageCustomizerFactory(new StaticTokenProvider());
 
-        assertTrue(customizer.supports(context("rest", config(RestProviderResolvedConfig.TokenApplyLocation.HEADER))));
-        assertFalse(customizer.supports(context("shetab", config(RestProviderResolvedConfig.TokenApplyLocation.HEADER))));
-        assertFalse(customizer.supports(context("rest", config(false, RestProviderResolvedConfig.AuthType.BEARER,
-                RestProviderResolvedConfig.TokenApplyLocation.HEADER))));
-        assertFalse(customizer.supports(context("rest", config(true, RestProviderResolvedConfig.AuthType.BASIC,
-                RestProviderResolvedConfig.TokenApplyLocation.HEADER))));
+        ProviderMessageCustomizer customizer = factory.create(factoryContext("rest", "rest"), config("header", "Authorization", "{tokenType} {accessToken}"));
+
+        assertEquals("rest-auth-url", factory.type());
+        assertEquals(5000, customizer.order());
+        assertThrows(IllegalArgumentException.class,
+                () -> factory.create(factoryContext("rest", "shetab"), config("header", "Authorization", "{tokenType} {accessToken}")));
     }
 
     @Test
-    void appliesTokenToConfiguredHeader() throws Exception {
-        RestAuthenticationProviderMessageCustomizer customizer = new RestAuthenticationProviderMessageCustomizer(new StaticTokenProvider());
-        RestProviderResolvedConfig config = config(RestProviderResolvedConfig.TokenApplyLocation.HEADER, "X-Auth-Token", "{accessToken}");
-        ProviderExchange exchange = exchange(config);
+    void appliesTokenToConfiguredHeader() {
+        ProviderExchange exchange = exchange(config("header", "X-Auth-Token", "{accessToken}"));
+        ProviderMessageCustomizer customizer = customizer("header", "X-Auth-Token", "{accessToken}");
 
         customizer.beforeSend(exchange);
 
-        assertEquals("token-1", exchange.request().headers().get("X-Auth-Token"));
+        assertEquals("abc", exchange.request().headers().get("X-Auth-Token"));
         assertEquals(Boolean.TRUE, exchange.getAttribute("rest.auth.applied", Boolean.class));
     }
 
     @Test
-    void appliesTokenToConfiguredBodyField() throws Exception {
-        RestAuthenticationProviderMessageCustomizer customizer = new RestAuthenticationProviderMessageCustomizer(new StaticTokenProvider());
-        RestProviderResolvedConfig config = config(RestProviderResolvedConfig.TokenApplyLocation.BODY, "accessToken", "{accessToken}");
-        ProviderExchange exchange = exchange(config);
+    void appliesTokenToConfiguredBodyField() {
+        ProviderExchange exchange = exchange(config("body", "accessToken", "{accessToken}"));
+        ProviderMessageCustomizer customizer = customizer("body", "accessToken", "{accessToken}");
 
         customizer.beforeSend(exchange);
 
-        assertEquals("token-1", exchange.request().bodyAsMap().get("accessToken"));
+        assertEquals("abc", exchange.request().fields().get("accessToken"));
     }
 
     @Test
-    void appliesTokenToConfiguredQueryParameter() throws Exception {
-        RestAuthenticationProviderMessageCustomizer customizer = new RestAuthenticationProviderMessageCustomizer(new StaticTokenProvider());
-        RestProviderResolvedConfig config = config(RestProviderResolvedConfig.TokenApplyLocation.QUERY, "auth_token", "{accessToken}");
-        ProviderExchange exchange = exchange(config);
+    void appliesTokenToConfiguredQueryParameter() {
+        ProviderExchange exchange = exchange(config("query", "auth_token", "{accessToken}"));
+        ProviderMessageCustomizer customizer = customizer("query", "auth_token", "{accessToken}");
 
         customizer.beforeSend(exchange);
 
-        assertEquals("token-1", exchange.request().queryParameters().get("auth_token"));
+        assertEquals("abc", exchange.request().queryParameters().get("auth_token"));
     }
 
-    private ProviderExchange exchange(RestProviderResolvedConfig config) throws Exception {
-        ProviderRequest request = new ProviderRequest("POST", new URI("https://provider.example/do"), Map.of(), new java.util.LinkedHashMap<String, Object>());
-        return new ProviderExchange(request, context("rest", config));
+    private ProviderMessageCustomizer customizer(String location, String name, String format) {
+        return new RestAuthUrlProviderMessageCustomizerFactory(new StaticTokenProvider())
+                .create(factoryContext("rest", "rest"), config(location, name, format));
     }
 
-    private ProviderMessageCustomizerContext context(String transportType, RestProviderResolvedConfig config) {
-        return new ProviderMessageCustomizerContext(
-                config.provider(),
-                "svc",
-                "op",
-                "mb",
-                transportType,
-                config.providerConfig(),
-                config,
-                "correlation-1",
-                "trace-1"
-        );
+    private ProviderExchange exchange(RestAuthUrlProviderMessageCustomizerConfig authConfig) {
+        RestProviderResolvedConfig resolvedConfig = resolvedConfig();
+        ProviderMessageCustomizerContext context = new ProviderMessageCustomizerContext(
+                "hps-rest", "rest", "svc", "op", "mb", "rest", Map.of(), resolvedConfig, "corr", "trace");
+        return new ProviderExchange(new ProviderRequest("POST", URI.create("https://provider.example/pay"), Map.of(), Map.of()), context);
     }
 
-    private RestProviderResolvedConfig config(RestProviderResolvedConfig.TokenApplyLocation location) {
-        return config(true, RestProviderResolvedConfig.AuthType.BEARER, location);
+    private RestAuthUrlProviderMessageCustomizerConfig config(String location, String name, String format) {
+        RestAuthUrlProviderMessageCustomizerConfig config = new RestAuthUrlProviderMessageCustomizerConfig();
+        config.setUrl("https://provider.example/token");
+        config.getCache().setName("rest_provider_token_cache");
+        config.getCache().setAuthProfile("default");
+        config.getCache().setCredentialKey("hps-rest");
+        config.getApply().setLocation(location);
+        config.getApply().setName(name);
+        config.getApply().setFormat(format);
+        return config;
     }
 
-    private RestProviderResolvedConfig config(
-            RestProviderResolvedConfig.TokenApplyLocation location,
-            String applyName,
-            String applyFormat
+    private ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext factoryContext(
+            String providerType,
+            String transportType
     ) {
-        return config(true, RestProviderResolvedConfig.AuthType.BEARER, location, applyName, applyFormat);
+        return new ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext(
+                "hps-rest", providerType, transportType, "svc", "op", "mb", "corr", "trace", Map.of(), resolvedConfig());
     }
 
-    private RestProviderResolvedConfig config(
-            boolean authCustomizer,
-            RestProviderResolvedConfig.AuthType authType,
-            RestProviderResolvedConfig.TokenApplyLocation location
-    ) {
-        return config(authCustomizer, authType, location, "Authorization", "{tokenType} {accessToken}");
-    }
-
-    private RestProviderResolvedConfig config(
-            boolean authCustomizer,
-            RestProviderResolvedConfig.AuthType authType,
-            RestProviderResolvedConfig.TokenApplyLocation location,
-            String applyName,
-            String applyFormat
-    ) {
+    private RestProviderResolvedConfig resolvedConfig() {
         return new RestProviderResolvedConfig(
-                "hps",
+                "hps-rest",
+                "rest",
                 "https://provider.example",
                 3000,
                 6000,
@@ -120,44 +105,23 @@ class RestAuthenticationProviderMessageCustomizerTest {
                 RestProviderResolvedConfig.HttpRedirect.NORMAL,
                 "POST",
                 Map.of(),
-                Map.of("outlet", "001"),
-                new RestProviderResolvedConfig.Customizers(authCustomizer),
+                Map.of(),
+                List.of(),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
-                new RestProviderResolvedConfig.Auth(authType, "Authorization", null, null, null, null, true),
-                new RestProviderResolvedConfig.Security(java.util.List.of("authorization"), java.util.List.of("token"), 400),
-                new RestProviderResolvedConfig.Token(
-                        true,
-                        "default",
-                        "credential-a",
-                        "rest_provider_token_cache",
-                        "access-token",
-                        "rest-provider-token",
-                        30,
-                        300,
-                        "POST",
-                        null,
-                        "/token",
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
-                        "access_token",
-                        "expires_in",
-                        "token_type",
-                        "Bearer",
-                        new RestProviderResolvedConfig.TokenCache(true, "centralized", "provider-token", Duration.ofSeconds(30), Duration.ofSeconds(5)),
-                        new RestProviderResolvedConfig.TokenLock(true, "provider-token-refresh-lock", Duration.ofSeconds(3), Duration.ofSeconds(10), Duration.ofMillis(100)),
-                        new RestProviderResolvedConfig.TokenApply(location, applyName, applyFormat)
-                ),
-                new RestProviderResolvedConfig.RateLimit(false, "rest-default", "provider")
+                new RestProviderResolvedConfig.Auth(RestProviderResolvedConfig.AuthType.NONE, "Authorization", null, null, null, null, true),
+                new RestProviderResolvedConfig.Security(List.of("authorization"), List.of("token"), 400),
+                new RestProviderResolvedConfig.RateLimit(false, null, "provider-operation")
         );
     }
 
     private static final class StaticTokenProvider implements ProviderAuthTokenProvider {
         @Override
-        public ProviderAuthToken resolveToken(RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
-            return new ProviderAuthToken("token-1", "Bearer");
+        public ProviderAuthToken resolveToken(
+                RestProviderResolvedConfig providerConfig,
+                RestAuthUrlProviderMessageCustomizerConfig authConfig,
+                ProviderMessageCustomizerContext context
+        ) {
+            return new ProviderAuthToken("abc", "Bearer");
         }
     }
 }

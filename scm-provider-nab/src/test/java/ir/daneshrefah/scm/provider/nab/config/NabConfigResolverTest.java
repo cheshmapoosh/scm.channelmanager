@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.provider.nab.config;
 
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,6 +11,51 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NabConfigResolverTest {
+
+
+    @Test
+    void resolvesUnifiedNabProviderWithoutDefaults() {
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        ProviderRegistryProperties.Provider core = new ProviderRegistryProperties.Provider();
+        core.setType("nab");
+        core.setProtocol("ATPS");
+        core.setEndpoint("127.0.0.1:9999");
+        core.setUserId("999998");
+        core.setPassword("secret");
+        core.getRqUid().setLength(16);
+        ProviderRegistryProperties.Field protocol = new ProviderRegistryProperties.Field();
+        protocol.setName("protocol");
+        protocol.setLength(4);
+        protocol.setRequired(true);
+        ProviderRegistryProperties.Field command = new ProviderRegistryProperties.Field();
+        command.setName("command");
+        command.setLength(2);
+        command.setRequired(true);
+        core.setHeaderFields(List.of(protocol, command));
+        registry.getProviders().put("nab-atps", core);
+
+        NabResolvedConfig config = new NabConfigResolver(registry, new NabProperties()).resolve("nab-atps", null);
+
+        assertEquals("nab-atps", config.provider());
+        assertEquals("nab", config.providerType());
+        assertEquals("ATPS", config.protocol());
+        assertEquals(2, config.headerFieldsByProtocol().get("ATPS").size());
+    }
+
+    @Test
+    void unifiedNabProviderRequiresInstanceHeaderFields() {
+        ProviderRegistryProperties registry = new ProviderRegistryProperties();
+        ProviderRegistryProperties.Provider core = new ProviderRegistryProperties.Provider();
+        core.setType("nab");
+        core.setProtocol("ATPS");
+        core.setEndpoint("127.0.0.1:9999");
+        core.setUserId("999998");
+        core.setPassword("secret");
+        registry.getProviders().put("nab-atps", core);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new NabConfigResolver(registry, new NabProperties()).resolve("nab-atps", null));
+    }
 
     @Test
     void resolvesTypedProviderAndMergesDefaults() {

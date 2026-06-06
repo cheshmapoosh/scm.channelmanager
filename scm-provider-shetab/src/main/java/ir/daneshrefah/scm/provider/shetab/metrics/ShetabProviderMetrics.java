@@ -1,20 +1,41 @@
 package ir.daneshrefah.scm.provider.shetab.metrics;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class ShetabProviderMetrics {
     private final ConcurrentMap<String, CounterSet> counters = new ConcurrentHashMap<>();
+    private final MeterRegistry meterRegistry;
+
+    public ShetabProviderMetrics(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        this.meterRegistry = meterRegistryProvider == null ? null : meterRegistryProvider.getIfAvailable();
+    }
+
+    public ShetabProviderMetrics() {
+        this.meterRegistry = null;
+    }
 
     public CounterSet provider(String provider) {
-        return counters.computeIfAbsent(provider, ignored -> new CounterSet());
+        return counters.computeIfAbsent(provider, ignored -> new CounterSet(provider, meterRegistry));
     }
 
     public static final class CounterSet {
+        private final String provider;
+        private final MeterRegistry meterRegistry;
         private final AtomicLong submitted = new AtomicLong();
         private final AtomicLong rateLimited = new AtomicLong();
         private final AtomicLong rateLimitWaits = new AtomicLong();
@@ -25,6 +46,13 @@ public class ShetabProviderMetrics {
         private final AtomicLong failed = new AtomicLong();
         private final AtomicLong timedOut = new AtomicLong();
         private final AtomicLong totalLatencyMs = new AtomicLong();
+        private final AtomicLong customizerExecutions = new AtomicLong();
+        private final AtomicLong customizerErrors = new AtomicLong();
+
+        private CounterSet(String provider, MeterRegistry meterRegistry) {
+            this.provider = provider;
+            this.meterRegistry = meterRegistry;
+        }
 
         public void submitted() {
             submitted.incrementAndGet();
@@ -68,6 +96,35 @@ public class ShetabProviderMetrics {
             }
         }
 
+        public void recordProviderRequestDuration(
+                ShetabResolvedConfig config,
+                ProviderMessageCustomizerContext context,
+                Duration duration,
+                String outcome
+        ) {
+            if (meterRegistry == null || duration == null) {
+                return;
+            }
+            Timer.builder("provider.request.duration")
+                    .tags(tags(config, context, null, outcome))
+                    .register(meterRegistry)
+                    .record(duration.toNanos(), TimeUnit.NANOSECONDS);
+        }
+
+        public void recordProviderRequestError(ShetabResolvedConfig config, ProviderMessageCustomizerContext context) {
+            increment("provider.request.error", tags(config, context, null, "error"));
+        }
+
+        public void customizerExecution(ProviderMessageCustomizerContext context, String customizerType, String phase) {
+            customizerExecutions.incrementAndGet();
+            increment("provider.customizer.execution", tags(context, customizerType, phase));
+        }
+
+        public void customizerError(ProviderMessageCustomizerContext context, String customizerType, String phase) {
+            customizerErrors.incrementAndGet();
+            increment("provider.customizer.error", tags(context, customizerType, phase));
+        }
+
         public long submittedCount() {
             return submitted.get();
         }
@@ -90,6 +147,43 @@ public class ShetabProviderMetrics {
 
         public long succeededCount() {
             return succeeded.get();
+        }
+
+        private void increment(String name, Iterable<Tag> tags) {
+            if (meterRegistry == null) {
+                return;
+            }
+            Counter.builder(name).tags(tags).register(meterRegistry).increment();
+        }
+
+        private List<Tag> tags(ShetabResolvedConfig config, ProviderMessageCustomizerContext context, String customizerType, String outcome) {
+            return List.of(
+                    Tag.of("providerCode", value(config == null ? provider : config.provider())),
+                    Tag.of("providerType", value(config == null ? "shetab" : config.providerType())),
+                    Tag.of("serviceCode", value(context == null ? "" : context.serviceCode())),
+                    Tag.of("operationCode", value(context == null ? "" : context.operationCode())),
+                    Tag.of("channelCode", value(context == null ? "" : context.channelCode())),
+                    Tag.of("transportType", "shetab"),
+                    Tag.of("customizerType", value(customizerType)),
+                    Tag.of("outcome", value(outcome))
+            );
+        }
+
+        private List<Tag> tags(ProviderMessageCustomizerContext context, String customizerType, String phase) {
+            return List.of(
+                    Tag.of("providerCode", value(context == null ? provider : context.providerCode())),
+                    Tag.of("providerType", value(context == null ? "" : context.providerType())),
+                    Tag.of("serviceCode", value(context == null ? "" : context.serviceCode())),
+                    Tag.of("operationCode", value(context == null ? "" : context.operationCode())),
+                    Tag.of("channelCode", value(context == null ? "" : context.channelCode())),
+                    Tag.of("transportType", value(context == null ? "" : context.transportType())),
+                    Tag.of("customizerType", value(customizerType)),
+                    Tag.of("outcome", value(phase))
+            );
+        }
+
+        private String value(String value) {
+            return value == null ? "" : value;
         }
     }
 }

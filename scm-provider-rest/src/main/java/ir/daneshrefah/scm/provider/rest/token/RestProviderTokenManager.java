@@ -3,17 +3,18 @@ package ir.daneshrefah.scm.provider.rest.token;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
+import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockAcquireFailedException;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
+import ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig;
 import ir.daneshrefah.scm.provider.rest.exception.RestProviderAuthException;
 import ir.daneshrefah.scm.provider.rest.exception.RestProviderAuthFault;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
-import io.opentelemetry.api.trace.Span;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -35,9 +36,6 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 @RequiredArgsConstructor
@@ -49,171 +47,163 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
     private final ObjectProvider<LockUtility> lockUtilityProvider;
     private final RestProviderMetrics metrics;
 
-    private final ConcurrentMap<String, TokenCacheEntry> localTokenCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReentrantLock> localLocks = new ConcurrentHashMap<>();
-
-    public TokenValue resolveToken(RestProviderResolvedConfig config) {
-        ProviderAuthToken token = resolveToken(config, null);
-        return new TokenValue(token.accessToken(), token.tokenType());
-    }
-
     @Override
-    public ProviderAuthToken resolveToken(RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
-        RestProviderResolvedConfig.Token tokenConfig = config.token();
-        if (tokenConfig == null || !tokenConfig.enabled()) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_FAILED, config,
-                    "Token flow is not enabled for provider " + config.provider());
+    public ProviderAuthToken resolveToken(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context
+    ) {
+        if (providerConfig == null) {
+            throw new RestProviderAuthException(RestProviderAuthFault.PROVIDER_AUTH_FAILED, "",
+                    "REST provider configuration is unavailable");
+        }
+        if (authConfig == null) {
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_FAILED, providerConfig,
+                    "REST auth-url configuration is unavailable for provider " + providerConfig.provider());
         }
 
-        String cacheKey = cacheKey(config, context);
-        TokenCacheEntry cached = readToken(config, cacheKey);
+        String cacheKey = cacheKey(providerConfig, authConfig, context);
+        TokenCacheEntry cached = readToken(providerConfig, authConfig, cacheKey);
         long now = System.currentTimeMillis();
-        if (isUsable(cached, tokenConfig, now)) {
-            log.debug("REST provider token cache hit provider={} service={} operation={} channel={} authProfile={}",
-                    config.provider(), serviceCode(context), operationCode(context), channelCode(context), tokenConfig.authProfile());
-            metrics.provider(config.provider()).tokenCacheHit();
-            traceTokenEvent("provider.auth.cache.hit", config, context);
+        if (isUsable(cached, authConfig, now)) {
+            log.debug("REST auth-url token cache hit provider={} service={} operation={} channel={} authProfile={}",
+                    providerConfig.provider(), serviceCode(context), operationCode(context), channelCode(context),
+                    authConfig.cache().getAuthProfile());
+            metrics.provider(providerConfig.provider()).tokenCacheHit(providerConfig, context);
+            traceTokenEvent("provider.auth.cache.hit", providerConfig, authConfig, context);
             return new ProviderAuthToken(cached.accessToken(), cached.tokenType());
         }
-        log.debug("REST provider token cache miss provider={} service={} operation={} channel={} authProfile={}",
-                config.provider(), serviceCode(context), operationCode(context), channelCode(context), tokenConfig.authProfile());
-        metrics.provider(config.provider()).tokenCacheMiss();
-        traceTokenEvent("provider.auth.cache.miss", config, context);
 
-        TokenCacheEntry refreshed = resolveMissingToken(config, context, cacheKey);
+        log.debug("REST auth-url token cache miss provider={} service={} operation={} channel={} authProfile={}",
+                providerConfig.provider(), serviceCode(context), operationCode(context), channelCode(context),
+                authConfig.cache().getAuthProfile());
+        metrics.provider(providerConfig.provider()).tokenCacheMiss(providerConfig, context);
+        traceTokenEvent("provider.auth.cache.miss", providerConfig, authConfig, context);
 
-        if (!isUsable(refreshed, tokenConfig, System.currentTimeMillis())) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_TOKEN_UNAVAILABLE, config,
-                    "Could not resolve valid access token for provider " + config.provider());
+        TokenCacheEntry refreshed = resolveMissingToken(providerConfig, authConfig, context, cacheKey);
+        if (!isUsable(refreshed, authConfig, System.currentTimeMillis())) {
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_TOKEN_UNAVAILABLE, providerConfig,
+                    "Could not resolve valid access token for provider " + providerConfig.provider());
         }
         return new ProviderAuthToken(refreshed.accessToken(), refreshed.tokenType());
     }
 
     private TokenCacheEntry resolveMissingToken(
-            RestProviderResolvedConfig config,
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
             ProviderMessageCustomizerContext context,
             String cacheKey
     ) {
-        RestProviderResolvedConfig.Token tokenConfig = config.token();
-        if (tokenConfig.lock() == null || !tokenConfig.lock().enabled()) {
-            log.warn("REST provider token refresh is running without distributed lock provider={} authProfile={}",
-                    config.provider(), tokenConfig.authProfile());
-            return refreshToken(config, context, cacheKey);
-        }
-
-        String lockKey = lockKey(config, context);
+        String lockKey = lockKey(providerConfig, authConfig, context);
         LockUtility lockUtility = lockUtilityProvider.getIfAvailable();
         if (lockUtility == null) {
-            if (!centralizedTokenCache(config)) {
-                return executeLocalSingleFlight(lockKey, () -> {
-                    TokenCacheEntry current = readToken(config, cacheKey);
-                    if (isUsable(current, tokenConfig, System.currentTimeMillis())) {
-                        metrics.provider(config.provider()).tokenCacheHit();
-                        return current;
-                    }
-                    return refreshToken(config, context, cacheKey);
-                });
-            }
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_LOCK_TIMEOUT, config,
-                    "Distributed lock utility is unavailable for provider " + config.provider());
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_LOCK_TIMEOUT, providerConfig,
+                    "Distributed lock utility is unavailable for provider " + providerConfig.provider());
         }
 
         try {
-            return lockUtility.executeWithLock(lockKey, tokenConfig.lock().waitTimeout(), () -> {
-                metrics.provider(config.provider()).tokenLockAcquired();
-                traceTokenEvent("provider.auth.lock.acquired", config, context);
-                log.debug("REST provider token refresh lock acquired provider={} lockKey={} authProfile={}",
-                        config.provider(), lockKey, tokenConfig.authProfile());
-                TokenCacheEntry current = readToken(config, cacheKey);
-                long currentNow = System.currentTimeMillis();
-                if (isUsable(current, tokenConfig, currentNow)) {
-                    log.debug("REST provider token cache hit after lock provider={} service={} operation={} channel={} authProfile={}",
-                            config.provider(), serviceCode(context), operationCode(context), channelCode(context), tokenConfig.authProfile());
-                    metrics.provider(config.provider()).tokenCacheHit();
+            return lockUtility.executeWithLock(lockKey, authConfig.lock().waitTimeoutDuration(), () -> {
+                metrics.provider(providerConfig.provider()).tokenLockAcquired(providerConfig, context);
+                traceTokenEvent("provider.auth.lock.acquired", providerConfig, authConfig, context);
+                log.debug("REST auth-url token refresh lock acquired provider={} authProfile={}",
+                        providerConfig.provider(), authConfig.cache().getAuthProfile());
+                TokenCacheEntry current = readToken(providerConfig, authConfig, cacheKey);
+                if (isUsable(current, authConfig, System.currentTimeMillis())) {
+                    log.debug("REST auth-url token cache hit after lock provider={} service={} operation={} channel={} authProfile={}",
+                            providerConfig.provider(), serviceCode(context), operationCode(context), channelCode(context),
+                            authConfig.cache().getAuthProfile());
+                    metrics.provider(providerConfig.provider()).tokenCacheHit(providerConfig, context);
+                    traceTokenEvent("provider.auth.cache.hit", providerConfig, authConfig, context);
                     return current;
                 }
-                return refreshToken(config, context, cacheKey);
+                return refreshToken(providerConfig, authConfig, context, cacheKey);
             });
         } catch (LockAcquireFailedException e) {
-            metrics.provider(config.provider()).tokenLockTimeout();
-            traceTokenEvent("provider.auth.lock.timeout", config, context);
-            log.warn("REST provider token refresh lock timeout provider={} lockKey={} waitTimeout={} authProfile={}",
-                    config.provider(), lockKey, tokenConfig.lock().waitTimeout(), tokenConfig.authProfile());
-            TokenCacheEntry polled = pollTokenCache(config, cacheKey);
-            if (isUsable(polled, tokenConfig, System.currentTimeMillis())) {
+            metrics.provider(providerConfig.provider()).tokenLockTimeout(providerConfig, context);
+            traceTokenEvent("provider.auth.lock.timeout", providerConfig, authConfig, context);
+            log.warn("REST auth-url token refresh lock timeout provider={} waitTimeout={} authProfile={}",
+                    providerConfig.provider(), authConfig.lock().waitTimeoutDuration(), authConfig.cache().getAuthProfile());
+            TokenCacheEntry polled = pollTokenCache(providerConfig, authConfig, context, cacheKey);
+            if (isUsable(polled, authConfig, System.currentTimeMillis())) {
                 return polled;
             }
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_LOCK_TIMEOUT,
-                    config.provider(),
-                    "Could not acquire REST provider token refresh lock for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "Could not acquire REST provider token refresh lock for provider " + providerConfig.provider(),
                     e);
         } catch (RestProviderAuthException e) {
             throw e;
         } catch (RuntimeException e) {
-            log.error("REST provider token distributed lock failure provider={} authProfile={}",
-                    config.provider(), tokenConfig.authProfile(), e);
+            log.error("REST auth-url distributed lock failure provider={} authProfile={}",
+                    providerConfig.provider(), authConfig.cache().getAuthProfile(), e);
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_LOCK_TIMEOUT,
-                    config.provider(),
-                    "REST provider token refresh lock failed for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "REST provider token refresh lock failed for provider " + providerConfig.provider(),
                     e);
         }
     }
 
     private TokenCacheEntry refreshToken(
-            RestProviderResolvedConfig config,
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
             ProviderMessageCustomizerContext context,
             String cacheKey
     ) {
         try {
             long startedAt = System.nanoTime();
-            TokenCacheEntry fetched = fetchToken(config, context);
-            metrics.provider(config.provider()).addTokenRequestLatency(Duration.ofNanos(System.nanoTime() - startedAt).toMillis());
-            putToken(config, context, cacheKey, fetched);
-            traceTokenEvent("provider.auth.token.refresh", config, context);
-            log.info("REST provider token refreshed provider={} expiresInSeconds={} authProfile={}",
-                    config.provider(), fetched.expiresInSeconds(), config.token().authProfile());
-            metrics.provider(config.provider()).tokenRefresh();
+            TokenCacheEntry fetched = fetchToken(providerConfig, authConfig, context);
+            metrics.provider(providerConfig.provider()).recordTokenRequestDuration(
+                    providerConfig,
+                    context,
+                    Duration.ofNanos(System.nanoTime() - startedAt));
+            putToken(providerConfig, authConfig, context, cacheKey, fetched);
+            traceTokenEvent("provider.auth.token.refresh", providerConfig, authConfig, context);
+            log.info("REST auth-url token refreshed provider={} expiresInSeconds={} authProfile={}",
+                    providerConfig.provider(), fetched.expiresInSeconds(), authConfig.cache().getAuthProfile());
+            metrics.provider(providerConfig.provider()).tokenRefresh(providerConfig, context);
             return fetched;
         } catch (RestProviderAuthException e) {
-            metrics.provider(config.provider()).tokenRefreshFailure();
+            metrics.provider(providerConfig.provider()).tokenRefreshFailure(providerConfig, context);
             throw e;
         } catch (RuntimeException e) {
-            log.error("REST provider token refresh failed provider={} authProfile={}",
-                    config.provider(), config.token().authProfile(), e);
-            metrics.provider(config.provider()).tokenRefreshFailure();
+            log.error("REST auth-url token refresh failed provider={} authProfile={}",
+                    providerConfig.provider(), authConfig.cache().getAuthProfile(), e);
+            metrics.provider(providerConfig.provider()).tokenRefreshFailure(providerConfig, context);
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_FAILED,
-                    config.provider(),
-                    "REST provider token refresh failed for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "REST provider token refresh failed for provider " + providerConfig.provider(),
                     e);
         }
     }
 
-    private TokenCacheEntry fetchToken(RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
-        RestProviderResolvedConfig.Token tokenConfig = config.token();
-        traceTokenEvent("provider.auth.request", config, context);
-        HttpMethod method = resolveMethod(tokenConfig.method());
-        URI uri = resolveUri(config.baseUrl(), tokenConfig.url(), tokenConfig.path(), tokenConfig.query());
+    private TokenCacheEntry fetchToken(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context
+    ) {
+        traceTokenEvent("provider.auth.request", providerConfig, authConfig, context);
+        HttpMethod method = resolveMethod(authConfig.getMethod());
+        URI uri = resolveUri(providerConfig.baseUrl(), authConfig.getUrl(), authConfig.getPath(), authConfig.request().getQuery());
 
-        Map<String, String> headers = new LinkedHashMap<>(tokenConfig.headers());
-        applyAuth(headers, tokenConfig.auth());
-
-        Object body = resolveTokenRequestBody(tokenConfig, headers);
+        Map<String, String> headers = new LinkedHashMap<>(safeStringMap(authConfig.request().getHeaders()));
+        applyAuth(headers, authConfig.request().auth());
+        Object body = resolveTokenRequestBody(authConfig, headers);
         RestProviderRequestSpec requestSpec = new RestProviderRequestSpec(method, uri, Map.copyOf(headers), body, true);
 
-        ResponseEntity<String> response = clientRegistry.exchange(config, requestSpec);
+        ResponseEntity<String> response = clientRegistry.exchange(providerConfig, requestSpec);
         int statusCode = response.getStatusCode().value();
         if (statusCode < 200 || statusCode >= 300) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_FAILED, config,
-                    "Token endpoint returned non-success status " + statusCode + " for provider " + config.provider());
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_FAILED, providerConfig,
+                    "Token endpoint returned non-success status " + statusCode + " for provider " + providerConfig.provider());
         }
 
         String responseBody = response.getBody();
         if (StringUtils.isBlank(responseBody)) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE, config,
-                    "Token endpoint returned empty body for provider " + config.provider());
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE, providerConfig,
+                    "Token endpoint returned empty body for provider " + providerConfig.provider());
         }
 
         JsonNode root;
@@ -222,60 +212,47 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         } catch (Exception e) {
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE,
-                    config.provider(),
-                    "Token endpoint body is not valid JSON for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "Token endpoint body is not valid JSON for provider " + providerConfig.provider(),
                     e);
         }
 
-        String accessToken = asText(resolvePath(root, tokenConfig.responseTokenField()));
+        RestAuthUrlProviderMessageCustomizerConfig.Response responseConfig = authConfig.response();
+        String accessToken = asText(resolvePath(root, responseConfig.getTokenField()));
         if (StringUtils.isBlank(accessToken)) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE, config,
-                    "Token endpoint response does not contain configured token field for provider " + config.provider());
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_INVALID_RESPONSE, providerConfig,
+                    "Token endpoint response does not contain configured token field for provider " + providerConfig.provider());
         }
 
-        String tokenType = asText(resolvePath(root, tokenConfig.responseTokenTypeField()));
+        String tokenType = asText(resolvePath(root, responseConfig.getTokenTypeField()));
         if (StringUtils.isBlank(tokenType)) {
-            tokenType = tokenConfig.defaultTokenType();
+            tokenType = responseConfig.getDefaultTokenType();
         }
 
-        int expiresInSeconds = asInt(resolvePath(root, tokenConfig.responseExpiresInField()), tokenConfig.defaultExpiresInSeconds());
+        int expiresInSeconds = asInt(resolvePath(root, responseConfig.getExpiresInField()),
+                responseConfig.getDefaultExpiresInSeconds() == null ? 300 : responseConfig.getDefaultExpiresInSeconds());
         if (expiresInSeconds <= 0) {
-            expiresInSeconds = tokenConfig.defaultExpiresInSeconds();
+            expiresInSeconds = responseConfig.getDefaultExpiresInSeconds() == null ? 300 : responseConfig.getDefaultExpiresInSeconds();
         }
         long expiresAtEpochMs = System.currentTimeMillis() + (expiresInSeconds * 1000L);
         return new TokenCacheEntry(accessToken, tokenType, expiresAtEpochMs, expiresInSeconds);
     }
 
-    private Object resolveTokenRequestBody(RestProviderResolvedConfig.Token tokenConfig, Map<String, String> headers) {
-        if (tokenConfig.form() != null && !tokenConfig.form().isEmpty()) {
+    private Object resolveTokenRequestBody(
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            Map<String, String> headers
+    ) {
+        Map<String, String> form = safeStringMap(authConfig.request().getForm());
+        if (!form.isEmpty()) {
             headers.putIfAbsent(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-            return encodeForm(tokenConfig.form());
+            return encodeForm(form);
         }
-        Object body = tokenConfig.body();
-        if (hasBody(body)) {
+        Map<String, Object> body = safeObjectMap(authConfig.request().getBody());
+        if (!body.isEmpty()) {
             headers.putIfAbsent(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
             return body;
         }
         return null;
-    }
-
-    private boolean hasBody(Object body) {
-        if (body == null) {
-            return false;
-        }
-        if (body instanceof String text) {
-            return StringUtils.isNotBlank(text);
-        }
-        if (body instanceof Map<?, ?> map) {
-            return !map.isEmpty();
-        }
-        if (body instanceof Iterable<?> iterable) {
-            return iterable.iterator().hasNext();
-        }
-        if (body.getClass().isArray()) {
-            return java.lang.reflect.Array.getLength(body) > 0;
-        }
-        return true;
     }
 
     private String encodeForm(Map<String, String> form) {
@@ -296,33 +273,29 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         return body.toString();
     }
 
-    private void applyAuth(Map<String, String> headers, RestProviderResolvedConfig.Auth auth) {
-        if (auth == null || auth.type() == null || auth.type() == RestProviderResolvedConfig.AuthType.NONE) {
+    private void applyAuth(Map<String, String> headers, RestAuthUrlProviderMessageCustomizerConfig.Auth auth) {
+        if (auth == null || auth.authType() == RestAuthUrlProviderMessageCustomizerConfig.AuthType.NONE) {
             return;
         }
-        if (hasHeader(headers, auth.headerName())) {
+        if (hasHeader(headers, auth.getHeaderName())) {
             return;
         }
-
-        String headerName = StringUtils.defaultIfBlank(auth.headerName(), HttpHeaders.AUTHORIZATION);
+        String headerName = StringUtils.defaultIfBlank(auth.getHeaderName(), HttpHeaders.AUTHORIZATION);
         String value;
-        switch (auth.type()) {
+        switch (auth.authType()) {
             case BASIC -> {
-                if (StringUtils.isBlank(auth.username()) || StringUtils.isBlank(auth.password())) {
+                if (StringUtils.isBlank(auth.getUsername()) || StringUtils.isBlank(auth.getPassword())) {
                     throw new IllegalArgumentException("Token endpoint BASIC auth requires username and password");
                 }
-                String credentials = auth.username() + ":" + auth.password();
-                if (auth.basicBase64()) {
+                String credentials = auth.getUsername() + ":" + auth.getPassword();
+                if (auth.getBasicBase64() == null || auth.getBasicBase64()) {
                     credentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
                 }
-                String prefix = StringUtils.defaultIfBlank(auth.prefix(), "Basic");
-                value = prefix + " " + credentials;
+                value = StringUtils.defaultIfBlank(auth.getPrefix(), "Basic") + " " + credentials;
             }
-            case BEARER -> value = withPrefix(auth.prefix(), auth.token(), "Bearer");
-            case JWT -> value = withPrefix(auth.prefix(), auth.token(), "JWT");
-            case API_KEY -> value = withPrefix(auth.prefix(), auth.token(), null);
+            case BEARER -> value = withPrefix(auth.getPrefix(), auth.getToken(), "Bearer");
             case NONE -> value = null;
-            default -> throw new IllegalStateException("Unsupported auth type: " + auth.type());
+            default -> throw new IllegalStateException("Unsupported auth type: " + auth.authType());
         }
         if (StringUtils.isNotBlank(value)) {
             headers.put(headerName, value);
@@ -363,13 +336,7 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
                 builder.path(normalizedPath);
             }
         }
-        Map<String, String> queryMap = query == null ? Map.of() : query;
-        queryMap.forEach((key, value) -> {
-            if (StringUtils.isBlank(key) || value == null) {
-                return;
-            }
-            builder.queryParam(key, value);
-        });
+        safeStringMap(query).forEach((key, value) -> builder.queryParam(key, value));
         return builder.build().encode().toUri();
     }
 
@@ -382,43 +349,50 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         }
     }
 
-    private boolean isUsable(TokenCacheEntry entry, RestProviderResolvedConfig.Token tokenConfig, long nowEpochMs) {
+    private boolean isUsable(
+            TokenCacheEntry entry,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            long nowEpochMs
+    ) {
         if (entry == null || StringUtils.isBlank(entry.accessToken())) {
             return false;
         }
-        long refreshThresholdMs = tokenConfig.cache() != null && tokenConfig.cache().refreshSkew() != null
-                ? tokenConfig.cache().refreshSkew().toMillis()
-                : tokenConfig.earlyRefreshSeconds() * 1000L;
-        return (entry.expiresAtEpochMs() - nowEpochMs) > Math.max(refreshThresholdMs, 1000L);
+        long refreshThresholdMs = Math.max(authConfig.cache().refreshSkewDuration().toMillis(), 1000L);
+        return (entry.expiresAtEpochMs() - nowEpochMs) > refreshThresholdMs;
     }
 
-    private String cacheKey(RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
-        RestProviderResolvedConfig.Token token = config.token();
-        String prefix = token.cache() == null ? "provider-token" : StringUtils.defaultIfBlank(token.cache().keyPrefix(), "provider-token");
+    private String cacheKey(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context
+    ) {
         return String.join(":",
-                prefix,
-                safeKey(config.provider()),
-                safeKey(token.authProfile()),
+                safeKey(authConfig.cache().getKeyPrefix()),
+                safeKey(providerConfig.provider()),
+                safeKey(authConfig.cache().getAuthProfile()),
                 safeKey(channelCode(context)),
-                safeKey(token.credentialKey()));
+                safeKey(authConfig.cache().getCredentialKey()));
     }
 
-    private String lockKey(RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
-        RestProviderResolvedConfig.Token token = config.token();
-        String prefix = token.lock() == null ? "provider-token-refresh-lock" : StringUtils.defaultIfBlank(token.lock().keyPrefix(), "provider-token-refresh-lock");
+    private String lockKey(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context
+    ) {
         return String.join(":",
-                prefix,
-                safeKey(config.provider()),
-                safeKey(token.authProfile()),
+                safeKey(authConfig.lock().getKeyPrefix()),
+                safeKey(providerConfig.provider()),
+                safeKey(authConfig.cache().getAuthProfile()),
                 safeKey(channelCode(context)),
-                safeKey(token.credentialKey()));
+                safeKey(authConfig.cache().getCredentialKey()));
     }
 
-    private TokenCacheEntry readToken(RestProviderResolvedConfig config, String key) {
-        Cache cache = tokenCache(config);
-        if (cache == null) {
-            return localTokenCacheEnabled(config) ? localTokenCache.get(localKey(config.token().cacheName(), key)) : null;
-        }
+    private TokenCacheEntry readToken(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            String key
+    ) {
+        Cache cache = tokenCache(providerConfig, authConfig);
         try {
             Cache.ValueWrapper valueWrapper = cache.get(key);
             if (valueWrapper == null || valueWrapper.get() == null) {
@@ -426,101 +400,81 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
             }
             return convertToTokenEntry(valueWrapper.get());
         } catch (RuntimeException e) {
-            log.error("REST provider token centralized cache read failed provider={} cacheName={}",
-                    config.provider(), config.token().cacheName(), e);
+            log.error("REST auth-url centralized cache read failed provider={} cacheName={}",
+                    providerConfig.provider(), authConfig.cache().getName(), e);
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR,
-                    config.provider(),
-                    "REST provider token cache read failed for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "REST provider token cache read failed for provider " + providerConfig.provider(),
                     e);
         }
     }
 
     private void putToken(
-            RestProviderResolvedConfig config,
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
             ProviderMessageCustomizerContext context,
             String key,
             TokenCacheEntry entry
     ) {
-        Cache cache = tokenCache(config);
-        if (cache == null) {
-            if (localTokenCacheEnabled(config)) {
-                localTokenCache.put(localKey(config.token().cacheName(), key), entry);
-                metrics.provider(config.provider()).tokenCachePut();
-                traceTokenEvent("provider.auth.cache.put", config, context);
-            }
-            return;
-        }
-        Duration ttl = tokenTtl(config, entry);
+        Cache cache = tokenCache(providerConfig, authConfig);
+        Duration ttl = tokenTtl(authConfig, entry);
         try {
             if (cache instanceof TtlAwareCache ttlAwareCache) {
                 ttlAwareCache.put(key, entry, ttl);
-                metrics.provider(config.provider()).tokenCachePut();
-                traceTokenEvent("provider.auth.cache.put", config, context);
-                return;
+            } else {
+                cache.put(key, entry);
             }
-            cache.put(key, entry);
-            metrics.provider(config.provider()).tokenCachePut();
-            traceTokenEvent("provider.auth.cache.put", config, context);
+            metrics.provider(providerConfig.provider()).tokenCachePut(providerConfig, context);
+            traceTokenEvent("provider.auth.cache.put", providerConfig, authConfig, context);
         } catch (RuntimeException e) {
-            log.error("REST provider token centralized cache put failed provider={} cacheName={}",
-                    config.provider(), config.token().cacheName(), e);
+            log.error("REST auth-url centralized cache put failed provider={} cacheName={}",
+                    providerConfig.provider(), authConfig.cache().getName(), e);
             throw new RestProviderAuthException(
                     RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR,
-                    config.provider(),
-                    "REST provider token cache put failed for provider " + config.provider(),
+                    providerConfig.provider(),
+                    "REST provider token cache put failed for provider " + providerConfig.provider(),
                     e);
         }
     }
 
-    private Cache tokenCache(RestProviderResolvedConfig config) {
-        RestProviderResolvedConfig.Token token = config.token();
-        if (token.cache() != null && !token.cache().enabled()) {
-            return null;
-        }
+    private Cache tokenCache(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig
+    ) {
         CacheManager cacheManager = cacheManagerProvider.getIfAvailable();
         if (cacheManager == null) {
-            if (centralizedTokenCache(config)) {
-                throw authException(RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR, config,
-                        "Centralized token cache manager is unavailable for provider " + config.provider());
-            }
-            return null;
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR, providerConfig,
+                    "Centralized token cache manager is unavailable for provider " + providerConfig.provider());
         }
-        Cache cache = cacheManager.getCache(token.cacheName());
-        if (cache == null && centralizedTokenCache(config)) {
-            throw authException(RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR, config,
-                    "Centralized token cache is not configured for provider " + config.provider());
+        Cache cache = cacheManager.getCache(authConfig.cache().getName());
+        if (cache == null) {
+            throw authException(RestProviderAuthFault.PROVIDER_AUTH_CACHE_ERROR, providerConfig,
+                    "Centralized token cache is not configured for provider " + providerConfig.provider());
         }
         return cache;
     }
 
-    private boolean centralizedTokenCache(RestProviderResolvedConfig config) {
-        RestProviderResolvedConfig.TokenCache cache = config.token().cache();
-        return cache == null || !"local".equalsIgnoreCase(cache.mode());
-    }
-
-    private boolean localTokenCacheEnabled(RestProviderResolvedConfig config) {
-        RestProviderResolvedConfig.TokenCache cache = config.token().cache();
-        return cache != null && cache.enabled() && "local".equalsIgnoreCase(cache.mode());
-    }
-
-    private Duration tokenTtl(RestProviderResolvedConfig config, TokenCacheEntry entry) {
-        Duration ttlSkew = config.token().cache() == null ? Duration.ZERO : config.token().cache().ttlSkew();
-        long ttlSeconds = Math.max(1, entry.expiresInSeconds() - (ttlSkew == null ? 0 : ttlSkew.toSeconds()));
+    private Duration tokenTtl(RestAuthUrlProviderMessageCustomizerConfig authConfig, TokenCacheEntry entry) {
+        long ttlSeconds = Math.max(1, entry.expiresInSeconds() - authConfig.cache().ttlSkewDuration().toSeconds());
         return Duration.ofSeconds(ttlSeconds);
     }
 
-    private TokenCacheEntry pollTokenCache(RestProviderResolvedConfig config, String cacheKey) {
-        RestProviderResolvedConfig.Token token = config.token();
-        Duration waitTimeout = token.lock().waitTimeout() == null ? Duration.ZERO : token.lock().waitTimeout();
-        Duration retryDelay = token.lock().retryDelay();
+    private TokenCacheEntry pollTokenCache(
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context,
+            String cacheKey
+    ) {
+        Duration waitTimeout = authConfig.lock().waitTimeoutDuration();
+        Duration retryDelay = authConfig.lock().retryDelayDuration();
         long deadline = System.nanoTime() + Math.max(0, waitTimeout.toNanos());
         while (System.nanoTime() <= deadline) {
-            TokenCacheEntry cached = readToken(config, cacheKey);
-            if (isUsable(cached, token, System.currentTimeMillis())) {
-                log.debug("REST provider token cache populated while waiting provider={} authProfile={}",
-                        config.provider(), token.authProfile());
-                metrics.provider(config.provider()).tokenCacheHit();
+            TokenCacheEntry cached = readToken(providerConfig, authConfig, cacheKey);
+            if (isUsable(cached, authConfig, System.currentTimeMillis())) {
+                log.debug("REST auth-url token cache populated while waiting provider={} authProfile={}",
+                        providerConfig.provider(), authConfig.cache().getAuthProfile());
+                metrics.provider(providerConfig.provider()).tokenCacheHit(providerConfig, context);
                 return cached;
             }
             sleep(retryDelay);
@@ -535,16 +489,6 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for REST provider token cache", e);
-        }
-    }
-
-    private TokenCacheEntry executeLocalSingleFlight(String lockKey, java.util.function.Supplier<TokenCacheEntry> action) {
-        ReentrantLock localLock = localLocks.computeIfAbsent(lockKey, ignored -> new ReentrantLock());
-        localLock.lock();
-        try {
-            return action.get();
-        } finally {
-            localLock.unlock();
         }
     }
 
@@ -581,10 +525,7 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return null;
         }
-        if (node.isTextual()) {
-            return node.asText();
-        }
-        if (node.isNumber() || node.isBoolean()) {
+        if (node.isTextual() || node.isNumber() || node.isBoolean()) {
             return node.asText();
         }
         return null;
@@ -607,8 +548,28 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         return fallback;
     }
 
-    private String localKey(String cacheName, String key) {
-        return cacheName + "::" + key;
+    private Map<String, String> safeStringMap(Map<String, String> input) {
+        Map<String, String> result = new LinkedHashMap<>();
+        if (input != null) {
+            input.forEach((key, value) -> {
+                if (StringUtils.isNotBlank(key) && value != null) {
+                    result.put(key, value);
+                }
+            });
+        }
+        return result;
+    }
+
+    private Map<String, Object> safeObjectMap(Map<String, Object> input) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (input != null) {
+            input.forEach((key, value) -> {
+                if (StringUtils.isNotBlank(key) && value != null) {
+                    result.put(key, value);
+                }
+            });
+        }
+        return result;
     }
 
     private String safeKey(String value) {
@@ -630,24 +591,30 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
 
     private RestProviderAuthException authException(
             RestProviderAuthFault fault,
-            RestProviderResolvedConfig config,
+            RestProviderResolvedConfig providerConfig,
             String message
     ) {
-        return new RestProviderAuthException(fault, config.provider(), message);
+        return new RestProviderAuthException(fault, providerConfig.provider(), message);
     }
 
-    private void traceTokenEvent(String eventName, RestProviderResolvedConfig config, ProviderMessageCustomizerContext context) {
+    private void traceTokenEvent(
+            String eventName,
+            RestProviderResolvedConfig providerConfig,
+            RestAuthUrlProviderMessageCustomizerConfig authConfig,
+            ProviderMessageCustomizerContext context
+    ) {
         Span span = Span.current();
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
         span.addEvent(eventName);
-        span.setAttribute("scm.provider.name", config.provider());
+        span.setAttribute("scm.provider.name", providerConfig.provider());
+        span.setAttribute("scm.provider.type", providerConfig.providerType());
         span.setAttribute("scm.provider.service_code", serviceCode(context));
         span.setAttribute("scm.provider.operation_code", operationCode(context));
         span.setAttribute("scm.provider.channel_code", channelCode(context));
         span.setAttribute("scm.provider.transport_type", "rest");
-        span.setAttribute("scm.provider.auth.profile", StringUtils.defaultString(config.token().authProfile()));
+        span.setAttribute("scm.provider.auth.profile", StringUtils.defaultString(authConfig.cache().getAuthProfile()));
         if ("provider.auth.cache.hit".equals(eventName)) {
             span.setAttribute("scm.provider.auth.cache_hit", true);
         } else if ("provider.auth.cache.miss".equals(eventName)) {
@@ -659,9 +626,6 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         } else if ("provider.auth.token.refresh".equals(eventName)) {
             span.setAttribute("scm.provider.auth.token_refreshed", true);
         }
-    }
-
-    public record TokenValue(String accessToken, String tokenType) {
     }
 
     record TokenCacheEntry(

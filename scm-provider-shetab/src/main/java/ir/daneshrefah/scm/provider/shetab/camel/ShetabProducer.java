@@ -2,7 +2,15 @@ package ir.daneshrefah.scm.provider.shetab.camel;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipelineFactory;
+import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
+import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabConfigResolver;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabEndpointOverrides;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabHeaders;
@@ -10,7 +18,6 @@ import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabIsoMapConverter;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.ShetabRateLimiter;
-import ir.daneshrefah.scm.provider.shetab.security.ShetabMessageSecurityProcessor;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabClientRegistry;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabTraceSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +26,9 @@ import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
 import org.jpos.iso.ISOMsg;
 
+import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +44,8 @@ public class ShetabProducer extends DefaultProducer {
     private ShetabClientRegistry clientRegistry;
     private ShetabRateLimiter rateLimiter;
     private ShetabProviderMetrics metrics;
-    private ShetabMessageSecurityProcessor securityProcessor;
     private ShetabTraceSupport traceSupport;
+    private ProviderMessageCustomizerPipelineFactory customizerPipelineFactory;
     private ObjectMapper objectMapper;
 
     public ShetabProducer(ShetabEndpoint endpoint) {
@@ -52,8 +61,8 @@ public class ShetabProducer extends DefaultProducer {
         clientRegistry = bean(ShetabClientRegistry.class);
         rateLimiter = bean(ShetabRateLimiter.class);
         metrics = bean(ShetabProviderMetrics.class);
-        securityProcessor = bean(ShetabMessageSecurityProcessor.class);
         traceSupport = bean(ShetabTraceSupport.class);
+        customizerPipelineFactory = bean(ProviderMessageCustomizerPipelineFactory.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -68,7 +77,13 @@ public class ShetabProducer extends DefaultProducer {
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
-        securityProcessor.protectRequest(config, requestMap, request);
+        ProviderRequest providerRequest = new ProviderRequest("ISO8583", null, Map.of(), requestMap);
+        providerRequest.nativeRequest(request);
+        ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
+        ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
+        ProviderMessageCustomizerPipeline customizerPipeline = customizerPipelineFactory.build(customizerContext, config.messageCustomizers());
+        logConfiguredCustomizers(customizerContext, customizerPipeline);
+        executeCustomizers(exchange, providerExchange, customizerPipeline, true);
 
         log.info("Shetab provider start provider={} operation={} mti={}", config.provider(), operationName, requestMap.get("mti"));
         if (log.isDebugEnabled()) {
@@ -81,10 +96,16 @@ public class ShetabProducer extends DefaultProducer {
                 rateLimiter.acquire(config, operationName);
                 return clientRegistry.request(config, request);
             });
-            securityProcessor.verifyResponse(config, response);
+            ProviderResponse providerResponse = new ProviderResponse();
+            providerResponse.nativeResponse(response);
+            providerExchange.response(providerResponse);
+            executeCustomizers(exchange, providerExchange, customizerPipeline, false);
             Map<String, Object> responseMap = isoMapConverter.toMap(response);
+            providerResponse.body(responseMap);
             providerMetrics.succeeded();
-            providerMetrics.addLatency(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+            Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
+            providerMetrics.addLatency(elapsed.toMillis());
+            providerMetrics.recordProviderRequestDuration(config, customizerContext, elapsed, "success");
             if (log.isDebugEnabled()) {
                 log.debug("Shetab provider response provider={} operation={} body={}",
                         config.provider(), operationName, maskSensitive(responseMap));
@@ -93,9 +114,73 @@ public class ShetabProducer extends DefaultProducer {
             log.info("Shetab provider done provider={} operation={} elapsedMs={}",
                     config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
         } catch (RuntimeException e) {
+            providerMetrics.recordProviderRequestError(config, customizerContext);
             log.error("Shetab provider error provider={} operation={} elapsedMs={} message={}",
                     config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt), e.getMessage(), e);
             throw e;
+        }
+    }
+
+
+    private ProviderMessageCustomizerContext customizerContext(Exchange exchange, ShetabResolvedConfig config, String operationName) {
+        return new ProviderMessageCustomizerContext(
+                config.provider(),
+                config.providerType(),
+                serviceCode(exchange),
+                operationName,
+                channelCode(exchange),
+                "shetab",
+                config.providerConfig(),
+                config,
+                correlationId(exchange),
+                traceId(exchange)
+        );
+    }
+
+    private void logConfiguredCustomizers(ProviderMessageCustomizerContext context, ProviderMessageCustomizerPipeline pipeline) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        List<String> customizers = pipeline == null ? List.of() : pipeline.entries().stream()
+                .map(entry -> entry.type() + "#" + entry.order())
+                .toList();
+        log.debug("Shetab provider customizers configured provider={} type={} service={} operation={} channel={} transport={} customizers={}",
+                context.providerCode(), context.providerType(), context.serviceCode(), context.operationCode(),
+                context.channelCode(), context.transportType(), customizers);
+    }
+
+    private void executeCustomizers(
+            Exchange camelExchange,
+            ProviderExchange providerExchange,
+            ProviderMessageCustomizerPipeline pipeline,
+            boolean beforeSend
+    ) {
+        if (pipeline == null || pipeline.isEmpty()) {
+            return;
+        }
+        for (ProviderMessageCustomizerPipeline.Entry entry : pipeline.entries()) {
+            try {
+                traceSupport.customizerSpan(camelExchange, providerExchange.context(), entry.type(),
+                        beforeSend ? "beforeSend" : "afterReceive",
+                        () -> {
+                            if (beforeSend) {
+                                entry.customizer().beforeSend(providerExchange);
+                            } else {
+                                entry.customizer().afterReceive(providerExchange);
+                            }
+                        });
+                metrics.provider(providerExchange.context().providerCode()).customizerExecution(
+                        providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
+            } catch (RuntimeException e) {
+                metrics.provider(providerExchange.context().providerCode()).customizerError(
+                        providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
+                log.error("Shetab provider customizer error provider={} type={} service={} operation={} channel={} customizer={} phase={} message={}",
+                        providerExchange.context().providerCode(), providerExchange.context().providerType(),
+                        providerExchange.context().serviceCode(), providerExchange.context().operationCode(),
+                        providerExchange.context().channelCode(), entry.type(), beforeSend ? "beforeSend" : "afterReceive",
+                        e.getMessage(), e);
+                throw e;
+            }
         }
     }
 
@@ -182,6 +267,43 @@ public class ShetabProducer extends DefaultProducer {
                 || normalized.contains("cvv")
                 || normalized.contains("expiry")
                 || normalized.contains("expire");
+    }
+
+
+    private String serviceCode(Exchange exchange) {
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        if (service != null && StringUtils.isNotBlank(service.getCode())) {
+            return service.getCode();
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("serviceCode", String.class));
+    }
+
+    private String channelCode(Exchange exchange) {
+        String channelCode = exchange.getProperty(Message.CHANNEL_CODE, String.class);
+        if (StringUtils.isNotBlank(channelCode)) {
+            return channelCode;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("channelCode", String.class));
+    }
+
+    private String correlationId(Exchange exchange) {
+        String correlationId = exchange.getProperty(Message.CORRELATION_ID, String.class);
+        if (StringUtils.isNotBlank(correlationId)) {
+            return correlationId;
+        }
+        correlationId = exchange.getMessage().getHeader("X-Correlation-Id", String.class);
+        if (StringUtils.isNotBlank(correlationId)) {
+            return correlationId;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("X-SCM-Correlation-ID", String.class));
+    }
+
+    private String traceId(Exchange exchange) {
+        String traceId = exchange.getProperty(Message.TRACE_ID, String.class);
+        if (StringUtils.isNotBlank(traceId)) {
+            return traceId;
+        }
+        return traceSupport.currentTraceIds().getOrDefault("traceId", "");
     }
 
     private <T> T first(T value, T fallback) {
