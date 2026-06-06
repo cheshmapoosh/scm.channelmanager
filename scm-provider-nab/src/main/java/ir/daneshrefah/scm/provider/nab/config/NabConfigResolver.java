@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.provider.nab.domain.NabOverflowPolicy;
 import ir.daneshrefah.scm.provider.nab.domain.NabPadding;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class NabConfigResolver {
     private final NabProperties legacyProperties;
     private final AtomicBoolean legacyWarningLogged = new AtomicBoolean();
 
+    @Autowired
     public NabConfigResolver(
             ProviderRegistryProperties providerRegistryProperties,
             NabProperties legacyProperties

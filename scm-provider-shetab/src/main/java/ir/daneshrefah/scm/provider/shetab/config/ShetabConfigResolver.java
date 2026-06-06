@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.provider.shetab.config;
 import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ public class ShetabConfigResolver {
     private final ShetabProperties legacyProperties;
     private final AtomicBoolean legacyWarningLogged = new AtomicBoolean();
 
+    @Autowired
     public ShetabConfigResolver(
             ProviderRegistryProperties providerRegistryProperties,
             ShetabProperties legacyProperties

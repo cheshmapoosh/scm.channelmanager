@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -40,6 +41,7 @@ public class RestProviderConfigResolver {
     private final RestProviderProperties legacyProperties;
     private final AtomicBoolean legacyWarningLogged = new AtomicBoolean();
 
+    @Autowired
     public RestProviderConfigResolver(
             ProviderRegistryProperties providerRegistryProperties,
             RestProviderProperties legacyProperties
