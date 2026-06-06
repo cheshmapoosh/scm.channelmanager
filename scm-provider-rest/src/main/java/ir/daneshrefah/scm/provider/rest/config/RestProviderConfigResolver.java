@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -75,10 +76,26 @@ public class RestProviderConfigResolver {
         RestProviderProperties.Auth mergedAuth = mergeAuth(defaults.getAuth(), instance.getAuth());
         RestProviderProperties.Security mergedSecurity = mergeSecurity(defaults.getSecurity(), instance.getSecurity());
         RestProviderProperties.Token mergedToken = mergeToken(defaults.getToken(), instance.getToken());
+        RestProviderProperties.Customizers mergedCustomizers = mergeCustomizers(defaults.getCustomizers(), instance.getCustomizers());
         RestProviderProperties.RateLimit mergedRateLimit = mergeRateLimit(defaults.getRateLimit(), instance.getRateLimit());
 
         Map<String, String> headers = mergeHeaders(defaults.getHeaders(), instance.getHeaders());
+        Map<String, Object> providerConfig = mergeProviderConfig(defaults.getProviderConfig(), instance.getProviderConfig());
         RestProviderProperties.Auth mergedTokenAuth = nonNull(mergedToken.getAuth(), new RestProviderProperties.Auth());
+        RestProviderResolvedConfig.Auth resolvedAuth = new RestProviderResolvedConfig.Auth(
+                resolveAuthType(mergedAuth.getType()),
+                StringUtils.defaultIfBlank(mergedAuth.getHeaderName(), "Authorization").trim(),
+                StringUtils.trimToNull(mergedAuth.getPrefix()),
+                StringUtils.trimToNull(mergedAuth.getToken()),
+                StringUtils.trimToNull(mergedAuth.getUsername()),
+                StringUtils.trimToNull(mergedAuth.getPassword()),
+                Boolean.TRUE.equals(first(mergedAuth.getBasicBase64(), Boolean.TRUE))
+        );
+        boolean tokenEnabled = Boolean.TRUE.equals(first(mergedToken.getEnabled(), Boolean.FALSE));
+        boolean authenticationCustomizerEnabled = Boolean.TRUE.equals(first(
+                mergedCustomizers.getAuthentication(),
+                tokenEnabled
+        ));
 
         return new RestProviderResolvedConfig(
                 providerName,
@@ -90,28 +107,24 @@ public class RestProviderConfigResolver {
                 redirect,
                 defaultMethod,
                 headers,
+                providerConfig,
+                new RestProviderResolvedConfig.Customizers(authenticationCustomizerEnabled),
                 new RestProviderResolvedConfig.Proxy(
                         StringUtils.trimToNull(mergedProxy.getHost()),
                         mergedProxy.getPort(),
                         StringUtils.trimToNull(mergedProxy.getUsername()),
                         StringUtils.trimToNull(mergedProxy.getPassword())
                 ),
-                new RestProviderResolvedConfig.Auth(
-                        resolveAuthType(mergedAuth.getType()),
-                        StringUtils.defaultIfBlank(mergedAuth.getHeaderName(), "Authorization").trim(),
-                        StringUtils.trimToNull(mergedAuth.getPrefix()),
-                        StringUtils.trimToNull(mergedAuth.getToken()),
-                        StringUtils.trimToNull(mergedAuth.getUsername()),
-                        StringUtils.trimToNull(mergedAuth.getPassword()),
-                        Boolean.TRUE.equals(first(mergedAuth.getBasicBase64(), Boolean.TRUE))
-                ),
+                resolvedAuth,
                 new RestProviderResolvedConfig.Security(
                         listOf(nonEmpty(mergedSecurity.getSensitiveHeaders(), DEFAULT_SENSITIVE_HEADERS)),
                         listOf(nonEmpty(mergedSecurity.getSensitiveBodyKeys(), DEFAULT_SENSITIVE_BODY_KEYS)),
                         value(mergedSecurity.getMaxBodyLogLength(), 400)
                 ),
                 new RestProviderResolvedConfig.Token(
-                        Boolean.TRUE.equals(first(mergedToken.getEnabled(), Boolean.FALSE)),
+                        tokenEnabled,
+                        value(mergedToken.getAuthProfile(), "default"),
+                        value(mergedToken.getCredentialKey(), value(mergedToken.getCacheKey(), "access-token")),
                         value(mergedToken.getCacheName(), "rest_provider_token_cache"),
                         value(mergedToken.getCacheKey(), "access-token"),
                         value(mergedToken.getLockName(), "rest-provider-token"),
@@ -136,7 +149,10 @@ public class RestProviderConfigResolver {
                         value(mergedToken.getResponseTokenField(), "access_token"),
                         value(mergedToken.getResponseExpiresInField(), "expires_in"),
                         value(mergedToken.getResponseTokenTypeField(), "token_type"),
-                        value(mergedToken.getDefaultTokenType(), "Bearer")
+                        value(mergedToken.getDefaultTokenType(), "Bearer"),
+                        resolveTokenCache(mergedToken),
+                        resolveTokenLock(mergedToken),
+                        resolveTokenApply(mergedToken, resolvedAuth)
                 ),
                 resolvedRateLimit(mergedRateLimit, overrides)
         );
@@ -230,11 +246,24 @@ public class RestProviderConfigResolver {
         return result;
     }
 
+    private RestProviderProperties.Customizers mergeCustomizers(
+            RestProviderProperties.Customizers defaults,
+            RestProviderProperties.Customizers instance
+    ) {
+        RestProviderProperties.Customizers fallback = nonNull(defaults, new RestProviderProperties.Customizers());
+        RestProviderProperties.Customizers item = nonNull(instance, new RestProviderProperties.Customizers());
+        RestProviderProperties.Customizers result = new RestProviderProperties.Customizers();
+        result.setAuthentication(first(item.getAuthentication(), fallback.getAuthentication()));
+        return result;
+    }
+
     private RestProviderProperties.Token mergeToken(RestProviderProperties.Token defaults, RestProviderProperties.Token instance) {
         RestProviderProperties.Token fallback = nonNull(defaults, new RestProviderProperties.Token());
         RestProviderProperties.Token item = nonNull(instance, new RestProviderProperties.Token());
         RestProviderProperties.Token result = new RestProviderProperties.Token();
         result.setEnabled(first(item.getEnabled(), fallback.getEnabled()));
+        result.setAuthProfile(first(item.getAuthProfile(), fallback.getAuthProfile()));
+        result.setCredentialKey(first(item.getCredentialKey(), fallback.getCredentialKey()));
         result.setCacheName(first(item.getCacheName(), fallback.getCacheName()));
         result.setCacheKey(first(item.getCacheKey(), fallback.getCacheKey()));
         result.setLockName(first(item.getLockName(), fallback.getLockName()));
@@ -252,6 +281,9 @@ public class RestProviderConfigResolver {
         result.setResponseExpiresInField(first(item.getResponseExpiresInField(), fallback.getResponseExpiresInField()));
         result.setResponseTokenTypeField(first(item.getResponseTokenTypeField(), fallback.getResponseTokenTypeField()));
         result.setDefaultTokenType(first(item.getDefaultTokenType(), fallback.getDefaultTokenType()));
+        result.setCache(mergeTokenCache(fallback.getCache(), item.getCache()));
+        result.setLock(mergeTokenLock(fallback.getLock(), item.getLock()));
+        result.setApply(mergeTokenApply(fallback.getApply(), item.getApply()));
         return result;
     }
 
@@ -288,12 +320,117 @@ public class RestProviderConfigResolver {
         return Map.copyOf(body);
     }
 
+    private Map<String, Object> mergeProviderConfig(Map<String, Object> defaults, Map<String, Object> instance) {
+        Map<String, Object> providerConfig = new LinkedHashMap<>();
+        providerConfig.putAll(nonNull(defaults, Map.of()));
+        providerConfig.putAll(nonNull(instance, Map.of()));
+        providerConfig.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
+        return Map.copyOf(providerConfig);
+    }
+
     private Map<String, String> mergeHeaders(Map<String, String> defaults, Map<String, String> instance) {
         Map<String, String> headers = new LinkedHashMap<>();
         headers.putAll(nonNull(defaults, Map.of()));
         headers.putAll(nonNull(instance, Map.of()));
         headers.entrySet().removeIf(entry -> StringUtils.isBlank(entry.getKey()) || entry.getValue() == null);
         return Map.copyOf(headers);
+    }
+
+    private RestProviderProperties.Cache mergeTokenCache(RestProviderProperties.Cache defaults, RestProviderProperties.Cache instance) {
+        RestProviderProperties.Cache fallback = nonNull(defaults, new RestProviderProperties.Cache());
+        RestProviderProperties.Cache item = nonNull(instance, new RestProviderProperties.Cache());
+        RestProviderProperties.Cache result = new RestProviderProperties.Cache();
+        result.setEnabled(first(item.getEnabled(), fallback.getEnabled()));
+        result.setMode(first(item.getMode(), fallback.getMode()));
+        result.setKeyPrefix(first(item.getKeyPrefix(), fallback.getKeyPrefix()));
+        result.setRefreshSkew(first(item.getRefreshSkew(), fallback.getRefreshSkew()));
+        result.setTtlSkew(first(item.getTtlSkew(), fallback.getTtlSkew()));
+        return result;
+    }
+
+    private RestProviderProperties.Lock mergeTokenLock(RestProviderProperties.Lock defaults, RestProviderProperties.Lock instance) {
+        RestProviderProperties.Lock fallback = nonNull(defaults, new RestProviderProperties.Lock());
+        RestProviderProperties.Lock item = nonNull(instance, new RestProviderProperties.Lock());
+        RestProviderProperties.Lock result = new RestProviderProperties.Lock();
+        result.setEnabled(first(item.getEnabled(), fallback.getEnabled()));
+        result.setKeyPrefix(first(item.getKeyPrefix(), fallback.getKeyPrefix()));
+        result.setWaitTimeout(first(item.getWaitTimeout(), fallback.getWaitTimeout()));
+        result.setLeaseTime(first(item.getLeaseTime(), fallback.getLeaseTime()));
+        result.setRetryDelay(first(item.getRetryDelay(), fallback.getRetryDelay()));
+        return result;
+    }
+
+    private RestProviderProperties.Apply mergeTokenApply(RestProviderProperties.Apply defaults, RestProviderProperties.Apply instance) {
+        RestProviderProperties.Apply fallback = nonNull(defaults, new RestProviderProperties.Apply());
+        RestProviderProperties.Apply item = nonNull(instance, new RestProviderProperties.Apply());
+        RestProviderProperties.Apply result = new RestProviderProperties.Apply();
+        result.setLocation(first(item.getLocation(), fallback.getLocation()));
+        result.setName(first(item.getName(), fallback.getName()));
+        result.setFormat(first(item.getFormat(), fallback.getFormat()));
+        return result;
+    }
+
+    private RestProviderResolvedConfig.TokenCache resolveTokenCache(RestProviderProperties.Token token) {
+        RestProviderProperties.Cache cache = nonNull(token.getCache(), new RestProviderProperties.Cache());
+        int earlyRefreshSeconds = value(token.getEarlyRefreshSeconds(), 30);
+        return new RestProviderResolvedConfig.TokenCache(
+                Boolean.TRUE.equals(first(cache.getEnabled(), Boolean.TRUE)),
+                value(cache.getMode(), "centralized").trim().toLowerCase(Locale.ROOT),
+                value(cache.getKeyPrefix(), "provider-token"),
+                first(cache.getRefreshSkew(), Duration.ofSeconds(Math.max(0, earlyRefreshSeconds))),
+                first(cache.getTtlSkew(), Duration.ofSeconds(5))
+        );
+    }
+
+    private RestProviderResolvedConfig.TokenLock resolveTokenLock(RestProviderProperties.Token token) {
+        RestProviderProperties.Lock lock = nonNull(token.getLock(), new RestProviderProperties.Lock());
+        return new RestProviderResolvedConfig.TokenLock(
+                Boolean.TRUE.equals(first(lock.getEnabled(), Boolean.TRUE)),
+                value(lock.getKeyPrefix(), value(token.getLockName(), "provider-token-refresh-lock")),
+                first(lock.getWaitTimeout(), Duration.ofSeconds(3)),
+                first(lock.getLeaseTime(), Duration.ofSeconds(10)),
+                first(lock.getRetryDelay(), Duration.ofMillis(100))
+        );
+    }
+
+    private RestProviderResolvedConfig.TokenApply resolveTokenApply(
+            RestProviderProperties.Token token,
+            RestProviderResolvedConfig.Auth auth
+    ) {
+        RestProviderProperties.Apply apply = nonNull(token.getApply(), new RestProviderProperties.Apply());
+        RestProviderResolvedConfig.TokenApplyLocation location = resolveApplyLocation(apply.getLocation());
+        String name = value(apply.getName(), defaultApplyName(location, auth));
+        String format = value(apply.getFormat(), defaultApplyFormat(auth));
+        return new RestProviderResolvedConfig.TokenApply(location, name, format);
+    }
+
+    private RestProviderResolvedConfig.TokenApplyLocation resolveApplyLocation(String value) {
+        String location = StringUtils.defaultIfBlank(value, "header").trim().toUpperCase(Locale.ROOT);
+        try {
+            return RestProviderResolvedConfig.TokenApplyLocation.valueOf(location);
+        } catch (Exception ignored) {
+            throw new IllegalArgumentException("Unsupported token apply location: " + value + ". Allowed: HEADER, BODY, QUERY");
+        }
+    }
+
+    private String defaultApplyName(RestProviderResolvedConfig.TokenApplyLocation location, RestProviderResolvedConfig.Auth auth) {
+        if (location == RestProviderResolvedConfig.TokenApplyLocation.HEADER) {
+            return StringUtils.defaultIfBlank(auth.headerName(), "Authorization");
+        }
+        return "accessToken";
+    }
+
+    private String defaultApplyFormat(RestProviderResolvedConfig.Auth auth) {
+        if (auth.type() == RestProviderResolvedConfig.AuthType.API_KEY && StringUtils.isBlank(auth.prefix())) {
+            return "{accessToken}";
+        }
+        if (StringUtils.isNotBlank(auth.prefix())) {
+            return auth.prefix() + " {accessToken}";
+        }
+        if (auth.type() == RestProviderResolvedConfig.AuthType.JWT) {
+            return "{tokenType} {accessToken}";
+        }
+        return "{tokenType} {accessToken}";
     }
 
     private static <T> T first(T value, T fallback) {

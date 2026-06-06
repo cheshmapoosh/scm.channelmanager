@@ -9,6 +9,10 @@ public record RestProviderRequestSpec(
         HttpMethod method,
         URI uri,
         Map<String, String> headers,
-        Object body
+        Object body,
+        boolean skipProviderAuth
 ) {
+    public RestProviderRequestSpec(HttpMethod method, URI uri, Map<String, String> headers, Object body) {
+        this(method, uri, headers, body, false);
+    }
 }

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,11 +30,19 @@ public class RestProviderProperties {
         private String followRedirects = "NORMAL";
         private String defaultMethod = "POST";
         private Map<String, String> headers = new HashMap<>();
+        private Map<String, Object> providerConfig = new HashMap<>();
+        private Customizers customizers = new Customizers();
         private RateLimit rateLimit = new RateLimit();
         private Proxy proxy = new Proxy();
         private Auth auth = new Auth();
         private Security security = new Security();
         private Token token = new Token();
+    }
+
+    @Getter
+    @Setter
+    public static class Customizers {
+        private Boolean authentication;
     }
 
     @Getter
@@ -77,6 +86,8 @@ public class RestProviderProperties {
     @Setter
     public static class Token {
         private Boolean enabled;
+        private String authProfile;
+        private String credentialKey;
         private String cacheName;
         private String cacheKey;
         private String lockName;
@@ -94,5 +105,36 @@ public class RestProviderProperties {
         private String responseExpiresInField;
         private String responseTokenTypeField;
         private String defaultTokenType;
+        private Cache cache = new Cache();
+        private Lock lock = new Lock();
+        private Apply apply = new Apply();
+    }
+
+    @Getter
+    @Setter
+    public static class Cache {
+        private Boolean enabled;
+        private String mode;
+        private String keyPrefix;
+        private Duration refreshSkew;
+        private Duration ttlSkew;
+    }
+
+    @Getter
+    @Setter
+    public static class Lock {
+        private Boolean enabled;
+        private String keyPrefix;
+        private Duration waitTimeout;
+        private Duration leaseTime;
+        private Duration retryDelay;
+    }
+
+    @Getter
+    @Setter
+    public static class Apply {
+        private String location;
+        private String name;
+        private String format;
     }
 }

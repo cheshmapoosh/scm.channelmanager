@@ -42,7 +42,7 @@ public class RestProviderClientRegistry {
 
     public ResponseEntity<String> exchange(RestProviderResolvedConfig config, RestProviderRequestSpec requestSpec) {
         RestClient client = clients.computeIfAbsent(ClientKey.from(config), ignored -> createClient(config));
-        Map<String, String> resolvedHeaders = resolveHeaders(config, requestSpec.headers());
+        Map<String, String> resolvedHeaders = resolveHeaders(config, requestSpec);
         long startedAt = System.nanoTime();
         log.info(
                 "REST SEND provider={} method={} url={} headerCount={} body={}",
@@ -94,21 +94,25 @@ public class RestProviderClientRegistry {
         }
     }
 
-    private Map<String, String> resolveHeaders(RestProviderResolvedConfig config, Map<String, String> sourceHeaders) {
+    private Map<String, String> resolveHeaders(RestProviderResolvedConfig config, RestProviderRequestSpec requestSpec) {
         Map<String, String> headers = new LinkedHashMap<>();
+        Map<String, String> sourceHeaders = requestSpec.headers();
         if (sourceHeaders != null && !sourceHeaders.isEmpty()) {
             headers.putAll(sourceHeaders);
         }
-        enforceProviderAuthorization(config, headers);
+        enforceProviderAuthorization(config, headers, requestSpec.skipProviderAuth());
         return headers;
     }
 
-    private void enforceProviderAuthorization(RestProviderResolvedConfig config, Map<String, String> headers) {
+    private void enforceProviderAuthorization(RestProviderResolvedConfig config, Map<String, String> headers, boolean skipProviderAuth) {
         RestProviderResolvedConfig.Auth auth = config.auth();
         String headerName = auth != null
                 ? StringUtils.defaultIfBlank(auth.headerName(), HttpHeaders.AUTHORIZATION)
                 : HttpHeaders.AUTHORIZATION;
         boolean tokenFlowEnabled = config.token() != null && config.token().enabled();
+        if (tokenFlowEnabled && skipProviderAuth) {
+            return;
+        }
         if (tokenFlowEnabled && hasHeader(headers, headerName)) {
             return;
         }

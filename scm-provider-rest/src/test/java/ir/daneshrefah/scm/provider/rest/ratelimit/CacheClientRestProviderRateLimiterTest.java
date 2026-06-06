@@ -50,6 +50,8 @@ class CacheClientRestProviderRateLimiterTest {
                 RestProviderResolvedConfig.HttpRedirect.NORMAL,
                 "POST",
                 Map.of(),
+                Map.of(),
+                new RestProviderResolvedConfig.Customizers(false),
                 new RestProviderResolvedConfig.Proxy(null, null, null, null),
                 new RestProviderResolvedConfig.Auth(
                         RestProviderResolvedConfig.AuthType.NONE,
@@ -67,6 +69,8 @@ class CacheClientRestProviderRateLimiterTest {
                 ),
                 new RestProviderResolvedConfig.Token(
                         false,
+                        "default",
+                        "access-token",
                         "rest_provider_token_cache",
                         "access-token",
                         "rest-provider-token",
@@ -91,7 +95,10 @@ class CacheClientRestProviderRateLimiterTest {
                         "access_token",
                         "expires_in",
                         "token_type",
-                        "Bearer"
+                        "Bearer",
+                        new RestProviderResolvedConfig.TokenCache(true, "local", "provider-token", java.time.Duration.ofSeconds(30), java.time.Duration.ofSeconds(5)),
+                        new RestProviderResolvedConfig.TokenLock(true, "provider-token-refresh-lock", java.time.Duration.ofSeconds(3), java.time.Duration.ofSeconds(10), java.time.Duration.ofMillis(100)),
+                        new RestProviderResolvedConfig.TokenApply(RestProviderResolvedConfig.TokenApplyLocation.HEADER, "Authorization", "{tokenType} {accessToken}")
                 ),
                 new RestProviderResolvedConfig.RateLimit(enabled, bucket, key)
         );

@@ -159,6 +159,22 @@ shetab:request?provider=shetab7&rateLimitEnabled=true&rateLimitBucket=shetab7
 - `security.cvv2` در `field 48` با tag `P92` ساخته می‌شود.
 - اگر caller در `fields.48` مقدار `P92` داده باشد، provider آن را بازسازی می‌کند.
 
+## ProviderMessageCustomizer و MAC
+
+قرارداد عمومی `ProviderMessageCustomizer` در SCM برای آماده‌سازی پیام provider قبل از ارسال و enrichment بعد از دریافت response استفاده می‌شود. خود قرارداد Spring-independent است و implementation می‌تواند Spring bean باشد.
+
+Orderهای پیشنهادی:
+
+- `100..999`: field enrichment مثل terminal/merchant/outlet
+- `5000`: authentication
+- `8000`: pin-block
+- `10000`: MAC فقط برای ISO8583/Shetab
+- `20000`: response enrichment
+
+برای Shetab/ISO8583، MAC می‌تواند در آینده به شکل `ProviderMessageCustomizer` پیاده‌سازی شود، اما باید بعد از نهایی‌شدن همه fieldهای request اجرا شود؛ یعنی بعد از enrichment، auth و pin-block. MAC نباید روی مقدارهای خام caller اعتماد کند و نباید PIN/PIN block/MAC را در log یا trace قرار دهد.
+
+نکته مهم: REST provider فیلد MAC ندارد. هیچ MAC customizer نباید `transportType=rest` را support کند.
+
 ## اجرای تست integration واقعی
 
 ```bash

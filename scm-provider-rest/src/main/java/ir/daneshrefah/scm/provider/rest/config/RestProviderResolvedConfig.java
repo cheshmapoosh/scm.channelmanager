@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.provider.rest.config;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,8 @@ public record RestProviderResolvedConfig(
         HttpRedirect followRedirects,
         String defaultMethod,
         Map<String, String> defaultHeaders,
+        Map<String, Object> providerConfig,
+        Customizers customizers,
         Proxy proxy,
         Auth auth,
         Security security,
@@ -59,8 +62,15 @@ public record RestProviderResolvedConfig(
     ) {
     }
 
+    public record Customizers(
+            boolean authentication
+    ) {
+    }
+
     public record Token(
             boolean enabled,
+            String authProfile,
+            String credentialKey,
             String cacheName,
             String cacheKey,
             String lockName,
@@ -77,8 +87,42 @@ public record RestProviderResolvedConfig(
             String responseTokenField,
             String responseExpiresInField,
             String responseTokenTypeField,
-            String defaultTokenType
+            String defaultTokenType,
+            TokenCache cache,
+            TokenLock lock,
+            TokenApply apply
     ) {
+    }
+
+    public record TokenCache(
+            boolean enabled,
+            String mode,
+            String keyPrefix,
+            Duration refreshSkew,
+            Duration ttlSkew
+    ) {
+    }
+
+    public record TokenLock(
+            boolean enabled,
+            String keyPrefix,
+            Duration waitTimeout,
+            Duration leaseTime,
+            Duration retryDelay
+    ) {
+    }
+
+    public record TokenApply(
+            TokenApplyLocation location,
+            String name,
+            String format
+    ) {
+    }
+
+    public enum TokenApplyLocation {
+        HEADER,
+        BODY,
+        QUERY
     }
 
     public record RateLimit(

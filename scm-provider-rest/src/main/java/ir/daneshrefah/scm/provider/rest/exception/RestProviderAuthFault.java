@@ -1,0 +1,10 @@
+package ir.daneshrefah.scm.provider.rest.exception;
+
+public enum RestProviderAuthFault {
+    PROVIDER_AUTH_FAILED,
+    PROVIDER_AUTH_TIMEOUT,
+    PROVIDER_AUTH_INVALID_RESPONSE,
+    PROVIDER_AUTH_TOKEN_UNAVAILABLE,
+    PROVIDER_AUTH_LOCK_TIMEOUT,
+    PROVIDER_AUTH_CACHE_ERROR
+}

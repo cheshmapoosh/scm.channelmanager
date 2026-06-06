@@ -2,7 +2,16 @@ package ir.daneshrefah.scm.provider.rest.camel;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.trace.Span;
+import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerExecutor;
+import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
+import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderEndpointOverrides;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderHeaders;
@@ -13,7 +22,6 @@ import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestEnvelope;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
 import ir.daneshrefah.scm.provider.rest.ratelimit.RestProviderRateLimiter;
-import ir.daneshrefah.scm.provider.rest.token.RestProviderTokenManager;
 import ir.daneshrefah.scm.provider.rest.trace.RestProviderTraceSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -26,10 +34,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -67,7 +76,7 @@ public class RestProviderProducer extends DefaultProducer {
     private RestProviderRateLimiter rateLimiter;
     private RestProviderTraceSupport traceSupport;
     private RestProviderLogSanitizer logSanitizer;
-    private RestProviderTokenManager tokenManager;
+    private ProviderMessageCustomizerExecutor customizerExecutor;
     private ObjectMapper objectMapper;
 
     public RestProviderProducer(RestProviderEndpoint endpoint) {
@@ -84,7 +93,7 @@ public class RestProviderProducer extends DefaultProducer {
         rateLimiter = bean(RestProviderRateLimiter.class);
         traceSupport = bean(RestProviderTraceSupport.class);
         logSanitizer = bean(RestProviderLogSanitizer.class);
-        tokenManager = bean(RestProviderTokenManager.class);
+        customizerExecutor = new ProviderMessageCustomizerExecutor(customizerBeans());
         objectMapper = bean(ObjectMapper.class);
     }
 
@@ -93,14 +102,20 @@ public class RestProviderProducer extends DefaultProducer {
         traceSupport.enrichLogMdc(exchange);
         String provider = resolveProvider(exchange);
         RestProviderResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
-        RestProviderRequestSpec requestSpec = buildRequestSpec(exchange, config);
         String operationName = resolveOperationName(exchange);
+        ProviderRequest providerRequest = buildProviderRequest(exchange, config);
+        ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
+        ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
+        List<ProviderMessageCustomizer> matchedCustomizers = customizerExecutor.matchedCustomizers(customizerContext);
+        logMatchedCustomizers(customizerContext, matchedCustomizers);
 
         RestProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         providerMetrics.submitted();
         long startedAt = System.nanoTime();
         try {
+            executeCustomizers(exchange, providerExchange, matchedCustomizers, true);
             rateLimiter.acquire(config, operationName);
+            RestProviderRequestSpec requestSpec = toRestRequestSpec(providerExchange, config);
             logRequest(config, operationName, requestSpec);
             ResponseEntity<String> response = traceSupport.clientSpan(
                     exchange,
@@ -113,10 +128,16 @@ public class RestProviderProducer extends DefaultProducer {
             classifyResponse(response.getStatusCode().value(), providerMetrics);
 
             Map<String, Object> result = buildResponseBody(response);
-            exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, response.getStatusCode().value());
-            exchange.getMessage().setBody(result);
+            ProviderResponse providerResponse = new ProviderResponse(response.getStatusCode().value(), flattenHeaders(response.getHeaders()), result);
+            providerResponse.nativeResponse(response);
+            providerExchange.response(providerResponse);
+            executeCustomizers(exchange, providerExchange, matchedCustomizers, false);
 
-            logResponse(config, operationName, requestSpec, response, result, elapsedMs);
+            exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, response.getStatusCode().value());
+            Object finalBody = providerExchange.response() != null ? providerExchange.response().body() : result;
+            exchange.getMessage().setBody(finalBody);
+
+            logResponse(config, operationName, requestSpec, response, finalBody, elapsedMs);
         } catch (RuntimeException e) {
             providerMetrics.failed();
             if (isTimeout(e)) {
@@ -127,8 +148,8 @@ public class RestProviderProducer extends DefaultProducer {
                     "REST ERROR provider={} operation={} method={} url={} elapsedMs={} message={}",
                     config.provider(),
                     operationName,
-                    requestSpec.method(),
-                    requestSpec.uri(),
+                    providerExchange.request().method(),
+                    providerExchange.request().uri(),
                     elapsedMs,
                     e.getMessage()
             );
@@ -168,7 +189,7 @@ public class RestProviderProducer extends DefaultProducer {
         );
     }
 
-    private RestProviderRequestSpec buildRequestSpec(Exchange exchange, RestProviderResolvedConfig config) {
+    private ProviderRequest buildProviderRequest(Exchange exchange, RestProviderResolvedConfig config) {
         Object body = exchange.getMessage().getBody();
         RestProviderRequestEnvelope envelope = toEnvelope(body);
 
@@ -197,7 +218,6 @@ public class RestProviderProducer extends DefaultProducer {
         if (envelope.getAuth() != null) {
             log.warn("Ignoring request-level auth override for REST provider. provider={}", config.provider());
         }
-        applyAuth(headers, config);
         ensureContentType(headers, envelope.getBody());
 
         Object requestBody = envelope.getBody();
@@ -205,7 +225,98 @@ public class RestProviderProducer extends DefaultProducer {
             requestBody = body;
         }
 
-        return new RestProviderRequestSpec(method, uri, Map.copyOf(headers), requestBody);
+        return new ProviderRequest(method.name(), uri, headers, requestBody);
+    }
+
+    private RestProviderRequestSpec toRestRequestSpec(ProviderExchange providerExchange, RestProviderResolvedConfig config) {
+        ProviderRequest request = providerExchange.request();
+        URI uri = appendCustomizerQueryParameters(request.uri(), request.queryParameters());
+        HttpMethod method = resolveMethod(request.method());
+        boolean skipProviderAuth = Boolean.TRUE.equals(providerExchange.getAttribute("rest.auth.applied", Boolean.class));
+        return new RestProviderRequestSpec(method, uri, Map.copyOf(request.headers()), request.body(), skipProviderAuth);
+    }
+
+    private URI appendCustomizerQueryParameters(URI uri, Map<String, Object> queryParameters) {
+        if (queryParameters == null || queryParameters.isEmpty()) {
+            return uri;
+        }
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUri(uri);
+        queryParameters.forEach((key, value) -> appendQuery(builder, key, value));
+        return builder.build().encode().toUri();
+    }
+
+    private ProviderMessageCustomizerContext customizerContext(
+            Exchange exchange,
+            RestProviderResolvedConfig config,
+            String operationName
+    ) {
+        return new ProviderMessageCustomizerContext(
+                config.provider(),
+                serviceCode(exchange),
+                operationName,
+                channelCode(exchange),
+                "rest",
+                config.providerConfig(),
+                config,
+                correlationId(exchange),
+                traceId(exchange)
+        );
+    }
+
+    private void logMatchedCustomizers(
+            ProviderMessageCustomizerContext context,
+            List<ProviderMessageCustomizer> matchedCustomizers
+    ) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        List<String> customizerNames = matchedCustomizers.stream()
+                .map(customizer -> customizer.getClass().getSimpleName() + "#" + customizer.order())
+                .toList();
+        log.debug("REST provider customizers matched provider={} service={} operation={} channel={} transport={} customizers={}",
+                context.providerCode(),
+                context.serviceCode(),
+                context.operationCode(),
+                context.channelCode(),
+                context.transportType(),
+                customizerNames);
+    }
+
+    private void executeCustomizers(
+            Exchange camelExchange,
+            ProviderExchange providerExchange,
+            List<ProviderMessageCustomizer> matchedCustomizers,
+            boolean beforeSend
+    ) {
+        if (matchedCustomizers == null || matchedCustomizers.isEmpty()) {
+            return;
+        }
+        for (ProviderMessageCustomizer customizer : matchedCustomizers) {
+            try {
+                traceSupport.customizerSpan(camelExchange, providerExchange.context(), customizer,
+                        beforeSend ? "beforeSend" : "afterReceive",
+                        () -> {
+                            if (beforeSend) {
+                                customizer.beforeSend(providerExchange);
+                            } else {
+                                customizer.afterReceive(providerExchange);
+                            }
+                        });
+                metrics.provider(providerExchange.context().providerCode()).customizerExecution();
+            } catch (RuntimeException e) {
+                metrics.provider(providerExchange.context().providerCode()).customizerError();
+                log.error("REST provider customizer error provider={} service={} operation={} channel={} customizer={} phase={} message={}",
+                        providerExchange.context().providerCode(),
+                        providerExchange.context().serviceCode(),
+                        providerExchange.context().operationCode(),
+                        providerExchange.context().channelCode(),
+                        customizer.getClass().getSimpleName(),
+                        beforeSend ? "beforeSend" : "afterReceive",
+                        e.getMessage(),
+                        e);
+                throw e;
+            }
+        }
     }
 
     private URI resolveUri(String baseUrl, String absoluteUrl, String path, Map<String, Object> query) {
@@ -238,81 +349,6 @@ public class RestProviderProducer extends DefaultProducer {
             return;
         }
         builder.queryParam(key, value);
-    }
-
-    private void applyAuth(Map<String, String> headers, RestProviderResolvedConfig config) {
-        RestProviderResolvedConfig.Auth auth = config.auth();
-        if (auth == null) {
-            return;
-        }
-        if (config.token() != null && config.token().enabled() && requiresSharedToken(auth.type())) {
-            RestProviderTokenManager.TokenValue tokenValue = tokenManager.resolveToken(config);
-            String resolvedPrefix = auth.prefix();
-            if ((auth.type() == RestProviderResolvedConfig.AuthType.BEARER
-                    || auth.type() == RestProviderResolvedConfig.AuthType.JWT)
-                    && StringUtils.isBlank(resolvedPrefix)) {
-                resolvedPrefix = tokenValue.tokenType();
-            }
-            auth = new RestProviderResolvedConfig.Auth(
-                    auth.type(),
-                    auth.headerName(),
-                    resolvedPrefix,
-                    tokenValue.accessToken(),
-                    auth.username(),
-                    auth.password(),
-                    auth.basicBase64()
-            );
-        }
-        if (auth.type() == RestProviderResolvedConfig.AuthType.NONE) {
-            return;
-        }
-        if (hasHeader(headers, auth.headerName())) {
-            return;
-        }
-        String headerName = StringUtils.defaultIfBlank(auth.headerName(), HttpHeaders.AUTHORIZATION);
-        String value = resolveAuthHeaderValue(auth);
-        if (StringUtils.isNotBlank(value)) {
-            headers.put(headerName, value);
-        }
-    }
-
-    private boolean requiresSharedToken(RestProviderResolvedConfig.AuthType type) {
-        return type == RestProviderResolvedConfig.AuthType.BEARER
-                || type == RestProviderResolvedConfig.AuthType.JWT
-                || type == RestProviderResolvedConfig.AuthType.API_KEY;
-    }
-
-    private String resolveAuthHeaderValue(RestProviderResolvedConfig.Auth auth) {
-        return switch (auth.type()) {
-            case BASIC -> basicHeader(auth);
-            case BEARER -> prefixed(auth.prefix(), auth.token(), "Bearer");
-            case JWT -> prefixed(auth.prefix(), auth.token(), "JWT");
-            case API_KEY -> prefixed(auth.prefix(), auth.token(), null);
-            case NONE -> null;
-        };
-    }
-
-    private String basicHeader(RestProviderResolvedConfig.Auth auth) {
-        if (StringUtils.isBlank(auth.username()) || StringUtils.isBlank(auth.password())) {
-            throw new IllegalArgumentException("REST provider BASIC auth requires username and password");
-        }
-        String credentials = auth.username() + ":" + auth.password();
-        if (auth.basicBase64()) {
-            credentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-        }
-        String prefix = StringUtils.defaultIfBlank(auth.prefix(), "Basic");
-        return prefix + " " + credentials;
-    }
-
-    private String prefixed(String prefix, String token, String defaultPrefix) {
-        if (StringUtils.isBlank(token)) {
-            throw new IllegalArgumentException("REST provider auth token is empty");
-        }
-        String resolvedPrefix = first(prefix, defaultPrefix);
-        if (StringUtils.isBlank(resolvedPrefix)) {
-            return token;
-        }
-        return resolvedPrefix + " " + token;
     }
 
     private Map<String, Object> buildResponseBody(ResponseEntity<String> response) {
@@ -400,13 +436,13 @@ public class RestProviderProducer extends DefaultProducer {
             String operationName,
             RestProviderRequestSpec requestSpec,
             ResponseEntity<String> response,
-            Map<String, Object> responsePayload,
+            Object responsePayload,
             long elapsedMs
     ) {
         if (!log.isInfoEnabled()) {
             return;
         }
-        Object body = responsePayload.get("body");
+        Object body = responsePayload instanceof Map<?, ?> map ? map.get("body") : responsePayload;
         Object safeBody = body;
         if (body instanceof String text) {
             safeBody = logSanitizer.sanitizeBody(logSanitizer.parseJsonIfPossible(text), config.security());
@@ -582,8 +618,71 @@ public class RestProviderProducer extends DefaultProducer {
     }
 
     private String resolveOperationName(Exchange exchange) {
-        Operation operation = exchange.getProperty(ir.daneshrefah.scm.common.model.message.Message.OPERATION, Operation.class);
+        String operationName = exchange.getProperty(Message.OPERATION_NAME, String.class);
+        if (StringUtils.isNotBlank(operationName)) {
+            return operationName;
+        }
+        Operation operation = exchange.getProperty(Message.OPERATION, Operation.class);
         return operation != null ? operation.getName() : "";
+    }
+
+    private String serviceCode(Exchange exchange) {
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        if (service != null && StringUtils.isNotBlank(service.getCode())) {
+            return service.getCode();
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("serviceCode", String.class));
+    }
+
+    private String channelCode(Exchange exchange) {
+        String channelCode = exchange.getProperty(Message.CHANNEL_CODE, String.class);
+        if (StringUtils.isNotBlank(channelCode)) {
+            return channelCode;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("channelCode", String.class));
+    }
+
+    private String correlationId(Exchange exchange) {
+        String correlationId = exchange.getProperty(Message.CORRELATION_ID, String.class);
+        if (StringUtils.isNotBlank(correlationId)) {
+            return correlationId;
+        }
+        correlationId = exchange.getMessage().getHeader("X-Correlation-Id", String.class);
+        if (StringUtils.isNotBlank(correlationId)) {
+            return correlationId;
+        }
+        correlationId = exchange.getMessage().getHeader("X-SCM-Correlation-ID", String.class);
+        return StringUtils.defaultString(correlationId);
+    }
+
+    private String traceId(Exchange exchange) {
+        String traceId = exchange.getProperty(Message.TRACE_ID, String.class);
+        if (StringUtils.isNotBlank(traceId)) {
+            return traceId;
+        }
+        Span span = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
+        if (span == null) {
+            span = Span.current();
+        }
+        if (span != null && span.getSpanContext().isValid()) {
+            return span.getSpanContext().getTraceId();
+        }
+        return "";
+    }
+
+    private Collection<ProviderMessageCustomizer> customizerBeans() {
+        Collection<ProviderMessageCustomizer> beans = getEndpoint().getCamelContext()
+                .getRegistry()
+                .findByType(ProviderMessageCustomizer.class);
+        if (beans == null || beans.isEmpty()) {
+            return List.of();
+        }
+        return beans.stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator
+                        .comparingInt(ProviderMessageCustomizer::order)
+                        .thenComparing(customizer -> customizer.getClass().getName()))
+                .toList();
     }
 
     private <T> T bean(Class<T> type) {
