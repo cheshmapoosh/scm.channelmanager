@@ -25,6 +25,7 @@ import org.apache.camel.support.SimpleRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class RestProviderProducerCustomizerTest {
 
@@ -85,6 +87,42 @@ class RestProviderProducerCustomizerTest {
 
         assertEquals(List.of("transport"), events);
         assertEquals(0, metrics.provider("hps").customizerExecutionCount());
+    }
+
+    @Test
+    void providerWithoutAuthCustomizersDoesNotForwardRequestAuthorizationHeaders() throws Exception {
+        List<String> events = new ArrayList<>();
+        CapturingClientRegistry clientRegistry = new CapturingClientRegistry(executorProvider(), events);
+        RestProviderMetrics metrics = new RestProviderMetrics();
+        ProviderRegistryProperties registryProperties = properties(false);
+
+        try (CamelContext camelContext = camelContext(clientRegistry, metrics, events, registryProperties)) {
+            camelContext.start();
+            RestProviderEndpoint endpoint = camelContext.getEndpoint("rest-provider:hps", RestProviderEndpoint.class);
+            Producer producer = endpoint.createProducer();
+            producer.start();
+            try {
+                Exchange exchange = endpoint.createExchange(ExchangePattern.InOut);
+                exchange.getMessage().setHeader(HttpHeaders.AUTHORIZATION, "Bearer inbound-token");
+                exchange.getMessage().setHeader(HttpHeaders.PROXY_AUTHORIZATION, "Basic proxy-token");
+                exchange.getMessage().setBody(Map.of(
+                        "headers", Map.of(
+                                HttpHeaders.AUTHORIZATION, "Bearer envelope-token",
+                                HttpHeaders.PROXY_AUTHORIZATION, "Basic envelope-proxy-token"
+                        ),
+                        "auth", Map.of("type", "BEARER", "token", "request-token"),
+                        "body", Map.of("amount", "1", "auth", "body-auth-like-field")
+                ));
+                producer.process(exchange);
+            } finally {
+                producer.stop();
+            }
+        }
+
+        assertEquals(List.of("transport"), events);
+        assertEquals(0, metrics.provider("hps").customizerExecutionCount());
+        assertFalse(clientRegistry.requestSpec.headers().containsKey(HttpHeaders.AUTHORIZATION));
+        assertFalse(clientRegistry.requestSpec.headers().containsKey(HttpHeaders.PROXY_AUTHORIZATION));
     }
 
     private CamelContext camelContext(

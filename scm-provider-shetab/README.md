@@ -132,6 +132,8 @@ Output is a `Map` with `mti` and `fields`.
 
 `ProviderMessageCustomizerFactory` is the Spring bean extension point. YAML uses stable customizer `type` values, not bean names. The factory binds typed config and returns an immutable runtime `ProviderMessageCustomizer` instance.
 
+`scm-common` provides Spring Boot auto-configuration for the common provider registry, customizer factory registry, and pipeline factory; provider modules do not need to component-scan common provider infrastructure manually.
+
 The provider resolver builds the customizer pipeline once for the resolved Shetab provider instance. The producer executes only the configured pipeline for that instance.
 
 Order convention:

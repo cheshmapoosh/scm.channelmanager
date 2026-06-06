@@ -142,6 +142,8 @@ public interface ProviderMessageCustomizerFactory<C> {
 }
 ```
 
+`scm-common` provides Spring Boot auto-configuration for `ProviderRegistryProperties`, `ProviderMessageCustomizerFactoryRegistry`, and `ProviderMessageCustomizerPipelineFactory`; provider modules do not need to component-scan common provider infrastructure manually.
+
 How it works:
 
 1. The provider instance lists `message-customizers` by stable `type`.

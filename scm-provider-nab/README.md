@@ -127,6 +127,8 @@ Runtime overrides are still available through NAB provider headers and endpoint 
 
 NAB uses the common factory-based ProviderMessageCustomizer architecture. Factories are Spring beans, YAML uses stable `message-customizers[].type` values, and runtime customizers are immutable instances created per resolved provider.
 
+`scm-common` provides Spring Boot auto-configuration for the common provider registry, customizer factory registry, and pipeline factory; provider modules do not need to component-scan common provider infrastructure manually.
+
 The NAB resolver builds the provider instance pipeline once. No customizer is enabled by default.
 
 ## Observability And Security
