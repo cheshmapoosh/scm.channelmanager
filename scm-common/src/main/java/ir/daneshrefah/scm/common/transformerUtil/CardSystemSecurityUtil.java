@@ -128,29 +128,5 @@ public class CardSystemSecurityUtil {
         return bytesLength;
     }
 
-    public static JSONObject decrypt(JSONObject params) {
-        Map<String, String> map = new HashMap<>();
-        Cipher borrowed = null;
-        try {
-            System.out.println(CipherPoolManager.class.getClassLoader());
-            System.out.println(CipherPoolManager.getInstance());
-            borrowed = CipherPoolManager.getInstance().borrow();
-            for (Object key : params.keySet()) {
-                String s = String.valueOf(params.get(key));
-                byte[] decode = Base64.decode(s.getBytes());
-                byte[] bytes = borrowed.doFinal(decode);
-                String b = new String(bytes);
-                map.put(String.valueOf(key), b);
-            }
-        } catch (Exception e) {
-            log.error("could not decrypt params ", e);
-        } finally {
-            if (Objects.nonNull(borrowed)) {
-                CipherPoolManager.getInstance().giveBack(borrowed);
-            }
-        }
-        return new JSONObject(map);
-    }
-
 
 }
