@@ -25,4 +25,7 @@ if (out == null && errorCode != null) {
     throw new RuntimeException(bodyResponse.get("errorDescription"))
 }
 
-return []
+return [
+        "password": null,
+        "card": null
+]

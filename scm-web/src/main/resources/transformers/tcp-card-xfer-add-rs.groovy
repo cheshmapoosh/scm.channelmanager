@@ -24,7 +24,7 @@ if (fields == null) {
 
 println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
 if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
-    throw new RuntimeException("tcp card inq rs action code : " + fields["39"].toString())
+    throw new RuntimeException("tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition()].toString())
 }
 
 def balance = fields["54"]
@@ -68,8 +68,8 @@ def createBalance = {
 
 createBalance()
 
-def date = fields["12"].format(DateTimeFormatter.ofPattern("yyMMddHHmmss"))
-def amount = !fields["4"].isEmpty() ? StringUtils.unPadZero(fields["4"], "0") : null
+def date = fields[ISOField.LOCAL_TRANSACTION_DATE_TIME.getPosition()].format(DateTimeFormatter.ofPattern("yyMMddHHmmss"))
+def amount = !fields[ISOField.TRANSACTION_AMOUNT.getPosition()].isEmpty() ? StringUtils.unPadZero(fields[ISOField.TRANSACTION_AMOUNT.getPosition()], "0") : null
 
 return [
         "fundTransfer"       : [

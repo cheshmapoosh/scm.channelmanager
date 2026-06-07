@@ -25,6 +25,10 @@ if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISO
     throw new RuntimeException("tcp card inq rs action code : " + fields["39"].toString())
 }
 
+//return [
+//        "status" : body.actionCode
+//]
 return [
-        "status" : body.actionCode
+    "password": null,
+    "card": null
 ]

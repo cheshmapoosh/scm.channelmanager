@@ -162,7 +162,7 @@ def fillAdditionalInformation = {
                 break;
             case RequestType.GET_BALANCE:
                 message = "مانده گیری"
-                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.padlength()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
+                additionalPrivateData += "CAD" + StringUtils.leftPadEmpty(String.valueOf(message.length()), 3) + PersianStringUtil.cvrtUTFToAscii1256Encoding(message);
                 break;
         }
     }
@@ -204,7 +204,8 @@ req.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_C
 
 def additionalPrivateData = "";
 if (pin != null && !pin.isEmpty()) {
-    req.put(ISOField.PIN_DATA.getPosition(), CardSystemSecurityUtil.encryptPin(pin, srcCard));
+//    req.put(ISOField.PIN_DATA.getPosition(), CardSystemSecurityUtil.encryptPin(pin, srcCard));
+    req.put(ISOField.PIN_DATA.getPosition(), pin);
 } else {
     additionalPrivateData = fillAdditionalInformation();
 }

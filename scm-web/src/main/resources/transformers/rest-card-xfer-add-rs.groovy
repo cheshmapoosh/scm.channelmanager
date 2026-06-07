@@ -1,3 +1,5 @@
+import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
+
 def body = exchange.in.body
 println("rest cardXferAdd rs transformer start provider body : " + body)
 
@@ -17,3 +19,26 @@ return [
         "dateAndTime" :out['dateAndTime'],
         "destCard" :out['destCard']
 ]
+
+//return [
+//        "fundTransfer"       : [
+//                "sourceAccountNumber"  : "?",
+//                "sourceCardNumber"     : fields[ISOField.PAN.getPosition()],
+//                "destinationCardNumber": "?",
+//                "amount"               : amount,
+//                "customerCount"        : 0,
+//                "followupCode"         : "?",
+//                "personName"           : [
+//                        "firstName": "?",
+//                        "lastName" : "?"
+//                ],
+//                "date"                 : date
+//        ],
+//        "balance"            : [
+//                "ledgerBalance"    : ledgerBalance,
+//                "depositableAmount": depositableAmount
+//        ],
+//        "serverResponseCode" : fields[ISOField.ACTION_CODE.getPosition()],
+//        "processCode"        : fields[ISOField.PROCESSING_CODE.getPosition()],
+//        "destinationBankName": "?"
+//]

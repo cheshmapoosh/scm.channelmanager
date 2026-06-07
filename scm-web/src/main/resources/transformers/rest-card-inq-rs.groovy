@@ -3,6 +3,7 @@ package transformers
 import ir.daneshrefah.scm.common.data.dto.bank.BankDto
 import ir.daneshrefah.scm.common.model.message.Message
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
+import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 
 def body = exchange.in.body
 def headers = exchange.in.headers
@@ -47,13 +48,44 @@ def detection = exchange.context.registry.lookupByName("bankListLoader")
 BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
 println("bank name : " + (bank == null ? "" : bank.getName()))
 
+
+def customerNameFamily = out["destName"].toString()
+println("customerNameFamily : " + customerNameFamily)
+def name = "";
+def family = "";
+
+if (!(customerNameFamily.isEmpty() || customerNameFamily.length() <= 25)) {
+    try {
+        def tailoredCustomerNameFamily = customerNameFamily[25..-1]
+        int nameLen = tailoredCustomerNameFamily[0..1] as int
+
+        int nameStart = 2
+        int nameEnd = nameStart + nameLen
+
+        name = tailoredCustomerNameFamily[nameStart..<nameEnd]
+        println("name : " + name)
+
+        int familyLen = tailoredCustomerNameFamily[nameEnd..<(nameEnd + 2)] as int
+
+        int familyStart = nameEnd + 2
+        int familyEnd = familyStart + familyLen
+
+        family = tailoredCustomerNameFamily[familyStart..<familyEnd]
+        println("family : " + family)
+    } catch (Exception e) {
+        name = "";
+        family = ""
+    }
+}
+
+println("end name proces")
 return [
-        "card": [
+        "card"        : [
                 "destinationBankName": bank == null ? "" : bank.getName(),
-                "imageUrl": ""
+                "imageUrl"           : ""
         ],
         "customerName": [
-                "firstName": PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(out["destName"].toString())),
-                "lastName" : ""
+                "firstName": name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name)),
+                "lastName" : family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
         ]
 ]
