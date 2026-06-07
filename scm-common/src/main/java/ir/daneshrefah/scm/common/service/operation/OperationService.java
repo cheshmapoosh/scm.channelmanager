@@ -7,12 +7,15 @@ import ir.daneshrefah.scm.common.dto.operation.OperationResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface OperationService {
     OperationResponse findById(String id);
 
     List<Operation> getAllOperations();
+
+    List<Operation> findActiveOperationsByNames(Collection<String> operationNames);
 
     PagedResponseData<OperationResponse> getAllOperationsByFilter(OperationFilterRequest request);
 

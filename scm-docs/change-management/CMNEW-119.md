@@ -7,7 +7,7 @@ Refactors SCM runtime routing so the Gateway Layer only owns protocol/client exp
 Gateway routes now dispatch to explicit service routes with:
 
 ```text
-direct:scm.service.<normalized-service-code>
+direct:<service-route-id>
 ```
 
 ## Branch
@@ -134,9 +134,9 @@ Versioning:
 - `v1` can represent old CM-compatible client behavior: same URL, payloads, error format and HTTP status behavior where applicable.
 - `ContractStyle` is intentionally not part of SCM. SCM should not know whether a client is legacy or modern.
 - `versionSelector` is intentionally not required in this path-based phase.
-- Gateway `routeId` values use compact layer prefixes and include the version, for example `gw.dm.domain-card.card-inquiry.v1` and `gw.dm.domain-card.card-inquiry.v2`.
-- Service route IDs use `svc.<targetKindShort>.<gatewayName>.<serviceCode>`, for example `svc.dm.domain-card.card-inquiry`.
-- Operation route IDs use `op.<operationName>`, while operation dispatch remains `direct:<operationName>`.
+- Gateway `routeId` values use compact layer prefixes and include the version, for example `gw.dm.card.cardinquiry.v1` and `gw.dm.card.cardinquiry.v2`.
+- Service route IDs use `svc.<targetKindShort>.<gatewayScope>.<serviceCode>`, for example `svc.dm.card.cardinquiry`.
+- Operation route IDs use `op.<operationName>`, and operation dispatch uses the same direct key, for example `direct:op.SVC_CARD_INQUIRY_TCP`.
 - Service route URIs remain version-agnostic by default, for example both v1 and v2 dispatch to the same service route unless business/provider behavior truly differs.
 
 Fallback:

@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.model.MulticastDefinition;
@@ -42,12 +43,17 @@ public class ServiceTargetRouter {
         }
 
         if (Objects.equals(RoutingStrategy.FAIL_OVER, service.getRoutingStrategy())) {
+            List<ServiceOperation> activeOperations = activeServiceOperations(service);
+            if (activeOperations.isEmpty()) {
+                log.warn("No active operation found for FAIL_OVER service routing serviceCode={}", service.getCode());
+                throw new IllegalStateException("No active operation found for service " + service.getCode());
+            }
             log.debug("Building FAIL_OVER service target routeId={} serviceCode={} operationCount={}",
-                    route.getRouteId(), service.getCode(), service.getServiceOperations().size());
+                    route.getRouteId(), service.getCode(), activeOperations.size());
             MulticastDefinition multicast = route.multicast()
                     .parallelProcessing(false)
                     .stopOnException("false");
-            service.getServiceOperations().forEach(serviceOperation -> {
+            activeOperations.forEach(serviceOperation -> {
                 String operationName = serviceOperation.getOperationName();
                 multicast.to(resolveOperationUrl(operationName)).end();
             });
@@ -60,10 +66,7 @@ public class ServiceTargetRouter {
     }
 
     private ServiceOperation resolveFirstServiceOperation(Service service) {
-        List<ServiceOperation> activeOperations = service.getServiceOperations()
-                .stream()
-                .filter(operation -> Boolean.TRUE.equals(operation.getActive()))
-                .toList();
+        List<ServiceOperation> activeOperations = activeServiceOperations(service);
 
         if (activeOperations.isEmpty()) {
             log.warn("No active operation found for FIRST service routing serviceCode={}", service.getCode());
@@ -79,7 +82,7 @@ public class ServiceTargetRouter {
 
     private ServiceOperation resolveMultiOperation(RouteDefinition route, Service service) {
         String[] splitRouteName = route.getRouteId().split("-");
-        return service.getServiceOperations()
+        return activeServiceOperations(service)
                 .stream()
                 .filter(o -> RouteUtils.getInstance().generateRouteUniqId(o.getOperationName())
                         .equals(splitRouteName[splitRouteName.length - 1]))
@@ -91,10 +94,17 @@ public class ServiceTargetRouter {
                 });
     }
 
+    private List<ServiceOperation> activeServiceOperations(Service service) {
+        return service.getServiceOperations()
+                .stream()
+                .filter(operation -> Boolean.TRUE.equals(operation.getActive()))
+                .toList();
+    }
+
     private String resolveOperationUrl(String operationName) {
         if (StringUtils.contains(operationName, ':')) {
             return operationName;
         }
-        return "direct:" + operationName;
+        return "direct:" + RouteIdSupport.operationRouteId(operationName);
     }
 }

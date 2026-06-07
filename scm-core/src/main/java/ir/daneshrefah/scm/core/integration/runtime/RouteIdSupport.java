@@ -21,7 +21,7 @@ public final class RouteIdSupport {
         return "gw."
                 + targetKindShort(targetKind)
                 + "."
-                + normalizeRequired(gatewayName, "gatewayName")
+                + normalizeGatewayScopeName(gatewayName)
                 + "."
                 + normalizeRequired(serviceCode, "serviceCode")
                 + suffix;
@@ -43,17 +43,7 @@ public final class RouteIdSupport {
         return "svc."
                 + targetKindShort(targetKind)
                 + "."
-                + normalizeRequired(gatewayName, "gatewayName")
-                + "."
-                + normalizeRequired(serviceCode, "serviceCode");
-    }
-
-    public static String serviceRouteKey(RuntimeTargetKind targetKind,
-                                         String gatewayName,
-                                         String serviceCode) {
-        return targetKindShort(targetKind)
-                + "."
-                + normalizeRequired(gatewayName, "gatewayName")
+                + normalizeGatewayScopeName(gatewayName)
                 + "."
                 + normalizeRequired(serviceCode, "serviceCode");
     }
@@ -77,14 +67,29 @@ public final class RouteIdSupport {
         if (normalized == null) {
             throw new IllegalArgumentException("gatewayName is required for route id.");
         }
-        if (normalized.startsWith("channel.")) {
+        String lowerCaseName = normalized.toLowerCase(Locale.ROOT);
+        if (lowerCaseName.startsWith("channel.")) {
             return RuntimeTargetKind.CHANNEL;
         }
-        if (normalized.startsWith("domain.")) {
+        if (lowerCaseName.startsWith("domain.")) {
             return RuntimeTargetKind.SERVICE_DOMAIN;
         }
         throw new IllegalArgumentException("Gateway name '" + gatewayName
                 + "' cannot be mapped to a route target kind.");
+    }
+
+    public static String normalizeGatewayScopeName(String gatewayName) {
+        String scopeName = StringUtils.trimToNull(gatewayName);
+        if (scopeName == null) {
+            throw new IllegalArgumentException("gatewayName is required for route id.");
+        }
+        String lowerCaseScopeName = scopeName.toLowerCase(Locale.ROOT);
+        if (lowerCaseScopeName.startsWith("domain.")) {
+            scopeName = scopeName.substring("domain.".length());
+        } else if (lowerCaseScopeName.startsWith("channel.")) {
+            scopeName = scopeName.substring("channel.".length());
+        }
+        return normalizeRequired(scopeName, "gatewayName");
     }
 
     public static String normalizeRequired(String value, String label) {

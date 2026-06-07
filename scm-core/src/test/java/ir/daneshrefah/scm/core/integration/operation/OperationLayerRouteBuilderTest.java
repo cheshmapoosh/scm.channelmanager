@@ -28,13 +28,18 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.model.RouteDefinition;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -68,7 +73,7 @@ class OperationLayerRouteBuilderTest {
                 throwingHandler())) {
             ProducerTemplate template = context.createProducerTemplate();
 
-            Exchange exchange = template.request("direct:CARD_INQUIRY", request ->
+            Exchange exchange = template.request("direct:op.CARD_INQUIRY", request ->
                     request.setProperty(Message.SERVICE_LAYER_INVOCATION, true));
 
             assertInstanceOf(ScmFault.class, exchange.getMessage().getBody());
@@ -90,7 +95,7 @@ class OperationLayerRouteBuilderTest {
                 throwingHandler())) {
             ProducerTemplate template = context.createProducerTemplate();
 
-            Exchange exchange = template.request("direct:CARD_INQUIRY", request -> {
+            Exchange exchange = template.request("direct:op.CARD_INQUIRY", request -> {
             });
 
             assertEquals("global-error", exchange.getMessage().getBody());
@@ -119,6 +124,8 @@ class OperationLayerRouteBuilderTest {
             assertTrue(routeIds.contains("op.CARD_STATUS"));
             assertFalse(routeIds.contains("op.UNRELATED_ACTIVE"));
             assertFalse(routeIds.stream().anyMatch(routeId -> routeId.startsWith("route-")));
+            assertRequiredOperationLookup(operationService, "CARD_INQUIRY", "CARD_STATUS");
+            verify(operationService, never()).getAllOperations();
         }
     }
 
@@ -139,6 +146,7 @@ class OperationLayerRouteBuilderTest {
                     .count();
 
             assertEquals(1, count);
+            assertRequiredOperationLookup(operationService, "CARD_INQUIRY");
         }
     }
 
@@ -153,6 +161,7 @@ class OperationLayerRouteBuilderTest {
                 new RuntimeRoutePlan(gateway(), RuntimeTargetKind.SERVICE_DOMAIN, List.of()),
                 noOpHandler())) {
             assertTrue(routeIds(context).stream().noneMatch(routeId -> routeId.startsWith("op.")));
+            verify(operationService, never()).findActiveOperationsByNames(any());
             verify(operationService, never()).getAllOperations();
         }
     }
@@ -170,7 +179,8 @@ class OperationLayerRouteBuilderTest {
             RouteDefinition route = context.getRouteDefinition("op.CARD_INQUIRY");
 
             assertEquals("op.CARD_INQUIRY", route.getRouteId());
-            assertEquals("direct:CARD_INQUIRY", route.getInput().getEndpointUri());
+            assertEquals("direct:op.CARD_INQUIRY", route.getInput().getEndpointUri());
+            assertEquals(route.getRouteId(), route.getInput().getEndpointUri().substring("direct:".length()));
         }
     }
 
@@ -199,7 +209,48 @@ class OperationLayerRouteBuilderTest {
             assertTrue(routeIds.contains("op.CARD_STATUS"));
             assertTrue(routeIds.contains("op.CARD_LIMIT"));
             assertFalse(routeIds.contains("op.INACTIVE_IGNORED"));
+            assertRequiredOperationLookup(operationService, "CARD_INQUIRY", "CARD_STATUS", "CARD_LIMIT");
         }
+    }
+
+    @Test
+    void missingRequiredOperationIsNotRouted() throws Exception {
+        OperationService operationService = operationService();
+
+        try (DefaultCamelContext context = context(
+                operationService,
+                mock(PluginResolverService.class),
+                mock(GlobalErrorHandler.class),
+                runtimePlan(service("card-inquiry", RoutingStrategy.FIRST, serviceOperation("CARD_INQUIRY", true))),
+                noOpHandler())) {
+            assertFalse(routeIds(context).contains("op.CARD_INQUIRY"));
+            assertRequiredOperationLookup(operationService, "CARD_INQUIRY");
+            verify(operationService, never()).getAllOperations();
+        }
+    }
+
+    @Test
+    void duplicateActiveOperationNamesFailFast() {
+        OperationService operationService = mock(OperationService.class);
+        when(operationService.findActiveOperationsByNames(any()))
+                .thenReturn(List.of(operation("CARD_INQUIRY"), operation("CARD_INQUIRY")));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> context(
+                operationService,
+                mock(PluginResolverService.class),
+                mock(GlobalErrorHandler.class),
+                runtimePlan(service("card-inquiry", RoutingStrategy.FIRST, serviceOperation("CARD_INQUIRY", true))),
+                noOpHandler()));
+
+        assertTrue(exception.getMessage().contains("Duplicate active operation"));
+        verify(operationService, never()).getAllOperations();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertRequiredOperationLookup(OperationService operationService, String... operationNames) {
+        ArgumentCaptor<Collection<String>> namesCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(operationService).findActiveOperationsByNames(namesCaptor.capture());
+        assertEquals(Set.of(operationNames), Set.copyOf(namesCaptor.getValue()));
     }
 
     private DefaultCamelContext context(OperationService operationService,
@@ -251,7 +302,17 @@ class OperationLayerRouteBuilderTest {
 
     private OperationService operationService(Operation... operations) {
         OperationService operationService = mock(OperationService.class);
-        when(operationService.getAllOperations()).thenReturn(List.of(operations));
+        List<Operation> operationCatalog = List.of(operations);
+        when(operationService.findActiveOperationsByNames(any())).thenAnswer(invocation -> {
+            Collection<String> operationNames = invocation.getArgument(0);
+            Set<String> requiredNames = operationNames == null
+                    ? Set.of()
+                    : new LinkedHashSet<>(operationNames);
+            return operationCatalog.stream()
+                    .filter(operation -> Boolean.TRUE.equals(operation.getActive()))
+                    .filter(operation -> requiredNames.contains(operation.getName()))
+                    .toList();
+        });
         return operationService;
     }
 

@@ -35,8 +35,10 @@ import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
@@ -65,16 +67,18 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
         log.info("event={} layer=service runtimeMode={} targetCount={} outcome=started",
                 RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_STARTED, runtimeMode, runtimeTargets.size());
+        Set<String> serviceRouteIds = new LinkedHashSet<>();
         runtimeTargets.forEach(runtimeTarget ->
                 runtimeTarget.gatewayNames().forEach(gatewayName ->
-                        configureServiceTarget(runtimeMode, runtimeTarget, gatewayName)));
+                        configureServiceTarget(runtimeMode, runtimeTarget, gatewayName, serviceRouteIds)));
         log.info("event={} layer=service runtimeMode={} targetCount={} outcome=success",
                 RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_COMPLETED, runtimeMode, runtimeTargets.size());
     }
 
     private void configureServiceTarget(RuntimeMode runtimeMode,
                                         RuntimeTargetProperties runtimeTarget,
-                                        String gatewayName) {
+                                        String gatewayName,
+                                        Set<String> serviceRouteIds) {
         long startNanos = System.nanoTime();
         log.info("event={} layer=service gatewayName={} runtimeMode={} configuredTargetKind={} outcome=started",
                 RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_STARTED,
@@ -82,7 +86,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 runtimeMode,
                 runtimeTarget.targetKind());
         try {
-            configureServiceTargetSafely(runtimeMode, runtimeTarget, gatewayName, startNanos);
+            configureServiceTargetSafely(runtimeMode, runtimeTarget, gatewayName, serviceRouteIds, startNanos);
         } catch (RuntimeException exception) {
             log.error("event={} layer=service gatewayName={} runtimeMode={} configuredTargetKind={} durationMs={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_FAILED,
@@ -100,6 +104,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private void configureServiceTargetSafely(RuntimeMode runtimeMode,
                                               RuntimeTargetProperties runtimeTarget,
                                               String gatewayName,
+                                              Set<String> serviceRouteIds,
                                               long startNanos) {
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
         if (gatewayChannel == null) {
@@ -144,7 +149,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
         routePlan.servicePlans().forEach(servicePlan -> {
             try {
-                buildServiceRoute(routePlan, servicePlan, channelPluginDetails);
+                buildServiceRoute(routePlan, servicePlan, channelPluginDetails, serviceRouteIds);
             } catch (RuntimeException exception) {
                 log.error("event={} layer=service gatewayName={} runtimeMode={} targetKind={} serviceCode={} durationMs={} outcome=failed failureType={} failureMessage={}",
                         RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_FAILED,
@@ -198,10 +203,12 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
 
     private void buildServiceRoute(RuntimeRoutePlan routePlan,
                                    RuntimeServicePlan servicePlan,
-                                   List<PluginDetail> channelPluginDetails) {
+                                   List<PluginDetail> channelPluginDetails,
+                                   Set<String> serviceRouteIds) {
         Service service = servicePlan.service();
-        String serviceUri = serviceRouteUriResolver.resolve(routePlan, servicePlan);
         String routeId = serviceRouteUriResolver.routeId(routePlan, servicePlan);
+        validateUniqueServiceRouteId(routeId, routePlan, servicePlan, serviceRouteIds);
+        String serviceUri = serviceRouteUriResolver.resolve(routePlan, servicePlan);
         log.info("event={} layer=service routeId={} gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} targetUri={} outcome=started",
                 RouteLogEvents.SERVICE_ROUTE_REGISTRATION_STARTED,
                 routeId,
@@ -322,6 +329,20 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 RouteLogSupport.channelServiceAccessId(servicePlan),
                 service.getCode(),
                 serviceUri);
+    }
+
+    private void validateUniqueServiceRouteId(String routeId,
+                                              RuntimeRoutePlan routePlan,
+                                              RuntimeServicePlan servicePlan,
+                                              Set<String> serviceRouteIds) {
+        if (serviceRouteIds.add(routeId)) {
+            return;
+        }
+        throw new IllegalStateException("Duplicate service route id '" + routeId
+                + "' for targetKind=" + routePlan.targetKind()
+                + ", gatewayName=" + routePlan.gatewayChannel().getName()
+                + ", serviceCode=" + servicePlan.service().getCode()
+                + ". Service route identity must be unique in the active runtime plan.");
     }
 
     private void applyServiceStart(ProcessorDefinition<?> route, RuntimeServicePlan servicePlan) {

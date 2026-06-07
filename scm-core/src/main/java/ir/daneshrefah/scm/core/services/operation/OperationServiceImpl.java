@@ -23,11 +23,14 @@ import ir.daneshrefah.scm.common.service.operationProvider.OperationProviderServ
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -46,6 +49,24 @@ public class OperationServiceImpl implements OperationService {
             return List.of();
         }
         return operationEntities.stream().map(operationMapper::toModel).toList();
+    }
+
+    @Override
+    public List<Operation> findActiveOperationsByNames(Collection<String> operationNames) {
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        if (operationNames != null) {
+            operationNames.stream()
+                    .map(StringUtils::trimToNull)
+                    .filter(name -> name != null)
+                    .forEach(names::add);
+        }
+        if (names.isEmpty()) {
+            return List.of();
+        }
+        return operationRepository.findByNameInAndActiveTrue(names)
+                .stream()
+                .map(operationMapper::toModel)
+                .toList();
     }
 
     @Override

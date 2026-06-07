@@ -30,7 +30,7 @@ class RestProtocolHandlerTest {
                 servicePlan("domain.card", List.of(routeDefinition)));
 
         assertEquals(1, routes.size());
-        assertEquals("gw.dm.domain-card.card-inquiry.v2", routes.getFirst().route().getRouteId());
+        assertEquals("gw.dm.card.card-inquiry.v2", routes.getFirst().route().getRouteId());
         assertEquals("v2", routes.getFirst().serviceVersion());
     }
 
@@ -77,8 +77,8 @@ class RestProtocolHandlerTest {
                 servicePlan("domain.card", List.of(inquiry, status)));
 
         assertEquals(2, routes.size());
-        assertEquals("gw.dm.domain-card.card-inquiry.v2", routes.get(0).route().getRouteId());
-        assertTrue(routes.get(1).route().getRouteId().startsWith("gw.dm.domain-card.card-inquiry.v2."));
+        assertEquals("gw.dm.card.card-inquiry.v2", routes.get(0).route().getRouteId());
+        assertTrue(routes.get(1).route().getRouteId().startsWith("gw.dm.card.card-inquiry.v2."));
         assertNotEquals(routes.get(0).route().getRouteId(), routes.get(1).route().getRouteId());
     }
 
@@ -90,7 +90,7 @@ class RestProtocolHandlerTest {
                 gateway("channel.mb"),
                 servicePlan("channel.mb", List.of(routeDefinition)));
 
-        assertEquals("gw.ch.channel-mb.card-inquiry.v1", routes.getFirst().route().getRouteId());
+        assertEquals("gw.ch.mb.card-inquiry.v1", routes.getFirst().route().getRouteId());
     }
 
     private List<InboundRouteDefinition> routeDefinitions(GatewayChannel gatewayChannel,

@@ -172,11 +172,12 @@ Service layer نباید بداند request از REST آمده یا SOAP یا TC
 مثال:
 
 ```text
-scm.gateway.channel.mb.card-inquiry
-    -> direct:scm.service.card-inquiry
+gw.dm.card.cardinquiry.v1
+    -> direct:svc.dm.card.cardinquiry
 
-direct:scm.service.card-inquiry
+direct:svc.dm.card.cardinquiry
     -> service pipeline
+    -> direct:op.SVC_CARD_INQUIRY_TCP
     -> operation/provider
 ```
 
@@ -189,7 +190,7 @@ ServiceRouteUriResolver
 در اجرای فعلی، این resolver معمولاً direct endpoint تولید می‌کند:
 
 ```text
-direct:scm.service.<service-code>
+direct:<service-route-id>
 ```
 
 مزیت این کار این است که اگر در آینده service layer به یک JVM یا microservice جدا منتقل شود، gateway فقط resolver جدید نیاز دارد.
@@ -329,8 +330,8 @@ Service layer نباید ClientContract را بشناسد. این تبدیل‌�
 Service route به صورت پیش‌فرض version-aware نیست:
 
 ```text
-/card/inquiry     -> contract v1 -> direct:scm.service.card-inquiry
-/v2/card/inquiry  -> contract v2 -> direct:scm.service.card-inquiry
+/card/inquiry     -> contract v1 -> direct:svc.dm.card.cardinquiry
+/v2/card/inquiry  -> contract v2 -> direct:svc.dm.card.cardinquiry
 ```
 
 Service layer فقط زمانی باید version-aware شود که رفتار business، operation یا provider واقعاً متفاوت باشد.

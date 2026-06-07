@@ -12,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GatewayRouteIdFactoryTest {
     @Test
     void routeIdIncludesVersion() {
-        assertEquals("gw.dm.domain-card.card-inquiry.v1",
+        assertEquals("gw.dm.card.card-inquiry.v1",
                 GatewayRouteIdFactory.singleRouteId(
                         RuntimeTargetKind.SERVICE_DOMAIN,
                         "domain.card",
                         "card-inquiry",
                         "v1"));
-        assertEquals("gw.ch.channel-mb.card-inquiry.v2",
+        assertEquals("gw.ch.mb.card-inquiry.v2",
                 GatewayRouteIdFactory.singleRouteId(
                         RuntimeTargetKind.CHANNEL,
                         "channel.mb",
@@ -55,6 +55,6 @@ class GatewayRouteIdFactoryTest {
                 "v2",
                 definition);
 
-        assertTrue(routeId.startsWith("gw.dm.domain-card.card-inquiry.v2."));
+        assertTrue(routeId.startsWith("gw.dm.card.card-inquiry.v2."));
     }
 }

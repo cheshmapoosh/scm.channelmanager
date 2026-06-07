@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -75,38 +76,20 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
             return;
         }
 
-        List<Operation> operations = operationService.getAllOperations();
-        Set<String> builtOperationNames = new LinkedHashSet<>();
-        int skippedOperationCount = 0;
+        List<Operation> operations = operationService.findActiveOperationsByNames(requiredOperationNames);
+        Map<String, Operation> activeOperationsByName = activeOperationsByRequiredName(requiredOperationNames, operations);
+        logMissingOperations(requiredOperationNames, activeOperationsByName.keySet());
+
         int builtRouteCount = 0;
-        for (Operation operation : operations) {
-            if (!Boolean.TRUE.equals(operation.getActive())) {
-                continue;
-            }
-            String operationName = StringUtils.trimToNull(operation.getName());
-            if (!requiredOperationNames.contains(operationName)) {
-                skippedOperationCount++;
-                log.info("event={} layer=operation operationName={} reason=not-required-by-runtime-plan outcome=skipped",
-                        RouteLogEvents.OPERATION_ROUTE_SKIPPED,
-                        operationName);
-                continue;
-            }
-            if (!builtOperationNames.add(operationName)) {
-                skippedOperationCount++;
-                log.info("event={} layer=operation operationName={} reason=duplicate-operation-name outcome=skipped",
-                        RouteLogEvents.OPERATION_ROUTE_SKIPPED,
-                        operationName);
-                continue;
-            }
+        for (Operation operation : activeOperationsByName.values()) {
             buildOperationRoute(operation);
             builtRouteCount++;
         }
-        logMissingOperations(requiredOperationNames, builtOperationNames);
-        log.info("event={} layer=operation requiredOperationCount={} builtRouteCount={} skippedOperationCount={} outcome=success",
+        log.info("event={} layer=operation requiredOperationCount={} loadedOperationCount={} builtRouteCount={} outcome=success",
                 RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_COMPLETED,
                 requiredOperationNames.size(),
-                builtRouteCount,
-                skippedOperationCount);
+                activeOperationsByName.size(),
+                builtRouteCount);
     }
 
     private Set<String> resolveRequiredOperationNames(RuntimeMode runtimeMode,
@@ -179,7 +162,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
 
     private void buildOperationRoute(Operation operation) {
         String routeId = RouteIdSupport.operationRouteId(operation.getName());
-        String fromUri = resolveFromUri(operation);
+        String fromUri = "direct:" + routeId;
         RouteDefinition route = from(fromUri)
                 .routeId(routeId)
                 .setProperty(Message.OPERATION, constant(operation));
@@ -210,8 +193,31 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                         operationName));
     }
 
-    private String resolveFromUri(Operation operation) {
-        return "direct:" + operation.getName();
+    private Map<String, Operation> activeOperationsByRequiredName(Set<String> requiredOperationNames,
+                                                                  List<Operation> operations) {
+        Map<String, Operation> operationsByName = new LinkedHashMap<>();
+        if (operations == null) {
+            return operationsByName;
+        }
+        for (Operation operation : operations) {
+            if (operation == null || !Boolean.TRUE.equals(operation.getActive())) {
+                continue;
+            }
+            String operationName = StringUtils.trimToNull(operation.getName());
+            if (operationName == null) {
+                throw new IllegalStateException("Operation lookup returned an active operation without a name.");
+            }
+            if (!requiredOperationNames.contains(operationName)) {
+                throw new IllegalStateException("Operation lookup returned unexpected active operation '"
+                        + operationName + "' that was not required by active runtime service plans.");
+            }
+            Operation existing = operationsByName.putIfAbsent(operationName, operation);
+            if (existing != null) {
+                throw new IllegalStateException("Duplicate active operation returned for required operation name '"
+                        + operationName + "'.");
+            }
+        }
+        return operationsByName;
     }
 
     private void defineExceptionHandler(RouteDefinition route) {
