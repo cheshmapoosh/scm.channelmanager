@@ -153,6 +153,8 @@ scm:
       username:
       password:
       topic: SUA/LOGOUT
+  super-app:
+    session-ttl: 3600_000
 
 
 #spring:
@@ -201,3 +203,13 @@ logging:
     org.hibernate.SQL: debug #just for develop
     org.hibernate.type.descriptor.sql: trace #just for develop
     org.hibernate.orm.jdbc.bind: trace #just for develop
+
+
+service:
+  shahkar:
+    baseUrl: http://10.15.6.53:8088
+    tokenPath: /connect/token
+    inquiryPath: /gov/1.0/ShahkarService
+    clientId: cm_develop
+    clientSecret: 9jl48zohr0cqa6wnc54h
+    grant_Type: client_credentials

@@ -21,6 +21,9 @@ dependencies {
     api 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
     compileOnly 'org.apache.camel.springboot:camel-spring-boot-starter'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'org.jpos:jpos:2.1.8'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation 'org.apache.commons:commons-pool2:2.12.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

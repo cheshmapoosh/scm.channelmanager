@@ -166,9 +166,9 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                     }
                     ChannelServiceAccess representativeAccess = memberAccesses.getFirst();
                     List<ChannelServiceDefinition> inboundDefinitions = inboundDefinitionsByService
-                            .getOrDefault(entry.getKey(), List.of());
+                            .getOrDefault(entry.getKey(), entry.getValue());
                     List<ChannelServiceDefinition> apiDocDefinitions = apiDocDefinitionsByService
-                            .getOrDefault(entry.getKey(), List.of());
+                            .getOrDefault(entry.getKey(), entry.getValue());
                     validateDefinitionPresent(
                             gatewayChannel,
                             RuntimeTargetKind.SERVICE_DOMAIN,

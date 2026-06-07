@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.PwaOauthResponseMapper;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationResponse;
@@ -146,6 +148,9 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
 
     @Override
     public boolean support(HttpServletRequest request) {
+        if(request.getAttribute(PRE_AUTHENTICATION_INSTANCE) instanceof OAuth2ShahkarAuthenticationToken){
+            return false;
+        }
         return Optional
                 .ofNullable(request.getHeader(Constants.APP_VERSION_HEADER))
                 .stream()

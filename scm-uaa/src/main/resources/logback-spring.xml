@@ -12,9 +12,9 @@
 
 <!-- Rolling knobs -->
 <springProperty scope="context" name="MAX_HISTORY_DAYS"
-                source="scm.log.app.max-history-days" defaultValue="50" />
-<springProperty scope="context" name="TOTAL_SIZE_CAP"
-                source="scm.log.app.total-size-cap" defaultValue="10GB" />
+                source="scm.log.app.max-history" defaultValue="50" />
+<!--<springProperty scope="context" name="TOTAL_SIZE_CAP"
+                source="scm.log.app.total-size-cap" defaultValue="10GB" />-->
 <springProperty scope="context" name="MAX_FILE_SIZE"
                 source="scm.log.app.max-file-size" defaultValue="100MB" />
 
@@ -52,8 +52,8 @@
         <fileNamePattern>${ARCHIVE_PATTERN}</fileNamePattern>
         <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
         <maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
-        <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
-        <cleanHistoryOnStart>true</cleanHistoryOnStart>
+
+        <cleanHistoryOnStart>false</cleanHistoryOnStart>
     </rollingPolicy>
 
     <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

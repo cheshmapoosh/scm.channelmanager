@@ -282,7 +282,7 @@ public class UserService {
 
         //TODO verify shahkar
 
-        GeneralRealPersonEntity personEntity = findRealPersonByNationalCode(nationalCode);
+        GeneralRealPersonEntity personEntity = findIndividualPersonByNationalCode(nationalCode);
         if (Objects.isNull(personEntity)) {
             personEntity = new IndividualPersonEntity();
             personEntity.setUsername(nationalCode);
@@ -329,6 +329,12 @@ public class UserService {
         if (Objects.nonNull(personEntity.getId())) {
             userEntities = Optional.of(userRepository.findByPersonIdAndLegacyTerminalId(personEntity.getId(),
                     terminal.get().getLegacyTerminalId().intValue()));
+            UserEntity userEntity  =   userEntities
+                    .filter(list -> !list.isEmpty())
+                    .map(list -> list.get(0))
+                    .orElseThrow(() -> new IllegalArgumentException("User list is empty or not present"));
+            return userMapper.toModel(userEntity);
+
         }
 
         return null;
@@ -336,6 +342,10 @@ public class UserService {
 
     public GeneralRealPersonEntity findRealPersonByNationalCode(String nationalCode) {
         return personRepository.findRealPersonByNationalCode(nationalCode);
+    }
+
+    public GeneralRealPersonEntity findIndividualPersonByNationalCode(String nationalCode) {
+        return personRepository.findIndividualPersonByNationalCode(nationalCode);
     }
 
     public User createSmsVerifiedUserAndDeleteOld(String mobileNo, String terminalCode) {

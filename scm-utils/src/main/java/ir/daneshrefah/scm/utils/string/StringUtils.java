@@ -119,8 +119,24 @@ public class StringUtils {
         return leftPad(str, size, '0');
     }
 
+    public static String leftPadEmpty(final String str, final int size) {
+        return leftPad(str, size, ' ');
+    }
+
     public static String leftPad(final String str, final int size, final char padChar) {
         return org.apache.commons.lang3.StringUtils.leftPad(str, size, padChar);
+    }
+
+    public static String unPadZero(String srcStr, String pattern) {
+        if (!isEmpty(srcStr) && !isEmpty(pattern)) {
+            String destStr;
+            for (destStr = srcStr; destStr.length() >= pattern.length() && destStr.substring(0, pattern.length()).equals(pattern); destStr = destStr.substring(pattern.length())) {
+            }
+
+            return destStr;
+        } else {
+            return srcStr;
+        }
     }
 
     public static String replaceOnceIgnoreCase(final String text, final String searchString, final String replacement) {

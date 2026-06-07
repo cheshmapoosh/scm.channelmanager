@@ -1,16 +1,18 @@
 package ir.daneshrefah.scm.uaa.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
+import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2SmsOtpAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.*;
 import ir.daneshrefah.scm.uaa.security.converter.*;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
 import ir.daneshrefah.scm.uaa.security.filter.MissingGrantTypeFallbackFilter;
+import ir.daneshrefah.scm.uaa.service.shahkar.ShahkarOwnershipService;
+import ir.daneshrefah.scm.uaa.service.user.OtpUserService;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import ir.daneshrefah.scm.uaa.utils.Urls;
 import jakarta.servlet.ServletException;
@@ -18,6 +20,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -32,8 +36,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.MessageDigestPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
@@ -81,12 +89,23 @@ public class SecurityConfig {
     private final LogoutService logoutService;
     private final CacheManager cacheManager;
     private final UserService userService;
+    private final OtpUserService otpUserService;
+    private final ShahkarOwnershipService shahkarOwnershipService;
+
+
+    @Qualifier("hazelcastClient")
+    private final HazelcastInstance instance;
+
+    @Value("${scm.super-app.session-ttl}")
+    private  Long sessionTTL;
+
 
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
                                                                       OAuth2GeneralAuthenticationProvider oAuth2GeneralAuthenticationProvider,
-                                                                      OAuth2SmsOtpAuthenticationProvider oAuth2SmsOtpAuthenticationProvider)
+                                                                      OAuth2SmsOtpAuthenticationProvider oAuth2SmsOtpAuthenticationProvider,
+                                                                      OAuth2ShahkarAuthenticationProvider oAuth2ShahkarAuthenticationProvider)
             throws Exception {
 
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
@@ -101,11 +120,12 @@ public class SecurityConfig {
                                                         Arrays.asList(new FirstPasswordGrantAuthenticationConverter(),
                                                                 new SecondPasswordGrantAuthenticationConverter(),
                                                                 new SmsOtpGrantAuthenticationConverter(),
-                                                                new ShahkarGrantAuthenticationConverter(),
+                                                                new ShahkarGrantAuthenticationConverter(otpUserService,shahkarOwnershipService,instance,sessionTTL),
                                                                 new DefaultGrantAuthenticationConverter()))
                                         )
                                         .authenticationProvider(oAuth2GeneralAuthenticationProvider)
                                         .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)
+                                        .authenticationProvider(oAuth2ShahkarAuthenticationProvider)
                 )
                 .oidc(Customizer.withDefaults());// Enable OpenID Connect 1.0
 
@@ -154,6 +174,7 @@ public class SecurityConfig {
                                 .requestMatchers("/otp/public/**").permitAll()
                                 .requestMatchers("/oauth/token_key").permitAll()
                                 .requestMatchers("/auth/login").permitAll()
+                                .requestMatchers("/auth/refresh").permitAll()
                                 .requestMatchers("/login**").permitAll()
                                 .requestMatchers("/assets/**").permitAll()
                                 .requestMatchers("/api/register").permitAll()
@@ -225,9 +246,9 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        PasswordEncoder defaultPasswordEncoder = new org.springframework.security.crypto.password.MessageDigestPasswordEncoder("MD5");
+        PasswordEncoder defaultPasswordEncoder = new MessageDigestPasswordEncoder("MD5");
         Map<String, PasswordEncoder> encoders = new HashMap<>();
-        encoders.put("noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance());
+        encoders.put("noop", NoOpPasswordEncoder.getInstance());
         encoders.put("MD5", defaultPasswordEncoder);
         DelegatingPasswordEncoder passwordEncoder = new DelegatingPasswordEncoder("MD5", encoders);
         passwordEncoder.setDefaultPasswordEncoderForMatches(defaultPasswordEncoder);

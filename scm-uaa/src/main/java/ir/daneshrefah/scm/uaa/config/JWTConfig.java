@@ -7,10 +7,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
-import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralPerson;
-import ir.daneshrefah.scm.common.model.person.GeneralRealPerson;
-import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
@@ -208,6 +205,9 @@ public class JWTConfig {
                     claims.claim(CLAIM_KEY_USER_CHALLENGE_CODE, user.getLoginStaticPassword());
                 }
                 claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
+                claims.claim(CLAIM_KEY_AUDIENCE,"oauth2-resource");
+                claims.claim(OAUTH2_PARAM_PWA_NAME_USER_USERNAME,((IndividualPerson)user.getPerson()).getNationalCode());
+                claims.claim("appVersion","SA");
                 addTokenLifeTimeClaims(authenticationToken, claims);
             }
         };

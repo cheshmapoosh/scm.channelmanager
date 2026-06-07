@@ -107,6 +107,9 @@ public class RestProviderProducer extends DefaultProducer {
 
         RestProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         providerMetrics.submitted();
+
+        logRequest(config, operationName, requestSpec);
+
         long startedAt = System.nanoTime();
         try {
             executeCustomizers(exchange, providerExchange, customizerPipeline, true);

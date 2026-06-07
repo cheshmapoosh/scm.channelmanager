@@ -21,6 +21,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
+
 public class MissingGrantTypeFallbackFilter extends OncePerRequestFilter {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -57,7 +59,11 @@ public class MissingGrantTypeFallbackFilter extends OncePerRequestFilter {
             params.putAll(request.getParameterMap());
             params.putIfAbsent(OAuth2ParameterNames.GRANT_TYPE, new String[]{AuthorizationGrantType.DEFAULT.getCode()});
             params.putIfAbsent(OAuth2ParameterNames.SCOPE, new String[]{"session"});
+            if(request.getHeader("x-otp-code") !=null){
+                params.putIfAbsent("x-otp-code",new String[]{request.getHeader("x-otp-code")});
+            }
             enrichUserInfo(params, request);
+            enrichIfExtShk(params, request);
         }
 
         @SuppressWarnings("unchecked")
@@ -96,6 +102,60 @@ public class MissingGrantTypeFallbackFilter extends OncePerRequestFilter {
         @Override
         public String[] getParameterValues(String name) {
             return params.getOrDefault(name, super.getParameterValues(name));
+        }
+
+        @SuppressWarnings("unchecked")
+        private void enrichIfExtShk(Map<String, String[]> params, HttpServletRequest request) {
+
+            if (!(request instanceof ContentCachingRequestWrapper wrapper)) {
+                return;
+            }
+
+            byte[] body = wrapper.getContentAsByteArray();
+            if (body.length == 0) {
+                return;
+            }
+
+            try {
+                Map<String, Object> bodyMap =
+                        objectMapper.readValue(body, Map.class);
+
+                Object grantTypeObj = bodyMap.get(OAuth2ParameterNames.GRANT_TYPE);
+                if (grantTypeObj == null) {
+                    return; // ✅ سایر توکن‌ها untouched
+                }
+
+                String grantType = String.valueOf(grantTypeObj);
+
+                // ✅ تنها نقطه دخالت
+                if (!"ext_shk".equals(grantType)) {
+                    return;
+                }
+
+                // ✅ override فقط برای ext_shk
+                params.put(
+                        OAuth2ParameterNames.GRANT_TYPE,
+                        new String[]{grantType}
+                );
+                //request.   (SCM_PARAMETER_ACCESS_PARAMETER,new String[]{String.valueOf(bodyMap.get(OAuth2ParameterNames.PASSWORD))});
+
+                if (bodyMap.containsKey(OAuth2ParameterNames.USERNAME)) {
+                    params.put(
+                            OAuth2ParameterNames.USERNAME,
+                            new String[]{String.valueOf(bodyMap.get(OAuth2ParameterNames.USERNAME))}
+                    );
+                }
+
+                if (bodyMap.containsKey(OAuth2ParameterNames.PASSWORD)) {
+                    params.put(
+                            OAuth2ParameterNames.PASSWORD,
+                            new String[]{String.valueOf(bodyMap.get(OAuth2ParameterNames.PASSWORD))}
+                    );
+                }
+
+            } catch (Exception ignored) {
+
+            }
         }
     }
 
