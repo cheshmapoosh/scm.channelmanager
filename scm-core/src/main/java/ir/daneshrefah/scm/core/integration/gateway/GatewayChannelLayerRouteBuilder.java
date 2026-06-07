@@ -23,11 +23,11 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class GatewayChannelRouteBuilder extends RouteBuilder {
+public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
     private final GatewayService gatewayService;
     private final RuntimeRoutePlanProvider runtimeRoutePlanProvider;
     private final List<ProtocolHandler> protocolHandlers;
-    private final GatewayLayerRouteBuilder gatewayLayerRouteBuilder;
+    private final GatewayRoutePipelineConfigurer gatewayRoutePipelineConfigurer;
     private final RuntimeRouteActivation runtimeRouteActivation;
 
     @Override
@@ -176,7 +176,7 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
                                        RuntimeServicePlan servicePlan,
                                        InboundRouteDefinition inboundRoute) {
         try {
-            gatewayLayerRouteBuilder.configureGatewayRoute(new ChannelRouteBuildContext(routePlan, servicePlan), inboundRoute);
+            gatewayRoutePipelineConfigurer.configureGatewayRoute(new ChannelRouteBuildContext(routePlan, servicePlan), inboundRoute);
         } catch (RuntimeException exception) {
             log.error("event={} layer=gateway routeId={} gatewayName={} targetKind={} serviceCode={} serviceVersion={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,

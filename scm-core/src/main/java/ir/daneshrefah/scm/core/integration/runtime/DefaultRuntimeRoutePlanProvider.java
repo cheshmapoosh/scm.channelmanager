@@ -166,16 +166,16 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                     }
                     ChannelServiceAccess representativeAccess = memberAccesses.getFirst();
                     List<ChannelServiceDefinition> inboundDefinitions = inboundDefinitionsByService
-                            .getOrDefault(entry.getKey(), entry.getValue());
+                            .getOrDefault(entry.getKey(), List.of());
                     List<ChannelServiceDefinition> apiDocDefinitions = apiDocDefinitionsByService
-                            .getOrDefault(entry.getKey(), entry.getValue());
-                    validateDefinitionPresent(
-                            gatewayChannel,
-                            RuntimeTargetKind.SERVICE_DOMAIN,
-                            representativeAccess,
-                            ChannelServiceDefinitionType.INBOUND,
-                            CollectionUtils.isNotEmpty(inboundDefinitions),
-                            "INBOUND creates gateway route exposure.");
+                            .getOrDefault(entry.getKey(), List.of());
+                    if (CollectionUtils.isEmpty(inboundDefinitions)) {
+                        log.warn("Service-domain membership skipped gatewayName={} serviceKey={} {} reason=missing-inbound-definition",
+                                gatewayChannel.getName(),
+                                entry.getKey(),
+                                serviceRef(representativeAccess));
+                        return null;
+                    }
                     warnOptionalApiDocMissing(
                             gatewayChannel,
                             RuntimeTargetKind.SERVICE_DOMAIN,

@@ -44,12 +44,6 @@ public class RestProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public RestProviderMetrics restProviderMetrics() {
         return new RestProviderMetrics();
     }

@@ -4,8 +4,6 @@
   src:
     local("Vazirmatn"),
     local("Vazirmatn Regular"),
-    url("assets/fonts/Vazirmatn-Regular.woff2") format("woff2"),
-    url("./assets/fonts/Vazirmatn-Regular.woff2") format("woff2"),
     url("../assets/fonts/Vazirmatn-Regular.woff2") format("woff2"),
     url("./../assets/fonts/Vazirmatn-Regular.woff2") format("woff2");
   font-weight: 400;
@@ -17,8 +15,6 @@
   font-family: "Vazirmatn";
   src:
     local("Vazirmatn Medium"),
-    url("assets/fonts/Vazirmatn-Medium.woff2") format("woff2"),
-    url("./assets/fonts/Vazirmatn-Medium.woff2") format("woff2"),
     url("../assets/fonts/Vazirmatn-Medium.woff2") format("woff2"),
     url("./../assets/fonts/Vazirmatn-Medium.woff2") format("woff2");
   font-weight: 500;
@@ -30,8 +26,6 @@
   font-family: "Vazirmatn";
   src:
     local("Vazirmatn Bold"),
-    url("assets/fonts/Vazirmatn-Bold.woff2") format("woff2"),
-    url("./assets/fonts/Vazirmatn-Bold.woff2") format("woff2"),
     url("../assets/fonts/Vazirmatn-Bold.woff2") format("woff2"),
     url("./../assets/fonts/Vazirmatn-Bold.woff2") format("woff2");
   font-weight: 700;
@@ -104,33 +98,34 @@ Gateway Route -> Service -> Operation Route -> OperationTypeHandler -> Provider/
 
 ---
 
-## 2) تحلیل کامل `OperationRouteBuilder`
+## 2) تحلیل کامل `OperationLayerRouteBuilder`
 
 فایل مرجع:
 
-`scm-core/src/main/java/ir/daneshrefah/scm/core/integration/operation/OperationRouteBuilder.java`
+`scm-core/src/main/java/ir/daneshrefah/scm/core/integration/operation/OperationLayerRouteBuilder.java`
 
 ### 2.1) شروع ساخت Route ها
 
 در متد `configure`:
 
-1. همه عملیات فعال خوانده می‌شوند.
+1. ابتدا `RuntimeRouteActivation` هدف‌های فعال runtime را می‌خواند.
+2. برای هر gateway فعال، `RuntimeRoutePlanProvider` فقط service plan های همان runtime target را می‌سازد.
+3. نام عملیات مورد نیاز از `servicePlans().service().serviceOperations` استخراج می‌شود.
 
-```java
-List<Operation> operations = operationService.getAllOperations();
-operations.stream().filter(operation -> Boolean.TRUE.equals(operation.getActive()))
+```text
+runtime targets -> gateway channel -> runtime route plan -> active service operations
 ```
 
-نکته: `operationService.getAllOperations` خودش از مخزن با شرط `active = true` می‌خواند.
+نکته: `OperationLayerRouteBuilder` دیگر همه عملیات فعال دیتابیس را route نمی‌کند. اگر `scm-web` فقط برای `domain.card` بالا آمده باشد، فقط عملیات مورد نیاز service plan های `domain.card` ساخته می‌شوند.
 
-2. برای هر عملیات یک `direct route` ساخته می‌شود:
+4. برای هر عملیات مورد نیاز یک `direct route` ساخته می‌شود:
 
 ```text
 from: direct:<operationName>
-routeId: route-<operationName>
+routeId: op.<operationName>
 ```
 
-3. آبجکت عملیات داخل `exchange property` ست می‌شود:
+5. آبجکت عملیات داخل `exchange property` ست می‌شود:
 
 ```text
 key: scmOperation
@@ -181,11 +176,11 @@ key: scmOperation
 
 ---
 
-### 2.6) جمع‌بندی رفتاری `OperationRouteBuilder`
+### 2.6) جمع‌بندی رفتاری `OperationLayerRouteBuilder`
 
-`OperationRouteBuilder` خودش منطق کسب‌وکاری عملیات را اجرا نمی‌کند. وظیفه آن:
+`OperationLayerRouteBuilder` خودش منطق کسب‌وکاری عملیات را اجرا نمی‌کند. وظیفه آن:
 
-1. ایجاد route برای هر عملیات فعال.
+1. ایجاد route فقط برای عملیات مورد نیاز runtime service plan های فعال.
 2. تزریق خط‌مشی مشترک: خطا، trace، plugin.
 3. سپردن مقصد واقعی عملیات به `OperationTypeHandler`.
 
@@ -365,11 +360,11 @@ direct:<operationName>
 
 برای درک بهتر، ترتیب دقیق اجرای runtime:
 
-1. `GatewayChannelRouteBuilder` درخواست ورودی را می‌گیرد.
+1. `GatewayChannelLayerRouteBuilder` درخواست ورودی را می‌گیرد.
 2. سرویس مقصد را بر اساس channel و service mapping پیدا می‌کند.
 3. بر اساس `routingStrategy`، عملیات مناسب را انتخاب می‌کند.
 4. به `direct:<operationName>` می‌فرستد.
-5. `OperationRouteBuilder` وارد عمل می‌شود.
+5. `OperationLayerRouteBuilder` وارد عمل می‌شود.
 6. plugin های `BEFORE` اجرا می‌شوند.
 7. `OperationTypeHandler` مقصد واقعی را صدا می‌زند.
 8. plugin های `AFTER` اجرا می‌شوند.

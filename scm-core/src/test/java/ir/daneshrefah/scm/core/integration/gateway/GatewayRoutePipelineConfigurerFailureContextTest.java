@@ -23,11 +23,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class GatewayLayerRouteBuilderFailureContextTest {
+class GatewayRoutePipelineConfigurerFailureContextTest {
 
     @Test
     void failureContextPrefersExchangeProperties() throws Exception {
-        GatewayLayerRouteBuilder builder = builder();
+        GatewayRoutePipelineConfigurer builder = builder();
         Exchange exchange = new DefaultExchange(new DefaultCamelContext());
         Service service = new Service();
         service.setCode("card-inquiry");
@@ -40,7 +40,7 @@ class GatewayLayerRouteBuilderFailureContextTest {
 
     @Test
     void failureContextFallsBackToRuntimeServicePlan() throws Exception {
-        GatewayLayerRouteBuilder builder = builder();
+        GatewayRoutePipelineConfigurer builder = builder();
         Exchange exchange = new DefaultExchange(new DefaultCamelContext());
         exchange.setProperty(Message.RUNTIME_SERVICE_PLAN, servicePlan("ib", "balance-inquiry"));
 
@@ -50,15 +50,15 @@ class GatewayLayerRouteBuilderFailureContextTest {
 
     @Test
     void failureContextAllowsMissingValues() throws Exception {
-        GatewayLayerRouteBuilder builder = builder();
+        GatewayRoutePipelineConfigurer builder = builder();
         Exchange exchange = new DefaultExchange(new DefaultCamelContext());
 
         assertThat(invoke(builder, "failureChannelCode", exchange)).isNull();
         assertThat(invoke(builder, "failureServiceCode", exchange)).isNull();
     }
 
-    private GatewayLayerRouteBuilder builder() {
-        return new GatewayLayerRouteBuilder(
+    private GatewayRoutePipelineConfigurer builder() {
+        return new GatewayRoutePipelineConfigurer(
                 mock(ClientContractResolver.class),
                 Map.<String, RequestContractDecoder>of(),
                 mock(ServiceRouteUriResolver.class),
@@ -76,8 +76,8 @@ class GatewayLayerRouteBuilderFailureContextTest {
         return new RuntimeServicePlan(new GatewayChannel(), access, service, List.of());
     }
 
-    private String invoke(GatewayLayerRouteBuilder builder, String methodName, Exchange exchange) throws Exception {
-        Method method = GatewayLayerRouteBuilder.class.getDeclaredMethod(methodName, Exchange.class);
+    private String invoke(GatewayRoutePipelineConfigurer builder, String methodName, Exchange exchange) throws Exception {
+        Method method = GatewayRoutePipelineConfigurer.class.getDeclaredMethod(methodName, Exchange.class);
         method.setAccessible(true);
         return (String) method.invoke(builder, exchange);
     }

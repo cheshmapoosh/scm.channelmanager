@@ -131,18 +131,16 @@ class DefaultRuntimeRoutePlanProviderTest {
     }
 
     @Test
-    void domainPlanFailsWhenMemberServiceHasNoInboundDefinition() {
+    void domainPlanSkipsMemberServiceWithNoInboundDefinition() {
         GatewayChannel gatewayChannel = gateway("domain.card");
         ChannelServiceAccess access = activeAccess();
         arrangeDomainDefinitions(gatewayChannel, access, List.of(
                 definition(access, ChannelServiceDefinitionType.SVC_DOMAIN_MEMBER, "member-1"),
                 definition(access, ChannelServiceDefinitionType.API_DOC, "api-doc-1")));
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> provider.provide(gatewayChannel));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> provider.provide(gatewayChannel));
 
-        assertInvalidDefinitionMessage(exception, "domain.card", RuntimeTargetKind.SERVICE_DOMAIN, "card", "INBOUND");
+        assertTrue(exception.getMessage().contains("No active service plan found for runtime target domain.card"));
     }
 
     @Test

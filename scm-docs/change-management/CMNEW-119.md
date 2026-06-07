@@ -21,8 +21,10 @@ direct:scm.service.<normalized-service-code>
 ## Impact Areas
 
 Application:
-- `GatewayChannelRouteBuilder` is now protocol/client-contract focused.
+- `GatewayChannelLayerRouteBuilder` is now protocol/client-contract focused.
 - `ServiceLayerRouteBuilder` builds direct service routes.
+- `OperationLayerRouteBuilder` builds direct operation routes only for operations required by active runtime service plans.
+- `GatewayRoutePipelineConfigurer` configures the internal gateway route pipeline and is not a top-level Camel `RouteBuilder`.
 - `ServiceTargetRouter` owns `FIRST`, `FAIL_OVER` and `MULTI_OPERATION` target selection.
 - `RuntimeRoutePlanProvider` loads runtime service plans for `channel.*` and `domain.*`.
 
@@ -78,7 +80,7 @@ Metrics:
 - Load services from `GatewayChannel.channel -> CHANNEL_SERVICE_ACCESS -> Service`.
 - Filter inactive channel-service access records and unpublished services.
 - This represents all services available to the channel.
-- Every active service plan must have at least one `INBOUND` definition and at least one `API_DOC` definition.
+- Every active service plan must have at least one `INBOUND` definition. `API_DOC` is optional metadata.
 
 `domain.*`:
 - Load definitions from `TBL_SCM_CHN_SVC_DEFINITION` for the selected `GatewayChannel`.
@@ -86,7 +88,7 @@ Metrics:
 - `INBOUND` and `API_DOC` never create domain membership.
 - Domain service routes are unique by `Service`; multiple member channels for the same service are collapsed into one service route and preserved as membership metadata.
 - If a domain runtime has no `SVC_DOMAIN_MEMBER` definitions, startup fails fast.
-- Every active domain member service must also have at least one `INBOUND` definition and at least one `API_DOC` definition. `SVC_DOMAIN_MEMBER` is membership only and `API_DOC` does not expose a route.
+- Every active domain member service must also have at least one `INBOUND` definition to become a runtime service plan. Members without `INBOUND` are skipped with a warning. `SVC_DOMAIN_MEMBER` is membership only and `API_DOC` does not expose a route.
 - Multiple gateway routes are modeled as multiple `INBOUND` definitions. There is no group definition in the v9 runtime model.
 
 Runtime guards normalize channel codes before comparison:
@@ -132,8 +134,10 @@ Versioning:
 - `v1` can represent old CM-compatible client behavior: same URL, payloads, error format and HTTP status behavior where applicable.
 - `ContractStyle` is intentionally not part of SCM. SCM should not know whether a client is legacy or modern.
 - `versionSelector` is intentionally not required in this path-based phase.
-- Gateway `routeId` values include the version, for example `card-inquiry-v1-route` and `card-inquiry-v2-route`.
-- Service route URIs remain version-agnostic by default, for example both v1 and v2 dispatch to `direct:scm.service.card-inquiry` unless business/provider behavior truly differs.
+- Gateway `routeId` values use compact layer prefixes and include the version, for example `gw.dm.domain-card.card-inquiry.v1` and `gw.dm.domain-card.card-inquiry.v2`.
+- Service route IDs use `svc.<targetKindShort>.<gatewayName>.<serviceCode>`, for example `svc.dm.domain-card.card-inquiry`.
+- Operation route IDs use `op.<operationName>`, while operation dispatch remains `direct:<operationName>`.
+- Service route URIs remain version-agnostic by default, for example both v1 and v2 dispatch to the same service route unless business/provider behavior truly differs.
 
 Fallback:
 1. Route definition contract.

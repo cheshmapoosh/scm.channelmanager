@@ -39,12 +39,6 @@ public class ShetabProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public ShetabProviderMetrics shetabProviderMetrics() {
         return new ShetabProviderMetrics();
     }

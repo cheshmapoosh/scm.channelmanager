@@ -29,7 +29,7 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class GatewayLayerRouteBuilder {
+public class GatewayRoutePipelineConfigurer {
 
     private final ClientContractResolver clientContractResolver;
     private final Map<String, RequestContractDecoder> requestContractDecoders;

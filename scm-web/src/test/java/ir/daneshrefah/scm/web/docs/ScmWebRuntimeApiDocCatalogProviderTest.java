@@ -120,8 +120,9 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     @Test
     void missingDetailsRefIsSkippedWhenFailFastFalse() {
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        Resource missingResource = missingResource();
         when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
-                .thenReturn(missingResource());
+                .thenReturn(missingResource);
 
         assertThat(provider.findApiDocGroups()).isEmpty();
     }
@@ -130,8 +131,9 @@ class ScmWebRuntimeApiDocCatalogProviderTest {
     void missingDetailsRefFailsWhenFailFastTrue() {
         ScmWebRuntimeApiDocCatalogProvider failFastProvider = provider(runtimeEnvironment(), failFastProperties());
         arrangeScopedDefinitions(apiDocDefinition("api-doc-1", detailsRef("services/card/card-inquiry/v1/api-docs.json")));
+        Resource missingResource = missingResource();
         when(resourceLoader.getResource("classpath:services/card/card-inquiry/v1/api-docs.json"))
-                .thenReturn(missingResource());
+                .thenReturn(missingResource);
 
         assertThatThrownBy(failFastProvider::findApiDocGroups)
                 .isInstanceOf(IllegalStateException.class)

@@ -4,7 +4,9 @@ import ir.daneshrefah.scm.common.model.gateway.*;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractVersionResolver;
+import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
@@ -108,11 +110,21 @@ public class RestProtocolHandler implements ProtocolHandler {
                                      String serviceVersion,
                                      InboundChannelServiceDefinition definition,
                                      Set<String> usedRouteIds) {
-            String routeId = GatewayRouteIdFactory.singleRouteId(serviceCode, serviceVersion);
+            RuntimeTargetKind targetKind = RouteIdSupport.targetKindFromGatewayName(gatewayChannel.getName());
+            String routeId = GatewayRouteIdFactory.singleRouteId(
+                    targetKind,
+                    gatewayChannel.getName(),
+                    serviceCode,
+                    serviceVersion);
             if (usedRouteIds.add(routeId)) {
                 return routeId;
             }
-            routeId = GatewayRouteIdFactory.inboundRouteId(serviceCode, serviceVersion, definition);
+            routeId = GatewayRouteIdFactory.inboundRouteId(
+                    targetKind,
+                    gatewayChannel.getName(),
+                    serviceCode,
+                    serviceVersion,
+                    definition);
             int sequence = 2;
             String candidate = routeId;
             while (!usedRouteIds.add(candidate)) {

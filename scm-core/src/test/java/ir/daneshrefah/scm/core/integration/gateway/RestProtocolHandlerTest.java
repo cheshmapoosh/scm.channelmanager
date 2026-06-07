@@ -30,7 +30,7 @@ class RestProtocolHandlerTest {
                 servicePlan("domain.card", List.of(routeDefinition)));
 
         assertEquals(1, routes.size());
-        assertEquals("card-inquiry-v2-route", routes.getFirst().route().getRouteId());
+        assertEquals("gw.dm.domain-card.card-inquiry.v2", routes.getFirst().route().getRouteId());
         assertEquals("v2", routes.getFirst().serviceVersion());
     }
 
@@ -77,9 +77,20 @@ class RestProtocolHandlerTest {
                 servicePlan("domain.card", List.of(inquiry, status)));
 
         assertEquals(2, routes.size());
-        assertEquals("card-inquiry-v2-route", routes.get(0).route().getRouteId());
-        assertTrue(routes.get(1).route().getRouteId().startsWith("card-inquiry-v2-route-"));
+        assertEquals("gw.dm.domain-card.card-inquiry.v2", routes.get(0).route().getRouteId());
+        assertTrue(routes.get(1).route().getRouteId().startsWith("gw.dm.domain-card.card-inquiry.v2."));
         assertNotEquals(routes.get(0).route().getRouteId(), routes.get(1).route().getRouteId());
+    }
+
+    @Test
+    void channelGatewayRouteIdUsesChannelShortName() throws Exception {
+        InboundChannelServiceDefinition routeDefinition = restRoute("route-1", "/v1/card/inquiry");
+
+        List<InboundRouteDefinition> routes = routeDefinitions(
+                gateway("channel.mb"),
+                servicePlan("channel.mb", List.of(routeDefinition)));
+
+        assertEquals("gw.ch.channel-mb.card-inquiry.v1", routes.getFirst().route().getRouteId());
     }
 
     private List<InboundRouteDefinition> routeDefinitions(GatewayChannel gatewayChannel,

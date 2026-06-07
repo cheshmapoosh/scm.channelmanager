@@ -1,0 +1,286 @@
+package ir.daneshrefah.scm.core.integration.operation;
+
+import ir.daneshrefah.scm.common.constant.Routes;
+import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
+import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.common.service.GatewayService;
+import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
+import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
+import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
+import ir.daneshrefah.scm.common.service.operation.OperationService;
+import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
+import ir.daneshrefah.scm.logging.utils.TraceUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.RouteDefinition;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class OperationLayerRouteBuilder extends RouteBuilder {
+    private final RuntimeRouteActivation runtimeRouteActivation;
+    private final GatewayService gatewayService;
+    private final RuntimeRoutePlanProvider runtimeRoutePlanProvider;
+    private final OperationService operationService;
+    private final PluginResolverService pluginResolverService;
+    private final Map<String, PluginHandler> pluginHandlers;
+    private final List<OperationTypeHandler> operationTypeHandlers;
+    private final GlobalErrorHandler globalErrorHandler;
+
+    @Override
+    public void configure() {
+        RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
+        List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
+        log.info("event={} layer=operation runtimeMode={} targetCount={} outcome=started",
+                RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_STARTED,
+                runtimeMode,
+                runtimeTargets.size());
+
+        Set<String> requiredOperationNames = resolveRequiredOperationNames(runtimeMode, runtimeTargets);
+        log.info("event={} layer=operation requiredOperationCount={} runtimeTargetCount={} outcome=success",
+                RouteLogEvents.OPERATION_ROUTE_PLAN_RESOLVED,
+                requiredOperationNames.size(),
+                runtimeTargets.size());
+
+        if (requiredOperationNames.isEmpty()) {
+            log.warn("event={} layer=operation runtimeMode={} requiredOperationCount=0 runtimeTargetCount={} outcome=skipped reason=no-required-operations",
+                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                    runtimeMode,
+                    runtimeTargets.size());
+            log.info("event={} layer=operation requiredOperationCount=0 builtRouteCount=0 skippedOperationCount=0 outcome=success",
+                    RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_COMPLETED);
+            return;
+        }
+
+        List<Operation> operations = operationService.getAllOperations();
+        Set<String> builtOperationNames = new LinkedHashSet<>();
+        int skippedOperationCount = 0;
+        int builtRouteCount = 0;
+        for (Operation operation : operations) {
+            if (!Boolean.TRUE.equals(operation.getActive())) {
+                continue;
+            }
+            String operationName = StringUtils.trimToNull(operation.getName());
+            if (!requiredOperationNames.contains(operationName)) {
+                skippedOperationCount++;
+                log.info("event={} layer=operation operationName={} reason=not-required-by-runtime-plan outcome=skipped",
+                        RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                        operationName);
+                continue;
+            }
+            if (!builtOperationNames.add(operationName)) {
+                skippedOperationCount++;
+                log.info("event={} layer=operation operationName={} reason=duplicate-operation-name outcome=skipped",
+                        RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                        operationName);
+                continue;
+            }
+            buildOperationRoute(operation);
+            builtRouteCount++;
+        }
+        logMissingOperations(requiredOperationNames, builtOperationNames);
+        log.info("event={} layer=operation requiredOperationCount={} builtRouteCount={} skippedOperationCount={} outcome=success",
+                RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_COMPLETED,
+                requiredOperationNames.size(),
+                builtRouteCount,
+                skippedOperationCount);
+    }
+
+    private Set<String> resolveRequiredOperationNames(RuntimeMode runtimeMode,
+                                                      List<RuntimeTargetProperties> runtimeTargets) {
+        Set<String> requiredOperationNames = new LinkedHashSet<>();
+        for (RuntimeTargetProperties runtimeTarget : runtimeTargets) {
+            if (runtimeTarget == null || !runtimeTarget.enabled()) {
+                continue;
+            }
+            for (String gatewayName : runtimeTarget.gatewayNames()) {
+                resolveRequiredOperationNames(runtimeMode, runtimeTarget, gatewayName, requiredOperationNames);
+            }
+        }
+        return requiredOperationNames;
+    }
+
+    private void resolveRequiredOperationNames(RuntimeMode runtimeMode,
+                                               RuntimeTargetProperties runtimeTarget,
+                                               String gatewayName,
+                                               Set<String> requiredOperationNames) {
+        GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
+        if (gatewayChannel == null) {
+            log.warn("event={} layer=operation gatewayName={} reason=gateway-channel-not-found outcome=skipped",
+                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                    gatewayName);
+            return;
+        }
+        if (!Boolean.TRUE.equals(gatewayChannel.getActive())) {
+            log.warn("event={} layer=operation gatewayName={} reason=inactive-gateway-channel outcome=skipped",
+                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                    gatewayChannel.getName());
+            return;
+        }
+        RuntimeTargetKind targetKind = runtimeRouteActivation.resolveTargetKind(gatewayChannel);
+        if (runtimeTarget.targetKind() != targetKind) {
+            log.warn("event={} layer=operation gatewayName={} configuredTargetKind={} resolvedTargetKind={} reason=target-kind-mismatch outcome=skipped",
+                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                    gatewayChannel.getName(),
+                    runtimeTarget.targetKind(),
+                    targetKind);
+            return;
+        }
+        if (!runtimeRouteActivation.shouldBuildServiceRoutes(runtimeMode, targetKind)) {
+            log.info("event={} layer=operation gatewayName={} runtimeMode={} targetKind={} reason=runtime-mode outcome=skipped",
+                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                    gatewayChannel.getName(),
+                    runtimeMode,
+                    targetKind);
+            return;
+        }
+
+        RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
+        routePlan.servicePlans()
+                .stream()
+                .flatMap(this::serviceOperations)
+                .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+                .map(ServiceOperation::getOperationName)
+                .map(StringUtils::trimToNull)
+                .filter(Objects::nonNull)
+                .forEach(requiredOperationNames::add);
+    }
+
+    private java.util.stream.Stream<ServiceOperation> serviceOperations(RuntimeServicePlan servicePlan) {
+        if (servicePlan == null || servicePlan.service() == null
+                || servicePlan.service().getServiceOperations() == null) {
+            return java.util.stream.Stream.empty();
+        }
+        return servicePlan.service().getServiceOperations().stream();
+    }
+
+    private void buildOperationRoute(Operation operation) {
+        String routeId = RouteIdSupport.operationRouteId(operation.getName());
+        String fromUri = resolveFromUri(operation);
+        RouteDefinition route = from(fromUri)
+                .routeId(routeId)
+                .setProperty(Message.OPERATION, constant(operation));
+
+        defineExceptionHandler(route);
+        applyMetrics(route, operation);
+
+        List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
+        applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
+        buildTarget(route, operation);
+        List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
+        applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
+
+        log.info("event={} layer=operation operationName={} operationType={} routeId={} fromUri={} outcome=success",
+                RouteLogEvents.OPERATION_ROUTE_REGISTERED,
+                operation.getName(),
+                operation.getType(),
+                routeId,
+                fromUri);
+    }
+
+    private void logMissingOperations(Set<String> requiredOperationNames, Set<String> builtOperationNames) {
+        requiredOperationNames.stream()
+                .filter(operationName -> !builtOperationNames.contains(operationName))
+                .forEach(operationName -> log.warn(
+                        "event={} layer=operation operationName={} reason=required-operation-not-active-or-not-found outcome=skipped",
+                        RouteLogEvents.OPERATION_ROUTE_SKIPPED,
+                        operationName));
+    }
+
+    private String resolveFromUri(Operation operation) {
+        return "direct:" + operation.getName();
+    }
+
+    private void defineExceptionHandler(RouteDefinition route) {
+        route.onException(Exception.class)
+                .handled(true)
+                .process(exchange -> {
+                    Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+                    String routeId = exchange.getFromRouteId();
+                    TraceUtils traceUtils = TraceUtils.getInstance();
+                    if (traceUtils != null) {
+                        traceUtils.traceException(exchange, exception);
+                    }
+                    log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
+                    if (Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class))) {
+                        // CMNEW-119: service-layer direct calls must receive SCMFault, not protocol-specific gateway output.
+                        globalErrorHandler.handle(exchange);
+                    } else {
+                        exchange.getIn().setBody(exception);
+                    }
+                })
+                .filter(exchange -> !Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class)))
+                .to(Routes.GLOBAL_ERROR_HANDLER)
+                .end();
+    }
+
+    private void applyMetrics(RouteDefinition route, Operation operation) {
+
+    }
+
+    private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Map<String, ?> properties) {
+        if (orderedBeforePluginDetails == null) {
+            return;
+        }
+
+        orderedBeforePluginDetails.forEach(detail -> {
+            PluginHandler handler = resolvePluginHandler(detail);
+            handler.init(route, detail, properties);
+            route.process(exchange -> {
+                handler.handle(exchange, detail);
+            });
+        });
+    }
+
+    private void buildTarget(RouteDefinition route, Operation operation) {
+        OperationTypeHandler handler = operationTypeHandlers.stream()
+                .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type handler not found for operation " + operation.getName()));
+        handler.internalConfig(route, operation);
+    }
+
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
+        if (orderedAfterPluginDetails == null) {
+            return;
+        }
+
+        orderedAfterPluginDetails.forEach(detail -> {
+            PluginHandler handler = resolvePluginHandler(detail);
+            handler.init(route, detail, properties);
+            route.process(exchange -> {
+                handler.handle(exchange, detail);
+            });
+        });
+    }
+
+    private PluginHandler resolvePluginHandler(PluginDetail detail) {
+        PluginHandler handler = pluginHandlers.get(detail.getName());
+        if (handler == null) {
+            throw new IllegalArgumentException("Plugin handler not found: " + detail.getName());
+        }
+        return handler;
+    }
+}

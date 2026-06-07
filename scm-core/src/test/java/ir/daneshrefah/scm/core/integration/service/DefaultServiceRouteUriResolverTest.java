@@ -30,10 +30,10 @@ class DefaultServiceRouteUriResolverTest {
         RuntimeServicePlan servicePlan = servicePlan("Card Inquiry", 100L);
 
         assertEquals(
-                "direct:scm.service.service-domain.domain-card.card-inquiry.100",
+                "direct:scm.service.dm.domain-card.card-inquiry",
                 resolver.resolve(routePlan, servicePlan));
         assertEquals(
-                "scm-service-service-domain-domain-card-card-inquiry-100",
+                "svc.dm.domain-card.card-inquiry",
                 resolver.routeId(routePlan, servicePlan));
     }
 
@@ -42,11 +42,21 @@ class DefaultServiceRouteUriResolverTest {
         RuntimeServicePlan servicePlan = servicePlan("card-inquiry", 100L);
 
         assertEquals(
-                "scm-service-channel-channel-mb-card-inquiry-100",
+                "svc.ch.channel-mb.card-inquiry",
                 resolver.routeId(routePlan(RuntimeTargetKind.CHANNEL, "channel.mb"), servicePlan));
         assertEquals(
-                "scm-service-service-domain-domain-card-card-inquiry-100",
+                "svc.dm.domain-card.card-inquiry",
                 resolver.routeId(routePlan(RuntimeTargetKind.SERVICE_DOMAIN, "domain.card"), servicePlan));
+    }
+
+    @Test
+    void routeIdsDoNotContainRepeatedLayerWords() {
+        RuntimeServicePlan servicePlan = servicePlan("card-inquiry", 100L);
+
+        String routeId = resolver.routeId(routePlan(RuntimeTargetKind.SERVICE_DOMAIN, "domain.card"), servicePlan);
+
+        org.junit.jupiter.api.Assertions.assertFalse(routeId.contains("service-service"));
+        org.junit.jupiter.api.Assertions.assertFalse(routeId.contains("domain-domain"));
     }
 
     private RuntimeRoutePlan routePlan(String gatewayName) {
