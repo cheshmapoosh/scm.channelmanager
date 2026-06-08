@@ -126,7 +126,7 @@ Gateway layer فقط مسئول ورود و خروج درخواست است.
 مسئولیت‌ها:
 
 ```text
-- ساخت route ورودی بر اساس GatewayChannel و ProtocolHandler
+- ساخت route ورودی بر اساس GatewayChannel و GatewayInboundRouteFactory
 - خواندن protocol از GatewayChannel.protocolType
 - تبدیل request client به مدل داخلی SCM
 - تنظیم context اولیه مثل channelCode, serviceCode, gatewayName

@@ -26,7 +26,7 @@ import java.util.Objects;
 public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
     private final GatewayService gatewayService;
     private final RuntimeRoutePlanProvider runtimeRoutePlanProvider;
-    private final List<ProtocolHandler> protocolHandlers;
+    private final List<GatewayInboundRouteFactory> inboundRouteFactories;
     private final GatewayRoutePipelineConfigurer gatewayRoutePipelineConfigurer;
     private final RuntimeRouteActivation runtimeRouteActivation;
 
@@ -36,13 +36,13 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
         List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
         log.info("event={} layer=gateway runtimeMode={} targetCount={} outcome=started",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_STARTED, runtimeMode, runtimeTargets.size());
-        if (CollectionUtils.isEmpty(protocolHandlers)) {
+        if (CollectionUtils.isEmpty(inboundRouteFactories)) {
             log.error("event={} layer=gateway runtimeMode={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
                     runtimeMode,
                     IllegalStateException.class.getSimpleName(),
-                    "No protocol handler found");
-            throw new IllegalStateException("No protocol handler found");
+                    "No gateway inbound route factory found");
+            throw new IllegalStateException("No gateway inbound route factory found");
         }
         runtimeTargets.forEach(runtimeTarget ->
                 runtimeTarget.gatewayNames().forEach(gatewayName ->
@@ -116,24 +116,26 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
                 gatewayChannel.getProtocolType(),
                 routePlan.targetKind(),
                 routePlan.servicePlans().size());
-        ProtocolHandler protocolHandler = protocolHandlers.stream()
-                .filter(h -> Objects.equals(gatewayChannel.getProtocolType(), h.getProtocol()))
+        GatewayInboundRouteFactory inboundRouteFactory = inboundRouteFactories.stream()
+                .filter(factory -> Objects.equals(gatewayChannel.getProtocolType(), factory.protocol()))
                 .findFirst()
-                .orElseThrow(() -> {
-                    return new IllegalStateException("No handler for " + gatewayChannel.getName()
-                            + " gateway with " + gatewayChannel.getProtocolType() + " protocol");
-                });
+                .orElseThrow(() -> new IllegalStateException("No inbound route factory for "
+                        + gatewayChannel.getName()
+                        + " gateway with " + gatewayChannel.getProtocolType() + " protocol"));
 
-        ProtocolHandler.ProtocolConfigurer protocolConfigurer = protocolHandler.config(gatewayChannel, this);
-        log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} handler={} outcome=success",
-                RouteLogEvents.GATEWAY_PROTOCOL_HANDLER_RESOLVED,
+        log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} factory={} outcome=success",
+                RouteLogEvents.GATEWAY_INBOUND_ROUTE_FACTORY_RESOLVED,
                 gatewayChannel.getName(),
                 runtimeMode,
                 routePlan.targetKind(),
                 gatewayChannel.getProtocolType(),
-                protocolHandler.getClass().getSimpleName());
+                inboundRouteFactory.getClass().getSimpleName());
         routePlan.servicePlans().forEach(servicePlan ->
-                protocolConfigurer.routeDefinition(servicePlan)
+                inboundRouteFactory.createRoutes(new GatewayInboundRouteContext(
+                                gatewayChannel,
+                                routePlan,
+                                servicePlan,
+                                this))
                         .forEach(inboundRoute -> configureGatewayRoute(routePlan, servicePlan, inboundRoute)));
         log.info("event={} layer=gateway gatewayName={} runtimeMode={} targetKind={} protocol={} serviceCount={} durationMs={} outcome=success",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_COMPLETED,

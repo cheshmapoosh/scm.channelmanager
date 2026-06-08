@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
+import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
@@ -623,7 +624,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         if (serviceOperation.getOperationName().contains(":")) {
             return serviceOperation.getOperationName();
         }
-        return "direct:" + serviceOperation.getOperationName();
+        return "direct:" + RouteIdSupport.operationRouteId(serviceOperation.getOperationName());
     }
 
     private PluginHandler resolvePluginHandler(PluginDetail detail) {

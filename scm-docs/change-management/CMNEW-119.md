@@ -22,6 +22,7 @@ direct:<service-route-id>
 
 Application:
 - `GatewayChannelLayerRouteBuilder` is now protocol/client-contract focused.
+- `GatewayInboundRouteFactory` creates protocol-specific inbound Gateway route definitions, while `GatewayRoutePipelineConfigurer` configures the common Gateway processing pipeline.
 - `ServiceLayerRouteBuilder` builds direct service routes.
 - `OperationLayerRouteBuilder` builds direct operation routes only for operations required by active runtime service plans.
 - `GatewayRoutePipelineConfigurer` configures the internal gateway route pipeline and is not a top-level Camel `RouteBuilder`.

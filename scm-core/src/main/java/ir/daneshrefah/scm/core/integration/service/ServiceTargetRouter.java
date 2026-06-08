@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
-import ir.daneshrefah.scm.core.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.model.MulticastDefinition;
 import org.apache.camel.model.RouteDefinition;
@@ -33,13 +32,10 @@ public class ServiceTargetRouter {
         }
 
         if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
-            log.debug("Building MULTI_OPERATION service target routeId={} serviceCode={}",
+            log.warn("MULTI_OPERATION service routing requires an explicit selected operation; routeId parsing is not supported routeId={} serviceCode={}",
                     route.getRouteId(), service.getCode());
-            ServiceOperation serviceOperation = resolveMultiOperation(route, service);
-            route.setProperty(Message.SERVICE_OPERATION, constant(serviceOperation));
-            route.setProperty(Message.OPERATION_NAME, constant(serviceOperation.getOperationName()));
-            route.to(resolveOperationUrl(serviceOperation.getOperationName()));
-            return;
+            throw new IllegalStateException("MULTI_OPERATION routing for service " + service.getCode()
+                    + " requires an explicit selected operation. Route id based operation selection is not supported.");
         }
 
         if (Objects.equals(RoutingStrategy.FAIL_OVER, service.getRoutingStrategy())) {
@@ -78,20 +74,6 @@ public class ServiceTargetRouter {
             throw new IllegalStateException("FIRST routing requires exactly one active operation for service " + service.getCode());
         }
         return activeOperations.getFirst();
-    }
-
-    private ServiceOperation resolveMultiOperation(RouteDefinition route, Service service) {
-        String[] splitRouteName = route.getRouteId().split("-");
-        return activeServiceOperations(service)
-                .stream()
-                .filter(o -> RouteUtils.getInstance().generateRouteUniqId(o.getOperationName())
-                        .equals(splitRouteName[splitRouteName.length - 1]))
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.warn("No matching operation found for MULTI_OPERATION service routing routeId={} serviceCode={}",
-                            route.getRouteId(), service.getCode());
-                    return new IllegalStateException("No route found for " + route.getRouteId());
-                });
     }
 
     private List<ServiceOperation> activeServiceOperations(Service service) {
