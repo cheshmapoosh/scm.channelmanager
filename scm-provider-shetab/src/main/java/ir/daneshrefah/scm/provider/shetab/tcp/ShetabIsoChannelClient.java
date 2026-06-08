@@ -62,8 +62,8 @@ public class ShetabIsoChannelClient {
         if (!running.compareAndSet(false, true)) {
             return;
         }
-        senderThread = thread("shetab-sender-" + config.provider(), this::senderLoop);
-        receiverThread = thread("shetab-receiver-" + config.provider(), this::receiverLoop);
+        senderThread = thread("scm-shetab-sender-" + config.provider(), this::senderLoop);
+        receiverThread = thread("scm-shetab-receiver-" + config.provider(), this::receiverLoop);
         senderThread.start();
         receiverThread.start();
         log.info("Started Shetab ISOChannel client provider={} endpointCount={}",
