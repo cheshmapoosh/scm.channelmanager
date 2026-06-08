@@ -30,7 +30,7 @@ public class RestProviderTraceSupport {
             Supplier<ResponseEntity<String>> action
     ) {
         Span parent = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        Span span = tracer.spanBuilder("rest-provider " + config.provider())
+        Span span = tracer.spanBuilder("scm-rest " + config.provider())
                 .setSpanKind(SpanKind.CLIENT)
                 .setParent(parent != null ? Context.current().with(parent) : Context.current())
                 .startSpan();

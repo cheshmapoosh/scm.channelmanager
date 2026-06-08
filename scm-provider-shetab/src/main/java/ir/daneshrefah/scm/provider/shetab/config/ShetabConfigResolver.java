@@ -21,6 +21,8 @@ import java.util.stream.Stream;
 @Component
 @Slf4j
 public class ShetabConfigResolver {
+    public static final String COMPONENT_SCHEME = "scm-shetab";
+
     private final ProviderRegistryProperties providerRegistryProperties;
     private final ProviderMessageCustomizerPipelineFactory pipelineFactory;
     private final ConcurrentMap<String, ShetabResolvedConfig> resolvedConfigs = new ConcurrentHashMap<>();
@@ -131,8 +133,11 @@ public class ShetabConfigResolver {
         }
         String type = providerName.substring(0, separator).trim();
         String name = providerName.substring(separator + 1).trim();
-        if (!"shetab".equalsIgnoreCase(type) || name.isBlank()) {
-            throw new IllegalArgumentException("Invalid Shetab provider name: " + providerName + ". Expected shetab:<name>");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("Invalid Shetab provider name: " + providerName);
+        }
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
+            throw unsupportedScheme(type);
         }
         return name;
     }
@@ -169,6 +174,11 @@ public class ShetabConfigResolver {
         }
         Object type = properties.get("type");
         return type != null && "shetab".equalsIgnoreCase(String.valueOf(type));
+    }
+
+    private IllegalArgumentException unsupportedScheme(String scheme) {
+        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+                + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
     }
 
     private int value(Integer value, int fallback) {

@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 @ConditionalOnClass(CamelContext.class)
 public class RestProviderAutoConfiguration {
 
-    @Bean("rest-provider")
-    @ConditionalOnMissingBean(name = "rest-provider")
+    @Bean("scm-rest")
+    @ConditionalOnMissingBean(name = "scm-rest")
     public RestProviderComponent restProviderComponent(ObjectProvider<CamelContext> camelContext) {
         RestProviderComponent component = new RestProviderComponent();
         CamelContext context = camelContext.getIfAvailable();

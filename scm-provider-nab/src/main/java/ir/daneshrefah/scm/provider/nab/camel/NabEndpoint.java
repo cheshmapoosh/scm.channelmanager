@@ -13,9 +13,9 @@ import org.apache.camel.support.DefaultEndpoint;
 
 @UriEndpoint(
         firstVersion = "1.0.0",
-        scheme = "nab",
+        scheme = "scm-nab",
         title = "NAB",
-        syntax = "nab:request",
+        syntax = "scm-nab:providerCode",
         producerOnly = true,
         category = {Category.NETWORKING}
 )

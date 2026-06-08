@@ -5,8 +5,10 @@
 Example URI:
 
 ```text
-shetab:request?provider=hps-shetab7
+scm-shetab:hps-shetab7
 ```
+
+Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-shetab:hps-shetab7`.
 
 ## Primary Configuration Model
 

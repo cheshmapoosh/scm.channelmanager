@@ -5,8 +5,10 @@
 Example URI:
 
 ```text
-nab:request?provider=nab-atps
+scm-nab:nab-atps
 ```
+
+Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-nab:nab-atps`.
 
 ## Primary Configuration Model
 

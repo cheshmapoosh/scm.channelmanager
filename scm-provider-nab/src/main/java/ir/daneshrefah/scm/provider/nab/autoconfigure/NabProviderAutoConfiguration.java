@@ -20,8 +20,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(CamelContext.class)
 public class NabProviderAutoConfiguration {
 
-    @Bean("nab")
-    @ConditionalOnMissingBean(name = "nab")
+    @Bean("scm-nab")
+    @ConditionalOnMissingBean(name = "scm-nab")
     public NabComponent nabComponent(ObjectProvider<CamelContext> camelContext) {
         NabComponent component = new NabComponent();
         CamelContext context = camelContext.getIfAvailable();

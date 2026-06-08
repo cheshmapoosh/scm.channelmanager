@@ -5,8 +5,11 @@
 Example URI:
 
 ```text
-rest-provider:request?provider=hps-rest
+scm-rest:hps-rest
 ```
+
+Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-rest:hps-rest`.
+Do not use `rest:` for SCM REST provider routes; Apache Camel reserves `rest:` for its built-in REST DSL endpoint syntax.
 
 ## Primary Configuration Model
 

@@ -2,6 +2,9 @@ package ir.daneshrefah.scm.provider.nab.camel;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.provider.nab.application.NabProviderService;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
 import ir.daneshrefah.scm.provider.nab.config.NabEndpointOverrides;
@@ -43,7 +46,13 @@ public class NabProducer extends DefaultProducer {
     @Override
     public void process(Exchange exchange) {
         String provider = resolveProvider(exchange);
-        NabResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
+        NabResolvedConfig config;
+        try {
+            config = configResolver.resolve(provider, overrides(exchange));
+        } catch (RuntimeException e) {
+            logProviderResolutionFailed(exchange, provider, resolveOperationName(exchange), e);
+            throw e;
+        }
         JsonNode input = bodyAsJsonNode(exchange.getMessage().getBody());
         String operation = operationName(input);
         NabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
@@ -81,6 +90,10 @@ public class NabProducer extends DefaultProducer {
         if (StringUtils.isNotBlank(headerProvider)) {
             return headerProvider;
         }
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
         String operationProvider = exchange.getMessage().getHeader("scmOperationProviderName", String.class);
         if (StringUtils.isNotBlank(operationProvider)) {
             return operationProvider;
@@ -93,6 +106,59 @@ public class NabProducer extends DefaultProducer {
             return remaining;
         }
         throw new IllegalArgumentException("NAB provider is not specified");
+    }
+
+    private void logProviderResolutionFailed(Exchange exchange,
+                                             String provider,
+                                             String operationName,
+                                             RuntimeException exception) {
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} componentScheme={} providerType={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+                providerUri(exchange, provider),
+                componentScheme(provider),
+                "nab",
+                providerCode(provider),
+                configResolver.availableProviderCodes(),
+                operationName,
+                serviceCode(exchange),
+                gatewayName(exchange),
+                exception.getClass().getSimpleName(),
+                safeMessage(exception),
+                exception);
+    }
+
+    private String providerCode(String provider) {
+        try {
+            return configResolver.providerName(provider);
+        } catch (RuntimeException ignored) {
+            String cleaned = StringUtils.trimToNull(provider);
+            int separator = cleaned != null ? cleaned.indexOf(':') : -1;
+            return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(separator + 1)) : cleaned;
+        }
+    }
+
+    private String componentScheme(String provider) {
+        String cleaned = StringUtils.trimToNull(provider);
+        int separator = cleaned != null ? cleaned.indexOf(':') : -1;
+        return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(0, separator)) : NabConfigResolver.COMPONENT_SCHEME;
+    }
+
+    private String providerUri(Exchange exchange, String provider) {
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
+        String endpointUri = StringUtils.trimToNull(endpoint.getEndpointUri());
+        return endpointUri != null ? endpointUri : provider;
+    }
+
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        return exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
     }
 
     private NabEndpointOverrides overrides(Exchange exchange) {
@@ -114,6 +180,15 @@ public class NabProducer extends DefaultProducer {
             return "default";
         }
         return protocol + ":" + code;
+    }
+
+    private String resolveOperationName(Exchange exchange) {
+        String operationName = exchange.getProperty(Message.OPERATION_NAME, String.class);
+        if (StringUtils.isNotBlank(operationName)) {
+            return operationName;
+        }
+        Operation operation = exchange.getProperty(Message.OPERATION, Operation.class);
+        return operation != null ? operation.getName() : "";
     }
 
     private boolean isTimedOut(Throwable throwable) {
@@ -140,6 +215,22 @@ public class NabProducer extends DefaultProducer {
             }
         }
         return objectMapper.valueToTree(body);
+    }
+
+    private String serviceCode(Exchange exchange) {
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        if (service != null && StringUtils.isNotBlank(service.getCode())) {
+            return service.getCode();
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("serviceCode", String.class));
+    }
+
+    private String gatewayName(Exchange exchange) {
+        String gatewayName = exchange.getProperty(Message.GATEWAY_NAME, String.class);
+        if (StringUtils.isNotBlank(gatewayName)) {
+            return gatewayName;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("gatewayName", String.class));
     }
 
     private <T> T first(T value, T fallback) {

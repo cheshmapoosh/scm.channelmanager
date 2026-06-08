@@ -191,11 +191,11 @@ public class RestProviderProducer extends DefaultProducer {
                                              String provider,
                                              String operationName,
                                              RuntimeException exception) {
-        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} providerName={} providerType={} transportType={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} componentScheme={} providerType={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
                 providerUri(exchange, provider),
-                normalizedProviderName(provider),
+                componentScheme(provider),
                 "rest",
-                "rest",
+                providerCode(provider),
                 configResolver.availableProviderCodes(),
                 operationName,
                 serviceCode(exchange),
@@ -205,12 +205,20 @@ public class RestProviderProducer extends DefaultProducer {
                 exception);
     }
 
-    private String normalizedProviderName(String provider) {
+    private String providerCode(String provider) {
         try {
             return configResolver.providerName(provider);
         } catch (RuntimeException ignored) {
-            return provider;
+            String cleaned = StringUtils.trimToNull(provider);
+            int separator = cleaned != null ? cleaned.indexOf(':') : -1;
+            return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(separator + 1)) : cleaned;
         }
+    }
+
+    private String componentScheme(String provider) {
+        String cleaned = StringUtils.trimToNull(provider);
+        int separator = cleaned != null ? cleaned.indexOf(':') : -1;
+        return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(0, separator)) : RestProviderConfigResolver.COMPONENT_SCHEME;
     }
 
     private String providerUri(Exchange exchange, String provider) {

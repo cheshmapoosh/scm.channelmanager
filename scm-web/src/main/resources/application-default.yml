@@ -32,7 +32,7 @@ scm:
       max-connection: 10
       default-schema: REF
   provider:
-    nab: http://scm-core.daneshrefah.ir/Service
+    "nab": http://scm-core.daneshrefah.ir/Service
     nab-tcp: 10.15.27.12:3080
     iban: http://10.15.29.131:8086/ibanq/services/IBANService
     #    iban: http://10.15.8.195:8080/ibanq/services/IBANService
@@ -40,6 +40,8 @@ scm:
     #    pichack: http://10.15.46.105:8080/dpi/api/pichak
     sayad: http://10.15.1.98:8080/sayad/services/api
   providers:
+    # Operation provider URIs use scm-<provider-type>:<provider-code>, for example:
+    # scm-rest:hps-rest and scm-shetab:hps-shetab7.
     hps-rest:
       type: rest
       enabled: true

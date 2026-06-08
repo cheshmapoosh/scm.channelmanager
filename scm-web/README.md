@@ -228,8 +228,10 @@ key: scmOperation
 
 ```text
 NAME = hps-shetab7
-URI  = shetab:hps-shetab7
+URI  = scm-shetab:hps-shetab7
 ```
+
+قرارداد URI برای providerهای جدید `scm-<provider-type>:<provider-code>` است؛ مثل `scm-rest:hps-rest`، `scm-shetab:hps-shetab7` و `scm-nab:nab-atps`.
 
 ---
 

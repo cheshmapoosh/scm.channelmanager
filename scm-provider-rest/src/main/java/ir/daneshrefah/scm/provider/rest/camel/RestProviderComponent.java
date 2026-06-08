@@ -7,7 +7,7 @@ import org.apache.camel.support.DefaultComponent;
 
 import java.util.Map;
 
-@Component("rest-provider")
+@Component("scm-rest")
 public class RestProviderComponent extends DefaultComponent {
     public RestProviderComponent() {
     }

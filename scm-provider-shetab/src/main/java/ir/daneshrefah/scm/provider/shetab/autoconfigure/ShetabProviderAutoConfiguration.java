@@ -25,8 +25,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(CamelContext.class)
 public class ShetabProviderAutoConfiguration {
 
-    @Bean("shetab")
-    @ConditionalOnMissingBean(name = "shetab")
+    @Bean("scm-shetab")
+    @ConditionalOnMissingBean(name = "scm-shetab")
     public ShetabComponent shetabComponent(ObjectProvider<CamelContext> camelContext) {
         ShetabComponent component = new ShetabComponent();
         CamelContext context = camelContext.getIfAvailable();

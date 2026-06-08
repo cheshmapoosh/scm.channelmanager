@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 @Slf4j
 public class NabConfigResolver {
+    public static final String COMPONENT_SCHEME = "scm-nab";
+
     private final ProviderRegistryProperties providerRegistryProperties;
     private final ProviderMessageCustomizerPipelineFactory pipelineFactory;
     private final ConcurrentMap<String, NabResolvedConfig> resolvedConfigs = new ConcurrentHashMap<>();
@@ -46,6 +48,18 @@ public class NabConfigResolver {
         }
         NabResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(providerName), ignored -> resolveBase(providerName));
         return base.withOverrides(overrides);
+    }
+
+    public String providerName(String provider) {
+        return normalizeProviderName(provider);
+    }
+
+    public List<String> availableProviderCodes() {
+        return providerRegistryProperties.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && isNabProvider(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 
     private NabResolvedConfig resolveBase(String providerName) {
@@ -120,7 +134,9 @@ public class NabConfigResolver {
                         && entry.getKey().toLowerCase(Locale.ROOT).equals(providerName.toLowerCase(Locale.ROOT)))
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("NAB provider " + providerName + " is not configured"));
+                .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
+                        + "' of type 'nab' is not configured. Available nab providers: "
+                        + availableProviderCodes()));
     }
 
     private String normalizeProviderName(String provider) {
@@ -134,8 +150,11 @@ public class NabConfigResolver {
         }
         String type = providerName.substring(0, separator).trim();
         String name = providerName.substring(separator + 1).trim();
-        if (!"nab".equalsIgnoreCase(type) || name.isBlank()) {
-            throw new IllegalArgumentException("Invalid NAB provider name: " + providerName + ". Expected nab:<name>");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("Invalid NAB provider name: " + providerName);
+        }
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
+            throw unsupportedScheme(type);
         }
         return name;
     }
@@ -202,6 +221,19 @@ public class NabConfigResolver {
 
     private String cacheKey(String providerName) {
         return providerName.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isNabProvider(Map<String, Object> properties) {
+        if (properties == null) {
+            return false;
+        }
+        Object type = properties.get("type");
+        return type != null && "nab".equalsIgnoreCase(String.valueOf(type));
+    }
+
+    private IllegalArgumentException unsupportedScheme(String scheme) {
+        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+                + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
     }
 
     private static int value(Integer value, int fallback) {

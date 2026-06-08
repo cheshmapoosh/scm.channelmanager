@@ -13,9 +13,9 @@ import org.apache.camel.support.DefaultEndpoint;
 
 @UriEndpoint(
         firstVersion = "1.0.0",
-        scheme = "rest-provider",
+        scheme = "scm-rest",
         title = "REST Provider",
-        syntax = "rest-provider:request",
+        syntax = "scm-rest:providerCode",
         producerOnly = true,
         category = {Category.HTTP}
 )

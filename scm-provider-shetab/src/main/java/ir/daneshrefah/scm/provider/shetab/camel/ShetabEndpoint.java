@@ -13,9 +13,9 @@ import org.apache.camel.support.DefaultEndpoint;
 
 @UriEndpoint(
         firstVersion = "1.0.0",
-        scheme = "shetab",
+        scheme = "scm-shetab",
         title = "Shetab",
-        syntax = "shetab:request",
+        syntax = "scm-shetab:providerCode",
         producerOnly = true,
         category = {Category.NETWORKING}
 )

@@ -7,7 +7,7 @@ import org.apache.camel.support.DefaultComponent;
 
 import java.util.Map;
 
-@Component("nab")
+@Component("scm-nab")
 public class NabComponent extends DefaultComponent {
     public NabComponent() {
     }

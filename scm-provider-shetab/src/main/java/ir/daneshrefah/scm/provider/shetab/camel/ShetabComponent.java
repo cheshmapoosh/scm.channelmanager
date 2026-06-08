@@ -7,7 +7,7 @@ import org.apache.camel.support.DefaultComponent;
 
 import java.util.Map;
 
-@Component("shetab")
+@Component("scm-shetab")
 public class ShetabComponent extends DefaultComponent {
     public ShetabComponent() {
     }

@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 @Slf4j
 public class RestProviderConfigResolver {
+    public static final String COMPONENT_SCHEME = "scm-rest";
+
     private static final List<String> DEFAULT_SENSITIVE_HEADERS = List.of(
             "authorization",
             "proxy-authorization",
@@ -164,8 +166,8 @@ public class RestProviderConfigResolver {
         if (name.isBlank()) {
             throw new IllegalArgumentException("Invalid REST provider name: " + providerName);
         }
-        if (!"rest".equalsIgnoreCase(type) && !"rest-provider".equalsIgnoreCase(type) && !"restprovider".equalsIgnoreCase(type)) {
-            throw new IllegalArgumentException("Invalid REST provider name: " + providerName + ". Expected rest:<name> or rest-provider:<name>");
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
+            throw unsupportedScheme(type);
         }
         return name;
     }
@@ -203,6 +205,11 @@ public class RestProviderConfigResolver {
         }
         Object type = properties.get("type");
         return type != null && "rest".equalsIgnoreCase(String.valueOf(type));
+    }
+
+    private IllegalArgumentException unsupportedScheme(String scheme) {
+        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+                + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
     }
 
     private String trim(String value) {
