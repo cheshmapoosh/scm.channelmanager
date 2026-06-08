@@ -16,6 +16,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +50,7 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         BearerAuthenticationToken bearer = (BearerAuthenticationToken) authentication;
-        Jwt jwt = jwtDecoder.decode(bearer.getToken());
+        Jwt jwt = decodeBearerToken(bearer);
         UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt, username);
         validateUserAuthentication(authentication, userAuthentication);
         if (StringUtils.isNotEmpty(userAuthentication.getDetails().getSessionId())) {
@@ -63,6 +65,14 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
         return userAuthentication;
     }
 
+
+    private Jwt decodeBearerToken(BearerAuthenticationToken bearer) {
+        try {
+            return jwtDecoder.decode(bearer.getToken());
+        } catch (JwtException ex) {
+            throw new InvalidBearerTokenException("Bearer token is invalid or expired", ex);
+        }
+    }
     private void validateUserAuthentication(BaseAuthenticationToken authentication, UserAuthentication userAuthentication) {
         if (null == userAuthentication) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
@@ -72,19 +82,14 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
 
     @Override
     protected void additionalAuthenticationChecks(UserAuthentication userAuthentication, BaseAuthenticationToken authentication) throws AuthenticationException {
-        String requestClientId = ((BaseTerminalAuthenticationToken) authentication).getClientId();
-        String authenticationClientId = userAuthentication.getDetails().getClientId();
-        String requestTerminalCode = ((BaseTerminalAuthenticationToken) authentication).getTerminalCode();
         String authenticationTerminalCode = userAuthentication.getPrincipal().getTerminalCode();
         String username = userAuthentication.getPrincipal().getNickname();
-//        if (!StringUtils.equalsIgnoreCase(requestTerminalCode, authenticationTerminalCode)) {
-//            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_TERMINAL);
-//        }
         if (userAuthentication.getPrincipal().getPerson() instanceof ClientPerson){
             return;
         }
         if (authentication instanceof BearerAuthenticationToken bearerAuthenticationToken) {
-            validateJwtId(jwtDecoder.decode(bearerAuthenticationToken.getToken()), username, authenticationTerminalCode,bearerAuthenticationToken);
+            Jwt jwt = decodeBearerToken(bearerAuthenticationToken);
+            validateJwtId(jwt, username, authenticationTerminalCode, bearerAuthenticationToken);
         }
     }
 

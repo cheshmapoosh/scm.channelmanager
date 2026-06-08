@@ -128,7 +128,16 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
         }
         catch (AuthenticationException failed) {
             this.securityContextHolderStrategy.clearContext();
-            this.logger.trace("Failed to process authentication request", failed);
+
+            this.logger.warn(LogMessage.format(
+                    "Bearer authentication failed method=%s uri=%s remoteAddr=%s failureType=%s failureMessage=%s",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    request.getRemoteAddr(),
+                    failed.getClass().getSimpleName(),
+                    failed.getMessage()
+            ), failed);
+
             this.authenticationFailureHandler.onAuthenticationFailure(request, response, failed);
         }
     }
