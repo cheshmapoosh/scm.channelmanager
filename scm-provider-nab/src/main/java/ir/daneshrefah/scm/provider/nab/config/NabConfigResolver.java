@@ -67,7 +67,7 @@ public class NabConfigResolver {
         RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         NabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), NabProviderInstanceProperties.class, "NAB provider " + entry.providerCode());
-        validate(entry.providerCode(), reference.scheme(), instance);
+        validate(entry.providerCode(), reference.scheme(), reference.providerUri(), instance);
         String protocol = StringUtils.trimToNull(instance.getProtocol()).toUpperCase(Locale.ROOT);
         int rqUidLength = value(instance.getRqUid().getLength(), 16);
         Map<String, List<NabFieldSpec>> headerFields = resolveHeaderFields(instance, protocol);
@@ -105,14 +105,19 @@ public class NabConfigResolver {
         );
     }
 
-    private void validate(String providerName, String uriScheme, NabProviderInstanceProperties instance) {
+    private void validate(String providerName,
+                          String uriScheme,
+                          String providerUri,
+                          NabProviderInstanceProperties instance) {
         String configuredScheme = StringUtils.trimToNull(instance.getScheme());
         if (configuredScheme == null) {
             throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
         }
         if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
             throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
-                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
+                    + "'. providerUri='" + providerUri
+                    + "', URI scheme is '" + uriScheme
+                    + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("NAB provider " + providerName + " is disabled");

@@ -81,7 +81,7 @@ public class RestProviderConfigResolver {
         RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         RestProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), RestProviderInstanceProperties.class, "REST provider " + entry.providerCode());
-        validate(entry.providerCode(), reference.scheme(), instance);
+        validate(entry.providerCode(), reference.scheme(), reference.providerUri(), instance);
         RestProviderResolvedConfig.RateLimit rateLimit = resolvedRateLimit(instance.getRateLimit(), entry.providerCode());
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
                 entry.providerCode(),
@@ -126,14 +126,19 @@ public class RestProviderConfigResolver {
         );
     }
 
-    private void validate(String providerName, String uriScheme, RestProviderInstanceProperties instance) {
+    private void validate(String providerName,
+                          String uriScheme,
+                          String providerUri,
+                          RestProviderInstanceProperties instance) {
         String configuredScheme = StringUtils.trimToNull(instance.getScheme());
         if (configuredScheme == null) {
             throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
         }
         if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
             throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
-                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
+                    + "'. providerUri='" + providerUri
+                    + "', URI scheme is '" + uriScheme
+                    + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("REST provider " + providerName + " is disabled");

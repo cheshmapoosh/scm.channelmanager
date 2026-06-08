@@ -63,7 +63,7 @@ public class ShetabConfigResolver {
         RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         ShetabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), ShetabProviderInstanceProperties.class, "Shetab provider " + entry.providerCode());
-        validate(entry.providerCode(), reference.scheme(), instance);
+        validate(entry.providerCode(), reference.scheme(), reference.providerUri(), instance);
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
                 entry.providerCode(), COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, entry.providerCode()),
                 null, null, null,
@@ -94,14 +94,19 @@ public class ShetabConfigResolver {
         );
     }
 
-    private void validate(String providerName, String uriScheme, ShetabProviderInstanceProperties instance) {
+    private void validate(String providerName,
+                          String uriScheme,
+                          String providerUri,
+                          ShetabProviderInstanceProperties instance) {
         String configuredScheme = StringUtils.trimToNull(instance.getScheme());
         if (configuredScheme == null) {
             throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
         }
         if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
             throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
-                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
+                    + "'. providerUri='" + providerUri
+                    + "', URI scheme is '" + uriScheme
+                    + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("Shetab provider " + providerName + " is disabled");

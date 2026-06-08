@@ -33,12 +33,6 @@ public class NabProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public NabProviderMetrics nabProviderMetrics() {
         return new NabProviderMetrics();
     }
