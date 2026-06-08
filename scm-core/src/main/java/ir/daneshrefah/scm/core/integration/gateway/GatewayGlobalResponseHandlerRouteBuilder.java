@@ -12,9 +12,12 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolv
 import ir.daneshrefah.scm.core.integration.gateway.contract.FaultContractEncoder;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ResponseContractEncoder;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.dataformat.JsonLibrary;
@@ -50,10 +53,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                     Object encodedBody;
                     traceResponse(exchange);
                     if (body instanceof ScmFault fault) {
-                        FaultContractEncoder faultEncoder = resolveFaultEncoder(contract);
-                        encodedBody = faultEncoder.encode(exchange, fault, contract);
-                        log.info("Gateway fault encoded contract={} serviceVersion={} routeId={} exchangeId={}",
-                                contract.name(), serviceVersion(exchange), exchange.getFromRouteId(), exchange.getExchangeId());
+                        encodedBody = encodeFault(exchange, fault, contract);
                     } else {
                         ResponseContractEncoder responseEncoder = resolveResponseEncoder(contract);
                         encodedBody = responseEncoder.encode(exchange, contract);
@@ -66,7 +66,59 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                 .json(JsonLibrary.Jackson);
     }
 
-    private ClientContract resolveContract(org.apache.camel.Exchange exchange) {
+    private Object encodeFault(Exchange exchange, ScmFault fault, ClientContract contract) {
+        FaultContractEncoder faultEncoder = resolveFaultEncoder(contract);
+        Map<String, String> fields = scmExchangeMdc.fields(exchange);
+        log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceCode={} serviceVersion={} contractName={} faultEncoder={} routeId={} exchangeId={} correlationId={} outcome=started",
+                RouteLogEvents.GATEWAY_FAULT_ENCODING_STARTED,
+                RouteLogSupport.gatewayName(exchange),
+                RouteLogSupport.targetKind(exchange),
+                RouteLogSupport.protocol(exchange),
+                serviceCode(exchange),
+                serviceVersion(exchange),
+                contract.name(),
+                contract.faultEncoder(),
+                exchange.getFromRouteId(),
+                exchange.getExchangeId(),
+                fields.get("correlationId"));
+        try {
+            Object encodedBody = faultEncoder.encode(exchange, fault, contract);
+            Integer httpStatus = exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceCode={} serviceVersion={} contractName={} faultEncoder={} httpStatus={} routeId={} exchangeId={} correlationId={} outcome=success",
+                    RouteLogEvents.GATEWAY_FAULT_ENCODED,
+                    RouteLogSupport.gatewayName(exchange),
+                    RouteLogSupport.targetKind(exchange),
+                    RouteLogSupport.protocol(exchange),
+                    serviceCode(exchange),
+                    serviceVersion(exchange),
+                    contract.name(),
+                    contract.faultEncoder(),
+                    httpStatus,
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"));
+            return encodedBody;
+        } catch (RuntimeException e) {
+            log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceCode={} serviceVersion={} contractName={} faultEncoder={} routeId={} exchangeId={} correlationId={} outcome=failed failureType={} failureMessage={}",
+                    RouteLogEvents.GATEWAY_FAULT_ENCODING_FAILED,
+                    RouteLogSupport.gatewayName(exchange),
+                    RouteLogSupport.targetKind(exchange),
+                    RouteLogSupport.protocol(exchange),
+                    serviceCode(exchange),
+                    serviceVersion(exchange),
+                    contract.name(),
+                    contract.faultEncoder(),
+                    exchange.getFromRouteId(),
+                    exchange.getExchangeId(),
+                    fields.get("correlationId"),
+                    RouteLogSupport.failureType(e),
+                    RouteLogSupport.failureMessage(e),
+                    e);
+            throw e;
+        }
+    }
+
+    private ClientContract resolveContract(Exchange exchange) {
         ClientContract contract = exchange.getProperty(Message.CLIENT_CONTRACT, ClientContract.class);
         if (contract != null) {
             return contract;
@@ -80,7 +132,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         return contract;
     }
 
-    private String serviceVersion(org.apache.camel.Exchange exchange) {
+    private String serviceVersion(Exchange exchange) {
         return exchange.getProperty(Message.SERVICE_VERSION, String.class);
     }
 
@@ -100,7 +152,12 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         return encoder;
     }
 
-    private void traceResponse(org.apache.camel.Exchange exchange) {
+    private String serviceCode(Exchange exchange) {
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        return service != null ? service.getCode() : null;
+    }
+
+    private void traceResponse(Exchange exchange) {
         TraceUtils traceUtils = TraceUtils.getInstance();
         if (traceUtils != null) {
             Service service = exchange.getProperty(Message.SERVICE, Service.class);

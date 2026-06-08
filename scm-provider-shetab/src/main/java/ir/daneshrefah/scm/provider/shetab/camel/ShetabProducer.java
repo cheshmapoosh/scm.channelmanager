@@ -67,9 +67,14 @@ public class ShetabProducer extends DefaultProducer {
     public void process(Exchange exchange) {
         traceSupport.enrichLogMdc(exchange);
         String provider = resolveProvider(exchange);
-        ShetabResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
-        Operation operation = exchange.getProperty(ir.daneshrefah.scm.common.model.message.Message.OPERATION, Operation.class);
-        String operationName = operation != null ? operation.getName() : "";
+        String operationName = resolveOperationName(exchange);
+        ShetabResolvedConfig config;
+        try {
+            config = configResolver.resolve(provider, overrides(exchange));
+        } catch (RuntimeException e) {
+            logProviderResolutionFailed(exchange, provider, operationName, e);
+            throw e;
+        }
         ShetabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
@@ -186,6 +191,10 @@ public class ShetabProducer extends DefaultProducer {
         if (StringUtils.isNotBlank(headerProvider)) {
             return headerProvider;
         }
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
         String operationProvider = exchange.getMessage().getHeader("scmOperationProviderName", String.class);
         if (StringUtils.isNotBlank(operationProvider)) {
             return operationProvider;
@@ -198,6 +207,51 @@ public class ShetabProducer extends DefaultProducer {
             return remaining;
         }
         throw new IllegalArgumentException("Shetab provider is not specified");
+    }
+
+    private void logProviderResolutionFailed(Exchange exchange,
+                                             String provider,
+                                             String operationName,
+                                             RuntimeException exception) {
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} providerName={} providerType={} transportType={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+                providerUri(exchange, provider),
+                normalizedProviderName(provider),
+                "shetab",
+                "shetab",
+                configResolver.availableProviderCodes(),
+                operationName,
+                serviceCode(exchange),
+                gatewayName(exchange),
+                exception.getClass().getSimpleName(),
+                safeMessage(exception),
+                exception);
+    }
+
+    private String normalizedProviderName(String provider) {
+        try {
+            return configResolver.providerName(provider);
+        } catch (RuntimeException ignored) {
+            return provider;
+        }
+    }
+
+    private String providerUri(Exchange exchange, String provider) {
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
+        String endpointUri = StringUtils.trimToNull(endpoint.getEndpointUri());
+        return endpointUri != null ? endpointUri : provider;
+    }
+
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        return exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
     }
 
     private ShetabEndpointOverrides overrides(Exchange exchange) {
@@ -266,6 +320,14 @@ public class ShetabProducer extends DefaultProducer {
                 || normalized.contains("expire");
     }
 
+    private String resolveOperationName(Exchange exchange) {
+        String operationName = exchange.getProperty(Message.OPERATION_NAME, String.class);
+        if (StringUtils.isNotBlank(operationName)) {
+            return operationName;
+        }
+        Operation operation = exchange.getProperty(Message.OPERATION, Operation.class);
+        return operation != null ? operation.getName() : "";
+    }
 
     private String serviceCode(Exchange exchange) {
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
@@ -281,6 +343,14 @@ public class ShetabProducer extends DefaultProducer {
             return channelCode;
         }
         return StringUtils.defaultString(exchange.getMessage().getHeader("channelCode", String.class));
+    }
+
+    private String gatewayName(Exchange exchange) {
+        String gatewayName = exchange.getProperty(Message.GATEWAY_NAME, String.class);
+        if (StringUtils.isNotBlank(gatewayName)) {
+            return gatewayName;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("gatewayName", String.class));
     }
 
     private String correlationId(Exchange exchange) {

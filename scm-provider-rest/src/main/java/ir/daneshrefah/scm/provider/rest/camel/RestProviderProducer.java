@@ -97,8 +97,14 @@ public class RestProviderProducer extends DefaultProducer {
     public void process(Exchange exchange) {
         traceSupport.enrichLogMdc(exchange);
         String provider = resolveProvider(exchange);
-        RestProviderResolvedConfig config = configResolver.resolve(provider, overrides(exchange));
         String operationName = resolveOperationName(exchange);
+        RestProviderResolvedConfig config;
+        try {
+            config = configResolver.resolve(provider, overrides(exchange));
+        } catch (RuntimeException e) {
+            logProviderResolutionFailed(exchange, provider, operationName, e);
+            throw e;
+        }
         ProviderRequest providerRequest = buildProviderRequest(exchange, config);
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
@@ -163,6 +169,10 @@ public class RestProviderProducer extends DefaultProducer {
         if (StringUtils.isNotBlank(headerProvider)) {
             return headerProvider;
         }
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
         String operationProvider = exchange.getMessage().getHeader("scmOperationProviderName", String.class);
         if (StringUtils.isNotBlank(operationProvider)) {
             return operationProvider;
@@ -175,6 +185,51 @@ public class RestProviderProducer extends DefaultProducer {
             return remaining;
         }
         throw new IllegalArgumentException("REST provider is not specified");
+    }
+
+    private void logProviderResolutionFailed(Exchange exchange,
+                                             String provider,
+                                             String operationName,
+                                             RuntimeException exception) {
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} providerName={} providerType={} transportType={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+                providerUri(exchange, provider),
+                normalizedProviderName(provider),
+                "rest",
+                "rest",
+                configResolver.availableProviderCodes(),
+                operationName,
+                serviceCode(exchange),
+                gatewayName(exchange),
+                exception.getClass().getSimpleName(),
+                safeMessage(exception),
+                exception);
+    }
+
+    private String normalizedProviderName(String provider) {
+        try {
+            return configResolver.providerName(provider);
+        } catch (RuntimeException ignored) {
+            return provider;
+        }
+    }
+
+    private String providerUri(Exchange exchange, String provider) {
+        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
+        if (StringUtils.isNotBlank(operationProviderUri)) {
+            return operationProviderUri;
+        }
+        String endpointUri = StringUtils.trimToNull(endpoint.getEndpointUri());
+        return endpointUri != null ? endpointUri : provider;
+    }
+
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        return exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
     }
 
     private RestProviderEndpointOverrides overrides(Exchange exchange) {
@@ -643,6 +698,14 @@ public class RestProviderProducer extends DefaultProducer {
             return channelCode;
         }
         return StringUtils.defaultString(exchange.getMessage().getHeader("channelCode", String.class));
+    }
+
+    private String gatewayName(Exchange exchange) {
+        String gatewayName = exchange.getProperty(Message.GATEWAY_NAME, String.class);
+        if (StringUtils.isNotBlank(gatewayName)) {
+            return gatewayName;
+        }
+        return StringUtils.defaultString(exchange.getMessage().getHeader("gatewayName", String.class));
     }
 
     private String correlationId(Exchange exchange) {

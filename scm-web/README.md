@@ -227,8 +227,8 @@ key: scmOperation
 نمونه:
 
 ```text
-NAME = shetab:hps
-URI  = shetab:request?provider=hps
+NAME = hps-shetab7
+URI  = shetab:hps-shetab7
 ```
 
 ---

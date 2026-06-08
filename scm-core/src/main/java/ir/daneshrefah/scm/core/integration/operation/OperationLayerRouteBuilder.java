@@ -224,7 +224,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                         exchange.getIn().setBody(exception);
                     }
                 })
-                .filter(exchange -> !Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class)))
+//                .filter(exchange -> !Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class)))
                 .to(Routes.GLOBAL_ERROR_HANDLER)
                 .end();
     }

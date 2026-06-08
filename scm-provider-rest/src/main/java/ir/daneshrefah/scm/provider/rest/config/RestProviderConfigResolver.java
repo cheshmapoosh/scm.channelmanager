@@ -62,6 +62,18 @@ public class RestProviderConfigResolver {
         return base.withOverrides(overrides);
     }
 
+    public String providerName(String provider) {
+        return normalizeProviderName(provider);
+    }
+
+    public List<String> availableProviderCodes() {
+        return providerRegistryProperties.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && isRestProvider(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
     private RestProviderResolvedConfig resolveBase(String providerName) {
         RegistryEntry entry = findProvider(providerName);
         RestProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
@@ -133,7 +145,9 @@ public class RestProviderConfigResolver {
                         && entry.getKey().toLowerCase(Locale.ROOT).equals(providerName.toLowerCase(Locale.ROOT)))
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("REST provider " + providerName + " is not configured"));
+                .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
+                        + "' of type 'rest' is not configured. Available rest providers: "
+                        + availableProviderCodes()));
     }
 
     private String normalizeProviderName(String provider) {
@@ -181,6 +195,14 @@ public class RestProviderConfigResolver {
 
     private String cacheKey(String providerName) {
         return providerName.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isRestProvider(Map<String, Object> properties) {
+        if (properties == null) {
+            return false;
+        }
+        Object type = properties.get("type");
+        return type != null && "rest".equalsIgnoreCase(String.valueOf(type));
     }
 
     private String trim(String value) {

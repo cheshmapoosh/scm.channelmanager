@@ -106,7 +106,7 @@ public class GatewayRoutePipelineConfigurer {
                     inboundRoute.channelServiceDefinition(),
                     inboundRoute.serviceVersion());
             exchange.setProperty(Message.CLIENT_CONTRACT, contract);
-            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} contractName={} requestDecoder={} routeId={} exchangeId={} correlationId={} outcome=success",
+            log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} contractName={} requestDecoder={} responseEncoder={} faultEncoder={} source={} routeId={} exchangeId={} correlationId={} outcome=success",
                     RouteLogEvents.GATEWAY_CONTRACT_RESOLVED,
                     servicePlan.gatewayChannel().getName(),
                     routePlan.targetKind(),
@@ -116,6 +116,9 @@ public class GatewayRoutePipelineConfigurer {
                     serviceVersion(exchange),
                     contract.name(),
                     contract.requestDecoder(),
+                    contract.responseEncoder(),
+                    contract.faultEncoder(),
+                    contract.source(),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
                     fields.get("correlationId"));

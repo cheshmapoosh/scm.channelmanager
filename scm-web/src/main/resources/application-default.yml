@@ -7,6 +7,21 @@ scm:
       kind: SERVICE_DOMAIN
       gateway-names:
         - domain.card
+  gateway:
+    client-contracts:
+      defaults:
+        REST:
+          default:
+            name: rest-default
+            request-decoder: jsonScmRequestDecoder
+            response-encoder: jsonScmResponseEncoder
+            fault-encoder: restProblemDetailFaultEncoder
+          versions:
+            v1:
+              name: rest-legacy-v1
+              request-decoder: jsonScmRequestDecoder
+              response-encoder: legacyMbCardResponseEncoder
+              fault-encoder: legacyMbCardFaultEncoder
   logging:
     datasource:
       enabled: true

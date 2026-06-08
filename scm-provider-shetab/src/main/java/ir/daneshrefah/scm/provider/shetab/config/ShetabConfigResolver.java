@@ -44,6 +44,18 @@ public class ShetabConfigResolver {
         return base.withOverrides(overrides);
     }
 
+    public String providerName(String provider) {
+        return normalizeProviderName(provider);
+    }
+
+    public List<String> availableProviderCodes() {
+        return providerRegistryProperties.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && isShetabProvider(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
     private ShetabResolvedConfig resolveBase(String providerName) {
         RegistryEntry entry = findProvider(providerName);
         ShetabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
@@ -103,7 +115,9 @@ public class ShetabConfigResolver {
                         && entry.getKey().toLowerCase(Locale.ROOT).equals(providerName.toLowerCase(Locale.ROOT)))
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Shetab provider " + providerName + " is not configured"));
+                .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
+                        + "' of type 'shetab' is not configured. Available shetab providers: "
+                        + availableProviderCodes()));
     }
 
     private String normalizeProviderName(String provider) {
@@ -147,6 +161,14 @@ public class ShetabConfigResolver {
 
     private String cacheKey(String providerName) {
         return providerName.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isShetabProvider(Map<String, Object> properties) {
+        if (properties == null) {
+            return false;
+        }
+        Object type = properties.get("type");
+        return type != null && "shetab".equalsIgnoreCase(String.valueOf(type));
     }
 
     private int value(Integer value, int fallback) {
