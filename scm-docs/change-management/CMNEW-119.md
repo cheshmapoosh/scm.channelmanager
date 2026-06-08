@@ -40,14 +40,20 @@ Database:
 - The v9 Java enum also no longer contains the intermediate route/group/API-documentation names from earlier CMNEW-119 drafts.
 
 Config Server:
-- Preferred runtime key is `scm.runtime.gateway-name`, for example `channel.mb` or `domain.card`.
+- Preferred runtime target config uses `scm.runtime.target.kind` and `scm.runtime.target.gateway-names`.
+- `RuntimeTargetKind` determines whether the runtime target is `CHANNEL` or `SERVICE_DOMAIN`.
+- Both `CHANNEL` and `SERVICE_DOMAIN` can have gateway, service, and operation routes.
+- `SERVICE_DOMAIN` changes route planning source, not route layer activation.
 - `scm.app-name` remains as a legacy fallback only and should be retired from new config.
 - Optional runtime channel affinity:
 
 ```yaml
 scm:
   runtime:
-    gateway-name: channel.mb
+    target:
+      kind: CHANNEL
+      gateway-names:
+        - channel.mb
     channel-affinity:
       enabled: false
       allowed-channel-codes:

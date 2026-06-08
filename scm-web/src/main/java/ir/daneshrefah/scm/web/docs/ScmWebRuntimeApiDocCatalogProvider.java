@@ -9,7 +9,6 @@ import ir.daneshrefah.scm.common.data.entity.definition.DefinitionEntity;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.core.entity.gateway.ChannelServiceDefinitionEntity;
 import ir.daneshrefah.scm.core.entity.gateway.GatewayChannelEntity;
-import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import ir.daneshrefah.scm.core.integration.runtime.ScmRuntimeProperties;
 import ir.daneshrefah.scm.core.repository.gateway.ChannelServiceDefinitionRepository;
@@ -242,7 +241,7 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     }
 
     private String catalogCacheKeyValue(RuntimeApiDocCatalogCacheKey cacheKey) {
-        return cacheKey.runtimeMode() + "|" + String.join(",", cacheKey.gatewayNames());
+        return String.join(",", cacheKey.gatewayNames());
     }
 
     private RuntimeApiDocCatalog loadRuntimeCatalog(RuntimeApiDocCatalogCacheKey cacheKey) {
@@ -254,17 +253,15 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         }
 
         List<String> gatewayNames = cacheKey.gatewayNames();
-        log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} outcome=started",
+        log.info("event={} moduleCode={} gatewayNames={} failFast={} outcome=started",
                 API_DOC_CATALOG_RESOLUTION_STARTED,
                 MODULE_CODE,
-                cacheKey.runtimeMode(),
                 gatewayNames,
                 failFast);
         if (gatewayNames.isEmpty()) {
-            log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} groupCount=0 itemCount=0 outcome=success",
+            log.info("event={} moduleCode={} gatewayNames={} failFast={} groupCount=0 itemCount=0 outcome=success",
                     API_DOC_CATALOG_RESOLVED,
                     MODULE_CODE,
-                    cacheKey.runtimeMode(),
                     gatewayNames,
                     failFast);
             return RuntimeApiDocCatalog.empty();
@@ -273,10 +270,9 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         List<ChannelServiceDefinitionEntity> apiDocDefinitions = channelServiceDefinitionRepository
                 .findByTypeAndGatewayChannel_NameIn(ChannelServiceDefinitionType.API_DOC, gatewayNames);
         RuntimeApiDocCatalog catalog = parseCatalog(apiDocDefinitions, failFast);
-        log.info("event={} moduleCode={} runtimeMode={} gatewayNames={} failFast={} apiDocDefinitions={} groupCount={} itemCount={} outcome=success",
+        log.info("event={} moduleCode={} gatewayNames={} failFast={} apiDocDefinitions={} groupCount={} itemCount={} outcome=success",
                 API_DOC_CATALOG_RESOLVED,
                 MODULE_CODE,
-                cacheKey.runtimeMode(),
                 gatewayNames,
                 failFast,
                 apiDocDefinitions.size(),
@@ -287,7 +283,6 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
 
     private RuntimeApiDocCatalogCacheKey catalogCacheKey() {
         return new RuntimeApiDocCatalogCacheKey(
-                scmRuntimeProperties.runtimeMode(),
                 activeRuntimeGatewayNames(),
                 failFast(),
                 apiDocsEnabled());
@@ -569,11 +564,9 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     }
 
     private List<String> activeRuntimeGatewayNames() {
-        RuntimeMode runtimeMode = scmRuntimeProperties.runtimeMode();
         return scmRuntimeProperties.runtimeTargets()
                 .stream()
                 .filter(RuntimeTargetProperties::enabled)
-                .filter(runtimeTarget -> runtimeMode.accepts(runtimeTarget.targetKind()))
                 .flatMap(runtimeTarget -> runtimeTarget.gatewayNames().stream())
                 .filter(StringUtils::hasText)
                 .map(String::trim)
@@ -879,11 +872,10 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             return;
         }
 
-        log.debug("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} outcome=skipped reason={}",
+        log.debug("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} outcome=skipped reason={}",
                 API_DOC_CACHE_UNAVAILABLE,
                 MODULE_CODE,
                 API_DOC_CATALOG_CACHE_NAME,
-                cacheKey.runtimeMode(),
                 cacheKey.gatewayNames(),
                 cacheKeyValue,
                 reason);
@@ -902,11 +894,10 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
         int itemCount = catalog != null ? catalog.documentsById().size() : 0;
 
         if (warn) {
-            log.warn("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+            log.warn("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                     event,
                     MODULE_CODE,
                     API_DOC_CATALOG_CACHE_NAME,
-                    cacheKey.runtimeMode(),
                     cacheKey.gatewayNames(),
                     cacheKeyValue,
                     groupCount,
@@ -918,11 +909,10 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             return;
         }
 
-        log.info("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+        log.info("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                 event,
                 MODULE_CODE,
                 API_DOC_CATALOG_CACHE_NAME,
-                cacheKey.runtimeMode(),
                 cacheKey.gatewayNames(),
                 cacheKeyValue,
                 groupCount,
@@ -1117,7 +1107,6 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
     }
 
     private record RuntimeApiDocCatalogCacheKey(
-            RuntimeMode runtimeMode,
             List<String> gatewayNames,
             boolean failFast,
             boolean apiDocsEnabled

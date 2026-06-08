@@ -14,10 +14,6 @@ public class RuntimeRouteActivation {
     private final ScmRuntimeProperties scmRuntimeProperties;
     private final RuntimeTargetKindResolver runtimeTargetKindResolver;
 
-    public RuntimeMode runtimeMode() {
-        return scmRuntimeProperties.runtimeMode();
-    }
-
     public List<RuntimeTargetProperties> runtimeTargets() {
         return scmRuntimeProperties.runtimeTargets();
     }
@@ -28,19 +24,5 @@ public class RuntimeRouteActivation {
                 gatewayChannel != null ? gatewayChannel.getName() : null,
                 targetKind);
         return targetKind;
-    }
-
-    public boolean shouldBuildGatewayRoutes(RuntimeMode runtimeMode, RuntimeTargetKind targetKind) {
-        boolean enabled = runtimeMode.channelGatewayRoutesEnabled(targetKind);
-        log.debug("Runtime route activation decision layer=gateway runtimeMode={} targetKind={} enabled={}",
-                runtimeMode, targetKind, enabled);
-        return enabled;
-    }
-
-    public boolean shouldBuildServiceRoutes(RuntimeMode runtimeMode, RuntimeTargetKind targetKind) {
-        boolean enabled = runtimeMode.serviceExecutionRoutesEnabled(targetKind);
-        log.debug("Runtime route activation decision layer=service runtimeMode={} targetKind={} enabled={}",
-                runtimeMode, targetKind, enabled);
-        return enabled;
     }
 }

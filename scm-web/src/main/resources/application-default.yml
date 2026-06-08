@@ -3,7 +3,10 @@ scm:
   app-name: domain.card
   channels: MB4TEST
   runtime:
-    gateway-name: domain.card
+    target:
+      kind: SERVICE_DOMAIN
+      gateway-names:
+        - domain.card
   logging:
     datasource:
       enabled: true

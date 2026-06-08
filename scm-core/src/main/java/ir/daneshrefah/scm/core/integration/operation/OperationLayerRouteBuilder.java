@@ -13,7 +13,6 @@ import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
-import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
@@ -53,23 +52,20 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
 
     @Override
     public void configure() {
-        RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
         List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
-        log.info("event={} layer=operation runtimeMode={} targetCount={} outcome=started",
+        log.info("event={} layer=operation targetCount={} outcome=started",
                 RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_STARTED,
-                runtimeMode,
                 runtimeTargets.size());
 
-        Set<String> requiredOperationNames = resolveRequiredOperationNames(runtimeMode, runtimeTargets);
+        Set<String> requiredOperationNames = resolveRequiredOperationNames(runtimeTargets);
         log.info("event={} layer=operation requiredOperationCount={} runtimeTargetCount={} outcome=success",
                 RouteLogEvents.OPERATION_ROUTE_PLAN_RESOLVED,
                 requiredOperationNames.size(),
                 runtimeTargets.size());
 
         if (requiredOperationNames.isEmpty()) {
-            log.warn("event={} layer=operation runtimeMode={} requiredOperationCount=0 runtimeTargetCount={} outcome=skipped reason=no-required-operations",
+            log.warn("event={} layer=operation requiredOperationCount=0 runtimeTargetCount={} outcome=skipped reason=no-required-operations",
                     RouteLogEvents.OPERATION_ROUTE_SKIPPED,
-                    runtimeMode,
                     runtimeTargets.size());
             log.info("event={} layer=operation requiredOperationCount=0 builtRouteCount=0 skippedOperationCount=0 outcome=success",
                     RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_COMPLETED);
@@ -92,22 +88,20 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 builtRouteCount);
     }
 
-    private Set<String> resolveRequiredOperationNames(RuntimeMode runtimeMode,
-                                                      List<RuntimeTargetProperties> runtimeTargets) {
+    private Set<String> resolveRequiredOperationNames(List<RuntimeTargetProperties> runtimeTargets) {
         Set<String> requiredOperationNames = new LinkedHashSet<>();
         for (RuntimeTargetProperties runtimeTarget : runtimeTargets) {
             if (runtimeTarget == null || !runtimeTarget.enabled()) {
                 continue;
             }
             for (String gatewayName : runtimeTarget.gatewayNames()) {
-                resolveRequiredOperationNames(runtimeMode, runtimeTarget, gatewayName, requiredOperationNames);
+                resolveRequiredOperationNames(runtimeTarget, gatewayName, requiredOperationNames);
             }
         }
         return requiredOperationNames;
     }
 
-    private void resolveRequiredOperationNames(RuntimeMode runtimeMode,
-                                               RuntimeTargetProperties runtimeTarget,
+    private void resolveRequiredOperationNames(RuntimeTargetProperties runtimeTarget,
                                                String gatewayName,
                                                Set<String> requiredOperationNames) {
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
@@ -129,14 +123,6 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                     RouteLogEvents.OPERATION_ROUTE_SKIPPED,
                     gatewayChannel.getName(),
                     runtimeTarget.targetKind(),
-                    targetKind);
-            return;
-        }
-        if (!runtimeRouteActivation.shouldBuildServiceRoutes(runtimeMode, targetKind)) {
-            log.info("event={} layer=operation gatewayName={} runtimeMode={} targetKind={} reason=runtime-mode outcome=skipped",
-                    RouteLogEvents.OPERATION_ROUTE_SKIPPED,
-                    gatewayChannel.getName(),
-                    runtimeMode,
                     targetKind);
             return;
         }

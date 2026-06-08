@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -16,7 +17,7 @@ import java.util.Map;
 public class ScmRuntimeProperties {
     public static final String GATEWAY_NAME_PROPERTY = "scm.runtime.gateway-name";
     public static final String LEGACY_APP_NAME_PROPERTY = "scm.app-name";
-    public static final String RUNTIME_MODE_PROPERTY = "scm.runtime.mode";
+    public static final String RUNTIME_TARGET_PROPERTY = "scm.runtime.target";
     public static final String RUNTIME_TARGETS_PROPERTY = "scm.runtime.targets";
 
     private final Environment environment;
@@ -34,20 +35,12 @@ public class ScmRuntimeProperties {
                 + GATEWAY_NAME_PROPERTY + " or legacy " + LEGACY_APP_NAME_PROPERTY + ".");
     }
 
-    public RuntimeMode runtimeMode() {
-        String runtimeMode = StringUtils.trimToNull(environment.getProperty(RUNTIME_MODE_PROPERTY));
-        if (runtimeMode == null) {
-            return RuntimeMode.DEFAULT;
-        }
-        try {
-            return RuntimeMode.from(runtimeMode);
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid " + RUNTIME_MODE_PROPERTY + " '" + runtimeMode
-                    + "'. Expected CHANNEL, SERVICE_DOMAIN, or CHANNEL_AND_SERVICE_DOMAIN.", exception);
-        }
-    }
-
     public List<RuntimeTargetProperties> runtimeTargets() {
+        RuntimeTargetProperties configuredTarget = configuredRuntimeTarget();
+        if (configuredTarget != null) {
+            return List.of(configuredTarget);
+        }
+
         RuntimeTargetConfiguration configuredTargets = configuredRuntimeTargets();
         if (configuredTargets.present()) {
             return configuredTargets.targets();
@@ -71,6 +64,25 @@ public class ScmRuntimeProperties {
         }
         gatewayNamesByKind.replaceAll((ignored, gatewayNames) -> List.copyOf(gatewayNames));
         return Map.copyOf(gatewayNamesByKind);
+    }
+
+    private RuntimeTargetProperties configuredRuntimeTarget() {
+        String prefix = RUNTIME_TARGET_PROPERTY;
+        RuntimeTargetKind targetKind = runtimeTargetKind(prefix + ".kind");
+        List<String> gatewayNames = gatewayNames(prefix + ".gateway-names");
+        boolean configured = targetKind != null || !gatewayNames.isEmpty();
+        if (!configured) {
+            return null;
+        }
+        if (targetKind == null) {
+            throw new IllegalStateException("Runtime target kind is required under " + prefix + ".kind.");
+        }
+        if (gatewayNames.isEmpty()) {
+            throw new IllegalStateException("Runtime target " + targetKind
+                    + " is configured but no gateway names are configured under "
+                    + prefix + ".gateway-names.");
+        }
+        return new RuntimeTargetProperties(targetKind, true, gatewayNames);
     }
 
     private RuntimeTargetConfiguration configuredRuntimeTargets() {
@@ -100,6 +112,23 @@ public class ScmRuntimeProperties {
         }
         runtimeTargets.add(new RuntimeTargetProperties(targetKind, true, gatewayNames));
         return true;
+    }
+
+    private RuntimeTargetKind runtimeTargetKind(String propertyName) {
+        String value = StringUtils.trimToNull(environment.getProperty(propertyName));
+        if (value == null) {
+            return null;
+        }
+        try {
+            return RuntimeTargetKind.valueOf(value
+                    .replace('-', '_')
+                    .replace('.', '_')
+                    .replace(' ', '_')
+                    .toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Invalid " + propertyName + " '" + value
+                    + "'. Expected CHANNEL or SERVICE_DOMAIN.", exception);
+        }
     }
 
     private List<String> gatewayNames(String propertyName) {

@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestConfigurationDefinition;
@@ -39,10 +38,9 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
     }
 
     @Override
-    public List<InboundRouteDefinition> createRoutes(GatewayInboundRouteContext context) {
+    public void configureGateway(GatewayInboundRouteFactoryContext context) {
         GatewayChannel gatewayChannel = context.gatewayChannel();
-        RouteBuilder routeBuilder = context.routeBuilder();
-        RestConfigurationDefinition restConfigurationDefinition = routeBuilder.restConfiguration()
+        RestConfigurationDefinition restConfigurationDefinition = context.routeBuilder().restConfiguration()
                 .component("servlet")
                 .bindingMode(RestBindingMode.json)
                 .enableCORS(true)
@@ -56,6 +54,10 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         if (StringUtils.isNotEmpty(host)) {
             restConfigurationDefinition.host(host);
         }
+    }
+
+    @Override
+    public List<InboundRouteDefinition> createRoutes(GatewayInboundRouteContext context) {
         return createRestRouteDefinitions(
                 context,
                 clientContractVersionResolver);

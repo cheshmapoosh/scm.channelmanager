@@ -7,5 +7,8 @@ import java.util.List;
 public interface GatewayInboundRouteFactory {
     ProtocolType protocol();
 
+    default void configureGateway(GatewayInboundRouteFactoryContext context) {
+    }
+
     List<InboundRouteDefinition> createRoutes(GatewayInboundRouteContext context);
 }

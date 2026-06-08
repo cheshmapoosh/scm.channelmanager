@@ -18,7 +18,6 @@ import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
-import ir.daneshrefah.scm.core.integration.runtime.RuntimeMode;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
@@ -64,35 +63,31 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
 
     @Override
     public void configure() {
-        RuntimeMode runtimeMode = runtimeRouteActivation.runtimeMode();
         List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
-        log.info("event={} layer=service runtimeMode={} targetCount={} outcome=started",
-                RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_STARTED, runtimeMode, runtimeTargets.size());
+        log.info("event={} layer=service targetCount={} outcome=started",
+                RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_STARTED, runtimeTargets.size());
         Set<String> serviceRouteIds = new LinkedHashSet<>();
         runtimeTargets.forEach(runtimeTarget ->
                 runtimeTarget.gatewayNames().forEach(gatewayName ->
-                        configureServiceTarget(runtimeMode, runtimeTarget, gatewayName, serviceRouteIds)));
-        log.info("event={} layer=service runtimeMode={} targetCount={} outcome=success",
-                RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_COMPLETED, runtimeMode, runtimeTargets.size());
+                        configureServiceTarget(runtimeTarget, gatewayName, serviceRouteIds)));
+        log.info("event={} layer=service targetCount={} outcome=success",
+                RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_COMPLETED, runtimeTargets.size());
     }
 
-    private void configureServiceTarget(RuntimeMode runtimeMode,
-                                        RuntimeTargetProperties runtimeTarget,
+    private void configureServiceTarget(RuntimeTargetProperties runtimeTarget,
                                         String gatewayName,
                                         Set<String> serviceRouteIds) {
         long startNanos = System.nanoTime();
-        log.info("event={} layer=service gatewayName={} runtimeMode={} configuredTargetKind={} outcome=started",
+        log.info("event={} layer=service gatewayName={} configuredTargetKind={} outcome=started",
                 RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_STARTED,
                 gatewayName,
-                runtimeMode,
                 runtimeTarget.targetKind());
         try {
-            configureServiceTargetSafely(runtimeMode, runtimeTarget, gatewayName, serviceRouteIds, startNanos);
+            configureServiceTargetSafely(runtimeTarget, gatewayName, serviceRouteIds, startNanos);
         } catch (RuntimeException exception) {
-            log.error("event={} layer=service gatewayName={} runtimeMode={} configuredTargetKind={} durationMs={} outcome=failed failureType={} failureMessage={}",
+            log.error("event={} layer=service gatewayName={} configuredTargetKind={} durationMs={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_FAILED,
                     gatewayName,
-                    runtimeMode,
                     runtimeTarget.targetKind(),
                     RouteLogSupport.elapsedMs(startNanos),
                     RouteLogSupport.failureType(exception),
@@ -102,8 +97,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         }
     }
 
-    private void configureServiceTargetSafely(RuntimeMode runtimeMode,
-                                              RuntimeTargetProperties runtimeTarget,
+    private void configureServiceTargetSafely(RuntimeTargetProperties runtimeTarget,
                                               String gatewayName,
                                               Set<String> serviceRouteIds,
                                               long startNanos) {
@@ -111,39 +105,27 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         if (gatewayChannel == null) {
             throw new IllegalStateException("Gateway channel '" + gatewayName + "' not found");
         }
-        log.info("event={} layer=service gatewayName={} runtimeMode={} protocol={} outcome=success",
+        log.info("event={} layer=service gatewayName={} protocol={} outcome=success",
                 RouteLogEvents.SERVICE_GATEWAY_CHANNEL_RESOLVED,
                 gatewayChannel.getName(),
-                runtimeMode,
                 gatewayChannel.getProtocolType());
         RuntimeTargetKind targetKind = runtimeRouteActivation.resolveTargetKind(gatewayChannel);
         validateConfiguredTargetKind(runtimeTarget, gatewayChannel, targetKind);
-        log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} outcome=success",
+        log.info("event={} layer=service gatewayName={} configuredTargetKind={} resolvedTargetKind={} protocol={} outcome=success",
                 RouteLogEvents.SERVICE_TARGET_KIND_RESOLVED,
                 gatewayChannel.getName(),
-                runtimeMode,
+                runtimeTarget.targetKind(),
                 targetKind,
                 gatewayChannel.getProtocolType());
-        if (!runtimeRouteActivation.shouldBuildServiceRoutes(runtimeMode, targetKind)) {
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} durationMs={} outcome=skipped reason=runtime-mode",
-                    RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_SKIPPED,
-                    gatewayChannel.getName(),
-                    runtimeMode,
-                    targetKind,
-                    gatewayChannel.getProtocolType(),
-                    RouteLogSupport.elapsedMs(startNanos));
-            return;
-        }
 
-        RuntimeRoutePlan routePlan = resolveRoutePlan(gatewayChannel, runtimeMode);
-        log.info("event={} layer=service gatewayName={} runtimeMode={} protocol={} targetKind={} serviceCount={} outcome=success",
+        RuntimeRoutePlan routePlan = resolveRoutePlan(gatewayChannel);
+        log.info("event={} layer=service gatewayName={} protocol={} targetKind={} serviceCount={} outcome=success",
                 RouteLogEvents.SERVICE_ROUTE_PLAN_RESOLVED,
-                gatewayChannel.getName(), runtimeMode, gatewayChannel.getProtocolType(), routePlan.targetKind(), routePlan.servicePlans().size());
+                gatewayChannel.getName(), gatewayChannel.getProtocolType(), routePlan.targetKind(), routePlan.servicePlans().size());
         if (routePlan.servicePlans().isEmpty()) {
-            log.warn("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} outcome=skipped reason=empty-route-plan",
+            log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} outcome=skipped reason=empty-route-plan",
                     RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_SKIPPED,
                     gatewayChannel.getName(),
-                    runtimeMode,
                     routePlan.targetKind(),
                     gatewayChannel.getProtocolType());
         }
@@ -152,10 +134,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
             try {
                 buildServiceRoute(routePlan, servicePlan, channelPluginDetails, serviceRouteIds);
             } catch (RuntimeException exception) {
-                log.error("event={} layer=service gatewayName={} runtimeMode={} targetKind={} serviceCode={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                log.error("event={} layer=service gatewayName={} targetKind={} serviceCode={} durationMs={} outcome=failed failureType={} failureMessage={}",
                         RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_FAILED,
                         gatewayChannel.getName(),
-                        runtimeMode,
                         routePlan.targetKind(),
                         servicePlan.service().getCode(),
                         RouteLogSupport.elapsedMs(startNanos),
@@ -165,24 +146,22 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 throw exception;
             }
         });
-        log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} serviceCount={} durationMs={} outcome=success",
+        log.info("event={} layer=service gatewayName={} targetKind={} protocol={} serviceCount={} durationMs={} outcome=success",
                 RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_COMPLETED,
                 gatewayChannel.getName(),
-                runtimeMode,
                 routePlan.targetKind(),
                 gatewayChannel.getProtocolType(),
                 routePlan.servicePlans().size(),
                 RouteLogSupport.elapsedMs(startNanos));
     }
 
-    private RuntimeRoutePlan resolveRoutePlan(GatewayChannel gatewayChannel, RuntimeMode runtimeMode) {
+    private RuntimeRoutePlan resolveRoutePlan(GatewayChannel gatewayChannel) {
         try {
             return runtimeRoutePlanProvider.provide(gatewayChannel);
         } catch (RuntimeException exception) {
-            log.error("event={} layer=service gatewayName={} runtimeMode={} protocol={} outcome=failed failureType={} failureMessage={}",
+            log.error("event={} layer=service gatewayName={} protocol={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.SERVICE_ROUTE_CONSTRUCTION_FAILED,
                     gatewayChannel.getName(),
-                    runtimeMode,
                     gatewayChannel.getProtocolType(),
                     RouteLogSupport.failureType(exception),
                     RouteLogSupport.failureMessage(exception),
@@ -244,10 +223,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
 
         route.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=started",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.SERVICE_TARGET_ROUTING_STARTED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -263,10 +241,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         serviceTargetRouter.buildTarget(route, service);
         route.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",
                     RouteLogEvents.SERVICE_TARGET_ROUTING_FINISHED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -286,10 +263,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                 PluginPhase.AFTER);
         route.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=started",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.SERVICE_RESPONSE_PROCESSING_STARTED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -304,10 +280,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         applyPlugins(route, afterPlugins, servicePlan);
         route.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=success",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=success",
                     RouteLogEvents.SERVICE_RESPONSE_PROCESSING_FINISHED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -350,10 +325,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         route.process(exchange -> {
             exchange.setProperty(RouteLogSupport.SERVICE_START_NANOS, System.nanoTime());
             Map<String, String> fields = scmExchangeMdc.put(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=started",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.SERVICE_REQUEST_RECEIVED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     RouteLogSupport.targetKind(exchange),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -365,10 +339,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
             try {
-                log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
+                log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
                         RouteLogEvents.SERVICE_GUARD_CHECK_STARTED,
                         servicePlan.gatewayChannel().getName(),
-                        runtimeRouteActivation.runtimeMode(),
                         RouteLogSupport.targetKind(exchange),
                         servicePlan.gatewayChannel().getProtocolType(),
                         channelCode(exchange, servicePlan),
@@ -380,10 +353,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                         fields.get("correlationId"));
                 runtimeChannelGuard.check(exchange, servicePlan);
                 channelServiceAccessGuard.check(exchange, servicePlan);
-                log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=success",
+                log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=success",
                         RouteLogEvents.SERVICE_GUARD_CHECK_PASSED,
                         servicePlan.gatewayChannel().getName(),
-                        runtimeRouteActivation.runtimeMode(),
                         RouteLogSupport.targetKind(exchange),
                         servicePlan.gatewayChannel().getProtocolType(),
                         channelCode(exchange, servicePlan),
@@ -394,10 +366,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                         exchange.getExchangeId(),
                         fields.get("correlationId"));
             } catch (RuntimeException exception) {
-                log.warn("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=failed failureType={} failureMessage={}",
+                log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=failed failureType={} failureMessage={}",
                         RouteLogEvents.SERVICE_GUARD_CHECK_FAILED,
                         servicePlan.gatewayChannel().getName(),
-                        runtimeRouteActivation.runtimeMode(),
                         RouteLogSupport.targetKind(exchange),
                         servicePlan.gatewayChannel().getProtocolType(),
                         channelCode(exchange, servicePlan),
@@ -437,10 +408,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         String operationName = exchange.getProperty(Message.OPERATION_NAME, String.class);
         Map<String, String> fields = scmExchangeMdc.fields(exchange);
         try {
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} routeId={} exchangeId={} correlationId={} outcome=started",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.SERVICE_PLUGIN_STARTED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     RouteLogSupport.targetKind(exchange),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -464,10 +434,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     detail.getPhase(),
                     pluginDurationNanos,
                     true);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} pluginDurationMs={} routeId={} exchangeId={} correlationId={} outcome=success",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} pluginDurationMs={} routeId={} exchangeId={} correlationId={} outcome=success",
                     RouteLogEvents.SERVICE_PLUGIN_FINISHED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     RouteLogSupport.targetKind(exchange),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -492,10 +461,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     detail.getPhase(),
                     pluginDurationNanos,
                     false);
-            log.warn("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} pluginDurationMs={} routeId={} exchangeId={} correlationId={} outcome=failed failureType={} failureMessage={}",
+            log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} pluginName={} pluginPhase={} pluginDurationMs={} routeId={} exchangeId={} correlationId={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.SERVICE_PLUGIN_FAILED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     RouteLogSupport.targetKind(exchange),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -528,10 +496,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     true);
             serviceAuditEventPublisher.recordSuccess(exchange);
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
-            log.info("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
+            log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
                     RouteLogEvents.SERVICE_REQUEST_SUCCEEDED,
                     servicePlan.gatewayChannel().getName(),
-                    runtimeRouteActivation.runtimeMode(),
                     RouteLogSupport.targetKind(exchange),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
@@ -566,10 +533,9 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                             false);
                     serviceAuditEventPublisher.recordFailure(exchange, exception);
                     Map<String, String> fields = scmExchangeMdc.fields(exchange);
-                    log.warn("event={} layer=service gatewayName={} runtimeMode={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                    log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
                             RouteLogEvents.SERVICE_REQUEST_FAILED,
                             servicePlan.gatewayChannel().getName(),
-                            runtimeRouteActivation.runtimeMode(),
                             RouteLogSupport.targetKind(exchange),
                             servicePlan.gatewayChannel().getProtocolType(),
                             channelCode(exchange, servicePlan),
