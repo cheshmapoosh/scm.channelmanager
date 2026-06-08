@@ -12,7 +12,7 @@ import java.util.Map;
 @Getter
 @Setter
 public class ShetabProviderInstanceProperties {
-    private String type;
+    private String scheme;
     private Boolean enabled = true;
     private String endpoint;
     private List<String> endpoints = new ArrayList<>();

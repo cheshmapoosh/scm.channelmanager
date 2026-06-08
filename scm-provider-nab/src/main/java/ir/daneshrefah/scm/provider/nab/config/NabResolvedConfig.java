@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public record NabResolvedConfig(
         String provider,
-        String providerType,
+        String scheme,
         String endpoint,
         String protocol,
         int connectTimeoutMs,
@@ -60,7 +60,7 @@ public record NabResolvedConfig(
             CharacterNormalization characterNormalization,
             boolean wireLogEnabled
     ) {
-        this(provider, "nab", endpoint, protocol, connectTimeoutMs, socketTimeoutMs, responseTimeoutMs,
+        this(provider, NabConfigResolver.COMPONENT_SCHEME, endpoint, protocol, connectTimeoutMs, socketTimeoutMs, responseTimeoutMs,
                 responseIdleTimeoutMs, ackLengthBytes, charset, userId, password, defaultServiceCode,
                 serviceCodesByTerminalType, serviceCodesByChannelCode, headerFieldsByProtocol,
                 ProviderMessageCustomizerPipeline.empty(), rateLimit, rqUid, characterNormalization, wireLogEnabled);
@@ -86,7 +86,7 @@ public record NabResolvedConfig(
                 && Objects.equals(rateLimitKey, rateLimit.key())) {
             return this;
         }
-        return new NabResolvedConfig(provider, providerType, endpoint, protocol, connectTimeoutMs, socketTimeoutMs,
+        return new NabResolvedConfig(provider, scheme, endpoint, protocol, connectTimeoutMs, socketTimeoutMs,
                 resolvedResponseTimeoutMs, responseIdleTimeoutMs, ackLengthBytes, resolvedCharset, userId, password,
                 defaultServiceCode, serviceCodesByTerminalType, serviceCodesByChannelCode, headerFieldsByProtocol,
                 messageCustomizerPipeline, new RateLimit(rateLimitEnabled, rateLimitBucket, rateLimitKey), rqUid,

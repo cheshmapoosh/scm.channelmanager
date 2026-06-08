@@ -38,6 +38,8 @@ public class RestProviderTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", config.provider());
+            span.setAttribute("scm.provider.scheme", config.scheme());
+            span.setAttribute("scm.provider.uri", config.scheme() + ":" + config.provider());
             span.setAttribute("http.request.method", request.method().name());
 
             URI uri = request.uri();
@@ -90,11 +92,11 @@ public class RestProviderTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", value(context.providerCode()));
-            span.setAttribute("scm.provider.type", value(context.providerType()));
+            span.setAttribute("scm.provider.scheme", value(context.scheme()));
+            span.setAttribute("scm.provider.uri", value(context.providerUri()));
             span.setAttribute("scm.provider.service_code", value(context.serviceCode()));
             span.setAttribute("scm.provider.operation_code", value(context.operationCode()));
             span.setAttribute("scm.provider.channel_code", value(context.channelCode()));
-            span.setAttribute("scm.provider.transport_type", value(context.transportType()));
             span.setAttribute("scm.provider.customizer.type", value(customizerType));
             span.setAttribute("scm.provider.customizer.phase", value(phase));
             action.run();

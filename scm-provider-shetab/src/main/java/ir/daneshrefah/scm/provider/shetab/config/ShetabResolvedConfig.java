@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public record ShetabResolvedConfig(
         String provider,
-        String providerType,
+        String scheme,
         List<String> endpoints,
         String packagerClass,
         String packagerXml,
@@ -47,7 +47,7 @@ public record ShetabResolvedConfig(
             RateLimit rateLimit,
             EndpointLease endpointLease
     ) {
-        this(provider, "shetab", endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs,
+        this(provider, ShetabConfigResolver.COMPONENT_SCHEME, endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs,
                 responseTimeoutMs, sendTimeoutMs, reconnectDelayMs, sameEndpointReconnectAttempts, queueCapacity,
                 Map.of(), ProviderMessageCustomizerPipeline.empty(), rateLimit, endpointLease);
     }
@@ -70,7 +70,7 @@ public record ShetabResolvedConfig(
                 && Objects.equals(rateLimitKey, rateLimit.key())) {
             return this;
         }
-        return new ShetabResolvedConfig(provider, providerType, endpoints, packagerClass, packagerXml, connectTimeoutMs,
+        return new ShetabResolvedConfig(provider, scheme, endpoints, packagerClass, packagerXml, connectTimeoutMs,
                 socketTimeoutMs, resolvedResponseTimeoutMs, sendTimeoutMs, reconnectDelayMs,
                 sameEndpointReconnectAttempts, queueCapacity, providerConfig, messageCustomizerPipeline,
                 new RateLimit(rateLimitEnabled, rateLimitBucket, rateLimitKey), endpointLease);

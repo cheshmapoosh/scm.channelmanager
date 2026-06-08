@@ -22,7 +22,6 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
             "nab", "scm-nab",
             "rest", "scm-rest",
             "rest-provider", "scm-rest",
-            "restprovider", "scm-rest",
             "shetab", "scm-shetab"
     );
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
@@ -88,19 +87,19 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
         if (!StringUtils.contains(uri, ':')) {
             throw new IllegalArgumentException("Provider operation target URI must include a Camel scheme for operation " + operation.getName());
         }
-        validateProviderScheme(operation, uri);
+        validateProviderScheme(uri);
         return uri;
     }
 
-    private void validateProviderScheme(Operation operation, String uri) {
+    private void validateProviderScheme(String uri) {
         String scheme = StringUtils.substringBefore(uri, ":");
         String normalized = StringUtils.trimToEmpty(scheme).toLowerCase(Locale.ROOT);
         String replacement = OLD_PROVIDER_SCHEME_REPLACEMENTS.get(normalized);
         if (replacement == null) {
             return;
         }
-        throw new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
-                + "' for operation " + operation.getName()
-                + ". Use '" + replacement + ":<providerCode>' instead.");
+        throw new IllegalArgumentException("Unsupported SCM provider scheme '" + scheme
+                + "'. Use '" + replacement + ":<providerCode>' instead.");
     }
+
 }

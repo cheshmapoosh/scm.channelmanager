@@ -5,8 +5,8 @@ import java.util.Optional;
 
 public record ProviderMessageCustomizerFactoryContext(
         String providerCode,
-        String providerType,
-        String transportType,
+        String scheme,
+        String providerUri,
         String serviceCode,
         String operationCode,
         String channelCode,
@@ -26,8 +26,8 @@ public record ProviderMessageCustomizerFactoryContext(
         }
         return new ProviderMessageCustomizerFactoryContext(
                 context.providerCode(),
-                context.providerType(),
-                context.transportType(),
+                context.scheme(),
+                context.providerUri(),
                 context.serviceCode(),
                 context.operationCode(),
                 context.channelCode(),

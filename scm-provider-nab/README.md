@@ -8,7 +8,7 @@ Example URI:
 scm-nab:nab-atps
 ```
 
-Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-nab:nab-atps`.
+Operation provider URIs follow `<scheme>:<providerCode>`, for example `scm-nab:nab-atps`.
 
 ## Primary Configuration Model
 
@@ -18,7 +18,7 @@ Provider instances are configured under the unified registry:
 scm:
   providers:
     nab-atps:
-      type: nab
+      scheme: scm-nab
       enabled: true
       protocol: ATPS
       endpoint: 10.10.10.10:3080
@@ -50,9 +50,11 @@ Rules:
 
 - There is no defaults block in the primary model.
 - Every NAB provider instance must explicitly configure protocol, endpoint, timeouts, credentials, `rq-uid`, `header-fields`, and rate-limit if needed.
+- Provider config uses `scm.providers.<providerCode>.scheme = scm-nab`, not provider `type`.
+- Customizer `type` values identify customizer factories and are separate from provider `scheme`.
 - `header-fields` are provider-instance specific and must not be documented or configured under defaults.
 - Missing required fields fail fast.
-- `type: nab` makes this module own and validate the instance.
+- `scheme: scm-nab` makes this module own and validate the instance.
 - If `message-customizers` is missing or empty, no customizer pipeline runs.
 
 ## Request Shape

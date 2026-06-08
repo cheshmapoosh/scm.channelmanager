@@ -12,7 +12,7 @@ import java.util.Map;
 @Getter
 @Setter
 public class NabProviderInstanceProperties {
-    private String type;
+    private String scheme;
     private Boolean enabled = true;
     private String protocol;
     private String endpoint;

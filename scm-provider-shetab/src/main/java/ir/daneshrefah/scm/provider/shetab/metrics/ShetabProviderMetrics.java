@@ -159,11 +159,10 @@ public class ShetabProviderMetrics {
         private List<Tag> tags(ShetabResolvedConfig config, ProviderMessageCustomizerContext context, String customizerType, String outcome) {
             return List.of(
                     Tag.of("providerCode", value(config == null ? provider : config.provider())),
-                    Tag.of("providerType", value(config == null ? "shetab" : config.providerType())),
+                    Tag.of("scheme", value(config == null ? "" : config.scheme())),
                     Tag.of("serviceCode", value(context == null ? "" : context.serviceCode())),
                     Tag.of("operationCode", value(context == null ? "" : context.operationCode())),
                     Tag.of("channelCode", value(context == null ? "" : context.channelCode())),
-                    Tag.of("transportType", "shetab"),
                     Tag.of("customizerType", value(customizerType)),
                     Tag.of("outcome", value(outcome))
             );
@@ -172,11 +171,10 @@ public class ShetabProviderMetrics {
         private List<Tag> tags(ProviderMessageCustomizerContext context, String customizerType, String phase) {
             return List.of(
                     Tag.of("providerCode", value(context == null ? provider : context.providerCode())),
-                    Tag.of("providerType", value(context == null ? "" : context.providerType())),
+                    Tag.of("scheme", value(context == null ? "" : context.scheme())),
                     Tag.of("serviceCode", value(context == null ? "" : context.serviceCode())),
                     Tag.of("operationCode", value(context == null ? "" : context.operationCode())),
                     Tag.of("channelCode", value(context == null ? "" : context.channelCode())),
-                    Tag.of("transportType", value(context == null ? "" : context.transportType())),
                     Tag.of("customizerType", value(customizerType)),
                     Tag.of("outcome", value(phase))
             );

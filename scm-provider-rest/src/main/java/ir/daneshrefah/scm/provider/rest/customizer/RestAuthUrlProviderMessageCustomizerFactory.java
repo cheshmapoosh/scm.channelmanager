@@ -3,9 +3,9 @@ package ir.daneshrefah.scm.provider.rest.customizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext;
+import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
 import ir.daneshrefah.scm.provider.rest.token.ProviderAuthTokenProvider;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,11 +37,8 @@ public class RestAuthUrlProviderMessageCustomizerFactory
             ProviderMessageCustomizerFactoryContext context,
             RestAuthUrlProviderMessageCustomizerConfig config
     ) {
-        if (context == null || !"rest".equalsIgnoreCase(context.transportType())) {
+        if (context == null || !RestProviderConfigResolver.COMPONENT_SCHEME.equalsIgnoreCase(context.scheme())) {
             throw new IllegalArgumentException("rest-auth-url customizer can only be configured for REST providers");
-        }
-        if (!"rest".equalsIgnoreCase(StringUtils.defaultString(context.providerType()))) {
-            throw new IllegalArgumentException("rest-auth-url customizer requires provider type rest");
         }
         RestAuthUrlProviderMessageCustomizerConfig safeConfig = config == null
                 ? new RestAuthUrlProviderMessageCustomizerConfig()

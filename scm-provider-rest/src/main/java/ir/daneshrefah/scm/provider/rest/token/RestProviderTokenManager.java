@@ -609,11 +609,11 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         }
         span.addEvent(eventName);
         span.setAttribute("scm.provider.name", providerConfig.provider());
-        span.setAttribute("scm.provider.type", providerConfig.providerType());
+        span.setAttribute("scm.provider.scheme", providerConfig.scheme());
+        span.setAttribute("scm.provider.uri", providerConfig.scheme() + ":" + providerConfig.provider());
         span.setAttribute("scm.provider.service_code", serviceCode(context));
         span.setAttribute("scm.provider.operation_code", operationCode(context));
         span.setAttribute("scm.provider.channel_code", channelCode(context));
-        span.setAttribute("scm.provider.transport_type", "rest");
         span.setAttribute("scm.provider.auth.profile", StringUtils.defaultString(authConfig.cache().getAuthProfile()));
         if ("provider.auth.cache.hit".equals(eventName)) {
             span.setAttribute("scm.provider.auth.cache_hit", true);

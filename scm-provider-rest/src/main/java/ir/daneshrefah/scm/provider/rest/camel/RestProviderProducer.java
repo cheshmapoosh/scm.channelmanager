@@ -191,10 +191,9 @@ public class RestProviderProducer extends DefaultProducer {
                                              String provider,
                                              String operationName,
                                              RuntimeException exception) {
-        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} componentScheme={} providerType={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} scheme={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
                 providerUri(exchange, provider),
-                componentScheme(provider),
-                "rest",
+                scheme(provider),
                 providerCode(provider),
                 configResolver.availableProviderCodes(),
                 operationName,
@@ -215,7 +214,7 @@ public class RestProviderProducer extends DefaultProducer {
         }
     }
 
-    private String componentScheme(String provider) {
+    private String scheme(String provider) {
         String cleaned = StringUtils.trimToNull(provider);
         int separator = cleaned != null ? cleaned.indexOf(':') : -1;
         return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(0, separator)) : RestProviderConfigResolver.COMPONENT_SCHEME;
@@ -315,11 +314,11 @@ public class RestProviderProducer extends DefaultProducer {
     ) {
         return new ProviderMessageCustomizerContext(
                 config.provider(),
-                config.providerType(),
+                config.scheme(),
+                config.scheme() + ":" + config.provider(),
                 serviceCode(exchange),
                 operationName,
                 channelCode(exchange),
-                "rest",
                 config.providerConfig(),
                 config,
                 correlationId(exchange),
@@ -337,13 +336,13 @@ public class RestProviderProducer extends DefaultProducer {
         List<String> customizerNames = pipeline == null ? List.of() : pipeline.entries().stream()
                 .map(entry -> entry.type() + "#" + entry.order())
                 .toList();
-        log.debug("REST provider customizers configured provider={} type={} service={} operation={} channel={} transport={} customizers={}",
+        log.debug("REST provider customizers configured provider={} scheme={} providerUri={} service={} operation={} channel={} customizers={}",
                 context.providerCode(),
-                context.providerType(),
+                context.scheme(),
+                context.providerUri(),
                 context.serviceCode(),
                 context.operationCode(),
                 context.channelCode(),
-                context.transportType(),
                 customizerNames);
     }
 
@@ -370,9 +369,10 @@ public class RestProviderProducer extends DefaultProducer {
                 metrics.provider(providerExchange.context().providerCode()).customizerExecution(providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
             } catch (RuntimeException e) {
                 metrics.provider(providerExchange.context().providerCode()).customizerError(providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
-                log.error("REST provider customizer error provider={} type={} service={} operation={} channel={} customizer={} phase={} message={}",
+                log.error("REST provider customizer error provider={} scheme={} providerUri={} service={} operation={} channel={} customizer={} phase={} message={}",
                         providerExchange.context().providerCode(),
-                        providerExchange.context().providerType(),
+                        providerExchange.context().scheme(),
+                        providerExchange.context().providerUri(),
                         providerExchange.context().serviceCode(),
                         providerExchange.context().operationCode(),
                         providerExchange.context().channelCode(),

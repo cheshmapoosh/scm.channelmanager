@@ -38,16 +38,17 @@ public class ShetabConfigResolver {
     }
 
     public ShetabResolvedConfig resolve(String provider, ShetabEndpointOverrides overrides) {
-        String providerName = normalizeProviderName(provider);
-        if (providerName == null) {
+        ProviderReference reference = normalizeProviderReference(provider);
+        if (reference == null) {
             throw new IllegalArgumentException("Shetab provider is required");
         }
-        ShetabResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(providerName), ignored -> resolveBase(providerName));
+        ShetabResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(reference.providerCode()), ignored -> resolveBase(reference));
         return base.withOverrides(overrides);
     }
 
     public String providerName(String provider) {
-        return normalizeProviderName(provider);
+        ProviderReference reference = normalizeProviderReference(provider);
+        return reference == null ? null : reference.providerCode();
     }
 
     public List<String> availableProviderCodes() {
@@ -58,20 +59,21 @@ public class ShetabConfigResolver {
                 .toList();
     }
 
-    private ShetabResolvedConfig resolveBase(String providerName) {
-        RegistryEntry entry = findProvider(providerName);
+    private ShetabResolvedConfig resolveBase(ProviderReference reference) {
+        RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         ShetabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), ShetabProviderInstanceProperties.class, "Shetab provider " + entry.providerCode());
-        validate(entry.providerCode(), instance);
+        validate(entry.providerCode(), reference.scheme(), instance);
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
-                entry.providerCode(), "shetab", null, null, null, "shetab",
+                entry.providerCode(), COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, entry.providerCode()),
+                null, null, null,
                 cleanObjectMap(instance.getProviderConfig()), instance, null, null);
         ProviderMessageCustomizerPipeline pipeline = pipelineFactory.build(customizerContext, instance.getMessageCustomizers());
         log.debug("Shetab provider runtime resolved provider={} customizers={}", entry.providerCode(),
                 pipeline.entries().stream().map(item -> item.type() + "#" + item.order()).toList());
         return new ShetabResolvedConfig(
                 entry.providerCode(),
-                "shetab",
+                COMPONENT_SCHEME,
                 mergedEndpoints(instance.getEndpoints(), instance.getEndpoint()),
                 instance.getPackagerClass(),
                 instance.getPackagerXml(),
@@ -92,9 +94,14 @@ public class ShetabConfigResolver {
         );
     }
 
-    private void validate(String providerName, ShetabProviderInstanceProperties instance) {
-        if (!"shetab".equalsIgnoreCase(StringUtils.trimToEmpty(instance.getType()))) {
-            throw new IllegalArgumentException("Provider " + providerName + " must define type=shetab");
+    private void validate(String providerName, String uriScheme, ShetabProviderInstanceProperties instance) {
+        String configuredScheme = StringUtils.trimToNull(instance.getScheme());
+        if (configuredScheme == null) {
+            throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
+        }
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
+            throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
+                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("Shetab provider " + providerName + " is disabled");
@@ -107,7 +114,7 @@ public class ShetabConfigResolver {
         }
     }
 
-    private RegistryEntry findProvider(String providerName) {
+    private RegistryEntry findProvider(String providerName, String scheme) {
         Map<String, Object> exact = providerRegistryProperties.provider(providerName);
         if (exact != null) {
             return new RegistryEntry(providerName, exact);
@@ -118,28 +125,28 @@ public class ShetabConfigResolver {
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
-                        + "' of type 'shetab' is not configured. Available shetab providers: "
+                        + "' with scheme '" + scheme + "' is not configured. Available providers for scheme '" + scheme + "': "
                         + availableProviderCodes()));
     }
 
-    private String normalizeProviderName(String provider) {
+    private ProviderReference normalizeProviderReference(String provider) {
         String providerName = StringUtils.trimToNull(provider);
         if (providerName == null) {
             return null;
         }
         int separator = providerName.indexOf(':');
         if (separator < 0) {
-            return providerName;
+            return new ProviderReference(providerName, COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, providerName));
         }
-        String type = providerName.substring(0, separator).trim();
+        String scheme = providerName.substring(0, separator).trim();
         String name = providerName.substring(separator + 1).trim();
         if (name.isBlank()) {
             throw new IllegalArgumentException("Invalid Shetab provider name: " + providerName);
         }
-        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
-            throw unsupportedScheme(type);
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(scheme)) {
+            throw unsupportedScheme(scheme);
         }
-        return name;
+        return new ProviderReference(name, scheme, providerUri(scheme, name));
     }
 
     private List<String> mergedEndpoints(List<String> endpoints, String endpointAlias) {
@@ -172,13 +179,17 @@ public class ShetabConfigResolver {
         if (properties == null) {
             return false;
         }
-        Object type = properties.get("type");
-        return type != null && "shetab".equalsIgnoreCase(String.valueOf(type));
+        Object scheme = properties.get("scheme");
+        return scheme != null && COMPONENT_SCHEME.equalsIgnoreCase(String.valueOf(scheme));
     }
 
     private IllegalArgumentException unsupportedScheme(String scheme) {
-        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+        return new IllegalArgumentException("Unsupported SCM provider scheme '" + scheme
                 + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
+    }
+
+    private String providerUri(String scheme, String providerCode) {
+        return scheme + ":" + providerCode;
     }
 
     private int value(Integer value, int fallback) {
@@ -215,5 +226,8 @@ public class ShetabConfigResolver {
     }
 
     private record RegistryEntry(String providerCode, Map<String, Object> properties) {
+    }
+
+    private record ProviderReference(String providerCode, String scheme, String providerUri) {
     }
 }

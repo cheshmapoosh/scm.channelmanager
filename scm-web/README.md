@@ -231,7 +231,8 @@ NAME = hps-shetab7
 URI  = scm-shetab:hps-shetab7
 ```
 
-قرارداد URI برای providerهای جدید `scm-<provider-type>:<provider-code>` است؛ مثل `scm-rest:hps-rest`، `scm-shetab:hps-shetab7` و `scm-nab:nab-atps`.
+قرارداد URI برای providerها `<scheme>:<providerCode>` است؛ مقدار `scheme` از `scm.providers.<providerCode>.scheme` می‌آید. مثال‌ها: `scm-rest:hps-rest`، `scm-shetab:hps-shetab7` و `scm-nab:nab-atps`.
+برای SCM REST provider از `rest:` استفاده نکنید، چون `rest:` برای component داخلی Apache Camel رزرو شده است. تنظیمات provider از `scheme` استفاده می‌کند؛ `type` فقط برای `message-customizers` باقی می‌ماند.
 
 ---
 

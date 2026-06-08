@@ -56,16 +56,17 @@ public class RestProviderConfigResolver {
     }
 
     public RestProviderResolvedConfig resolve(String provider, RestProviderEndpointOverrides overrides) {
-        String providerName = normalizeProviderName(provider);
-        if (providerName == null) {
+        ProviderReference reference = normalizeProviderReference(provider);
+        if (reference == null) {
             throw new IllegalArgumentException("REST provider is required");
         }
-        RestProviderResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(providerName), ignored -> resolveBase(providerName));
+        RestProviderResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(reference.providerCode()), ignored -> resolveBase(reference));
         return base.withOverrides(overrides);
     }
 
     public String providerName(String provider) {
-        return normalizeProviderName(provider);
+        ProviderReference reference = normalizeProviderReference(provider);
+        return reference == null ? null : reference.providerCode();
     }
 
     public List<String> availableProviderCodes() {
@@ -76,19 +77,19 @@ public class RestProviderConfigResolver {
                 .toList();
     }
 
-    private RestProviderResolvedConfig resolveBase(String providerName) {
-        RegistryEntry entry = findProvider(providerName);
+    private RestProviderResolvedConfig resolveBase(ProviderReference reference) {
+        RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         RestProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), RestProviderInstanceProperties.class, "REST provider " + entry.providerCode());
-        validate(entry.providerCode(), instance);
+        validate(entry.providerCode(), reference.scheme(), instance);
         RestProviderResolvedConfig.RateLimit rateLimit = resolvedRateLimit(instance.getRateLimit(), entry.providerCode());
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
                 entry.providerCode(),
-                "rest",
+                COMPONENT_SCHEME,
+                providerUri(COMPONENT_SCHEME, entry.providerCode()),
                 null,
                 null,
                 null,
-                "rest",
                 cleanObjectMap(instance.getProviderConfig()),
                 instance,
                 null,
@@ -99,7 +100,7 @@ public class RestProviderConfigResolver {
                 pipeline.entries().stream().map(item -> item.type() + "#" + item.order()).toList());
         return new RestProviderResolvedConfig(
                 entry.providerCode(),
-                "rest",
+                COMPONENT_SCHEME,
                 StringUtils.trimToNull(first(instance.getBaseUrl(), instance.getEndpoint())),
                 value(instance.getConnectTimeoutMs(), 3000),
                 value(instance.getResponseTimeoutMs(), 6000),
@@ -125,9 +126,14 @@ public class RestProviderConfigResolver {
         );
     }
 
-    private void validate(String providerName, RestProviderInstanceProperties instance) {
-        if (!"rest".equalsIgnoreCase(StringUtils.trimToEmpty(instance.getType()))) {
-            throw new IllegalArgumentException("Provider " + providerName + " must define type=rest");
+    private void validate(String providerName, String uriScheme, RestProviderInstanceProperties instance) {
+        String configuredScheme = StringUtils.trimToNull(instance.getScheme());
+        if (configuredScheme == null) {
+            throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
+        }
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
+            throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
+                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("REST provider " + providerName + " is disabled");
@@ -137,7 +143,7 @@ public class RestProviderConfigResolver {
         }
     }
 
-    private RegistryEntry findProvider(String providerName) {
+    private RegistryEntry findProvider(String providerName, String scheme) {
         Map<String, Object> exact = providerRegistryProperties.provider(providerName);
         if (exact != null) {
             return new RegistryEntry(providerName, exact);
@@ -148,28 +154,28 @@ public class RestProviderConfigResolver {
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
-                        + "' of type 'rest' is not configured. Available rest providers: "
+                        + "' with scheme '" + scheme + "' is not configured. Available providers for scheme '" + scheme + "': "
                         + availableProviderCodes()));
     }
 
-    private String normalizeProviderName(String provider) {
+    private ProviderReference normalizeProviderReference(String provider) {
         String providerName = StringUtils.trimToNull(provider);
         if (providerName == null) {
             return null;
         }
         int separator = providerName.indexOf(':');
         if (separator < 0) {
-            return providerName;
+            return new ProviderReference(providerName, COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, providerName));
         }
-        String type = providerName.substring(0, separator).trim();
+        String scheme = providerName.substring(0, separator).trim();
         String name = providerName.substring(separator + 1).trim();
         if (name.isBlank()) {
             throw new IllegalArgumentException("Invalid REST provider name: " + providerName);
         }
-        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
-            throw unsupportedScheme(type);
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(scheme)) {
+            throw unsupportedScheme(scheme);
         }
-        return name;
+        return new ProviderReference(name, scheme, providerUri(scheme, name));
     }
 
     private RestProviderResolvedConfig.HttpRedirect resolveRedirect(String value) {
@@ -203,13 +209,17 @@ public class RestProviderConfigResolver {
         if (properties == null) {
             return false;
         }
-        Object type = properties.get("type");
-        return type != null && "rest".equalsIgnoreCase(String.valueOf(type));
+        Object scheme = properties.get("scheme");
+        return scheme != null && COMPONENT_SCHEME.equalsIgnoreCase(String.valueOf(scheme));
     }
 
     private IllegalArgumentException unsupportedScheme(String scheme) {
-        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+        return new IllegalArgumentException("Unsupported SCM provider scheme '" + scheme
                 + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
+    }
+
+    private String providerUri(String scheme, String providerCode) {
+        return scheme + ":" + providerCode;
     }
 
     private String trim(String value) {
@@ -274,5 +284,8 @@ public class RestProviderConfigResolver {
     }
 
     private record RegistryEntry(String providerCode, Map<String, Object> properties) {
+    }
+
+    private record ProviderReference(String providerCode, String scheme, String providerUri) {
     }
 }

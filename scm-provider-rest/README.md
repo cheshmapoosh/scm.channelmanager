@@ -8,7 +8,7 @@ Example URI:
 scm-rest:hps-rest
 ```
 
-Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-rest:hps-rest`.
+Operation provider URIs follow `<scheme>:<providerCode>`, for example `scm-rest:hps-rest`.
 Do not use `rest:` for SCM REST provider routes; Apache Camel reserves `rest:` for its built-in REST DSL endpoint syntax.
 
 ## Primary Configuration Model
@@ -19,7 +19,7 @@ Provider instances are configured under the unified registry:
 scm:
   providers:
     hps-rest:
-      type: rest
+      scheme: scm-rest
       enabled: true
       base-url: https://hps-rest.example.ir
       connect-timeout-ms: 3000
@@ -76,8 +76,10 @@ Rules:
 
 - There is no defaults block in the primary model.
 - Every provider instance must be explicitly configured.
-- `provider-code` is the key under `scm.providers`.
-- `type: rest` makes this module own and validate the instance.
+- `providerCode` is the key under `scm.providers`.
+- Provider config uses `scm.providers.<providerCode>.scheme = scm-rest`, not provider `type`.
+- `scheme: scm-rest` makes this module own and validate the instance.
+- Customizer `type` values identify customizer factories and are separate from provider `scheme`.
 - Missing required fields fail fast.
 - If `message-customizers` is missing or empty, no customizer runs.
 - No customizer is enabled by default.
@@ -259,7 +261,7 @@ Supported types are `BASIC`, `BEARER`, `JWT`, and `API_KEY`. The customizer supp
 
 ## REST Has No MAC
 
-REST provider has no MAC field. Do not configure or implement MAC for REST. A Shetab/ISO8583 MAC customizer must reject REST transport.
+REST provider has no MAC field. Do not configure or implement MAC for REST. A Shetab/ISO8583 MAC customizer must reject `scm-rest` providers.
 
 ## Observability And Security
 
@@ -289,7 +291,7 @@ Metrics include:
 - `provider.auth.token.refresh.error`
 - `provider.auth.request.duration`
 
-Metric tags are low cardinality: providerCode, providerType, serviceCode, operationCode, channelCode, transportType, customizerType, outcome.
+Metric tags are low cardinality: providerCode, scheme, serviceCode, operationCode, channelCode, customizerType, outcome.
 
 Never log or trace tokens, username/password, client secret, PIN, PIN block, MAC, PAN, account number, CVV2, or raw sensitive body values.
 

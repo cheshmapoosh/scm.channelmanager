@@ -7,7 +7,7 @@ import java.util.Map;
 
 public record RestProviderResolvedConfig(
         String provider,
-        String providerType,
+        String scheme,
         String baseUrl,
         int connectTimeoutMs,
         int responseTimeoutMs,
@@ -48,7 +48,7 @@ public record RestProviderResolvedConfig(
                 && java.util.Objects.equals(rateLimitKey, rateLimit.key())) {
             return this;
         }
-        return new RestProviderResolvedConfig(provider, providerType, baseUrl, connectTimeoutMs, resolvedResponseTimeoutMs,
+        return new RestProviderResolvedConfig(provider, scheme, baseUrl, connectTimeoutMs, resolvedResponseTimeoutMs,
                 virtualThreadsEnabled, insecureSsl, followRedirects, defaultMethod, defaultHeaders, providerConfig,
                 messageCustomizerPipeline, proxy, security,
                 new RateLimit(rateLimitEnabled, rateLimitBucket, rateLimitKey));

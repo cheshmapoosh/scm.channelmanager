@@ -42,16 +42,17 @@ public class NabConfigResolver {
     }
 
     public NabResolvedConfig resolve(String provider, NabEndpointOverrides overrides) {
-        String providerName = normalizeProviderName(provider);
-        if (providerName == null) {
+        ProviderReference reference = normalizeProviderReference(provider);
+        if (reference == null) {
             throw new IllegalArgumentException("NAB provider is required");
         }
-        NabResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(providerName), ignored -> resolveBase(providerName));
+        NabResolvedConfig base = resolvedConfigs.computeIfAbsent(cacheKey(reference.providerCode()), ignored -> resolveBase(reference));
         return base.withOverrides(overrides);
     }
 
     public String providerName(String provider) {
-        return normalizeProviderName(provider);
+        ProviderReference reference = normalizeProviderReference(provider);
+        return reference == null ? null : reference.providerCode();
     }
 
     public List<String> availableProviderCodes() {
@@ -62,22 +63,23 @@ public class NabConfigResolver {
                 .toList();
     }
 
-    private NabResolvedConfig resolveBase(String providerName) {
-        RegistryEntry entry = findProvider(providerName);
+    private NabResolvedConfig resolveBase(ProviderReference reference) {
+        RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
         NabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
                 entry.properties(), NabProviderInstanceProperties.class, "NAB provider " + entry.providerCode());
-        validate(entry.providerCode(), instance);
+        validate(entry.providerCode(), reference.scheme(), instance);
         String protocol = StringUtils.trimToNull(instance.getProtocol()).toUpperCase(Locale.ROOT);
         int rqUidLength = value(instance.getRqUid().getLength(), 16);
         Map<String, List<NabFieldSpec>> headerFields = resolveHeaderFields(instance, protocol);
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
-                entry.providerCode(), "nab", null, null, null, "nab", Map.of(), instance, null, null);
+                entry.providerCode(), COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, entry.providerCode()),
+                null, null, null, Map.of(), instance, null, null);
         ProviderMessageCustomizerPipeline pipeline = pipelineFactory.build(customizerContext, instance.getMessageCustomizers());
         log.debug("NAB provider runtime resolved provider={} customizers={}", entry.providerCode(),
                 pipeline.entries().stream().map(item -> item.type() + "#" + item.order()).toList());
         return new NabResolvedConfig(
                 entry.providerCode(),
-                "nab",
+                COMPONENT_SCHEME,
                 StringUtils.trimToNull(instance.getEndpoint()),
                 protocol,
                 value(instance.getConnectTimeoutMs(), 3000),
@@ -103,9 +105,14 @@ public class NabConfigResolver {
         );
     }
 
-    private void validate(String providerName, NabProviderInstanceProperties instance) {
-        if (!"nab".equalsIgnoreCase(StringUtils.trimToEmpty(instance.getType()))) {
-            throw new IllegalArgumentException("Provider " + providerName + " must define type=nab");
+    private void validate(String providerName, String uriScheme, NabProviderInstanceProperties instance) {
+        String configuredScheme = StringUtils.trimToNull(instance.getScheme());
+        if (configuredScheme == null) {
+            throw new IllegalArgumentException("Provider " + providerName + " must define scheme=" + COMPONENT_SCHEME);
+        }
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(configuredScheme)) {
+            throw new IllegalArgumentException("Provider URI scheme mismatch for provider '" + providerName
+                    + "'. URI scheme is '" + uriScheme + "' but configured scheme is '" + configuredScheme + "'.");
         }
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("NAB provider " + providerName + " is disabled");
@@ -124,7 +131,7 @@ public class NabConfigResolver {
         }
     }
 
-    private RegistryEntry findProvider(String providerName) {
+    private RegistryEntry findProvider(String providerName, String scheme) {
         Map<String, Object> exact = providerRegistryProperties.provider(providerName);
         if (exact != null) {
             return new RegistryEntry(providerName, exact);
@@ -135,28 +142,28 @@ public class NabConfigResolver {
                 .map(entry -> new RegistryEntry(entry.getKey(), entry.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
-                        + "' of type 'nab' is not configured. Available nab providers: "
+                        + "' with scheme '" + scheme + "' is not configured. Available providers for scheme '" + scheme + "': "
                         + availableProviderCodes()));
     }
 
-    private String normalizeProviderName(String provider) {
+    private ProviderReference normalizeProviderReference(String provider) {
         String providerName = StringUtils.trimToNull(provider);
         if (providerName == null) {
             return null;
         }
         int separator = providerName.indexOf(':');
         if (separator < 0) {
-            return providerName;
+            return new ProviderReference(providerName, COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, providerName));
         }
-        String type = providerName.substring(0, separator).trim();
+        String scheme = providerName.substring(0, separator).trim();
         String name = providerName.substring(separator + 1).trim();
         if (name.isBlank()) {
             throw new IllegalArgumentException("Invalid NAB provider name: " + providerName);
         }
-        if (!COMPONENT_SCHEME.equalsIgnoreCase(type)) {
-            throw unsupportedScheme(type);
+        if (!COMPONENT_SCHEME.equalsIgnoreCase(scheme)) {
+            throw unsupportedScheme(scheme);
         }
-        return name;
+        return new ProviderReference(name, scheme, providerUri(scheme, name));
     }
 
     private NabResolvedConfig.RateLimit resolvedRateLimit(
@@ -227,13 +234,17 @@ public class NabConfigResolver {
         if (properties == null) {
             return false;
         }
-        Object type = properties.get("type");
-        return type != null && "nab".equalsIgnoreCase(String.valueOf(type));
+        Object scheme = properties.get("scheme");
+        return scheme != null && COMPONENT_SCHEME.equalsIgnoreCase(String.valueOf(scheme));
     }
 
     private IllegalArgumentException unsupportedScheme(String scheme) {
-        return new IllegalArgumentException("Unsupported SCM provider component scheme '" + scheme
+        return new IllegalArgumentException("Unsupported SCM provider scheme '" + scheme
                 + "'. Use '" + COMPONENT_SCHEME + ":<providerCode>' instead.");
+    }
+
+    private String providerUri(String scheme, String providerCode) {
+        return scheme + ":" + providerCode;
     }
 
     private static int value(Integer value, int fallback) {
@@ -253,5 +264,8 @@ public class NabConfigResolver {
     }
 
     private record RegistryEntry(String providerCode, Map<String, Object> properties) {
+    }
+
+    private record ProviderReference(String providerCode, String scheme, String providerUri) {
     }
 }

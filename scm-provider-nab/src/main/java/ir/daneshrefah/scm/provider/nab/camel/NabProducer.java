@@ -112,10 +112,9 @@ public class NabProducer extends DefaultProducer {
                                              String provider,
                                              String operationName,
                                              RuntimeException exception) {
-        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} componentScheme={} providerType={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} scheme={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
                 providerUri(exchange, provider),
-                componentScheme(provider),
-                "nab",
+                scheme(provider),
                 providerCode(provider),
                 configResolver.availableProviderCodes(),
                 operationName,
@@ -136,7 +135,7 @@ public class NabProducer extends DefaultProducer {
         }
     }
 
-    private String componentScheme(String provider) {
+    private String scheme(String provider) {
         String cleaned = StringUtils.trimToNull(provider);
         int separator = cleaned != null ? cleaned.indexOf(':') : -1;
         return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(0, separator)) : NabConfigResolver.COMPONENT_SCHEME;

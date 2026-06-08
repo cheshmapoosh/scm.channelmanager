@@ -12,7 +12,7 @@ import java.util.Map;
 @Getter
 @Setter
 public class RestProviderInstanceProperties {
-    private String type;
+    private String scheme;
     private Boolean enabled = true;
     private String baseUrl;
     private String endpoint;

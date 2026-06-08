@@ -8,7 +8,7 @@ Example URI:
 scm-shetab:hps-shetab7
 ```
 
-Operation provider URIs follow `scm-<provider-type>:<provider-code>`, for example `scm-shetab:hps-shetab7`.
+Operation provider URIs follow `<scheme>:<providerCode>`, for example `scm-shetab:hps-shetab7`.
 
 ## Primary Configuration Model
 
@@ -18,7 +18,7 @@ Provider instances are configured under the unified registry:
 scm:
   providers:
     hps-shetab7:
-      type: shetab
+      scheme: scm-shetab
       enabled: true
       endpoints:
         - 10.10.10.11:9000
@@ -75,6 +75,8 @@ Rules:
 
 - There is no defaults block in the primary model.
 - Every provider instance must explicitly configure `endpoints`, packager, timeouts, rate-limit/lease if needed, and message customizers.
+- Provider config uses `scm.providers.<providerCode>.scheme = scm-shetab`, not provider `type`.
+- Customizer `type` values identify customizer factories and are separate from provider `scheme`.
 - `endpoints` is the preferred primary Shetab endpoint configuration.
 - `endpoint` may be used only as a single-endpoint convenience alias.
 - No customizer is enabled by default.
@@ -89,7 +91,7 @@ Shetab supports multiple provider endpoints. In distributed deployments, configu
 scm:
   providers:
     hps-shetab7:
-      type: shetab
+      scheme: scm-shetab
       endpoints:
         - 10.10.10.11:9000
         - 10.10.10.12:9000
@@ -157,11 +159,11 @@ Shetab customizer types currently include:
 
 MAC must run after all request fields are finalized. PIN block must run before MAC. CVV2, expiry, outlet, terminal, and merchant enrichment must run before MAC.
 
-REST provider has no MAC field. `shetab-mac` must never support REST transport.
+REST provider has no MAC field. `shetab-mac` must never support `scm-rest` providers.
 
 ## Observability And Security
 
-Trace spans/events cover provider call and each configured customizer phase. Safe attributes include providerCode, providerType, serviceCode, operationCode, channelCode, transportType, customizerType, and phase.
+Trace spans/events cover provider call and each configured customizer phase. Safe attributes include providerCode, scheme, providerUri, serviceCode, operationCode, channelCode, customizerType, and phase.
 
 Metrics include:
 

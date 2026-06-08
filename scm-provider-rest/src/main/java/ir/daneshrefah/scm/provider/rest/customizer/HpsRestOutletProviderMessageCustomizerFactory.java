@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext;
+import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +32,7 @@ public class HpsRestOutletProviderMessageCustomizerFactory
 
     @Override
     public ProviderMessageCustomizer create(ProviderMessageCustomizerFactoryContext context, Config config) {
-        if (context == null || !"rest".equalsIgnoreCase(context.transportType())) {
+        if (context == null || !RestProviderConfigResolver.COMPONENT_SCHEME.equalsIgnoreCase(context.scheme())) {
             throw new IllegalArgumentException("hps-rest-outlet customizer can only be configured for REST providers");
         }
         Config safeConfig = config == null ? new Config() : config;

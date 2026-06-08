@@ -40,10 +40,10 @@ scm:
     #    pichack: http://10.15.46.105:8080/dpi/api/pichak
     sayad: http://10.15.1.98:8080/sayad/services/api
   providers:
-    # Operation provider URIs use scm-<provider-type>:<provider-code>, for example:
+    # Operation provider URIs use <scheme>:<provider-code>, for example:
     # scm-rest:hps-rest and scm-shetab:hps-shetab7.
     hps-rest:
-      type: rest
+      scheme: scm-rest
       enabled: true
       base-url: http://10.15.1.61:9677/general/ws/do
       connect-timeout-ms: 3000
@@ -84,7 +84,7 @@ scm:
             basic-base64: true
 
     hps-shetab7:
-      type: shetab
+      scheme: scm-shetab
       enabled: true
       endpoints:
         - 10.15.1.61:32001

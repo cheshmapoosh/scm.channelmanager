@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.provider.message.ProviderExchange;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactory;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerFactoryContext;
+import ir.daneshrefah.scm.provider.shetab.config.ShetabConfigResolver;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +38,7 @@ public class HpsShetabOutletProviderMessageCustomizerFactory
     }
 
     static void validateContext(ProviderMessageCustomizerFactoryContext context, String type) {
-        if (context == null || !"shetab".equalsIgnoreCase(context.providerType()) || "rest".equalsIgnoreCase(context.transportType())) {
+        if (context == null || !ShetabConfigResolver.COMPONENT_SCHEME.equalsIgnoreCase(context.scheme())) {
             throw new IllegalArgumentException(type + " customizer can only be configured for Shetab providers");
         }
     }
