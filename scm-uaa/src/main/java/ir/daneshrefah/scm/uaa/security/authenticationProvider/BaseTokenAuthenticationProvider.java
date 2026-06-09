@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -24,6 +25,8 @@ import org.springframework.security.oauth2.server.authorization.token.DefaultOAu
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Set;
 
 /**
@@ -114,8 +117,29 @@ public abstract class BaseTokenAuthenticationProvider<T extends AbstractAuthenti
             // This log is kept separate for consistency with other providers
             this.log.trace("Authenticated token request");
         }
+        OAuth2RefreshToken refreshToken = null;
+        if (registeredClient.getAuthorizationGrantTypes().contains(org.springframework.security.oauth2.core.AuthorizationGrantType.REFRESH_TOKEN) && !registeredClient.getClientSettings().isRequireProofKey()) {
 
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authenticationToken.getClientPrincipal(), accessToken);
+            OAuth2TokenContext refreshTokenContext = DefaultOAuth2TokenContext.builder()
+                    .registeredClient(registeredClient).principal(authenticationToken)
+                    .authorizationServerContext(AuthorizationServerContextHolder.getContext())
+                    .authorizedScopes(scopes)
+                    .tokenType(OAuth2TokenType.REFRESH_TOKEN)
+                    .authorizationGrantType(AuthorizationGrantTypeMapper.GRANT_TYPE_SMS_OTP)
+                    .authorizationGrant(authenticationToken)
+                    .build();
+            OAuth2Token generatedRefreshToken = this.tokenGenerator.generate(refreshTokenContext);
+            if (generatedRefreshToken instanceof OAuth2RefreshToken rt) {
+                refreshToken = rt;
+            }
+        }
+        if (this.log.isTraceEnabled()) {
+            this.log.trace("Saved authorization");            // This log is kept separate for consistency with other providers
+            this.log.trace("Authenticated token request");
+        }
+
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authenticationToken.getClientPrincipal(), accessToken,  refreshToken);
+
     }
 
     protected abstract T authenticateToken(T authenticationToken);

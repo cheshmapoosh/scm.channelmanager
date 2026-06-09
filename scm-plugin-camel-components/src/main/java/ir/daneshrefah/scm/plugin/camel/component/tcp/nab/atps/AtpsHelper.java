@@ -151,34 +151,33 @@ public class AtpsHelper {
     }
 
     public static String toString(Object inBody, Charset charset) {
-        if (inBody == null) return "";
-        if (inBody instanceof String s) {
-            return s;
+        switch (inBody) {
+            case null -> {
+                return "";
+            }
+            case String s -> {
+                return s;
+            }
 //            return s.trim();
-        } else if (inBody instanceof byte[] bytes) {
-            return new String(bytes, charset);
-        } else if (inBody instanceof ByteBuf byteBuf) {
-            byte[] bytes = new byte[byteBuf.readableBytes()];
-            byteBuf.getBytes(byteBuf.readerIndex(), bytes);
-            return new String(bytes, charset);
-        } else {
-            throw new IllegalArgumentException("Body must be String, byte[] or ByteBuf");
-
+            case byte[] bytes -> {
+                return new String(bytes, charset);
+            }
+            case ByteBuf byteBuf -> {
+                byte[] bytes = new byte[byteBuf.readableBytes()];
+                byteBuf.getBytes(byteBuf.readerIndex(), bytes);
+                return new String(bytes, charset);
+            }
+            default -> throw new IllegalArgumentException("Body must be String, byte[] or ByteBuf");
         }
     }
 
     public static ByteBuf toByteBuf(Object inBody, Charset charset) {
-        if (inBody == null) {
-            throw new IllegalArgumentException("Body must not be null");
-        } else if (inBody instanceof ByteBuf byteBuf) {
-            return byteBuf;
-        } else if (inBody instanceof byte[] bytes) {
-            return Unpooled.wrappedBuffer(bytes);
-        } else if (inBody instanceof String s) {
-            return Unpooled.wrappedBuffer(s.getBytes(charset));
-        } else {
-            throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
-
-        }
+        return switch (inBody) {
+            case null -> throw new IllegalArgumentException("Body must not be null");
+            case ByteBuf byteBuf -> byteBuf;
+            case byte[] bytes -> Unpooled.wrappedBuffer(bytes);
+            case String s -> Unpooled.wrappedBuffer(s.getBytes(charset));
+            default -> throw new IllegalArgumentException("ATPS body must be byte[], String or ByteBuf");
+        };
     }
 }

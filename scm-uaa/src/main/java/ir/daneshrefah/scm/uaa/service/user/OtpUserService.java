@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestAccessParameter;
 import static ir.daneshrefah.scm.uaa.utils.RequestUtils.extractRequestTerminalCode;
 
@@ -156,6 +157,29 @@ public class OtpUserService {
         GeneralPerson generalPerson = personService
                 .findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrg())
                 .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        Recipient recipient = Recipient.builder()
+                .address(generalPerson.getMobile1())
+                .identifier(generalPerson.getMobile1())
+                .identifierType(UserIdentifierType.MOBILE_NUMBER)
+                .terminalCode(terminalCode)
+                .accessParameter(accessParameter)
+                .build();
+        OtpSendRequest otpRequest = OtpSendRequest.builder()
+                .otpType(OtpType.SMS)
+                .reason(request.getReason())
+                .recipient(recipient)
+                .build();
+        return otpService.sendOtp(otpRequest);
+    }
+
+    public OtpSendResponse sendOtpSmsShahkar(OtpSmsBasedNationalCodeRequest request,String terminalCode,String accessParameter) {
+        GeneralPerson generalPerson = personService
+                .findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrg())
+                .orElseThrow(()->new NoMatchRecordFoundException("user"));
+        if(StringUtils.notEquals(generalPerson.getMobile1(),accessParameter)){
+            log.error("MobileNo did not match with user in database. MobileNo:{} NationalCode:{}",accessParameter,request.getNationalId());
+            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_PASSWORD);
+        }
         Recipient recipient = Recipient.builder()
                 .address(generalPerson.getMobile1())
                 .identifier(generalPerson.getMobile1())

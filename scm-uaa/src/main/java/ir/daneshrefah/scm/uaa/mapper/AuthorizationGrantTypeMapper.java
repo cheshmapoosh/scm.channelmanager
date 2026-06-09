@@ -18,6 +18,10 @@ public class AuthorizationGrantTypeMapper {
             new org.springframework.security.oauth2.core.AuthorizationGrantType(AuthorizationGrantType.SMS_OTP.name());
     public static final org.springframework.security.oauth2.core.AuthorizationGrantType GRANT_TYPE_SHAHKAR =
             new org.springframework.security.oauth2.core.AuthorizationGrantType(AuthorizationGrantType.SHAHKAR.name());
+    public static final org.springframework.security.oauth2.core.AuthorizationGrantType REFRESH_TOKEN =
+            new org.springframework.security.oauth2.core.AuthorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN.name());
+    public static final org.springframework.security.oauth2.core.AuthorizationGrantType DEFAULT =
+            new org.springframework.security.oauth2.core.AuthorizationGrantType(AuthorizationGrantType.DEFAULT.name());
     public static AuthorizationGrantTypeMapper INSTANCE = new AuthorizationGrantTypeMapper();
 
     Map<AuthorizationGrantType, org.springframework.security.oauth2.core.AuthorizationGrantType> springAuthorizationMapping = new HashMap<>();
@@ -35,6 +39,7 @@ public class AuthorizationGrantTypeMapper {
                 new org.springframework.security.oauth2.core.AuthorizationGrantType(AuthorizationGrantType.SECOND_PASSWORD.name()));
         springAuthorizationMapping.put(AuthorizationGrantType.SMS_OTP, GRANT_TYPE_SMS_OTP);
         springAuthorizationMapping.put(AuthorizationGrantType.SHAHKAR, GRANT_TYPE_SHAHKAR);
+        springAuthorizationMapping.put(AuthorizationGrantType.DEFAULT, DEFAULT);
     }
 
     public org.springframework.security.oauth2.core.AuthorizationGrantType toSpring(AuthorizationGrantType value) {

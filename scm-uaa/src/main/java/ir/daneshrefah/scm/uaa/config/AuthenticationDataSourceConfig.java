@@ -64,7 +64,7 @@ public class AuthenticationDataSourceConfig {
         Map<String, Object> properties = new HashMap<>();
         properties.put("hibernate.default_schema", dataSourceConfigProperties.getAuthenticationDatasource().getDefaultSchema());
 
-        properties.put("hibernate.show_sql", "true");
+        properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
         properties.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy");
 
