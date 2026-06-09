@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
@@ -34,7 +35,7 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
         route.process(exchange -> {
             exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
             exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, operation.getProvider().getUri());
-            exchange.getMessage().setBody(toMap(exchange.getMessage().getBody()));
+            exchange.getMessage().setBody(toMap(exchange.getMessage().getBody(JsonNode.class)));
         });
 
         route.to(resolveTargetUri(operation));
