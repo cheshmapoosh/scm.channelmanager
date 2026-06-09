@@ -33,9 +33,9 @@ if (amountStr.length() < 12) {
     amountStr = StringUtils.leftPadZero(amountStr, 12)
     println("amount : " + amountStr)
 }
-print("pin before encrypt : " + pin)
+println("pin before encrypt : " + pin)
 pin = CardSystemSecurityUtil.encryptPin(pin.toString(), card.toString())
-print("pin after encrypt : " + pin)
+println("pin after encrypt : " + pin)
 
 //JSONObject request = new JSONObject();
 //request.put("cvv2", body["cvv"]);

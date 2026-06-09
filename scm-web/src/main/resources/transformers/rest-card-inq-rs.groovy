@@ -1,11 +1,14 @@
 package transformers
 
 import ir.daneshrefah.scm.common.data.dto.bank.BankDto
+import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.common.model.message.Message
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 
-def body = exchange.in.body
+def bodyRaw = exchange.in.body
+def body = bodyRaw.body
+def errorCode = body.errorCode
 def headers = exchange.in.headers
 println("rest cardInquiry rs transformer start provider body : " + body)
 if (!body instanceof Map) {
@@ -14,8 +17,8 @@ if (!body instanceof Map) {
 
 def status = body.get("status")
 println("rest card inq rs status : " + status)
-if (status == null) {
-    throw new RuntimeException("REST provider should set HTTP response code")
+if (errorCode != null) {
+    throw new CardException(errorCode.toString(),body.errorDescription)
 }
 def statusCode = status as int
 if (!(statusCode >= 200 && statusCode < 300)) {

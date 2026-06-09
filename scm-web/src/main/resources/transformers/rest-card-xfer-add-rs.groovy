@@ -1,13 +1,15 @@
+import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 
-def body = exchange.in.body
+def bodyRaw = exchange.in.body
+def body = bodyRaw.body
+def errorCode = body.errorCode
 println("rest cardXferAdd rs transformer start provider body : " + body)
 
-def errorCode = body.errorCode
 def out = body.outData
 
 if(out == null && errorCode != null){
-    throw new RuntimeException(body.get("errorDescription"))
+    throw new CardException(errorCode.toString(), body.errorDescription)
 }
 
 return [
