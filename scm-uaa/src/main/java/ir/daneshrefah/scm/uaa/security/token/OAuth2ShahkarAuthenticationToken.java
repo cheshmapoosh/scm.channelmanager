@@ -1,10 +1,12 @@
 package ir.daneshrefah.scm.uaa.security.token;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.Getter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -22,6 +24,8 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
     private final Object principal;
     private final String phoneNumber;
     private final String credentials;
+    private Instant lastUsedAt;
+    private final Instant createdAt;
 
     /**
      * Creates a token with the supplied array of authorities.
@@ -33,7 +37,7 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
      */
     public OAuth2ShahkarAuthenticationToken(Object principal, String phoneNumber, String credentials,
                                             Set<String> scopes, Authentication clientPrincipal) {
-        this(principal, phoneNumber, credentials, scopes, clientPrincipal, null);
+        this(principal, phoneNumber, credentials, scopes, clientPrincipal, null, Instant.now(),Instant.now());
     }
 
     /**
@@ -45,11 +49,13 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
      *
      */
     public OAuth2ShahkarAuthenticationToken(Object principal, String phoneNumber, String credentials,
-                                            Set<String> scopes, Authentication clientPrincipal, Collection<? extends GrantedAuthority> authorities) {
+                                            Set<String> scopes, Authentication clientPrincipal, Collection<? extends GrantedAuthority> authorities,Instant createdAt,Instant lastUsedAt) {
         super(scopes, clientPrincipal, authorities);
         this.principal = principal;
         this.phoneNumber = phoneNumber;
         this.credentials = credentials;
+        this.createdAt = createdAt;
+        this.lastUsedAt = lastUsedAt;
         if (Objects.nonNull(authorities) && !authorities.isEmpty()) {
             setAuthenticated(true);
         }
@@ -59,4 +65,11 @@ public class OAuth2ShahkarAuthenticationToken extends AbstractAuthenticationToke
     public AuthorizationGrantType getGrantType() {
         return AuthorizationGrantType.SHAHKAR;
     }
+
+    public void setLastUsedAt(Instant lastUsedAt) {
+        this.lastUsedAt = lastUsedAt;
+    }
+
+
+
 }

@@ -210,7 +210,7 @@ public class AtpsProducer extends DefaultProducer {
             throw new RuntimeException("Received message is invalid");
         }
 
-        String responseString = new String(bytes, CP1256).trim();
+        String responseString = new String(bytes, CP1256);
         String actionCode = responseString.trim().isEmpty() ? responseString : responseString.substring(0, 5);
 
 

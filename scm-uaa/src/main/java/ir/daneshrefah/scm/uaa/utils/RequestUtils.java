@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static ir.daneshrefah.scm.uaa.common.utils.Constants.ACCESS_PARAM_HEADER;
 import static ir.daneshrefah.scm.uaa.utils.Constants.REQUEST_ATTRIBUTE_CORRELATION_ID;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_ACCESS_PARAMETER;
 import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_TERMINAL;
@@ -182,7 +183,10 @@ public class RequestUtils {
     public static Optional<String> extractRequestAccessParameter(HttpServletRequest request) {
         String header = request.getHeader(SCM_PARAMETER_ACCESS_PARAMETER);
         if (StringUtils.isBlank(header)) {
-            return Optional.empty();
+            header = request.getHeader(ACCESS_PARAM_HEADER);
+           if (StringUtils.isBlank(header)) {
+               return Optional.empty();
+           }
         }
         return Optional.of(header);
     }

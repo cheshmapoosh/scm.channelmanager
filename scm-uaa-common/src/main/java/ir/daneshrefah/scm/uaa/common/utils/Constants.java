@@ -95,6 +95,10 @@ public interface Constants {
 
     String PRE_AUTHENTICATION_INSTANCE = "preAuthenticationInstance";
 
+    String SHAHKAR_ERROR = "shakarError";
+
+
+
 //     String AUTH_HEADER ="X_UserAuthorization";
 //     String DELEGATED_AUTH_HEADER ="X-DelegateAuthorization";
 //    String IP_HEADER = "X-Forwarded-For";
