@@ -13,6 +13,8 @@ import ir.daneshrefah.scm.common.service.GatewayService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.core.integration.audit.ServiceAuditEventPublisher;
 import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
+import ir.daneshrefah.scm.core.integration.observability.PluginObservationSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
@@ -27,7 +29,6 @@ import ir.daneshrefah.scm.core.integration.service.guard.ChannelServiceAccessGua
 import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
 import ir.daneshrefah.scm.core.integration.service.guard.RuntimeChannelGuard;
 import ir.daneshrefah.scm.core.integration.service.metrics.ServicePluginMetrics;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -62,6 +63,8 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private final ServiceAuditEventPublisher serviceAuditEventPublisher;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
     private final RuntimeRouteActivation runtimeRouteActivation;
+    private final CoreObservationTraceSupport observationTraceSupport;
+    private final PluginObservationSupport pluginObservationSupport;
 
     @Override
     public void configure() {
@@ -327,6 +330,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         route.process(exchange -> {
             exchange.setProperty(RouteLogSupport.SERVICE_START_NANOS, System.nanoTime());
             Map<String, String> fields = scmExchangeMdc.put(exchange);
+            observationTraceSupport.startServiceExecution(exchange, servicePlan);
             log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.SERVICE_REQUEST_RECEIVED,
                     servicePlan.gatewayChannel().getName(),
@@ -427,7 +431,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
-            handler.handle(exchange, detail);
+            pluginObservationSupport.execute(exchange, detail, handler, "service", () -> handler.handle(exchange, detail));
             long pluginDurationNanos = System.nanoTime() - startNanos;
             servicePluginMetrics.recordPluginExecution(
                     servicePlan.gatewayChannel().getName(),
@@ -498,6 +502,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     exchange.getProperty(Message.OPERATION_NAME, String.class),
                     durationNanos,
                     true);
+            observationTraceSupport.finishServiceExecutionSuccess(exchange);
             serviceAuditEventPublisher.recordSuccess(exchange);
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
@@ -531,10 +536,8 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private void handleServiceException(Exchange exchange, RuntimeServicePlan servicePlan) {
         Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
         scmExchangeMdc.put(exchange);
-        TraceUtils traceUtils = TraceUtils.getInstance();
-        if (traceUtils != null) {
-            traceUtils.traceException(exchange, exception);
-        }
+        observationTraceSupport.finishServiceExecutionFailure(exchange, exception);
+        observationTraceSupport.traceException(exchange, exception);
         globalErrorHandler.handle(exchange);
         servicePluginMetrics.recordServiceExecution(
                 servicePlan.gatewayChannel().getName(),

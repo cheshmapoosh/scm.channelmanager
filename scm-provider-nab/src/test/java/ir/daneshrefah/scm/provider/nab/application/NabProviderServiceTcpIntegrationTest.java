@@ -242,7 +242,7 @@ class NabProviderServiceTcpIntegrationTest {
 
     private Map<String, Object> providerConfig(String endpoint, String protocol) {
         Map<String, Object> config = new LinkedHashMap<>();
-        config.put("type", "nab");
+        config.put("scheme", "scm-nab");
         config.put("protocol", protocol);
         config.put("endpoint", endpoint);
         config.put("charset", "windows-1252");

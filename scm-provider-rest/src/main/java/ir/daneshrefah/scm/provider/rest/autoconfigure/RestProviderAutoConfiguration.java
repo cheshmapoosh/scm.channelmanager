@@ -56,7 +56,7 @@ public class RestProviderAutoConfiguration {
     ) {
         RateLimiterUtility utility = rateLimiterUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("RateLimiterUtility not found; REST provider rate limiter falls back to noop. Runtime deployments should enable scm-cache-client rate-limit.");
+            log.warn("RateLimiterUtility not found; REST provider rate limiter falls back to noop. Runtime deployments should enable scm-cache-starter rate-limit.");
             return new NoopRestProviderRateLimiter();
         }
         return new CacheClientRestProviderRateLimiter(utility, metrics);

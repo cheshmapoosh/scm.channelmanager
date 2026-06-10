@@ -33,5 +33,5 @@ dependencies {
 //    implementation 'io.springfox:springfox-swagger-ui'
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.8.0.202311291450-r'
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
+    implementation project(':scm-observation-starter')
 }
-

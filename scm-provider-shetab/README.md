@@ -606,7 +606,7 @@ shetab-endpoint-lease::<providerCode>::<endpoint>
 
 ## ۱۶. Rate Limit
 
-Rate limit توزیع‌شده از `RateLimiterUtility` در `scm-cache-client` استفاده می‌کند.
+Rate limit توزیع‌شده از `RateLimiterUtility` در `scm-cache-starter` استفاده می‌کند.
 
 ```yaml
 rate-limit:

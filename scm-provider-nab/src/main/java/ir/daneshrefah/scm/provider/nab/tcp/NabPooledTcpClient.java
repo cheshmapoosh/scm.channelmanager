@@ -54,11 +54,7 @@ public class NabPooledTcpClient implements NabTcpClient {
     }
 
     private void logWire(NabResolvedConfig config, String direction, String content) {
-        if (config.wireLogEnabled()) {
-            log.info("NAB wire provider={} direction={} content=[{}]", config.provider(), direction, content);
-        } else {
-            log.debug("NAB wire provider={} direction={} chars={}", config.provider(), direction, content.length());
-        }
+        log.debug("NAB wire provider={} direction={} chars={}", config.provider(), direction, content.length());
     }
 
     private boolean containsIgnoreCase(String value, String token) {

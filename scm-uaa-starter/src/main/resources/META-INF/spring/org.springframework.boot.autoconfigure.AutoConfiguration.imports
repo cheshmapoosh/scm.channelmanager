@@ -1,0 +1,6 @@
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmResourceServerAutoConfiguration
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmMethodSecurityAutoConfiguration
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmSecurityCacheAutoConfiguration
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmLegacyAuthenticationProvidersAutoConfiguration
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmSecurityObservationAutoConfiguration
+ir.daneshrefah.scm.uaa.client.autoconfigure.ScmOwnershipAutoConfiguration

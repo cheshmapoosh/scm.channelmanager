@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -30,6 +30,7 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final GlobalErrorHandler globalErrorHandler;
     private final Map<String, PluginHandler> pluginHandlers;
+    private final CoreObservationTraceSupport observationTraceSupport;
 
     @Override
     public void configure() throws Exception {
@@ -61,19 +62,7 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
                 }
             }
             Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-            TraceUtils traceUtils = TraceUtils.getInstance();
-            if (traceUtils != null) {
-                try {
-                    traceUtils.traceException(exchange, exception);
-                } catch (Exception traceException) {
-                    log.warn("Global error trace failed routeId={} exchangeId={} failureType={} failureMessage={}",
-                            exchange.getFromRouteId(),
-                            exchange.getExchangeId(),
-                            traceException.getClass().getName(),
-                            traceException.getMessage(),
-                            traceException);
-                }
-            }
+            observationTraceSupport.traceException(exchange, exception);
         }).to(Routes.GLOBAL_RESPONSE_HANDLER);
     }
 

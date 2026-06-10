@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
 import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
@@ -15,7 +16,6 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.service.ServiceRouteUriResolver;
 import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -37,6 +37,7 @@ public class GatewayRoutePipelineConfigurer {
     private final ServiceRouteUriResolver serviceRouteUriResolver;
     private final ScmExchangeMdc scmExchangeMdc;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
+    private final CoreObservationTraceSupport observationTraceSupport;
 
     public void configureGatewayRoute(ChannelRouteBuildContext context,
                                       InboundRouteDefinition inboundRoute) {
@@ -73,10 +74,7 @@ public class GatewayRoutePipelineConfigurer {
             exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
             applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
             Map<String, String> fields = scmExchangeMdc.put(exchange);
-            TraceUtils traceUtils = TraceUtils.getInstance();
-            if (traceUtils != null) {
-                traceUtils.traceScmRequest(exchange, service);
-            }
+            observationTraceSupport.traceGatewayRequest(exchange, service);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.GATEWAY_REQUEST_RECEIVED,
                     servicePlan.gatewayChannel().getName(),
@@ -244,20 +242,7 @@ public class GatewayRoutePipelineConfigurer {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     scmExchangeMdc.put(exchange);
-                    TraceUtils traceUtils = TraceUtils.getInstance();
-                    if (traceUtils != null) {
-                        try {
-                            traceUtils.traceException(exchange, exception);
-                        } catch (Exception traceException) {
-                            log.warn("event={} layer=gateway routeId={} exchangeId={} outcome=trace_failed failureType={} failureMessage={}",
-                                    RouteLogEvents.GATEWAY_REQUEST_FAILED,
-                                    exchange.getFromRouteId(),
-                                    exchange.getExchangeId(),
-                                    RouteLogSupport.failureType(traceException),
-                                    RouteLogSupport.failureMessage(traceException),
-                                    traceException);
-                        }
-                    }
+                    observationTraceSupport.traceException(exchange, exception);
                     Map<String, String> fields = scmExchangeMdc.fields(exchange);
                     log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
                             RouteLogEvents.GATEWAY_REQUEST_FAILED,

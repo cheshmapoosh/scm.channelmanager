@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.provider.rest.token;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
-import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockAcquireFailedException;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
@@ -15,6 +14,7 @@ import ir.daneshrefah.scm.provider.rest.exception.RestProviderAuthFault;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
+import ir.daneshrefah.scm.provider.rest.trace.RestProviderTraceSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -46,6 +46,7 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
     private final ObjectProvider<CacheManager> cacheManagerProvider;
     private final ObjectProvider<LockUtility> lockUtilityProvider;
     private final RestProviderMetrics metrics;
+    private final RestProviderTraceSupport traceSupport;
 
     @Override
     public ProviderAuthToken resolveToken(
@@ -603,29 +604,8 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
             RestAuthUrlProviderMessageCustomizerConfig authConfig,
             ProviderMessageCustomizerContext context
     ) {
-        Span span = Span.current();
-        if (span == null || !span.getSpanContext().isValid()) {
-            return;
-        }
-        span.addEvent(eventName);
-        span.setAttribute("scm.provider.name", providerConfig.provider());
-        span.setAttribute("scm.span.level", "provider");
-        span.setAttribute("scm.provider.scheme", providerConfig.scheme());
-        span.setAttribute("scm.provider.uri", providerConfig.scheme() + ":" + providerConfig.provider());
-        span.setAttribute("scm.provider.service_code", serviceCode(context));
-        span.setAttribute("scm.provider.operation_code", operationCode(context));
-        span.setAttribute("scm.provider.channel_code", channelCode(context));
-        span.setAttribute("scm.provider.auth.profile", StringUtils.defaultString(authConfig.cache().getAuthProfile()));
-        if ("provider.auth.cache.hit".equals(eventName)) {
-            span.setAttribute("scm.provider.auth.cache_hit", true);
-        } else if ("provider.auth.cache.miss".equals(eventName)) {
-            span.setAttribute("scm.provider.auth.cache_hit", false);
-        } else if ("provider.auth.lock.acquired".equals(eventName)) {
-            span.setAttribute("scm.provider.auth.lock_acquired", true);
-        } else if ("provider.auth.lock.timeout".equals(eventName)) {
-            span.setAttribute("scm.provider.auth.lock_acquired", false);
-        } else if ("provider.auth.token.refresh".equals(eventName)) {
-            span.setAttribute("scm.provider.auth.token_refreshed", true);
+        if (traceSupport != null) {
+            traceSupport.tokenEvent(eventName, providerConfig, authConfig, context);
         }
     }
 

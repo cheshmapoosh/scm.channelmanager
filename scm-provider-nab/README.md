@@ -137,4 +137,8 @@ The NAB resolver builds the provider instance pipeline once. No customizer is en
 
 ## Observability And Security
 
-Metrics follow the provider metric style and include provider request counters/latency and rate-limit counters. Logs include provider and operation context. Do not log password, account number, PAN, token, PIN, or other sensitive values.
+Observation is produced through `scm-observation-starter`. `scm-provider-nab` does not use `scm-logging-client`.
+
+Metrics follow the Micrometer / Actuator / Prometheus path and do not produce JSONL. Provider observation includes provider request counters, duration metrics, and safe trace attributes for provider code, provider type, operation code, status, duration, and safe response/error codes.
+
+Raw NAB request/response messages, passwords, account numbers, PAN, token, PIN, CVV2, Authorization headers, and other sensitive values must not be logged, traced, audited, or tagged.

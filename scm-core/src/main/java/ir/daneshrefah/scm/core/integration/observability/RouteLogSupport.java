@@ -15,6 +15,7 @@ import java.util.Locale;
 public final class RouteLogSupport {
     public static final String GATEWAY_START_NANOS = "scmGatewayStartNanos";
     public static final String SERVICE_START_NANOS = "scmServiceStartNanos";
+    public static final String OPERATION_START_NANOS = "scmOperationStartNanos";
 
     private static final long NANOS_PER_MILLISECOND = 1_000_000L;
     private static final int MAX_FAILURE_MESSAGE_LENGTH = 300;

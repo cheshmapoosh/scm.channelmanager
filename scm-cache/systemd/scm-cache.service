@@ -1,0 +1,15 @@
+[Unit]
+Description=SCM Cache
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=scm-cache
+Group=scm-cache
+ExecStart=/usr/bin/java -jar /opt/scm-cache/scm-cache.jar
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

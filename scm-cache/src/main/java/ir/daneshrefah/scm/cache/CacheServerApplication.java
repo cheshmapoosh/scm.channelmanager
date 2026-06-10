@@ -1,28 +1,30 @@
 package ir.daneshrefah.scm.cache;
 
-import ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration;
+import ir.daneshrefah.scm.cache.observation.ScmCacheInitLogging;
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Description of the class or purpose of the file.
+ * Starts the SCM Cache Hazelcast member as a non-web infrastructure process.
  *
  * @author reza jamshidi
  * @version 1.0
  * @since 2023-11-18
  */
 @SpringBootApplication
-@EnableCaching
 @EnableScheduling
-@ComponentScan(basePackages = {"ir.daneshrefah.scm.cache"},
-        excludeFilters={@ComponentScan.Filter(type= FilterType.ASSIGNABLE_TYPE, value= CacheClientAutoConfiguration.class)})
 public class CacheServerApplication {
+
     public static void main(String[] args) {
-        SpringApplication.run(CacheServerApplication.class, args);
+        SpringApplication application =
+                new SpringApplication(CacheServerApplication.class);
+
+        application.setWebApplicationType(WebApplicationType.NONE);
+        application.setBannerMode(Banner.Mode.OFF);
+        application.addInitializers(new ScmCacheInitLogging());
+        application.run(args);
     }
 }
-

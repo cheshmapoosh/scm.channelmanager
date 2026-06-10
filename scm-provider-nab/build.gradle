@@ -5,8 +5,9 @@ plugins {
 dependencies {
     api 'org.apache.camel:camel-core'
 
-    implementation project(':scm-cache-client')
+    implementation project(':scm-cache-starter')
     implementation project(':scm-common')
+    implementation project(':scm-observation-starter')
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.apache.commons:commons-lang3'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

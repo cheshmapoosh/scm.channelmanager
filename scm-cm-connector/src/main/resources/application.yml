@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: scm-cm-connector
+  profiles:
+    active: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

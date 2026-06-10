@@ -3,6 +3,16 @@ spring:
     active: default
   application:
     name: ${SCM_APPLICATION_NAME}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
 scm:
   cache:
     client:

@@ -50,16 +50,11 @@ scm:
   cache:
     client:
       distributed: true
-      security:
-        user-cache:
-          enabled: true
-          cache-name: user_cache
-          key-expression: "#user.username + '::' + #user.user.terminalCode"
       caches:
         user_cache:
-          type: remote
+          type: near
         session_cache:
-          type: remote
+          type: near
         "jwt:jti":
           type: remote
         cache_otp:

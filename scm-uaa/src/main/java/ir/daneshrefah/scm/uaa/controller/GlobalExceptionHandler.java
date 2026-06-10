@@ -1,17 +1,17 @@
 package ir.daneshrefah.scm.uaa.controller;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
 import ir.daneshrefah.scm.common.constant.AccessibleLocale;
-import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.error.management.ExceptionResolverHelper;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededException;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
-import ir.daneshrefah.scm.logging.utils.SpanUtil;
+import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,9 @@ import java.util.Locale;
 public class
 GlobalExceptionHandler {
 
-    private final Tracer tracer;
+    private static final String X_CORRELATION_ID = "X-Correlation-Id";
+
+    private final ScmObservation observation;
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<?> handleRateLimitExceeded(HttpServletRequest request, RateLimitExceededException exception) {
@@ -79,22 +81,50 @@ GlobalExceptionHandler {
     }
 
     private void handleSpanException(HttpServletRequest request, Exception exception, HttpStatus responseStatus) {
-        Span span = null;
         try {
-            span = (Span) request.getAttribute("otel.span");
-            if (span == null) {
-                span = tracer.spanBuilder(request.getServletPath()).setSpanKind(SpanKind.SERVER).startSpan();
-                SpanUtil.setRequestSpanAttributes(request, span);
-                SpanUtil.setException(exception,span);
-                span.setAttribute(LogAttribute.HTTP_STATUS_CODE.getAttributeName(), responseStatus.value());
+            ObservationScope scope = observation.trace()
+                    .span("uaa.exception")
+                    .spanKind("server")
+                    .action("uaa.exception")
+                    .outcome("failure")
+                    .correlationId(correlationId(request))
+                    .attribute(ScmHttpAttributes.METHOD, request.getMethod())
+                    .attribute(ScmHttpAttributes.URL_PATH, request.getServletPath())
+                    .attribute(ScmHttpAttributes.STATUS_CODE, responseStatus.value())
+                    .attribute(ScmErrorAttributes.TYPE, exception.getClass().getName())
+                    .attribute(ScmErrorAttributes.MESSAGE, safeMessage(exception))
+                    .start();
+            try {
+                scope.failure();
+            } finally {
+                scope.close();
             }
         } catch (Exception e) {
-            log.error("Exception occurred while handling global exception span", e);
-        } finally {
-            if (span != null) {
-                span.end();
-            }
+            log.error("Exception occurred while handling global exception observation", e);
         }
+    }
+
+    private String correlationId(HttpServletRequest request) {
+        String correlationId = request.getHeader(X_CORRELATION_ID);
+        if (StringUtils.isEmpty(correlationId)) {
+            correlationId = request.getHeader(Constants.SCM_PARAMETER_CORRELATION_ID);
+        }
+        if (StringUtils.isEmpty(correlationId)) {
+            correlationId = request.getHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID);
+        }
+        return correlationId;
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {

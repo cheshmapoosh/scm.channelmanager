@@ -22,7 +22,7 @@ class NabConfigResolverTest {
         NabResolvedConfig config = resolver(registry).resolve("nab-atps", null);
 
         assertEquals("nab-atps", config.provider());
-        assertEquals("nab", config.providerType());
+        assertEquals("scm-nab", config.scheme());
         assertEquals("ATPS", config.protocol());
         assertEquals("127.0.0.1:9999", config.endpoint());
         assertEquals(2, config.headerFieldsByProtocol().get("ATPS").size());
@@ -39,9 +39,9 @@ class NabConfigResolverTest {
     }
 
     @Test
-    void rejectsNonNabProviderType() {
+    void rejectsNonNabProviderScheme() {
         Map<String, Object> config = baseConfig();
-        config.put("type", "rest");
+        config.put("scheme", "rest-provider");
         ProviderRegistryProperties registry = registry("nab-atps", config);
 
         assertThrows(IllegalArgumentException.class, () -> resolver(registry).resolve("nab-atps", null));
@@ -55,7 +55,7 @@ class NabConfigResolverTest {
         config.put("service-codes-by-terminal-type", Map.of("ATM", "01"));
         ProviderRegistryProperties registry = registry("core", config);
 
-        NabResolvedConfig resolved = resolver(registry).resolve("nab:core", null);
+        NabResolvedConfig resolved = resolver(registry).resolve("scm-nab:core", null);
 
         assertEquals("core", resolved.provider());
         assertEquals(1111, resolved.connectTimeoutMs());
@@ -119,7 +119,7 @@ class NabConfigResolverTest {
 
     private Map<String, Object> baseConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
-        config.put("type", "nab");
+        config.put("scheme", "scm-nab");
         config.put("protocol", "ATPS");
         config.put("endpoint", "127.0.0.1:9999");
         config.put("user-id", "999998");

@@ -1,63 +1,61 @@
 package ir.daneshrefah.scm.provider.shetab.trace;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.ScmObservation;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
-import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.jpos.iso.ISOMsg;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
-@RequiredArgsConstructor
 public class ShetabTraceSupport {
-    private final Tracer tracer;
+    private final ObjectProvider<ScmObservation> observationProvider;
 
-    public <T> T clientSpan(Exchange exchange, ShetabResolvedConfig config, ISOMsg request, Supplier<T> action) {
-        Span parent = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        Span span = tracer.spanBuilder(config.scheme() + " " + config.provider())
-                .setSpanKind(SpanKind.CLIENT)
-                .setParent(parent != null ? Context.current().with(parent) : Context.current())
-                .startSpan();
-
-        try (Scope ignored = span.makeCurrent()) {
-            putMdc(span);
-            span.setAttribute("scm.provider.name", config.provider());
-            span.setAttribute("scm.span.level", "provider");
-            span.setAttribute("scm.provider.scheme", config.scheme());
-            span.setAttribute("scm.provider.uri", config.scheme() + ":" + config.provider());
-            String primaryEndpoint = primaryEndpoint(config);
-            if (primaryEndpoint != null) {
-                span.setAttribute("shetab.endpoint.primary", primaryEndpoint);
-                EndpointParts endpointParts = parseEndpoint(primaryEndpoint);
-                if (endpointParts != null) {
-                    span.setAttribute("net.peer.name", endpointParts.host());
-                    span.setAttribute("net.peer.port", endpointParts.port());
-                }
-            }
-            span.setAttribute("shetab.iso.mti", safeMti(request));
-            span.setAttribute("shetab.iso.stan", safeField(request, 11));
-            span.setAttribute("shetab.iso.rrn", safeField(request, 37));
-            return action.get();
-        } catch (RuntimeException e) {
-            span.recordException(e);
-            throw e;
-        } finally {
-            span.end();
-            MDC.remove("traceId");
-            MDC.remove("spanId");
-        }
+    public ShetabTraceSupport(ObjectProvider<ScmObservation> observationProvider) {
+        this.observationProvider = observationProvider;
     }
 
+    public <T> T clientSpan(Exchange exchange, ShetabResolvedConfig config, ISOMsg request, Supplier<T> action) {
+        ScmObservation observation = observationProvider.getIfAvailable();
+        if (observation == null) {
+            return action.get();
+        }
+
+        String primaryEndpoint = primaryEndpoint(config);
+        EndpointParts endpointParts = primaryEndpoint == null ? null : parseEndpoint(primaryEndpoint);
+
+        ObservationScope scope = observation.trace()
+                .span("provider.shetab.call")
+                .spanKind("client")
+                .action("provider.shetab.call")
+                .attribute("scm.provider.name", value(config == null ? null : config.provider()))
+                .attribute("scm.provider.scheme", value(config == null ? null : config.scheme()))
+                .attribute("scm.provider.uri", providerUri(config))
+                .attribute("shetab.endpoint.primary", primaryEndpoint)
+                .attribute("net.peer.name", endpointParts == null ? null : endpointParts.host())
+                .attribute("net.peer.port", endpointParts == null ? null : endpointParts.port())
+                .attribute("shetab.iso.mti", safeMti(request))
+                .attribute("shetab.iso.stan", safeField(request, 11))
+                .attribute("shetab.iso.rrn", safeField(request, 37))
+                .start();
+
+        try {
+            T result = action.get();
+            scope.success();
+            return result;
+        } catch (RuntimeException e) {
+            scope.failure(e);
+            throw e;
+        } finally {
+            scope.close();
+        }
+    }
 
     public void customizerSpan(
             Exchange exchange,
@@ -66,58 +64,54 @@ public class ShetabTraceSupport {
             String phase,
             Runnable action
     ) {
-        Span parent = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        Span span = tracer.spanBuilder("provider customizer " + value(customizerType))
-                .setSpanKind(SpanKind.INTERNAL)
-                .setParent(parent != null ? Context.current().with(parent) : Context.current())
-                .startSpan();
-
-        try (Scope ignored = span.makeCurrent()) {
-            putMdc(span);
-            span.setAttribute("scm.provider.name", value(context.providerCode()));
-            span.setAttribute("scm.span.level", "provider");
-            span.setAttribute("scm.provider.scheme", value(context.scheme()));
-            span.setAttribute("scm.provider.uri", value(context.providerUri()));
-            span.setAttribute("scm.provider.service_code", value(context.serviceCode()));
-            span.setAttribute("scm.provider.operation_code", value(context.operationCode()));
-            span.setAttribute("scm.provider.channel_code", value(context.channelCode()));
-            span.setAttribute("scm.provider.customizer.type", value(customizerType));
-            span.setAttribute("scm.provider.customizer.phase", value(phase));
+        ScmObservation observation = observationProvider.getIfAvailable();
+        if (observation == null) {
             action.run();
+            return;
+        }
+
+        ObservationScope scope = observation.trace()
+                .span("provider.customizer.execute")
+                .spanKind("internal")
+                .action("provider.customizer.execute")
+                .attribute("scm.provider.name", value(context == null ? null : context.providerCode()))
+                .attribute("scm.provider.scheme", value(context == null ? null : context.scheme()))
+                .attribute("scm.provider.uri", value(context == null ? null : context.providerUri()))
+                .attribute("scm.provider.service_code", value(context == null ? null : context.serviceCode()))
+                .attribute("scm.provider.operation_code", value(context == null ? null : context.operationCode()))
+                .attribute("scm.provider.channel_code", value(context == null ? null : context.channelCode()))
+                .attribute("scm.provider.customizer.type", value(customizerType))
+                .attribute("scm.provider.customizer.phase", value(phase))
+                .start();
+
+        try {
+            action.run();
+            scope.success();
         } catch (RuntimeException e) {
-            span.recordException(e);
+            scope.failure(e);
             throw e;
         } finally {
-            span.end();
-            MDC.remove("traceId");
-            MDC.remove("spanId");
+            scope.close();
         }
     }
 
     public void enrichLogMdc(Exchange exchange) {
-        Span span = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        if (span == null) {
-            span = Span.current();
-        }
-        putMdc(span);
+        // Trace context is managed by scm-observation-starter/Micrometer.
+        // Keep this method as a compatibility hook for existing producer code.
     }
 
     public Map<String, String> currentTraceIds() {
-        Span span = Span.current();
-        if (span.getSpanContext().isValid()) {
-            return Map.of(
-                    "traceId", span.getSpanContext().getTraceId(),
-                    "spanId", span.getSpanContext().getSpanId()
-            );
-        }
-        return Map.of("traceId", "", "spanId", "");
+        return Map.of(
+                "traceId", value(MDC.get("traceId")),
+                "spanId", value(MDC.get("spanId"))
+        );
     }
 
-    private void putMdc(Span span) {
-        if (span != null && span.getSpanContext().isValid()) {
-            MDC.put("traceId", span.getSpanContext().getTraceId());
-            MDC.put("spanId", span.getSpanContext().getSpanId());
+    private String providerUri(ShetabResolvedConfig config) {
+        if (config == null) {
+            return "";
         }
+        return value(config.scheme()) + ":" + value(config.provider());
     }
 
     private String value(String value) {
@@ -141,7 +135,7 @@ public class ShetabTraceSupport {
     }
 
     private String primaryEndpoint(ShetabResolvedConfig config) {
-        if (config.endpoints() == null || config.endpoints().isEmpty()) {
+        if (config == null || config.endpoints() == null || config.endpoints().isEmpty()) {
             return null;
         }
         String endpoint = config.endpoints().get(0);

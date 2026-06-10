@@ -5,6 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmProviderAttributes;
+import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
 import ir.daneshrefah.scm.provider.nab.application.NabProviderService;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
 import ir.daneshrefah.scm.provider.nab.config.NabEndpointOverrides;
@@ -21,12 +27,18 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class NabProducer extends DefaultProducer {
+    private static final String PROVIDER_TYPE = "tcp";
+    private static final String PROVIDER_NAME = "NAB";
+    private static final String OUTCOME_SUCCESS = "success";
+    private static final String OUTCOME_FAILURE = "failure";
+
     private final NabEndpoint endpoint;
     private NabConfigResolver configResolver;
     private NabProviderService providerService;
     private NabRateLimiter rateLimiter;
     private NabProviderMetrics metrics;
     private ObjectMapper objectMapper;
+    private ScmObservation observation;
 
     public NabProducer(NabEndpoint endpoint) {
         super(endpoint);
@@ -41,6 +53,7 @@ public class NabProducer extends DefaultProducer {
         rateLimiter = bean(NabRateLimiter.class);
         metrics = bean(NabProviderMetrics.class);
         objectMapper = bean(ObjectMapper.class);
+        observation = bean(ScmObservation.class);
     }
 
     @Override
@@ -57,20 +70,18 @@ public class NabProducer extends DefaultProducer {
         String operation = operationName(input);
         NabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         long startedAt = System.nanoTime();
+        ObservationScope observationScope = startObservation(exchange, config, input, operation);
 
         log.info("NAB provider call started provider={}", config.provider());
-        if (log.isDebugEnabled()) {
-            log.debug("NAB provider input provider={} body={}", config.provider(), input);
-        }
         providerMetrics.submitted();
         try {
             rateLimiter.acquire(config, operation);
             JsonNode output = providerService.execute(input, config);
-            if (log.isDebugEnabled()) {
-                log.debug("NAB provider output provider={} body={}", config.provider(), output);
-            }
             exchange.getMessage().setBody(output);
             providerMetrics.succeeded();
+            long durationMs = elapsedMillis(startedAt);
+            markObservationSuccess(observationScope, config, output, durationMs);
+            recordObservationMetrics(config, operationCode(input), OUTCOME_SUCCESS, durationMs, null);
             log.info("NAB provider call finished provider={} operation={}", config.provider(), operation);
         } catch (RuntimeException e) {
             if (isTimedOut(e)) {
@@ -78,11 +89,80 @@ public class NabProducer extends DefaultProducer {
             } else {
                 providerMetrics.failed();
             }
+            long durationMs = elapsedMillis(startedAt);
+            markObservationFailure(observationScope, config, e, durationMs);
+            recordObservationMetrics(config, operationCode(input), OUTCOME_FAILURE, durationMs, errorCode(e));
             log.error("NAB provider call failed provider={} operation={}", config.provider(), operation, e);
             throw e;
         } finally {
-            providerMetrics.addLatency(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+            providerMetrics.addLatency(elapsedMillis(startedAt));
+            observationScope.close();
         }
+    }
+
+    private ObservationScope startObservation(Exchange exchange, NabResolvedConfig config, JsonNode input, String operation) {
+        var traceBuilder = observation.trace()
+                .span("operation.call")
+                .spanKind("client")
+                .action("operation.call")
+                .attribute(ScmProviderAttributes.CODE, config.provider())
+                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
+                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
+                .attribute(ScmOperationAttributes.CODE, operationCode(input))
+                .attribute(ScmOperationAttributes.NAME, operation);
+        String correlationId = correlationId(exchange);
+        if (StringUtils.isNotBlank(correlationId)) {
+            traceBuilder.correlationId(correlationId);
+        }
+        return traceBuilder.start();
+    }
+
+    private void markObservationSuccess(ObservationScope scope, NabResolvedConfig config, JsonNode output, long durationMs) {
+        scope.attribute(ScmProviderAttributes.CODE, config.provider())
+                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
+                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
+                .attribute(ScmProviderAttributes.STATUS, OUTCOME_SUCCESS)
+                .attribute(ScmProviderAttributes.DURATION_MS, durationMs)
+                .attribute(ScmProviderAttributes.RESPONSE_CODE, responseCode(output))
+                .success();
+    }
+
+    private void markObservationFailure(ObservationScope scope, NabResolvedConfig config, RuntimeException exception, long durationMs) {
+        scope.attribute(ScmProviderAttributes.CODE, config.provider())
+                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
+                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
+                .attribute(ScmProviderAttributes.STATUS, OUTCOME_FAILURE)
+                .attribute(ScmProviderAttributes.DURATION_MS, durationMs)
+                .attribute(ScmProviderAttributes.ERROR_CODE, errorCode(exception))
+                .attribute(ScmProviderAttributes.ERROR_MESSAGE, safeMessage(exception))
+                .failure(exception)
+                .attribute("error.message", safeMessage(exception));
+    }
+
+    private void recordObservationMetrics(
+            NabResolvedConfig config,
+            String operationCode,
+            String outcome,
+            long durationMs,
+            String errorCode
+    ) {
+        observation.metric()
+                .counter(ScmMetricNames.PROVIDER_CALLS)
+                .tag(ScmMetricAttributes.PROVIDER_CODE, config.provider())
+                .tag(ScmMetricAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
+                .tag(ScmMetricAttributes.OPERATION_CODE, operationCode)
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .tag(ScmMetricAttributes.ERROR_CODE, errorCode)
+                .increment();
+
+        observation.metric()
+                .timer(ScmMetricNames.PROVIDER_DURATION)
+                .tag(ScmMetricAttributes.PROVIDER_CODE, config.provider())
+                .tag(ScmMetricAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
+                .tag(ScmMetricAttributes.OPERATION_CODE, operationCode)
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .tag(ScmMetricAttributes.ERROR_CODE, errorCode)
+                .record(durationMs, TimeUnit.MILLISECONDS);
     }
 
     private String resolveProvider(Exchange exchange) {
@@ -154,10 +234,12 @@ public class NabProducer extends DefaultProducer {
         if (exception == null || exception.getMessage() == null) {
             return null;
         }
-        return exception.getMessage()
+        String message = exception.getMessage()
                 .replace('\r', ' ')
                 .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|pin|cvv2?|pan|account|payload|message)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     private NabEndpointOverrides overrides(Exchange exchange) {
@@ -179,6 +261,32 @@ public class NabProducer extends DefaultProducer {
             return "default";
         }
         return protocol + ":" + code;
+    }
+
+    private String operationCode(JsonNode input) {
+        if (input == null || !input.isObject()) {
+            return "default";
+        }
+        return StringUtils.defaultIfBlank(StringUtils.trimToNull(input.path("command").path("code").asText()), "default");
+    }
+
+    private String responseCode(JsonNode output) {
+        if (output == null) {
+            return null;
+        }
+        JsonNode status = output.path("status");
+        if (!status.isObject()) {
+            return null;
+        }
+        String code = status.path("code").asText(null);
+        return StringUtils.trimToNull(code);
+    }
+
+    private String errorCode(Throwable throwable) {
+        if (isTimedOut(throwable)) {
+            return "timeout";
+        }
+        return throwable == null ? null : throwable.getClass().getSimpleName();
     }
 
     private String resolveOperationName(Exchange exchange) {
@@ -230,6 +338,34 @@ public class NabProducer extends DefaultProducer {
             return gatewayName;
         }
         return StringUtils.defaultString(exchange.getMessage().getHeader("gatewayName", String.class));
+    }
+
+    private String correlationId(Exchange exchange) {
+        String value = exchange.getProperty(Message.CORRELATION_ID, String.class);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        value = exchange.getMessage().getHeader(Message.CORRELATION_ID, String.class);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        value = exchange.getMessage().getHeader("X-Correlation-Id", String.class);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        value = exchange.getMessage().getHeader("X-SCM-Correlation-ID", String.class);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        value = exchange.getMessage().getHeader("X-SCM-Client-Correlation-ID", String.class);
+        if (StringUtils.isNotBlank(value)) {
+            return value;
+        }
+        return exchange.getMessage().getHeader("correlationId", String.class);
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 
     private <T> T first(T value, T fallback) {

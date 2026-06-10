@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.operation.handler;
 
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import org.apache.camel.model.RouteDefinition;
 
 
@@ -10,21 +10,21 @@ public interface OperationTypeHandler {
     OperationType getOperationType();
     void config(RouteDefinition route, Operation operation);
 
-    default void internalConfig(RouteDefinition route, Operation operation){
-        logBeforeRoute(route, operation);
+    default void internalConfig(RouteDefinition route, Operation operation, CoreObservationTraceSupport observationTraceSupport){
+        startOperationCall(route, operation, observationTraceSupport);
         config(route, operation);
-        logAfterRoute(route, operation);
+        finishOperationCall(route, operation, observationTraceSupport);
     }
 
-    private void logBeforeRoute(RouteDefinition route, Operation operation){
+    private void startOperationCall(RouteDefinition route, Operation operation, CoreObservationTraceSupport observationTraceSupport){
         route.process(exchange -> {
-            TraceUtils.getInstance().traceBeforeOperation(exchange,operation);
+            observationTraceSupport.startOperationCall(exchange, operation);
         });
     }
 
-    private void logAfterRoute(RouteDefinition route, Operation operation){
+    private void finishOperationCall(RouteDefinition route, Operation operation, CoreObservationTraceSupport observationTraceSupport){
         route.process(exchange -> {
-           TraceUtils.getInstance().traceAfterOperation(exchange,operation);
+           observationTraceSupport.finishOperationCallSuccess(exchange, operation);
         });
     }
 }

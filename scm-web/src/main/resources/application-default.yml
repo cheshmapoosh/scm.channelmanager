@@ -4,6 +4,17 @@ pod:
 
 scm:
   app-name: domain.card
+  observation:
+    enabled: true
+    base-dir: ./build/obs
+    platform: scm
+    app-name: ${SCM_OBSERVATION_APP_NAME:scm-web}
+    app-label: ${SCM_OBSERVATION_APP_LABEL:local}
+    instance-id: ${HOSTNAME:local}
+    channel-code: ${SCM_CHANNEL_CODE:default}
+    gateway-name: ${SCM_GATEWAY_NAME:default}
+    file-name-platform-token: scm
+    time-zone: UTC
   channels: MB4TEST
   runtime:
     target:
@@ -224,6 +235,13 @@ scm:
       file-size: 1MB  #Max size of each log file
       keep-log-history: 30 #Keep up to 30 days of log files
   security:
+    cache:
+      session:
+        enabled: true
+        cache-name: session_cache
+      user:
+        enabled: true
+        cache-name: user_cache
     client-id: scm
     client-secret:
     distributed: true
@@ -233,6 +251,10 @@ scm:
     client:
       distributed: true
       caches:
+        user_cache:
+          type: near
+        session_cache:
+          type: near
         bank:
           type: local
         userCards:

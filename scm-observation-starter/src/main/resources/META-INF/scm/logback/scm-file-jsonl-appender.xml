@@ -1,0 +1,60 @@
+<included>
+    <if condition='property("LOG_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_FILE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_FILE_FORMAT").equalsIgnoreCase("jsonl")'>
+        <then>
+            <appender name="SCM_FILE_JSONL"
+                      class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${APPLICATION_LOG_FILE}</file>
+                <append>true</append>
+                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_TRACE</marker>
+                    <inverse>true</inverse>
+                </filter>
+                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_AUDIT</marker>
+                    <inverse>true</inverse>
+                </filter>
+                <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                    <fileNamePattern>${APPLICATION_ARCHIVE_PATTERN}</fileNamePattern>
+                    <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+                    <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+                    <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+                    <cleanHistoryOnStart>${LOG_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+                </rollingPolicy>
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <timestamp>
+                            <fieldName>@timestamp</fieldName>
+                        </timestamp>
+                        <logLevel>
+                            <fieldName>log.level</fieldName>
+                        </logLevel>
+                        <loggerName>
+                            <fieldName>log.logger</fieldName>
+                        </loggerName>
+                        <threadName>
+                            <fieldName>process.thread.name</fieldName>
+                        </threadName>
+                        <message/>
+                        <provider class="ir.daneshrefah.scm.observation.logging.ScmRegisteredArgumentsJsonProvider"/>
+                        <provider class="ir.daneshrefah.scm.observation.logging.ScmMdcJsonProvider"/>
+                        <throwableClassName>
+                            <fieldName>error.type</fieldName>
+                        </throwableClassName>
+                        <throwableMessage>
+                            <fieldName>error.message</fieldName>
+                        </throwableMessage>
+                        <stackTrace>
+                            <fieldName>error.stack_trace</fieldName>
+                        </stackTrace>
+                    </providers>
+                </encoder>
+            </appender>
+        </then>
+        <else>
+            <appender name="SCM_FILE_JSONL"
+                      class="ch.qos.logback.core.helpers.NOPAppender"/>
+        </else>
+    </if>
+</included>

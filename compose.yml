@@ -162,4 +162,3 @@ services:
       - "--scm.swagger.target-host=10.10.4.125"
 
 
-

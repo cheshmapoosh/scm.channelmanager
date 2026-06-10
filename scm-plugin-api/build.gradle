@@ -19,9 +19,9 @@ dependencies {
     implementation 'org.reflections:reflections:0.10.2'
 //    api 'ir.daneshrefah.scm.uaa:uaa-client:0.0.1-SNAPSHOT'
     api project(':scm-common')
+    api project(':scm-common-log')
     api project(':scm-utils')
-    api project(':scm-uaa-client')
-    implementation project(':scm-logging-client')
+    api project(':scm-uaa-starter')
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.apache.commons:commons-collections4'

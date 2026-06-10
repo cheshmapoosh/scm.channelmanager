@@ -94,7 +94,7 @@ class NabActiveAccountsInqRealIntegrationTest {
 
     private Map<String, Object> providerConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
-        config.put("type", "nab");
+        config.put("scheme", "scm-nab");
         config.put("protocol", "ATPI");
         config.put("endpoint", endpoint());
         config.put("charset", "windows-1256");
