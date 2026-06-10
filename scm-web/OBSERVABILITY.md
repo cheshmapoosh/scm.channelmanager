@@ -1,53 +1,109 @@
 # Observability - scm-web
 
-## هدف
+## Scope
 
-`scm-web` نقطه اصلی Gateway runtime است و باید Observation سطح Channel، Service، Operation و Provider را فعال کند.
+`scm-web` is the gateway runtime. The first runtime rollout is limited to gateway entry lifecycle observation.
+
+The design is protocol-neutral in `scm-observation-starter`:
+
+```text
+GatewayObservationLifecycle
+  -> ScmObservation.trace()
+  -> ScmObservation.log()
+  -> ScmObservation.metric()
+```
+
+HTTP is only the first adapter in this module:
+
+```text
+HTTP request -> HttpGatewayObservationFilter -> GatewayObservationLifecycle
+```
+
+Future adapters should reuse the same lifecycle:
+
+```text
+SOAP    -> future SoapGatewayObservationAdapter
+MQ/JMS  -> future MqGatewayObservationAdapter
+TCP/ISO -> future TcpGatewayObservationAdapter
+```
+
+Not implemented in this rollout:
+
+```text
+service.execute
+operation.call
+provider attributes
+plugin observation
+audit rollout
+legacy table projection
+SOAP adapter
+MQ/JMS adapter
+TCP/ISO adapter
+```
+
+## Correlation
+
+`HttpGatewayObservationFilter` uses `X-Correlation-Id` as the official HTTP correlation header.
+
+Rules:
+
+- If the incoming header is present and not blank, the same value is used.
+- Otherwise a new correlation id is generated.
+- The response always includes `X-Correlation-Id`.
+- Request attributes include `scm.gateway.observation.context`, `scm.correlation_id`, `scm.trace.id`, `scm.gateway.span.id`, `scm.gateway.name`, and `scm.channel.code`.
 
 ## Trace
 
-Spanهای پیشنهادی:
+The gateway entry span is:
 
 ```text
-scm.channel.receive
-scm.service.execute
-scm.operation.execute
-scm.provider.call
+gateway.receive
 ```
+
+Common protocol-neutral attributes include:
+
+```text
+scm.protocol
+scm.request.name
+scm.message.id
+client.address
+```
+
+The HTTP adapter adds safe HTTP metadata only:
+
+```text
+http.method
+url.path
+http.query.present
+http.status_code
+client.ip
+```
+
+Request body, response body, Authorization, JWT, cookies, and raw query string are not captured.
 
 ## Log
 
-خروجی Log باید JSON line باشد و توسط Filebeat خوانده شود.
-
-مسیر پیشنهادی:
+Each gateway request emits one structured observation log event through the lifecycle:
 
 ```text
-/log/scm/scm-web/application.ndjson
+request.completed -> success
+request.failed    -> failure
 ```
 
-## Audit
-
-رویدادهای پیشنهادی:
-
-```text
-BUSINESS_OPERATION_EXECUTED
-BUSINESS_OPERATION_DENIED
-PROVIDER_SELECTED
-ROUTE_CHANGED
-```
+The log event includes correlation id, trace id, gateway span id, gateway/channel, protocol, request name, safe adapter attributes, and duration.
 
 ## Metric
 
-Metric فقط از Actuator/Micrometer:
+Gateway metrics are emitted through `ScmObservation.metric()` and Micrometer when a `MeterRegistry` is available.
+
+Current metric names:
 
 ```text
-/actuator/prometheus
+scm.gateway.requests
+scm.request.duration
+scm.faults
 ```
 
-Metricهای پیشنهادی:
+Metric tags are low-cardinality only: app, profile, label, platform, channel, gateway, protocol, request name, outcome, and error code when available.
 
-```text
-scm_gateway_requests_total
-scm_gateway_request_duration_seconds
-scm_gateway_errors_total
-```
+Metrics do not write JSONL files and do not use `scm.target.index`.

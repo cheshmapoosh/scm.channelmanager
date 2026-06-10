@@ -14,7 +14,7 @@ class ProviderConfigurationBinderNabTest {
     @Test
     void nabProviderInstanceBindingPreservesMapKeysAndNestedHeaderFields() {
         NabProviderInstanceProperties config = ProviderConfigurationBinder.bind(Map.of(
-                "type", "nab",
+                "scheme", "scm-nab",
                 "protocol", "ATPI",
                 "endpoint", "10.10.10.10:3080",
                 "user-id", "999998",

@@ -42,7 +42,7 @@ public class NabProviderAutoConfiguration {
     public NabRateLimiter nabRateLimiter(ObjectProvider<RateLimiterUtility> rateLimiterUtility, NabProviderMetrics metrics) {
         RateLimiterUtility utility = rateLimiterUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("RateLimiterUtility not found; NAB rate limiter falls back to noop. Runtime deployments should enable scm-cache-client rate-limit.");
+            log.warn("RateLimiterUtility not found; NAB rate limiter falls back to noop. Runtime deployments should enable scm-cache-starter rate-limit.");
             return new NoopNabRateLimiter();
         }
         return new CacheClientNabRateLimiter(utility, metrics);

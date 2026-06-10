@@ -10,7 +10,7 @@ dependencies {
     compileOnly project(':scm-common')
     compileOnly project(':scm-common-data')
     compileOnly project(':scm-common-error')
-    compileOnly project(':scm-cache-client')
+    compileOnly project(':scm-cache-starter')
     compileOnly project(':scm-plugin-api')
     compileOnly project(':scm-otp-client')
     implementation 'org.projectlombok:lombok'

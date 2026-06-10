@@ -1,0 +1,51 @@
+<included>
+    <if condition='property("LOG_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_CONSOLE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_CONSOLE_FORMAT").equalsIgnoreCase("jsonl")'>
+        <then>
+            <appender name="SCM_CONSOLE_JSONL"
+                      class="ch.qos.logback.core.ConsoleAppender">
+                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_TRACE</marker>
+                    <inverse>true</inverse>
+                </filter>
+                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_AUDIT</marker>
+                    <inverse>true</inverse>
+                </filter>
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <timestamp>
+                            <fieldName>@timestamp</fieldName>
+                        </timestamp>
+                        <logLevel>
+                            <fieldName>log.level</fieldName>
+                        </logLevel>
+                        <loggerName>
+                            <fieldName>log.logger</fieldName>
+                        </loggerName>
+                        <threadName>
+                            <fieldName>process.thread.name</fieldName>
+                        </threadName>
+                        <message/>
+                        <provider class="ir.daneshrefah.scm.observation.logging.ScmRegisteredArgumentsJsonProvider"/>
+                        <provider class="ir.daneshrefah.scm.observation.logging.ScmMdcJsonProvider"/>
+                        <throwableClassName>
+                            <fieldName>error.type</fieldName>
+                        </throwableClassName>
+                        <throwableMessage>
+                            <fieldName>error.message</fieldName>
+                        </throwableMessage>
+                        <stackTrace>
+                            <fieldName>error.stack_trace</fieldName>
+                        </stackTrace>
+                    </providers>
+                </encoder>
+            </appender>
+        </then>
+        <else>
+            <appender name="SCM_CONSOLE_JSONL"
+                      class="ch.qos.logback.core.helpers.NOPAppender"/>
+        </else>
+    </if>
+</included>

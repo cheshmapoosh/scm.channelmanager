@@ -34,16 +34,19 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
     implementation project(':scm-gateway')
-    implementation project(':scm-docs-client')
+    implementation project(':scm-observation-starter')
+    implementation project(':scm-docs-starter')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
-    implementation project(':scm-cache-client')
+    implementation project(':scm-cache-starter')
     implementation project(':scm-common-log')
     implementation project(':scm-common-data')
     implementation project(':scm-provider-shetab')
     implementation project(':scm-provider-rest')
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     implementation project(':scm-provider-nab')
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.apache.camel.springboot:camel-spring-security-starter'

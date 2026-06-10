@@ -1,0 +1,37 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+    id 'java'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+bootJar {
+    enabled = true
+    version = parent.version
+}
+
+tasks.named("bootJar") {
+    mainClass = 'ir.daneshrefah.scm.cmconnector.ScmCmConnectorApplication'
+    archiveClassifier = ''
+}
+
+dependencies {
+    implementation project(':scm-uaa-starter')
+    implementation project(':scm-cache-starter')
+    implementation project(':scm-observation-starter')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    runtimeOnly 'org.codehaus.janino:janino'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+}

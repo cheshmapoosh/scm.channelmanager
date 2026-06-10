@@ -1,0 +1,38 @@
+<included>
+    <springProperty scope="context" name="LOG_ENABLED"
+                    source="scm.observation.log.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="LOG_CONSOLE_ENABLED"
+                    source="scm.observation.log.console.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="LOG_CONSOLE_FORMAT"
+                    source="scm.observation.log.console.format" defaultValue="simple"/>
+    <springProperty scope="context" name="LOG_FILE_ENABLED"
+                    source="scm.observation.log.file.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="LOG_FILE_FORMAT"
+                    source="scm.observation.log.file.format" defaultValue="jsonl"/>
+    <springProperty scope="context" name="LOG_FILE_DIRECTORY"
+                    source="scm.observation.log.file.directory" defaultValue="${user.home}/scm/logs/app"/>
+    <springProperty scope="context" name="LOG_FILE_NAME"
+                    source="scm.observation.log.file.file-name" defaultValue="${spring.application.name}.jsonl"/>
+    <springProperty scope="context" name="LOG_ARCHIVE_DIRECTORY"
+                    source="scm.observation.log.file.archive-directory" defaultValue="${LOG_FILE_DIRECTORY}/archive"/>
+    <springProperty scope="context" name="LOG_MAX_FILE_SIZE"
+                    source="scm.observation.log.rolling.max-file-size" defaultValue="100MB"/>
+    <springProperty scope="context" name="LOG_MAX_HISTORY"
+                    source="scm.observation.log.rolling.max-history" defaultValue="30"/>
+    <springProperty scope="context" name="LOG_TOTAL_SIZE_CAP"
+                    source="scm.observation.log.rolling.total-size-cap" defaultValue="10GB"/>
+    <springProperty scope="context" name="LOG_CLEAN_HISTORY_ON_START"
+                    source="scm.observation.log.rolling.clean-history-on-start" defaultValue="false"/>
+
+    <springProperty scope="context" name="SCM_RUNTIME"
+                    source="scm.runtime" defaultValue="standalone"/>
+    <springProperty scope="context" name="CONTAINER_IMAGE_NAME"
+                    source="scm.runtime.image.name" defaultValue=""/>
+    <springProperty scope="context" name="CONTAINER_IMAGE_TAG"
+                    source="scm.runtime.image.tag" defaultValue=""/>
+
+    <property name="APPLICATION_LOG_FILE"
+              value="${LOG_FILE_DIRECTORY}/${LOG_FILE_NAME}"/>
+    <property name="APPLICATION_ARCHIVE_PATTERN"
+              value="${LOG_ARCHIVE_DIRECTORY}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz"/>
+</included>

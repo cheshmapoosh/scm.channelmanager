@@ -1,0 +1,50 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+
+scm:
+  security:
+    cache:
+      session:
+        enabled: true
+        cache-name: session_cache
+      user:
+        enabled: false
+    resource-server:
+      enabled: true
+      issuer-uri: ${SCM_UAA_ISSUER_URI:http://localhost:8080}
+      audiences:
+        - scm-cm-connector
+      required-claims:
+        - sub
+        - sid
+        - nickname
+        - terminalCode
+
+  cache:
+    client:
+      distributed: true
+      caches:
+        session_cache:
+          type: near
+      config:
+        cluster-name: ${SCM_CACHE_CLUSTER_NAME:dev3}
+        network-config:
+          addresses:
+            - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
+
+  cm:
+    connector:
+      admin-cache-endpoints-enabled: false
+
+  observation:
+    enabled: true
+    log:
+      enabled: true
+    trace:
+      enabled: true
+    audit:
+      enabled: false
+    metric:
+      enabled: true

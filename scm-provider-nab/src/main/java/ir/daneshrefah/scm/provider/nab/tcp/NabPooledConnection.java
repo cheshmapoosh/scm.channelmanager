@@ -180,13 +180,8 @@ final class NabPooledConnection implements AutoCloseable {
     }
 
     private void logWire(NabResolvedConfig config, String direction, String content) {
-        if (config.wireLogEnabled()) {
-            log.info("NAB wire provider={} endpoint={} direction={} content=[{}]",
-                    config.provider(), endpoint.value(), direction, content);
-        } else {
-            log.debug("NAB wire provider={} endpoint={} direction={} chars={}",
-                    config.provider(), endpoint.value(), direction, content.length());
-        }
+        log.debug("NAB wire provider={} endpoint={} direction={} chars={}",
+                config.provider(), endpoint.value(), direction, content.length());
     }
 
     @Override

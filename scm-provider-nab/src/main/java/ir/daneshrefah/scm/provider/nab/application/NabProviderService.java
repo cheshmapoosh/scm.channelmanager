@@ -52,10 +52,8 @@ public class NabProviderService {
         log.info("Sending NAB request provider={} protocol={} command={} rqUid={} requestFields={} responseFields={}",
                 config.provider(), commandSpec.protocol(), commandSpec.code(), headerValues.rqUid(),
                 requestFields.size(), responseSpec.fields().size());
-        log.debug("NAB request fullMessage provider={} content=[{}]", config.provider(), wireRequest.fullMessage());
 
         String wireResponse = tcpClient.request(config, wireRequest);
-        log.debug("NAB response message provider={} content=[{}]", config.provider(), wireResponse);
         ObjectNode response = responseParser.parse(wireResponse, responseSpec);
         response.put("rqUid", headerValues.rqUid());
         response.put("command", commandSpec.code());

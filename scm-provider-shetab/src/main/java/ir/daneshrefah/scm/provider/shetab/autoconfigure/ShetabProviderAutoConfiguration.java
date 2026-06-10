@@ -48,7 +48,7 @@ public class ShetabProviderAutoConfiguration {
     public ShetabRateLimiter shetabRateLimiter(ObjectProvider<RateLimiterUtility> rateLimiterUtility, ShetabProviderMetrics metrics) {
         RateLimiterUtility utility = rateLimiterUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("RateLimiterUtility not found; Shetab rate limiter falls back to noop. Runtime deployments should enable scm-cache-client rate-limit.");
+            log.warn("RateLimiterUtility not found; Shetab rate limiter falls back to noop. Runtime deployments should enable scm-cache-starter rate-limit.");
             return new NoopShetabRateLimiter();
         }
         return new CacheClientShetabRateLimiter(utility, metrics);
@@ -59,7 +59,7 @@ public class ShetabProviderAutoConfiguration {
     public ShetabEndpointLeaseManager shetabEndpointLeaseManager(ObjectProvider<ResourceLeaseUtility> resourceLeaseUtility) {
         ResourceLeaseUtility utility = resourceLeaseUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease supports only single-endpoint providers. Multi-endpoint providers with endpoint-lease.enabled=true will fail until scm-cache-client resource-lease is enabled.");
+            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease supports only single-endpoint providers. Multi-endpoint providers with endpoint-lease.enabled=true will fail until scm-cache-starter resource-lease is enabled.");
             return new NoopShetabEndpointLeaseManager();
         }
         return new CacheClientShetabEndpointLeaseManager(utility);

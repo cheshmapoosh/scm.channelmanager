@@ -23,20 +23,15 @@ tasks.named("bootJar") {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'com.hazelcast:hazelcast-spring'
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    api project(':scm-uaa-common')
-    implementation 'org.springframework.security:spring-security-core'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    api 'com.bucket4j:bucket4j_jdk17-core'
-    api 'com.bucket4j:bucket4j_jdk17-hazelcast'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation ('org.codehaus.janino:janino')
+    implementation project(':scm-observation-starter')
+    runtimeOnly 'org.codehaus.janino:janino'
 }

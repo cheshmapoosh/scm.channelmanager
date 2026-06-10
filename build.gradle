@@ -90,6 +90,30 @@ subprojects {
         enabled = false
     }
 
+    tasks.withType(Jar).configureEach {
+        archiveVersion.set(rootProject.version.toString())
+        manifest {
+            attributes(
+                    'Implementation-Title': project.name,
+                    'Implementation-Version': rootProject.version.toString(),
+                    'SCM-Service-Name': project.name,
+                    'SCM-Service-Version': rootProject.version.toString()
+            )
+        }
+    }
+
+    tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootJar).configureEach {
+        archiveVersion.set(rootProject.version.toString())
+        manifest {
+            attributes(
+                    'Implementation-Title': project.name,
+                    'Implementation-Version': rootProject.version.toString(),
+                    'SCM-Service-Name': project.name,
+                    'SCM-Service-Version': rootProject.version.toString()
+            )
+        }
+    }
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
@@ -140,6 +164,7 @@ subprojects {
             dependency "com.bucket4j:bucket4j_jdk17-hazelcast:${bucket4jVersion}"
             dependency "com.vdurmont:semver4j:${semver4jVersion}"
             dependency "org.codehaus.janino:janino:${janinoVersion}"
+            dependency 'net.logstash.logback:logstash-logback-encoder:8.0'
         }
     }
 

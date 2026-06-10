@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.common.core;
 
-import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -9,6 +8,8 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 
 /**
@@ -24,9 +25,15 @@ public class SessionCache {
 
     private static final String DEFAULT_CACHE_NAME = "session_cache";
     private final CacheManager cacheManager;
+    private final String cacheName;
 
     public SessionCache(CacheManager cacheManager) {
+        this(cacheManager, DEFAULT_CACHE_NAME);
+    }
+
+    public SessionCache(CacheManager cacheManager, String cacheName) {
         this.cacheManager = cacheManager;
+        this.cacheName = StringUtils.isEmpty(cacheName) ? DEFAULT_CACHE_NAME : cacheName.trim();
     }
 
     public UserAuthentication getSessionFromCache(String username, String terminalCode) {
@@ -56,8 +63,7 @@ public class SessionCache {
         long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(user.getDetails().getIssuedAt(), user.getDetails().getExpiresAt());
         Cache cache = sessionCache();
         Duration ttl = Duration.ofMinutes(timeToLiveMinutes);
-        if (cache instanceof TtlAwareCache ttlAwareCache) {
-            ttlAwareCache.put(sessionKey, user, ttl);
+        if (putWithTtl(cache, sessionKey, user, ttl)) {
             return;
         }
         cache.put(sessionKey, user);
@@ -68,10 +74,22 @@ public class SessionCache {
     }
 
     private Cache sessionCache() {
-        Cache cache = cacheManager.getCache(DEFAULT_CACHE_NAME);
+        Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
-            throw new IllegalStateException("Spring cache is not configured: " + DEFAULT_CACHE_NAME);
+            throw new IllegalStateException("Spring cache is not configured: " + cacheName);
         }
         return cache;
+    }
+
+    private boolean putWithTtl(Cache cache, String sessionKey, UserAuthentication user, Duration ttl) {
+        try {
+            Method putWithTtl = cache.getClass().getMethod("put", Object.class, Object.class, Duration.class);
+            putWithTtl.invoke(cache, sessionKey, user, ttl);
+            return true;
+        } catch (NoSuchMethodException exception) {
+            return false;
+        } catch (IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException("Could not write session cache entry with ttl.", exception);
+        }
     }
 }

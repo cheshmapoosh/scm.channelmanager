@@ -1,0 +1,201 @@
+package ir.daneshrefah.scm.observation.gateway;
+
+import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ObservationIds;
+import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.attributes.ScmClientAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmGatewayAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
+import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+public class GatewayObservationLifecycle {
+    private static final Logger log = LoggerFactory.getLogger(GatewayObservationLifecycle.class);
+    private static final String GATEWAY_RECEIVE = "gateway.receive";
+    private static final String REQUEST_COMPLETED = "request.completed";
+    private static final String REQUEST_FAILED = "request.failed";
+    private static final String OUTCOME_SUCCESS = "success";
+    private static final String OUTCOME_FAILURE = "failure";
+    private static final String DEFAULT_VALUE = "default";
+
+    private final ScmObservation observation;
+    private final ObservationContext observationContext;
+
+    public GatewayObservationLifecycle(ScmObservation observation, ObservationContext observationContext) {
+        this.observation = observation;
+        this.observationContext = observationContext;
+    }
+
+    public GatewayObservationScope start(GatewayObservationRequest request) {
+        GatewayObservationRequest safeRequest = request == null ? GatewayObservationRequest.builder().build() : request;
+        GatewayObservationContext context = context(safeRequest);
+        ObservationScope traceScope = null;
+        try {
+            traceScope = observation.trace()
+                    .source(GatewayObservationLifecycle.class)
+                    .span(GATEWAY_RECEIVE)
+                    .spanKind(spanKind(context.protocol()))
+                    .correlationId(context.correlationId())
+                    .traceId(context.traceId())
+                    .spanId(context.gatewaySpanId())
+                    .attribute(ScmGatewayAttributes.NAME, context.gatewayName())
+                    .attribute(ScmGatewayAttributes.CHANNEL_CODE, context.channelCode())
+                    .attribute(ScmGatewayAttributes.PROTOCOL, context.protocol().value())
+                    .attribute(ScmGatewayAttributes.REQUEST_NAME, context.requestName())
+                    .attribute(ScmGatewayAttributes.MESSAGE_ID, context.messageId())
+                    .attribute(ScmGatewayAttributes.ROUTE_ID, safeRequest.routeId())
+                    .attribute(ScmClientAttributes.ADDRESS, safeRequest.clientAddress())
+                    .attributes(safeRequest.attributes())
+                    .start();
+        } catch (RuntimeException ex) {
+            safeObservationFailure("start", ex);
+        }
+        return new GatewayObservationScope(this, safeRequest, context, traceScope, System.nanoTime());
+    }
+
+    void finish(
+            GatewayObservationRequest request,
+            GatewayObservationContext context,
+            ObservationScope traceScope,
+            long startNanos,
+            GatewayObservationResult result
+    ) {
+        GatewayObservationResult safeResult = result == null ? GatewayObservationResult.success() : result;
+        long durationMs = durationMillis(startNanos);
+        try {
+            finishTrace(traceScope, safeResult, durationMs);
+        } catch (RuntimeException ex) {
+            safeObservationFailure("trace", ex);
+        }
+        try {
+            recordMetrics(context, safeResult, durationMs);
+        } catch (RuntimeException ex) {
+            safeObservationFailure("metric", ex);
+        }
+    }
+
+    private GatewayObservationContext context(GatewayObservationRequest request) {
+        GatewayProtocol protocol = request.protocol() == null ? GatewayProtocol.UNKNOWN : request.protocol();
+        return new GatewayObservationContext(
+                textOrGenerate(request.correlationId(), ObservationIds.correlationId()),
+                textOrGenerate(request.traceId(), ObservationIds.traceId()),
+                textOrGenerate(request.spanId(), ObservationIds.spanId()),
+                textOrDefault(request.gatewayName(), observationContext.gatewayName()),
+                textOrDefault(request.channelCode(), observationContext.channelCode()),
+                protocol,
+                textOrDefault(request.requestName(), protocol.value()),
+                textOrNull(request.messageId())
+        );
+    }
+
+    private void finishTrace(ObservationScope traceScope, GatewayObservationResult result, long durationMs) {
+        if (traceScope == null) {
+            return;
+        }
+        putResultAttributes(traceScope, result);
+        if (OUTCOME_FAILURE.equals(outcome(result))) {
+            traceScope.failure();
+        } else {
+            traceScope.success();
+        }
+        traceScope.close();
+    }
+
+    private void recordMetrics(GatewayObservationContext context, GatewayObservationResult result, long durationMs) {
+        String outcome = outcome(result);
+        observation.metric()
+                .counter(ScmMetricNames.GATEWAY_REQUESTS)
+                .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
+                .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
+                .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
+                .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
+                .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
+                .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
+                .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
+                .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .increment();
+
+        observation.metric()
+                .timer(ScmMetricNames.REQUEST_DURATION)
+                .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
+                .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
+                .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
+                .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
+                .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
+                .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
+                .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
+                .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .record(durationMs, TimeUnit.MILLISECONDS);
+
+        if (OUTCOME_FAILURE.equals(outcome)) {
+            observation.metric()
+                    .counter(ScmMetricNames.FAULTS)
+                    .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
+                    .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
+                    .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
+                    .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
+                    .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
+                    .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
+                    .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
+                    .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
+                    .tag(ScmMetricAttributes.OUTCOME, outcome)
+                    .tag(ScmMetricAttributes.ERROR_CODE, result.errorCode())
+                    .increment();
+        }
+    }
+
+    private void putResultAttributes(ObservationScope traceScope, GatewayObservationResult result) {
+        traceScope.attributes(result.attributes());
+        traceScope.attribute(ScmErrorAttributes.CODE, result.errorCode());
+        traceScope.attribute(ScmErrorAttributes.TYPE, result.errorType());
+        traceScope.attribute(ScmErrorAttributes.MESSAGE, result.errorMessage());
+    }
+
+    private String spanKind(GatewayProtocol protocol) {
+        return protocol == GatewayProtocol.MQ || protocol == GatewayProtocol.JMS ? "consumer" : "server";
+    }
+
+    private String outcome(GatewayObservationResult result) {
+        String outcome = result.outcome();
+        return outcome == null || outcome.isBlank() ? OUTCOME_SUCCESS : outcome.trim();
+    }
+
+    private long durationMillis(long startNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, System.nanoTime() - startNanos));
+    }
+
+    private String textOrDefault(String value, String fallback) {
+        String candidate = textOrNull(value);
+        if (candidate != null) {
+            return candidate;
+        }
+        candidate = textOrNull(fallback);
+        return candidate == null ? DEFAULT_VALUE : candidate;
+    }
+
+    private String textOrGenerate(String value, String generatedValue) {
+        String candidate = textOrNull(value);
+        return candidate == null ? generatedValue : candidate;
+    }
+
+    private String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void safeObservationFailure(String phase, RuntimeException ex) {
+        log.warn("event=GATEWAY_OBSERVATION_FAILED phase={} outcome=failed errorType={} errorMessage={}",
+                phase,
+                ex.getClass().getName(),
+                ex.getMessage());
+    }
+
+}

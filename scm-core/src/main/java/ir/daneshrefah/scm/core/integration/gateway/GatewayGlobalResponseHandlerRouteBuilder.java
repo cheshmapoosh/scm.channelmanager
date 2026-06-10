@@ -11,10 +11,10 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
 import ir.daneshrefah.scm.core.integration.gateway.contract.FaultContractEncoder;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ResponseContractEncoder;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -33,6 +33,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
     private final Map<String, ResponseContractEncoder> responseContractEncoders;
     private final Map<String, FaultContractEncoder> faultContractEncoders;
     private final ScmExchangeMdc scmExchangeMdc;
+    private final CoreObservationTraceSupport observationTraceSupport;
 
     @Override
     public void configure() {
@@ -158,10 +159,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
     }
 
     private void traceResponse(Exchange exchange) {
-        TraceUtils traceUtils = TraceUtils.getInstance();
-        if (traceUtils != null) {
-            Service service = exchange.getProperty(Message.SERVICE, Service.class);
-            traceUtils.traceScmResponse(exchange, service);
-        }
+        Service service = exchange.getProperty(Message.SERVICE, Service.class);
+        observationTraceSupport.traceGatewayResponse(exchange, service);
     }
 }

@@ -303,4 +303,4 @@ Never log or trace tokens, username/password, client secret, PIN, PIN block, MAC
 - Missing Authorization header: verify `rest-auth-url.apply.location/name/format` and token response paths.
 - Token not refreshed: check cache key components, `refresh-skew`, and auth response `expires-in-field`.
 - Lock timeout: verify `LockUtility` and centralized cache are available across nodes.
-- Centralized cache unavailable: configure `scm-cache-client` and the cache named by `rest-auth-url.cache.name`.
+- Centralized cache unavailable: configure `scm-cache-starter` and the cache named by `rest-auth-url.cache.name`.

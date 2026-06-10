@@ -24,13 +24,14 @@ dependencies {
     compileOnly 'org.springframework.security:spring-security-web'
     compileOnly 'org.springframework.security:spring-security-oauth2-core'
     compileOnly 'org.springframework.security:spring-security-oauth2-jose'
+    compileOnly 'org.springframework:spring-context'
+    compileOnly 'org.springframework:spring-expression'
     api 'com.oopsguy.kaptcha:kaptcha-spring-boot-starter:1.0.0-beta-2'
 //    implementation 'com.github.penggle:kaptcha:2.3.2'
 //    implementation 'net.logicsquad:nanocaptcha:2.1'
     api project(':scm-common')
     api project(':scm-common-data')
     api project(':scm-utils')
-    api project(':scm-cache-client')
     api 'com.ibm.mq:com.ibm.mq.allclient:9.4.1.0'
     api 'com.ibm.mq:com.ibm.mq.jakarta.client:9.4.1.0'
     api 'org.springframework:spring-jms'

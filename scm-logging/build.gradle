@@ -50,6 +50,7 @@ dependencies {
     api project(':scm-common-log')
     api project(':scm-common')
     api project(':scm-utils')
+    implementation project(':scm-observation-starter')
 }
 
 

@@ -1,12 +1,6 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
-//import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.HazelcastInstance;
-
-import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
@@ -31,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.*;
@@ -43,8 +38,6 @@ import org.springframework.security.crypto.password.MessageDigestPasswordEncoder
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
@@ -56,7 +49,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -210,7 +203,7 @@ public class SecurityConfig {
                     httpSecurityCorsConfigurer.configurationSource(configurationSource);
                 })
                 .logout(logout -> {
-                    logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"));
+                    logout.logoutRequestMatcher(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/logout"));
                     logout.logoutSuccessHandler(LogoutSuccessHandlerConfiguration);
                     logout.invalidateHttpSession(true);
                     logout.deleteCookies("JSESSIONID");
@@ -275,12 +268,6 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/**", configuration);
         log.info(">>> CORS DEACTIVATED ON ENVIRONMENT");
         return source;
-    }
-
-
-    @Bean
-    public SessionCache sessionCache(CacheManager cacheManager) {
-        return new SessionCache(cacheManager);
     }
 
 }

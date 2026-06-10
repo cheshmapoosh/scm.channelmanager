@@ -16,3 +16,12 @@ spring:
         max-attempts: 5
         max-interval: 3000
       fail-fast: true
+
+scm:
+  observation:
+    log:
+      console:
+        enabled: false
+      file:
+        enabled: true
+        format: jsonl

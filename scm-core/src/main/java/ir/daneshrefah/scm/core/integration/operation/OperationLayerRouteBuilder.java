@@ -10,7 +10,11 @@ import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.service.GatewayService;
 import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
+import ir.daneshrefah.scm.core.integration.observability.PluginObservationSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
+import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
+import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.operation.handler.OperationTypeHandler;
 import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
@@ -21,13 +25,19 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
-import ir.daneshrefah.scm.logging.utils.TraceUtils;
+import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
+import ir.daneshrefah.scm.observation.metrics.MetricCounterBuilder;
+import ir.daneshrefah.scm.observation.metrics.MetricTimerBuilder;
+import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -36,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -49,6 +60,11 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     private final Map<String, PluginHandler> pluginHandlers;
     private final List<OperationTypeHandler> operationTypeHandlers;
     private final GlobalErrorHandler globalErrorHandler;
+    private final CoreObservationTraceSupport observationTraceSupport;
+    private final PluginObservationSupport pluginObservationSupport;
+    private final ScmExchangeMdc exchangeMdc;
+    private final ObjectProvider<ScmObservation> observationProvider;
+    private final ObjectProvider<ObservationContext> observationContextProvider;
 
     @Override
     public void configure() {
@@ -153,7 +169,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 .routeId(routeId)
                 .setProperty(Message.OPERATION, constant(operation));
 
-        defineExceptionHandler(route);
+        defineExceptionHandler(route, operation);
         applyMetrics(route, operation);
 
         List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
@@ -161,6 +177,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         buildTarget(route, operation);
         List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
         applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
+        applyMetricsSuccess(route, operation);
 
         log.info("event={} layer=operation operationName={} operationType={} routeId={} fromUri={} outcome=success",
                 RouteLogEvents.OPERATION_ROUTE_REGISTERED,
@@ -206,16 +223,15 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         return operationsByName;
     }
 
-    private void defineExceptionHandler(RouteDefinition route) {
+    private void defineExceptionHandler(RouteDefinition route, Operation operation) {
         route.onException(Exception.class)
                 .handled(true)
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    TraceUtils traceUtils = TraceUtils.getInstance();
-                    if (traceUtils != null) {
-                        traceUtils.traceException(exchange, exception);
-                    }
+                    observationTraceSupport.finishOperationCallFailure(exchange, operation, exception);
+                    recordOperationMetrics(exchange, operation, exception);
+                    observationTraceSupport.traceException(exchange, exception);
                     log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
                     if (Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class))) {
                         // CMNEW-119: service-layer direct calls must receive SCMFault, not protocol-specific gateway output.
@@ -230,7 +246,11 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     }
 
     private void applyMetrics(RouteDefinition route, Operation operation) {
+        route.process(exchange -> exchange.setProperty(RouteLogSupport.OPERATION_START_NANOS, System.nanoTime()));
+    }
 
+    private void applyMetricsSuccess(RouteDefinition route, Operation operation) {
+        route.process(exchange -> recordOperationMetrics(exchange, operation, null));
     }
 
     private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails, Map<String, ?> properties) {
@@ -241,9 +261,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         orderedBeforePluginDetails.forEach(detail -> {
             PluginHandler handler = resolvePluginHandler(detail);
             handler.init(route, detail, properties);
-            route.process(exchange -> {
-                handler.handle(exchange, detail);
-            });
+            route.process(exchange -> pluginObservationSupport.execute(exchange, detail, handler, "operation", () -> handler.handle(exchange, detail)));
         });
     }
 
@@ -251,7 +269,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         OperationTypeHandler handler = operationTypeHandlers.stream()
                 .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type handler not found for operation " + operation.getName()));
-        handler.internalConfig(route, operation);
+        handler.internalConfig(route, operation, observationTraceSupport);
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {
@@ -262,10 +280,82 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         orderedAfterPluginDetails.forEach(detail -> {
             PluginHandler handler = resolvePluginHandler(detail);
             handler.init(route, detail, properties);
-            route.process(exchange -> {
-                handler.handle(exchange, detail);
-            });
+            route.process(exchange -> pluginObservationSupport.execute(exchange, detail, handler, "operation", () -> handler.handle(exchange, detail)));
         });
+    }
+
+    private void recordOperationMetrics(Exchange exchange, Operation operation, Exception exception) {
+        ScmObservation observation = observationProvider.getIfAvailable();
+        if (observation == null) {
+            return;
+        }
+        String outcome = exception == null ? "success" : "failure";
+        long durationNanos = operationDurationNanos(exchange);
+        Map<String, String> fields = exchangeMdc.fields(exchange);
+        ObservationContext context = observationContextProvider.getIfAvailable();
+
+        MetricCounterBuilder calls = observation.metric().counter(ScmMetricNames.OPERATION_CALLS);
+        tagOperation(calls, context, fields, operation, outcome, exception);
+        calls.increment();
+
+        MetricTimerBuilder duration = observation.metric().timer(ScmMetricNames.OPERATION_DURATION);
+        tagOperation(duration, context, fields, operation, outcome, exception);
+        duration.record(durationNanos, TimeUnit.NANOSECONDS);
+
+        if (exception != null) {
+            MetricCounterBuilder faults = observation.metric().counter(ScmMetricNames.FAULTS);
+            tagOperation(faults, context, fields, operation, outcome, exception);
+            faults.increment();
+        }
+    }
+
+    private void tagOperation(
+            MetricCounterBuilder builder,
+            ObservationContext context,
+            Map<String, String> fields,
+            Operation operation,
+            String outcome,
+            Exception exception
+    ) {
+        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
+                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
+                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                .tag(ScmMetricAttributes.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
+                .tag("operation_name", operation != null ? operation.getName() : fields.get("operationName"))
+                .tag("operation_type", operation != null && operation.getType() != null ? operation.getType().name() : null)
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+    }
+
+    private void tagOperation(
+            MetricTimerBuilder builder,
+            ObservationContext context,
+            Map<String, String> fields,
+            Operation operation,
+            String outcome,
+            Exception exception
+    ) {
+        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
+                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
+                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                .tag(ScmMetricAttributes.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
+                .tag("operation_name", operation != null ? operation.getName() : fields.get("operationName"))
+                .tag("operation_type", operation != null && operation.getType() != null ? operation.getType().name() : null)
+                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+    }
+
+    private long operationDurationNanos(Exchange exchange) {
+        Long startNanos = exchange.getProperty(RouteLogSupport.OPERATION_START_NANOS, Long.class);
+        return startNanos != null ? Math.max(0L, System.nanoTime() - startNanos) : 0L;
     }
 
     private PluginHandler resolvePluginHandler(PluginDetail detail) {

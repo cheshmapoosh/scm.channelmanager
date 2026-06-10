@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.provider.rest.camel;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
@@ -731,17 +730,7 @@ public class RestProviderProducer extends DefaultProducer {
 
     private String traceId(Exchange exchange) {
         String traceId = exchange.getProperty(Message.TRACE_ID, String.class);
-        if (StringUtils.isNotBlank(traceId)) {
-            return traceId;
-        }
-        Span span = exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN, Span.class);
-        if (span == null) {
-            span = Span.current();
-        }
-        if (span != null && span.getSpanContext().isValid()) {
-            return span.getSpanContext().getTraceId();
-        }
-        return "";
+        return StringUtils.defaultString(traceId);
     }
 
     private <T> T bean(Class<T> type) {
