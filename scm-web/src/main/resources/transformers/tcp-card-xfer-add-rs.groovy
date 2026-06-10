@@ -1,3 +1,4 @@
+import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
 
@@ -24,10 +25,10 @@ if (fields == null) {
 
 println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
 if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
-    throw new RuntimeException("tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition()].toString())
+    throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
 }
 
-def balance = fields["54"]
+def balance = fields[ISOField.ADDITIONAL_AMOUNTS.getPosition().toString()]
 def availableBalance = null
 def ledgerBalance = null
 def depositableAmount = null

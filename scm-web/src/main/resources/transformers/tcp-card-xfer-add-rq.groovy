@@ -1,5 +1,6 @@
 import groovy.json.JsonOutput
 import ir.daneshrefah.scm.common.constant.TerminalType
+import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
 import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
 import ir.daneshrefah.scm.provider.shetab.iso.util.FunctionCode
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
@@ -47,9 +48,10 @@ def stan = sprintf("%06d", System.currentTimeMillis() % 1_000_000)
 def rrn = sprintf("%012d", System.currentTimeMillis() % 1_000_000_000_000L);
 def expiryDate = trk2EquivData == null ? null : trk2EquivData.cardExpirationYearMonth
 def pin = trk2EquivData == null ? null : trk2EquivData.pin
-println("pin before encrypt : " + pin)
-pin = CardSystemSecurityUtil.encryptPin(pin, srcCardNumber)
-println("pin after encrypt : " + pin)
+def cvv2 = trk2EquivData == null ? null : trk2EquivData.cvv2
+//println("pin before encrypt : " + pin)
+//pin = CardSystemSecurityUtil.encryptPin(pin, srcCardNumber)
+//println("pin after encrypt : " + pin)
 
 println("before preparePointOfServiceData : ")
 def preparePointOfServiceData = {
@@ -102,7 +104,7 @@ def extractAdditionalData = {
     def BILL_ID_TAG = "BBI"
     def CHECK_DUPLICATE_TAG = "DUP"
     def DST_CARD_TAG = "DST"
-    def cvv2 = trk2EquivData.cvv2
+
     println("cvv2 :" + cvv2)
     def tailoredCVV2 = trk2EquivData != null && cvv2 != null && !cvv2.isEmpty() ? fixSize(cvv2, 4) : null;
 
@@ -144,34 +146,51 @@ def extractAdditionalData = {
 def additionalData = extractAdditionalData()
 
 def req = [:]
+def field = [:]
+def security = [:]
 
-req.put("mti", MTI.TRANSFER_REQUEST_COMMAND.getCode())
-req.put(ISOField.PAN.getPosition(), srcCardNumber)
-req.put(ISOField.PROCESSING_CODE.getPosition(), processCode)
-req.put(ISOField.TRANSACTION_AMOUNT.getPosition(), amount)
-req.put(ISOField.TRANSACTION_FEE_AMOUNT.getPosition(), amount)
-req.put(ISOField.TRANSMISSON_DATE_TIME.getPosition(), transmissionDateTime)
-req.put(ISOField.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(), stan)
-req.put(ISOField.LOCAL_TRANSACTION_DATE_TIME.getPosition(), localTransactionDateTime);
-req.put(ISOField.EXPIRY_DATE.getPosition(), expiryDate)
-req.put(ISOField.POINT_OF_SERVICE_DATA_CODE.getPosition(), serviceDataCode)
-req.put(ISOField.FUNCTION_CODE.getPosition(), createFunctionCodeCode())
-req.put(ISOField.CARD_ACCEPTOR_BUSINESS_CODE.getPosition(), CardConstant.CARD_ACCEPTOR_BUSINESS_CODE)
-req.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID)
-req.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), getForwardingInstitutionId)
-req.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn)
-req.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
-req.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE)
-req.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION)
+req.put("mti", MTI.TRANSFER_REQUEST_COMMAND.getCode());
+
+field.put("mti", MTI.TRANSFER_REQUEST_COMMAND.getCode())
+field.put(ISOField.PAN.getPosition(), srcCardNumber)
+field.put(ISOField.PROCESSING_CODE.getPosition(), processCode)
+field.put(ISOField.TRANSACTION_AMOUNT.getPosition(), amount)
+field.put(ISOField.TRANSACTION_FEE_AMOUNT.getPosition(), amount)
+field.put(ISOField.TRANSMISSON_DATE_TIME.getPosition(), transmissionDateTime)
+field.put(ISOField.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(), stan)
+field.put(ISOField.LOCAL_TRANSACTION_DATE_TIME.getPosition(), localTransactionDateTime);
+field.put(ISOField.EXPIRY_DATE.getPosition(), expiryDate)
+field.put(ISOField.POINT_OF_SERVICE_DATA_CODE.getPosition(), serviceDataCode)
+field.put(ISOField.FUNCTION_CODE.getPosition(), createFunctionCodeCode())
+field.put(ISOField.CARD_ACCEPTOR_BUSINESS_CODE.getPosition(), CardConstant.CARD_ACCEPTOR_BUSINESS_CODE)
+field.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID)
+field.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), getForwardingInstitutionId)
+field.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn)
+field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
+field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE)
+field.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION)
 def additional = extractAdditionalData()
 if (additional != null && !additional.isEmpty()) {
-    req.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), additionalData)
+    field.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), additionalData)
 }
-req.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE)
-req.put(ISOField.PIN_DATA.getPosition(), pin)
+field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE)
+field.put(ISOField.PIN_DATA.getPosition(), pin)
 if (isAccountTarget) {
-    req.put(ISOField.ACCOUNT_NO_2.getPosition(), destAccount)
+    field.put(ISOField.ACCOUNT_NO_2.getPosition(), destAccount)
 }
+
+req.put("fields", field)
+
+
+security.put("expiryDate", expiryDate);
+security.put("cvv2", cvv2);
+security.put("pin", pin);
+security.put("expiryRequired", true);
+security.put("cvv2Required", true);
+security.put("pinRequired", true);
+security.put("macRequired", false);
+
+req.put("security", security)
 
 println("card xfer add rs : " + req)
 return JsonOutput.toJson(req)

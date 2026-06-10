@@ -78,10 +78,10 @@ req.put("fields", field)
 
 security.put("expiryDate", "");
 security.put("cvv2", "");
-security.put("pin", "");
+security.put("pin", "9729");
 security.put("expiryRequired", false);
 security.put("cvv2Required", false);
-security.put("pinRequired", false);
+security.put("pinRequired", true);
 security.put("macRequired", false);
 
 req.put("security", security)

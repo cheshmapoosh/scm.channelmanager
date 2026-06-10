@@ -172,57 +172,71 @@ def fillAdditionalInformation = {
 
 
 def req = [:]
-//def field = [:]
-//def security = [:]
+def field = [:]
+def security = [:]
 
 req.put("mti", MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode());
-req.put(ISOField.PAN.getPosition(), srcCard);
-req.put(ISOField.PROCESSING_CODE.getPosition(), ProcessCode.CARD_PASSWORD_NOTIFICATION.getCode());
-req.put(ISOField.TRANSMISSON_DATE_TIME.getPosition(), transmissionDateTime);
-req.put(ISOField.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(), stan);
-req.put(ISOField.LOCAL_TRANSACTION_DATE_TIME.getProperties(), localTransactionDateTime);
-req.put(ISOField.CARD_ACCEPTOR_BUSINESS_CODE.getPosition(), CardConstant.CARD_ACCEPTOR_BUSINESS_CODE);
-req.put(ISOField.CAPTURE_DATE.getPosition(), captureDate);
-req.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
-req.put(ISOField.ACQUIRE_COUNTRY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
-req.put(ISOField.POINT_OF_SERVICE_DATA_CODE.getPosition(), CardConstant.DEFAULT_IB_POINT_OF_SERVICE_DATA);
-req.put(ISOField.FUNCTION_CODE.getPosition(), reqType == RequestType.DYNAMIC_PIN ? CardConstant.DYNAMIC_PIN_FUNCTION_CODE : CardConstant.FUNCTION_CODE);
-req.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), srcCard[0..5]);
-req.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn);
+
+field.put("mti", MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode());
+field.put(ISOField.PAN.getPosition(), srcCard);
+field.put(ISOField.PROCESSING_CODE.getPosition(), ProcessCode.CARD_PASSWORD_NOTIFICATION.getCode());
+field.put(ISOField.TRANSMISSON_DATE_TIME.getPosition(), transmissionDateTime);
+field.put(ISOField.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(), stan);
+field.put(ISOField.LOCAL_TRANSACTION_DATE_TIME.getPosition(), localTransactionDateTime);
+field.put(ISOField.CARD_ACCEPTOR_BUSINESS_CODE.getPosition(), CardConstant.CARD_ACCEPTOR_BUSINESS_CODE);
+field.put(ISOField.CAPTURE_DATE.getPosition(), captureDate);
+field.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
+field.put(ISOField.ACQUIRE_COUNTRY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
+field.put(ISOField.POINT_OF_SERVICE_DATA_CODE.getPosition(), CardConstant.DEFAULT_IB_POINT_OF_SERVICE_DATA);
+field.put(ISOField.FUNCTION_CODE.getPosition(), reqType == RequestType.DYNAMIC_PIN ? CardConstant.DYNAMIC_PIN_FUNCTION_CODE : CardConstant.FUNCTION_CODE);
+field.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), srcCard[0..5]);
+field.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn);
 
 def channelCode = exchange.getProperty('scmChannelCode')
 def isNBKChannel = TerminalType.NBK.getTerminalCode().equalsIgnoreCase(channelCode);
 if (isNBKChannel && Objects.equals(RequestType.BILL_PAYMENT, reqType)) {
-    req.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.BPG_CARD_ACCEPT_TERMINAL_ID);
+    field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.BPG_CARD_ACCEPT_TERMINAL_ID);
 } else {
-    req.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID);
+    field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID);
 }
-req.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE);
-req.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION);
-req.put(ISOField.ACQUIRE_INSTITUTE_CODE.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
-req.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
+field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE);
+field.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION);
+field.put(ISOField.ACQUIRE_INSTITUTE_CODE.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID);
+field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);
 
 def additionalPrivateData = "";
 if (pin != null && !pin.isEmpty()) {
 //    req.put(ISOField.PIN_DATA.getPosition(), CardSystemSecurityUtil.encryptPin(pin, srcCard));
-    req.put(ISOField.PIN_DATA.getPosition(), pin);
+    field.put(ISOField.PIN_DATA.getPosition(), pin);
 } else {
     additionalPrivateData = fillAdditionalInformation();
 }
 if (amount != null) {
-    req.put(ISOField.TRANSACTION_AMOUNT.getPosition(), amount)
-    req.put(ISOField.TRANSACTION_FEE_AMOUNT.getPosition(), amount)
+    field.put(ISOField.TRANSACTION_AMOUNT.getPosition(), amount)
+    field.put(ISOField.TRANSACTION_FEE_AMOUNT.getPosition(), amount)
 }
 
 if (!additionalPrivateData.toString().isEmpty()) {
-    req.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), additionalPrivateData)
+    field.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), additionalPrivateData)
 }
 
 if (channelCode == TerminalType.IVR.getTerminalCode()) {
-    req.put(ISOField.EXPIRY_DATE.getPosition(), "0000")
+    field.put(ISOField.EXPIRY_DATE.getPosition(), "0000")
 } else {
-    req.put(ISOField.EXPIRY_DATE.getPosition(), trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
+    field.put(ISOField.EXPIRY_DATE.getPosition(), trk2EquivData != null && cardExpirationYearMonth != null ? cardExpirationYearMonth : null)
 }
+req.put("fields", field)
+
+
+security.put("expiryDate", cardExpirationYearMonth);
+security.put("cvv2", cvv2);
+security.put("pin", pin);
+security.put("expiryRequired", true);
+security.put("cvv2Required", true);
+security.put("pinRequired", true);
+security.put("macRequired", false);
+
+req.put("security", security)
 
 println("card pass inq rq :  " + req)
 
