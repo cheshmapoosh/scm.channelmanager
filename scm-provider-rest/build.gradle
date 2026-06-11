@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api 'org.apache.camel:camel-core'
+    api 'org.jpos:jpos:2.1.10'
 
     implementation project(':scm-cache-client')
     implementation project(':scm-common')

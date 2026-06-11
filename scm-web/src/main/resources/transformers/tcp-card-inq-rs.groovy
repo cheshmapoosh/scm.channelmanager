@@ -1,3 +1,4 @@
+import ir.daneshrefah.scm.common.constant.CacheConstants
 import ir.daneshrefah.scm.common.data.dto.bank.BankDto
 import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.common.model.message.Message
@@ -58,16 +59,32 @@ if (!(customerNameFamily.isEmpty() || customerNameFamily.length() <= 25)) {
 }
 
 def originalBody = exchange.getProperty(Message.ORIGINAL_BODY)
-println("origin body :"+ originalBody)
+println("origin body :" + originalBody)
 def destCardNumber = originalBody?.fundTransfer?.destinationCardNumber
-println("dest card : "+ destCardNumber)
+println("dest card : " + destCardNumber)
 
-def cardNo = destCardNumber?.toString()?.replace('"','')?.trim()
+def cardNo = destCardNumber?.toString()?.replace('"', '')?.trim()
 def bankPrefix = cardNo?.length() >= 6 ? cardNo[0..5] : null
-println("card prefix : "+ bankPrefix)
+println("card prefix : " + bankPrefix)
 def detection = exchange.context.registry.lookupByName("bankListLoader")
 BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
 println("bank name : " + (bank == null ? "" : bank.getName()))
+
+def customerName = name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name))
+def customerLastName = family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
+
+def srcCard = fields[ISOField.PAN.getPosition().toString()].toString()
+srcCard = srcCard == null ? "" : srcCard
+
+def terminalId = fields[ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition().toString()].toString()
+terminalId = terminalId == null ? "" : terminalId
+
+def cache = exchange.context.registry.lookupByName("transformerCacheManager");
+cache.putInCache(
+        CacheConstants.CACHE_NAME_DEST_CARD_CUS,
+        srcCard + ":" + terminalId,
+        fields[ISOField.ADDITIONAL_RESPONSE_DATA2.getPosition().toString()].toString(),
+)
 
 println("end tcp card inquiry!")
 return [
@@ -76,7 +93,7 @@ return [
                 "imageUrl"           : ""
         ],
         "customerName": [
-                "firstName": name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name)),
-                "lastName" : family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
+                "firstName": customerName,
+                "lastName" : customerLastName
         ]
 ]

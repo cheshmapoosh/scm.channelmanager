@@ -1,16 +1,16 @@
 package transformers
 
 import groovy.json.JsonOutput
-import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
+import ir.daneshrefah.scm.common.constant.CacheConstants
 import ir.daneshrefah.scm.common.transformerUtil.constant.CardServiceName
 import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
 import ir.daneshrefah.scm.utils.string.StringUtils
-import org.json.simple.JSONObject
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 def body = exchange.in.body
+def header = exchange.in.headers
 def fundTransfer = body.fundTransfer
 if (fundTransfer == null) {
     throw new RuntimeException("fundTransfer is Empty")
@@ -33,9 +33,11 @@ if (amountStr.length() < 12) {
     amountStr = StringUtils.leftPadZero(amountStr, 12)
     println("amount : " + amountStr)
 }
-println("pin before encrypt : " + pin)
-pin = CardSystemSecurityUtil.encryptPin(pin.toString(), card.toString())
-println("pin after encrypt : " + pin)
+
+def ip = " "//header['ip']
+//println("pin before encrypt : " + pin)
+//pin = CardSystemSecurityUtil.encryptPin(pin, card)
+//println("pin after encrypt : " + pin)
 
 //JSONObject request = new JSONObject();
 //request.put("cvv2", body["cvv"]);
@@ -49,7 +51,7 @@ req.put("serviceName", CardServiceName.CARD_XFER_ADD)
 
 def data = [:]
 data.put("cardNumber", card)
-data.put("ip", "               ")
+data.put("ip", StringUtils.leftPadEmpty(ip, 15))
 data.put("mobileNumber", "09301677601")
 data.put("stan", stan)
 data.put("posData", CardConstant.DEFAULT_MB_POINT_OF_SERVICE_DATA)
@@ -65,8 +67,10 @@ data.put("amount", amountStr)
 data.put("pin", pin)
 data.put("accountNumber", srcAccount)
 data.put("captureCode", "")
-data.put("transBind", " ") //?????????????// name last name az card inquiry
 
+def cache = exchange.context.registry.lookupByName("transformerCacheManager");
+def customerName = cache.getFromCache(CacheConstants.CACHE_NAME_DEST_CARD_CUS, card + ":" + CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
+data.put("transBind", customerName == null ? " " : customerName)
 
 req.put("data", data)
 

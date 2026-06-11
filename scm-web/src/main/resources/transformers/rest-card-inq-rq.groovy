@@ -25,6 +25,7 @@ def cvv =  trk2EquivData == null ? null : trk2EquivData.cvv2
 println("cvv2 rest card inq : "+ cvv)
 
 def req = [:]
+def data = [:]
 println("rest cardInquiry rq transformer start")
 
 //JSONObject request = new JSONObject();
@@ -35,7 +36,6 @@ println("rest cardInquiry rq transformer start")
 
 req.put("serviceName", CardServiceName.CARD_INQUIRY)
 
-def data = [:]
 data.put("cardNumber", srcCard)
 data.put("stan", stan)
 data.put("posData", CardConstant.DEFAULT_MB_POINT_OF_SERVICE_DATA)

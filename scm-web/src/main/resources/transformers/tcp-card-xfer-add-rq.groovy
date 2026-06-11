@@ -1,4 +1,5 @@
 import groovy.json.JsonOutput
+import ir.daneshrefah.scm.common.constant.CacheConstants
 import ir.daneshrefah.scm.common.constant.TerminalType
 import ir.daneshrefah.scm.common.transformerUtil.CardSystemSecurityUtil
 import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
@@ -20,12 +21,12 @@ def trk2EquivData = body.trk2EquivData
 def srcCardNumber = fundTransfer.sourceCardNumber
 def destCardNo = fundTransfer.destinationCardNumber
 def amount = fundTransfer.amount
-def destAccount = fundTransfer.destinationAccountNo
+def sourceAccountNumber = fundTransfer.sourceAccountNumber
 
 def isFundTransferAccountTarget = {
-    println("destAccount : " + destAccount + "destCardNo : " + destCardNo)
-    println("isFundTransferAccountTarget : " + destAccount && destCardNo)
-    return destAccount && destCardNo//destAccount != null && !destAccount.isEmpty() && destCardNo != null && destCardNo.isEmpty();
+    println("sourceAccountNumber : " + sourceAccountNumber + "destCardNo : " + destCardNo)
+    println("isFundTransferAccountTarget : " + sourceAccountNumber && destCardNo)
+    return sourceAccountNumber && destCardNo//sourceAccountNumber != null && !sourceAccountNumber.isEmpty() && destCardNo != null && destCardNo.isEmpty();
 }
 def isAccountTarget = isFundTransferAccountTarget()
 println("isAccountTarget : " + isAccountTarget)
@@ -109,8 +110,8 @@ def extractAdditionalData = {
     def tailoredCVV2 = trk2EquivData != null && cvv2 != null && !cvv2.isEmpty() ? fixSize(cvv2, 4) : null;
 
     def additionalPrivateData = ""
-    println("additionalPrivateData destAccount: " + destAccount + "destCardNo : " + destCardNo)
-    if (destAccount != null && !destAccount.isEmpty() && (destCardNo == null || destCardNo.isEmpty())) {
+    println("additionalPrivateData sourceAccountNumber: " + sourceAccountNumber + "destCardNo : " + destCardNo)
+    if (sourceAccountNumber != null && !sourceAccountNumber.isEmpty() && (destCardNo == null || destCardNo.isEmpty())) {
         def functionCode = createFunctionCodeCode();
         println("additionalPrivateData 1 : " + additionalPrivateData + "tailoredCVV2: " + tailoredCVV2)
         additionalPrivateData += (tailoredCVV2 != null && !tailoredCVV2.isEmpty() ? CVV2_TAG + StringUtils.leftPadZero(tailoredCVV2.length() + "", 3) + tailoredCVV2 : "");
@@ -145,6 +146,9 @@ def extractAdditionalData = {
 }
 def additionalData = extractAdditionalData()
 
+def cache = exchange.context.registry.lookupByName("transformerCacheManager");
+def customerName = cache.getFromCache(CacheConstants.CACHE_NAME_DEST_CARD_CUS, srcCardNumber + ":" + CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
+
 def req = [:]
 def field = [:]
 def security = [:]
@@ -176,7 +180,11 @@ if (additional != null && !additional.isEmpty()) {
 field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE)
 field.put(ISOField.PIN_DATA.getPosition(), pin)
 if (isAccountTarget) {
-    field.put(ISOField.ACCOUNT_NO_2.getPosition(), destAccount)
+    field.put(ISOField.ACCOUNT_NO_2.getPosition(), sourceAccountNumber)
+}
+
+if(customerName != null){
+    field.put(ISOField.ADDITIONAL_RESPONSE_DATA2.getPosition(), customerName)
 }
 
 req.put("fields", field)

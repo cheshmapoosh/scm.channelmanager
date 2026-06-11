@@ -1,9 +1,11 @@
 package transformers
 
+import ir.daneshrefah.scm.common.constant.CacheConstants
 import ir.daneshrefah.scm.common.data.dto.bank.BankDto
 import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.common.model.message.Message
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
+import ir.daneshrefah.scm.provider.shetab.iso.util.CardConstant
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 
 def bodyRaw = exchange.in.body
@@ -15,42 +17,36 @@ if (!body instanceof Map) {
     return
 }
 
-def status = body.get("status")
+def status = body.get("succeed")
 println("rest card inq rs status : " + status)
 if (errorCode != null) {
     throw new CardException(errorCode.toString(),body.errorDescription)
 }
-def statusCode = status as int
-if (!(statusCode >= 200 && statusCode < 300)) {
-    throw new RuntimeException("Expected 2xx status from HPS card inquiry endpoint, but got " + statusCode)
-}
 
-def bodyResponse = body.get("body")
-def out = bodyResponse.get("outData")
+def out = body.get("outData")
 println("out clas  : " + out.getClass())
 
-if (out == null && bodyResponse.get("errorCode") != null) {
-    throw new RuntimeException(bodyResponse.get("errorDescription"))
+if (out == null && status == false) {
+    throw new RuntimeException(body.get("errorDescription"))
 }
 
 println("out cardInq rs : " + out)
 println("rest cardInquiry rs transformer end transformed body : " + body)
 
 def originalBody = exchange.getProperty(Message.ORIGINAL_BODY)
+println("origin body :"+ originalBody)
 def destCardNumber = originalBody?.fundTransfer?.destinationCardNumber
-if (destCardNumber == null && bodyResponse instanceof Map) {
-    destCardNumber = bodyResponse.get("destCard") ?: bodyResponse.get("destinationCardNumber")
-}
-if (destCardNumber == null && out instanceof Map) {
-    destCardNumber = out.get("destCard") ?: out.get("destinationCardNumber")
-}
-def bankPrefix = destCardNumber == null ? null : destCardNumber.toString()
-bankPrefix = bankPrefix != null && bankPrefix.length() >= 6 ? bankPrefix[0..5] : null
+println("dest card : "+ destCardNumber)
 
+def originSrcCard = originalBody?.fundTransfer?.sourceCardNumber
+def srcCardNo = originSrcCard?.toString()?.replace('"','')?.trim()
+
+def cardNo = destCardNumber?.toString()?.replace('"','')?.trim()
+def bankPrefix = cardNo?.length() >= 6 ? cardNo[0..5] : null
+println("card prefix : "+ bankPrefix)
 def detection = exchange.context.registry.lookupByName("bankListLoader")
 BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
 println("bank name : " + (bank == null ? "" : bank.getName()))
-
 
 def customerNameFamily = out["destName"].toString()
 println("customerNameFamily : " + customerNameFamily)
@@ -81,6 +77,15 @@ if (!(customerNameFamily.isEmpty() || customerNameFamily.length() <= 25)) {
     }
 }
 
+def customerName = name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name))
+def customerLastName = family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
+
+def cache = exchange.context.registry.lookupByName("transformerCacheManager");
+cache.putInCache(
+        CacheConstants.CACHE_NAME_DEST_CARD_CUS,
+        srcCardNo==null ? "":srcCardNo + ":" + CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID,
+        customerName.toString().concat(customerLastName.toString()))
+
 println("end name proces")
 return [
         "card"        : [
@@ -88,7 +93,7 @@ return [
                 "imageUrl"           : ""
         ],
         "customerName": [
-                "firstName": name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name)),
-                "lastName" : family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
+                "firstName": customerName,
+                "lastName" : customerLastName
         ]
 ]

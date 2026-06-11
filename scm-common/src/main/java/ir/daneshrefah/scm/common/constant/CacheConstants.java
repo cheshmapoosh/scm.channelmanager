@@ -10,4 +10,5 @@ package ir.daneshrefah.scm.common.constant;
 public class CacheConstants {
 
     public static final String CACHE_NAME_OTP = "cache_otp";
+    public static final String CACHE_NAME_DEST_CARD_CUS = "dest-card-customer-name-cache";
 }
