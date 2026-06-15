@@ -57,8 +57,18 @@ public class OperationRouteBuilder extends RouteBuilder {
 
             List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
             applyBeforePlugins(route, orderedBeforePluginDetails, Map.of(Message.OPERATION, operation));
-            buildTarget(route, operation);
-            List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
+
+            boolean targetBuilt = buildTarget(route, operation);
+            if (!targetBuilt) {
+                log.warn("Skipping operation route because target handler not found. operationName={}, operationType={}",
+                        operation.getName(), operation.getType());
+                return;
+            }
+
+            List<PluginDetail> orderedAfterPluginDetails =
+                    pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
+
+
             applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
         });
     }
@@ -97,11 +107,20 @@ public class OperationRouteBuilder extends RouteBuilder {
         });
     }
 
-    private void buildTarget(RouteDefinition route, Operation operation) {
+    private boolean buildTarget(RouteDefinition route, Operation operation) {
         OperationTypeHandler handler = operationTypeHandlers.stream()
                 .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type not found"));
+                .findFirst()
+                .orElse(null);
+
+        if (handler == null) {
+            log.warn("Operation type handler not found. operationName={}, operationType={}",
+                    operation.getName(), operation.getType());
+            return false;
+        }
+
         handler.internalConfig(route, operation);
+        return true;
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {

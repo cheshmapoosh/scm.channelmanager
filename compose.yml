@@ -1,6 +1,6 @@
 services:
   scm-config:
-    image: reg.daneshrefah.ir/modern-banking/scm-config:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-config:${SCM_VERSION:-8.5.4}
     container_name: scm-config-container
     volumes:
       - /home/scm/docker/cache/scm-config-server-boot.jar:/app/scm-config-server-boot.jar
@@ -32,7 +32,7 @@ services:
     depends_on:
       scm-config:
         condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-cache:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-cache:${SCM_VERSION:-8.5.4}
     container_name: scm-cache-container
     volumes:
       - /home/scm/docker/cache/scm-cache-boot.jar:/app/scm-cache-boot.jar
@@ -60,7 +60,7 @@ services:
     depends_on:
       scm-config:
         condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-uaa:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-uaa:${SCM_VERSION:-8.5.4}
     container_name: scm-uaa-container
     volumes:
       - /home/scm/docker/uaa/scm-uaa-boot.jar:/app/scm-uaa-boot.jar
@@ -86,7 +86,7 @@ services:
     depends_on:
       scm-config:
         condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
     container_name: scm-web-container
     volumes:
       - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
@@ -113,7 +113,7 @@ services:
     depends_on:
       scm-config:
         condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
     container_name: scm-ib-container
     volumes:
       - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
@@ -139,7 +139,7 @@ services:
     depends_on:
       scm-config:
         condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.3}
+    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
     container_name: scm-ib-container
     volumes:
       - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar

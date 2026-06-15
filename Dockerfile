@@ -4,7 +4,7 @@ ENV JAVA_OPTS="-Xms4096m -Xmx8192m"
 ENV JDWP_OPTS=""
 ENV SERVER_PORT=8080
 
-ARG VERSION="8.5.3"
+ARG VERSION="8.5.4"
 ENV VERSION=$VERSION
 ARG SPRING_APPLICATION_NAME="scm-web"
 
@@ -30,6 +30,6 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS $JDWP_OPTS -jar /app/$SPRING_APPLICATIO
 #docker run -d \
 #  --name scm-config \
 #  -e SPRING_APPLICATION_NAME=scm-config \
-#  -e VERSION=8.5.3 \
+#  -e VERSION=8.5.4 \
 #  -p 8081:8080 \
-#  reg.daneshrefah.ir/modern-banking/scm-all-in-one:8.5.3
+#  reg.daneshrefah.ir/modern-banking/scm-all-in-one:8.5.4

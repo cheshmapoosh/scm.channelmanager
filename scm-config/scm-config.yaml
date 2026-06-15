@@ -5,10 +5,10 @@ kind: ServiceAccount
 metadata:
   name: scm-config
   labels:
-    helm.sh/chart: scm-config-8.5.3
+    helm.sh/chart: scm-config-8.5.4
     app.kubernetes.io/name: scm-config
     app.kubernetes.io/instance: scm-config
-    app.kubernetes.io/version: "8.5.3"
+    app.kubernetes.io/version: "8.5.4"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
@@ -27,10 +27,10 @@ kind: Service
 metadata:
   name: scm-config
   labels:
-    helm.sh/chart: scm-config-8.5.3
+    helm.sh/chart: scm-config-8.5.4
     app.kubernetes.io/name: scm-config
     app.kubernetes.io/instance: scm-config
-    app.kubernetes.io/version: "8.5.3"
+    app.kubernetes.io/version: "8.5.4"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: LoadBalancer
@@ -51,10 +51,10 @@ kind: Deployment
 metadata:
   name: scm-config
   labels:
-    helm.sh/chart: scm-config-8.5.3
+    helm.sh/chart: scm-config-8.5.4
     app.kubernetes.io/name: scm-config
     app.kubernetes.io/instance: scm-config
-    app.kubernetes.io/version: "8.5.3"
+    app.kubernetes.io/version: "8.5.4"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -65,10 +65,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: scm-config-8.5.3
+        helm.sh/chart: scm-config-8.5.4
         app.kubernetes.io/name: scm-config
         app.kubernetes.io/instance: scm-config
-        app.kubernetes.io/version: "8.5.3"
+        app.kubernetes.io/version: "8.5.4"
         app.kubernetes.io/managed-by: Helm
     spec:
       imagePullSecrets:
@@ -80,7 +80,7 @@ spec:
         - name: scm-config
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.5.3"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:8.5.4"
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
@@ -88,7 +88,7 @@ spec:
             - name: SPRING_APPLICATION_NAME
               value: scm-config
             - name: VERSION
-              value: 8.5.3
+              value: 8.5.4
             - name: SERVER_PORT
               value: "8888"
           ports:

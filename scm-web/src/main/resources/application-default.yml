@@ -1,7 +1,7 @@
 SCM_APPLICATION_NAME: scm-mb
 scm:
   app-name: scm-mb
-  channels: MB4TEST
+  channels: IB4TEST
   logging:
     datasource:
       enabled: true
@@ -71,10 +71,10 @@ scm:
     client:
       distributed: true
       config:
-        clusterName: dev3
+        clusterName: scm
         network-config:
           addresses:
-            - '127.0.0.1:5701'
+            - '10.10.4.123:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
