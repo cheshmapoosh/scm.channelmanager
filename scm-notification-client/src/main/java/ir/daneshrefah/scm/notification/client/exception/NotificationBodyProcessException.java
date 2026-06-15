@@ -8,8 +8,8 @@ import ir.daneshrefah.scm.common.model.notification.NotificationRequest;
 public class NotificationBodyProcessException extends BaseNotificationException{
 
     private final String templateCode;
-    public NotificationBodyProcessException(NotificationRequest request, String templateCode) {
-        super(request, "notification body could not process for template code : " + templateCode, null);
+    public NotificationBodyProcessException(NotificationRequest request, String templateCode,Exception e) {
+        super(request, "notification body could not process for template code : " + templateCode, e);
         this.templateCode = templateCode;
     }
 
