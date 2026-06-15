@@ -149,6 +149,10 @@ public class OperationTemplateTransformer implements PluginHandler {
 
                 ClassPathResource resource =
                         new ClassPathResource(logicalPath);
+                if (!resource.exists()) {
+                    log.warn("Groovy transformer not found in classpath: {}", logicalPath);
+                    return "";
+                }
 
                 return StreamUtils.copyToString(
                         resource.getInputStream(),

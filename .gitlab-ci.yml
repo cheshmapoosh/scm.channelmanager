@@ -7,6 +7,8 @@ variables:
   REGISTRY_URL: "reg.daneshrefah.ir/modern-banking"
   IMAGE_NAME: "scm-app"
   KUBE_NAMESPACE: "scm"
+
+  GRADLE_VERSION: "8.14"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   LOCAL_GRADLE_HOME: "$CI_PROJECT_DIR/.gradle/gradle-home"
 
@@ -21,17 +23,35 @@ build_jars:
     policy: pull-push
     paths:
       - .gradle/caches
+      - .gradle/wrapper
+      - .gradle/gradle-home
+
   before_script:
     - |
-      if command -v gradle >/dev/null 2>&1; then
+      set -e
+  
+      if [ -x "$LOCAL_GRADLE_HOME/bin/gradle" ]; then
+        echo "Using cached Gradle from $LOCAL_GRADLE_HOME"
+  
+      elif command -v gradle >/dev/null 2>&1; then
+        echo "Using system Gradle"
         SOURCE_GRADLE_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v gradle)")")")"
+        rm -rf "$LOCAL_GRADLE_HOME"
+        mkdir -p "$(dirname "$LOCAL_GRADLE_HOME")"
+        cp -a "$SOURCE_GRADLE_HOME" "$LOCAL_GRADLE_HOME"
+  
       else
-        SOURCE_GRADLE_HOME="/opt/gradle"
+        echo "Gradle not found. Downloading Gradle $GRADLE_VERSION..."
+        mkdir -p "$GRADLE_USER_HOME"
+  
+        wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O "$GRADLE_USER_HOME/gradle.zip"
+        unzip -q "$GRADLE_USER_HOME/gradle.zip" -d "$GRADLE_USER_HOME"
+  
+        rm -rf "$LOCAL_GRADLE_HOME"
+        mv "$GRADLE_USER_HOME/gradle-${GRADLE_VERSION}" "$LOCAL_GRADLE_HOME"
+        rm -f "$GRADLE_USER_HOME/gradle.zip"
       fi
-
-      rm -rf "$LOCAL_GRADLE_HOME"
-      mkdir -p "$GRADLE_USER_HOME"
-      cp -a "$SOURCE_GRADLE_HOME" "$LOCAL_GRADLE_HOME"
+  
       "$LOCAL_GRADLE_HOME/bin/gradle" --version
   script:
     - '"$LOCAL_GRADLE_HOME/bin/gradle" clean :scm-config:bootJar :scm-cache:bootJar :scm-uaa:bootJar :scm-web:bootJar :scm-logging:bootJar --parallel --max-workers=4 -x test'

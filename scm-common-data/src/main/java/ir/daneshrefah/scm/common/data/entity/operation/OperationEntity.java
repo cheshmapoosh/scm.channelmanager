@@ -47,7 +47,7 @@ public class OperationEntity extends AbstractAuditableEntity<String> {
     @Column(length = 255)
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = OperationTypeConverter.class)
     @Column(name = "TYPE",nullable = false, length = 20)
     private OperationType type;
 

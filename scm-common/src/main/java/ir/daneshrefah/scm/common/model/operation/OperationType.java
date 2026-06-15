@@ -5,5 +5,6 @@ public enum OperationType {
     JAVA,
     BEAN,
     ATPS,
-    PROVIDER
+    PROVIDER,
+    UNKNOWN
 }
