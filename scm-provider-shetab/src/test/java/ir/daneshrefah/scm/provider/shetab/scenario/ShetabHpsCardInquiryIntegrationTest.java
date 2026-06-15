@@ -66,7 +66,7 @@ class ShetabHpsCardInquiryIntegrationTest {
 
     @Test
     void sendsCardInquiryToHpsAndReceivesNetworkResponse() throws Exception {
-        Assumptions.assumeTrue(Boolean.parseBoolean(env("SCM_SHETAB_HPS_INTEGRATION", "false")),
+        Assumptions.assumeTrue(Boolean.parseBoolean(env("SCM_SHETAB_HPS_INTEGRATION", "true")),
                 "Set SCM_SHETAB_HPS_INTEGRATION=true to run the real HPS integration test");
         Assumptions.assumeTrue(Files.exists(CARD_INQUIRY_SAMPLE_PATH),
                 "Sample file does not exist: " + CARD_INQUIRY_SAMPLE_PATH);
@@ -77,8 +77,8 @@ class ShetabHpsCardInquiryIntegrationTest {
         String pin = env("SCM_SHETAB_HPS_PIN", "");
         ShetabResolvedConfig config = config(
                 endpoints,
-                env("SCM_SHETAB_HPS_PIN_KEY", ""),
-                env("SCM_SHETAB_HPS_MAC_KEY", "")
+                env("SCM_SHETAB_HPS_PIN_KEY", "1C1C1C1C1C1C1C1C"),
+                env("SCM_SHETAB_HPS_MAC_KEY", "1C1C1C1C1C1C1C1C")
         );
 
         Map<String, Object> requestBody = readRequest1100(CARD_INQUIRY_SAMPLE_PATH);
@@ -99,7 +99,7 @@ class ShetabHpsCardInquiryIntegrationTest {
         providerRequest.body(requestBody);
         providerRequest.nativeRequest(request);
         ProviderMessageCustomizerContext context = new ProviderMessageCustomizerContext(
-                config.provider(), config.providerType(), "cardInquiry", "cardInquiry", null, "shetab",
+                config.provider(), config.scheme(), "cardInquiry", "cardInquiry", null, "shetab",
                 Map.of(), config, null, null);
         ProviderExchange exchange = new ProviderExchange(providerRequest, context);
         config.messageCustomizerPipeline().customizers().forEach(customizer -> customizer.beforeSend(exchange));
@@ -141,15 +141,15 @@ class ShetabHpsCardInquiryIntegrationTest {
                         new ShetabMacProviderMessageCustomizerFactory(packagerFactory)
                 ))
         ).build(
-                new ProviderMessageCustomizerContext("hps", "shetab", null, null, null, "shetab", Map.of(), null, null, null),
+                new ProviderMessageCustomizerContext("hps-shetab7", "scm-shetab", null, null, null, "shetab", Map.of(), null, null, null),
                 List.of(
                         definition("shetab-pin-block", Map.of("key", pinKey, "field", 52, "pan-field", 2)),
                         definition("shetab-mac", Map.of("key", macKey, "field", 128, "verify-response", false))
                 )
         );
         return new ShetabResolvedConfig(
-                "hps",
-                "shetab",
+                "hps-shetab7",
+                "scm-shetab",
                 endpoints,
                 env("SCM_SHETAB_HPS_PACKAGER", "Shetab7AsciiXAPackager"),
                 null,

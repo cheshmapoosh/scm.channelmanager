@@ -30,7 +30,7 @@ class ShetabConfigResolverTest {
         ShetabResolvedConfig config = resolver(registry).resolve("hps-shetab7", null);
 
         assertEquals("hps-shetab7", config.provider());
-        assertEquals("shetab", config.providerType());
+        assertEquals("scm-shetab", config.scheme());
         assertEquals(List.of("10.10.10.11:9000", "10.10.10.12:9000"), config.endpoints());
         assertEquals("hps-shetab-outlet", config.messageCustomizerPipeline().entries().getFirst().type());
     }

@@ -1,4 +1,4 @@
-SCM_APPLICATION_NAME: domain.card
+SCM_APPLICATION_NAME: scm-web
 scm:
   app-name: domain.card
   channels: MB4TEST
@@ -71,10 +71,14 @@ scm:
           config:
             type: BASIC
             header-name: Authorization
-            username: ${HPS_REST_USERNAME:user01}
-            password: ${HPS_REST_PASSWORD:pass01}
+            username: ${HPS_REST_USERNAME:depositUser}
+            password: ${HPS_REST_PASSWORD:depositUser}
             basic-base64: true
-
+        - type: rest-shetab-pin-block
+          config:
+            key: ${SCM_HPS_SHETAB7_PIN_KEY:1C1C1C1C1C1C1C1C}
+            pin-source: data.pin
+            pan-source: data.cardNumber
     hps-shetab7:
       scheme: scm-shetab
       enabled: true
@@ -170,7 +174,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.10.4.125:8000
+    issuer-uri: http://127.0.0.1:8000
   cache:
     client:
       distributed: true
@@ -181,7 +185,7 @@ scm:
         clusterName: dev3
         network-config:
           addresses:
-            - '10.10.4.125:5701'
+            - '127.0.0.1:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object
