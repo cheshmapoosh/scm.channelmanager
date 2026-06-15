@@ -41,6 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
             sendNotificationInternal(notificationMessage);
         } catch (Exception e) {
             log.error("error on send notification", e);
+            throw e;
         }
     }
 
@@ -85,7 +86,7 @@ public class NotificationServiceImpl implements NotificationService {
                     return body;
                 }
             } catch (Exception e) {
-                throw new NotificationBodyProcessException(request, template.getBody());
+                throw new NotificationBodyProcessException(request, template.getBody(),e);
             }
         }
         throw new NotFoundSupportedBodyProcessorException(request, template.getCode().getValue());
