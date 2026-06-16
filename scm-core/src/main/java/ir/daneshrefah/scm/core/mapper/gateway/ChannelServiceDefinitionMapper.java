@@ -40,6 +40,9 @@ public abstract class ChannelServiceDefinitionMapper {
 
     @Named("toModel")
     public ChannelServiceDefinition toModel(ChannelServiceDefinitionEntity channelServiceDefinitionEntity) {
+        if (channelServiceDefinitionEntity == null || channelServiceDefinitionEntity.getType() == null) {
+            return null;
+        }
         return switch (channelServiceDefinitionEntity.getType()) {
             case REST -> toRest(channelServiceDefinitionEntity);
             case SWAGGER -> toSwagger(channelServiceDefinitionEntity);
