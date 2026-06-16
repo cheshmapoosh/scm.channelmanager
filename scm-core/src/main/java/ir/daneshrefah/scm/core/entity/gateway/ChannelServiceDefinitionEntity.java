@@ -34,7 +34,7 @@ public class ChannelServiceDefinitionEntity extends AbstractAuditableEntity<Stri
     @JoinColumn(name = "GATEWAY_CHANNEL_ID", nullable = false, foreignKey = @ForeignKey(name = "FK_CHN_SVC_DEF_ON_GTW_CHN"))
     private GatewayChannelEntity gatewayChannel;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ChannelServiceDefinitionTypeConverter.class)
     @Size(max = 20)
     @Column(nullable = false, length = 20)
     private ChannelServiceDefinitionType type;
