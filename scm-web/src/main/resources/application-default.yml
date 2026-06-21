@@ -126,6 +126,19 @@ scm:
             key: ${SCM_HPS_SHETAB7_MAC_KEY:1C1C1C1C1C1C1C1C}
             field: 128
             verify-response: false
+    api-repo:
+      schema: nab-api-repo
+      enabled: true
+      base-url: http://10.15.1.61:9677
+      connect-timeout-ms: 3000
+      response-timeout-ms: 8000
+      virtual-threads-enabled: true
+      insecure-ssl: false
+      follow-redirects: NORMAL
+      default-method: POST
+      headers:
+        Accept: application/json
+        Content-Type: application/json
 
   #    sayad: http://10.15.46.20:8080/sayad/services/api
   datasource:

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Description of the class or purpose of the file.
@@ -36,7 +37,7 @@ public abstract class GeneralLegalPersonEntity extends GeneralPersonEntity {
     @Column(name = "LAST_NAME")
     private String lastName;
     @Column(name = "BIRTH_DATE")
-    private LocalDate registerDate;
+    private LocalDateTime registerDate;
     @Column(name = "IDENTIFICATION_NO")
     private String identificationNo;
     @Column(name = "FATHER_NAME")
