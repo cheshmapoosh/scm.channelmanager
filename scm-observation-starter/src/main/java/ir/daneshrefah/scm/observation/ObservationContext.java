@@ -12,6 +12,8 @@ public record ObservationContext(
         String appLabel,
         String channelCode,
         String gatewayName,
+        String serviceVersion,
+        String runtime,
         ZoneId observationZoneId
 ) {
     private static final ZoneId OBSERVATION_ZONE_ID = ZoneId.of("UTC");
@@ -26,8 +28,19 @@ public record ObservationContext(
                 "default",
                 "default",
                 "default",
+                firstText(environmentValue(environment, "scm.deployment.service-version"), System.getenv("VERSION"), "unknown"),
+                runtime(environment),
                 OBSERVATION_ZONE_ID
         );
+    }
+
+    private static String runtime(Environment environment) {
+        String configured = firstText(environmentValue(environment, "scm.runtime"), System.getenv("SCM_RUNTIME"), "");
+        if ("kubernetes".equals(configured) || "standalone".equals(configured)) {
+            return configured;
+        }
+        return environmentValue(environment, "KUBERNETES_SERVICE_HOST") == null
+                && System.getenv("KUBERNETES_SERVICE_HOST") == null ? "standalone" : "kubernetes";
     }
 
     private static String firstActiveProfile(Environment environment) {

@@ -6,27 +6,18 @@ import java.util.Map;
 
 public class ObservationDocumentBuilder {
     private final ObservationStream stream;
-    private final ObservationRecordKind kind;
-    private final boolean errorContext;
     private final ObservationAttributeRegistry registry;
     private final ObservationSanitizer sanitizer;
-    private final ObservationRecordValidator validator;
     private final LinkedHashMap<String, Object> document = new LinkedHashMap<>();
 
     ObservationDocumentBuilder(
             ObservationStream stream,
-            ObservationRecordKind kind,
-            boolean errorContext,
             ObservationAttributeRegistry registry,
-            ObservationSanitizer sanitizer,
-            ObservationRecordValidator validator
+            ObservationSanitizer sanitizer
     ) {
         this.stream = stream;
-        this.kind = kind == null ? ObservationRecordKind.PLAIN : kind;
-        this.errorContext = errorContext || this.kind == ObservationRecordKind.EXCEPTION;
         this.registry = registry == null ? ObservationAttributeRegistry.commonOnly() : registry;
         this.sanitizer = sanitizer;
-        this.validator = validator == null ? new ObservationRecordValidator(this.registry) : validator;
     }
 
     public ObservationDocumentBuilder put(String fieldName, Object value) {
@@ -63,7 +54,6 @@ public class ObservationDocumentBuilder {
     }
 
     public LinkedHashMap<String, Object> build() {
-        validator.validate(stream, kind, errorContext, document);
         return new LinkedHashMap<>(document);
     }
 }

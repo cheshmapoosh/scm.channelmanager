@@ -24,6 +24,7 @@ public class ScmObservation {
     private final TraceObservationSink traceSink;
     private final ObservationSanitizer sanitizer;
     private final ObservationDocumentFactory documentFactory;
+    private final ObservationRecordValidator recordValidator;
     private final Clock clock;
 
     public ScmObservation(
@@ -35,6 +36,7 @@ public class ScmObservation {
             TraceObservationSink traceSink,
             ObservationSanitizer sanitizer,
             ObservationDocumentFactory documentFactory,
+            ObservationRecordValidator recordValidator,
             Clock clock
     ) {
         this.context = context;
@@ -45,6 +47,7 @@ public class ScmObservation {
         this.traceSink = traceSink;
         this.sanitizer = sanitizer;
         this.documentFactory = documentFactory;
+        this.recordValidator = recordValidator;
         this.clock = clock;
     }
 
@@ -88,6 +91,12 @@ public class ScmObservation {
 
     ObservationDocumentFactory documentFactory() {
         return documentFactory;
+    }
+
+    void validate(ObservationStream stream, ObservationRecordKind kind, boolean errorContext, Map<String, Object> document) {
+        if (recordValidator != null) {
+            recordValidator.validate(stream, kind, errorContext, document);
+        }
     }
 
     private boolean eventEnabled(ObservationEventSignal signal) {

@@ -9,14 +9,17 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
-import ir.daneshrefah.scm.observation.JwtObservationSanitizer;
+import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationRecordKind;
+import ir.daneshrefah.scm.observation.ObservationRecordValidator;
+import ir.daneshrefah.scm.observation.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.ObservationStream;
+import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
 import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
 import net.logstash.logback.argument.StructuredArgument;
 import net.logstash.logback.composite.AbstractJsonProvider;
@@ -35,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(ScmLogJsonProvider.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final JwtObservationSanitizer SANITIZER = new JwtObservationSanitizer();
+    private static final ObservationSanitizer SANITIZER = new SecretScrubbingObservationSanitizer();
 
     private final Set<String> unknownWarnings = ConcurrentHashMap.newKeySet();
 
@@ -54,8 +57,6 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         boolean errorContext = event.getThrowableProxy() != null || kind == ObservationRecordKind.EXCEPTION;
         ObservationDocumentFactory factory = new ObservationDocumentFactory(null, registry, SANITIZER);
         ObservationDocumentBuilder builder = factory.log(
-                kind,
-                errorContext,
                 Instant.ofEpochMilli(event.getTimeStamp()),
                 level(event),
                 event.getLoggerName(),
@@ -66,7 +67,9 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         );
         builder.putAll(attributes);
 
-        for (Map.Entry<String, Object> entry : builder.build().entrySet()) {
+        Map<String, Object> document = builder.build();
+        new ObservationRecordValidator(registry).validate(ObservationStream.LOG, kind, errorContext, document);
+        for (Map.Entry<String, Object> entry : document.entrySet()) {
             generator.writeObjectField(entry.getKey(), entry.getValue());
         }
     }
@@ -160,7 +163,9 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         if (text != null) {
             return text;
         }
-        return recordKind(event) == ObservationRecordKind.CONTEXT ? "lifecycle" : "unknown";
+        return recordKind(event) == ObservationRecordKind.CONTEXT
+                ? CorrelationType.LIFECYCLE.value()
+                : CorrelationType.UNKNOWN.value();
     }
 
     private ObservationRecordKind recordKind(ILoggingEvent event) {

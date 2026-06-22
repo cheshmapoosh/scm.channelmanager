@@ -1,5 +1,8 @@
 # Common LOG Attributes
 
+`correlation.type` values are defined by `CorrelationType`: `lifecycle`, `request`, `message`, `job`, `batch`, `operation`, and `unknown`.
+Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creation. Missing context defaults to `unknown`.
+
 | name | Java type | Elasticsearch type | owner | streams | presence | sensitivity | visiblePrefixLength | visibleSuffixLength | description |
 | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | --- |
 | `@timestamp` | String | date | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Log event timestamp. |
@@ -7,8 +10,8 @@
 | `log.logger` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Logger name. |
 | `process.thread.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Thread name that emitted the log. |
 | `message` | String | text | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Rendered log message. |
-| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for lifecycle, request, message, job, batch, operation, or unknown logs. |
-| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type: lifecycle, request, message, job, batch, operation, or unknown. |
+| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for the active CorrelationType context. |
+| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type from the CorrelationType enum. |
 | `deployment.service.name` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service name. |
 | `deployment.service.version` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service version. |
 | `deployment.environment` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Deployment environment: dev, test, pilot or prod. |

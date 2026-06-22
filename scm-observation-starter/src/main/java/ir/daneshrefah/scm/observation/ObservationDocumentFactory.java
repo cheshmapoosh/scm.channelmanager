@@ -5,23 +5,11 @@ import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttribute
 
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Set;
 
 public class ObservationDocumentFactory {
-    private static final Set<String> ALLOWED_CORRELATION_TYPES = Set.of(
-            "lifecycle",
-            "request",
-            "message",
-            "job",
-            "batch",
-            "operation",
-            "unknown"
-    );
-
     private final ObservationContext context;
     private final ObservationAttributeRegistry registry;
     private final ObservationSanitizer sanitizer;
-    private final ObservationRecordValidator validator;
 
     public ObservationDocumentFactory(
             ObservationContext context,
@@ -31,20 +19,15 @@ public class ObservationDocumentFactory {
         this.context = context;
         this.registry = registry == null ? ObservationAttributeRegistry.commonOnly() : registry;
         this.sanitizer = sanitizer;
-        this.validator = new ObservationRecordValidator(this.registry);
     }
 
     public ObservationDocumentBuilder builder(
-            ObservationStream stream,
-            ObservationRecordKind kind,
-            boolean errorContext
+            ObservationStream stream
     ) {
-        return new ObservationDocumentBuilder(stream, kind, errorContext, registry, sanitizer, validator);
+        return new ObservationDocumentBuilder(stream, registry, sanitizer);
     }
 
     public ObservationDocumentBuilder log(
-            ObservationRecordKind kind,
-            boolean errorContext,
             Instant timestamp,
             String level,
             String loggerName,
@@ -53,46 +36,42 @@ public class ObservationDocumentFactory {
             String correlationId,
             String correlationType
     ) {
-        ObservationDocumentBuilder builder = builder(ObservationStream.LOG, kind, errorContext);
+        ObservationDocumentBuilder builder = builder(ObservationStream.LOG);
         builder.put(ScmCommonLogAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
         builder.put(ScmCommonLogAttributes.LOG_LEVEL, textOrDefault(level, "INFO").toUpperCase(Locale.ROOT));
         builder.put(ScmCommonLogAttributes.LOG_LOGGER, textOrDefault(loggerName, "application"));
         builder.put(ScmCommonLogAttributes.PROCESS_THREAD_NAME, textOrDefault(threadName, Thread.currentThread().getName()));
         builder.put(ScmCommonLogAttributes.MESSAGE, textOrDefault(message, ""));
         builder.put(ScmCommonLogAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmCommonLogAttributes.CORRELATION_TYPE, correlationType(correlationType, kind));
+        builder.put(ScmCommonLogAttributes.CORRELATION_TYPE, correlationType(correlationType));
         return builder;
     }
 
     public ObservationDocumentBuilder trace(
-            ObservationRecordKind kind,
-            boolean errorContext,
             Instant timestamp,
             String message,
             String correlationId,
             String correlationType
     ) {
-        ObservationDocumentBuilder builder = builder(ObservationStream.TRACE, kind, errorContext);
+        ObservationDocumentBuilder builder = builder(ObservationStream.TRACE);
         builder.put(ScmObservationDocumentAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
         builder.put(ScmObservationDocumentAttributes.MESSAGE, textOrDefault(message, "trace observation"));
         builder.put(ScmObservationDocumentAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType, kind));
+        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType));
         return builder;
     }
 
     public ObservationDocumentBuilder audit(
-            ObservationRecordKind kind,
-            boolean errorContext,
             Instant timestamp,
             String message,
             String correlationId,
             String correlationType
     ) {
-        ObservationDocumentBuilder builder = builder(ObservationStream.AUDIT, kind, errorContext);
+        ObservationDocumentBuilder builder = builder(ObservationStream.AUDIT);
         builder.put(ScmObservationDocumentAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
         builder.put(ScmObservationDocumentAttributes.MESSAGE, textOrDefault(message, "audit observation"));
         builder.put(ScmObservationDocumentAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType, kind));
+        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType));
         return builder;
     }
 
@@ -100,18 +79,19 @@ public class ObservationDocumentFactory {
         if (builder == null) {
             return;
         }
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_NAME, textOrDefault(context == null ? null : context.appName(), "application"));
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_VERSION, "unknown");
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_ENVIRONMENT, textOrDefault(context == null ? null : context.appProfile(), "default"));
-        builder.put(ScmCommonLogAttributes.SCM_RUNTIME, "unknown");
+        if (context == null) {
+            return;
+        }
+        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
+        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
+        builder.put(ScmCommonLogAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(ScmCommonLogAttributes.SCM_RUNTIME, context.runtime());
     }
 
-    public String correlationType(String requestedValue, ObservationRecordKind kind) {
-        String normalized = requestedValue == null ? null : requestedValue.trim().toLowerCase(Locale.ROOT);
-        if (normalized != null && ALLOWED_CORRELATION_TYPES.contains(normalized)) {
-            return normalized;
-        }
-        return kind == ObservationRecordKind.CONTEXT ? "lifecycle" : "unknown";
+    public String correlationType(String requestedValue) {
+        return requestedValue == null || requestedValue.isBlank()
+                ? CorrelationType.UNKNOWN.value()
+                : requestedValue.trim().toLowerCase(Locale.ROOT);
     }
 
     private String textOrDefault(String value, String defaultValue) {

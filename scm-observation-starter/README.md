@@ -31,7 +31,19 @@ When an `EVENT`, `CONTEXT`, or `CHANGE` record also has a throwable, `ERROR_REQU
 
 `ObservationAttributePresence` defines required and optional fields without boolean `required` flags. Use `ALWAYS_REQUIRED`, `CONTEXT_REQUIRED`, `CONTEXT_OPTIONAL`, `EVENT_REQUIRED`, `EVENT_OPTIONAL`, `ERROR_REQUIRED`, `ERROR_OPTIONAL`, or `ON_CHANGE_OPTIONAL`.
 
-`ObservationAttributeSensitivity` controls value handling after sanitizer processing. `RAW` is emitted as-is, `SECURE` is replaced, and prefix/suffix masking modes expose only configured visible characters.
+`ObservationAttributeSensitivity` is registry policy. `RAW` is emitted as-is, `SECURE` is replaced with `[SECURE]`, and prefix/suffix masking modes expose only configured visible characters.
+
+## Responsibility Boundaries
+
+`ObservationAttributeRegistry` is the attribute catalog. It owns metadata lookup, stream allow-list checks, blank/null/drop handling, and sensitivity masking through `prepareValue(...)`. It does not build observation documents, validate full records, or run regex/content secret scrubbing.
+
+`ObservationDocumentFactory` builds base documents for `LOG`, `TRACE`, and `AUDIT`. It owns common field placement and default base values only. It does not own validation rules or duplicate `correlation.type` allowed values.
+
+`ObservationRecordValidator` validates a finished document by `ObservationStream`, `ObservationRecordKind`, required `ObservationAttributePresence`, and the active `ObservationAttributeRegistry`. It does not build or sanitize documents.
+
+`ObservationDocumentBuilder` is the assembly path used by LOG, TRACE, and AUDIT. It applies `SecretScrubbingObservationSanitizer` first for hard safety, then calls `ObservationAttributeRegistry.prepareValue(...)` for contract policy and masking.
+
+`SecretScrubbingObservationSanitizer` is hard safety only. It redacts raw JWTs, Bearer tokens, Authorization values, invalid `scm.auth.jwt.hash` values, and obvious secret assignments inside free text, maps, collections, and arrays. The hard replacement token is always `[SECURE]`.
 
 ## Registry Model
 
@@ -52,7 +64,7 @@ observation.log()
         .action("hazelcast.bootstrap.started")
         .outcome("success")
         .correlationId(correlationId)
-        .correlationType("lifecycle")
+        .correlationType(CorrelationType.LIFECYCLE.value())
         .message("Hazelcast bootstrap started")
         .write();
 ```
@@ -101,25 +113,29 @@ They route starter TRACE/AUDIT payloads to dedicated JSONL appenders and must st
 
 ## Correlation
 
-Allowed `correlation.type` values:
+Allowed `correlation.type` values are defined by `CorrelationType`:
 
 ```text
-lifecycle
-request
-message
-job
-batch
-operation
-unknown
+LIFECYCLE -> lifecycle
+REQUEST -> request
+MESSAGE -> message
+JOB -> job
+BATCH -> batch
+OPERATION -> operation
+UNKNOWN -> unknown
 ```
 
 Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creation. Missing context should be `unknown` or a clear generated fallback, not lifecycle.
 
+The base document factory defaults a missing `correlation.type` to `CorrelationType.UNKNOWN`. Invalid non-empty values are rejected by `ObservationRecordValidator`.
+
 ## JSONL Providers
 
-The bundled JSONL provider builds the full official LOG document from the Logback event, MDC, registered structured fields, marker kind, and throwable state. It uses `ObservationAttributeRegistryHolder`, drops unregistered fields, warns once for each unknown dropped field, applies the sanitizer, and applies registry masking/sensitivity.
+The bundled JSONL provider builds the full official LOG document from the Logback event, MDC, registered structured fields, marker kind, and throwable state. It uses `ObservationAttributeRegistryHolder`, drops unregistered fields, warns once for each unknown dropped field, runs `SecretScrubbingObservationSanitizer` for hard safety, then applies registry masking/sensitivity through `prepareValue(...)`.
 
 TRACE and AUDIT documents are built through `ObservationDocumentFactory` and validated with `ObservationRecordValidator`. The legacy base document path was removed; new documents do not use the old stream, service, app, gateway, channel, correlation, or target projection fields.
+
+Raw `StructuredArguments.kv(...)` is not the official contract path for junior developers. Use `ScmObservation` builders or official SCM log helpers so record kind, correlation type, validation, hard secret scrubbing, and registry masking are applied consistently.
 
 ## Common LOG Attributes
 

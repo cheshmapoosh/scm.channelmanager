@@ -1,11 +1,14 @@
 package ir.daneshrefah.scm.observation.trace;
 
+import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationEventSignal;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
 import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationRecordKind;
+import ir.daneshrefah.scm.observation.ObservationRecordValidator;
+import ir.daneshrefah.scm.observation.ObservationStream;
 import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
 import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
 import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
@@ -21,15 +24,18 @@ import java.util.Map;
 public class StructuredTraceObservationSink implements TraceObservationSink {
     private final ObservationEventDispatcher eventDispatcher;
     private final ObservationDocumentFactory documentFactory;
+    private final ObservationRecordValidator recordValidator;
     private final Clock clock;
 
     public StructuredTraceObservationSink(
             ObservationEventDispatcher eventDispatcher,
             ObservationDocumentFactory documentFactory,
+            ObservationRecordValidator recordValidator,
             Clock clock
     ) {
         this.eventDispatcher = eventDispatcher;
         this.documentFactory = documentFactory;
+        this.recordValidator = recordValidator;
         this.clock = clock;
     }
 
@@ -76,12 +82,10 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
         ) {
             String outcome = textOrDefault(requestedOutcome, textOrDefault(spec.outcome(), throwable == null ? "success" : "failure"));
             ObservationDocumentBuilder builder = documentFactory.trace(
-                    ObservationRecordKind.EVENT,
-                    throwable != null,
                     endedAt,
                     textOrDefault(spec.spanName(), "trace.span"),
                     spec.correlationId(),
-                    "operation"
+                    CorrelationType.OPERATION.value()
             );
             builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, "trace");
             builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
@@ -101,7 +105,9 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
                 builder.put(ScmErrorAttributes.TYPE, throwable.getClass().getName());
                 builder.put(ScmErrorAttributes.MESSAGE, safeMessage(throwable));
             }
-            return builder.build();
+            LinkedHashMap<String, Object> document = builder.build();
+            recordValidator.validate(ObservationStream.TRACE, ObservationRecordKind.EVENT, throwable != null, document);
+            return document;
         }
 
         private String safeMessage(Throwable throwable) {

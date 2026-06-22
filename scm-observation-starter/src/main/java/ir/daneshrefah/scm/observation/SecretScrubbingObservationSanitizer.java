@@ -8,10 +8,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class JwtObservationSanitizer implements ObservationSanitizer {
-    private static final String REDACTED = "[REDACTED]";
+public class SecretScrubbingObservationSanitizer implements ObservationSanitizer {
+    private static final String SECURE = "[SECURE]";
     private static final Pattern BEARER_TOKEN = Pattern.compile("(?i)Bearer\\s+[A-Za-z0-9._~+/=-]+");
     private static final Pattern JWT_TOKEN = Pattern.compile("\\beyJ[A-Za-z0-9_-]*\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\b");
+    private static final Pattern SENSITIVE_ASSIGNMENT = Pattern.compile(
+            "(?i)(password|token|authorization|client_secret|authorization_code|pin|cvv2?|pan|account[_ -]?number)\\s*[:=]\\s*\\S+"
+    );
     private static final String JWT_HASH_FIELD = "scm.auth.jwt.hash";
 
     @Override
@@ -45,16 +48,17 @@ public class JwtObservationSanitizer implements ObservationSanitizer {
     }
 
     private Object sanitizeString(String normalizedField, String value) {
-        String sanitized = BEARER_TOKEN.matcher(value).replaceAll(REDACTED);
-        sanitized = JWT_TOKEN.matcher(sanitized).replaceAll(REDACTED);
+        String sanitized = BEARER_TOKEN.matcher(value).replaceAll(SECURE);
+        sanitized = JWT_TOKEN.matcher(sanitized).replaceAll(SECURE);
+        sanitized = SENSITIVE_ASSIGNMENT.matcher(sanitized).replaceAll("$1=" + SECURE);
         if (JWT_HASH_FIELD.equals(normalizedField)) {
-            return isSha256Hash(sanitized) ? sanitized : REDACTED;
+            return isSha256Hash(sanitized) ? sanitized : SECURE;
         }
         return sanitized;
     }
 
     private boolean isSha256Hash(String value) {
-        return value.startsWith("sha256:") && !value.contains(REDACTED);
+        return value.startsWith("sha256:") && !value.contains(SECURE);
     }
 
     private Map<String, Object> sanitizeMap(String parentField, Map<?, ?> value) {
