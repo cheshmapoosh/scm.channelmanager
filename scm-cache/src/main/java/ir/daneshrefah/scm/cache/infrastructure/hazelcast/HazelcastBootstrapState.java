@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.cache.infrastructure.hazelcast;
 
-import ir.daneshrefah.scm.observation.ObservationSanitizer;
-import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -12,11 +11,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
+@RequiredArgsConstructor
 public class HazelcastBootstrapState {
     private static final int MAX_FAILURE_MESSAGE_LENGTH = 300;
-    private static final ObservationSanitizer SANITIZER =
-            new SecretScrubbingObservationSanitizer();
 
+    private final SafeFailureMessageFormatter failureMessageFormatter;
     private final AtomicReference<Snapshot> state =
             new AtomicReference<>(Snapshot.empty());
 
@@ -89,7 +88,7 @@ public class HazelcastBootstrapState {
                 current.registeredElementDefinitions(),
                 current.materializedElementDefinitions(),
                 throwable == null ? null : throwable.getClass().getName(),
-                safeFailureMessage(throwable),
+                failureMessageFormatter.format(throwable, MAX_FAILURE_MESSAGE_LENGTH),
                 Instant.now()
         ));
     }
@@ -127,27 +126,6 @@ public class HazelcastBootstrapState {
 
     private List<HazelcastElementDefinition> elements(HazelcastInitializationPlan plan) {
         return plan == null ? List.of() : List.copyOf(plan.elements());
-    }
-
-    private String safeFailureMessage(Throwable throwable) {
-        if (throwable == null || throwable.getMessage() == null) {
-            return null;
-        }
-        String message = throwable.getMessage()
-                .replace('\r', ' ')
-                .replace('\n', ' ')
-                .trim();
-        if (message.isBlank()) {
-            return null;
-        }
-        Object sanitized = SANITIZER.sanitize("error.message", message);
-        message = sanitized == null ? null : String.valueOf(sanitized);
-        if (message == null || message.isBlank()) {
-            return null;
-        }
-        return message.length() <= MAX_FAILURE_MESSAGE_LENGTH
-                ? message
-                : message.substring(0, MAX_FAILURE_MESSAGE_LENGTH);
     }
 
     public record Snapshot(

@@ -163,12 +163,30 @@ public class HazelcastBootstrap {
                 ScmLogMarkers.SCM_EVENT,
                 "Hazelcast bootstrap failed",
                 withThrowable(
-                        ScmCacheInitLogging.initArguments(
-                                ScmCacheObservationEvents.HAZELCAST_BOOTSTRAP_FAILED,
-                                "failure"
-                        ),
+                        failureArguments(exception),
                         exception
                 )
+        );
+    }
+
+    private Object[] failureArguments(RuntimeException exception) {
+        if (exception instanceof HazelcastElementMaterializationException materializationException) {
+            return ScmCacheInitLogging.initArguments(
+                    ScmCacheObservationEvents.HAZELCAST_BOOTSTRAP_FAILED,
+                    "failure",
+                    ScmCacheInitLogging.kv(
+                            ScmCacheLogFields.HAZELCAST_ELEMENT_TYPE,
+                            materializationException.elementType().name()
+                    ),
+                    ScmCacheInitLogging.kv(
+                            ScmCacheLogFields.HAZELCAST_ELEMENT_NAME,
+                            materializationException.elementName()
+                    )
+            );
+        }
+        return ScmCacheInitLogging.initArguments(
+                ScmCacheObservationEvents.HAZELCAST_BOOTSTRAP_FAILED,
+                "failure"
         );
     }
 
