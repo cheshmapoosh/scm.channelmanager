@@ -17,6 +17,8 @@ import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.ScmObservation;
 import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
+import ir.daneshrefah.scm.observation.element.ScmElementHealthEngine;
+import ir.daneshrefah.scm.observation.element.ScmElementRiskEngine;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationLifecycle;
 import ir.daneshrefah.scm.observation.logback.DefaultLogbackObservationEventPublisher;
 import ir.daneshrefah.scm.observation.logback.LogbackAuditObservationEventSink;
@@ -107,6 +109,18 @@ public class ScmObservationAutoConfiguration {
     @ConditionalOnMissingBean
     public ObservationRecordValidator observationRecordValidator(ObservationAttributeRegistry registry) {
         return new ObservationRecordValidator(registry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ScmElementRiskEngine scmElementRiskEngine() {
+        return new ScmElementRiskEngine();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ScmElementHealthEngine scmElementHealthEngine(ScmElementRiskEngine riskEngine) {
+        return new ScmElementHealthEngine(riskEngine);
     }
 
     @Bean

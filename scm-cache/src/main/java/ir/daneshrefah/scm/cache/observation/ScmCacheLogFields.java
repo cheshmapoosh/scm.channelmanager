@@ -5,6 +5,8 @@ public final class ScmCacheLogFields {
             ScmCacheObservationAttributes.HAZELCAST_ELEMENT_TYPE.name();
     public static final String HAZELCAST_ELEMENT_NAME =
             ScmCacheObservationAttributes.HAZELCAST_ELEMENT_NAME.name();
+    public static final String HAZELCAST_ELEMENT_CONFIG =
+            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_CONFIG.name();
     public static final String HAZELCAST_ELEMENT_COUNT =
             ScmCacheObservationAttributes.HAZELCAST_ELEMENT_COUNT.name();
     public static final String HAZELCAST_ELEMENT_SUMMARY =

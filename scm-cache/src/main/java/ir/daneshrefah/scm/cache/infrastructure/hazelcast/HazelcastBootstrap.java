@@ -8,25 +8,39 @@ import ir.daneshrefah.scm.cache.observation.ScmCacheInitLogging;
 import ir.daneshrefah.scm.cache.observation.ScmCacheLogFields;
 import ir.daneshrefah.scm.cache.observation.ScmCacheObservationEvents;
 import ir.daneshrefah.scm.cache.service.InstanceCacheConfigService;
+import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationStream;
 import ir.daneshrefah.scm.observation.logging.ScmLogMarkers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class HazelcastBootstrap {
+    private static final List<String> REQUIRED_ELEMENT_LOG_FIELDS = List.of(
+            ScmCacheLogFields.HAZELCAST_ELEMENT_TYPE,
+            ScmCacheLogFields.HAZELCAST_ELEMENT_NAME,
+            ScmCacheLogFields.HAZELCAST_ELEMENT_CONFIG
+    );
+
     private final InstanceCacheConfigService configService;
     private final HazelcastElementRegistry elementRegistry;
     private final HazelcastBootstrapState bootstrapState;
+    // Ensures scm-cache ObservationAttributeContributor is registered before bootstrap logs are emitted.
+    private final ObservationAttributeRegistry observationAttributeRegistry;
+    private final AtomicBoolean registryAvailabilityWarningLogged = new AtomicBoolean();
 
     public HazelcastInstance start(Config config) {
         bootstrapState.markBootstrapStarted();
+        checkObservationRegistryAvailability();
         logInit(
                 "Hazelcast bootstrap started",
                 ScmCacheObservationEvents.HAZELCAST_BOOTSTRAP_STARTED,
@@ -94,8 +108,7 @@ public class HazelcastBootstrap {
                     "Hazelcast element registered",
                     ScmCacheObservationEvents.HAZELCAST_ELEMENT_REGISTERED,
                     "success",
-                    ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_TYPE, element.type().name()),
-                    ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_NAME, element.name())
+                    elementFields(element)
             );
         }
     }
@@ -106,9 +119,34 @@ public class HazelcastBootstrap {
                     "Hazelcast element materialized",
                     ScmCacheObservationEvents.HAZELCAST_ELEMENT_MATERIALIZED,
                     "success",
-                    ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_TYPE, element.type().name()),
-                    ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_NAME, element.name())
+                    elementFields(element)
             );
+        }
+    }
+
+    private void checkObservationRegistryAvailability() {
+        List<String> missingFields = REQUIRED_ELEMENT_LOG_FIELDS.stream()
+                .filter(field -> !observationAttributeRegistry.contains(ObservationStream.LOG, field))
+                .toList();
+        if (!missingFields.isEmpty() && registryAvailabilityWarningLogged.compareAndSet(false, true)) {
+            log.warn(
+                    "SCM cache observation registry is missing Hazelcast element log attributes; JSONL element fields may be dropped: {}",
+                    String.join(",", missingFields)
+            );
+        }
+    }
+
+    private Object[] elementFields(HazelcastElementDefinition element) {
+        List<Object> fields = new ArrayList<>();
+        fields.add(ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_TYPE, element.type().name()));
+        fields.add(ScmCacheInitLogging.kv(ScmCacheLogFields.HAZELCAST_ELEMENT_NAME, element.name()));
+        addIfPresent(fields, ScmCacheLogFields.HAZELCAST_ELEMENT_CONFIG, element.configText());
+        return fields.toArray();
+    }
+
+    private void addIfPresent(List<Object> fields, String name, Object value) {
+        if (value != null) {
+            fields.add(ScmCacheInitLogging.kv(name, value));
         }
     }
 

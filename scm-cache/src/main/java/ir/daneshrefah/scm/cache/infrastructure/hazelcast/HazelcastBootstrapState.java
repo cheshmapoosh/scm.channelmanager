@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,6 +30,8 @@ public class HazelcastBootstrapState {
                 false,
                 Map.of(),
                 Map.of(),
+                List.of(),
+                List.of(),
                 null,
                 null,
                 Instant.now()
@@ -41,6 +44,8 @@ public class HazelcastBootstrapState {
                 false,
                 countByType(plan),
                 current.materializedElements(),
+                elements(plan),
+                current.materializedElementDefinitions(),
                 null,
                 null,
                 Instant.now()
@@ -53,6 +58,8 @@ public class HazelcastBootstrapState {
                 false,
                 current.registeredElements(),
                 countByType(plan),
+                current.registeredElementDefinitions(),
+                elements(plan),
                 null,
                 null,
                 Instant.now()
@@ -65,6 +72,8 @@ public class HazelcastBootstrapState {
                 true,
                 current.registeredElements(),
                 current.materializedElements(),
+                current.registeredElementDefinitions(),
+                current.materializedElementDefinitions(),
                 null,
                 null,
                 Instant.now()
@@ -77,6 +86,8 @@ public class HazelcastBootstrapState {
                 false,
                 current.registeredElements(),
                 current.materializedElements(),
+                current.registeredElementDefinitions(),
+                current.materializedElementDefinitions(),
                 throwable == null ? null : throwable.getClass().getName(),
                 safeFailureMessage(throwable),
                 Instant.now()
@@ -114,6 +125,10 @@ public class HazelcastBootstrapState {
         return Collections.unmodifiableMap(new EnumMap<>(counts));
     }
 
+    private List<HazelcastElementDefinition> elements(HazelcastInitializationPlan plan) {
+        return plan == null ? List.of() : List.copyOf(plan.elements());
+    }
+
     private String safeFailureMessage(Throwable throwable) {
         if (throwable == null || throwable.getMessage() == null) {
             return null;
@@ -140,6 +155,8 @@ public class HazelcastBootstrapState {
             boolean bootstrapCompleted,
             Map<HazelcastElementType, Integer> registeredElements,
             Map<HazelcastElementType, Integer> materializedElements,
+            List<HazelcastElementDefinition> registeredElementDefinitions,
+            List<HazelcastElementDefinition> materializedElementDefinitions,
             String lastFailureType,
             String lastFailureMessage,
             Instant lastUpdatedAt
@@ -147,6 +164,8 @@ public class HazelcastBootstrapState {
         public Snapshot {
             registeredElements = immutableCounts(registeredElements);
             materializedElements = immutableCounts(materializedElements);
+            registeredElementDefinitions = immutableElements(registeredElementDefinitions);
+            materializedElementDefinitions = immutableElements(materializedElementDefinitions);
             lastUpdatedAt = lastUpdatedAt == null ? Instant.EPOCH : lastUpdatedAt;
         }
 
@@ -156,6 +175,8 @@ public class HazelcastBootstrapState {
                     false,
                     Map.of(),
                     Map.of(),
+                    List.of(),
+                    List.of(),
                     null,
                     null,
                     Instant.EPOCH
@@ -193,6 +214,12 @@ public class HazelcastBootstrapState {
                 return Map.of();
             }
             return Collections.unmodifiableMap(new EnumMap<>(source));
+        }
+
+        private static List<HazelcastElementDefinition> immutableElements(
+                List<HazelcastElementDefinition> source
+        ) {
+            return source == null || source.isEmpty() ? List.of() : List.copyOf(source);
         }
     }
 }

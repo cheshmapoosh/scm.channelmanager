@@ -33,6 +33,18 @@ public final class ScmCacheObservationAttributes {
                     "Hazelcast element name."
             );
 
+    public static final ObservationAttributeKey<String> HAZELCAST_ELEMENT_CONFIG =
+            ObservationAttributeKey.logString(
+                    "cache.hazelcast.element.config",
+                    ObservationAttributeKey.ELASTIC_TEXT,
+                    OWNER,
+                    ObservationAttributePresence.EVENT_OPTIONAL,
+                    ObservationAttributeSensitivity.RAW,
+                    0,
+                    0,
+                    "Selected safe Hazelcast element configuration as deterministic text."
+            );
+
     public static final ObservationAttributeKey<Integer> HAZELCAST_ELEMENT_COUNT =
             ObservationAttributeKey.logInteger(
                     "cache.hazelcast.element.count",
@@ -109,6 +121,7 @@ public final class ScmCacheObservationAttributes {
         return List.of(
                 HAZELCAST_ELEMENT_TYPE,
                 HAZELCAST_ELEMENT_NAME,
+                HAZELCAST_ELEMENT_CONFIG,
                 HAZELCAST_ELEMENT_COUNT,
                 HAZELCAST_ELEMENT_SUMMARY,
                 HAZELCAST_MATERIALIZED_COUNT,

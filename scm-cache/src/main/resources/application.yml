@@ -31,3 +31,10 @@ scm:
     health:
       hazelcast:
         minimum-cluster-size: ${SCM_CACHE_HEALTH_MIN_CLUSTER_SIZE:1}
+        element-risk:
+          default-warning-ratio: ${SCM_CACHE_ELEMENT_WARNING_RATIO:0.80}
+          default-critical-ratio: ${SCM_CACHE_ELEMENT_CRITICAL_RATIO:0.90}
+          elements:
+            user_cache:
+              warning-ratio: 0.80
+              critical-ratio: 0.90
