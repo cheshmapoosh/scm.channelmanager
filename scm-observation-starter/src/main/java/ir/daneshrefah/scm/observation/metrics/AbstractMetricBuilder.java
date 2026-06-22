@@ -10,6 +10,7 @@ import java.util.Set;
 
 abstract class AbstractMetricBuilder<T extends AbstractMetricBuilder<T>> {
     private static final Set<String> DISALLOWED_TAGS = Set.of(
+            "correlation.id",
             "scm.correlation_id",
             "trace.id",
             "span.id",

@@ -3,44 +3,45 @@ package ir.daneshrefah.scm.observation.logging;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.fasterxml.jackson.core.JsonGenerator;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
+import ir.daneshrefah.scm.observation.ObservationIds;
 import net.logstash.logback.composite.AbstractJsonProvider;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class ScmMdcJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
-    private final ObservationAttributeRegistry registry = ObservationAttributeRegistry.effectiveLogRegistry();
-
     @Override
     public void writeTo(JsonGenerator generator, ILoggingEvent event) throws IOException {
         if (event == null) {
             return;
         }
+        ObservationAttributeRegistry registry = ObservationAttributeRegistryHolder.getOrCommonOnly();
         Map<String, String> mdc = event.getMDCPropertyMap();
         if (mdc != null && !mdc.isEmpty()) {
-            writeIfPresent(generator, mdc, ScmLogFields.TRACE_ID, "traceId", "trace_id", "trace.id");
-            writeIfPresent(generator, mdc, ScmLogFields.SPAN_ID, "spanId", "span_id", "span.id");
+            writeIfPresent(generator, registry, mdc, ScmLogFields.TRACE_ID, "traceId", "trace_id", "trace.id");
+            writeIfPresent(generator, registry, mdc, ScmLogFields.SPAN_ID, "spanId", "span_id", "span.id");
         }
         String correlationId = mdc == null ? null : firstPresent(mdc, "correlationId", "correlation_id", "correlation.id");
         if (correlationId == null) {
             correlationId = textOrNull(ScmInitCorrelationContext.current());
         }
         if (correlationId == null) {
-            correlationId = ScmInitCorrelationContext.ensure();
+            correlationId = ObservationIds.correlationId();
         }
-        writeField(generator, ScmLogFields.CORRELATION_ID, correlationId);
+        writeField(generator, registry, ScmLogFields.CORRELATION_ID, correlationId);
 
         String correlationType = mdc == null ? null : firstPresent(mdc, "correlationType", "correlation_type", "correlation.type");
-        writeField(generator, ScmLogFields.CORRELATION_TYPE, correlationType == null ? "lifecycle" : correlationType);
+        writeField(generator, registry, ScmLogFields.CORRELATION_TYPE, correlationType == null ? "unknown" : correlationType);
     }
 
-    private void writeIfPresent(JsonGenerator generator, Map<String, String> mdc, String fieldName, String... aliases)
+    private void writeIfPresent(JsonGenerator generator, ObservationAttributeRegistry registry, Map<String, String> mdc, String fieldName, String... aliases)
             throws IOException {
         String value = firstPresent(mdc, aliases);
-        writeField(generator, fieldName, value);
+        writeField(generator, registry, fieldName, value);
     }
 
-    private void writeField(JsonGenerator generator, String fieldName, String value) throws IOException {
+    private void writeField(JsonGenerator generator, ObservationAttributeRegistry registry, String fieldName, String value) throws IOException {
         Object prepared = registry.prepareValue(fieldName, value);
         if (prepared != null) {
             generator.writeObjectField(fieldName, prepared);

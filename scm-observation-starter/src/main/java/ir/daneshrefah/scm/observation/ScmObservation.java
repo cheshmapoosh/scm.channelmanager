@@ -11,7 +11,6 @@ import ir.daneshrefah.scm.observation.trace.TraceObservationSpec;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ScmObservation {
@@ -24,6 +23,7 @@ public class ScmObservation {
     private final MetricObservationSink metricSink;
     private final TraceObservationSink traceSink;
     private final ObservationSanitizer sanitizer;
+    private final ObservationDocumentFactory documentFactory;
     private final Clock clock;
 
     public ScmObservation(
@@ -34,6 +34,7 @@ public class ScmObservation {
             MetricObservationSink metricSink,
             TraceObservationSink traceSink,
             ObservationSanitizer sanitizer,
+            ObservationDocumentFactory documentFactory,
             Clock clock
     ) {
         this.context = context;
@@ -43,6 +44,7 @@ public class ScmObservation {
         this.metricSink = metricSink;
         this.traceSink = traceSink;
         this.sanitizer = sanitizer;
+        this.documentFactory = documentFactory;
         this.clock = clock;
     }
 
@@ -84,49 +86,15 @@ public class ScmObservation {
         return signalPolicy != null && signalPolicy.isEnabled(signal);
     }
 
+    ObservationDocumentFactory documentFactory() {
+        return documentFactory;
+    }
+
     private boolean eventEnabled(ObservationEventSignal signal) {
         return switch (signal) {
             case TRACE -> isEnabled(ObservationSignal.TRACE);
             case AUDIT -> isEnabled(ObservationSignal.AUDIT);
         };
-    }
-
-    LinkedHashMap<String, Object> baseDocument(
-            ObservationStream stream,
-            String eventKind,
-            String eventCategory,
-            String eventAction,
-            String eventOutcome,
-            String correlationId,
-            boolean legacyEnabled,
-            String legacyTable,
-            Instant timestamp
-    ) {
-        if (legacyEnabled) {
-            validateLegacyTable(legacyTable);
-        }
-        LinkedHashMap<String, Object> document = new LinkedHashMap<>();
-        document.put("@timestamp", timestamp.toString());
-        document.put("event.stream", stream.value());
-        document.put("event.kind", textOrDefault(eventKind, "event"));
-        document.put("event.category", textOrDefault(eventCategory, stream.value()));
-        document.put("event.action", textOrDefault(eventAction, stream.value() + ".event"));
-        document.put("event.outcome", textOrDefault(eventOutcome, "unknown"));
-        document.put("scm.target.index", targetIndexResolver.resolve(stream, context, timestamp));
-        document.put("scm.target.legacy.enabled", legacyEnabled);
-        if (legacyEnabled) {
-            document.put("scm.target.legacy.table", legacyTable.trim());
-        }
-        document.put("scm.platform", context.platform());
-        document.put("service.name", context.appName());
-        document.put("deployment.environment", context.appProfile());
-        document.put("scm.app.name", context.appName());
-        document.put("scm.app.profile", context.appProfile());
-        document.put("scm.app.label", context.appLabel());
-        document.put("scm.gateway.name", context.gatewayName());
-        document.put("scm.channel.code", context.channelCode());
-        document.put("scm.correlation_id", textOrDefault(correlationId, ObservationIds.correlationId()));
-        return document;
     }
 
     void putAttribute(Map<String, Object> document, String fieldName, Object value) {
@@ -151,11 +119,4 @@ public class ScmObservation {
         }
     }
 
-    private void validateLegacyTable(String legacyTable) {
-        ObservationLegacyTables.validate(legacyTable);
-    }
-
-    private String textOrDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value.trim();
-    }
 }

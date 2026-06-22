@@ -45,9 +45,6 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
         if (!observation.isEnabled(ObservationSignal.TRACE)) {
             return new ObservationScope(ir.daneshrefah.scm.observation.trace.TraceObservationHandle.NOOP);
         }
-        if (legacyEnabled) {
-            ObservationLegacyTables.validate(legacyTable);
-        }
         return observation.startTrace(new TraceObservationSpec(
                 sourceClass,
                 spanName,
@@ -58,8 +55,6 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
                 traceId,
                 spanId,
                 parentSpanId,
-                legacyEnabled,
-                legacyTable,
                 attributes
         ));
     }

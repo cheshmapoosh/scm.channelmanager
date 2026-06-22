@@ -1,14 +1,15 @@
 package ir.daneshrefah.scm.observation.trace;
 
-import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
-import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
+import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationEventSignal;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
 import ir.daneshrefah.scm.observation.ObservationIds;
-import ir.daneshrefah.scm.observation.ObservationLegacyTables;
-import ir.daneshrefah.scm.observation.ObservationSanitizer;
-import ir.daneshrefah.scm.observation.ObservationStream;
+import ir.daneshrefah.scm.observation.ObservationRecordKind;
 import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -18,23 +19,17 @@ import java.util.Locale;
 import java.util.Map;
 
 public class StructuredTraceObservationSink implements TraceObservationSink {
-    private final ObservationContext context;
-    private final ObsTargetIndexResolver targetIndexResolver;
     private final ObservationEventDispatcher eventDispatcher;
-    private final ObservationSanitizer sanitizer;
+    private final ObservationDocumentFactory documentFactory;
     private final Clock clock;
 
     public StructuredTraceObservationSink(
-            ObservationContext context,
-            ObsTargetIndexResolver targetIndexResolver,
             ObservationEventDispatcher eventDispatcher,
-            ObservationSanitizer sanitizer,
+            ObservationDocumentFactory documentFactory,
             Clock clock
     ) {
-        this.context = context;
-        this.targetIndexResolver = targetIndexResolver;
         this.eventDispatcher = eventDispatcher;
-        this.sanitizer = sanitizer;
+        this.documentFactory = documentFactory;
         this.clock = clock;
     }
 
@@ -65,10 +60,7 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
             }
             finished = true;
             Instant endedAt = Instant.now(clock);
-            LinkedHashMap<String, Object> document = baseDocument(endedAt, outcome, throwable);
-            putAttributes(document, spec.attributes());
-            putAttributes(document, attributes);
-            putThrowable(document, throwable);
+            LinkedHashMap<String, Object> document = document(endedAt, outcome, attributes, throwable);
             eventDispatcher.write(new ir.daneshrefah.scm.observation.ObservationEvent(
                     ObservationEventSignal.TRACE,
                     spec.sourceClass(),
@@ -76,73 +68,40 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
             ));
         }
 
-        private LinkedHashMap<String, Object> baseDocument(Instant endedAt, String requestedOutcome, Throwable throwable) {
-            LinkedHashMap<String, Object> document = new LinkedHashMap<>();
-            boolean legacyEnabled = spec.legacyEnabled();
-            String legacyTable = legacyEnabled ? ObservationLegacyTables.validate(spec.legacyTable()) : null;
+        private LinkedHashMap<String, Object> document(
+                Instant endedAt,
+                String requestedOutcome,
+                Map<String, Object> attributes,
+                Throwable throwable
+        ) {
             String outcome = textOrDefault(requestedOutcome, textOrDefault(spec.outcome(), throwable == null ? "success" : "failure"));
-            document.put("@timestamp", endedAt.toString());
-            document.put("event.stream", ObservationStream.TRACE.value());
-            document.put("event.kind", "span");
-            document.put("event.category", "trace");
-            document.put("event.action", textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
-            document.put("event.outcome", outcome);
-            document.put("scm.target.index", targetIndexResolver.resolve(ObservationStream.TRACE, context, endedAt));
-            document.put("scm.target.legacy.enabled", legacyEnabled);
-            if (legacyEnabled) {
-                document.put("scm.target.legacy.table", legacyTable);
+            ObservationDocumentBuilder builder = documentFactory.trace(
+                    ObservationRecordKind.EVENT,
+                    throwable != null,
+                    endedAt,
+                    textOrDefault(spec.spanName(), "trace.span"),
+                    spec.correlationId(),
+                    "operation"
+            );
+            builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, "trace");
+            builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
+            builder.put(ScmObservationDocumentAttributes.EVENT_OUTCOME, outcome);
+            builder.put(ScmTraceAttributes.TRACE_ID, textOrDefault(spec.traceId(), ObservationIds.traceId()));
+            builder.put(ScmTraceAttributes.SPAN_ID, textOrDefault(spec.spanId(), ObservationIds.spanId()));
+            builder.put(ScmTraceAttributes.PARENT_SPAN_ID, spec.parentSpanId());
+            builder.put(ScmTraceAttributes.SPAN_NAME, textOrDefault(spec.spanName(), "trace.span"));
+            builder.put(ScmTraceAttributes.SPAN_KIND, textOrDefault(spec.spanKind(), "internal").toLowerCase(Locale.ROOT));
+            builder.put(ScmTraceAttributes.SPAN_START_TIME, startedAt.toString());
+            builder.put(ScmTraceAttributes.SPAN_END_TIME, endedAt.toString());
+            builder.put(ScmTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startedAt, endedAt).toMillis()));
+            builder.put(ScmOperationAttributes.DURATION_MS, Math.max(0L, Duration.ofNanos(System.nanoTime() - startedNanos).toMillis()));
+            builder.putAll(spec.attributes());
+            builder.putAll(attributes);
+            if (throwable != null) {
+                builder.put(ScmErrorAttributes.TYPE, throwable.getClass().getName());
+                builder.put(ScmErrorAttributes.MESSAGE, safeMessage(throwable));
             }
-            document.put("scm.platform", context.platform());
-            document.put("service.name", context.appName());
-            document.put("deployment.environment", context.appProfile());
-            document.put("scm.app.name", context.appName());
-            document.put("scm.app.profile", context.appProfile());
-            document.put("scm.app.label", context.appLabel());
-            document.put("scm.gateway.name", context.gatewayName());
-            document.put("scm.channel.code", context.channelCode());
-            document.put("scm.correlation_id", textOrDefault(spec.correlationId(), ObservationIds.correlationId()));
-            document.put("trace.id", textOrDefault(spec.traceId(), ObservationIds.traceId()));
-            document.put("span.id", textOrDefault(spec.spanId(), ObservationIds.spanId()));
-            if (spec.parentSpanId() != null && !spec.parentSpanId().isBlank()) {
-                document.put("parent.span.id", spec.parentSpanId().trim());
-            }
-            document.put("span.name", textOrDefault(spec.spanName(), "trace.span"));
-            document.put("span.kind", textOrDefault(spec.spanKind(), "internal").toLowerCase(Locale.ROOT));
-            document.put("span.start_time", startedAt.toString());
-            document.put("span.end_time", endedAt.toString());
-            document.put("span.duration_ms", Math.max(0L, Duration.between(startedAt, endedAt).toMillis()));
-            document.put("scm.operation.duration_ms", Math.max(0L, Duration.ofNanos(System.nanoTime() - startedNanos).toMillis()));
-            return document;
-        }
-
-        private void putThrowable(Map<String, Object> document, Throwable throwable) {
-            if (throwable == null) {
-                return;
-            }
-            putAttribute(document, ScmErrorAttributes.TYPE.name(), throwable.getClass().getName());
-            putAttribute(document, ScmErrorAttributes.MESSAGE.name(), safeMessage(throwable));
-        }
-
-        private void putAttributes(Map<String, Object> document, Map<String, Object> attributes) {
-            if (attributes == null) {
-                return;
-            }
-            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-                putAttribute(document, entry.getKey(), entry.getValue());
-            }
-        }
-
-        private void putAttribute(Map<String, Object> document, String fieldName, Object value) {
-            if (fieldName == null || fieldName.isBlank() || value == null) {
-                return;
-            }
-            if (!TraceAttributeSecurity.isAllowed(fieldName) && !TraceAttributeSecurity.isReservedTraceField(fieldName)) {
-                return;
-            }
-            Object sanitized = sanitizer == null ? value : sanitizer.sanitize(fieldName.trim(), value);
-            if (sanitized != null) {
-                document.put(fieldName.trim(), sanitized);
-            }
+            return builder.build();
         }
 
         private String safeMessage(Throwable throwable) {

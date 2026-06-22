@@ -35,11 +35,7 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
             if (spec.outcome() != null && !spec.outcome().isBlank() && !"unknown".equalsIgnoreCase(spec.outcome().trim())) {
                 tag(spanBuilder, "event.outcome", spec.outcome());
             }
-            tag(spanBuilder, "scm.correlation_id", spec.correlationId());
-            tag(spanBuilder, "scm.target.legacy.enabled", spec.legacyEnabled());
-            if (spec.legacyEnabled()) {
-                tag(spanBuilder, "scm.target.legacy.table", spec.legacyTable());
-            }
+            tag(spanBuilder, "correlation.id", spec.correlationId());
             tagAll(spanBuilder, spec.attributes());
             Span span = spanBuilder.start();
             Tracer.SpanInScope spanInScope = tracer.withSpan(span);

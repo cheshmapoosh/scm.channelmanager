@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.observation;
 
 import ir.daneshrefah.scm.observation.attributes.ScmAuditAttributes;
 import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
 import ir.daneshrefah.scm.observation.policy.ObservationSignal;
 
 import java.time.Instant;
@@ -13,6 +14,8 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
     private String userName;
     private String resourceType;
     private String resourceId;
+    private ObservationRecordKind recordKind = ObservationRecordKind.EVENT;
+    private Throwable throwable;
 
     AuditObservationBuilder(ScmObservation observation) {
         super(observation);
@@ -23,7 +26,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
         this.auditType = "SERVICE";
         this.category = "service";
         this.action = "service.audit";
-        legacyDisabled();
+        this.recordKind = ObservationRecordKind.EVENT;
         return this;
     }
 
@@ -31,7 +34,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
         this.auditType = "CHANGE";
         this.category = "configuration";
         this.action = "change.audit";
-        legacyTarget("cm.user_action_log");
+        this.recordKind = ObservationRecordKind.CHANGE;
         return this;
     }
 
@@ -48,6 +51,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
 
     public AuditObservationBuilder failure(Throwable throwable) {
         outcome(OUTCOME_FAILURE);
+        this.throwable = throwable;
         if (throwable != null) {
             attribute(ScmErrorAttributes.TYPE, throwable.getClass().getName());
             attribute(ScmErrorAttributes.MESSAGE, safeMessage(throwable));
@@ -60,22 +64,23 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
             return;
         }
         Instant timestamp = observation.now();
-        LinkedHashMap<String, Object> document = observation.baseDocument(
-                ObservationStream.AUDIT,
-                "event",
-                category,
+        ObservationDocumentBuilder builder = observation.documentFactory().audit(
+                recordKind,
+                throwable != null,
+                timestamp,
                 action,
-                outcome,
                 correlationId,
-                legacyEnabled,
-                legacyTable,
-                timestamp
+                "operation"
         );
-        observation.putAttribute(document, ScmAuditAttributes.TYPE, auditType);
-        observation.putAttribute(document, ScmAuditAttributes.USER_NAME, userName);
-        observation.putAttribute(document, ScmAuditAttributes.RESOURCE_TYPE, resourceType);
-        observation.putAttribute(document, ScmAuditAttributes.RESOURCE_ID, resourceId);
-        observation.putAttributes(document, attributes);
+        builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, category);
+        builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, action);
+        builder.put(ScmObservationDocumentAttributes.EVENT_OUTCOME, outcome);
+        builder.put(ScmAuditAttributes.TYPE, auditType);
+        builder.put(ScmAuditAttributes.USER_NAME, userName);
+        builder.put(ScmAuditAttributes.RESOURCE_TYPE, resourceType);
+        builder.put(ScmAuditAttributes.RESOURCE_ID, resourceId);
+        builder.putAll(attributes);
+        LinkedHashMap<String, Object> document = builder.build();
         observation.write(ObservationEventSignal.AUDIT, sourceClass, document);
     }
 
