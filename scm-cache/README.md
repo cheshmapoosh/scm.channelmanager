@@ -1,18 +1,125 @@
 # scm-cache
 
-`scm-cache` is the SCM Hazelcast member process. It is infrastructure only.
+`scm-cache` is the SCM Hazelcast server/member process. It owns the embedded Hazelcast member bootstrap, server-side health checks, readiness/liveness probes, and Prometheus export.
 
-It does not expose REST APIs, OpenAPI, Spring Security filters, user-cache integration, session-cache integration, or a Hazelcast client. It starts as a non-web Spring Boot application and exposes only the Hazelcast member port.
+`scm-cache-starter` remains the client-side cache integration module. Client cache metrics and auto-instrumentation are intentionally deferred to a later cycle.
+
+## Ports
+
+The service uses exactly two conceptual ports:
+
+- `5701` named `hazelcast` for Hazelcast cluster/member communication.
+- `8080` named `management` for the main Spring Boot web server and Actuator endpoints.
+
+Actuator runs on the main web server port. Do not configure `management.server.port`, and do not add a separate actuator port.
+
+## Actuator Endpoints
+
+Only these Actuator endpoints are exposed:
+
+```text
+/actuator/health
+/actuator/health/liveness
+/actuator/health/readiness
+/actuator/info
+/actuator/metrics
+/actuator/prometheus
+```
+
+Probe aliases are also enabled on the same server port:
+
+```text
+/livez
+/readyz
+```
+
+`/actuator/health/liveness` includes Spring Boot `livenessState` and `scmCacheHazelcastLiveness`. It checks that the application is alive and the embedded Hazelcast lifecycle service is running. It does not depend on the database or remote systems.
+
+`/actuator/health/readiness` includes Spring Boot `readinessState` and the stable `scmCacheHazelcast` health indicator. Readiness checks that the embedded Hazelcast instance exists, its lifecycle service is running, bootstrap completed, registered element count matches materialized element count, and cluster size is at least `scm.cache.health.hazelcast.minimum-cluster-size` with a default of `1`.
+
+The Hazelcast readiness details include:
+
+```text
+cluster.size
+bootstrap.started
+bootstrap.completed
+registered.count
+materialized.count
+lastFailure.type
+lastFailure.message
+```
+
+## Prometheus Metrics
+
+Prometheus is available at:
+
+```text
+/actuator/prometheus
+```
+
+`scm-cache` registers low-cardinality gauges only:
+
+```text
+scm.cache.hazelcast.cluster.size
+scm.cache.hazelcast.member.running
+scm.cache.hazelcast.bootstrap.completed
+scm.cache.hazelcast.elements.registered
+scm.cache.hazelcast.elements.materialized
+scm.cache.hazelcast.elements.registered.by.type
+scm.cache.hazelcast.elements.materialized.by.type
+```
+
+Allowed tags are:
+
+```text
+service=scm-cache
+element.type=<HazelcastElementType>
+```
+
+Cache element names must not be metric tags. Element names may appear in structured bootstrap logs.
+
+## Structured Logs
+
+`ScmCacheInitLogging` is startup-log-only. It creates the initial lifecycle correlation id and minimal structured arguments before the normal Spring observation API is fully available. It must not contain business logic, transaction logic, repository access, health logic, or Hazelcast bootstrap logic.
+
+Startup/context/init logs use explicit `correlation.type=lifecycle`; they must not fall back to `unknown`.
+
+Event categories:
+
+```text
+scm.cache.context
+scm.cache.init
+scm.cache.health
+```
+
+Stable event actions:
+
+```text
+runtime.context.created
+scm.cache.init.started
+hazelcast.bootstrap.started
+hazelcast.bootstrap.config.loaded
+hazelcast.bootstrap.config.registered
+hazelcast.bootstrap.member.started
+hazelcast.bootstrap.objects.materialized
+hazelcast.bootstrap.completed
+hazelcast.bootstrap.failed
+hazelcast.element.registered
+hazelcast.element.materialized
+hazelcast.health.changed
+```
+
+Hazelcast bootstrap logs include loaded definition count, registered element count and summary by type, one registered event per element, materialized element count and summary by type, one materialized event per element, member address, and cluster size. Do not log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
 
 ## Configuration Source
 
-Local development uses:
+Local development uses module-local Spring configuration under:
 
 ```text
-scm-cache/src/main/resources/application-default.yml
+scm-cache/src/main/resources/
 ```
 
-Non-development environments must use Spring Cloud Config through `scm-config`. Do not add local production profile files for observation settings.
+Non-development environments must use Spring Cloud Config through `scm-config`. Do not add a centralized root `docs/` folder for module-specific observability details.
 
 ## Enabled Signals
 
@@ -25,111 +132,10 @@ AUDIT  = disabled
 METRIC = enabled
 ```
 
-Both the master switch and the signal switch are required:
-
-```yaml
-scm:
-  observation:
-    enabled: true
-    log:
-      enabled: true
-    trace:
-      enabled: true
-    audit:
-      enabled: false
-    metric:
-      enabled: true
-```
-
-There is no `signals.*`, `files.*`, `output.*`, `scm.log.*`, or deployment observation hierarchy.
-
-## Normal Logs
-
-Normal application logs use Lombok `@Slf4j` and SLF4J. They go through Logback and keep the source class logger name.
-
-INFO is used for production milestones:
-
-- Hazelcast initialization started,
-- cache definitions loaded as a count,
-- Hazelcast configuration elements registered as a count and summary,
-- Hazelcast member started,
-- distributed objects materialized as a count,
-- initialization completed with duration and counts,
-- initialization failed with the throwable preserved,
-- application ready,
-- shutdown started.
-
-Do not emit one INFO log per cache object. Use DEBUG for safe development details and temporary diagnostics. SLF4J TRACE is separate from the structured TRACE observation signal.
-
-Never log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
-
-## TRACE
-
-TRACE records cache-server lifecycle and Hazelcast initialization events such as:
+Metrics follow the standard Actuator and Micrometer flow:
 
 ```text
-scm.cache.server.started
-scm.cache.hazelcast.member.start
-scm.cache.hazelcast.member.shutdown
-scm.cache.map.config.load
-scm.cache.distributed.object.create
+Metric -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
-Trace output is JSONL through the `SCM_OBSERVATION_TRACE` Logback marker when trace file output is enabled.
-
-## AUDIT
-
-SCM Cache has no business or administrative REST API in this design, so AUDIT is disabled by default. Audit belongs in services that accept authenticated administrative or business requests.
-
-## METRIC
-
-SCM Cache records low-cardinality Micrometer metrics for startup, lifecycle, map configuration loading, distributed object creation, and errors.
-
-Metric tags must stay low-cardinality. Do not use cache key, user ID, request ID, correlation ID, exception message, token, OTP, nickname, terminal code, or cache values as tags.
-
-## Logback
-
-`scm-cache/src/main/resources/logback-spring.xml` is shared by all environments and reads only:
-
-```text
-scm.observation.log.*
-scm.observation.trace.*
-scm.observation.audit.*
-```
-
-The application and console appenders reject `SCM_OBSERVATION_TRACE` and `SCM_OBSERVATION_AUDIT`. The trace appender accepts only `SCM_OBSERVATION_TRACE`. The audit appender accepts only `SCM_OBSERVATION_AUDIT`.
-
-Trace and audit JSONL encoders use:
-
-```xml
-<pattern>%msg%n</pattern>
-```
-
-The SCM Cache package logger reads `scm.observation.log.level.application`. Development can use:
-
-```text
-SCM_OBSERVATION_LOG_APPLICATION_LEVEL=DEBUG
-```
-
-Temporary targeted troubleshooting may use:
-
-```text
-SCM_OBSERVATION_LOG_APPLICATION_LEVEL=TRACE
-```
-
-Do not enable DEBUG globally through the root logger.
-
-## Hazelcast Configuration Prefix
-
-Hazelcast member settings are bound from:
-
-```yaml
-scm:
-  cache:
-    hazelcast:
-      member:
-        instance-name: scm-cache
-        cluster-name: scm-cache-cluster
-```
-
-Do not use `hazelcast.config` or `scm.cache.hazelcast.config`.
+Do not write metrics to files.

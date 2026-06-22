@@ -8,9 +8,9 @@ spec:
   type: {{ .Values.serviceApi.type }}
   ports:
     - port: {{ .Values.serviceApi.port }}
-      targetPort: http
+      targetPort: management
       protocol: TCP
-      name: http
+      name: management
   {{- with .Values.serviceApi.externalIPs }}
   externalIPs:
     {{- toYaml . | nindent 4}}

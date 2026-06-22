@@ -22,6 +22,8 @@ tasks.named("bootJar") {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'com.hazelcast:hazelcast-spring'
@@ -34,4 +36,5 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation project(':scm-observation-starter')
     runtimeOnly 'org.codehaus.janino:janino'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 }
