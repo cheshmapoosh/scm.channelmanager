@@ -28,7 +28,7 @@ public class CacheServerLifecycleObserver {
 
     private void logInit(String message, String action, String outcome) {
         log.info(
-                ScmLogMarkers.SCM_INIT,
+                ScmLogMarkers.SCM_EVENT,
                 message,
                 ScmCacheInitLogging.initArguments(action, outcome)
         );

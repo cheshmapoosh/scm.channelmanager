@@ -72,7 +72,7 @@ public class HazelcastBootstrap {
 
     private void logInit(String message, String action, String outcome, Object... fields) {
         log.info(
-                ScmLogMarkers.SCM_INIT,
+                ScmLogMarkers.SCM_EVENT,
                 message,
                 ScmCacheInitLogging.initArguments(action, outcome, fields)
         );
@@ -80,7 +80,7 @@ public class HazelcastBootstrap {
 
     private void logInitFailure(RuntimeException exception) {
         log.error(
-                ScmLogMarkers.SCM_INIT,
+                ScmLogMarkers.SCM_EVENT,
                 "Hazelcast bootstrap failed",
                 withThrowable(
                         ScmCacheInitLogging.initArguments(

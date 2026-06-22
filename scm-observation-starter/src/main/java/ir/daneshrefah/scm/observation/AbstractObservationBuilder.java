@@ -9,8 +9,6 @@ abstract class AbstractObservationBuilder<T extends AbstractObservationBuilder<T
     protected String action;
     protected String outcome = "unknown";
     protected String correlationId;
-    protected boolean legacyEnabled;
-    protected String legacyTable;
     protected Class<?> sourceClass = ScmObservation.class;
 
     AbstractObservationBuilder(ScmObservation observation) {
@@ -40,18 +38,6 @@ abstract class AbstractObservationBuilder<T extends AbstractObservationBuilder<T
 
     public T correlationId(String correlationId) {
         this.correlationId = correlationId;
-        return self();
-    }
-
-    public T legacyTarget(String legacyTable) {
-        this.legacyEnabled = true;
-        this.legacyTable = legacyTable;
-        return self();
-    }
-
-    public T legacyDisabled() {
-        this.legacyEnabled = false;
-        this.legacyTable = null;
         return self();
     }
 

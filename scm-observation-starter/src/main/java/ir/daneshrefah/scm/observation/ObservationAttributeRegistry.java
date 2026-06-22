@@ -1,28 +1,45 @@
 package ir.daneshrefah.scm.observation;
 
 import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
+import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.Set;
 
 public class ObservationAttributeRegistry {
-    private static final ObservationAttributeRegistry EFFECTIVE_LOG_REGISTRY =
-            new ObservationAttributeRegistry(loadContributors());
+    private static final ObservationAttributeRegistry COMMON_ONLY = new ObservationAttributeRegistry(List.of());
 
-    private final Map<String, ObservationAttributeKey<?>> attributes;
+    private final Map<ObservationStream, Map<String, ObservationAttributeKey<?>>> attributesByStream;
+    private final Map<String, ObservationAttributeKey<?>> firstAttributeByName;
 
     public ObservationAttributeRegistry() {
         this(List.of());
     }
 
     public ObservationAttributeRegistry(Collection<ObservationAttributeContributor> contributors) {
-        Map<String, ObservationAttributeKey<?>> registered = new LinkedHashMap<>();
+        Map<ObservationStream, Map<String, ObservationAttributeKey<?>>> registered = new EnumMap<>(ObservationStream.class);
+        for (ObservationStream stream : ObservationStream.values()) {
+            registered.put(stream, new LinkedHashMap<>());
+        }
         registerAll(registered, ScmCommonLogAttributes.attributes());
+        registerAll(registered, ScmObservationDocumentAttributes.attributes());
+        registerAll(registered, ScmTraceAttributes.attributes());
+        registerAll(registered, ScmAuditAttributes.attributes());
+        registerAll(registered, ScmHttpAttributes.attributes());
+        registerAll(registered, ScmOperationAttributes.attributes());
+        registerAll(registered, ScmErrorAttributes.attributes());
         if (contributors != null) {
             for (ObservationAttributeContributor contributor : contributors) {
                 if (contributor != null) {
@@ -30,34 +47,62 @@ public class ObservationAttributeRegistry {
                 }
             }
         }
-        this.attributes = Collections.unmodifiableMap(registered);
+        Map<ObservationStream, Map<String, ObservationAttributeKey<?>>> immutableByStream = new EnumMap<>(ObservationStream.class);
+        Map<String, ObservationAttributeKey<?>> firstByName = new LinkedHashMap<>();
+        for (Map.Entry<ObservationStream, Map<String, ObservationAttributeKey<?>>> entry : registered.entrySet()) {
+            Map<String, ObservationAttributeKey<?>> streamAttributes = Collections.unmodifiableMap(entry.getValue());
+            immutableByStream.put(entry.getKey(), streamAttributes);
+            for (ObservationAttributeKey<?> key : streamAttributes.values()) {
+                firstByName.putIfAbsent(key.name(), key);
+            }
+        }
+        this.attributesByStream = Collections.unmodifiableMap(immutableByStream);
+        this.firstAttributeByName = Collections.unmodifiableMap(firstByName);
     }
 
-    public static ObservationAttributeRegistry effectiveLogRegistry() {
-        return EFFECTIVE_LOG_REGISTRY;
+    public static ObservationAttributeRegistry commonOnly() {
+        return COMMON_ONLY;
     }
 
     public Collection<ObservationAttributeKey<?>> all() {
-        return attributes.values();
+        Set<ObservationAttributeKey<?>> attributes = new LinkedHashSet<>();
+        for (Map<String, ObservationAttributeKey<?>> streamAttributes : attributesByStream.values()) {
+            attributes.addAll(streamAttributes.values());
+        }
+        return Collections.unmodifiableSet(attributes);
+    }
+
+    public Collection<ObservationAttributeKey<?>> all(ObservationStream stream) {
+        return attributes(stream).values();
     }
 
     public Optional<ObservationAttributeKey<?>> findByName(String name) {
-        return Optional.ofNullable(attributes.get(name));
+        return Optional.ofNullable(firstAttributeByName.get(name));
+    }
+
+    public Optional<ObservationAttributeKey<?>> findByName(ObservationStream stream, String name) {
+        return Optional.ofNullable(attributes(stream).get(name));
     }
 
     public boolean contains(String name) {
-        return attributes.containsKey(name);
+        return firstAttributeByName.containsKey(name);
+    }
+
+    public boolean contains(ObservationStream stream, String name) {
+        return attributes(stream).containsKey(name);
     }
 
     public boolean containsLogAttribute(String name) {
-        return findByName(name)
-                .map(key -> key.streams().contains(ObservationStream.LOG))
-                .orElse(false);
+        return contains(ObservationStream.LOG, name);
     }
 
     public Object prepareValue(String name, Object value) {
-        ObservationAttributeKey<?> key = attributes.get(name);
-        if (key == null || !key.streams().contains(ObservationStream.LOG) || value == null) {
+        return prepareValue(ObservationStream.LOG, name, value);
+    }
+
+    public Object prepareValue(ObservationStream stream, String name, Object value) {
+        ObservationAttributeKey<?> key = attributes(stream).get(name);
+        if (key == null || value == null) {
             return null;
         }
         String text = value instanceof String ? ((String) value).trim() : null;
@@ -70,7 +115,14 @@ public class ObservationAttributeRegistry {
         return mask(String.valueOf(value), key);
     }
 
-    private void registerAll(Map<String, ObservationAttributeKey<?>> registered,
+    private Map<String, ObservationAttributeKey<?>> attributes(ObservationStream stream) {
+        if (stream == null) {
+            return Map.of();
+        }
+        return attributesByStream.getOrDefault(stream, Map.of());
+    }
+
+    private void registerAll(Map<ObservationStream, Map<String, ObservationAttributeKey<?>>> registered,
                              Collection<ObservationAttributeKey<?>> keys) {
         if (keys == null) {
             return;
@@ -80,15 +132,23 @@ public class ObservationAttributeRegistry {
         }
     }
 
-    private void register(Map<String, ObservationAttributeKey<?>> registered, ObservationAttributeKey<?> key) {
+    private void register(Map<ObservationStream, Map<String, ObservationAttributeKey<?>>> registered,
+                          ObservationAttributeKey<?> key) {
         if (key == null) {
             return;
         }
-        ObservationAttributeKey<?> existing = registered.get(key.name());
-        if (existing != null && !existing.compatibleWith(key)) {
-            throw new IllegalStateException("Observation attribute has incompatible duplicate metadata: " + key.name());
+        for (ObservationStream stream : key.streams()) {
+            Map<String, ObservationAttributeKey<?>> streamAttributes = registered.get(stream);
+            if (streamAttributes == null) {
+                continue;
+            }
+            ObservationAttributeKey<?> existing = streamAttributes.get(key.name());
+            if (existing != null && !existing.compatibleWith(key)) {
+                throw new IllegalStateException("Observation attribute has incompatible duplicate metadata: "
+                        + stream + ":" + key.name());
+            }
+            streamAttributes.putIfAbsent(key.name(), key);
         }
-        registered.putIfAbsent(key.name(), key);
     }
 
     private Object mask(String value, ObservationAttributeKey<?> key) {
@@ -130,10 +190,4 @@ public class ObservationAttributeRegistry {
                 + value.substring(value.length() - Math.max(0, suffix));
     }
 
-    private static Collection<ObservationAttributeContributor> loadContributors() {
-        return ServiceLoader.load(ObservationAttributeContributor.class)
-                .stream()
-                .map(ServiceLoader.Provider::get)
-                .toList();
-    }
 }

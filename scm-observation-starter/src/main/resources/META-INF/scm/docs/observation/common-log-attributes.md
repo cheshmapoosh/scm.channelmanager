@@ -7,8 +7,8 @@
 | `log.logger` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Logger name. |
 | `process.thread.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Thread name that emitted the log. |
 | `message` | String | text | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Rendered log message. |
-| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for lifecycle, request, message, job, batch or operation logs. |
-| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type: lifecycle, request, message, job, batch or operation. |
+| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for lifecycle, request, message, job, batch, operation, or unknown logs. |
+| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type: lifecycle, request, message, job, batch, operation, or unknown. |
 | `deployment.service.name` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service name. |
 | `deployment.service.version` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service version. |
 | `deployment.environment` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Deployment environment: dev, test, pilot or prod. |

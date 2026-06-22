@@ -20,12 +20,12 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
     public void initialize(ConfigurableApplicationContext applicationContext) {
         ensureInitCorrelationId();
         log.info(
-                ScmLogMarkers.SCM_INIT,
+                ScmLogMarkers.SCM_CONTEXT,
                 "SCM runtime context created",
                 contextArguments(applicationContext.getEnvironment())
         );
         log.info(
-                ScmLogMarkers.SCM_INIT,
+                ScmLogMarkers.SCM_EVENT,
                 "SCM cache init started",
                 initArguments("scm.cache.init.started", "unknown")
         );
@@ -66,7 +66,8 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
         arguments.add(kv(ScmLogFields.DEPLOYMENT_SERVICE_VERSION, firstPresent(
                 environment.getProperty("scm.deployment.service-version"),
                 System.getenv("VERSION"),
-                implementationVersion()
+                implementationVersion(),
+                "unknown"
         )));
         arguments.add(kv(ScmLogFields.DEPLOYMENT_ENVIRONMENT, deploymentEnvironment(environment)));
         arguments.add(kv(ScmLogFields.SCM_RUNTIME, runtime(environment)));

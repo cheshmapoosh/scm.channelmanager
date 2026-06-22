@@ -1,184 +1,132 @@
 # scm-observation-starter
 
-`scm-observation-starter` provides shared SCM observation APIs and Spring Boot auto-configuration.
-
-Adding the dependency alone enables nothing. The starter is fully opt-in and fail-closed.
-
-## Signals
-
-The only supported SCM observation namespaces are:
-
-```text
-scm.observation.enabled
-scm.observation.log.*
-scm.observation.trace.*
-scm.observation.audit.*
-scm.observation.metric.*
-```
-
-The master switch and the per-signal switch must both be enabled:
-
-```yaml
-scm:
-  observation:
-    enabled: false
-    log:
-      enabled: false
-    trace:
-      enabled: false
-    audit:
-      enabled: false
-    metric:
-      enabled: false
-```
-
-Effective state:
-
-```text
-signal enabled = scm.observation.enabled AND scm.observation.<signal>.enabled
-```
-
-`scm.observation.enabled=true` by itself still leaves every signal disabled.
-
-The starter does not support the old signal tree, shared observation file tree, shared observation output tree, separate SCM log tree, or deployment observation metadata.
+`scm-observation-starter` provides the shared SCM observation foundation for LOG, TRACE, AUDIT, and future METRIC work. Adding the dependency alone enables nothing; every signal is opt-in and fail-closed.
 
 ## Architecture
 
 ```text
-Normal LOG -> Lombok @Slf4j -> SLF4J -> Logback -> host logback-spring.xml
-TRACE      -> starter event -> direct Logback event -> TRACE marker -> host JSONL appender
-AUDIT      -> starter event -> direct Logback event -> AUDIT marker -> host JSONL appender
-METRIC     -> starter metric API -> Micrometer -> Actuator -> Prometheus
+LOG    -> Logback JSONL -> Filebeat -> Elasticsearch -> Kibana
+TRACE  -> starter event -> Logback routing marker -> JSONL -> Filebeat -> Elasticsearch -> Kibana
+AUDIT  -> starter event -> Logback routing marker -> JSONL -> Filebeat -> Elasticsearch -> Kibana
+METRIC -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
-Metrics are never written to JSONL files by the starter.
+Metrics are not JSONL records. Cycle 0 does not implement Actuator/Prometheus wiring or cache metrics.
 
-## Normal Logging
+## Core Concepts
 
-Application code must use normal Lombok/SLF4J logging:
+`ObservationStream` identifies the output stream: `LOG`, `TRACE`, `AUDIT`, or future `METRIC`.
+
+`ObservationRecordKind` is validation context only. It is never written to JSONL.
+
+| kind | required presence |
+| --- | --- |
+| `PLAIN` | `ALWAYS_REQUIRED` |
+| `CONTEXT` | `ALWAYS_REQUIRED`, `CONTEXT_REQUIRED` |
+| `EVENT` | `ALWAYS_REQUIRED`, `EVENT_REQUIRED` |
+| `EXCEPTION` | `ALWAYS_REQUIRED`, `ERROR_REQUIRED` |
+| `CHANGE` | `ALWAYS_REQUIRED` |
+
+When an `EVENT`, `CONTEXT`, or `CHANGE` record also has a throwable, `ERROR_REQUIRED` is added. `ERROR_REQUIRED` means a throwable, fault, or exception marker exists; it does not mean `log.level=ERROR`.
+
+`ObservationAttributePresence` defines required and optional fields without boolean `required` flags. Use `ALWAYS_REQUIRED`, `CONTEXT_REQUIRED`, `CONTEXT_OPTIONAL`, `EVENT_REQUIRED`, `EVENT_OPTIONAL`, `ERROR_REQUIRED`, `ERROR_OPTIONAL`, or `ON_CHANGE_OPTIONAL`.
+
+`ObservationAttributeSensitivity` controls value handling after sanitizer processing. `RAW` is emitted as-is, `SECURE` is replaced, and prefix/suffix masking modes expose only configured visible characters.
+
+## Registry Model
+
+`ObservationAttributeContributor` is Spring Bean based. Do not register contributors with Java SPI or `META-INF/services`.
+
+Spring auto-configuration builds one `ObservationAttributeRegistry` from built-in starter attributes and Spring contributors. Duplicate metadata for the same stream and field must be compatible or startup fails.
+
+`ObservationAttributeRegistryHolder` publishes the Spring-built registry for Logback providers. If Logback initializes before Spring publishes the registry, providers use the common-only fallback registry. There is no SPI fallback.
+
+## Official LOG API
+
+Junior developers should use either normal SLF4J messages or the official SCM observation API/helpers. Do not use raw `StructuredArguments.kv(...)` as the official path; unregistered fields are dropped by the JSONL provider and warned once per field name.
 
 ```java
-@Slf4j
-@Component
-public class HazelcastBootstrap {
-    public void start() {
-        log.info("Hazelcast initialization started");
-    }
-}
+observation.log()
+        .event()
+        .category("cache.init")
+        .action("hazelcast.bootstrap.started")
+        .outcome("success")
+        .correlationId(correlationId)
+        .correlationType("lifecycle")
+        .message("Hazelcast bootstrap started")
+        .write();
 ```
 
-`LOG` does not replace SLF4J and does not change the Java logging API. Logger names remain the source class names.
+Supported LOG builder flows:
 
-`scm.observation.log.*` configures LOG observation behavior and host Logback output settings. Logger levels are still enforced by Logback.
+- `plain()`
+- `context()`
+- `event()`
+- `exception(Throwable)`
+- `change()`
+- `category(String)`
+- `action(String)`
+- `outcome(String)`
+- `correlationId(String)`
+- `correlationType(String)`
+- `message(String)`
+- `write()`
 
-## TRACE And AUDIT Routing
+## SLF4J Markers
 
-TRACE and AUDIT are structured JSON events. They are routed through Logback markers, not logger names and not SLF4J `info`, `warn`, or `error` calls.
+RecordKind markers are for normal LOG JSONL validation:
 
-Required marker names:
+| marker | record kind |
+| --- | --- |
+| `SCM_CONTEXT` | `CONTEXT` |
+| `SCM_EVENT` | `EVENT` |
+| `SCM_EXCEPTION` | `EXCEPTION` |
+| `SCM_CHANGE` | `CHANGE` |
+
+Detection rules:
+
+- `log.info("x")`, `log.warn("x")`, and `log.error("x")` without marker and without throwable are `PLAIN`.
+- `log.warn("x", throwable)` and `log.error("x", throwable)` are `EXCEPTION`.
+- `log.error("x")` without throwable does not require `error.*`.
+- Marker plus throwable validates both marker-required fields and `ERROR_REQUIRED`.
+
+Routing markers are not RecordKind markers:
 
 ```text
 SCM_OBSERVATION_TRACE
 SCM_OBSERVATION_AUDIT
 ```
 
-Host `logback-spring.xml` must:
+They route starter TRACE/AUDIT payloads to dedicated JSONL appenders and must stay out of normal application appenders.
 
-- reject these markers from the normal application appender and console appender,
-- accept only `SCM_OBSERVATION_TRACE` in the trace JSONL appender,
-- accept only `SCM_OBSERVATION_AUDIT` in the audit JSONL appender,
-- use `<pattern>%msg%n</pattern>` for trace and audit files.
+## Correlation
 
-The starter provides `ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter` for XML routing.
+Allowed `correlation.type` values:
 
-## Configuration Contract
-
-Each signal owns its output settings:
-
-```yaml
-scm:
-  observation:
-    enabled: true
-
-    log:
-      enabled: true
-      console:
-        enabled: false
-      file:
-        enabled: true
-        directory: /var/log/app
-        file-name: scm-cache.log
-        archive-directory: /var/log/app/archive
-      rolling:
-        max-file-size: 100MB
-        max-history: 30
-        total-size-cap: 10GB
-        clean-history-on-start: false
-      level:
-        root: INFO
-        application: INFO
-        spring: INFO
-        hibernate: WARN
-        hazelcast: INFO
-
-    trace:
-      enabled: true
-      file:
-        enabled: true
-        directory: /var/log/observation
-        file-name: scm-cache-trace.jsonl
-        archive-directory: /var/log/observation/archive
-      rolling:
-        max-file-size: 100MB
-        max-history: 30
-        total-size-cap: 10GB
-        clean-history-on-start: false
-      async:
-        enabled: true
-        queue-size: 8192
-        discarding-threshold: 0
-        never-block: false
-
-    audit:
-      enabled: true
-      file:
-        enabled: true
-        directory: /var/log/observation
-        file-name: scm-cache-audit.jsonl
-        archive-directory: /var/log/observation/archive
-      rolling:
-        max-file-size: 100MB
-        max-history: 90
-        total-size-cap: 20GB
-        clean-history-on-start: false
-      async:
-        enabled: false
-        queue-size: 8192
-        discarding-threshold: 0
-        never-block: false
-
-    metric:
-      enabled: false
+```text
+lifecycle
+request
+message
+job
+batch
+operation
+unknown
 ```
 
-Hosts should place development values in `application-default.yml` and non-development values in `scm-config`. The host `logback-spring.xml` reads the effective Spring Environment with `<springProperty>`.
+Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creation. Missing context should be `unknown` or a clear generated fallback, not lifecycle.
 
-## Deployment Identity
+## JSONL Providers
 
-The starter has no deployment metadata feature. It does not read deployment identity variables, infer the operating-system user, look up the hostname, generate runtime identity, or add Kubernetes Pod or Node fields.
+The bundled JSONL provider builds the full official LOG document from the Logback event, MDC, registered structured fields, marker kind, and throwable state. It uses `ObservationAttributeRegistryHolder`, drops unregistered fields, warns once for each unknown dropped field, applies the sanitizer, and applies registry masking/sensitivity.
 
-Audit actor identity must come from the authenticated application security principal. If no authenticated actor is available, omit the actor attribute.
+TRACE and AUDIT documents are built through `ObservationDocumentFactory` and validated with `ObservationRecordValidator`. The legacy base document path was removed; new documents do not use the old stream, service, app, gateway, channel, correlation, or target projection fields.
 
-## Safety Rules
+## Common LOG Attributes
 
-- Do not put request bodies, cache values, tokens, credentials, kubeconfig, or secrets in logs, traces, audits, or metric tags.
-- Use predefined typed attributes such as `ScmCacheAttributes.CLUSTER_NAME`.
-- Avoid high-cardinality metric tags such as cache key, user ID, request ID, correlation ID, and exception message.
-- Prefer synchronous AUDIT output first. If AUDIT is async, configure no-discard behavior and understand backpressure.
-- Treat SLF4J TRACE level as a development logging level. It is separate from the structured TRACE observation signal.
+The source of truth for common LOG fields is:
 
-## Auto-Configuration
+```text
+src/main/resources/META-INF/scm/docs/observation/common-log-attributes.md
+```
 
-All Spring wiring is provided by the starter. Host modules should not create observation configuration classes, custom sinks, custom signal policies, custom marker filters, Micrometer wiring, or OpenTelemetry wiring.
-
-Disabled observation APIs are safe no-ops: they create no events, serialize nothing, publish nothing, and do not warn per call.
+Keep that file aligned with `ScmCommonLogAttributes`.

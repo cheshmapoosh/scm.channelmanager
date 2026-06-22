@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
 import net.logstash.logback.argument.StructuredArgument;
 import net.logstash.logback.composite.AbstractJsonProvider;
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ public class ScmRegisteredArgumentsJsonProvider extends AbstractJsonProvider<ILo
     private static final Logger LOG = LoggerFactory.getLogger(ScmRegisteredArgumentsJsonProvider.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final ObservationAttributeRegistry registry = ObservationAttributeRegistry.effectiveLogRegistry();
     private final Set<String> unknownWarnings = ConcurrentHashMap.newKeySet();
 
     @Override
@@ -28,14 +28,15 @@ public class ScmRegisteredArgumentsJsonProvider extends AbstractJsonProvider<ILo
         if (event == null || event.getArgumentArray() == null) {
             return;
         }
+        ObservationAttributeRegistry registry = ObservationAttributeRegistryHolder.getOrCommonOnly();
         for (Object argument : event.getArgumentArray()) {
             if (argument instanceof StructuredArgument structuredArgument) {
-                writeStructuredArgument(generator, structuredArgument);
+                writeStructuredArgument(generator, registry, structuredArgument);
             }
         }
     }
 
-    private void writeStructuredArgument(JsonGenerator generator, StructuredArgument argument) throws IOException {
+    private void writeStructuredArgument(JsonGenerator generator, ObservationAttributeRegistry registry, StructuredArgument argument) throws IOException {
         TokenBuffer buffer = new TokenBuffer(OBJECT_MAPPER, false);
         argument.writeTo(buffer);
         try (JsonParser parser = buffer.asParser(OBJECT_MAPPER)) {
@@ -45,13 +46,13 @@ public class ScmRegisteredArgumentsJsonProvider extends AbstractJsonProvider<ILo
                     String fieldName = parser.currentName();
                     parser.nextToken();
                     Object value = parser.readValueAs(Object.class);
-                    writeRegisteredField(generator, fieldName, value);
+                    writeRegisteredField(generator, registry, fieldName, value);
                 }
             }
         }
     }
 
-    private void writeRegisteredField(JsonGenerator generator, String fieldName, Object value) throws IOException {
+    private void writeRegisteredField(JsonGenerator generator, ObservationAttributeRegistry registry, String fieldName, Object value) throws IOException {
         if (isProviderOwnedField(fieldName)) {
             return;
         }

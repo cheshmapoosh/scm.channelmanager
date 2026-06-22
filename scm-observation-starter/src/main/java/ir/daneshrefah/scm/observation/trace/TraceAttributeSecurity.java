@@ -54,12 +54,12 @@ final class TraceAttributeSecurity {
         }
         return switch (fieldName.trim().toLowerCase(Locale.ROOT)) {
             case "@timestamp",
-                    "event.stream",
-                    "event.kind",
                     "event.category",
                     "event.action",
                     "event.outcome",
-                    "scm.target.index",
+                    "message",
+                    "correlation.id",
+                    "correlation.type",
                     "trace.id",
                     "span.id",
                     "parent.span.id",

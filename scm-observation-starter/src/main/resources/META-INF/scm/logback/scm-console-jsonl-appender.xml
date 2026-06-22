@@ -15,30 +15,7 @@
                 </filter>
                 <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
                     <providers>
-                        <timestamp>
-                            <fieldName>@timestamp</fieldName>
-                        </timestamp>
-                        <logLevel>
-                            <fieldName>log.level</fieldName>
-                        </logLevel>
-                        <loggerName>
-                            <fieldName>log.logger</fieldName>
-                        </loggerName>
-                        <threadName>
-                            <fieldName>process.thread.name</fieldName>
-                        </threadName>
-                        <message/>
-                        <provider class="ir.daneshrefah.scm.observation.logging.ScmRegisteredArgumentsJsonProvider"/>
-                        <provider class="ir.daneshrefah.scm.observation.logging.ScmMdcJsonProvider"/>
-                        <throwableClassName>
-                            <fieldName>error.type</fieldName>
-                        </throwableClassName>
-                        <throwableMessage>
-                            <fieldName>error.message</fieldName>
-                        </throwableMessage>
-                        <stackTrace>
-                            <fieldName>error.stack_trace</fieldName>
-                        </stackTrace>
+                        <provider class="ir.daneshrefah.scm.observation.logging.ScmLogJsonProvider"/>
                     </providers>
                 </encoder>
             </appender>

@@ -14,8 +14,8 @@ public final class ScmCommonLogAttributes {
     public static final ObservationAttributeKey<String> LOG_LOGGER = keyword("log.logger", ObservationAttributePresence.ALWAYS_REQUIRED, "Logger name.");
     public static final ObservationAttributeKey<String> PROCESS_THREAD_NAME = keyword("process.thread.name", ObservationAttributePresence.ALWAYS_REQUIRED, "Thread name that emitted the log.");
     public static final ObservationAttributeKey<String> MESSAGE = text("message", ObservationAttributePresence.ALWAYS_REQUIRED, "Rendered log message.");
-    public static final ObservationAttributeKey<String> CORRELATION_ID = keyword("correlation.id", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation id for lifecycle, request, message, job, batch or operation logs.");
-    public static final ObservationAttributeKey<String> CORRELATION_TYPE = keyword("correlation.type", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation type: lifecycle, request, message, job, batch or operation.");
+    public static final ObservationAttributeKey<String> CORRELATION_ID = keyword("correlation.id", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation id for lifecycle, request, message, job, batch, operation, or unknown logs.");
+    public static final ObservationAttributeKey<String> CORRELATION_TYPE = keyword("correlation.type", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation type: lifecycle, request, message, job, batch, operation, or unknown.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_SERVICE_NAME = keyword("deployment.service.name", ObservationAttributePresence.CONTEXT_REQUIRED, "Running SCM service name.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_SERVICE_VERSION = keyword("deployment.service.version", ObservationAttributePresence.CONTEXT_REQUIRED, "Running SCM service version.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_ENVIRONMENT = keyword("deployment.environment", ObservationAttributePresence.CONTEXT_REQUIRED, "Deployment environment: dev, test, pilot or prod.");

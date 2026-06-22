@@ -14,8 +14,6 @@ public record TraceObservationSpec(
         String traceId,
         String spanId,
         String parentSpanId,
-        boolean legacyEnabled,
-        String legacyTable,
         Map<String, Object> attributes
 ) {
     public TraceObservationSpec {

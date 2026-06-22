@@ -96,56 +96,67 @@ public final class ObservationAttributeKey<T> {
         );
     }
 
-    public static ObservationAttributeKey<String> stringKey(String name, String description) {
-        return stringKey(name, false, description);
+    public static ObservationAttributeKey<String> stringKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, String.class, ELASTIC_KEYWORD, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<String> stringKey(String name, boolean required, String description) {
-        return legacyKey(name, String.class, ELASTIC_KEYWORD, required, description);
+    public static ObservationAttributeKey<String> dateKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, String.class, ELASTIC_DATE, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<String> dateKey(String name, String description) {
-        return legacyKey(name, String.class, ELASTIC_DATE, false, description);
+    public static ObservationAttributeKey<Boolean> booleanKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, Boolean.class, ELASTIC_KEYWORD, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<Boolean> booleanKey(String name, String description) {
-        return booleanKey(name, false, description);
+    public static ObservationAttributeKey<Integer> integerKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, Integer.class, ELASTIC_INTEGER, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<Boolean> booleanKey(String name, boolean required, String description) {
-        return legacyKey(name, Boolean.class, ELASTIC_KEYWORD, required, description);
+    public static ObservationAttributeKey<Long> longKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, Long.class, ELASTIC_INTEGER, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<Integer> integerKey(String name, String description) {
-        return integerKey(name, false, description);
+    public static ObservationAttributeKey<Double> doubleKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, Double.class, ELASTIC_INTEGER, presence, description, streams);
     }
 
-    public static ObservationAttributeKey<Integer> integerKey(String name, boolean required, String description) {
-        return legacyKey(name, Integer.class, ELASTIC_INTEGER, required, description);
-    }
-
-    public static ObservationAttributeKey<Long> longKey(String name, String description) {
-        return longKey(name, false, description);
-    }
-
-    public static ObservationAttributeKey<Long> longKey(String name, boolean required, String description) {
-        return legacyKey(name, Long.class, ELASTIC_INTEGER, required, description);
-    }
-
-    public static ObservationAttributeKey<Double> doubleKey(String name, String description) {
-        return doubleKey(name, false, description);
-    }
-
-    public static ObservationAttributeKey<Double> doubleKey(String name, boolean required, String description) {
-        return legacyKey(name, Double.class, ELASTIC_INTEGER, required, description);
-    }
-
-    public static ObservationAttributeKey<Object> objectKey(String name, String description) {
-        return objectKey(name, false, description);
-    }
-
-    public static ObservationAttributeKey<Object> objectKey(String name, boolean required, String description) {
-        return legacyKey(name, Object.class, ELASTIC_KEYWORD, required, description);
+    public static ObservationAttributeKey<Object> objectKey(
+            String name,
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
+    ) {
+        return typedKey(name, Object.class, ELASTIC_KEYWORD, presence, description, streams);
     }
 
     @SafeVarargs
@@ -178,20 +189,24 @@ public final class ObservationAttributeKey<T> {
         );
     }
 
-    private static <T> ObservationAttributeKey<T> legacyKey(
+    private static <T> ObservationAttributeKey<T> typedKey(
             String name,
             Class<T> type,
             String elasticType,
-            boolean required,
-            String description
+            ObservationAttributePresence presence,
+            String description,
+            ObservationStream... streams
     ) {
+        Set<ObservationStream> streamSet = streams == null || streams.length == 0
+                ? EnumSet.of(ObservationStream.LOG)
+                : EnumSet.copyOf(Arrays.asList(streams));
         return new ObservationAttributeKey<>(
                 name,
                 type,
                 elasticType,
-                "legacy",
-                EnumSet.allOf(ObservationStream.class),
-                required ? ObservationAttributePresence.EVENT_REQUIRED : ObservationAttributePresence.EVENT_OPTIONAL,
+                "starter",
+                streamSet,
+                presence,
                 ObservationAttributeSensitivity.RAW,
                 0,
                 0,
@@ -237,13 +252,6 @@ public final class ObservationAttributeKey<T> {
 
     public String description() {
         return description;
-    }
-
-    public boolean required() {
-        return presence == ObservationAttributePresence.ALWAYS_REQUIRED
-                || presence == ObservationAttributePresence.CONTEXT_REQUIRED
-                || presence == ObservationAttributePresence.EVENT_REQUIRED
-                || presence == ObservationAttributePresence.ERROR_REQUIRED;
     }
 
     public boolean compatibleWith(ObservationAttributeKey<?> other) {

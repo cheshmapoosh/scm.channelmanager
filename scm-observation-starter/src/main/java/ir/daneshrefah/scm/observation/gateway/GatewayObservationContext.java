@@ -11,7 +11,7 @@ public record GatewayObservationContext(
         String messageId
 ) {
     public static final String REQUEST_ATTRIBUTE = "scm.gateway.observation.context";
-    public static final String CORRELATION_ID_ATTRIBUTE = "scm.correlation_id";
+    public static final String CORRELATION_ID_ATTRIBUTE = "correlation.id";
     public static final String TRACE_ID_ATTRIBUTE = "scm.trace.id";
     public static final String GATEWAY_SPAN_ID_ATTRIBUTE = "scm.gateway.span.id";
     public static final String GATEWAY_NAME_ATTRIBUTE = "scm.gateway.name";

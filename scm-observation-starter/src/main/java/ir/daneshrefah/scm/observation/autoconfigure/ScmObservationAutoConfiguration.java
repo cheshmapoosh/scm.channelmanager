@@ -7,7 +7,9 @@ import ir.daneshrefah.scm.observation.JwtObservationSanitizer;
 import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
 import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationDocumentSerializer;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
 import ir.daneshrefah.scm.observation.ObservationEventSink;
@@ -78,13 +80,26 @@ public class ScmObservationAutoConfiguration {
     public ObservationAttributeRegistry observationAttributeRegistry(
             ObjectProvider<ObservationAttributeContributor> contributors
     ) {
-        return new ObservationAttributeRegistry(contributors.orderedStream().toList());
+        ObservationAttributeRegistry registry = new ObservationAttributeRegistry(contributors.orderedStream().toList());
+        ObservationAttributeRegistryHolder.set(registry);
+        return registry;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public ObservationSanitizer observationSanitizer() {
         return new JwtObservationSanitizer();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObservationDocumentFactory observationDocumentFactory(
+            ObservationContext context,
+            ObservationAttributeRegistry registry,
+            ObservationSanitizer sanitizer
+    ) {
+        ObservationAttributeRegistryHolder.set(registry);
+        return new ObservationDocumentFactory(context, registry, sanitizer);
     }
 
     @Bean
@@ -124,6 +139,7 @@ public class ScmObservationAutoConfiguration {
             ObjectProvider<MetricObservationSink> metricSinkProvider,
             ObjectProvider<TraceObservationSink> traceSinkProvider,
             ObservationSanitizer sanitizer,
+            ObservationDocumentFactory documentFactory,
             Clock observationClock
     ) {
         return new ScmObservation(
@@ -134,6 +150,7 @@ public class ScmObservationAutoConfiguration {
                 metricSinkProvider.getIfAvailable(),
                 traceSinkProvider.getIfAvailable(NoopTraceObservationSink::new),
                 sanitizer,
+                documentFactory,
                 observationClock
         );
     }
@@ -194,17 +211,13 @@ public class ScmObservationAutoConfiguration {
         @ConditionalOnTraceEnabled
         @ConditionalOnMissingBean
         public TraceObservationSink traceObservationSink(
-                ObservationContext context,
-                ObsTargetIndexResolver targetIndexResolver,
                 ObservationEventDispatcher eventDispatcher,
-                ObservationSanitizer sanitizer,
+                ObservationDocumentFactory documentFactory,
                 Clock observationClock
         ) {
             return new StructuredTraceObservationSink(
-                    context,
-                    targetIndexResolver,
                     eventDispatcher,
-                    sanitizer,
+                    documentFactory,
                     observationClock
             );
         }
