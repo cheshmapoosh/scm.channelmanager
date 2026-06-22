@@ -159,3 +159,7 @@ health: 1=healthy, 0=unhealthy
 ```
 
 `warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`; count, millisecond, byte, latency, error, and memory thresholds must use separate future properties with explicit units. Grafana should alert on final risk and health metrics, not threshold math.
+
+Generic element metrics should use Prometheus-friendly tags: `service`, `component`, `element_type`, and `element_name` when the element name is finite and configured. Host modules should avoid scrape-time remote-system sampling; for example, `scm-cache` refreshes Hazelcast element samples and health results on a schedule, then serves gauges from the latest snapshot.
+
+`ScmElementHealthEngine` reports `capacity_ratio_unavailable` when an element is materialized and healthy but the host adapter cannot calculate a capacity ratio. That reason remains `NORMAL` risk and must not make readiness fail by itself. Host modules should validate bound `ScmElementRiskProperties` during startup by delegating to `ScmElementRiskEngine`.

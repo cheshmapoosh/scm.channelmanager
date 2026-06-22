@@ -43,7 +43,10 @@ public class ScmElementHealthEngine {
     }
 
     private String reason(ScmElementRiskLevel risk, Double capacityRatio) {
-        if (capacityRatio == null || risk == ScmElementRiskLevel.NORMAL) {
+        if (capacityRatio == null) {
+            return "capacity_ratio_unavailable";
+        }
+        if (risk == ScmElementRiskLevel.NORMAL) {
             return "normal";
         }
         return risk == ScmElementRiskLevel.WARNING

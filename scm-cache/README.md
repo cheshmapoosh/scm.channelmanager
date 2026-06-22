@@ -77,18 +77,22 @@ Allowed Hazelcast lifecycle tags are:
 
 ```text
 service=scm-cache
-element.type=<HazelcastElementType>
+component=hazelcast
+element_type=<HazelcastElementType>
 ```
 
 Allowed generic element metric tags are:
 
 ```text
+service=scm-cache
 component=hazelcast
 element_type=<HazelcastElementType>
 element_name=<finite configured element name>
 ```
 
 Element names are allowed as metric tags only for finite configured Hazelcast elements. Never use request, user, account, token, correlation, or other dynamic values as element tags.
+
+Hazelcast element metrics use a scheduled snapshot refresh instead of scrape-time Hazelcast sampling. The refresh reads samples once, evaluates health/risk once, registers meters for newly discovered configured elements, and Prometheus gauge functions only read the latest snapshot.
 
 Element risk is calculated inside the application before metrics are exported. Grafana and Prometheus must alert on the final values, not recalculate thresholds:
 
@@ -97,7 +101,9 @@ scm.element.risk: 0=normal, 1=warning, 2=critical
 scm.element.health: 1=healthy, 0=unhealthy
 ```
 
-`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`. `scm-observation-starter` owns `ScmElementRiskProperties`, `ScmElementRiskEngine`, and `ScmElementHealthEngine`; `scm-cache` binds them with `scm.cache.health.hazelcast.element-risk` and provides Hazelcast samples. Grafana should alert on `scm.element.risk == 1`, `scm.element.risk == 2`, and `scm.element.health == 0`.
+`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`. `scm-observation-starter` owns `ScmElementRiskProperties`, `ScmElementRiskEngine`, and `ScmElementHealthEngine`; `scm-cache` binds them with `scm.cache.health.hazelcast.element-risk` and provides Hazelcast samples. The default policy and every per-element override are validated fail-fast at startup. Grafana should alert on `scm.element.risk == 1`, `scm.element.risk == 2`, and `scm.element.health == 0`.
+
+The health reason `capacity_ratio_unavailable` means the element is materialized and healthy, but the adapter could not calculate a capacity ratio for that element. Readiness must not fail only because this reason is present, and `scm.element.capacity.ratio` may be `NaN`.
 
 ## Structured Logs
 
@@ -130,9 +136,13 @@ hazelcast.element.materialized
 hazelcast.health.changed
 ```
 
-Hazelcast bootstrap logs include loaded definition count, registered element count and summary by type, one registered event per element, materialized element count and summary by type, one materialized event per element, member address, and cluster size. Do not log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
+Hazelcast bootstrap logs include loaded definition count, registered element count and summary by type, one registered event per element, materialized element count and summary by type, one materialized event per element, member address, and cluster size. Materialization failures include the Hazelcast element type/name when available and are rethrown after a single bootstrap failure log. Do not log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
 
 Registered and materialized Hazelcast element logs include `cache.hazelcast.element.type`, `cache.hazelcast.element.name`, and one LOG-only text field named `cache.hazelcast.element.config`. The config text uses deterministic key order, excludes nulls, and includes only selected safe values such as `ttlSeconds`, `maxIdleSeconds`, backup counts, `statisticsEnabled`, `evictionSize`, and `evictionMaxSizePolicy`. Nested JSON config logging is intentionally not used, and full Hazelcast config objects are never logged. `scm-cache` log attributes are registered through `ScmCacheObservationAttributeContributor`.
+
+Failure message formatting uses the injected `ObservationSanitizer` through `SafeFailureMessageFormatter`; it removes CR/LF, trims, sanitizes, and truncates stored failure messages instead of manually constructing a sanitizer.
+
+`HazelcastElementRegistry` only orchestrates registration and returns the initialization plan. `HazelcastElementDefinitionFactory` builds element definitions and deterministic config text, while `HazelcastElementMaterializer` materializes distributed objects and adds type/name context to materialization failures.
 
 ## Configuration Source
 
