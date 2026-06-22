@@ -67,16 +67,37 @@ scm.cache.hazelcast.elements.registered
 scm.cache.hazelcast.elements.materialized
 scm.cache.hazelcast.elements.registered.by.type
 scm.cache.hazelcast.elements.materialized.by.type
+scm.element.health
+scm.element.risk
+scm.element.materialized
+scm.element.capacity.ratio
 ```
 
-Allowed tags are:
+Allowed Hazelcast lifecycle tags are:
 
 ```text
 service=scm-cache
 element.type=<HazelcastElementType>
 ```
 
-Cache element names must not be metric tags. Element names may appear in structured bootstrap logs.
+Allowed generic element metric tags are:
+
+```text
+component=hazelcast
+element_type=<HazelcastElementType>
+element_name=<finite configured element name>
+```
+
+Element names are allowed as metric tags only for finite configured Hazelcast elements. Never use request, user, account, token, correlation, or other dynamic values as element tags.
+
+Element risk is calculated inside the application before metrics are exported. Grafana and Prometheus must alert on the final values, not recalculate thresholds:
+
+```text
+scm.element.risk: 0=normal, 1=warning, 2=critical
+scm.element.health: 1=healthy, 0=unhealthy
+```
+
+`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`. `scm-observation-starter` owns `ScmElementRiskProperties`, `ScmElementRiskEngine`, and `ScmElementHealthEngine`; `scm-cache` binds them with `scm.cache.health.hazelcast.element-risk` and provides Hazelcast samples. Grafana should alert on `scm.element.risk == 1`, `scm.element.risk == 2`, and `scm.element.health == 0`.
 
 ## Structured Logs
 
@@ -110,6 +131,8 @@ hazelcast.health.changed
 ```
 
 Hazelcast bootstrap logs include loaded definition count, registered element count and summary by type, one registered event per element, materialized element count and summary by type, one materialized event per element, member address, and cluster size. Do not log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
+
+Registered and materialized Hazelcast element logs include `cache.hazelcast.element.type`, `cache.hazelcast.element.name`, and one LOG-only text field named `cache.hazelcast.element.config`. The config text uses deterministic key order, excludes nulls, and includes only selected safe values such as `ttlSeconds`, `maxIdleSeconds`, backup counts, `statisticsEnabled`, `evictionSize`, and `evictionMaxSizePolicy`. Nested JSON config logging is intentionally not used, and full Hazelcast config objects are never logged. `scm-cache` log attributes are registered through `ScmCacheObservationAttributeContributor`.
 
 ## Configuration Source
 

@@ -1,6 +1,6 @@
 # scm-observation-starter
 
-`scm-observation-starter` provides the shared SCM observation foundation for LOG, TRACE, AUDIT, and future METRIC work. Adding the dependency alone enables nothing; every signal is opt-in and fail-closed.
+`scm-observation-starter` provides the shared SCM observation foundation for LOG, TRACE, AUDIT, and METRIC work. Adding the dependency alone enables nothing; every signal is opt-in and fail-closed.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ AUDIT  -> starter event -> Logback routing marker -> JSONL -> Filebeat -> Elasti
 METRIC -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
-Metrics are not JSONL records. Cycle 0 does not implement Actuator/Prometheus wiring or cache metrics.
+Metrics are not JSONL records. Host modules expose Actuator/Micrometer metrics and use starter-owned generic models where shared calculation logic is needed.
 
 ## Core Concepts
 
@@ -146,3 +146,16 @@ src/main/resources/META-INF/scm/docs/observation/common-log-attributes.md
 ```
 
 Keep that file aligned with `ScmCommonLogAttributes`.
+
+## Element Risk
+
+`scm-observation-starter` owns the generic SCM element risk and health model. Host modules bind their own configuration prefix by extending `ScmElementRiskProperties`, then provide runtime samples and HealthIndicator adapters.
+
+Risk is application-computed before metrics are exported. Grafana and Prometheus consume final values only:
+
+```text
+risk: 0=normal, 1=warning, 2=critical
+health: 1=healthy, 0=unhealthy
+```
+
+`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`; count, millisecond, byte, latency, error, and memory thresholds must use separate future properties with explicit units. Grafana should alert on final risk and health metrics, not threshold math.

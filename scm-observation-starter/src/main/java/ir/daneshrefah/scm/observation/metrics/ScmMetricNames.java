@@ -22,6 +22,10 @@ public final class ScmMetricNames {
     public static final String CACHE_MAP_CONFIG_LOAD = "scm.cache.map.config.load";
     public static final String CACHE_DISTRIBUTED_OBJECT_CREATE = "scm.cache.distributed.object.create";
     public static final String CACHE_ERRORS = "scm.cache.errors";
+    public static final String ELEMENT_HEALTH = "scm.element.health";
+    public static final String ELEMENT_RISK = "scm.element.risk";
+    public static final String ELEMENT_MATERIALIZED = "scm.element.materialized";
+    public static final String ELEMENT_CAPACITY_RATIO = "scm.element.capacity.ratio";
     public static final String CM_CONNECTOR_SESSION_READ = "scm.cm.connector.session.read";
     public static final String CM_CONNECTOR_CACHE_ACCESS = "scm.cm.connector.cache.access";
     public static final String CM_CONNECTOR_OWNERSHIP_CHECK = "scm.cm.connector.ownership.check";

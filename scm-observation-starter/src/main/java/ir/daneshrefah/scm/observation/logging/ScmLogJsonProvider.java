@@ -49,11 +49,11 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         }
 
         ObservationAttributeRegistry registry = ObservationAttributeRegistryHolder.getOrCommonOnly();
-        Map<String, Object> attributes = structuredAttributes(event, registry);
+        ObservationRecordKind kind = recordKind(event);
+        Map<String, Object> attributes = structuredAttributes(event, registry, kind);
         putMdcFields(attributes, event.getMDCPropertyMap());
         putThrowableFields(attributes, event.getThrowableProxy());
 
-        ObservationRecordKind kind = recordKind(event);
         boolean errorContext = event.getThrowableProxy() != null || kind == ObservationRecordKind.EXCEPTION;
         ObservationDocumentFactory factory = new ObservationDocumentFactory(null, registry, SANITIZER);
         ObservationDocumentBuilder builder = factory.log(
@@ -74,7 +74,11 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         }
     }
 
-    private Map<String, Object> structuredAttributes(ILoggingEvent event, ObservationAttributeRegistry registry) throws IOException {
+    private Map<String, Object> structuredAttributes(
+            ILoggingEvent event,
+            ObservationAttributeRegistry registry,
+            ObservationRecordKind kind
+    ) throws IOException {
         Map<String, Object> attributes = new LinkedHashMap<>();
         Object[] arguments = event.getArgumentArray();
         if (arguments == null) {
@@ -82,7 +86,7 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         }
         for (Object argument : arguments) {
             if (argument instanceof StructuredArgument structuredArgument) {
-                readStructuredArgument(structuredArgument, registry, attributes);
+                readStructuredArgument(structuredArgument, registry, attributes, kind);
             }
         }
         return attributes;
@@ -91,7 +95,8 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
     private void readStructuredArgument(
             StructuredArgument argument,
             ObservationAttributeRegistry registry,
-            Map<String, Object> attributes
+            Map<String, Object> attributes,
+            ObservationRecordKind kind
     ) throws IOException {
         TokenBuffer buffer = new TokenBuffer(OBJECT_MAPPER, false);
         argument.writeTo(buffer);
@@ -102,7 +107,7 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
                     String fieldName = parser.currentName();
                     parser.nextToken();
                     Object value = parser.readValueAs(Object.class);
-                    putStructuredField(registry, attributes, fieldName, value);
+                    putStructuredField(registry, attributes, fieldName, value, kind);
                 }
             }
         }
@@ -112,7 +117,8 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
             ObservationAttributeRegistry registry,
             Map<String, Object> attributes,
             String fieldName,
-            Object value
+            Object value,
+            ObservationRecordKind kind
     ) {
         if (fieldName == null || fieldName.isBlank() || isEventOwnedField(fieldName)) {
             return;
@@ -121,7 +127,12 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         if (registry.contains(ObservationStream.LOG, normalizedField)) {
             attributes.put(normalizedField, value);
         } else if (unknownWarnings.add(normalizedField)) {
-            LOG.warn("Dropping unregistered SCM log attribute '{}'", normalizedField);
+            LOG.warn(
+                    "Dropping unregistered SCM log attribute '{}' for stream '{}' and record kind '{}'",
+                    normalizedField,
+                    ObservationStream.LOG,
+                    kind
+            );
         }
     }
 
