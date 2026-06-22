@@ -26,13 +26,13 @@ public final class ScmObservationDocumentAttributes {
             "correlation.id",
             ObservationAttributeKey.ELASTIC_KEYWORD,
             ObservationAttributePresence.ALWAYS_REQUIRED,
-            "Correlation id for request, message, job, batch, operation, or lifecycle records."
+            "Correlation id for the active CorrelationType context."
     );
     public static final ObservationAttributeKey<String> CORRELATION_TYPE = key(
             "correlation.type",
             ObservationAttributeKey.ELASTIC_KEYWORD,
             ObservationAttributePresence.ALWAYS_REQUIRED,
-            "Correlation type: lifecycle, request, message, job, batch, operation, or unknown."
+            "Correlation type from the CorrelationType enum."
     );
     public static final ObservationAttributeKey<String> EVENT_CATEGORY = key(
             "event.category",

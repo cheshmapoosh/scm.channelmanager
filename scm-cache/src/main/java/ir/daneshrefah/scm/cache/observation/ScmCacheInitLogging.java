@@ -38,7 +38,7 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
     public static Object[] initArguments(String action, String outcome, Object... additionalFields) {
         ensureInitCorrelationId();
         List<Object> arguments = new ArrayList<>();
-        arguments.add(kv(ScmLogFields.EVENT_CATEGORY, "scm.init"));
+            arguments.add(kv(ScmLogFields.EVENT_CATEGORY, "scm.init"));
         arguments.add(kv(ScmLogFields.EVENT_ACTION, action));
         arguments.add(kv(ScmLogFields.EVENT_OUTCOME, outcome));
         for (Object additionalField : additionalFields) {

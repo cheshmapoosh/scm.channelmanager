@@ -1,21 +1,9 @@
 package ir.daneshrefah.scm.observation;
 
 import java.util.EnumSet;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class ObservationRecordValidator {
-    private static final Set<String> ALLOWED_CORRELATION_TYPES = Set.of(
-            "lifecycle",
-            "request",
-            "message",
-            "job",
-            "batch",
-            "operation",
-            "unknown"
-    );
-
     private final ObservationAttributeRegistry registry;
 
     public ObservationRecordValidator(ObservationAttributeRegistry registry) {
@@ -68,8 +56,7 @@ public class ObservationRecordValidator {
         if (value == null) {
             return;
         }
-        String normalized = String.valueOf(value).trim().toLowerCase(Locale.ROOT);
-        if (!ALLOWED_CORRELATION_TYPES.contains(normalized)) {
+        if (!CorrelationType.isAllowed(String.valueOf(value))) {
             throw new IllegalStateException("Invalid " + stream + " correlation.type: " + value);
         }
     }

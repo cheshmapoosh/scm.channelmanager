@@ -5,13 +5,16 @@ import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
-import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationRecordKind;
+import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.ObservationStream;
 import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
 import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
 
@@ -26,6 +29,7 @@ public class ScmSpanDataMapper {
     private static final String CORRELATION_ID = "correlation.id";
 
     private final ObservationDocumentFactory documentFactory;
+    private final ObservationRecordValidator recordValidator;
     private final ObservationSanitizer sanitizer;
 
     public ScmSpanDataMapper(
@@ -34,7 +38,9 @@ public class ScmSpanDataMapper {
             ObservationSanitizer sanitizer
     ) {
         this.sanitizer = sanitizer;
-        this.documentFactory = new ObservationDocumentFactory(context, ObservationAttributeRegistry.commonOnly(), sanitizer);
+        ObservationAttributeRegistry registry = ObservationAttributeRegistry.commonOnly();
+        this.documentFactory = new ObservationDocumentFactory(context, registry, sanitizer);
+        this.recordValidator = new ObservationRecordValidator(registry);
     }
 
     public Map<String, Object> map(SpanData spanData) {
@@ -43,12 +49,10 @@ public class ScmSpanDataMapper {
         String eventAction = stringAttribute(spanData, EVENT_ACTION, textOrDefault(spanData.getName(), "trace.span"));
         String eventOutcome = stringAttribute(spanData, EVENT_OUTCOME, statusOutcome(spanData));
         ObservationDocumentBuilder builder = documentFactory.trace(
-                ObservationRecordKind.EVENT,
-                false,
                 endTime,
                 textOrDefault(spanData.getName(), "trace.span"),
                 stringAttribute(spanData, CORRELATION_ID, ObservationIds.correlationId()),
-                "operation"
+                CorrelationType.OPERATION.value()
         );
         builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, "trace");
         builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, textOrDefault(eventAction, textOrDefault(spanData.getName(), "trace.span")));
@@ -62,7 +66,9 @@ public class ScmSpanDataMapper {
         builder.put(ScmTraceAttributes.SPAN_END_TIME, endTime.toString());
         builder.put(ScmTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startTime, endTime).toMillis()));
         putSpanAttributes(builder, spanData);
-        return builder.build();
+        Map<String, Object> document = builder.build();
+        recordValidator.validate(ObservationStream.TRACE, ObservationRecordKind.EVENT, false, document);
+        return document;
     }
 
     private void putParentSpanId(ObservationDocumentBuilder builder, SpanContext parentSpanContext) {

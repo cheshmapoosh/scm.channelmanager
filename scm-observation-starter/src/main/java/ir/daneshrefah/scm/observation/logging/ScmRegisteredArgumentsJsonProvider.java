@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
+import ir.daneshrefah.scm.observation.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
 import net.logstash.logback.argument.StructuredArgument;
 import net.logstash.logback.composite.AbstractJsonProvider;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ScmRegisteredArgumentsJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(ScmRegisteredArgumentsJsonProvider.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObservationSanitizer SANITIZER = new SecretScrubbingObservationSanitizer();
 
     private final Set<String> unknownWarnings = ConcurrentHashMap.newKeySet();
 
@@ -56,7 +59,8 @@ public class ScmRegisteredArgumentsJsonProvider extends AbstractJsonProvider<ILo
         if (isProviderOwnedField(fieldName)) {
             return;
         }
-        Object prepared = registry.prepareValue(fieldName, value);
+        Object sanitized = SANITIZER.sanitize(fieldName, value);
+        Object prepared = registry.prepareValue(fieldName, sanitized);
         if (prepared != null) {
             generator.writeObjectField(fieldName, prepared);
         } else if (fieldName != null && !registry.containsLogAttribute(fieldName) && unknownWarnings.add(fieldName)) {

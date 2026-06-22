@@ -65,12 +65,10 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
         }
         Instant timestamp = observation.now();
         ObservationDocumentBuilder builder = observation.documentFactory().audit(
-                recordKind,
-                throwable != null,
                 timestamp,
                 action,
                 correlationId,
-                "operation"
+                CorrelationType.OPERATION.value()
         );
         builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, category);
         builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, action);
@@ -81,6 +79,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
         builder.put(ScmAuditAttributes.RESOURCE_ID, resourceId);
         builder.putAll(attributes);
         LinkedHashMap<String, Object> document = builder.build();
+        observation.validate(ObservationStream.AUDIT, recordKind, throwable != null, document);
         observation.write(ObservationEventSignal.AUDIT, sourceClass, document);
     }
 

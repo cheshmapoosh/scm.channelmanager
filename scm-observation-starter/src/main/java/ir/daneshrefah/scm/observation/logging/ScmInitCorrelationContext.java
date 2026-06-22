@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.observation.logging;
 
+import ir.daneshrefah.scm.observation.CorrelationType;
 import org.slf4j.MDC;
 
 import java.util.UUID;
@@ -41,7 +42,7 @@ public final class ScmInitCorrelationContext {
     private static void ensureLifecycleType() {
         if (textOrNull(MDC.get(ScmMdcKeys.CORRELATION_TYPE)) == null
                 && textOrNull(MDC.get(ScmLogFields.CORRELATION_TYPE)) == null) {
-            MDC.put(ScmMdcKeys.CORRELATION_TYPE, "lifecycle");
+            MDC.put(ScmMdcKeys.CORRELATION_TYPE, CorrelationType.LIFECYCLE.value());
         }
     }
 

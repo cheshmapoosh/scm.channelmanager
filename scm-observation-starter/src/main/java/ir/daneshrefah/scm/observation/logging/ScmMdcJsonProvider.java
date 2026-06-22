@@ -2,15 +2,20 @@ package ir.daneshrefah.scm.observation.logging;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.fasterxml.jackson.core.JsonGenerator;
+import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.ObservationIds;
+import ir.daneshrefah.scm.observation.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
 import net.logstash.logback.composite.AbstractJsonProvider;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class ScmMdcJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
+    private static final ObservationSanitizer SANITIZER = new SecretScrubbingObservationSanitizer();
+
     @Override
     public void writeTo(JsonGenerator generator, ILoggingEvent event) throws IOException {
         if (event == null) {
@@ -32,7 +37,7 @@ public class ScmMdcJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         writeField(generator, registry, ScmLogFields.CORRELATION_ID, correlationId);
 
         String correlationType = mdc == null ? null : firstPresent(mdc, "correlationType", "correlation_type", "correlation.type");
-        writeField(generator, registry, ScmLogFields.CORRELATION_TYPE, correlationType == null ? "unknown" : correlationType);
+        writeField(generator, registry, ScmLogFields.CORRELATION_TYPE, correlationType == null ? CorrelationType.UNKNOWN.value() : correlationType);
     }
 
     private void writeIfPresent(JsonGenerator generator, ObservationAttributeRegistry registry, Map<String, String> mdc, String fieldName, String... aliases)
@@ -42,7 +47,8 @@ public class ScmMdcJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
     }
 
     private void writeField(JsonGenerator generator, ObservationAttributeRegistry registry, String fieldName, String value) throws IOException {
-        Object prepared = registry.prepareValue(fieldName, value);
+        Object sanitized = SANITIZER.sanitize(fieldName, value);
+        Object prepared = registry.prepareValue(fieldName, sanitized);
         if (prepared != null) {
             generator.writeObjectField(fieldName, prepared);
         }

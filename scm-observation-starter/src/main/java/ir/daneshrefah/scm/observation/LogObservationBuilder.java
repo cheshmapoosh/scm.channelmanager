@@ -12,13 +12,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class LogObservationBuilder extends AbstractObservationBuilder<LogObservationBuilder> {
     private static final int MAX_ERROR_MESSAGE_LENGTH = 300;
-    private static final Pattern SENSITIVE_ASSIGNMENT = Pattern.compile(
-            "(?i)(password|token|authorization|client_secret|authorization_code|pin|cvv2?|pan|account[_ -]?number)\\s*[:=]\\s*\\S+"
-    );
 
     private String level = "INFO";
     private String loggerName = "application";
@@ -43,7 +39,7 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
         this.recordKind = ObservationRecordKind.CONTEXT;
         this.category = "scm.context";
         this.action = "runtime.context";
-        this.correlationType = "lifecycle";
+        this.correlationType = CorrelationType.LIFECYCLE.value();
         return this;
     }
 
@@ -144,11 +140,7 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
         if (throwable == null || throwable.getMessage() == null) {
             return null;
         }
-        String message = SENSITIVE_ASSIGNMENT.matcher(throwable.getMessage()
-                        .replace('\r', ' ')
-                        .replace('\n', ' '))
-                .replaceAll("$1=***")
-                .trim();
+        String message = throwable.getMessage().replace('\r', ' ').replace('\n', ' ').trim();
         return message.length() > MAX_ERROR_MESSAGE_LENGTH
                 ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)
                 : message;
@@ -163,8 +155,6 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
     public void write() {
         Instant timestamp = observation.now();
         ObservationDocumentBuilder builder = observation.documentFactory().log(
-                recordKind,
-                throwable != null,
                 timestamp,
                 level,
                 loggerName,
@@ -179,6 +169,7 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
         putKindFields(builder);
         builder.putAll(attributes);
         LinkedHashMap<String, Object> document = builder.build();
+        observation.validate(ObservationStream.LOG, recordKind, throwable != null, document);
         writeSlf4j(document);
     }
 

@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.observation.autoconfigure;
 import ch.qos.logback.classic.LoggerContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
-import ir.daneshrefah.scm.observation.JwtObservationSanitizer;
 import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
 import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
@@ -14,8 +13,10 @@ import ir.daneshrefah.scm.observation.ObservationDocumentSerializer;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
 import ir.daneshrefah.scm.observation.ObservationEventSink;
 import ir.daneshrefah.scm.observation.ObservationProperties;
+import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationLifecycle;
 import ir.daneshrefah.scm.observation.logback.DefaultLogbackObservationEventPublisher;
 import ir.daneshrefah.scm.observation.logback.LogbackAuditObservationEventSink;
@@ -88,7 +89,7 @@ public class ScmObservationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ObservationSanitizer observationSanitizer() {
-        return new JwtObservationSanitizer();
+        return new SecretScrubbingObservationSanitizer();
     }
 
     @Bean
@@ -100,6 +101,12 @@ public class ScmObservationAutoConfiguration {
     ) {
         ObservationAttributeRegistryHolder.set(registry);
         return new ObservationDocumentFactory(context, registry, sanitizer);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObservationRecordValidator observationRecordValidator(ObservationAttributeRegistry registry) {
+        return new ObservationRecordValidator(registry);
     }
 
     @Bean
@@ -140,6 +147,7 @@ public class ScmObservationAutoConfiguration {
             ObjectProvider<TraceObservationSink> traceSinkProvider,
             ObservationSanitizer sanitizer,
             ObservationDocumentFactory documentFactory,
+            ObservationRecordValidator recordValidator,
             Clock observationClock
     ) {
         return new ScmObservation(
@@ -151,6 +159,7 @@ public class ScmObservationAutoConfiguration {
                 traceSinkProvider.getIfAvailable(NoopTraceObservationSink::new),
                 sanitizer,
                 documentFactory,
+                recordValidator,
                 observationClock
         );
     }
@@ -213,11 +222,13 @@ public class ScmObservationAutoConfiguration {
         public TraceObservationSink traceObservationSink(
                 ObservationEventDispatcher eventDispatcher,
                 ObservationDocumentFactory documentFactory,
+                ObservationRecordValidator recordValidator,
                 Clock observationClock
         ) {
             return new StructuredTraceObservationSink(
                     eventDispatcher,
                     documentFactory,
+                    recordValidator,
                     observationClock
             );
         }
