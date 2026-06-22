@@ -44,7 +44,7 @@ spec:
             - name: hazelcast
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-            - name: http
+            - name: management
               containerPort: {{ .Values.serviceApi.port }}
               protocol: TCP
 {{/*          livenessProbe:*/}}

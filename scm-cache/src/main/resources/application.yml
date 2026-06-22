@@ -1,8 +1,33 @@
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
   main:
-    web-application-type: none
     banner-mode: off
   profiles:
     active: dev
   application:
     name: scm-cache
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+        add-additional-paths: true
+      group:
+        liveness:
+          include: livenessState,scmCacheHazelcastLiveness
+        readiness:
+          include: readinessState,scmCacheHazelcast
+
+scm:
+  cache:
+    health:
+      hazelcast:
+        minimum-cluster-size: ${SCM_CACHE_HEALTH_MIN_CLUSTER_SIZE:1}

@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.cache.observation;
 
+import ir.daneshrefah.scm.observation.CorrelationType;
+import ir.daneshrefah.scm.observation.logging.ScmInitCorrelationContext;
 import ir.daneshrefah.scm.observation.logging.ScmLogFields;
 import ir.daneshrefah.scm.observation.logging.ScmLogMarkers;
-import ir.daneshrefah.scm.observation.logging.ScmInitCorrelationContext;
 import lombok.extern.slf4j.Slf4j;
 import net.logstash.logback.argument.StructuredArguments;
 import org.springframework.context.ApplicationContextInitializer;
@@ -11,7 +12,6 @@ import org.springframework.core.env.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 public class ScmCacheInitLogging implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -27,7 +27,7 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
         log.info(
                 ScmLogMarkers.SCM_EVENT,
                 "SCM cache init started",
-                initArguments("scm.cache.init.started", "unknown")
+                initArguments(ScmCacheObservationEvents.SCM_CACHE_INIT_STARTED, "unknown")
         );
     }
 
@@ -38,9 +38,10 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
     public static Object[] initArguments(String action, String outcome, Object... additionalFields) {
         ensureInitCorrelationId();
         List<Object> arguments = new ArrayList<>();
-            arguments.add(kv(ScmLogFields.EVENT_CATEGORY, "scm.init"));
+        arguments.add(kv(ScmLogFields.EVENT_CATEGORY, ScmCacheObservationEvents.SCM_CACHE_INIT));
         arguments.add(kv(ScmLogFields.EVENT_ACTION, action));
         arguments.add(kv(ScmLogFields.EVENT_OUTCOME, outcome));
+        arguments.add(kv(ScmLogFields.CORRELATION_TYPE, CorrelationType.LIFECYCLE.value()));
         for (Object additionalField : additionalFields) {
             if (additionalField != null) {
                 arguments.add(additionalField);
@@ -56,9 +57,10 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
     private static Object[] contextArguments(Environment environment) {
         ensureInitCorrelationId();
         List<Object> arguments = new ArrayList<>();
-        arguments.add(kv(ScmLogFields.EVENT_CATEGORY, "scm.context"));
-        arguments.add(kv(ScmLogFields.EVENT_ACTION, "runtime.context.created"));
+        arguments.add(kv(ScmLogFields.EVENT_CATEGORY, ScmCacheObservationEvents.SCM_CACHE_CONTEXT));
+        arguments.add(kv(ScmLogFields.EVENT_ACTION, ScmCacheObservationEvents.RUNTIME_CONTEXT_CREATED));
         arguments.add(kv(ScmLogFields.EVENT_OUTCOME, "success"));
+        arguments.add(kv(ScmLogFields.CORRELATION_TYPE, CorrelationType.LIFECYCLE.value()));
         arguments.add(kv(ScmLogFields.DEPLOYMENT_SERVICE_NAME, firstPresent(
                 environment.getProperty("spring.application.name"),
                 "scm-cache"
@@ -96,14 +98,12 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
     }
 
     private static String deploymentEnvironment(Environment environment) {
-        Set<String> allowed = Set.of("dev", "test", "pilot", "prod");
-        for (String profile : environment.getActiveProfiles()) {
-            if (allowed.contains(profile)) {
-                return profile;
-            }
-        }
-        String configured = firstPresent(environment.getProperty("deployment.environment"), environment.getProperty("spring.profiles.active"));
-        return allowed.contains(configured) ? configured : "dev";
+        return firstPresent(
+                String.join(",", environment.getActiveProfiles()),
+                environment.getProperty("spring.profiles.active"),
+                environment.getProperty("deployment.environment"),
+                "default"
+        );
     }
 
     private static String runtime(Environment environment) {

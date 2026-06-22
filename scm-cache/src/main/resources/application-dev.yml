@@ -1,6 +1,4 @@
 spring:
-  main:
-    web-application-type: none
   datasource:
     url: jdbc:db2://10.15.27.82:446/DSNALOC
     username: casadm
