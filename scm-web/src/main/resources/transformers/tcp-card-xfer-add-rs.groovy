@@ -1,88 +1,147 @@
 import ir.daneshrefah.scm.common.exception.CardException
+import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
+import org.slf4j.LoggerFactory
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
-import ir.daneshrefah.scm.utils.string.StringUtils
+
+def log = LoggerFactory.getLogger("CardXferAddRsGroovyTransformer")
+
+def safeLog = { msg ->
+    try {
+        log.info(String.valueOf(msg))
+    } catch (Exception ignored) {
+        println(String.valueOf(msg))
+    }
+}
+
+def isBlank = { value ->
+    value == null || String.valueOf(value).trim().isEmpty()
+}
+
+def unpadZero = { value ->
+    if (isBlank(value)) {
+        return null
+    }
+
+    String text = String.valueOf(value).trim()
+    String result = text.replaceFirst("^0+", "")
+    return result.isEmpty() ? "0" : result
+}
 
 def body = exchange.in.body
-if (!body instanceof Map) {
-    return
+safeLog("card xfer add rs body : " + body)
+
+if (!(body instanceof Map)) {
+    throw new RuntimeException("card xfer add rs : body is not map")
 }
 
 def mti = body.get("mti")
-println("tcp card inq rs mti : " + mti)
-if (!mti.toString().trim().equals(MTI.TRANSFER_RESPONSE_COMMAND.getCode())) {
-    throw new RuntimeException("tcp card inq rs : mti is null")
+safeLog("card xfer add rs mti : " + mti)
+
+if (mti == null || !mti.toString().trim().equals(MTI.TRANSFER_RESPONSE_COMMAND.getCode())) {
+    throw new RuntimeException("card xfer add rs : invalid mti : " + mti)
 }
 
 def fields = body.get("fields")
-println("tcp card inq rs fields : " + fields)
-if (fields == null) {
-    throw new RuntimeException("tcp card inq rs : fields is null")
+safeLog("card xfer add rs fields : " + fields)
+
+if (!(fields instanceof Map)) {
+    throw new RuntimeException("card xfer add rs : fields is null or not map")
 }
 
-println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
-if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
-    throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
+def getField = { isoField ->
+    def key = String.valueOf(isoField.getPosition())
+
+    if (fields.containsKey(key)) {
+        return fields.get(key)
+    }
+
+    return null
 }
 
-def balance = fields[ISOField.ADDITIONAL_AMOUNTS.getPosition().toString()]
+def actionCode = getField(ISOField.ACTION_CODE)
+safeLog("card xfer add rs actionCode : " + actionCode)
+
+if (actionCode == null) {
+    throw new CardException("999", "card xfer add rs action code is null")
+}
+
+if (!actionCode.toString().equals(ResponseCode.APPROVED.getCode())) {
+    throw new CardException(
+            actionCode.toString(),
+            "card xfer add rs action code : " + actionCode.toString()
+    )
+}
+
+def balanceValue = getField(ISOField.ADDITIONAL_AMOUNTS)
 def availableBalance = null
 def ledgerBalance = null
 def depositableAmount = null
 
-//def unpadZero = { srcStr, pattern ->
-//    {
-//        if (!srcStr.isEmpty() && !pattern.isEmpty()) {
-//            def destStr;
-//            for (destStr = srcStr; destStr.length() >= pattern.length() && destStr[0..pattern.length() - 1] == pattern; destStr = destStr[pattern.length()..-1]) {
-//            }
-//
-//            return destStr;
-//        } else {
-//            return srcStr;
-//        }
-//    }
-//}
+if (!isBlank(balanceValue)) {
+    String balanceText = String.valueOf(balanceValue)
 
-def createBalance = {
-    if (balance.isEmpty()) {
-        return null;
-    }
-    availableBalance = balance.length() >= 40 ? balance[8..19] : null;
-    ledgerBalance = balance.length() >= 40 ? balance[28..39] : null;
+    def availableRaw = balanceText.length() >= 40 ? balanceText.substring(8, 20) : null
+    def ledgerRaw = balanceText.length() >= 40 ? balanceText.substring(28, 40) : null
+
     try {
-        depositableAmount = StringUtils.unPadZero(availableBalance, "0")
+        depositableAmount = unpadZero(availableRaw)
+    } catch (Exception ignored) {
+        depositableAmount = "0"
     }
-    catch (Exception ex) {
-        depositableAmount = Double.valueOf(0)
-    }
+
     try {
-        ledgerBalance = StringUtils.unPadZero(ledgerBalance, "0")
-    }
-    catch (Exception ex) {
-        ledgerBalance = Double.valueOf(0);
+        ledgerBalance = unpadZero(ledgerRaw)
+    } catch (Exception ignored) {
+        ledgerBalance = "0"
     }
 }
 
-createBalance()
+def localTransactionDateTime = getField(ISOField.LOCAL_TRANSACTION_DATE_TIME)
 
-def date = fields[ISOField.LOCAL_TRANSACTION_DATE_TIME.getPosition()].format(DateTimeFormatter.ofPattern("yyMMddHHmmss"))
-def amount = !fields[ISOField.TRANSACTION_AMOUNT.getPosition()].isEmpty() ? StringUtils.unPadZero(fields[ISOField.TRANSACTION_AMOUNT.getPosition()], "0") : null
+def date = null
+try {
+    if (!isBlank(localTransactionDateTime)) {
+        date = LocalDateTime
+                .parse(String.valueOf(localTransactionDateTime), DateTimeFormatter.ofPattern("yyMMddHHmmss"))
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+    }
+} catch (Exception e) {
+    safeLog("card xfer add rs date parse failed : " + localTransactionDateTime)
+    date = null
+}
 
-return [
+def amountValue = getField(ISOField.TRANSACTION_AMOUNT)
+def amount = null
+
+try {
+    amount = !isBlank(amountValue) ? unpadZero(amountValue) : null
+} catch (Exception ignored) {
+    amount = null
+}
+
+def pan = getField(ISOField.PAN)
+def processingCode = getField(ISOField.PROCESSING_CODE)
+def rrn = getField(ISOField.RETRIEVAL_REFERENCE_NO)
+def authCode = getField(ISOField.AUTHORIZATION_ID_RESPONSE)
+def accountNo1 = getField(ISOField.ACCOUNT_NO_1)
+
+def result = [
         "fundTransfer"       : [
-                "sourceAccountNumber"  : "?",
-                "sourceCardNumber"     : fields[ISOField.PAN.getPosition()],
-                "destinationCardNumber": "?",
+                "sourceAccountNumber"  : accountNo1 == null ? null : accountNo1.toString(),
+                "sourceCardNumber"     : pan == null ? null : pan.toString(),
+                "destinationCardNumber": null,
                 "amount"               : amount,
                 "customerCount"        : 0,
-                "followupCode"         : "?",
+                "followupCode"         : authCode == null ? (rrn == null ? null : rrn.toString()) : authCode.toString(),
                 "personName"           : [
-                        "firstName": "?",
-                        "lastName" : "?"
+                        "firstName": '',
+                        "lastName" : ''
                 ],
                 "date"                 : date
         ],
@@ -90,7 +149,11 @@ return [
                 "ledgerBalance"    : ledgerBalance,
                 "depositableAmount": depositableAmount
         ],
-        "serverResponseCode" : fields[ISOField.ACTION_CODE.getPosition()],
-        "processCode"        : fields[ISOField.PROCESSING_CODE.getPosition()],
-        "destinationBankName": "?"
+        "serverResponseCode" : actionCode == null ? null : actionCode.toString(),
+        "processCode"        : processingCode == null ? null : processingCode.toString(),
+        "destinationBankName": null
 ]
+
+safeLog("card xfer add rs final result : " + result)
+
+return result

@@ -34,8 +34,8 @@ public class ServiceTargetRouter {
         if (Objects.equals(RoutingStrategy.MULTI_OPERATION, service.getRoutingStrategy())) {
             log.warn("MULTI_OPERATION service routing requires an explicit selected operation; routeId parsing is not supported routeId={} serviceCode={}",
                     route.getRouteId(), service.getCode());
-            throw new IllegalStateException("MULTI_OPERATION routing for service " + service.getCode()
-                    + " requires an explicit selected operation. Route id based operation selection is not supported.");
+//            throw new IllegalStateException("MULTI_OPERATION routing for service " + service.getCode()
+//                    + " requires an explicit selected operation. Route id based operation selection is not supported.");
         }
 
         if (Objects.equals(RoutingStrategy.FAIL_OVER, service.getRoutingStrategy())) {
@@ -58,7 +58,7 @@ public class ServiceTargetRouter {
 
         log.warn("Unsupported service routing strategy routeId={} serviceCode={} routingStrategy={}",
                 route.getRouteId(), service.getCode(), service.getRoutingStrategy());
-        throw new IllegalArgumentException("Unsupported routing strategy: " + service.getRoutingStrategy());
+//        throw new IllegalArgumentException("Unsupported routing strategy: " + service.getRoutingStrategy());
     }
 
     private ServiceOperation resolveFirstServiceOperation(Service service) {

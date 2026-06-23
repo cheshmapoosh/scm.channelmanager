@@ -2,34 +2,53 @@ import ir.daneshrefah.scm.common.exception.CardException
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
+import org.slf4j.LoggerFactory
+
+def log = LoggerFactory.getLogger("CardPasswordNotificationRsGroovyTransformer")
 
 def body = exchange.in.body
 
-if (!body instanceof Map) {
-    return
+log.info("card password notification rs body: {}", body)
+
+if (!(body instanceof Map)) {
+    throw new RuntimeException("tcp card password notification rs : body is not map")
 }
 
 def mti = body.get("mti")
-println("tcp card password inq rs mti : " + mti)
-if (!mti.toString().trim().equals(MTI.AUTHORIZATION_ADVICE_RESPONSE_COMMAND.getCode())) {
-    throw new RuntimeException("tcp card inq rs : mti is null")
+log.info("tcp card password notification rs mti: {}", mti)
+
+if (mti == null || !mti.toString().trim().equals(MTI.AUTHORIZATION_ADVICE_RESPONSE_COMMAND.getCode())) {
+    throw new RuntimeException("tcp card password notification rs : invalid mti : " + mti)
 }
 
 def fields = body.get("fields")
-println("tcp card pasword inq rs fields : " + fields)
-if (fields == null) {
-    throw new RuntimeException("tcp card inq rs : fields is null")
+log.info("tcp card password notification rs fields: {}", fields)
+
+if (!(fields instanceof Map)) {
+    throw new RuntimeException("tcp card password notification rs : fields is null or not map")
 }
 
-println("tcp card password inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
-if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
-    throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
+def actionCodeKey = ISOField.ACTION_CODE.getPosition().toString()
+def dataRecordKey = ISOField.DATA_RECORD.getPosition().toString()
+
+def actionCode = fields[actionCodeKey]
+log.info("tcp card password notification rs actionCode: {}", actionCode)
+
+if (actionCode == null) {
+    throw new CardException("999", "tcp card password notification rs action code is null")
 }
 
-//return [
-//        "status" : body.actionCode
-//]
+if (!actionCode.toString().equals(ResponseCode.APPROVED.getCode())) {
+    throw new CardException(
+            actionCode.toString(),
+            "tcp card password notification rs action code : " + actionCode.toString()
+    )
+}
+
+def password = fields[dataRecordKey]
+log.info("tcp card password notification rs password/dataRecord exists: {}", password != null)
+
 return [
-    "password": null,
-    "card": null
+        "password": password == null ? null : password.toString(),
+        "card"    : null
 ]
