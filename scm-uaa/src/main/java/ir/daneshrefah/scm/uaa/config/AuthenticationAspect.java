@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.uaa.observation.UaaObservation;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +30,8 @@ public class AuthenticationAspect {
     public Object traceAuthenticate(ProceedingJoinPoint joinPoint, Authentication authentication) throws Throwable {
         UaaObservation.AuthContext ctx = authContext(authentication)
                 .withJwtPresent(false);
-        observation.authStarted(ctx);
         ObservationScope scope = observation.traceAuth(ctx);
+        observation.authStarted(ctx);
         try {
             Object result = joinPoint.proceed();
             UaaObservation.AuthContext completed = ctx
@@ -48,9 +47,7 @@ public class AuthenticationAspect {
                     .withResult("failure")
                     .withFailureReason(safeMessage(ex));
             observation.authAttributes(scope, failed);
-            scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
-                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
-                    .failure();
+            scope.failure(ex);
             observation.authFailed(failed, ex);
             log.trace("Authentication failed: {}", safeMessage(ex));
             throw ex;
@@ -59,9 +56,7 @@ public class AuthenticationAspect {
                     .withResult("failure")
                     .withFailureReason(safeMessage(ex));
             observation.authAttributes(scope, failed);
-            scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
-                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
-                    .failure();
+            scope.failure(ex);
             observation.authFailed(failed, ex);
             log.error("Unexpected error during authentication: {}", safeMessage(ex));
             throw ex;

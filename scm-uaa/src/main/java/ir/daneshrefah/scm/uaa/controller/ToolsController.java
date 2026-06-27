@@ -67,11 +67,6 @@ public class ToolsController extends BaseController {
 
     @PostMapping("/jwt")
     public String decodeJwt(@RequestParam String encodedValue, Model model) {
-        /*try {
-            JWTParser.parse(encodedValue).getJWTClaimsSet();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }*/
         String decodedString = null;
         final int firstDotPos = encodedValue.indexOf(".");
 

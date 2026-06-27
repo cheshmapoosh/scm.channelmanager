@@ -7,9 +7,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededException;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
 import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
-import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
+import ir.daneshrefah.scm.uaa.observation.UaaObservation;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,8 +38,10 @@ public class
 GlobalExceptionHandler {
 
     private static final String X_CORRELATION_ID = "X-Correlation-Id";
+    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    private static final String X_REAL_IP = "X-Real-IP";
 
-    private final ScmObservation observation;
+    private final UaaObservation observation;
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<?> handleRateLimitExceeded(HttpServletRequest request, RateLimitExceededException exception) {
@@ -82,20 +82,22 @@ GlobalExceptionHandler {
 
     private void handleSpanException(HttpServletRequest request, Exception exception, HttpStatus responseStatus) {
         try {
-            ObservationScope scope = observation.trace()
-                    .span("uaa.exception")
-                    .spanKind("server")
-                    .action("uaa.exception")
-                    .outcome("failure")
-                    .correlationId(correlationId(request))
-                    .attribute(UaaTraceAttributes.HTTP_METHOD, request.getMethod())
-                    .attribute(UaaTraceAttributes.URL_PATH, request.getServletPath())
-                    .attribute(UaaTraceAttributes.HTTP_STATUS_CODE, responseStatus.value())
-                    .attribute(CommonTraceAttributes.ERROR_TYPE, exception.getClass().getName())
-                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(exception))
-                    .start();
+            UaaObservation.ControllerContext ctx = new UaaObservation.ControllerContext(
+                    "globalException",
+                    "handle",
+                    request.getMethod(),
+                    requestPath(request),
+                    responseStatus.value(),
+                    clientIp(request),
+                    correlationId(request),
+                    "failure",
+                    observation.safeErrorMessage(exception)
+            );
+            ObservationScope scope = observation.traceController(ctx);
             try {
-                scope.failure();
+                observation.controllerAttributes(scope, ctx);
+                scope.failure(exception);
+                observation.controllerFailed(ctx, exception);
             } finally {
                 scope.close();
             }
@@ -115,16 +117,27 @@ GlobalExceptionHandler {
         return correlationId;
     }
 
-    private String safeMessage(Exception exception) {
-        if (exception == null || exception.getMessage() == null) {
+    private String requestPath(HttpServletRequest request) {
+        if (request == null) {
             return null;
         }
-        String message = exception.getMessage()
-                .replace('\r', ' ')
-                .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
-                .trim();
-        return message.length() > 300 ? message.substring(0, 300) : message;
+        return StringUtils.isEmpty(request.getRequestURI()) ? request.getServletPath() : request.getRequestURI();
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String forwardedFor = request.getHeader(X_FORWARDED_FOR);
+        if (!StringUtils.isEmpty(forwardedFor)) {
+            int comma = forwardedFor.indexOf(',');
+            return comma >= 0 ? forwardedFor.substring(0, comma).trim() : forwardedFor.trim();
+        }
+        String realIp = request.getHeader(X_REAL_IP);
+        if (!StringUtils.isEmpty(realIp)) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {

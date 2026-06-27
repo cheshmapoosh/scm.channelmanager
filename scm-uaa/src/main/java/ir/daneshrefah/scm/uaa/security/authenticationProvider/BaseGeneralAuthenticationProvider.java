@@ -100,7 +100,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             token = authenticationTokenGenerator.generateToken(
                     preAuthenticationToken, (TerminalUserDetails) userDetails);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Failed to generate authentication token: {}", safeMessage(e));
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
         }
 
@@ -111,7 +111,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         try {
             authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
         } catch (Exception e) {
-            log.error("authenticate failed for token type {}", token.getClass().getSimpleName(), e);
+            log.error("authenticate failed for token type {}: {}", token.getClass().getSimpleName(), safeMessage(e));
             throwError(token, e);
         }
         Exception exception = authorization.getClass().isAssignableFrom(PostAuthenticationToken.class) ? ((PostAuthenticationToken) authorization).getException() : null;
@@ -254,7 +254,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         try {
             return userDetailsService.loadUserByUsername(username, terminalCode);
         } catch (UsernameNotFoundException e) {
-            log.warn("user not found for: " + username + ":" + terminalCode);
+            log.warn("user not found for username={} terminal={}", username, terminalCode);
         }
         return null;
     }
@@ -263,6 +263,18 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
 
     private String extractCacheUserKey(String username, String terminalCode) {
         return username + StringUtils.DOUBLE_COLON + terminalCode;
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     protected abstract PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication);

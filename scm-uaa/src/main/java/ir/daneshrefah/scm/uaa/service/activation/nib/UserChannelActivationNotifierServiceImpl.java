@@ -75,7 +75,7 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
                     .build();
             notificationService.sendNotification(request);
         } catch (Exception e) {
-            log.error("Exception occurred while sending notification ", e);
+            log.error("Exception occurred while sending notification: {}", safeMessage(e));
         }
     }
 
@@ -92,6 +92,18 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
                 .convertToShamsiDateString(DateUtils
                         .DateConverter
                         .convertToLocalDateTime(DateUtils.DateConverter
-                                .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
+                .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 }

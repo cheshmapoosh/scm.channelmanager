@@ -13,7 +13,7 @@ public class SecretScrubbingObservationSanitizer implements ObservationSanitizer
     private static final Pattern BEARER_TOKEN = Pattern.compile("(?i)Bearer\\s+[A-Za-z0-9._~+/=-]+");
     private static final Pattern JWT_TOKEN = Pattern.compile("\\beyJ[A-Za-z0-9_-]*\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\b");
     private static final Pattern SENSITIVE_ASSIGNMENT = Pattern.compile(
-            "(?i)(password|token|authorization|client_secret|authorization_code|pin|cvv2?|pan|account[_ -]?number)\\s*[:=]\\s*\\S+"
+            "(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|cvv2?|pan|account[_ -]?number)\\s*[:=]\\s*\\S+"
     );
     private static final String JWT_HASH_FIELD = "scm.auth.jwt.hash";
     private static final String UAA_JWT_MASKED_FIELD = "uaa.jwt.masked";

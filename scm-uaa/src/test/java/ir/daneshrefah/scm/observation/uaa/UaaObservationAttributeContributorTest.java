@@ -20,8 +20,10 @@ class UaaObservationAttributeContributorTest {
 
         assertTrue(registry.contains(ObservationStream.LOG, "uaa.auth.type"));
         assertTrue(registry.contains(ObservationStream.LOG, "uaa.jwt.masked"));
+        assertTrue(registry.contains(ObservationStream.LOG, "uaa.http.status_code"));
         assertTrue(registry.contains(ObservationStream.TRACE, "uaa.auth.type"));
         assertTrue(registry.contains(ObservationStream.TRACE, "uaa.jwt.masked"));
+        assertTrue(registry.contains(ObservationStream.TRACE, "uaa.http.status_code"));
     }
 
     @Test
