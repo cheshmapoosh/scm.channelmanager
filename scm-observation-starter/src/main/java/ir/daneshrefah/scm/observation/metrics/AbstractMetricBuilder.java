@@ -27,7 +27,8 @@ abstract class AbstractMetricBuilder<T extends AbstractMetricBuilder<T>> {
             "message.sequence.id",
             "scm.message.sequence_id",
             "authorization",
-            "scm.auth.jwt.hash"
+            "scm.auth.jwt.hash",
+            "uaa.jwt.masked"
     );
 
     protected final MetricObservationSink sink;

@@ -79,10 +79,14 @@ public class ScmObservation {
     }
 
     ObservationScope startTrace(TraceObservationSpec spec) {
+        return startTrace(spec, null);
+    }
+
+    ObservationScope startTrace(TraceObservationSpec spec, AutoCloseable contextScope) {
         if (!isEnabled(ObservationSignal.TRACE) || traceSink == null) {
-            return new ObservationScope(TraceObservationHandle.NOOP);
+            return new ObservationScope(TraceObservationHandle.NOOP, contextScope);
         }
-        return new ObservationScope(traceSink.start(spec));
+        return new ObservationScope(traceSink.start(spec), contextScope);
     }
 
     boolean isEnabled(ObservationSignal signal) {

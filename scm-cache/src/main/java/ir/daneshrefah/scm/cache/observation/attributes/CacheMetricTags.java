@@ -8,10 +8,10 @@ import java.util.List;
 public final class CacheMetricTags {
     private static final String OWNER = "scm-cache";
 
-    public static final ObservationAttributeKey<String> HTTP_METHOD = tag("http.method", "HTTP method.");
-    public static final ObservationAttributeKey<String> HTTP_ROUTE = tag("http.route", "HTTP route template.");
-    public static final ObservationAttributeKey<String> OPERATION_TYPE = tag("scm.operation.type", "Cache operation type.");
-    public static final ObservationAttributeKey<String> HTTP_STATUS_CODE = tag("http.status_code", "HTTP status code.");
+    public static final ObservationAttributeKey<String> HTTP_METHOD = commonTag("http.method", "HTTP method.");
+    public static final ObservationAttributeKey<String> HTTP_ROUTE = commonTag("http.route", "HTTP route template.");
+    public static final ObservationAttributeKey<String> OPERATION_TYPE = commonTag("scm.operation.type", "Cache operation type.");
+    public static final ObservationAttributeKey<String> HTTP_STATUS_CODE = commonTag("http.status_code", "HTTP status code.");
 
     private CacheMetricTags() {
     }
@@ -22,5 +22,9 @@ public final class CacheMetricTags {
 
     private static ObservationAttributeKey<String> tag(String name, String description) {
         return MetricTag.lowCardinality(name, OWNER, description);
+    }
+
+    private static ObservationAttributeKey<String> commonTag(String name, String description) {
+        return MetricTag.lowCardinality(name, description);
     }
 }

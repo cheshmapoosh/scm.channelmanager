@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.observation.trace;
 
-import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationEventSignal;
@@ -80,14 +79,14 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
                     endedAt,
                     textOrDefault(spec.spanName(), "trace.span"),
                     spec.correlationId(),
-                    CorrelationType.OPERATION.value()
+                    spec.correlationType()
             );
             builder.put(CommonTraceAttributes.EVENT_CATEGORY, "trace");
             builder.put(CommonTraceAttributes.EVENT_ACTION, textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
             builder.put(CommonTraceAttributes.EVENT_OUTCOME, outcome);
             builder.put(CommonTraceAttributes.TRACE_ID, textOrDefault(spec.traceId(), ObservationIds.traceId()));
             builder.put(CommonTraceAttributes.SPAN_ID, textOrDefault(spec.spanId(), ObservationIds.spanId()));
-            builder.put(CommonTraceAttributes.PARENT_SPAN_ID, spec.parentSpanId());
+            builder.put(CommonTraceAttributes.PARENT_SPAN_ID, textOrNull(spec.parentSpanId()));
             builder.put(CommonTraceAttributes.SPAN_NAME, textOrDefault(spec.spanName(), "trace.span"));
             builder.put(CommonTraceAttributes.SPAN_KIND, textOrDefault(spec.spanKind(), "internal").toLowerCase(Locale.ROOT));
             builder.put(CommonTraceAttributes.SPAN_START_TIME, startedAt.toString());
@@ -114,6 +113,10 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
 
         private String textOrDefault(String value, String defaultValue) {
             return value == null || value.isBlank() ? defaultValue : value.trim();
+        }
+
+        private String textOrNull(String value) {
+            return value == null || value.isBlank() ? null : value.trim();
         }
     }
 }

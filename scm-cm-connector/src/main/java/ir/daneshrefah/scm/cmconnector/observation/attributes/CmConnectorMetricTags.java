@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class CmConnectorMetricTags {
     public static final ObservationAttributeKey<String> OPERATION_NAME = MetricTag.lowCardinality(
-            "scm.operation.name", "scm-cm-connector", "CM connector operation name.");
+            "scm.operation.name", "CM connector operation name.");
 
     private CmConnectorMetricTags() {
     }

@@ -1,9 +1,8 @@
 package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.ScmObservation;
 import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
-import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
+import ir.daneshrefah.scm.uaa.observation.UaaObservation;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,40 +25,70 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class AuthenticationAspect {
 
-    private final ScmObservation observation;
+    private final UaaObservation observation;
 
     @Around("execution(* authenticate(..)) && args(authentication) && within(ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider)")
     public Object traceAuthenticate(ProceedingJoinPoint joinPoint, Authentication authentication) throws Throwable {
-        ObservationScope scope = observation.trace()
-                .span("auth.authenticate")
-                .spanKind("internal")
-                .action("auth.authenticate")
-                .attribute(UaaTraceAttributes.AUTH_TYPE, "oauth2")
-                .attribute(UaaTraceAttributes.JWT_PRESENT, false)
-                .attribute(UaaTraceAttributes.CLIENT_IP, remoteAddress(authentication))
-                .attribute(UaaTraceAttributes.AUTH_CLIENT_TYPE, clientType(authentication))
-                .start();
+        UaaObservation.AuthContext ctx = authContext(authentication)
+                .withJwtPresent(false);
+        observation.authStarted(ctx);
+        ObservationScope scope = observation.traceAuth(ctx);
         try {
             Object result = joinPoint.proceed();
-            scope.attribute(UaaTraceAttributes.JWT_PRESENT, hasAccessToken(result))
-                    .attribute(UaaTraceAttributes.JWT_USERNAME, safeUsername(authentication));
+            UaaObservation.AuthContext completed = ctx
+                    .withResult("success")
+                    .withJwtPresent(hasAccessToken(result))
+                    .withJwtUsername(safeUsername(authentication));
+            observation.authAttributes(scope, completed);
             scope.success();
+            observation.authCompleted(completed);
             return result;
         } catch (AuthenticationException ex) {
+            UaaObservation.AuthContext failed = ctx
+                    .withResult("failure")
+                    .withFailureReason(safeMessage(ex));
+            observation.authAttributes(scope, failed);
             scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
                     .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
                     .failure();
-            log.trace("Authentication failed", ex);
+            observation.authFailed(failed, ex);
+            log.trace("Authentication failed: {}", safeMessage(ex));
             throw ex;
         } catch (Throwable ex) {
+            UaaObservation.AuthContext failed = ctx
+                    .withResult("failure")
+                    .withFailureReason(safeMessage(ex));
+            observation.authAttributes(scope, failed);
             scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
                     .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
                     .failure();
-            log.error("Unexpected error during authentication", ex);
+            observation.authFailed(failed, ex);
+            log.error("Unexpected error during authentication: {}", safeMessage(ex));
             throw ex;
         } finally {
             scope.close();
         }
+    }
+
+    private UaaObservation.AuthContext authContext(Authentication authentication) {
+        return new UaaObservation.AuthContext(
+                "oauth2",
+                clientId(authentication),
+                grantType(authentication),
+                "authenticate",
+                "authenticate",
+                "started",
+                null,
+                safeUsername(authentication),
+                remoteAddress(authentication),
+                null,
+                "access_token",
+                null,
+                null,
+                safeUsername(authentication),
+                null,
+                null
+        );
     }
 
     private boolean hasAccessToken(Object result) {
@@ -93,12 +122,17 @@ public class AuthenticationAspect {
         return username.length() > 128 ? username.substring(0, 128) : username;
     }
 
-    private String clientType(Authentication authentication) {
+    private String clientId(Authentication authentication) {
         if (authentication instanceof PreAuthenticationToken preAuthenticationToken) {
-            if (preAuthenticationToken.hasDefaultGrantPreAuthToken()) {
-                return preAuthenticationToken.getDefaultGrantPreAuthToken().getAppVersion();
-            }
             return preAuthenticationToken.getClientId();
+        }
+        return null;
+    }
+
+    private String grantType(Authentication authentication) {
+        if (authentication instanceof PreAuthenticationToken preAuthenticationToken
+                && preAuthenticationToken.getGrantType() != null) {
+            return String.valueOf(preAuthenticationToken.getGrantType());
         }
         return null;
     }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,5 +41,29 @@ class ObservationAttributeRegistryTest {
 
         assertThrows(IllegalStateException.class,
                 () -> new ObservationAttributeRegistry(List.of(() -> List.of(incompatible))));
+    }
+
+    @Test
+    void duplicateNameWithDifferentOwnerFailsFast() {
+        ObservationAttributeKey<String> ownerA = TraceAttribute.keyword(
+                "duplicate.owner.test", "module-a", ObservationAttributePresence.EVENT_OPTIONAL, "Module A.");
+        ObservationAttributeKey<String> ownerB = TraceAttribute.keyword(
+                "duplicate.owner.test", "module-b", ObservationAttributePresence.EVENT_OPTIONAL, "Module B.");
+
+        assertThrows(IllegalStateException.class,
+                () -> new ObservationAttributeRegistry(List.of(() -> List.of(ownerA, ownerB))));
+    }
+
+    @Test
+    void duplicateNameWithIdenticalMetadataPasses() {
+        ObservationAttributeKey<String> first = TraceAttribute.keyword(
+                "http.method", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP method.");
+        ObservationAttributeKey<String> second = TraceAttribute.keyword(
+                "http.method", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP method.");
+
+        ObservationAttributeRegistry registry = assertDoesNotThrow(
+                () -> new ObservationAttributeRegistry(List.of(() -> List.of(first, second))));
+
+        assertTrue(registry.contains(ObservationStream.TRACE, "http.method"));
     }
 }

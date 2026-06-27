@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class UaaClientMetricTags {
     public static final ObservationAttributeKey<String> OPERATION_NAME = MetricTag.lowCardinality(
-            "scm.operation.name", "scm-uaa-starter", "UAA client operation name.");
+            "scm.operation.name", "UAA client operation name.");
 
     private UaaClientMetricTags() {
     }

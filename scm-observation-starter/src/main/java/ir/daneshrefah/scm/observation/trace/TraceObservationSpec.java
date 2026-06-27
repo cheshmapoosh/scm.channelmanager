@@ -11,6 +11,7 @@ public record TraceObservationSpec(
         String action,
         String outcome,
         String correlationId,
+        String correlationType,
         String traceId,
         String spanId,
         String parentSpanId,

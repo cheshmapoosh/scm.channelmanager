@@ -21,8 +21,10 @@ public final class NabTraceAttributes {
             "scm.provider.error_code", OWNER, ObservationAttributePresence.ERROR_OPTIONAL, "Provider error code.");
     public static final ObservationAttributeKey<String> PROVIDER_ERROR_MESSAGE = TraceAttribute.text(
             "scm.provider.error_message", OWNER, ObservationAttributePresence.ERROR_OPTIONAL, "Safe provider error message.");
-    public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
-    public static final ObservationAttributeKey<String> OPERATION_NAME = keyword("scm.operation.name", "Operation name.");
+    public static final ObservationAttributeKey<String> OPERATION_CODE = TraceAttribute.keyword(
+            "scm.operation.code", ObservationAttributePresence.EVENT_OPTIONAL, "Operation code.");
+    public static final ObservationAttributeKey<String> OPERATION_NAME = TraceAttribute.keyword(
+            "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL, "Operation name.");
 
     private NabTraceAttributes() {
     }

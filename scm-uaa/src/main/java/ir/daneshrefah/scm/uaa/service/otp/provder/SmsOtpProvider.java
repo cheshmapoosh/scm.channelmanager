@@ -64,7 +64,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         if (!otp.isDelivered()) {
             sendNotification(otp);
             otp = deliverOtp(otp);
-            log.trace("sent otp {}", otp.toString());
+            log.trace("sent otp");
         }
         return OtpSendResponse.builder()
                 .otp(otp)
@@ -154,7 +154,7 @@ public class SmsOtpProvider extends AbstractOtpProvider {
         } else {
             putOtpInCache(otpKey, otp);
         }
-        log.trace("verify otp is successful for key {}", otp.getKey());
+        log.trace("verify otp is successful");
         return OtpVerifyResponse.builder()
                 .isSuccessful(true)
                 .build();

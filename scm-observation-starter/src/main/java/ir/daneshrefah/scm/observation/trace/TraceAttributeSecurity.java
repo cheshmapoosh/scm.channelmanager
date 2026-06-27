@@ -10,7 +10,13 @@ final class TraceAttributeSecurity {
             "scm.auth.jwt.subject",
             "scm.auth.jwt.username",
             "scm.auth.jwt.exp",
-            "scm.auth.jwt.hash"
+            "scm.auth.jwt.hash",
+            "uaa.jwt.present",
+            "uaa.jwt.issuer",
+            "uaa.jwt.subject",
+            "uaa.jwt.username",
+            "uaa.jwt.masked",
+            "uaa.jwt.expiration"
     );
 
     private TraceAttributeSecurity() {
@@ -24,7 +30,7 @@ final class TraceAttributeSecurity {
         if (SAFE_JWT_FIELDS.contains(normalized)) {
             return true;
         }
-        if (normalized.startsWith("scm.auth.jwt.")) {
+        if (normalized.startsWith("scm.auth.jwt.") || normalized.startsWith("uaa.jwt.")) {
             return false;
         }
         String compact = normalized

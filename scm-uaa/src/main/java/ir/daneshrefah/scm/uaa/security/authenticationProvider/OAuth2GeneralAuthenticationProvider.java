@@ -122,8 +122,6 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
                 recipient = otpSendResponse.getOtp().getRecipient().getAddress();
                 response.put("expirationDurationSeconds",expirationDuration);
                 response.put("recipient",recipient);
-                //TODO LOG FOR DEV
-                log.info(">>> OTP CODE : {}", otpSendResponse.getOtp().getOtpCode());
             }
             response.put("authenticationMethod",code);
             String responseString = response.toString();

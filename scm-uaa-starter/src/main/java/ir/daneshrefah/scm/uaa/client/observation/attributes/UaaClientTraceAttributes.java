@@ -8,7 +8,7 @@ import java.util.List;
 
 public final class UaaClientTraceAttributes {
     public static final ObservationAttributeKey<String> OPERATION_NAME = TraceAttribute.keyword(
-            "scm.operation.name", "scm-uaa-starter", ObservationAttributePresence.EVENT_OPTIONAL,
+            "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL,
             "UAA client operation name.");
 
     private UaaClientTraceAttributes() {

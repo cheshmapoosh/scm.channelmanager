@@ -82,7 +82,7 @@ public class UserActivationService {
         userActivation.setCodeValid(true);
         userActivation.setActivationCode(createOtpCode());
         userActivation.setRegistryToken(generateRegistryToken(request.getUsername(), request.getPhoneNumber(), headers.getAgent()));
-        log.info("userActivation:{}", userActivation);
+        log.info("Created user activation for username={}", userActivation.getUsername());
         return userActivation;
     }
 
@@ -124,12 +124,12 @@ public class UserActivationService {
     }
 
     private void setTokenValidity(UserActivation userActivation) {
-        log.info("Request to Update UserActivation : {} ", userActivation);
+        log.info("Request to update user activation code validity id={}", userActivation.getId());
         userActivationRepository.updateClientCodeValidity(userActivation.getId(), userActivation.getCodeValid());
     }
 
     private void setRetryCount(UserActivation userActivation) {
-        log.info("Request to Update UserActivation RetryCount : {} ", userActivation);
+        log.info("Request to update user activation retry count id={}", userActivation.getId());
         userActivationRepository.updateClientRetryCount(userActivation.getId(), userActivation.getRetryCount());
     }
 
@@ -141,7 +141,7 @@ public class UserActivationService {
             if (userActivation.getRetryCount() >= properties.getActivation().otpCodeTrailsCount()) {
                 userActivation.setCodeValid(false);
                 setTokenValidity(userActivation);
-                log.info("Inactivating token for phoneNumber :{}", userActivation.getPhoneNumber());
+                log.info("Inactivating registration token for phoneNumber={}", maskPhone(userActivation.getPhoneNumber()));
                 throw new GeneralPwaOauthException(PwaOauthMessage.REACHED_TRIAL_LIMIT);
             }
             setRetryCount(userActivation);
@@ -151,7 +151,7 @@ public class UserActivationService {
     }
 
     public void updateActivationStatus(UserActivation userActivation) {
-        log.info("Request to Update UserActivation ActivationStatus : {} ", userActivation);
+        log.info("Request to update user activation status id={}", userActivation.getId());
         userActivationRepository.updateActivationStatus(userActivation.getId(), userActivation.getActivated());
     }
 
@@ -172,6 +172,17 @@ public class UserActivationService {
                         ErrorUtils.throwError(OAUTH2_ERROR_CODE_IS_DISABLED, PwaOauthMessage.CLIENT_INACTIVE.name());
                     });
         }
+    }
+
+    private String maskPhone(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            return null;
+        }
+        String text = phoneNumber.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return "***" + text.substring(text.length() - 4);
     }
 
 }

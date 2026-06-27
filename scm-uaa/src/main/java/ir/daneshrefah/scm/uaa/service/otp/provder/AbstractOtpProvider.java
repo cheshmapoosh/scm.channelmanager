@@ -69,8 +69,7 @@ public abstract class AbstractOtpProvider {
     @SneakyThrows
     private OtpSendResponse adviseOtpResponse(OtpSendResponse otpSendResponse) {
         if (profileInfo.isTraceMode()) {
-            log.info(OBJECT_MAPPER.writeValueAsString(otpSendResponse.getOtp()));
-            System.out.println("otp send response :" + otpSendResponse.getOtp().getOtpCode());
+            log.info("OTP generated");
             return otpSendResponse;
         }
         return cleanResponseSecureData(otpSendResponse);
@@ -124,7 +123,7 @@ public abstract class AbstractOtpProvider {
         String otpCode = generateOtpCode(request.getReason().getPattern(), request.getReason().getLength());
         ValidationUtils.checkBlankString(otpCode, OtpCodeGenerationException::new);
         otp = createOtp(otpKey, request, otpCode, requireDeliver);
-        log.info("Generated OTP Code: {}", otpCode);
+        log.info("Generated OTP");
         putOtpInCache(otpKey, otp, Duration.ofMinutes(otp.getReason().getTimeToLiveMinutes()));
         return otp;
     }

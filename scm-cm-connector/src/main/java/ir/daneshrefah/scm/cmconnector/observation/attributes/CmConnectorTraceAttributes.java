@@ -8,7 +8,7 @@ import java.util.List;
 
 public final class CmConnectorTraceAttributes {
     public static final ObservationAttributeKey<String> OPERATION_NAME = TraceAttribute.keyword(
-            "scm.operation.name", "scm-cm-connector", ObservationAttributePresence.EVENT_OPTIONAL,
+            "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL,
             "CM connector operation name.");
 
     private CmConnectorTraceAttributes() {

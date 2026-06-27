@@ -10,10 +10,10 @@ public final class WebMetricTags {
 
     public static final ObservationAttributeKey<String> PROTOCOL = tag("protocol", "Gateway protocol.");
     public static final ObservationAttributeKey<String> REQUEST_NAME = tag("request_name", "Gateway request name.");
-    public static final ObservationAttributeKey<String> HTTP_METHOD = tag("http.method", "HTTP method.");
-    public static final ObservationAttributeKey<String> HTTP_ROUTE = tag("http.route", "HTTP route template.");
-    public static final ObservationAttributeKey<String> OPERATION_TYPE = tag("scm.operation.type", "Operation type.");
-    public static final ObservationAttributeKey<String> HTTP_STATUS_CODE = tag("http.status_code", "HTTP status code.");
+    public static final ObservationAttributeKey<String> HTTP_METHOD = commonTag("http.method", "HTTP method.");
+    public static final ObservationAttributeKey<String> HTTP_ROUTE = commonTag("http.route", "HTTP route template.");
+    public static final ObservationAttributeKey<String> OPERATION_TYPE = commonTag("scm.operation.type", "Operation type.");
+    public static final ObservationAttributeKey<String> HTTP_STATUS_CODE = commonTag("http.status_code", "HTTP status code.");
 
     private WebMetricTags() {
     }
@@ -24,5 +24,9 @@ public final class WebMetricTags {
 
     private static ObservationAttributeKey<String> tag(String name, String description) {
         return MetricTag.lowCardinality(name, OWNER, description);
+    }
+
+    private static ObservationAttributeKey<String> commonTag(String name, String description) {
+        return MetricTag.lowCardinality(name, description);
     }
 }

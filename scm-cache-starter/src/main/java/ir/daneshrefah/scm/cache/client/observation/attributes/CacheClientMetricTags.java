@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class CacheClientMetricTags {
     public static final ObservationAttributeKey<String> OPERATION_NAME = MetricTag.lowCardinality(
-            "scm.operation.name", "scm-cache-starter", "Cache client operation name.");
+            "scm.operation.name", "Cache client operation name.");
 
     private CacheClientMetricTags() {
     }
