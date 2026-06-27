@@ -90,10 +90,22 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
     @Override
     protected void throwError(Authentication errorCode, Exception exception) throws AuthenticationException {
         if (!(exception instanceof AuthenticationException)) {
-            log.error("authentication invalid error.", exception);
+            log.error("authentication invalid error: {}", safeMessage(exception));
             exception = new UnknownAuthenticationException(exception);
         }
         throw (AuthenticationException) exception;
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     @Override

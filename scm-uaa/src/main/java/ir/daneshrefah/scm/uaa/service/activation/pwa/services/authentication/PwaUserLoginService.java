@@ -68,7 +68,7 @@ public class PwaUserLoginService {
             login.setBlockedTime(ZonedDateTime.now());
             login.setStatus(AuthStatus.BLOCKED);
             save(login);
-            log.info("Sending block SMS in login process for username {} to phoneNumber {}", login.getUsername(), login.getPhoneNumber());
+            log.info("Sending block SMS in login process for username {} to phoneNumber {}", login.getUsername(), maskPhone(login.getPhoneNumber()));
             pwaNotificationCenter.sendLoginBlockedNotification(login,properties.getLogin().rateLimitCount().toString(), properties.getLogin().rateLimitBlockedTimeMinutes().toString());
             return true;
         } else {
@@ -104,6 +104,13 @@ public class PwaUserLoginService {
             lastLogin.add(login);
         }
         return lastLogin;
+    }
+
+    private String maskPhone(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.length() < 4) {
+            return "****";
+        }
+        return "***" + phoneNumber.substring(phoneNumber.length() - 4);
     }
 
 }

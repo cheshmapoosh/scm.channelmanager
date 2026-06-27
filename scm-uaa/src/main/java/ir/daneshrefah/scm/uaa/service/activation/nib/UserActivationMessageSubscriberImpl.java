@@ -45,14 +45,26 @@ public class UserActivationMessageSubscriberImpl implements UserActivationMessag
                                             userActivationService.activate(dbPerson, terminal);
                                             userChannelActivationNotifierService.sendSuccessNotification(dbPerson, username,terminal,TerminalType.NIB);
                                         } catch (Exception e) {
-                                            log.error("user channel activation failed for person.username :: {} ", dbPerson.getUsername(), e);
+                                            log.error("user channel activation failed for person.username :: {}: {}", dbPerson.getUsername(), safeMessage(e));
                                             userChannelActivationNotifierService.sendFailedNotification(dbPerson,username,terminal, TerminalType.NIB);
                                         }
                                     });
                         });
             } catch (Exception e) {
-                log.error(">>> Error in subscribing message from queue {}", ACTIVATION_PUSH_SUB_QUEUE_NAME, e);
+                log.error(">>> Error in subscribing message from queue {}: {}", ACTIVATION_PUSH_SUB_QUEUE_NAME, safeMessage(e));
             }
         }
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 }

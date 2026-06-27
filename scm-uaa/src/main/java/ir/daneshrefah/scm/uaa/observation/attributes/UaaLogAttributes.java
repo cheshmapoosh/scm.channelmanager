@@ -32,6 +32,11 @@ public final class UaaLogAttributes {
     public static final ObservationAttributeKey<String> MESSAGING_SYSTEM = keyword("uaa.messaging.system", "Messaging system.");
     public static final ObservationAttributeKey<String> MESSAGING_DESTINATION_NAME = keyword(
             "uaa.messaging.destination.name", "Messaging destination name.");
+    public static final ObservationAttributeKey<String> CLIENT_IP = keyword("uaa.client.ip", "UAA client IP address.");
+    public static final ObservationAttributeKey<String> HTTP_METHOD = keyword("uaa.http.method", "UAA HTTP method.");
+    public static final ObservationAttributeKey<String> URL_PATH = keyword("uaa.url.path", "UAA request path without query string.");
+    public static final ObservationAttributeKey<Integer> HTTP_STATUS_CODE = LogAttribute.integer(
+            "uaa.http.status_code", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "UAA HTTP response status code.");
 
     private UaaLogAttributes() {
     }
@@ -40,7 +45,8 @@ public final class UaaLogAttributes {
         return List.of(
                 AUTH_TYPE, AUTH_CLIENT_ID, AUTH_GRANT_TYPE, AUTH_METHOD, AUTH_STEP, AUTH_RESULT, AUTH_FAILURE_REASON,
                 OTP_CHANNEL, OTP_PURPOSE, TOKEN_TYPE, JWT_PRESENT, JWT_ISSUER, JWT_SUBJECT, JWT_USERNAME,
-                JWT_MASKED, JWT_EXPIRATION, DB_DATASOURCE, MESSAGING_SYSTEM, MESSAGING_DESTINATION_NAME
+                JWT_MASKED, JWT_EXPIRATION, DB_DATASOURCE, MESSAGING_SYSTEM, MESSAGING_DESTINATION_NAME,
+                CLIENT_IP, HTTP_METHOD, URL_PATH, HTTP_STATUS_CODE
         );
     }
 

@@ -25,7 +25,7 @@ public class PwaOauthResponseMapper {
             }
             return getMessage(generalException.getExceptionMessage());
         } else {
-            log.error(exception.getMessage(), exception);
+            log.error("PWA OAuth response mapping failed: {}", safeMessage(exception));
             return getMessage(PwaOauthMessage.CLIENT_REGISTRATION_FAILED);
         }
     }
@@ -39,6 +39,18 @@ public class PwaOauthResponseMapper {
         response.setHttpCode(exceptionMessage.getHttpStatus());
         response.setDetail(bundle.get(AccessibleLocale.FA_IR.getLocale(), bundleKey).orElse(StringUtils.EMPTY));
         return response;
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
 }

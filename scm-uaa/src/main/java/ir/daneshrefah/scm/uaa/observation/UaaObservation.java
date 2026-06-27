@@ -1,20 +1,102 @@
 package ir.daneshrefah.scm.uaa.observation;
 
+import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.LogObservationBuilder;
+import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.TraceContext;
+import ir.daneshrefah.scm.observation.TraceContextHolder;
 import ir.daneshrefah.scm.observation.TraceObservationBuilder;
 import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Component
 public class UaaObservation {
+    private static final String REQUEST = CorrelationType.REQUEST.value();
+    private static final int MAX_SAFE_MESSAGE_LENGTH = 300;
+
     private final ScmObservation observation;
 
     public UaaObservation(ScmObservation observation) {
         this.observation = observation;
+    }
+
+    public void controllerStarted(ControllerContext ctx) {
+        writeControllerLog(
+                ctx,
+                "started",
+                "INFO",
+                "UAA controller request started",
+                null
+        );
+    }
+
+    public void controllerCompleted(ControllerContext ctx) {
+        writeControllerLog(
+                ctx == null ? null : ctx.withResult("success"),
+                "success",
+                "INFO",
+                "UAA controller request completed",
+                null
+        );
+    }
+
+    public void controllerFailed(ControllerContext ctx, Throwable throwable) {
+        writeControllerLog(
+                ctx == null ? null : ctx.withResult("failure").withFailureReason(safeMessage(throwable)),
+                "failure",
+                "WARN",
+                "UAA controller request failed",
+                throwable
+        );
+    }
+
+    public ObservationScope traceController(ControllerContext ctx) {
+        String spanName = ctx == null ? "uaa.controller.unknown.unknown" : ctx.spanName();
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span(spanName)
+                .spanKind("server")
+                .action(spanName)
+                .correlationId(ctx == null ? null : ctx.correlationId())
+                .correlationType(REQUEST)
+                .traceId(ObservationIds.traceId())
+                .parentSpanId("");
+        putControllerTraceAttributes(builder, ctx);
+        return builder.start();
+    }
+
+    public ObservationScope controllerAttributes(ObservationScope scope, ControllerContext ctx) {
+        if (scope == null || ctx == null) {
+            return scope;
+        }
+        scope.attribute(UaaTraceAttributes.HTTP_METHOD, ctx.httpMethod())
+                .attribute(UaaTraceAttributes.URL_PATH, ctx.path())
+                .attribute(UaaTraceAttributes.HTTP_STATUS_CODE, ctx.statusCode())
+                .attribute(UaaTraceAttributes.CLIENT_IP, ctx.clientIp())
+                .attribute(UaaTraceAttributes.AUTH_STEP, ctx.operation())
+                .attribute(UaaTraceAttributes.AUTH_RESULT, ctx.result())
+                .attribute(UaaTraceAttributes.AUTH_FAILURE_REASON, ctx.failureReason());
+        return scope;
+    }
+
+    public void operationStarted(OperationContext ctx) {
+        writeOperationLog(ctx, "started", "INFO", "UAA operation started", null);
+    }
+
+    public void operationCompleted(OperationContext ctx) {
+        writeOperationLog(ctx == null ? null : ctx.withResult("success"), "success", "INFO",
+                "UAA operation completed", null);
+    }
+
+    public void operationFailed(OperationContext ctx, Throwable throwable) {
+        writeOperationLog(ctx == null ? null : ctx.withResult("failure").withFailureReason(safeMessage(throwable)),
+                "failure", "WARN", "UAA operation failed", throwable);
     }
 
     public void authStarted(AuthContext ctx) {
@@ -41,8 +123,28 @@ public class UaaObservation {
         writeJwtLog("uaa.jwt.validation.failed", "failure", "UAA JWT validation failed", "WARN", ctx, throwable);
     }
 
+    public void jwtIssueStarted(JwtContext ctx) {
+        writeJwtLog("uaa.jwt.issue.started", "started", "UAA JWT issue started", "INFO", ctx, null);
+    }
+
+    public void jwtIssueCompleted(JwtContext ctx) {
+        writeJwtLog("uaa.jwt.issue.completed", "success", "UAA JWT issue completed", "INFO", ctx, null);
+    }
+
+    public void jwtIssueFailed(JwtContext ctx, Throwable throwable) {
+        writeJwtLog("uaa.jwt.issue.failed", "failure", "UAA JWT issue failed", "WARN", ctx, throwable);
+    }
+
     public void otpSent(OtpContext ctx) {
         writeOtpLog("uaa.otp.sent", "success", "UAA OTP sent", "INFO", ctx, null);
+    }
+
+    public void otpVerifyStarted(OtpContext ctx) {
+        writeOtpLog("uaa.otp.verify.started", "started", "UAA OTP verification started", "INFO", ctx, null);
+    }
+
+    public void otpVerifyCompleted(OtpContext ctx) {
+        writeOtpLog("uaa.otp.verify.completed", "success", "UAA OTP verification completed", "INFO", ctx, null);
     }
 
     public void otpVerifyFailed(OtpContext ctx, Throwable throwable) {
@@ -52,21 +154,46 @@ public class UaaObservation {
     public ObservationScope traceAuth(AuthContext ctx) {
         TraceObservationBuilder builder = observation.trace()
                 .source(UaaObservation.class)
-                .span("uaa.auth")
+                .span("uaa.auth.authenticate")
                 .spanKind("internal")
-                .action("uaa.auth");
+                .action("uaa.auth.authenticate");
+        if (TraceContextHolder.current() == null) {
+            builder.correlationType(REQUEST);
+        }
         putAuthTraceAttributes(builder, ctx);
+        return builder.start();
+    }
+
+    public ObservationScope traceSecurity(OperationContext ctx) {
+        return traceOperation(ctx, "uaa.auth.provider.authenticate", "uaa.auth", "internal");
+    }
+
+    public ObservationScope traceJwtIssue(JwtContext ctx) {
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span("uaa.jwt.issue")
+                .spanKind("internal")
+                .action("uaa.jwt.issue");
+        putJwtTraceAttributes(builder, ctx);
         return builder.start();
     }
 
     public ObservationScope traceJwtValidation(JwtContext ctx) {
         TraceObservationBuilder builder = observation.trace()
                 .source(UaaObservation.class)
-                .span("uaa.jwt.validation")
+                .span("uaa.jwt.validate")
                 .spanKind("internal")
-                .action("uaa.jwt.validation");
+                .action("uaa.jwt.validate");
         putJwtTraceAttributes(builder, ctx);
         return builder.start();
+    }
+
+    public ObservationScope traceActivationPwa(OperationContext ctx) {
+        return traceOperation(ctx, "uaa.activation.pwa.request", "uaa.activation.pwa", "internal");
+    }
+
+    public ObservationScope traceActivationNib(OperationContext ctx) {
+        return traceOperation(ctx, "uaa.activation.nib.request", "uaa.activation.nib", "internal");
     }
 
     public ObservationScope traceOtpSend(OtpContext ctx) {
@@ -75,6 +202,36 @@ public class UaaObservation {
                 .span("uaa.otp.send")
                 .spanKind("internal")
                 .action("uaa.otp.send");
+        putOtpTraceAttributes(builder, ctx);
+        return builder.start();
+    }
+
+    public ObservationScope traceOtpVerify(OtpContext ctx) {
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span("uaa.otp.verify")
+                .spanKind("internal")
+                .action("uaa.otp.verify");
+        putOtpTraceAttributes(builder, ctx);
+        return builder.start();
+    }
+
+    public ObservationScope traceOtpBlockCheck(OtpContext ctx) {
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span("uaa.otp.block.check")
+                .spanKind("internal")
+                .action("uaa.otp.block.check");
+        putOtpTraceAttributes(builder, ctx);
+        return builder.start();
+    }
+
+    public ObservationScope traceOtpTrialUpdate(OtpContext ctx) {
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span("uaa.otp.trial.update")
+                .spanKind("internal")
+                .action("uaa.otp.trial.update");
         putOtpTraceAttributes(builder, ctx);
         return builder.start();
     }
@@ -119,7 +276,75 @@ public class UaaObservation {
         return scope;
     }
 
-    private ObservationScope traceDb(String spanName, DbContext ctx) {
+    public ObservationScope operationAttributes(ObservationScope scope, OperationContext ctx) {
+        if (scope == null || ctx == null) {
+            return scope;
+        }
+        scope.attribute(UaaTraceAttributes.AUTH_STEP, ctx.step())
+                .attribute(UaaTraceAttributes.AUTH_RESULT, ctx.result())
+                .attribute(UaaTraceAttributes.AUTH_FAILURE_REASON, ctx.failureReason());
+        return scope;
+    }
+
+    public ObservationScope jwtAttributes(ObservationScope scope, JwtContext ctx) {
+        if (scope == null || ctx == null) {
+            return scope;
+        }
+        scope.attribute(UaaTraceAttributes.JWT_PRESENT, ctx.present())
+                .attribute(UaaTraceAttributes.TOKEN_TYPE, ctx.tokenType())
+                .attribute(UaaTraceAttributes.JWT_ISSUER, ctx.issuer())
+                .attribute(UaaTraceAttributes.JWT_SUBJECT, ctx.subject())
+                .attribute(UaaTraceAttributes.JWT_USERNAME, ctx.username())
+                .attribute(UaaTraceAttributes.JWT_MASKED, ctx.jwtMasked())
+                .attribute(UaaTraceAttributes.JWT_EXPIRATION, ctx.expiration());
+        return scope;
+    }
+
+    public String jwtMasked(String token) {
+        String value = textOrNull(token);
+        if (value == null) {
+            return null;
+        }
+        if (value.length() <= 10) {
+            return value;
+        }
+        return value.substring(0, 5) + "..." + value.substring(value.length() - 5);
+    }
+
+    public String safeErrorMessage(Throwable throwable) {
+        return safeMessage(throwable);
+    }
+
+    public String maskPhone(String value) {
+        String phone = textOrNull(value);
+        if (phone == null) {
+            return null;
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() <= 4) {
+            return "****";
+        }
+        return "***" + digits.substring(digits.length() - 4);
+    }
+
+    private ObservationScope traceOperation(
+            OperationContext ctx,
+            String defaultSpanName,
+            String defaultCategory,
+            String spanKind
+    ) {
+        String spanName = textOrDefault(ctx == null ? null : ctx.spanName(), defaultSpanName);
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span(spanName)
+                .spanKind(textOrDefault(spanKind, "internal"))
+                .action(spanName);
+        putOperationTraceAttributes(builder, ctx, defaultCategory);
+        return builder.start();
+    }
+
+    private ObservationScope traceDb(String baseSpanName, DbContext ctx) {
+        String spanName = dbSpanName(baseSpanName, ctx);
         TraceObservationBuilder builder = observation.trace()
                 .source(UaaObservation.class)
                 .span(spanName)
@@ -130,6 +355,49 @@ public class UaaObservation {
                     .attribute(UaaTraceAttributes.AUTH_STEP, ctx.step());
         }
         return builder.start();
+    }
+
+    private void writeControllerLog(
+            ControllerContext ctx,
+            String outcome,
+            String level,
+            String message,
+            Throwable throwable
+    ) {
+        String action = ctx == null ? "uaa.controller.unknown.unknown" : ctx.spanName();
+        LogObservationBuilder builder = baseLog(action + "." + outcome, "uaa.controller", outcome, message, level)
+                .correlationId(ctx == null ? null : ctx.correlationId())
+                .correlationType(REQUEST);
+        if (ctx != null) {
+            builder.attribute(UaaLogAttributes.AUTH_STEP, ctx.operation())
+                    .attribute(UaaLogAttributes.AUTH_RESULT, textOrDefault(ctx.result(), outcome))
+                    .attribute(UaaLogAttributes.AUTH_FAILURE_REASON, textOrDefault(ctx.failureReason(), safeMessage(throwable)))
+                    .attribute(UaaLogAttributes.HTTP_METHOD, ctx.httpMethod())
+                    .attribute(UaaLogAttributes.URL_PATH, ctx.path())
+                    .attribute(UaaLogAttributes.HTTP_STATUS_CODE, ctx.statusCode())
+                    .attribute(UaaLogAttributes.CLIENT_IP, ctx.clientIp());
+        }
+        putError(builder, throwable);
+        builder.write();
+    }
+
+    private void writeOperationLog(
+            OperationContext ctx,
+            String outcome,
+            String level,
+            String message,
+            Throwable throwable
+    ) {
+        String category = textOrDefault(ctx == null ? null : ctx.category(), "uaa.operation");
+        String action = textOrDefault(ctx == null ? null : ctx.spanName(), category);
+        LogObservationBuilder builder = baseLog(action + "." + outcome, category, outcome, message, level);
+        if (ctx != null) {
+            builder.attribute(UaaLogAttributes.AUTH_STEP, ctx.step())
+                    .attribute(UaaLogAttributes.AUTH_RESULT, textOrDefault(ctx.result(), outcome))
+                    .attribute(UaaLogAttributes.AUTH_FAILURE_REASON, textOrDefault(ctx.failureReason(), safeMessage(throwable)));
+        }
+        putError(builder, throwable);
+        builder.write();
     }
 
     private void writeAuthLog(
@@ -155,7 +423,8 @@ public class UaaObservation {
                     .attribute(UaaLogAttributes.JWT_SUBJECT, ctx.jwtSubject())
                     .attribute(UaaLogAttributes.JWT_USERNAME, ctx.jwtUsername())
                     .attribute(UaaLogAttributes.JWT_MASKED, ctx.jwtMasked())
-                    .attribute(UaaLogAttributes.JWT_EXPIRATION, ctx.jwtExpiration());
+                    .attribute(UaaLogAttributes.JWT_EXPIRATION, ctx.jwtExpiration())
+                    .attribute(UaaLogAttributes.CLIENT_IP, ctx.clientIp());
         }
         putError(builder, throwable);
         builder.write();
@@ -204,7 +473,7 @@ public class UaaObservation {
     }
 
     private LogObservationBuilder baseLog(String action, String category, String outcome, String message, String level) {
-        return observation.log()
+        LogObservationBuilder builder = observation.log()
                 .event()
                 .source(UaaObservation.class)
                 .loggerName(UaaObservation.class)
@@ -213,6 +482,27 @@ public class UaaObservation {
                 .outcome(outcome)
                 .level(level)
                 .message(message);
+        TraceContext current = TraceContextHolder.current();
+        if (current != null) {
+            builder.correlationId(current.correlationId())
+                    .correlationType(current.correlationType())
+                    .attribute(CommonLogAttributes.TRACE_ID, current.traceId())
+                    .attribute(CommonLogAttributes.SPAN_ID, current.spanId());
+        }
+        return builder;
+    }
+
+    private void putControllerTraceAttributes(TraceObservationBuilder builder, ControllerContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        builder.attribute(UaaTraceAttributes.HTTP_METHOD, ctx.httpMethod())
+                .attribute(UaaTraceAttributes.URL_PATH, ctx.path())
+                .attribute(UaaTraceAttributes.HTTP_STATUS_CODE, ctx.statusCode())
+                .attribute(UaaTraceAttributes.CLIENT_IP, ctx.clientIp())
+                .attribute(UaaTraceAttributes.AUTH_STEP, ctx.operation())
+                .attribute(UaaTraceAttributes.AUTH_RESULT, ctx.result())
+                .attribute(UaaTraceAttributes.AUTH_FAILURE_REASON, ctx.failureReason());
     }
 
     private void putAuthTraceAttributes(TraceObservationBuilder builder, AuthContext ctx) {
@@ -249,6 +539,21 @@ public class UaaObservation {
                 .attribute(UaaTraceAttributes.JWT_EXPIRATION, ctx.expiration());
     }
 
+    private void putOperationTraceAttributes(
+            TraceObservationBuilder builder,
+            OperationContext ctx,
+            String defaultCategory
+    ) {
+        if (ctx == null) {
+            builder.attribute(UaaTraceAttributes.AUTH_TYPE, defaultCategory);
+            return;
+        }
+        builder.attribute(UaaTraceAttributes.AUTH_TYPE, textOrDefault(ctx.category(), defaultCategory))
+                .attribute(UaaTraceAttributes.AUTH_STEP, ctx.step())
+                .attribute(UaaTraceAttributes.AUTH_RESULT, ctx.result())
+                .attribute(UaaTraceAttributes.AUTH_FAILURE_REASON, ctx.failureReason());
+    }
+
     private void putOtpTraceAttributes(TraceObservationBuilder builder, OtpContext ctx) {
         if (ctx == null) {
             return;
@@ -278,6 +583,18 @@ public class UaaObservation {
                 .attribute(CommonLogAttributes.ERROR_MESSAGE, safeMessage(throwable));
     }
 
+    private String dbSpanName(String baseSpanName, DbContext ctx) {
+        String step = ctx == null ? null : textOrNull(ctx.step());
+        if (step == null) {
+            return baseSpanName;
+        }
+        String normalizedStep = normalizeName(step);
+        if (normalizedStep.startsWith(baseSpanName + ".")) {
+            return normalizedStep;
+        }
+        return baseSpanName + "." + normalizedStep;
+    }
+
     private String safeMessage(Throwable throwable) {
         if (throwable == null || throwable.getMessage() == null) {
             return null;
@@ -287,11 +604,85 @@ public class UaaObservation {
                 .replace('\n', ' ')
                 .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
-        return message.length() > 300 ? message.substring(0, 300) : message;
+        return message.length() > MAX_SAFE_MESSAGE_LENGTH ? message.substring(0, MAX_SAFE_MESSAGE_LENGTH) : message;
     }
 
     private String textOrDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+
+    private String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeName(String value) {
+        String normalized = textOrDefault(value, "unknown")
+                .replaceAll("([a-z])([A-Z]+)", "$1.$2")
+                .replaceAll("[^A-Za-z0-9]+", ".")
+                .replaceAll("\\.+", ".")
+                .replaceAll("^\\.|\\.$", "")
+                .toLowerCase(Locale.ROOT);
+        return normalized.isBlank() ? "unknown" : normalized;
+    }
+
+    public record ControllerContext(
+            String controller,
+            String operation,
+            String httpMethod,
+            String path,
+            Integer statusCode,
+            String clientIp,
+            String correlationId,
+            String result,
+            String failureReason
+    ) {
+        public String spanName() {
+            return "uaa.controller." + normalize(controller) + "." + normalize(operation);
+        }
+
+        public ControllerContext withStatus(Integer statusCode) {
+            return new ControllerContext(controller, operation, httpMethod, path, statusCode, clientIp, correlationId,
+                    result, failureReason);
+        }
+
+        public ControllerContext withResult(String result) {
+            return new ControllerContext(controller, operation, httpMethod, path, statusCode, clientIp, correlationId,
+                    result, failureReason);
+        }
+
+        public ControllerContext withFailureReason(String failureReason) {
+            return new ControllerContext(controller, operation, httpMethod, path, statusCode, clientIp, correlationId,
+                    result, failureReason);
+        }
+
+        private static String normalize(String value) {
+            if (value == null || value.isBlank()) {
+                return "unknown";
+            }
+            String normalized = value
+                    .replaceAll("([a-z])([A-Z]+)", "$1.$2")
+                    .replaceAll("[^A-Za-z0-9]+", ".")
+                    .replaceAll("\\.+", ".")
+                    .replaceAll("^\\.|\\.$", "")
+                    .toLowerCase(Locale.ROOT);
+            return normalized.isBlank() ? "unknown" : normalized;
+        }
+    }
+
+    public record OperationContext(
+            String spanName,
+            String category,
+            String step,
+            String result,
+            String failureReason
+    ) {
+        public OperationContext withResult(String result) {
+            return new OperationContext(spanName, category, step, result, failureReason);
+        }
+
+        public OperationContext withFailureReason(String failureReason) {
+            return new OperationContext(spanName, category, step, result, failureReason);
+        }
     }
 
     public record AuthContext(
@@ -342,6 +733,9 @@ public class UaaObservation {
             String jwtMasked,
             String expiration
     ) {
+        public JwtContext withMasked(String jwtMasked) {
+            return new JwtContext(present, tokenType, issuer, subject, username, jwtMasked, expiration);
+        }
     }
 
     public record OtpContext(
@@ -351,6 +745,13 @@ public class UaaObservation {
             String result,
             String failureReason
     ) {
+        public OtpContext withResult(String result) {
+            return new OtpContext(channel, purpose, step, result, failureReason);
+        }
+
+        public OtpContext withFailureReason(String failureReason) {
+            return new OtpContext(channel, purpose, step, result, failureReason);
+        }
     }
 
     public record DbContext(String datasource, String step) {
