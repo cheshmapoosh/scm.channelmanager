@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
 import ir.daneshrefah.scm.observation.logging.ScmLogMarkers;
 import net.logstash.logback.argument.StructuredArguments;
 import org.slf4j.Logger;
@@ -55,8 +55,8 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
         }
         this.throwable = throwable;
         if (throwable != null) {
-            attribute(ScmCommonLogAttributes.ERROR_TYPE, throwable.getClass().getName());
-            attribute(ScmCommonLogAttributes.ERROR_MESSAGE, safeMessage(throwable));
+            attribute(CommonLogAttributes.ERROR_TYPE, throwable.getClass().getName());
+            attribute(CommonLogAttributes.ERROR_MESSAGE, safeMessage(throwable));
         }
         return this;
     }
@@ -182,9 +182,9 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
         if (recordKind == ObservationRecordKind.EVENT
                 || recordKind == ObservationRecordKind.CONTEXT
                 || recordKind == ObservationRecordKind.CHANGE) {
-            builder.put(ScmCommonLogAttributes.EVENT_CATEGORY, textOrDefault(category, "application"));
-            builder.put(ScmCommonLogAttributes.EVENT_ACTION, textOrDefault(action, "log.event"));
-            builder.put(ScmCommonLogAttributes.EVENT_OUTCOME, textOrDefault(outcome, "unknown"));
+            builder.put(CommonLogAttributes.EVENT_CATEGORY, textOrDefault(category, "application"));
+            builder.put(CommonLogAttributes.EVENT_ACTION, textOrDefault(action, "log.event"));
+            builder.put(CommonLogAttributes.EVENT_OUTCOME, textOrDefault(outcome, "unknown"));
         }
     }
 
@@ -245,11 +245,11 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
     }
 
     private boolean isEventOwnedField(String fieldName) {
-        return ScmCommonLogAttributes.TIMESTAMP.name().equals(fieldName)
-                || ScmCommonLogAttributes.LOG_LEVEL.name().equals(fieldName)
-                || ScmCommonLogAttributes.LOG_LOGGER.name().equals(fieldName)
-                || ScmCommonLogAttributes.PROCESS_THREAD_NAME.name().equals(fieldName)
-                || ScmCommonLogAttributes.MESSAGE.name().equals(fieldName);
+        return CommonLogAttributes.TIMESTAMP.name().equals(fieldName)
+                || CommonLogAttributes.LOG_LEVEL.name().equals(fieldName)
+                || CommonLogAttributes.LOG_LOGGER.name().equals(fieldName)
+                || CommonLogAttributes.PROCESS_THREAD_NAME.name().equals(fieldName)
+                || CommonLogAttributes.MESSAGE.name().equals(fieldName);
     }
 
     private Object[] appendThrowable(Object[] arguments, Throwable throwable) {

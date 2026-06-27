@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.cache.infrastructure.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import ir.daneshrefah.scm.cache.observation.ScmCacheObservationAttributes;
+import ir.daneshrefah.scm.cache.observation.attributes.CacheLogAttributes;
 import ir.daneshrefah.scm.cache.observation.ScmCacheObservationEvents;
 import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ScmObservation;
@@ -178,9 +178,9 @@ public class ScmCacheHazelcastHealthIndicator implements HealthIndicator {
                 .action(ScmCacheObservationEvents.HAZELCAST_HEALTH_CHANGED)
                 .outcome(Status.UP.equals(status) ? "success" : "failure")
                 .info("Hazelcast health changed")
-                .attribute(ScmCacheObservationAttributes.HAZELCAST_CLUSTER_SIZE, clusterSize)
-                .attribute(ScmCacheObservationAttributes.HAZELCAST_ELEMENT_COUNT, registeredCount)
-                .attribute(ScmCacheObservationAttributes.HAZELCAST_MATERIALIZED_COUNT, materializedCount)
+                .attribute(CacheLogAttributes.HAZELCAST_CLUSTER_SIZE, clusterSize)
+                .attribute(CacheLogAttributes.HAZELCAST_ELEMENT_COUNT, registeredCount)
+                .attribute(CacheLogAttributes.HAZELCAST_MATERIALIZED_COUNT, materializedCount)
                 .write();
     }
 

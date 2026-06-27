@@ -9,10 +9,7 @@ import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationRecordKind;
 import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationStream;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -44,19 +41,17 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
         if (spec == null) {
             return TraceObservationHandle.NOOP;
         }
-        return new StructuredTraceObservationHandle(spec, Instant.now(clock), System.nanoTime());
+        return new StructuredTraceObservationHandle(spec, Instant.now(clock));
     }
 
     private final class StructuredTraceObservationHandle implements TraceObservationHandle {
         private final TraceObservationSpec spec;
         private final Instant startedAt;
-        private final long startedNanos;
         private boolean finished;
 
-        private StructuredTraceObservationHandle(TraceObservationSpec spec, Instant startedAt, long startedNanos) {
+        private StructuredTraceObservationHandle(TraceObservationSpec spec, Instant startedAt) {
             this.spec = spec;
             this.startedAt = startedAt;
-            this.startedNanos = startedNanos;
         }
 
         @Override
@@ -87,23 +82,22 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
                     spec.correlationId(),
                     CorrelationType.OPERATION.value()
             );
-            builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, "trace");
-            builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
-            builder.put(ScmObservationDocumentAttributes.EVENT_OUTCOME, outcome);
-            builder.put(ScmTraceAttributes.TRACE_ID, textOrDefault(spec.traceId(), ObservationIds.traceId()));
-            builder.put(ScmTraceAttributes.SPAN_ID, textOrDefault(spec.spanId(), ObservationIds.spanId()));
-            builder.put(ScmTraceAttributes.PARENT_SPAN_ID, spec.parentSpanId());
-            builder.put(ScmTraceAttributes.SPAN_NAME, textOrDefault(spec.spanName(), "trace.span"));
-            builder.put(ScmTraceAttributes.SPAN_KIND, textOrDefault(spec.spanKind(), "internal").toLowerCase(Locale.ROOT));
-            builder.put(ScmTraceAttributes.SPAN_START_TIME, startedAt.toString());
-            builder.put(ScmTraceAttributes.SPAN_END_TIME, endedAt.toString());
-            builder.put(ScmTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startedAt, endedAt).toMillis()));
-            builder.put(ScmOperationAttributes.DURATION_MS, Math.max(0L, Duration.ofNanos(System.nanoTime() - startedNanos).toMillis()));
+            builder.put(CommonTraceAttributes.EVENT_CATEGORY, "trace");
+            builder.put(CommonTraceAttributes.EVENT_ACTION, textOrDefault(spec.action(), textOrDefault(spec.spanName(), "trace.span")));
+            builder.put(CommonTraceAttributes.EVENT_OUTCOME, outcome);
+            builder.put(CommonTraceAttributes.TRACE_ID, textOrDefault(spec.traceId(), ObservationIds.traceId()));
+            builder.put(CommonTraceAttributes.SPAN_ID, textOrDefault(spec.spanId(), ObservationIds.spanId()));
+            builder.put(CommonTraceAttributes.PARENT_SPAN_ID, spec.parentSpanId());
+            builder.put(CommonTraceAttributes.SPAN_NAME, textOrDefault(spec.spanName(), "trace.span"));
+            builder.put(CommonTraceAttributes.SPAN_KIND, textOrDefault(spec.spanKind(), "internal").toLowerCase(Locale.ROOT));
+            builder.put(CommonTraceAttributes.SPAN_START_TIME, startedAt.toString());
+            builder.put(CommonTraceAttributes.SPAN_END_TIME, endedAt.toString());
+            builder.put(CommonTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startedAt, endedAt).toMillis()));
             builder.putAll(spec.attributes());
             builder.putAll(attributes);
             if (throwable != null) {
-                builder.put(ScmErrorAttributes.TYPE, throwable.getClass().getName());
-                builder.put(ScmErrorAttributes.MESSAGE, safeMessage(throwable));
+                builder.put(CommonTraceAttributes.ERROR_TYPE, throwable.getClass().getName());
+                builder.put(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(throwable));
             }
             LinkedHashMap<String, Object> document = builder.build();
             recordValidator.validate(ObservationStream.TRACE, ObservationRecordKind.EVENT, throwable != null, document);

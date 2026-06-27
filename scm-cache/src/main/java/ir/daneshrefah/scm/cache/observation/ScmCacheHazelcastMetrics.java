@@ -10,7 +10,6 @@ import ir.daneshrefah.scm.observation.element.ScmElementHealthResult;
 import ir.daneshrefah.scm.observation.element.ScmElementRiskLevel;
 import ir.daneshrefah.scm.observation.element.ScmHealthElementId;
 import ir.daneshrefah.scm.observation.element.ScmHealthElementSample;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
@@ -144,25 +143,25 @@ public class ScmCacheHazelcastMetrics implements MeterBinder {
         if (!registeredElementMeters.add(meterKey)) {
             return;
         }
-        Gauge.builder(ScmMetricNames.ELEMENT_HEALTH, this, metrics -> metrics.elementHealth(id))
+        Gauge.builder(CacheMetricNames.ELEMENT_HEALTH, this, metrics -> metrics.elementHealth(id))
                 .tag(SERVICE_TAG, SERVICE_NAME)
                 .tag(COMPONENT_TAG, id.component())
                 .tag(ELEMENT_TYPE_TAG, id.type())
                 .tag(ELEMENT_NAME_TAG, id.name())
                 .register(registry);
-        Gauge.builder(ScmMetricNames.ELEMENT_RISK, this, metrics -> metrics.elementRisk(id))
+        Gauge.builder(CacheMetricNames.ELEMENT_RISK, this, metrics -> metrics.elementRisk(id))
                 .tag(SERVICE_TAG, SERVICE_NAME)
                 .tag(COMPONENT_TAG, id.component())
                 .tag(ELEMENT_TYPE_TAG, id.type())
                 .tag(ELEMENT_NAME_TAG, id.name())
                 .register(registry);
-        Gauge.builder(ScmMetricNames.ELEMENT_MATERIALIZED, this, metrics -> metrics.elementMaterialized(id))
+        Gauge.builder(CacheMetricNames.ELEMENT_MATERIALIZED, this, metrics -> metrics.elementMaterialized(id))
                 .tag(SERVICE_TAG, SERVICE_NAME)
                 .tag(COMPONENT_TAG, id.component())
                 .tag(ELEMENT_TYPE_TAG, id.type())
                 .tag(ELEMENT_NAME_TAG, id.name())
                 .register(registry);
-        Gauge.builder(ScmMetricNames.ELEMENT_CAPACITY_RATIO, this, metrics -> metrics.elementCapacityRatio(id))
+        Gauge.builder(CacheMetricNames.ELEMENT_CAPACITY_RATIO, this, metrics -> metrics.elementCapacityRatio(id))
                 .tag(SERVICE_TAG, SERVICE_NAME)
                 .tag(COMPONENT_TAG, id.component())
                 .tag(ELEMENT_TYPE_TAG, id.type())

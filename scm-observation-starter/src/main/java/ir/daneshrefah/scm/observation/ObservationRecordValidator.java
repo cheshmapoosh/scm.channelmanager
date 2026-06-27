@@ -1,9 +1,18 @@
 package ir.daneshrefah.scm.observation;
 
+import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
+
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ObservationRecordValidator {
+    private static final Set<String> AUDIT_TYPES = Set.of(
+            ChangeEntityAuditAttributes.TYPE_VALUE,
+            ServiceExecuteAuditAttributes.TYPE_VALUE
+    );
+
     private final ObservationAttributeRegistry registry;
 
     public ObservationRecordValidator(ObservationAttributeRegistry registry) {
@@ -33,6 +42,8 @@ public class ObservationRecordValidator {
             }
         }
         validateCorrelationType(stream, document);
+        validateAuditType(stream, document);
+        validateTraceParent(stream, document);
     }
 
     private EnumSet<ObservationAttributePresence> requiredPresence(ObservationRecordKind kind, boolean errorContext) {
@@ -58,6 +69,30 @@ public class ObservationRecordValidator {
         }
         if (!CorrelationType.isAllowed(String.valueOf(value))) {
             throw new IllegalStateException("Invalid " + stream + " correlation.type: " + value);
+        }
+    }
+
+    private void validateAuditType(ObservationStream stream, Map<String, Object> document) {
+        if (stream != ObservationStream.AUDIT) {
+            return;
+        }
+        Object value = document.get(ChangeEntityAuditAttributes.AUDIT_TYPE.name());
+        if (value == null || !AUDIT_TYPES.contains(String.valueOf(value))) {
+            throw new IllegalStateException("Invalid AUDIT audit.type: " + value);
+        }
+    }
+
+    private void validateTraceParent(ObservationStream stream, Map<String, Object> document) {
+        if (stream != ObservationStream.TRACE) {
+            return;
+        }
+        Object parentSpanId = document.get("parent.span.id");
+        if (missing(parentSpanId)) {
+            return; // Absent, null, or blank parent.span.id defines a root span.
+        }
+        Object spanId = document.get("span.id");
+        if (String.valueOf(parentSpanId).equals(String.valueOf(spanId))) {
+            throw new IllegalStateException("Invalid TRACE parent.span.id: a span cannot be its own parent");
         }
     }
 

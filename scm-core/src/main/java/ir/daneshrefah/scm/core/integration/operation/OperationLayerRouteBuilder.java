@@ -27,10 +27,11 @@ import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
+import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
 import ir.daneshrefah.scm.observation.metrics.MetricCounterBuilder;
 import ir.daneshrefah.scm.observation.metrics.MetricTimerBuilder;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.metrics.CommonMetricNames;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -294,16 +295,16 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         Map<String, String> fields = exchangeMdc.fields(exchange);
         ObservationContext context = observationContextProvider.getIfAvailable();
 
-        MetricCounterBuilder calls = observation.metric().counter(ScmMetricNames.OPERATION_CALLS);
+        MetricCounterBuilder calls = observation.metric().counter(CommonMetricNames.OPERATION_CALLS);
         tagOperation(calls, context, fields, operation, outcome, exception);
         calls.increment();
 
-        MetricTimerBuilder duration = observation.metric().timer(ScmMetricNames.OPERATION_DURATION);
+        MetricTimerBuilder duration = observation.metric().timer(CommonMetricNames.OPERATION_DURATION);
         tagOperation(duration, context, fields, operation, outcome, exception);
         duration.record(durationNanos, TimeUnit.NANOSECONDS);
 
         if (exception != null) {
-            MetricCounterBuilder faults = observation.metric().counter(ScmMetricNames.FAULTS);
+            MetricCounterBuilder faults = observation.metric().counter(CommonMetricNames.FAULTS);
             tagOperation(faults, context, fields, operation, outcome, exception);
             faults.increment();
         }
@@ -317,18 +318,18 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
             String outcome,
             Exception exception
     ) {
-        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
-                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
-                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
-                .tag(ScmMetricAttributes.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
+        builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
+                .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
+                .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))
+                .tag(CommonMetricTags.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
                 .tag("operation_name", operation != null ? operation.getName() : fields.get("operationName"))
                 .tag("operation_type", operation != null && operation.getType() != null ? operation.getType().name() : null)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
     }
 
     private void tagOperation(
@@ -339,18 +340,18 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
             String outcome,
             Exception exception
     ) {
-        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
-                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
-                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
-                .tag(ScmMetricAttributes.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
+        builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
+                .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
+                .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))
+                .tag(CommonMetricTags.OPERATION_CODE, operation != null ? operation.getName() : fields.get("operationName"))
                 .tag("operation_name", operation != null ? operation.getName() : fields.get("operationName"))
                 .tag("operation_type", operation != null && operation.getType() != null ? operation.getType().name() : null)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
     }
 
     private long operationDurationNanos(Exchange exchange) {

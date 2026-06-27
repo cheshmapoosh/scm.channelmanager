@@ -3,18 +3,18 @@ package ir.daneshrefah.scm.core.integration.observability;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
+import ir.daneshrefah.scm.core.integration.observability.attributes.CoreLogAttributes;
+import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
+import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
 import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmCommonAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmGatewayAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmServiceAttributes;
+import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.observation.metrics.MetricCounterBuilder;
 import ir.daneshrefah.scm.observation.metrics.MetricTimerBuilder;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.metrics.CommonMetricNames;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -58,14 +58,14 @@ public class PluginObservationSupport {
         try {
             invocation.run();
             long durationNanos = System.nanoTime() - startNanos;
-            scope.attribute("plugin.duration_ms", durationNanos / 1_000_000L).success();
+            scope.attribute(CoreTraceAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L).success();
             recordMetrics(observation, fields, detail, handler, layer, durationNanos, "success", null);
             logSuccess(observation, exchange, detail, handler, layer, fields, durationNanos);
         } catch (Exception exception) {
             long durationNanos = System.nanoTime() - startNanos;
             scope.failure(exception)
-                    .attribute("plugin.duration_ms", durationNanos / 1_000_000L)
-                    .attribute(ScmErrorAttributes.MESSAGE, RouteLogSupport.failureMessage(exception));
+                    .attribute(CoreTraceAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L)
+                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception));
             recordMetrics(observation, fields, detail, handler, layer, durationNanos, "failure", exception);
             logFailure(observation, exchange, detail, handler, layer, fields, durationNanos, exception);
             throw exception;
@@ -87,18 +87,18 @@ public class PluginObservationSupport {
                 .spanKind("internal")
                 .action("plugin.execute")
                 .correlationId(fields.get("correlationId"))
-                .attribute(ScmCommonAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(ScmCommonAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(ScmServiceAttributes.CODE, fields.get("serviceCode"))
-                .attribute(ScmOperationAttributes.CODE, fields.get("operationName"))
-                .attribute(ScmOperationAttributes.NAME, fields.get("operationName"))
-                .attribute(ScmGatewayAttributes.ROUTE_ID, fields.get("routeId"))
-                .attribute("scm.exchange.id", fields.get("exchangeId"))
-                .attribute("plugin.name", detail != null ? detail.getName() : null)
-                .attribute("plugin.type", handler != null && handler.getType() != null ? handler.getType().name() : null)
-                .attribute("plugin.phase", detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
-                .attribute("plugin.layer", layer)
-                .attribute("scm.protocol", RouteLogSupport.protocol(exchange))
+                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                .attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"))
+                .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
+                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
+                .attribute(CoreTraceAttributes.PLUGIN_NAME, detail != null ? detail.getName() : null)
+                .attribute(CoreTraceAttributes.PLUGIN_TYPE, handler != null && handler.getType() != null ? handler.getType().name() : null)
+                .attribute(CoreTraceAttributes.PLUGIN_PHASE, detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
+                .attribute(CoreTraceAttributes.PLUGIN_LAYER, layer)
+                .attribute(CoreTraceAttributes.PROTOCOL, RouteLogSupport.protocol(exchange))
                 .start();
     }
 
@@ -113,7 +113,7 @@ public class PluginObservationSupport {
         baseLog(observation, exchange, detail, handler, layer, fields)
                 .info("Plugin execution completed")
                 .outcome("success")
-                .attribute("plugin.duration_ms", durationNanos / 1_000_000L)
+                .attribute(CoreLogAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L)
                 .write();
     }
 
@@ -121,9 +121,9 @@ public class PluginObservationSupport {
         baseLog(observation, exchange, detail, handler, layer, fields)
                 .warn("Plugin execution failed")
                 .outcome("failure")
-                .attribute("plugin.duration_ms", durationNanos / 1_000_000L)
-                .attribute(ScmErrorAttributes.TYPE, exception.getClass().getName())
-                .attribute(ScmErrorAttributes.MESSAGE, RouteLogSupport.failureMessage(exception))
+                .attribute(CoreLogAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L)
+                .attribute(CommonLogAttributes.ERROR_TYPE, exception.getClass().getName())
+                .attribute(CommonLogAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception))
                 .write();
     }
 
@@ -138,18 +138,18 @@ public class PluginObservationSupport {
         return observation.log()
                 .loggerName(PluginObservationSupport.class)
                 .correlationId(fields.get("correlationId"))
-                .attribute(ScmCommonAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(ScmCommonAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(ScmServiceAttributes.CODE, fields.get("serviceCode"))
-                .attribute(ScmOperationAttributes.CODE, fields.get("operationName"))
-                .attribute(ScmOperationAttributes.NAME, fields.get("operationName"))
-                .attribute(ScmGatewayAttributes.ROUTE_ID, fields.get("routeId"))
-                .attribute("scm.exchange.id", fields.get("exchangeId"))
-                .attribute("plugin.name", detail != null ? detail.getName() : null)
-                .attribute("plugin.type", handler != null && handler.getType() != null ? handler.getType().name() : null)
-                .attribute("plugin.phase", detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
-                .attribute("plugin.layer", layer)
-                .attribute("scm.protocol", RouteLogSupport.protocol(exchange));
+                .attribute(CoreLogAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CoreLogAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CoreLogAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                .attribute(CoreLogAttributes.OPERATION_CODE, fields.get("operationName"))
+                .attribute(CoreLogAttributes.OPERATION_NAME, fields.get("operationName"))
+                .attribute(CoreLogAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CoreLogAttributes.EXCHANGE_ID, fields.get("exchangeId"))
+                .attribute(CoreLogAttributes.PLUGIN_NAME, detail != null ? detail.getName() : null)
+                .attribute(CoreLogAttributes.PLUGIN_TYPE, handler != null && handler.getType() != null ? handler.getType().name() : null)
+                .attribute(CoreLogAttributes.PLUGIN_PHASE, detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
+                .attribute(CoreLogAttributes.PLUGIN_LAYER, layer)
+                .attribute(CoreLogAttributes.PROTOCOL, RouteLogSupport.protocol(exchange));
     }
 
     private void recordMetrics(
@@ -164,17 +164,17 @@ public class PluginObservationSupport {
     ) {
         ObservationContext context = contextProvider.getIfAvailable();
         var counter = observation.metric()
-                .counter(ScmMetricNames.PLUGIN_EXECUTIONS);
+                .counter(CoreMetricNames.PLUGIN_EXECUTIONS);
         tagCommon(counter, context, fields, detail, handler, layer, outcome, exception);
         counter.increment();
 
         var timer = observation.metric()
-                .timer(ScmMetricNames.PLUGIN_DURATION);
+                .timer(CoreMetricNames.PLUGIN_DURATION);
         tagCommon(timer, context, fields, detail, handler, layer, outcome, exception);
         timer.record(durationNanos, TimeUnit.NANOSECONDS);
 
         if (exception != null) {
-            var faults = observation.metric().counter(ScmMetricNames.FAULTS);
+            var faults = observation.metric().counter(CommonMetricNames.FAULTS);
             tagCommon(faults, context, fields, detail, handler, layer, outcome, exception);
             faults.increment();
         }
@@ -190,20 +190,20 @@ public class PluginObservationSupport {
             String outcome,
             Exception exception
     ) {
-        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
-                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
-                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
+        builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
+                .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
+                .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))
                 .tag("operation_name", fields.get("operationName"))
                 .tag("plugin_name", detail != null ? detail.getName() : null)
                 .tag("plugin_type", handler != null && handler.getType() != null ? handler.getType().name() : null)
                 .tag("plugin_phase", detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
                 .tag("plugin_layer", layer)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
     }
 
     private void tagCommon(
@@ -216,20 +216,20 @@ public class PluginObservationSupport {
             String outcome,
             Exception exception
     ) {
-        builder.tag(ScmMetricAttributes.APP_NAME, context != null ? context.appName() : null)
-                .tag(ScmMetricAttributes.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(ScmMetricAttributes.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(ScmMetricAttributes.PLATFORM, context != null ? context.platform() : null)
-                .tag(ScmMetricAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .tag(ScmMetricAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .tag(ScmMetricAttributes.SERVICE_CODE, fields.get("serviceCode"))
+        builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
+                .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
+                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
+                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
+                .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
+                .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
+                .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))
                 .tag("operation_name", fields.get("operationName"))
                 .tag("plugin_name", detail != null ? detail.getName() : null)
                 .tag("plugin_type", handler != null && handler.getType() != null ? handler.getType().name() : null)
                 .tag("plugin_phase", detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
                 .tag("plugin_layer", layer)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, exception != null ? exception.getClass().getSimpleName() : null);
     }
 
     @FunctionalInterface

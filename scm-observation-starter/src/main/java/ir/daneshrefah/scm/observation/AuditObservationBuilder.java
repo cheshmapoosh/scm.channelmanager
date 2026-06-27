@@ -1,15 +1,14 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.ScmAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
 import ir.daneshrefah.scm.observation.policy.ObservationSignal;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 
 public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObservationBuilder> {
-    private String auditType = "SERVICE";
+    private String auditType = ServiceExecuteAuditAttributes.TYPE_VALUE;
     private String category = "service";
     private String userName;
     private String resourceType;
@@ -23,7 +22,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
     }
 
     public AuditObservationBuilder service() {
-        this.auditType = "SERVICE";
+        this.auditType = ServiceExecuteAuditAttributes.TYPE_VALUE;
         this.category = "service";
         this.action = "service.audit";
         this.recordKind = ObservationRecordKind.EVENT;
@@ -31,7 +30,7 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
     }
 
     public AuditObservationBuilder change() {
-        this.auditType = "CHANGE";
+        this.auditType = ChangeEntityAuditAttributes.TYPE_VALUE;
         this.category = "configuration";
         this.action = "change.audit";
         this.recordKind = ObservationRecordKind.CHANGE;
@@ -53,8 +52,8 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
         outcome(OUTCOME_FAILURE);
         this.throwable = throwable;
         if (throwable != null) {
-            attribute(ScmErrorAttributes.TYPE, throwable.getClass().getName());
-            attribute(ScmErrorAttributes.MESSAGE, safeMessage(throwable));
+            attribute(ServiceExecuteAuditAttributes.ERROR_TYPE, throwable.getClass().getName());
+            attribute(ServiceExecuteAuditAttributes.ERROR_MESSAGE, safeMessage(throwable));
         }
         return this;
     }
@@ -70,13 +69,19 @@ public class AuditObservationBuilder extends AbstractObservationBuilder<AuditObs
                 correlationId,
                 CorrelationType.OPERATION.value()
         );
-        builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, category);
-        builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, action);
-        builder.put(ScmObservationDocumentAttributes.EVENT_OUTCOME, outcome);
-        builder.put(ScmAuditAttributes.TYPE, auditType);
-        builder.put(ScmAuditAttributes.USER_NAME, userName);
-        builder.put(ScmAuditAttributes.RESOURCE_TYPE, resourceType);
-        builder.put(ScmAuditAttributes.RESOURCE_ID, resourceId);
+        builder.put(ServiceExecuteAuditAttributes.EVENT_CATEGORY, category);
+        builder.put(ServiceExecuteAuditAttributes.EVENT_ACTION, action);
+        builder.put(ServiceExecuteAuditAttributes.EVENT_OUTCOME, outcome);
+        builder.put(ServiceExecuteAuditAttributes.AUDIT_TYPE, auditType);
+        if (ChangeEntityAuditAttributes.TYPE_VALUE.equals(auditType)) {
+            builder.put(ChangeEntityAuditAttributes.ACTOR_USERNAME_MASKED, userName);
+            builder.put(ChangeEntityAuditAttributes.ENTITY_TYPE, resourceType);
+            builder.put(ChangeEntityAuditAttributes.ENTITY_ID, resourceId);
+        } else {
+            builder.put(ServiceExecuteAuditAttributes.ACTOR_USERNAME_MASKED, userName);
+            builder.put(ServiceExecuteAuditAttributes.RESOURCE_TYPE, resourceType);
+            builder.put(ServiceExecuteAuditAttributes.RESOURCE_ID, resourceId);
+        }
         builder.putAll(attributes);
         LinkedHashMap<String, Object> document = builder.build();
         observation.validate(ObservationStream.AUDIT, recordKind, throwable != null, document);

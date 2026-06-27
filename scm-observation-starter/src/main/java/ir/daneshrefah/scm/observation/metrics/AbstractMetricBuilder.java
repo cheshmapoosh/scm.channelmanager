@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.observation.metrics;
 
 import ir.daneshrefah.scm.observation.ObservationAttributeKey;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.attributes.metric.MetricTag;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -19,6 +20,12 @@ abstract class AbstractMetricBuilder<T extends AbstractMetricBuilder<T>> {
             "scm.account.no",
             "scm.destination",
             "scm.client.phone_number",
+            "username",
+            "user.name",
+            "token",
+            "otp",
+            "message.sequence.id",
+            "scm.message.sequence_id",
             "authorization",
             "scm.auth.jwt.hash"
     );
@@ -71,7 +78,8 @@ abstract class AbstractMetricBuilder<T extends AbstractMetricBuilder<T>> {
 
     private boolean isDisallowed(String name) {
         String normalized = name.trim().toLowerCase(Locale.ROOT);
-        return DISALLOWED_TAGS.contains(normalized)
+        return MetricTag.isForbidden(normalized)
+                || DISALLOWED_TAGS.contains(normalized)
                 || normalized.contains("payload")
                 || normalized.contains("request.body")
                 || normalized.contains("response.body")

@@ -2,14 +2,13 @@ package ir.daneshrefah.scm.web.observation;
 
 import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationIds;
-import ir.daneshrefah.scm.observation.attributes.ScmClientAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationContext;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationLifecycle;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationRequest;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationResult;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationScope;
 import ir.daneshrefah.scm.observation.gateway.GatewayProtocol;
+import ir.daneshrefah.scm.web.observation.attributes.WebTraceAttributes;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,10 +64,10 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 .spanId(ObservationIds.spanId())
                 .requestName(requestName(request))
                 .clientAddress(clientIp(request))
-                .attribute(ScmHttpAttributes.METHOD, textOrDefault(request.getMethod()))
-                .attribute(ScmHttpAttributes.URL_PATH, safePath(request))
-                .attribute(ScmHttpAttributes.QUERY_PRESENT, hasQuery(request))
-                .attribute(ScmClientAttributes.IP, clientIp(request))
+                .attribute(WebTraceAttributes.HTTP_METHOD, textOrDefault(request.getMethod()))
+                .attribute(WebTraceAttributes.URL_PATH, safePath(request))
+                .attribute(WebTraceAttributes.QUERY_PRESENT, hasQuery(request))
+                .attribute(WebTraceAttributes.CLIENT_IP, clientIp(request))
                 .build();
 
         GatewayObservationScope observationScope = gatewayObservationLifecycle.start(observationRequest);
@@ -82,7 +81,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             observationScope.success(GatewayObservationResult.builder()
                     .outcome("success")
                     .statusCode(response.getStatus())
-                    .attribute(ScmHttpAttributes.STATUS_CODE, response.getStatus())
+                    .attribute(WebTraceAttributes.HTTP_STATUS_CODE, response.getStatus())
                     .build());
         } catch (Throwable ex) {
             int statusCode = statusCode(response, ex);
@@ -91,7 +90,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                     .statusCode(statusCode)
                     .errorCode(errorCode(statusCode, ex))
                     .error(ex)
-                    .attribute(ScmHttpAttributes.STATUS_CODE, statusCode)
+                    .attribute(WebTraceAttributes.HTTP_STATUS_CODE, statusCode)
                     .build());
             rethrow(ex);
         } finally {

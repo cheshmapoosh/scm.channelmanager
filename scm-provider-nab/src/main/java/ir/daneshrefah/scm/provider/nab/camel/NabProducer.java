@@ -7,10 +7,10 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmProviderAttributes;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.provider.nab.observation.attributes.NabMetricTags;
+import ir.daneshrefah.scm.provider.nab.observation.attributes.NabTraceAttributes;
+import ir.daneshrefah.scm.provider.nab.observation.NabMetricNames;
 import ir.daneshrefah.scm.provider.nab.application.NabProviderService;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
 import ir.daneshrefah.scm.provider.nab.config.NabEndpointOverrides;
@@ -105,11 +105,11 @@ public class NabProducer extends DefaultProducer {
                 .span("operation.call")
                 .spanKind("client")
                 .action("operation.call")
-                .attribute(ScmProviderAttributes.CODE, config.provider())
-                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
-                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
-                .attribute(ScmOperationAttributes.CODE, operationCode(input))
-                .attribute(ScmOperationAttributes.NAME, operation);
+                .attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
+                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
+                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
+                .attribute(NabTraceAttributes.OPERATION_CODE, operationCode(input))
+                .attribute(NabTraceAttributes.OPERATION_NAME, operation);
         String correlationId = correlationId(exchange);
         if (StringUtils.isNotBlank(correlationId)) {
             traceBuilder.correlationId(correlationId);
@@ -118,23 +118,23 @@ public class NabProducer extends DefaultProducer {
     }
 
     private void markObservationSuccess(ObservationScope scope, NabResolvedConfig config, JsonNode output, long durationMs) {
-        scope.attribute(ScmProviderAttributes.CODE, config.provider())
-                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
-                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
-                .attribute(ScmProviderAttributes.STATUS, OUTCOME_SUCCESS)
-                .attribute(ScmProviderAttributes.DURATION_MS, durationMs)
-                .attribute(ScmProviderAttributes.RESPONSE_CODE, responseCode(output))
+        scope.attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
+                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
+                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
+                .attribute(NabTraceAttributes.PROVIDER_STATUS, OUTCOME_SUCCESS)
+                .attribute(NabTraceAttributes.PROVIDER_DURATION_MS, durationMs)
+                .attribute(NabTraceAttributes.PROVIDER_RESPONSE_CODE, responseCode(output))
                 .success();
     }
 
     private void markObservationFailure(ObservationScope scope, NabResolvedConfig config, RuntimeException exception, long durationMs) {
-        scope.attribute(ScmProviderAttributes.CODE, config.provider())
-                .attribute(ScmProviderAttributes.NAME, PROVIDER_NAME)
-                .attribute(ScmProviderAttributes.TYPE, PROVIDER_TYPE)
-                .attribute(ScmProviderAttributes.STATUS, OUTCOME_FAILURE)
-                .attribute(ScmProviderAttributes.DURATION_MS, durationMs)
-                .attribute(ScmProviderAttributes.ERROR_CODE, errorCode(exception))
-                .attribute(ScmProviderAttributes.ERROR_MESSAGE, safeMessage(exception))
+        scope.attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
+                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
+                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
+                .attribute(NabTraceAttributes.PROVIDER_STATUS, OUTCOME_FAILURE)
+                .attribute(NabTraceAttributes.PROVIDER_DURATION_MS, durationMs)
+                .attribute(NabTraceAttributes.PROVIDER_ERROR_CODE, errorCode(exception))
+                .attribute(NabTraceAttributes.PROVIDER_ERROR_MESSAGE, safeMessage(exception))
                 .failure(exception)
                 .attribute("error.message", safeMessage(exception));
     }
@@ -147,21 +147,21 @@ public class NabProducer extends DefaultProducer {
             String errorCode
     ) {
         observation.metric()
-                .counter(ScmMetricNames.PROVIDER_CALLS)
-                .tag(ScmMetricAttributes.PROVIDER_CODE, config.provider())
-                .tag(ScmMetricAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
-                .tag(ScmMetricAttributes.OPERATION_CODE, operationCode)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, errorCode)
+                .counter(NabMetricNames.PROVIDER_CALLS)
+                .tag(NabMetricTags.PROVIDER_CODE, config.provider())
+                .tag(NabMetricTags.PROVIDER_TYPE, PROVIDER_TYPE)
+                .tag(CommonMetricTags.OPERATION_CODE, operationCode)
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, errorCode)
                 .increment();
 
         observation.metric()
-                .timer(ScmMetricNames.PROVIDER_DURATION)
-                .tag(ScmMetricAttributes.PROVIDER_CODE, config.provider())
-                .tag(ScmMetricAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
-                .tag(ScmMetricAttributes.OPERATION_CODE, operationCode)
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmMetricAttributes.ERROR_CODE, errorCode)
+                .timer(NabMetricNames.PROVIDER_DURATION)
+                .tag(NabMetricTags.PROVIDER_CODE, config.provider())
+                .tag(NabMetricTags.PROVIDER_TYPE, PROVIDER_TYPE)
+                .tag(CommonMetricTags.OPERATION_CODE, operationCode)
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag(CommonMetricTags.ERROR_CODE, errorCode)
                 .record(durationMs, TimeUnit.MILLISECONDS);
     }
 

@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.time.Instant;
 import java.util.Locale;
@@ -37,13 +38,13 @@ public class ObservationDocumentFactory {
             String correlationType
     ) {
         ObservationDocumentBuilder builder = builder(ObservationStream.LOG);
-        builder.put(ScmCommonLogAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
-        builder.put(ScmCommonLogAttributes.LOG_LEVEL, textOrDefault(level, "INFO").toUpperCase(Locale.ROOT));
-        builder.put(ScmCommonLogAttributes.LOG_LOGGER, textOrDefault(loggerName, "application"));
-        builder.put(ScmCommonLogAttributes.PROCESS_THREAD_NAME, textOrDefault(threadName, Thread.currentThread().getName()));
-        builder.put(ScmCommonLogAttributes.MESSAGE, textOrDefault(message, ""));
-        builder.put(ScmCommonLogAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmCommonLogAttributes.CORRELATION_TYPE, correlationType(correlationType));
+        builder.put(CommonLogAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
+        builder.put(CommonLogAttributes.LOG_LEVEL, textOrDefault(level, "INFO").toUpperCase(Locale.ROOT));
+        builder.put(CommonLogAttributes.LOG_LOGGER, textOrDefault(loggerName, "application"));
+        builder.put(CommonLogAttributes.PROCESS_THREAD_NAME, textOrDefault(threadName, Thread.currentThread().getName()));
+        builder.put(CommonLogAttributes.MESSAGE, textOrDefault(message, ""));
+        builder.put(CommonLogAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
+        builder.put(CommonLogAttributes.CORRELATION_TYPE, correlationType(correlationType));
         return builder;
     }
 
@@ -54,10 +55,11 @@ public class ObservationDocumentFactory {
             String correlationType
     ) {
         ObservationDocumentBuilder builder = builder(ObservationStream.TRACE);
-        builder.put(ScmObservationDocumentAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
-        builder.put(ScmObservationDocumentAttributes.MESSAGE, textOrDefault(message, "trace observation"));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType));
+        builder.put(CommonTraceAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
+        builder.put(CommonTraceAttributes.MESSAGE, textOrDefault(message, "trace observation"));
+        builder.put(CommonTraceAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
+        builder.put(CommonTraceAttributes.CORRELATION_TYPE, correlationType(correlationType));
+        putTraceRuntimeContext(builder);
         return builder;
     }
 
@@ -68,10 +70,11 @@ public class ObservationDocumentFactory {
             String correlationType
     ) {
         ObservationDocumentBuilder builder = builder(ObservationStream.AUDIT);
-        builder.put(ScmObservationDocumentAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
-        builder.put(ScmObservationDocumentAttributes.MESSAGE, textOrDefault(message, "audit observation"));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
-        builder.put(ScmObservationDocumentAttributes.CORRELATION_TYPE, correlationType(correlationType));
+        builder.put(ServiceExecuteAuditAttributes.TIMESTAMP, timestamp == null ? Instant.now().toString() : timestamp.toString());
+        builder.put(ServiceExecuteAuditAttributes.MESSAGE, textOrDefault(message, "audit observation"));
+        builder.put(ServiceExecuteAuditAttributes.CORRELATION_ID, textOrDefault(correlationId, ObservationIds.correlationId()));
+        builder.put(ServiceExecuteAuditAttributes.CORRELATION_TYPE, correlationType(correlationType));
+        putAuditRuntimeContext(builder);
         return builder;
     }
 
@@ -82,10 +85,10 @@ public class ObservationDocumentFactory {
         if (context == null) {
             return;
         }
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
-        builder.put(ScmCommonLogAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
-        builder.put(ScmCommonLogAttributes.SCM_RUNTIME, context.runtime());
+        builder.put(CommonLogAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
+        builder.put(CommonLogAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
+        builder.put(CommonLogAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(CommonLogAttributes.SCM_RUNTIME, context.runtime());
     }
 
     public String correlationType(String requestedValue) {
@@ -96,5 +99,25 @@ public class ObservationDocumentFactory {
 
     private String textOrDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+
+    private void putTraceRuntimeContext(ObservationDocumentBuilder builder) {
+        if (context == null) {
+            return;
+        }
+        builder.put(CommonTraceAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
+        builder.put(CommonTraceAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
+        builder.put(CommonTraceAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(CommonTraceAttributes.SCM_RUNTIME, context.runtime());
+    }
+
+    private void putAuditRuntimeContext(ObservationDocumentBuilder builder) {
+        if (context == null) {
+            return;
+        }
+        builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
+        builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
+        builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(ServiceExecuteAuditAttributes.SCM_RUNTIME, context.runtime());
     }
 }

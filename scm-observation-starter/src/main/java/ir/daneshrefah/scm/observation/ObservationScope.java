@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.observation;
 
 import ir.daneshrefah.scm.observation.trace.TraceObservationHandle;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,8 +31,8 @@ public class ObservationScope implements AutoCloseable {
         this.outcome = "failure";
         this.throwable = throwable;
         if (throwable != null) {
-            attribute(ScmErrorAttributes.TYPE, throwable.getClass().getName());
-            attribute(ScmErrorAttributes.MESSAGE, throwable.getMessage());
+            attribute(CommonTraceAttributes.ERROR_TYPE, throwable.getClass().getName());
+            attribute(CommonTraceAttributes.ERROR_MESSAGE, throwable.getMessage());
         }
         return this;
     }
