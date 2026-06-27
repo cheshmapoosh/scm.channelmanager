@@ -56,6 +56,17 @@ public final class LogAttribute {
                 ObservationAttributeSensitivity.RAW, 0, 0, description);
     }
 
+    public static ObservationAttributeKey<Boolean> booleanValue(
+            String name, String owner, ObservationAttributePresence presence, String description) {
+        return attribute(name, ObservationAttributeTypes.BOOLEAN, owner, presence,
+                ObservationAttributeSensitivity.RAW, 0, 0, description);
+    }
+
+    public static ObservationAttributeKey<Boolean> booleanValue(
+            String name, ObservationAttributePresence presence, String description) {
+        return booleanValue(name, "common", presence, description);
+    }
+
     public static ObservationAttributeKey<String> maskedKeyword(
             String name,
             String owner,

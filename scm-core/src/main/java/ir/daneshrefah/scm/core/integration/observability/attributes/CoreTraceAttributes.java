@@ -16,7 +16,7 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("scm.service.name", "Service name.");
     public static final ObservationAttributeKey<String> SERVICE_VERSION = keyword("scm.service.version", "Service version.");
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
-    public static final ObservationAttributeKey<String> OPERATION_NAME = keyword("scm.operation.name", "Operation name.");
+    public static final ObservationAttributeKey<String> OPERATION_NAME = commonKeyword("scm.operation.name", "Operation name.");
     public static final ObservationAttributeKey<String> OPERATION_TYPE = keyword("scm.operation.type", "Operation type.");
     public static final ObservationAttributeKey<Long> OPERATION_DURATION_MS = TraceAttribute.longNumber(
             "scm.operation.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Operation duration in milliseconds.");
@@ -47,5 +47,9 @@ public final class CoreTraceAttributes {
 
     private static ObservationAttributeKey<String> keyword(String name, String description) {
         return TraceAttribute.keyword(name, OWNER, ObservationAttributePresence.EVENT_OPTIONAL, description);
+    }
+
+    private static ObservationAttributeKey<String> commonKeyword(String name, String description) {
+        return TraceAttribute.keyword(name, ObservationAttributePresence.EVENT_OPTIONAL, description);
     }
 }

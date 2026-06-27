@@ -14,7 +14,7 @@ public final class CacheAuditAttributes {
     public static final ObservationAttributeKey<Integer> HTTP_STATUS_CODE = AuditAttribute.integerNumber(
             "http.status_code", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response status code.");
     public static final ObservationAttributeKey<Long> OPERATION_DURATION_MS = AuditAttribute.longNumber(
-            "scm.operation.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
+            "cache.operation.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
             "Cache operation duration in milliseconds.");
 
     private CacheAuditAttributes() {

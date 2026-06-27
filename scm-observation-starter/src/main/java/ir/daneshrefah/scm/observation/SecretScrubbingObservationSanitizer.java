@@ -16,6 +16,7 @@ public class SecretScrubbingObservationSanitizer implements ObservationSanitizer
             "(?i)(password|token|authorization|client_secret|authorization_code|pin|cvv2?|pan|account[_ -]?number)\\s*[:=]\\s*\\S+"
     );
     private static final String JWT_HASH_FIELD = "scm.auth.jwt.hash";
+    private static final String UAA_JWT_MASKED_FIELD = "uaa.jwt.masked";
 
     @Override
     public Object sanitize(String fieldName, Object value) {
@@ -48,6 +49,9 @@ public class SecretScrubbingObservationSanitizer implements ObservationSanitizer
     }
 
     private Object sanitizeString(String normalizedField, String value) {
+        if (UAA_JWT_MASKED_FIELD.equals(normalizedField)) {
+            return value;
+        }
         String sanitized = BEARER_TOKEN.matcher(value).replaceAll(SECURE);
         sanitized = JWT_TOKEN.matcher(sanitized).replaceAll(SECURE);
         sanitized = SENSITIVE_ASSIGNMENT.matcher(sanitized).replaceAll("$1=" + SECURE);

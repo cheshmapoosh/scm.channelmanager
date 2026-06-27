@@ -9,14 +9,14 @@ import java.util.List;
 public final class WebTraceAttributes {
     private static final String OWNER = "scm-web";
 
-    public static final ObservationAttributeKey<String> HTTP_METHOD = keyword("http.method", "HTTP method.");
-    public static final ObservationAttributeKey<String> URL_PATH = keyword("url.path", "HTTP request path without query string.");
+    public static final ObservationAttributeKey<String> HTTP_METHOD = commonKeyword("http.method", "HTTP method.");
+    public static final ObservationAttributeKey<String> URL_PATH = commonKeyword("url.path", "HTTP request path without query string.");
     public static final ObservationAttributeKey<Integer> HTTP_STATUS_CODE = TraceAttribute.integerNumber(
-            "http.status_code", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response status code.");
-    public static final ObservationAttributeKey<String> HTTP_ROUTE = keyword("http.route", "Low-cardinality HTTP route template.");
+            "http.status_code", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response status code.");
+    public static final ObservationAttributeKey<String> HTTP_ROUTE = commonKeyword("http.route", "Low-cardinality HTTP route template.");
     public static final ObservationAttributeKey<Boolean> QUERY_PRESENT = TraceAttribute.booleanValue(
-            "http.query.present", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Whether an HTTP query string was present.");
-    public static final ObservationAttributeKey<String> CLIENT_IP = keyword("client.ip", "Client IP address.");
+            "http.query.present", ObservationAttributePresence.EVENT_OPTIONAL, "Whether an HTTP query string was present.");
+    public static final ObservationAttributeKey<String> CLIENT_IP = commonKeyword("client.ip", "Client IP address.");
     public static final ObservationAttributeKey<String> CLIENT_ADDRESS = keyword("client.address", "Protocol-neutral client address.");
     public static final ObservationAttributeKey<String> GATEWAY_REQUEST_NAME = keyword("scm.request.name", "Low-cardinality gateway request name.");
     public static final ObservationAttributeKey<String> MESSAGE_ID = keyword("scm.message.id", "Protocol message identifier.");
@@ -33,5 +33,9 @@ public final class WebTraceAttributes {
 
     private static ObservationAttributeKey<String> keyword(String name, String description) {
         return TraceAttribute.keyword(name, OWNER, ObservationAttributePresence.EVENT_OPTIONAL, description);
+    }
+
+    private static ObservationAttributeKey<String> commonKeyword(String name, String description) {
+        return TraceAttribute.keyword(name, ObservationAttributePresence.EVENT_OPTIONAL, description);
     }
 }

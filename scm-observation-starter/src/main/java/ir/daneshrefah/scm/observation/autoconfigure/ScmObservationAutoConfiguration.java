@@ -32,8 +32,6 @@ import ir.daneshrefah.scm.observation.trace.NoopTraceObservationSink;
 import ir.daneshrefah.scm.observation.trace.StructuredTraceObservationSink;
 import ir.daneshrefah.scm.observation.trace.TraceObservationSink;
 import ir.daneshrefah.scm.observation.web.ObservationMdcFilter;
-import ir.daneshrefah.scm.observation.web.ObservationWebMvcConfigurer;
-import ir.daneshrefah.scm.observation.web.ObservationWebMvcInterceptor;
 import jakarta.servlet.Filter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -47,8 +45,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
-import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.Clock;
 import java.lang.annotation.ElementType;
@@ -277,27 +273,6 @@ public class ScmObservationAutoConfiguration {
         }
     }
 
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass({HandlerInterceptor.class, WebMvcConfigurer.class})
-    static class WebMvcObservationConfiguration {
-        @Bean
-        @ConditionalOnWebObservationEnabled
-        @ConditionalOnMissingBean
-        public ObservationWebMvcInterceptor observationWebMvcInterceptor(
-                ScmObservation observation,
-                ObservationSignalPolicy signalPolicy
-        ) {
-            return new ObservationWebMvcInterceptor(observation, signalPolicy);
-        }
-
-        @Bean
-        @ConditionalOnBean(ObservationWebMvcInterceptor.class)
-        @ConditionalOnMissingBean(name = "observationWebMvcConfigurer")
-        public WebMvcConfigurer observationWebMvcConfigurer(ObservationWebMvcInterceptor interceptor) {
-            return new ObservationWebMvcConfigurer(interceptor);
-        }
-    }
-
     @Conditional(TraceSignalCondition.class)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.TYPE})
@@ -320,12 +295,6 @@ public class ScmObservationAutoConfiguration {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.TYPE})
     @interface ConditionalOnLogEnabled {
-    }
-
-    @Conditional(WebObservationSignalCondition.class)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @interface ConditionalOnWebObservationEnabled {
     }
 
     static final class EventSignalCondition extends ObservationSignalConditionSupport {

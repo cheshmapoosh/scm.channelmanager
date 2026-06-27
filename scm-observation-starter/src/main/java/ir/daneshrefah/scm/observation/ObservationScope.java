@@ -8,13 +8,19 @@ import java.util.Map;
 
 public class ObservationScope implements AutoCloseable {
     private final TraceObservationHandle traceHandle;
+    private final AutoCloseable contextScope;
     private final Map<String, Object> attributes = new LinkedHashMap<>();
     private String outcome;
     private Throwable throwable;
     private boolean closed;
 
     ObservationScope(TraceObservationHandle traceHandle) {
+        this(traceHandle, null);
+    }
+
+    ObservationScope(TraceObservationHandle traceHandle, AutoCloseable contextScope) {
         this.traceHandle = traceHandle == null ? TraceObservationHandle.NOOP : traceHandle;
+        this.contextScope = contextScope;
     }
 
     public ObservationScope success() {
@@ -69,7 +75,22 @@ public class ObservationScope implements AutoCloseable {
     public void close() {
         if (!closed) {
             closed = true;
-            traceHandle.finish(outcome, attributes, throwable);
+            try {
+                traceHandle.finish(outcome, attributes, throwable);
+            } finally {
+                closeContextScope();
+            }
+        }
+    }
+
+    private void closeContextScope() {
+        if (contextScope == null) {
+            return;
+        }
+        try {
+            contextScope.close();
+        } catch (Exception ignored) {
+            // Restoring ThreadLocal trace context must not hide the original observation close result.
         }
     }
 }

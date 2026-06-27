@@ -70,7 +70,8 @@ public class ResponseProxyAdviosrFilter implements Filter {
                     responseWrapper.setContentType(responseProxy.getContentType());
                     responseWrapper.setStatus(responseProxy.getHttpStatusCode());
                     String responseBodyJson = objectMapper.writeValueAsString(responseProxy.getResponseBody());
-                    log.info("response body: " + responseBodyJson);
+                    log.info("response proxy applied. status={}, contentType={}",
+                            responseProxy.getHttpStatusCode(), responseProxy.getContentType());
                     responseWrapper.getWriter().write(responseBodyJson);
                 }).onFailure(exception -> {
                     log.error(exception.getMessage(), exception);

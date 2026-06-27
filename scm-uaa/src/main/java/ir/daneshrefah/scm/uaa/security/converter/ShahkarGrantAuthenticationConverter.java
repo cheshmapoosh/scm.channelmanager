@@ -136,7 +136,8 @@ public class ShahkarGrantAuthenticationConverter implements AuthenticationConver
             //throwError(Constants.OAUTH2_ERROR_CODE_REQUIRED_CLAIM, Constants.OAUTH2_PARAM_NAME_USER_CLAIM);
             ShahkarStatus shahkarStatus =  shahkarOwnershipService.checkOwnership(username,password);
             if (!ShahkarStatus.OWNED.equals(shahkarStatus )){
-                log.error("Shahkar error with status  '{}'. national code {}, mobile number {} ",shahkarStatus.name(),username,password);
+                log.error("Shahkar error with status '{}'. national code {}, mobile number {}",
+                        shahkarStatus.name(), mask(username), StringUtils.maskPhoneNumber(password));
                 throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.SHAHKAR_ERROR);
             }
             OtpSmsBasedNationalCodeRequest otpSmsBasedNationalCodeRequest = new OtpSmsBasedNationalCodeRequest(username, PersonType.REAL,null);
@@ -196,5 +197,15 @@ public class ShahkarGrantAuthenticationConverter implements AuthenticationConver
         return clientId;
     }
 
+    private String mask(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        String text = value.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return text.substring(0, 2) + "***" + text.substring(text.length() - 2);
+    }
 
 }

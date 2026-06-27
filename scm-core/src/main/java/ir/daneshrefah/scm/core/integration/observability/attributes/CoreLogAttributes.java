@@ -14,7 +14,8 @@ public final class CoreLogAttributes {
     public static final ObservationAttributeKey<String> ROUTE_ID = keyword("scm.route.id", "Gateway route or flow identifier.");
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
-    public static final ObservationAttributeKey<String> OPERATION_NAME = keyword("scm.operation.name", "Operation name.");
+    public static final ObservationAttributeKey<String> OPERATION_NAME = LogAttribute.keyword(
+            "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL, "Operation name.");
     public static final ObservationAttributeKey<String> EXCHANGE_ID = keyword("scm.exchange.id", "Camel exchange identifier.");
     public static final ObservationAttributeKey<String> PROTOCOL = keyword("scm.protocol", "Gateway protocol.");
     public static final ObservationAttributeKey<String> PLUGIN_NAME = keyword("plugin.name", "Plugin name.");

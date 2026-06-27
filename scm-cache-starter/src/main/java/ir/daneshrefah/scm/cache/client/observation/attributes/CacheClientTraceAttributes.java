@@ -8,7 +8,7 @@ import java.util.List;
 
 public final class CacheClientTraceAttributes {
     public static final ObservationAttributeKey<String> OPERATION_NAME = TraceAttribute.keyword(
-            "scm.operation.name", "scm-cache-starter", ObservationAttributePresence.EVENT_OPTIONAL,
+            "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL,
             "Cache client operation name.");
 
     private CacheClientTraceAttributes() {

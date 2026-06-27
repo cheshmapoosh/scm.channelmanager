@@ -75,7 +75,7 @@ public class PwaActivationServiceImpl implements PwaActivationService {
             return new GeneralPwaOauthException(CLIENT_NOT_FOUND);
         });
         UserActivation userActivation = activationService.save(request);
-        System.out.println("user activation code with phone number( " +userActivation.getPhoneNumber() +" ) activation code ->"+userActivation.getActivationCode());
+        log.info("User activation OTP created for phoneNumber={}", maskPhone(userActivation.getPhoneNumber()));
         pwaNotificationCenter.sendActivationOtp(user, request, userActivation);
         pwaUserRegisterService.saveRegistry(request, AuthStatus.OTP_SENT);
         return responseMapper.getMessage(PwaOauthMessage.CLIENT_REGISTRATION_SENT);
@@ -90,6 +90,17 @@ public class PwaActivationServiceImpl implements PwaActivationService {
                 .filter(user -> user.getStatus().equals(UserStatus.ACTIVE) && String.join("", user.getAccessParameters()).contains(StringUtils.trim(phoneNumber)))
                 .findFirst()
                 .map(userMapper::toModel);
+    }
+
+    private String maskPhone(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            return null;
+        }
+        String text = phoneNumber.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return "***" + text.substring(text.length() - 4);
     }
 
 }
