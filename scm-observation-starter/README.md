@@ -37,6 +37,8 @@ When an `EVENT`, `CONTEXT`, or `CHANGE` record also has a throwable, `ERROR_REQU
 
 `ObservationAttributeRegistry` is the attribute catalog. It owns metadata lookup, stream allow-list checks, blank/null/drop handling, and sensitivity masking through `prepareValue(...)`. It does not build observation documents, validate full records, or run regex/content secret scrubbing.
 
+Each key has one `ObservationAttributeType<T>` containing both its Java type and `ElasticFieldType`. Attribute definitions must not use raw Elasticsearch type strings. Elasticsearch remains the permanent destination for LOG, TRACE, and AUDIT records.
+
 `ObservationDocumentFactory` builds base documents for `LOG`, `TRACE`, and `AUDIT`. It owns common field placement and default base values only. It does not own validation rules or duplicate `correlation.type` allowed values.
 
 `ObservationRecordValidator` validates a finished document by `ObservationStream`, `ObservationRecordKind`, required `ObservationAttributePresence`, and the active `ObservationAttributeRegistry`. It does not build or sanitize documents.
@@ -50,6 +52,16 @@ When an `EVENT`, `CONTEXT`, or `CHANGE` record also has a throwable, `ERROR_REQU
 `ObservationAttributeContributor` is Spring Bean based. Do not register contributors with Java SPI or `META-INF/services`.
 
 Spring auto-configuration builds one `ObservationAttributeRegistry` from built-in starter attributes and Spring contributors. Duplicate metadata for the same stream and field must be compatible or startup fails.
+
+The starter registers only these common catalogs:
+
+- `attributes.log.CommonLogAttributes`
+- `attributes.trace.CommonTraceAttributes`
+- `attributes.audit.ChangeEntityAuditAttributes`
+- `attributes.audit.ServiceExecuteAuditAttributes`
+- `attributes.metric.CommonMetricTags`
+
+Metric names live separately in `metrics.CommonMetricNames`. HTTP, database, messaging, cache, channel, and other technical fields belong to the host module and are registered by that module's single `ObservationAttributeContributor`.
 
 `ObservationAttributeRegistryHolder` publishes the Spring-built registry for Logback providers. If Logback initializes before Spring publishes the registry, providers use the common-only fallback registry. There is no SPI fallback.
 
@@ -145,7 +157,26 @@ The source of truth for common LOG fields is:
 src/main/resources/META-INF/scm/docs/observation/common-log-attributes.md
 ```
 
-Keep that file aligned with `ScmCommonLogAttributes`.
+Keep that file aligned with `CommonLogAttributes`.
+
+## Host Module Adoption
+
+Keep module-specific observation code inside the host module:
+
+```text
+<module>/observation/attributes/<Module>LogAttributes.java
+<module>/observation/attributes/<Module>TraceAttributes.java
+<module>/observation/attributes/<Module>AuditAttributes.java
+<module>/observation/attributes/<Module>MetricTags.java
+<module>/observation/<Module>ObservationAttributeContributor.java
+<module>/observation/<Module>Observation.java
+```
+
+Attribute classes use `LogAttribute`, `TraceAttribute`, `AuditAttribute`, and `MetricTag` factories. One contributor returns all four attribute lists. Business code receives the module facade and calls intent methods such as `uaaObservation.authStarted(ctx)`, `uaaObservation.authFailed(ctx, ex)`, or `uaaObservation.otpSent(ctx)`; it does not assemble raw observation builders.
+
+The raw builders remain available for the module facade and senior extensions. Host metric tags must be bounded. Correlation IDs, trace/span IDs, usernames, card/account/phone values, tokens, OTPs, and message sequence IDs are rejected as metric tags.
+
+AUDIT supports exactly `CHANGE_ENTITY` and `SERVICE_EXECUTE`. A TRACE without a non-blank `parent.span.id` is a root span; do not add `span.role`.
 
 ## Element Risk
 

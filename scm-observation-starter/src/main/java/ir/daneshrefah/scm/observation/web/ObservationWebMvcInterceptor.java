@@ -2,12 +2,11 @@ package ir.daneshrefah.scm.observation.web;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.metrics.CommonMetricNames;
 import ir.daneshrefah.scm.observation.policy.ObservationSignal;
 import ir.daneshrefah.scm.observation.policy.ObservationSignalPolicy;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,10 +46,10 @@ public class ObservationWebMvcInterceptor implements HandlerInterceptor {
                     .spanKind("server")
                     .operation(operationName(request))
                     .correlationId(correlationId())
-                    .attribute(ScmHttpAttributes.METHOD, request.getMethod())
-                    .attribute(ScmHttpAttributes.ROUTE, normalizedRoute(request))
-                    .attribute(ScmHttpAttributes.URL_PATH, safePath(request))
-                    .attribute(ScmHttpAttributes.QUERY_PRESENT, request.getQueryString() != null)
+                    .attribute("http.method", request.getMethod())
+                    .attribute("http.route", normalizedRoute(request))
+                    .attribute("url.path", safePath(request))
+                    .attribute("http.query.present", request.getQueryString() != null)
                     .start();
             request.setAttribute(TRACE_SCOPE_ATTRIBUTE, scope);
         }
@@ -83,10 +82,10 @@ public class ObservationWebMvcInterceptor implements HandlerInterceptor {
             return;
         }
         scope.outcome(outcome)
-                .attribute(ScmHttpAttributes.STATUS_CODE, response.getStatus())
-                .attribute(ScmOperationAttributes.DURATION_MS, durationMs);
+                .attribute("http.status_code", response.getStatus())
+                .attribute("scm.operation.duration_ms", durationMs);
         if (exception != null) {
-            scope.failure(exception).attribute(ScmErrorAttributes.CODE, String.valueOf(response.getStatus()));
+            scope.failure(exception).attribute(CommonTraceAttributes.ERROR_CODE, String.valueOf(response.getStatus()));
         }
         scope.close();
     }
@@ -110,14 +109,14 @@ public class ObservationWebMvcInterceptor implements HandlerInterceptor {
                 .correlationId(correlationId())
                 .userName(actor(request))
                 .resource(resourceType(request), normalizedRoute(request))
-                .attribute(ScmHttpAttributes.METHOD, request.getMethod())
-                .attribute(ScmHttpAttributes.ROUTE, normalizedRoute(request))
-                .attribute(ScmHttpAttributes.STATUS_CODE, response.getStatus())
-                .attribute(ScmOperationAttributes.DURATION_MS, durationMs)
-                .attribute(ScmAuditAttributes.RESOURCE_ID, normalizedRoute(request));
+                .attribute("http.method", request.getMethod())
+                .attribute("http.route", normalizedRoute(request))
+                .attribute("http.status_code", response.getStatus())
+                .attribute("scm.operation.duration_ms", durationMs)
+                .attribute(ServiceExecuteAuditAttributes.RESOURCE_ID, normalizedRoute(request));
         if (exception != null) {
             audit.failure(exception)
-                    .attribute(ScmErrorAttributes.CODE, String.valueOf(response.getStatus()));
+                    .attribute(ChangeEntityAuditAttributes.ERROR_CODE, String.valueOf(response.getStatus()));
         }
         audit.write();
     }
@@ -127,19 +126,19 @@ public class ObservationWebMvcInterceptor implements HandlerInterceptor {
             return;
         }
         observation.metric()
-                .counter(ScmMetricNames.REQUESTS)
-                .tag(ScmHttpAttributes.METHOD, request.getMethod())
-                .tag(ScmHttpAttributes.ROUTE, normalizedRoute(request))
-                .tag(ScmOperationAttributes.TYPE, operationType(request))
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
-                .tag(ScmHttpAttributes.STATUS_CODE, String.valueOf(response.getStatus()))
+                .counter(CommonMetricNames.REQUESTS)
+                .tag("http.method", request.getMethod())
+                .tag("http.route", normalizedRoute(request))
+                .tag("scm.operation.type", operationType(request))
+                .tag(CommonMetricTags.OUTCOME, outcome)
+                .tag("http.status_code", String.valueOf(response.getStatus()))
                 .increment();
         observation.metric()
-                .timer(ScmMetricNames.REQUEST_DURATION)
-                .tag(ScmHttpAttributes.METHOD, request.getMethod())
-                .tag(ScmHttpAttributes.ROUTE, normalizedRoute(request))
-                .tag(ScmOperationAttributes.TYPE, operationType(request))
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .timer(CommonMetricNames.REQUEST_DURATION)
+                .tag("http.method", request.getMethod())
+                .tag("http.route", normalizedRoute(request))
+                .tag("scm.operation.type", operationType(request))
+                .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(durationMs, TimeUnit.MILLISECONDS);
     }
 

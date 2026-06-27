@@ -20,7 +20,7 @@ import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.ObservationStream;
 import ir.daneshrefah.scm.observation.SecretScrubbingObservationSanitizer;
-import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
 import net.logstash.logback.argument.StructuredArgument;
 import net.logstash.logback.composite.AbstractJsonProvider;
 import org.slf4j.Logger;
@@ -212,11 +212,11 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
     }
 
     private boolean isEventOwnedField(String fieldName) {
-        return ScmCommonLogAttributes.TIMESTAMP.name().equals(fieldName)
-                || ScmCommonLogAttributes.LOG_LEVEL.name().equals(fieldName)
-                || ScmCommonLogAttributes.LOG_LOGGER.name().equals(fieldName)
-                || ScmCommonLogAttributes.PROCESS_THREAD_NAME.name().equals(fieldName)
-                || ScmCommonLogAttributes.MESSAGE.name().equals(fieldName);
+        return CommonLogAttributes.TIMESTAMP.name().equals(fieldName)
+                || CommonLogAttributes.LOG_LEVEL.name().equals(fieldName)
+                || CommonLogAttributes.LOG_LOGGER.name().equals(fieldName)
+                || CommonLogAttributes.PROCESS_THREAD_NAME.name().equals(fieldName)
+                || CommonLogAttributes.MESSAGE.name().equals(fieldName);
     }
 
     private void putIfAbsent(Map<String, Object> attributes, String fieldName, Object value) {

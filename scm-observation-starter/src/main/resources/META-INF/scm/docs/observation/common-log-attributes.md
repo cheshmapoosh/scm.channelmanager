@@ -10,17 +10,12 @@ Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creat
 | `log.logger` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Logger name. |
 | `process.thread.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Thread name that emitted the log. |
 | `message` | String | text | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Rendered log message. |
-| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for the active CorrelationType context. |
-| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type from the CorrelationType enum. |
 | `deployment.service.name` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service name. |
 | `deployment.service.version` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service version. |
 | `deployment.environment` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Deployment environment: dev, test, pilot or prod. |
 | `scm.runtime` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Runtime mode: standalone or kubernetes. |
-| `container.image.name` | String | keyword | common | LOG | CONTEXT_OPTIONAL | RAW | 0 | 0 | Injected container image name. |
-| `container.image.tag` | String | keyword | common | LOG | CONTEXT_OPTIONAL | RAW | 0 | 0 | Injected container image tag. |
-| `kubernetes.namespace` | String | keyword | common | LOG | CONTEXT_OPTIONAL | RAW | 0 | 0 | Kubernetes namespace. |
-| `kubernetes.pod.name` | String | keyword | common | LOG | CONTEXT_OPTIONAL | RAW | 0 | 0 | Kubernetes pod name. |
-| `kubernetes.node.name` | String | keyword | common | LOG | CONTEXT_OPTIONAL | RAW | 0 | 0 | Kubernetes node name. |
+| `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for the active CorrelationType context. |
+| `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type from the CorrelationType enum. |
 | `event.category` | String | keyword | common | LOG | EVENT_REQUIRED | RAW | 0 | 0 | SCM event category. |
 | `event.action` | String | keyword | common | LOG | EVENT_REQUIRED | RAW | 0 | 0 | SCM event action. |
 | `event.outcome` | String | keyword | common | LOG | EVENT_REQUIRED | RAW | 0 | 0 | SCM event outcome: success, failure, unknown or skipped. |

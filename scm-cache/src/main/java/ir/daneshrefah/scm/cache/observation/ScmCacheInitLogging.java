@@ -73,24 +73,24 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
         )));
         arguments.add(kv(ScmLogFields.DEPLOYMENT_ENVIRONMENT, deploymentEnvironment(environment)));
         arguments.add(kv(ScmLogFields.SCM_RUNTIME, runtime(environment)));
-        arguments.add(kv(ScmLogFields.CONTAINER_IMAGE_NAME, firstPresent(
+        arguments.add(kv(ScmCacheLogFields.CONTAINER_IMAGE_NAME, firstPresent(
                 environment.getProperty("scm.runtime.image.name"),
                 System.getenv("CONTAINER_IMAGE_NAME")
         )));
-        arguments.add(kv(ScmLogFields.CONTAINER_IMAGE_TAG, firstPresent(
+        arguments.add(kv(ScmCacheLogFields.CONTAINER_IMAGE_TAG, firstPresent(
                 environment.getProperty("scm.runtime.image.tag"),
                 System.getenv("CONTAINER_IMAGE_TAG")
         )));
-        arguments.add(kv(ScmLogFields.KUBERNETES_NAMESPACE, firstPresent(
+        arguments.add(kv(ScmCacheLogFields.KUBERNETES_NAMESPACE, firstPresent(
                 environment.getProperty("scm.runtime.kubernetes.namespace"),
                 System.getenv("KUBERNETES_NAMESPACE")
         )));
-        arguments.add(kv(ScmLogFields.KUBERNETES_POD_NAME, firstPresent(
+        arguments.add(kv(ScmCacheLogFields.KUBERNETES_POD_NAME, firstPresent(
                 environment.getProperty("scm.runtime.kubernetes.pod-name"),
                 System.getenv("KUBERNETES_POD_NAME"),
                 System.getenv("HOSTNAME")
         )));
-        arguments.add(kv(ScmLogFields.KUBERNETES_NODE_NAME, firstPresent(
+        arguments.add(kv(ScmCacheLogFields.KUBERNETES_NODE_NAME, firstPresent(
                 environment.getProperty("scm.runtime.kubernetes.node-name"),
                 System.getenv("KUBERNETES_NODE_NAME")
         )));

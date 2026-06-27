@@ -4,14 +4,10 @@ import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
+import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmCommonAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmGatewayAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmServiceAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
@@ -57,25 +53,25 @@ public class CoreObservationTraceSupport {
                 .spanKind("internal")
                 .action("service.execute")
                 .correlationId(fields.get("correlationId"))
-                .attribute(ScmCommonAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(ScmCommonAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(ScmServiceAttributes.CODE, service != null ? service.getCode() : fields.get("serviceCode"))
-                .attribute(ScmServiceAttributes.NAME, service != null ? service.getName() : null)
-                .attribute(ScmServiceAttributes.VERSION, fields.get("serviceVersion"))
-                .attribute(ScmOperationAttributes.CODE, fields.get("operationName"))
-                .attribute(ScmOperationAttributes.NAME, fields.get("operationName"))
-                .attribute(ScmGatewayAttributes.ROUTE_ID, fields.get("routeId"))
-                .attribute("scm.exchange.id", fields.get("exchangeId"))
+                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CoreTraceAttributes.SERVICE_CODE, service != null ? service.getCode() : fields.get("serviceCode"))
+                .attribute(CoreTraceAttributes.SERVICE_NAME, service != null ? service.getName() : null)
+                .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"))
+                .attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"))
+                .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
+                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
                 .start();
         exchange.setProperty(SERVICE_SCOPE_PROPERTY, scope);
     }
 
     public void finishServiceExecutionSuccess(Exchange exchange) {
-        finishScope(exchange, SERVICE_SCOPE_PROPERTY, null, "scm.service.duration_ms", serviceDurationMs(exchange));
+        finishScope(exchange, SERVICE_SCOPE_PROPERTY, null, CoreTraceAttributes.SERVICE_DURATION_MS.name(), serviceDurationMs(exchange));
     }
 
     public void finishServiceExecutionFailure(Exchange exchange, Exception exception) {
-        finishScope(exchange, SERVICE_SCOPE_PROPERTY, exception, "scm.service.duration_ms", serviceDurationMs(exchange));
+        finishScope(exchange, SERVICE_SCOPE_PROPERTY, exception, CoreTraceAttributes.SERVICE_DURATION_MS.name(), serviceDurationMs(exchange));
     }
 
     public void startOperationCall(Exchange exchange, Operation operation) {
@@ -89,24 +85,24 @@ public class CoreObservationTraceSupport {
                 .spanKind(operationSpanKind(operation))
                 .action("operation.call")
                 .correlationId(fields.get("correlationId"))
-                .attribute(ScmCommonAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(ScmCommonAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(ScmServiceAttributes.CODE, fields.get("serviceCode"))
-                .attribute(ScmOperationAttributes.CODE, operationCode(operation))
-                .attribute(ScmOperationAttributes.NAME, operationName(operation, fields))
-                .attribute(ScmOperationAttributes.TYPE, operationType(operation))
-                .attribute(ScmGatewayAttributes.ROUTE_ID, fields.get("routeId"))
-                .attribute("scm.exchange.id", fields.get("exchangeId"))
+                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                .attribute(CoreTraceAttributes.OPERATION_CODE, operationCode(operation))
+                .attribute(CoreTraceAttributes.OPERATION_NAME, operationName(operation, fields))
+                .attribute(CoreTraceAttributes.OPERATION_TYPE, operationType(operation))
+                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
                 .start();
         exchange.setProperty(OPERATION_SCOPE_PROPERTY, scope);
     }
 
     public void finishOperationCallSuccess(Exchange exchange, Operation operation) {
-        finishScope(exchange, OPERATION_SCOPE_PROPERTY, null, ScmOperationAttributes.DURATION_MS.name(), operationDurationMs(exchange));
+        finishScope(exchange, OPERATION_SCOPE_PROPERTY, null, CoreTraceAttributes.OPERATION_DURATION_MS.name(), operationDurationMs(exchange));
     }
 
     public void finishOperationCallFailure(Exchange exchange, Operation operation, Exception exception) {
-        finishScope(exchange, OPERATION_SCOPE_PROPERTY, exception, ScmOperationAttributes.DURATION_MS.name(), operationDurationMs(exchange));
+        finishScope(exchange, OPERATION_SCOPE_PROPERTY, exception, CoreTraceAttributes.OPERATION_DURATION_MS.name(), operationDurationMs(exchange));
     }
 
     public void traceException(Exchange exchange, Exception exception) {
@@ -129,8 +125,8 @@ public class CoreObservationTraceSupport {
                 scope.success();
             } else {
                 scope.failure(exception)
-                        .attribute(ScmErrorAttributes.TYPE, exception.getClass().getName())
-                        .attribute(ScmErrorAttributes.MESSAGE, RouteLogSupport.failureMessage(exception));
+                        .attribute(CommonTraceAttributes.ERROR_TYPE, exception.getClass().getName())
+                        .attribute(CommonTraceAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception));
             }
         } finally {
             scope.close();
@@ -158,38 +154,38 @@ public class CoreObservationTraceSupport {
                 .action(action)
                 .outcome(outcome)
                 .correlationId(fields.get("correlationId"))
-                .attribute(ScmCommonAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(ScmCommonAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(ScmGatewayAttributes.ROUTE_ID, fields.get("routeId"))
-                .attribute("scm.exchange.id", fields.get("exchangeId"))
-                .attribute("scm.protocol", RouteLogSupport.protocol(exchange))
-                .attribute("scm.target.kind", RouteLogSupport.targetKind(exchange))
-                .attribute(ScmHttpAttributes.METHOD, header(exchange, Constants.CAMEL_PARAMETER_HTTP_METHOD))
-                .attribute(ScmHttpAttributes.URL_PATH, safePath(header(exchange, Constants.CAMEL_PARAMETER_HTTP_URI)))
-                .attribute(ScmHttpAttributes.STATUS_CODE, exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
+                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
+                .attribute(CoreTraceAttributes.PROTOCOL, RouteLogSupport.protocol(exchange))
+                .attribute(CoreTraceAttributes.TARGET_KIND, RouteLogSupport.targetKind(exchange))
+                .attribute("http.method", header(exchange, Constants.CAMEL_PARAMETER_HTTP_METHOD))
+                .attribute("url.path", safePath(header(exchange, Constants.CAMEL_PARAMETER_HTTP_URI)))
+                .attribute("http.status_code", exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
 
         Service resolvedService = service != null ? service : exchange.getProperty(Message.SERVICE, Service.class);
         if (resolvedService != null) {
-            trace.attribute(ScmServiceAttributes.CODE, resolvedService.getCode())
-                    .attribute(ScmServiceAttributes.NAME, resolvedService.getName())
-                    .attribute(ScmServiceAttributes.VERSION, fields.get("serviceVersion"));
+            trace.attribute(CoreTraceAttributes.SERVICE_CODE, resolvedService.getCode())
+                    .attribute(CoreTraceAttributes.SERVICE_NAME, resolvedService.getName())
+                    .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"));
         } else {
-            trace.attribute(ScmServiceAttributes.CODE, fields.get("serviceCode"))
-                    .attribute(ScmServiceAttributes.VERSION, fields.get("serviceVersion"));
+            trace.attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
+                    .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"));
         }
 
         Operation resolvedOperation = operation != null ? operation : exchange.getProperty(Message.OPERATION, Operation.class);
         if (resolvedOperation != null) {
-            trace.attribute(ScmOperationAttributes.CODE, resolvedOperation.getName())
-                    .attribute(ScmOperationAttributes.NAME, resolvedOperation.getName())
-                    .attribute(ScmOperationAttributes.TYPE, resolvedOperation.getType() != null ? resolvedOperation.getType().name() : null);
+            trace.attribute(CoreTraceAttributes.OPERATION_CODE, resolvedOperation.getName())
+                    .attribute(CoreTraceAttributes.OPERATION_NAME, resolvedOperation.getName())
+                    .attribute(CoreTraceAttributes.OPERATION_TYPE, resolvedOperation.getType() != null ? resolvedOperation.getType().name() : null);
         } else {
-            trace.attribute(ScmOperationAttributes.CODE, fields.get("operationName"));
+            trace.attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"));
         }
 
         if (exception != null) {
-            trace.attribute(ScmErrorAttributes.TYPE, exception.getClass().getName())
-                    .attribute(ScmErrorAttributes.MESSAGE, RouteLogSupport.failureMessage(exception));
+            trace.attribute(CommonTraceAttributes.ERROR_TYPE, exception.getClass().getName())
+                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception));
         }
 
         ObservationScope scope = trace.start();

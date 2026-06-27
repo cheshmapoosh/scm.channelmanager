@@ -1,24 +1,31 @@
 package ir.daneshrefah.scm.cache.observation;
 
+import ir.daneshrefah.scm.cache.observation.attributes.CacheLogAttributes;
+
 public final class ScmCacheLogFields {
     public static final String HAZELCAST_ELEMENT_TYPE =
-            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_TYPE.name();
+            CacheLogAttributes.HAZELCAST_ELEMENT_TYPE.name();
     public static final String HAZELCAST_ELEMENT_NAME =
-            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_NAME.name();
+            CacheLogAttributes.HAZELCAST_ELEMENT_NAME.name();
     public static final String HAZELCAST_ELEMENT_CONFIG =
-            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_CONFIG.name();
+            CacheLogAttributes.HAZELCAST_ELEMENT_CONFIG.name();
     public static final String HAZELCAST_ELEMENT_COUNT =
-            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_COUNT.name();
+            CacheLogAttributes.HAZELCAST_ELEMENT_COUNT.name();
     public static final String HAZELCAST_ELEMENT_SUMMARY =
-            ScmCacheObservationAttributes.HAZELCAST_ELEMENT_SUMMARY.name();
+            CacheLogAttributes.HAZELCAST_ELEMENT_SUMMARY.name();
     public static final String HAZELCAST_MATERIALIZED_COUNT =
-            ScmCacheObservationAttributes.HAZELCAST_MATERIALIZED_COUNT.name();
+            CacheLogAttributes.HAZELCAST_MATERIALIZED_COUNT.name();
     public static final String HAZELCAST_MATERIALIZED_SUMMARY =
-            ScmCacheObservationAttributes.HAZELCAST_MATERIALIZED_SUMMARY.name();
+            CacheLogAttributes.HAZELCAST_MATERIALIZED_SUMMARY.name();
     public static final String HAZELCAST_CLUSTER_SIZE =
-            ScmCacheObservationAttributes.HAZELCAST_CLUSTER_SIZE.name();
+            CacheLogAttributes.HAZELCAST_CLUSTER_SIZE.name();
     public static final String HAZELCAST_MEMBER_ADDRESS =
-            ScmCacheObservationAttributes.HAZELCAST_MEMBER_ADDRESS.name();
+            CacheLogAttributes.HAZELCAST_MEMBER_ADDRESS.name();
+    public static final String CONTAINER_IMAGE_NAME = CacheLogAttributes.CONTAINER_IMAGE_NAME.name();
+    public static final String CONTAINER_IMAGE_TAG = CacheLogAttributes.CONTAINER_IMAGE_TAG.name();
+    public static final String KUBERNETES_NAMESPACE = CacheLogAttributes.KUBERNETES_NAMESPACE.name();
+    public static final String KUBERNETES_POD_NAME = CacheLogAttributes.KUBERNETES_POD_NAME.name();
+    public static final String KUBERNETES_NODE_NAME = CacheLogAttributes.KUBERNETES_NODE_NAME.name();
 
     private ScmCacheLogFields() {
     }

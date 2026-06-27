@@ -15,8 +15,7 @@ import ir.daneshrefah.scm.observation.ObservationRecordKind;
 import ir.daneshrefah.scm.observation.ObservationRecordValidator;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.ObservationStream;
-import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,17 +53,17 @@ public class ScmSpanDataMapper {
                 stringAttribute(spanData, CORRELATION_ID, ObservationIds.correlationId()),
                 CorrelationType.OPERATION.value()
         );
-        builder.put(ScmObservationDocumentAttributes.EVENT_CATEGORY, "trace");
-        builder.put(ScmObservationDocumentAttributes.EVENT_ACTION, textOrDefault(eventAction, textOrDefault(spanData.getName(), "trace.span")));
-        builder.put(ScmObservationDocumentAttributes.EVENT_OUTCOME, textOrDefault(eventOutcome, statusOutcome(spanData)));
-        builder.put(ScmTraceAttributes.TRACE_ID, spanData.getTraceId());
-        builder.put(ScmTraceAttributes.SPAN_ID, spanData.getSpanId());
+        builder.put(CommonTraceAttributes.EVENT_CATEGORY, "trace");
+        builder.put(CommonTraceAttributes.EVENT_ACTION, textOrDefault(eventAction, textOrDefault(spanData.getName(), "trace.span")));
+        builder.put(CommonTraceAttributes.EVENT_OUTCOME, textOrDefault(eventOutcome, statusOutcome(spanData)));
+        builder.put(CommonTraceAttributes.TRACE_ID, spanData.getTraceId());
+        builder.put(CommonTraceAttributes.SPAN_ID, spanData.getSpanId());
         putParentSpanId(builder, spanData.getParentSpanContext());
-        builder.put(ScmTraceAttributes.SPAN_NAME, textOrDefault(spanData.getName(), "trace.span"));
-        builder.put(ScmTraceAttributes.SPAN_KIND, spanData.getKind().name().toLowerCase(Locale.ROOT));
-        builder.put(ScmTraceAttributes.SPAN_START_TIME, startTime.toString());
-        builder.put(ScmTraceAttributes.SPAN_END_TIME, endTime.toString());
-        builder.put(ScmTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startTime, endTime).toMillis()));
+        builder.put(CommonTraceAttributes.SPAN_NAME, textOrDefault(spanData.getName(), "trace.span"));
+        builder.put(CommonTraceAttributes.SPAN_KIND, spanData.getKind().name().toLowerCase(Locale.ROOT));
+        builder.put(CommonTraceAttributes.SPAN_START_TIME, startTime.toString());
+        builder.put(CommonTraceAttributes.SPAN_END_TIME, endTime.toString());
+        builder.put(CommonTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startTime, endTime).toMillis()));
         putSpanAttributes(builder, spanData);
         Map<String, Object> document = builder.build();
         recordValidator.validate(ObservationStream.TRACE, ObservationRecordKind.EVENT, false, document);
@@ -73,7 +72,7 @@ public class ScmSpanDataMapper {
 
     private void putParentSpanId(ObservationDocumentBuilder builder, SpanContext parentSpanContext) {
         if (parentSpanContext != null && parentSpanContext.isValid()) {
-            builder.put(ScmTraceAttributes.PARENT_SPAN_ID, parentSpanContext.getSpanId());
+            builder.put(CommonTraceAttributes.PARENT_SPAN_ID, parentSpanContext.getSpanId());
         }
     }
 

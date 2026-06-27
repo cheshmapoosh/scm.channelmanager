@@ -2,11 +2,12 @@ package ir.daneshrefah.scm.cmconnector.session.service;
 
 import ir.daneshrefah.scm.cmconnector.session.mapper.CmSessionMapper;
 import ir.daneshrefah.scm.cmconnector.session.model.CmSessionResponse;
+import ir.daneshrefah.scm.cmconnector.observation.attributes.CmConnectorMetricTags;
+import ir.daneshrefah.scm.cmconnector.observation.attributes.CmConnectorTraceAttributes;
+import ir.daneshrefah.scm.cmconnector.observation.CmConnectorMetricNames;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
 import ir.daneshrefah.scm.uaa.client.security.ScmPrincipal;
 import ir.daneshrefah.scm.uaa.client.security.ScmSecurityContext;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
@@ -35,7 +36,7 @@ public class CmSessionService {
         ObservationScope scope = observation.trace()
                 .source(CmSessionService.class)
                 .span("scm.cm.connector.session.read")
-                .attribute(ScmOperationAttributes.NAME, "scm.cm.connector.session.read")
+                .attribute(CmConnectorTraceAttributes.OPERATION_NAME, "scm.cm.connector.session.read")
                 .start();
 
         log.info("CM connector session read requested");
@@ -98,17 +99,17 @@ public class CmSessionService {
 
     private void recordSessionMetric(String outcome, long startedAt) {
         observation.metric()
-                .timer(ScmMetricNames.CM_CONNECTOR_SESSION_READ)
-                .tag(ScmOperationAttributes.NAME, "scm.cm.connector.session.read")
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .timer(CmConnectorMetricNames.SESSION_READ)
+                .tag(CmConnectorMetricTags.OPERATION_NAME, "scm.cm.connector.session.read")
+                .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(elapsedMillis(startedAt), TimeUnit.MILLISECONDS);
     }
 
     private void recordErrorMetric(String errorCode) {
         observation.metric()
-                .counter(ScmMetricNames.CM_CONNECTOR_ERRORS)
-                .tag(ScmOperationAttributes.NAME, "scm.cm.connector.session.read")
-                .tag(ScmMetricAttributes.ERROR_CODE, errorCode)
+                .counter(CmConnectorMetricNames.ERRORS)
+                .tag(CmConnectorMetricTags.OPERATION_NAME, "scm.cm.connector.session.read")
+                .tag(CommonMetricTags.ERROR_CODE, errorCode)
                 .increment();
     }
 

@@ -1,12 +1,10 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.ScmCommonLogAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmObservationDocumentAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmOperationAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
+import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,13 +31,11 @@ public class ObservationAttributeRegistry {
         for (ObservationStream stream : ObservationStream.values()) {
             registered.put(stream, new LinkedHashMap<>());
         }
-        registerAll(registered, ScmCommonLogAttributes.attributes());
-        registerAll(registered, ScmObservationDocumentAttributes.attributes());
-        registerAll(registered, ScmTraceAttributes.attributes());
-        registerAll(registered, ScmAuditAttributes.attributes());
-        registerAll(registered, ScmHttpAttributes.attributes());
-        registerAll(registered, ScmOperationAttributes.attributes());
-        registerAll(registered, ScmErrorAttributes.attributes());
+        registerAll(registered, CommonLogAttributes.attributes());
+        registerAll(registered, CommonTraceAttributes.attributes());
+        registerAll(registered, ChangeEntityAuditAttributes.attributes());
+        registerAll(registered, ServiceExecuteAuditAttributes.attributes());
+        registerAll(registered, CommonMetricTags.attributes());
         if (contributors != null) {
             for (ObservationAttributeContributor contributor : contributors) {
                 if (contributor != null) {

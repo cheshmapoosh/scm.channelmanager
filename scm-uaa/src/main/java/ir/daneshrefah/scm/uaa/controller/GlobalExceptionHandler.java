@@ -8,8 +8,8 @@ import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededExcept
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmHttpAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
@@ -88,11 +88,11 @@ GlobalExceptionHandler {
                     .action("uaa.exception")
                     .outcome("failure")
                     .correlationId(correlationId(request))
-                    .attribute(ScmHttpAttributes.METHOD, request.getMethod())
-                    .attribute(ScmHttpAttributes.URL_PATH, request.getServletPath())
-                    .attribute(ScmHttpAttributes.STATUS_CODE, responseStatus.value())
-                    .attribute(ScmErrorAttributes.TYPE, exception.getClass().getName())
-                    .attribute(ScmErrorAttributes.MESSAGE, safeMessage(exception))
+                    .attribute(UaaTraceAttributes.HTTP_METHOD, request.getMethod())
+                    .attribute(UaaTraceAttributes.URL_PATH, request.getServletPath())
+                    .attribute(UaaTraceAttributes.HTTP_STATUS_CODE, responseStatus.value())
+                    .attribute(CommonTraceAttributes.ERROR_TYPE, exception.getClass().getName())
+                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(exception))
                     .start();
             try {
                 scope.failure();

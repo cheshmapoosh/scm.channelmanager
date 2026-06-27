@@ -2,9 +2,8 @@ package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmAuthAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmClientAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,26 +34,26 @@ public class AuthenticationAspect {
                 .span("auth.authenticate")
                 .spanKind("internal")
                 .action("auth.authenticate")
-                .attribute(ScmAuthAttributes.TYPE, "oauth2")
-                .attribute(ScmAuthAttributes.JWT_PRESENT, false)
-                .attribute(ScmClientAttributes.IP, remoteAddress(authentication))
-                .attribute("scm.auth.client_type", clientType(authentication))
+                .attribute(UaaTraceAttributes.AUTH_TYPE, "oauth2")
+                .attribute(UaaTraceAttributes.JWT_PRESENT, false)
+                .attribute(UaaTraceAttributes.CLIENT_IP, remoteAddress(authentication))
+                .attribute(UaaTraceAttributes.AUTH_CLIENT_TYPE, clientType(authentication))
                 .start();
         try {
             Object result = joinPoint.proceed();
-            scope.attribute(ScmAuthAttributes.JWT_PRESENT, hasAccessToken(result))
-                    .attribute(ScmAuthAttributes.JWT_USERNAME, safeUsername(authentication));
+            scope.attribute(UaaTraceAttributes.JWT_PRESENT, hasAccessToken(result))
+                    .attribute(UaaTraceAttributes.JWT_USERNAME, safeUsername(authentication));
             scope.success();
             return result;
         } catch (AuthenticationException ex) {
-            scope.attribute(ScmErrorAttributes.TYPE, ex.getClass().getName())
-                    .attribute(ScmErrorAttributes.MESSAGE, safeMessage(ex))
+            scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
+                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
                     .failure();
             log.trace("Authentication failed", ex);
             throw ex;
         } catch (Throwable ex) {
-            scope.attribute(ScmErrorAttributes.TYPE, ex.getClass().getName())
-                    .attribute(ScmErrorAttributes.MESSAGE, safeMessage(ex))
+            scope.attribute(CommonTraceAttributes.ERROR_TYPE, ex.getClass().getName())
+                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(ex))
                     .failure();
             log.error("Unexpected error during authentication", ex);
             throw ex;

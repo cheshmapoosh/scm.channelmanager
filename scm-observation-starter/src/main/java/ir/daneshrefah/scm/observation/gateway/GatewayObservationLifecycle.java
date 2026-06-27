@@ -4,12 +4,9 @@ import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationIds;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.attributes.ScmClientAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmErrorAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmGatewayAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmMetricAttributes;
-import ir.daneshrefah.scm.observation.attributes.ScmTraceAttributes;
-import ir.daneshrefah.scm.observation.metrics.ScmMetricNames;
+import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.metrics.CommonMetricNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +42,13 @@ public class GatewayObservationLifecycle {
                     .correlationId(context.correlationId())
                     .traceId(context.traceId())
                     .spanId(context.gatewaySpanId())
-                    .attribute(ScmGatewayAttributes.NAME, context.gatewayName())
-                    .attribute(ScmGatewayAttributes.CHANNEL_CODE, context.channelCode())
-                    .attribute(ScmGatewayAttributes.PROTOCOL, context.protocol().value())
-                    .attribute(ScmGatewayAttributes.REQUEST_NAME, context.requestName())
-                    .attribute(ScmGatewayAttributes.MESSAGE_ID, context.messageId())
-                    .attribute(ScmGatewayAttributes.ROUTE_ID, safeRequest.routeId())
-                    .attribute(ScmClientAttributes.ADDRESS, safeRequest.clientAddress())
+                    .attribute("scm.gateway.name", context.gatewayName())
+                    .attribute("scm.channel.code", context.channelCode())
+                    .attribute("scm.protocol", context.protocol().value())
+                    .attribute("scm.request.name", context.requestName())
+                    .attribute("scm.message.id", context.messageId())
+                    .attribute("scm.route.id", safeRequest.routeId())
+                    .attribute("client.address", safeRequest.clientAddress())
                     .attributes(safeRequest.attributes())
                     .start();
         } catch (RuntimeException ex) {
@@ -111,53 +108,53 @@ public class GatewayObservationLifecycle {
     private void recordMetrics(GatewayObservationContext context, GatewayObservationResult result, long durationMs) {
         String outcome = outcome(result);
         observation.metric()
-                .counter(ScmMetricNames.GATEWAY_REQUESTS)
-                .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
-                .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
-                .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
-                .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
-                .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
-                .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
-                .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
-                .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .counter("scm.gateway.requests")
+                .tag("app_name", observationContext.appName())
+                .tag("app_profile", observationContext.appProfile())
+                .tag("app_label", observationContext.appLabel())
+                .tag("platform", observationContext.platform())
+                .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
+                .tag("gateway_name", context.gatewayName())
+                .tag("protocol", context.protocol().value())
+                .tag("request_name", context.requestName())
+                .tag(CommonMetricTags.OUTCOME, outcome)
                 .increment();
 
         observation.metric()
-                .timer(ScmMetricNames.REQUEST_DURATION)
-                .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
-                .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
-                .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
-                .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
-                .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
-                .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
-                .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
-                .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
-                .tag(ScmMetricAttributes.OUTCOME, outcome)
+                .timer(CommonMetricNames.REQUEST_DURATION)
+                .tag("app_name", observationContext.appName())
+                .tag("app_profile", observationContext.appProfile())
+                .tag("app_label", observationContext.appLabel())
+                .tag("platform", observationContext.platform())
+                .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
+                .tag("gateway_name", context.gatewayName())
+                .tag("protocol", context.protocol().value())
+                .tag("request_name", context.requestName())
+                .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(durationMs, TimeUnit.MILLISECONDS);
 
         if (OUTCOME_FAILURE.equals(outcome)) {
             observation.metric()
-                    .counter(ScmMetricNames.FAULTS)
-                    .tag(ScmMetricAttributes.APP_NAME, observationContext.appName())
-                    .tag(ScmMetricAttributes.APP_PROFILE, observationContext.appProfile())
-                    .tag(ScmMetricAttributes.APP_LABEL, observationContext.appLabel())
-                    .tag(ScmMetricAttributes.PLATFORM, observationContext.platform())
-                    .tag(ScmMetricAttributes.CHANNEL_CODE, context.channelCode())
-                    .tag(ScmMetricAttributes.GATEWAY_NAME, context.gatewayName())
-                    .tag(ScmMetricAttributes.PROTOCOL, context.protocol().value())
-                    .tag(ScmMetricAttributes.REQUEST_NAME, context.requestName())
-                    .tag(ScmMetricAttributes.OUTCOME, outcome)
-                    .tag(ScmMetricAttributes.ERROR_CODE, result.errorCode())
+                    .counter(CommonMetricNames.FAULTS)
+                    .tag("app_name", observationContext.appName())
+                    .tag("app_profile", observationContext.appProfile())
+                    .tag("app_label", observationContext.appLabel())
+                    .tag("platform", observationContext.platform())
+                    .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
+                    .tag("gateway_name", context.gatewayName())
+                    .tag("protocol", context.protocol().value())
+                    .tag("request_name", context.requestName())
+                    .tag(CommonMetricTags.OUTCOME, outcome)
+                    .tag(CommonMetricTags.ERROR_CODE, result.errorCode())
                     .increment();
         }
     }
 
     private void putResultAttributes(ObservationScope traceScope, GatewayObservationResult result) {
         traceScope.attributes(result.attributes());
-        traceScope.attribute(ScmErrorAttributes.CODE, result.errorCode());
-        traceScope.attribute(ScmErrorAttributes.TYPE, result.errorType());
-        traceScope.attribute(ScmErrorAttributes.MESSAGE, result.errorMessage());
+        traceScope.attribute(CommonTraceAttributes.ERROR_CODE, result.errorCode());
+        traceScope.attribute(CommonTraceAttributes.ERROR_TYPE, result.errorType());
+        traceScope.attribute(CommonTraceAttributes.ERROR_MESSAGE, result.errorMessage());
     }
 
     private String spanKind(GatewayProtocol protocol) {
