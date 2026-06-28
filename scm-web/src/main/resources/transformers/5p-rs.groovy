@@ -15,19 +15,19 @@ def bodyRawList = nabResponse.records
 
 def responseList = []
 for (def body in bodyRawList) {
+    println("5p response body : " + body);
     def accountNo = body.accountNo
     def transDate = body.transDate
-    def transRefNo = body.transRefNo
-    def transSeq = body.transSeq
-    def creditDebit = body.creditDebit
+    def transRefNo = body.refNo
+    def transSeq = body.refSeq
+    def creditDebit = body.debitCredit
     def transAmount = body.transAmount
     def transDesc = body.transDesc
     def latinDesc = body.latinDesc
     def serial = body.serial
     def refNo = body.refNo
-    def bankIdentificationNumber = body.bankIdentificationNumber
     def extCode = body.extCode
-    def actionTime = body.actionTime
+    def actionTime = body.actTime
     def iban = body.iban
     def nationalId = body.nationalId
     def descManual =body.descManual
@@ -35,9 +35,9 @@ for (def body in bodyRawList) {
     def billId = body.billId
     def paymentId = body.paymentId
     def sourceCardNo = body.sourceCardNo
-    def destinationCardNo = body.destinationCardNo
+    def destinationCardNo = body.destCardNo
     def otherSideIban = body.otherSideIban
-    def referenceCode = body.referenceCode
+    def referenceCode = body.reference
 
     def item = [
             "accountNo":accountNo,
@@ -50,7 +50,6 @@ for (def body in bodyRawList) {
             "latinDesc":latinDesc,
             "serial":serial,
             "refNo":refNo,
-            "bankIdentificationNumber":bankIdentificationNumber,
             "extCode":extCode,
             "actionTime":actionTime,
             "iban":iban,
@@ -62,8 +61,8 @@ for (def body in bodyRawList) {
             "sourceCardNo":sourceCardNo,
             "destinationCardNo":destinationCardNo,
             "otherSideIban":otherSideIban,
-            "referenceCode":referenceCode.toString().trim()
+            "referenceCode":referenceCode
     ]
     responseList << item
 }
-return JsonOutput.toJson(responseList)
+return responseList
