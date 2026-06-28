@@ -2,40 +2,42 @@ package transformers
 
 import ir.daneshrefah.scm.common.data.entity.asset.AccountTypeLoader
 
-def bodyRawList = exchange.in.body
-def actionCode = exchange.getProperty("actionCode")
-if(!bodyRawList||(bodyRawList instanceof String&&bodyRawList.toString().length()==5)){
-    throw new ir.daneshrefah.scm.common.exception.NabError(actionCode, "nab error!");
+def nabResponse = exchange.in.body
+println("5i nab response : "+ body)
+
+def status = nabResponse.status
+def actionCode = status.code
+def success = status.success
+if (!success){
+    throw new ir.daneshrefah.scm.common.exception.NabError(actionCode.asText(), "nab error!");
 }
+def bodyRawList = nabResponse.records
 def responseList = []
 for(def body in bodyRawList){
     println("5i response body : " + body);
-    if (body.length() < 205) {
-        continue
-    }
 
-    def accountNo = body[39..56]
-    def accountType = body[57..58]
-    def accountDesc = body[59..118]
-    def accountBalance = body[119..136]
-    def accountAvailBalance = body[137..154]
-    def blockAmount = body[155..172]
-    def iBanValue = body[173..202]
-    def commerce = body[203..203]
-    def flagKarpar = body[204..204]
+    def accountNo = body.accountNo
+    def accountType = body.accountType
+    def accountDesc = body.accountDesc
+    def accountBalance = body.accountBalance
+    def accountAvailBalance = body.accountAvailBalance
+    def blockAmount = body.blockAmount
+    def iBanValue = body.iBanValue
+    def commerce = body.commerce
+    def flagKarpar = body.flagKarpar
 
-    def accountTypeName = AccountTypeLoader.accountTypeEntityMap.get(accountType).getName();
+    def accountTypeName = AccountTypeLoader.accountTypeEntityMap[accountType]?.name ?: ""
 
     def item = [
-            "accountNo":accountNo.toString().trim().toLong().toString(),
-            "accountType":accountTypeName.toString().trim(),
-            "accountDesc":accountDesc.toString().trim(),
-            "accountBalance":accountBalance.toString().trim().toLong(),
-            "accountAvailBalance":accountAvailBalance.toString().trim().toLong(),
-            "blockAmount":blockAmount.toString().trim().toLong(),
-            "iBanValue":iBanValue.toString().trim(),
-            "commerce":commerce.toString().trim(),
-            "flagKarpar":flagKarpar.toString().trim()
+            "accountNo":accountNo,
+            "accountType":accountTypeName,
+            "accountDesc":accountDesc,
+            "accountBalance":accountBalance,
+            "accountAvailBalance":accountAvailBalance,
+            "blockAmount":blockAmount,
+            "iBanValue":iBanValue,
+            "commerce":commerce,
+            "flagKarpar":flagKarpar
     ]
     responseList << item
 }

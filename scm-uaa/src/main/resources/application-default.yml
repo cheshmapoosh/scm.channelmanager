@@ -26,8 +26,8 @@ scm:
       default-schema: REF
     activationDatasource:
       url: jdbc:db2://10.15.1.197:50000/DBREFSW
-      username: pwausr
-      password: pwausr
+      username: mbusr
+      password: mbusr
       driver-class-name: com.ibm.db2.jcc.DB2Driver
       max-connection: 10
       default-schema: MBUAA
@@ -68,7 +68,7 @@ scm:
         cluster-name: dev3
         network-config:
           addresses:
-            - '10.10.4.125:5701'
+            - '127.0.0.1:5701'
   otp:
     time-to-live-minutes: 1
     jms:
@@ -138,8 +138,8 @@ scm:
       spring: INFO
       hibernate: WARN
     app:
-      file-directory: /var/log/app
-      rolling-archive-directory: /var/log/app/archive
+      file-directory: log
+      rolling-archive-directory: log
       max-history-days: 50
       max-file-size: 200MB
       total-size-cap: 10GB

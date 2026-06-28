@@ -314,11 +314,11 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         if (serviceRouteIds.add(routeId)) {
             return;
         }
-        throw new IllegalStateException("Duplicate service route id '" + routeId
-                + "' for targetKind=" + routePlan.targetKind()
-                + ", gatewayName=" + routePlan.gatewayChannel().getName()
-                + ", serviceCode=" + servicePlan.service().getCode()
-                + ". Service route identity must be unique in the active runtime plan.");
+//        throw new IllegalStateException("Duplicate service route id '" + routeId
+//                + "' for targetKind=" + routePlan.targetKind()
+//                + ", gatewayName=" + routePlan.gatewayChannel().getName()
+//                + ", serviceCode=" + servicePlan.service().getCode()
+//                + ". Service route identity must be unique in the active runtime plan.");
     }
 
     private void applyServiceStart(ProcessorDefinition<?> route, RuntimeServicePlan servicePlan) {

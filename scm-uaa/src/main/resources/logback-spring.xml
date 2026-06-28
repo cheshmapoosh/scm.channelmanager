@@ -5,7 +5,7 @@
                 source="spring.application.name" defaultValue="scm-uaa" />
 
 <springProperty scope="context" name="LOG_DIR"
-                source="scm.log.app.file-directory" defaultValue="/var/log/app" />
+                source="scm.log.app.file-directory" defaultValue="log" />
 
 <springProperty scope="context" name="ARCHIVE_DIR"
                 source="scm.log.app.rolling-archive-directory" defaultValue="${LOG_DIR}/archive" />
@@ -73,7 +73,7 @@
 
 <!-- ===== Root ===== -->
 <root level="${ROOT_LEVEL}">
-    <appender-ref ref="ROLLING_FILE" />
+    <appender-ref ref="CONSOLE" />
 
 </root>
 

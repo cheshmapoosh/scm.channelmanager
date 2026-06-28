@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.Builder;
+import org.apache.camel.converter.stream.InputStreamCache;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.springframework.core.io.ClassPathResource;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -93,6 +95,31 @@ public class OperationTemplateTransformer implements PluginHandler {
         if (templateEngineType == TemplateEngineType.GROOVY || templateEngineType == TemplateEngineType.DATA_SONNET) {
 
             if (pluginDetail.getPhase() == PluginPhase.BEFORE) {
+                routeDefinition.process(exchange -> {
+                    log.info("Body class = {}", exchange.getIn().getBody().getClass());
+
+                    Object body = exchange.getIn().getBody();
+                    if (body instanceof Map || body instanceof List) {
+                        return;
+                    }
+
+                    if (body == null) {
+                        exchange.getIn().setBody("{}");
+                        return;
+                    }
+
+                    if (body instanceof InputStream || body instanceof InputStreamCache || body instanceof String) {
+                        String s = exchange.getContext()
+                                .getTypeConverter()
+                                .tryConvertTo(String.class, exchange, body);
+
+                        if (s == null || s.trim().isEmpty()) {
+                            exchange.getIn().setBody("{}");
+                        } else {
+                            exchange.getIn().setBody(s);
+                        }
+                    }
+                });
                 routeDefinition.unmarshal().json(JsonLibrary.Jackson);
                 String transformerBefore = loadScript(definition.getDetails());
                 routeDefinition.transform().language(templateEngineType.getType(), transformerBefore);

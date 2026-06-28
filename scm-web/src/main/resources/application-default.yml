@@ -1,12 +1,12 @@
 SCM_APPLICATION_NAME: scm-web
 scm:
-  app-name: domain.card
-  channels: MB4TEST
+  app-name: channel.nib
+  channels: IB4TEST
   runtime:
     target:
-      kind: SERVICE_DOMAIN
+      kind: CHANNEL
       gateway-names:
-        - domain.card
+        - channel.nib
   gateway:
     client-contracts:
       defaults:
@@ -144,6 +144,33 @@ scm:
       headers:
         Accept: application/json
         Content-Type: application/json
+    nab-atps:
+      scheme: scm-nab
+      enabled: true
+      protocol: ATPS
+      endpoint: 10.15.27.12:3080
+      connect-timeout-ms: 3000
+      socket-timeout-ms: 1000
+      response-timeout-ms: 6000
+      ack-length-bytes: 5
+      charset: windows-1256
+      user-id: "999998"
+      password: ${NAB_ATPS_PASSWORD:1234567890}
+      rq-uid:
+        length: 16
+        type: NUMERIC
+      header-fields:
+        - { name: "protocol", length: 4, required: true }
+        - { name: "command", length: 2, required: true }
+        - { name: "serviceCode", length: 2, required: true }
+        - { name: "dateTime", length: 14, required: true }
+        - { name: "userId", length: 10, required: true }
+        - { name: "password", length: 10, required: true }
+        - { name: "rqUid", length: 16, required: true }
+      rate-limit:
+        enabled: false
+        bucket: nab-atps
+        key: provider-operation
 
   #    sayad: http://10.15.46.20:8080/sayad/services/api
   datasource:

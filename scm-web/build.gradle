@@ -44,6 +44,7 @@ dependencies {
     implementation project(':scm-common-data')
     implementation project(':scm-provider-shetab')
     implementation project(':scm-provider-rest')
+    implementation project(':scm-provider-nab')
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.apache.camel.springboot:camel-spring-security-starter'
     implementation 'org.projectlombok:lombok'
