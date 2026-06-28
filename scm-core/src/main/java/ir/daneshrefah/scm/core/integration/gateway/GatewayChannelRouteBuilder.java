@@ -279,24 +279,31 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
         }
 
         orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
-            route.process(exchange -> {
-                pluginHandler.handle(exchange, definition);
-            });
-        });
+            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
 
+            if (pluginHandler == null) {
+                log.warn("Plugin '{}' not found. Ignoring.", definition.getName());
+                return;
+            }
+
+            route.process(exchange -> pluginHandler.handle(exchange, definition));
+        });
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
-        if (orderedBeforePluginDetails == null) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails) {
+        if (orderedAfterPluginDetails == null) {
             return;
         }
 
-        orderedBeforePluginDetails.forEach(definition -> {
-            PluginHandler pluginHandler = Objects.requireNonNull(pluginHandlers.get(definition.getName()));
-            route.process(exchange -> {
-                pluginHandler.handle(exchange, definition);
-            });
+        orderedAfterPluginDetails.forEach(definition -> {
+            PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
+
+            if (pluginHandler == null) {
+                log.warn("Plugin '{}' not found. Ignoring.", definition.getName());
+                return;
+            }
+
+            route.process(exchange -> pluginHandler.handle(exchange, definition));
         });
     }
 
