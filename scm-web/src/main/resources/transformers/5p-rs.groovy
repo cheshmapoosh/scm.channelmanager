@@ -1,12 +1,13 @@
 import groovy.json.JsonOutput
 
 def nabResponse = exchange.in.body
-println("5p nab response : "+ body)
+println("5p nab response : "+ nabResponse)
 
 def status = nabResponse.status
 def actionCode = status.code
 def success = status.success
 if (!success){
+    println("nab status code 5p : "+ actionCode.asText())
     throw new ir.daneshrefah.scm.common.exception.NabError(actionCode.asText(), "nab error!");
 }
 
@@ -34,7 +35,7 @@ for (def body in bodyRawList) {
     def billId = body.billId
     def paymentId = body.paymentId
     def sourceCardNo = body.sourceCardNo
-    def destinationCardno = body.destinationCardno
+    def destinationCardNo = body.destinationCardNo
     def otherSideIban = body.otherSideIban
     def referenceCode = body.referenceCode
 
@@ -59,7 +60,7 @@ for (def body in bodyRawList) {
             "billId":billId,
             "paymentId":paymentId,
             "sourceCardNo":sourceCardNo,
-            "destinationCardno":destinationCardno,
+            "destinationCardNo":destinationCardNo,
             "otherSideIban":otherSideIban,
             "referenceCode":referenceCode.toString().trim()
     ]
