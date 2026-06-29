@@ -6,10 +6,8 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitExceededException;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
-import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.uaa.observation.UaaObservation;
+import ir.daneshrefah.scm.observation.web.HttpServerObservationFilter;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -36,12 +34,6 @@ import java.util.Locale;
 @Slf4j
 public class
 GlobalExceptionHandler {
-
-    private static final String X_CORRELATION_ID = "X-Correlation-Id";
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    private static final String X_REAL_IP = "X-Real-IP";
-
-    private final UaaObservation observation;
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<?> handleRateLimitExceeded(HttpServletRequest request, RateLimitExceededException exception) {
@@ -81,63 +73,7 @@ GlobalExceptionHandler {
     }
 
     private void handleSpanException(HttpServletRequest request, Exception exception, HttpStatus responseStatus) {
-        try {
-            UaaObservation.ControllerContext ctx = new UaaObservation.ControllerContext(
-                    "globalException",
-                    "handle",
-                    request.getMethod(),
-                    requestPath(request),
-                    responseStatus.value(),
-                    clientIp(request),
-                    correlationId(request),
-                    "failure",
-                    observation.safeErrorMessage(exception)
-            );
-            ObservationScope scope = observation.traceController(ctx);
-            try {
-                observation.controllerAttributes(scope, ctx);
-                scope.failure(exception);
-                observation.controllerFailed(ctx, exception);
-            } finally {
-                scope.close();
-            }
-        } catch (Exception e) {
-            log.error("Exception occurred while handling global exception observation", e);
-        }
-    }
-
-    private String correlationId(HttpServletRequest request) {
-        String correlationId = request.getHeader(X_CORRELATION_ID);
-        if (StringUtils.isEmpty(correlationId)) {
-            correlationId = request.getHeader(Constants.SCM_PARAMETER_CORRELATION_ID);
-        }
-        if (StringUtils.isEmpty(correlationId)) {
-            correlationId = request.getHeader(Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID);
-        }
-        return correlationId;
-    }
-
-    private String requestPath(HttpServletRequest request) {
-        if (request == null) {
-            return null;
-        }
-        return StringUtils.isEmpty(request.getRequestURI()) ? request.getServletPath() : request.getRequestURI();
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        if (request == null) {
-            return null;
-        }
-        String forwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!StringUtils.isEmpty(forwardedFor)) {
-            int comma = forwardedFor.indexOf(',');
-            return comma >= 0 ? forwardedFor.substring(0, comma).trim() : forwardedFor.trim();
-        }
-        String realIp = request.getHeader(X_REAL_IP);
-        if (!StringUtils.isEmpty(realIp)) {
-            return realIp.trim();
-        }
-        return request.getRemoteAddr();
+        HttpServerObservationFilter.recordException(request, exception);
     }
 
     private Locale detectRequesteLocale(HttpServletRequest request) {

@@ -134,7 +134,7 @@ public class UserOtpVerifyServiceImpl implements UserOtpVerifyService {
 
     private OtpVerifyResponse handleStaticPasswordAuthentication(String claimCode, User user, AuthenticationMethodType authenticationMethodType) {
         boolean isValid = userService.validateStaticPassword(user, claimCode, authenticationMethodType);
-        log.trace("static password authentication is {} for user {}", isValid, user.getNickname());
+        log.trace("static credential authentication is {} for user {}", isValid, user.getNickname());
         return OtpVerifyResponse.builder()
                 .isSuccessful(isValid)
                 .build();

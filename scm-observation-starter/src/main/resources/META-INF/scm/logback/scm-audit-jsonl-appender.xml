@@ -1,0 +1,66 @@
+<included>
+    <if condition='property("AUDIT_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_FILE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_FILE_FORMAT").equalsIgnoreCase("jsonl")'>
+        <then>
+            <if condition='property("AUDIT_ASYNC_ENABLED").equalsIgnoreCase("true")'>
+                <then>
+                    <appender name="SCM_AUDIT_JSONL_FILE"
+                              class="ch.qos.logback.core.rolling.RollingFileAppender">
+                        <file>${AUDIT_LOG_FILE}</file>
+                        <append>true</append>
+                        <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                            <marker>SCM_OBSERVATION_AUDIT</marker>
+                        </filter>
+                        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                            <fileNamePattern>${AUDIT_ARCHIVE_PATTERN}</fileNamePattern>
+                            <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
+                            <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
+                            <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>
+                            <cleanHistoryOnStart>${AUDIT_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+                        </rollingPolicy>
+                        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                            <providers>
+                                <provider class="ir.daneshrefah.scm.observation.logging.ScmObservationEventJsonProvider"/>
+                            </providers>
+                        </encoder>
+                    </appender>
+                    <appender name="SCM_AUDIT_JSONL"
+                              class="ch.qos.logback.classic.AsyncAppender">
+                        <queueSize>${AUDIT_ASYNC_QUEUE_SIZE}</queueSize>
+                        <discardingThreshold>${AUDIT_ASYNC_DISCARDING_THRESHOLD}</discardingThreshold>
+                        <neverBlock>${AUDIT_ASYNC_NEVER_BLOCK}</neverBlock>
+                        <maxFlushTime>${AUDIT_ASYNC_MAX_FLUSH_TIME}</maxFlushTime>
+                        <appender-ref ref="SCM_AUDIT_JSONL_FILE"/>
+                    </appender>
+                </then>
+                <else>
+                    <appender name="SCM_AUDIT_JSONL"
+                              class="ch.qos.logback.core.rolling.RollingFileAppender">
+                        <file>${AUDIT_LOG_FILE}</file>
+                        <append>true</append>
+                        <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                            <marker>SCM_OBSERVATION_AUDIT</marker>
+                        </filter>
+                        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                            <fileNamePattern>${AUDIT_ARCHIVE_PATTERN}</fileNamePattern>
+                            <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
+                            <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
+                            <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>
+                            <cleanHistoryOnStart>${AUDIT_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+                        </rollingPolicy>
+                        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                            <providers>
+                                <provider class="ir.daneshrefah.scm.observation.logging.ScmObservationEventJsonProvider"/>
+                            </providers>
+                        </encoder>
+                    </appender>
+                </else>
+            </if>
+        </then>
+        <else>
+            <appender name="SCM_AUDIT_JSONL"
+                      class="ch.qos.logback.core.helpers.NOPAppender"/>
+        </else>
+    </if>
+</included>

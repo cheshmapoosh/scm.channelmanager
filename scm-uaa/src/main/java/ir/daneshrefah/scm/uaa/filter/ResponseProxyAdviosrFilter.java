@@ -74,7 +74,7 @@ public class ResponseProxyAdviosrFilter implements Filter {
                             responseProxy.getHttpStatusCode(), responseProxy.getContentType());
                     responseWrapper.getWriter().write(responseBodyJson);
                 }).onFailure(exception -> {
-                    log.error(exception.getMessage(), exception);
+                    log.error("response proxy failed: {}", safeMessage(exception));
                 }));
 
 
@@ -90,5 +90,17 @@ public class ResponseProxyAdviosrFilter implements Filter {
             responseWrapper.reset();
         }
         responseWrapper.copyBodyToResponse();
+    }
+
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 }

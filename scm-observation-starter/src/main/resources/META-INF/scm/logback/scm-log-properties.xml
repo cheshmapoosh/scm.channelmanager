@@ -35,4 +35,76 @@
               value="${LOG_FILE_DIRECTORY}/${LOG_FILE_NAME}"/>
     <property name="APPLICATION_ARCHIVE_PATTERN"
               value="${LOG_ARCHIVE_DIRECTORY}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz"/>
+
+    <springProperty scope="context" name="TRACE_ENABLED"
+                    source="scm.observation.trace.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="TRACE_FILE_ENABLED"
+                    source="scm.observation.trace.file.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="TRACE_FILE_FORMAT"
+                    source="scm.observation.trace.file.format" defaultValue="jsonl"/>
+    <springProperty scope="context" name="TRACE_FILE_DIRECTORY"
+                    source="scm.observation.trace.file.directory" defaultValue="${user.home}/scm/logs/trace"/>
+    <springProperty scope="context" name="TRACE_FILE_NAME"
+                    source="scm.observation.trace.file.file-name" defaultValue="${spring.application.name}-trace.jsonl"/>
+    <springProperty scope="context" name="TRACE_ARCHIVE_DIRECTORY"
+                    source="scm.observation.trace.file.archive-directory" defaultValue="${TRACE_FILE_DIRECTORY}/archive"/>
+    <springProperty scope="context" name="TRACE_MAX_FILE_SIZE"
+                    source="scm.observation.trace.rolling.max-file-size" defaultValue="100MB"/>
+    <springProperty scope="context" name="TRACE_MAX_HISTORY"
+                    source="scm.observation.trace.rolling.max-history" defaultValue="30"/>
+    <springProperty scope="context" name="TRACE_TOTAL_SIZE_CAP"
+                    source="scm.observation.trace.rolling.total-size-cap" defaultValue="10GB"/>
+    <springProperty scope="context" name="TRACE_CLEAN_HISTORY_ON_START"
+                    source="scm.observation.trace.rolling.clean-history-on-start" defaultValue="false"/>
+    <springProperty scope="context" name="TRACE_ASYNC_ENABLED"
+                    source="scm.observation.trace.async.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="TRACE_ASYNC_QUEUE_SIZE"
+                    source="scm.observation.trace.async.queue-size" defaultValue="8192"/>
+    <springProperty scope="context" name="TRACE_ASYNC_DISCARDING_THRESHOLD"
+                    source="scm.observation.trace.async.discarding-threshold" defaultValue="0"/>
+    <springProperty scope="context" name="TRACE_ASYNC_NEVER_BLOCK"
+                    source="scm.observation.trace.async.never-block" defaultValue="false"/>
+    <springProperty scope="context" name="TRACE_ASYNC_MAX_FLUSH_TIME"
+                    source="scm.observation.trace.async.max-flush-time" defaultValue="1000"/>
+
+    <property name="TRACE_LOG_FILE"
+              value="${TRACE_FILE_DIRECTORY}/${TRACE_FILE_NAME}"/>
+    <property name="TRACE_ARCHIVE_PATTERN"
+              value="${TRACE_ARCHIVE_DIRECTORY}/${TRACE_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz"/>
+
+    <springProperty scope="context" name="AUDIT_ENABLED"
+                    source="scm.observation.audit.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="AUDIT_FILE_ENABLED"
+                    source="scm.observation.audit.file.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="AUDIT_FILE_FORMAT"
+                    source="scm.observation.audit.file.format" defaultValue="jsonl"/>
+    <springProperty scope="context" name="AUDIT_FILE_DIRECTORY"
+                    source="scm.observation.audit.file.directory" defaultValue="${user.home}/scm/logs/audit"/>
+    <springProperty scope="context" name="AUDIT_FILE_NAME"
+                    source="scm.observation.audit.file.file-name" defaultValue="${spring.application.name}-audit.jsonl"/>
+    <springProperty scope="context" name="AUDIT_ARCHIVE_DIRECTORY"
+                    source="scm.observation.audit.file.archive-directory" defaultValue="${AUDIT_FILE_DIRECTORY}/archive"/>
+    <springProperty scope="context" name="AUDIT_MAX_FILE_SIZE"
+                    source="scm.observation.audit.rolling.max-file-size" defaultValue="100MB"/>
+    <springProperty scope="context" name="AUDIT_MAX_HISTORY"
+                    source="scm.observation.audit.rolling.max-history" defaultValue="90"/>
+    <springProperty scope="context" name="AUDIT_TOTAL_SIZE_CAP"
+                    source="scm.observation.audit.rolling.total-size-cap" defaultValue="20GB"/>
+    <springProperty scope="context" name="AUDIT_CLEAN_HISTORY_ON_START"
+                    source="scm.observation.audit.rolling.clean-history-on-start" defaultValue="false"/>
+    <springProperty scope="context" name="AUDIT_ASYNC_ENABLED"
+                    source="scm.observation.audit.async.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="AUDIT_ASYNC_QUEUE_SIZE"
+                    source="scm.observation.audit.async.queue-size" defaultValue="8192"/>
+    <springProperty scope="context" name="AUDIT_ASYNC_DISCARDING_THRESHOLD"
+                    source="scm.observation.audit.async.discarding-threshold" defaultValue="0"/>
+    <springProperty scope="context" name="AUDIT_ASYNC_NEVER_BLOCK"
+                    source="scm.observation.audit.async.never-block" defaultValue="false"/>
+    <springProperty scope="context" name="AUDIT_ASYNC_MAX_FLUSH_TIME"
+                    source="scm.observation.audit.async.max-flush-time" defaultValue="1000"/>
+
+    <property name="AUDIT_LOG_FILE"
+              value="${AUDIT_FILE_DIRECTORY}/${AUDIT_FILE_NAME}"/>
+    <property name="AUDIT_ARCHIVE_PATTERN"
+              value="${AUDIT_ARCHIVE_DIRECTORY}/${AUDIT_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz"/>
 </included>

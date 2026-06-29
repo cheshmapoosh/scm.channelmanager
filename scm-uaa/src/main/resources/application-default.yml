@@ -166,10 +166,10 @@ spring:
     config:
       enabled: false
   jpa:
-    show-sql: true
+    show-sql: ${SCM_UAA_JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${SCM_UAA_HIBERNATE_FORMAT_SQL:false}
   application:
     name: uaa
 
@@ -195,9 +195,9 @@ springdoc:
 
 logging:
   level:
-    org.hibernate.SQL: debug #just for develop
-    org.hibernate.type.descriptor.sql: trace #just for develop
-    org.hibernate.orm.jdbc.bind: trace #just for develop
+    org.hibernate.SQL: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL_BIND:WARN}
+    org.hibernate.orm.jdbc.bind: ${SCM_UAA_LOG_LEVEL_HIBERNATE_JDBC_BIND:WARN}
 
 
 service:
