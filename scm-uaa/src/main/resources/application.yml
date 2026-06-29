@@ -7,3 +7,53 @@ scm:
   application:
     version: 8.3.0
     build:  0728T1230
+  observation:
+    enabled: true
+    http:
+      server:
+        span-name: uaa.http.request
+    log:
+      enabled: true
+      file:
+        enabled: true
+        format: jsonl
+        file-name: ${SCM_OBSERVATION_LOG_FILE_NAME:scm-uaa.jsonl}
+      rolling:
+        max-file-size: ${SCM_OBSERVATION_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBSERVATION_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBSERVATION_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBSERVATION_LOG_CLEAN_HISTORY_ON_START:false}
+    trace:
+      enabled: true
+      file:
+        enabled: true
+        format: jsonl
+        file-name: ${SCM_OBSERVATION_TRACE_FILE_NAME:scm-uaa-trace.jsonl}
+      rolling:
+        max-file-size: ${SCM_OBSERVATION_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBSERVATION_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBSERVATION_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBSERVATION_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBSERVATION_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBSERVATION_TRACE_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBSERVATION_TRACE_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBSERVATION_TRACE_NEVER_BLOCK:false}
+    audit:
+      enabled: false
+      file:
+        enabled: true
+        format: jsonl
+        file-name: ${SCM_OBSERVATION_AUDIT_FILE_NAME:scm-uaa-audit.jsonl}
+    metric:
+      enabled: true
+  uaa:
+    log:
+      level:
+        root: ${SCM_UAA_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_UAA_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_UAA_LOG_LEVEL_SPRING:INFO}
+        spring-security: ${SCM_UAA_LOG_LEVEL_SPRING_SECURITY:INFO}
+        hibernate: ${SCM_UAA_LOG_LEVEL_HIBERNATE:WARN}
+        hikari: ${SCM_UAA_LOG_LEVEL_HIKARI:INFO}
+        ibm-mq: ${SCM_UAA_LOG_LEVEL_IBM_MQ:WARN}

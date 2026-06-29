@@ -20,7 +20,7 @@ class ObservationAttributeRegistryTest {
         assertTrue(registry.contains(ObservationStream.TRACE, "parent.span.id"));
         assertTrue(registry.contains(ObservationStream.AUDIT, "audit.type"));
         assertTrue(registry.contains(ObservationStream.METRIC, "operation_code"));
-        assertFalse(registry.contains(ObservationStream.TRACE, "http.method"));
+        assertTrue(registry.contains(ObservationStream.TRACE, "http.method"));
         assertFalse(registry.contains(ObservationStream.TRACE, "span.role"));
     }
 

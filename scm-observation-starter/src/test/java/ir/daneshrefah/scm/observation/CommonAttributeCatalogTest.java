@@ -31,6 +31,7 @@ class CommonAttributeCatalogTest {
                 "deployment.service.name", "deployment.service.version", "deployment.environment", "scm.runtime",
                 "correlation.id", "correlation.type", "trace.id", "span.id", "parent.span.id",
                 "span.name", "span.kind", "span.start_time", "span.end_time", "span.duration_ms",
+                "http.method", "http.route", "url.path", "http.status_code", "client.ip",
                 "event.category", "event.action", "event.outcome",
                 "error.type", "error.message", "error.stack_trace", "error.code", "error.category"
         ), names(CommonTraceAttributes.attributes()));

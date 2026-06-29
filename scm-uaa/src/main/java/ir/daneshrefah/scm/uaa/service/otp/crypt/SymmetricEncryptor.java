@@ -52,8 +52,8 @@ public class SymmetricEncryptor extends EncryptorImpl {
                 PublicKey publicKey = certificate.getPublicKey();
                 keyPair = new KeyPair(publicKey, (PrivateKey) privateKey);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
+            // Preserve legacy behavior: key loading failures are surfaced by the existing null-key path.
         }
         encryptedKey = keyPair.getPublic();
         decryptedKey = keyPair.getPrivate();

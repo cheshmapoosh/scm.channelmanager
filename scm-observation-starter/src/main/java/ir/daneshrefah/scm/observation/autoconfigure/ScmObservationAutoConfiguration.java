@@ -31,6 +31,7 @@ import ir.daneshrefah.scm.observation.policy.ResolvedObservationSignalPolicy;
 import ir.daneshrefah.scm.observation.trace.NoopTraceObservationSink;
 import ir.daneshrefah.scm.observation.trace.StructuredTraceObservationSink;
 import ir.daneshrefah.scm.observation.trace.TraceObservationSink;
+import ir.daneshrefah.scm.observation.web.HttpServerObservationFilter;
 import ir.daneshrefah.scm.observation.web.ObservationMdcFilter;
 import jakarta.servlet.Filter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -268,6 +269,29 @@ public class ScmObservationAutoConfiguration {
             FilterRegistrationBean<ObservationMdcFilter> registration = new FilterRegistrationBean<>();
             registration.setFilter(new ObservationMdcFilter(signalPolicy, context));
             registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
+            registration.addUrlPatterns("/*");
+            return registration;
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(Filter.class)
+    static class HttpServerTraceConfiguration {
+        @Bean
+        @ConditionalOnTraceEnabled
+        @ConditionalOnMissingBean(name = "httpServerObservationFilterRegistration")
+        public FilterRegistrationBean<HttpServerObservationFilter> httpServerObservationFilterRegistration(
+                ScmObservation observation,
+                ObservationSignalPolicy signalPolicy,
+                Environment environment
+        ) {
+            FilterRegistrationBean<HttpServerObservationFilter> registration = new FilterRegistrationBean<>();
+            registration.setFilter(new HttpServerObservationFilter(
+                    observation,
+                    signalPolicy,
+                    environment.getProperty("scm.observation.http.server.span-name", "http.server.request")
+            ));
+            registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 30);
             registration.addUrlPatterns("/*");
             return registration;
         }
