@@ -343,10 +343,4 @@ public class JWTConfig {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
     }
-//    @Bean
-//    public BCryptPasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
-
-
 }

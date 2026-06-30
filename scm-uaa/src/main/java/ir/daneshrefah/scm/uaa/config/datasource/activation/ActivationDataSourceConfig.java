@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -57,6 +59,18 @@ public class ActivationDataSourceConfig {
                 .build();
         dataSource.setMaximumPoolSize(activation.getMaxConnection());
         return dataSource;
+    }
+
+    @Bean("activationJdbcTemplate")
+    public JdbcTemplate activationJdbcTemplate(@Qualifier("activationDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean("activationNamedParameterJdbcTemplate")
+    public NamedParameterJdbcTemplate activationNamedParameterJdbcTemplate(
+            @Qualifier("activationDataSource") DataSource dataSource
+    ) {
+        return new NamedParameterJdbcTemplate(dataSource);
     }
 
     @Bean("activationEntityManagerFactory")

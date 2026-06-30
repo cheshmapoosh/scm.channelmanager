@@ -27,7 +27,11 @@ public class LegacyUsernameSaltedMd5PasswordEncoder implements PasswordEncoder {
         if (encodedPassword == null) {
             return false;
         }
-        return encodedPassword.trim().equalsIgnoreCase(encode(rawPassword));
+        String storedPassword = encodedPassword.trim();
+        if (hasSpringSecurityPrefix(storedPassword)) {
+            return false;
+        }
+        return storedPassword.equalsIgnoreCase(encode(rawPassword));
     }
 
     private String mergePasswordAndSalt(CharSequence password, String username) {
@@ -42,5 +46,9 @@ public class LegacyUsernameSaltedMd5PasswordEncoder implements PasswordEncoder {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("MD5 digest is not available", e);
         }
+    }
+
+    private boolean hasSpringSecurityPrefix(String encodedPassword) {
+        return encodedPassword.startsWith("{") && encodedPassword.indexOf('}') > 0;
     }
 }
