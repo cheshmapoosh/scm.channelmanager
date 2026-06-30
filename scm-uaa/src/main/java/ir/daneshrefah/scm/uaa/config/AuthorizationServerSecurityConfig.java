@@ -2,15 +2,15 @@ package ir.daneshrefah.scm.uaa.config;
 
 import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.uaa.security.filter.MissingGrantTypeFallbackFilter;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyAuthProperties;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.smsotp.SmsOtpGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.smsotp.SmsOtpGrantAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyPasswordGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyPasswordGrantRequestMapper;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.provider.LegacyPasswordGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.smsotp.SmsOtpGrantAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.smsotp.SmsOtpGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.service.shahkar.ShahkarOwnershipService;
 import ir.daneshrefah.scm.uaa.service.user.OtpUserService;
 import ir.daneshrefah.scm.uaa.utils.Urls;
@@ -49,7 +49,6 @@ public class AuthorizationServerSecurityConfig {
     private final OtpUserService otpUserService;
     private final ShahkarOwnershipService shahkarOwnershipService;
     private final LegacyClientTypeResolver legacyClientTypeResolver;
-    private final RegisteredClientLegacyPolicy legacyPolicy;
 
     @Qualifier("hazelcastClient")
     private final HazelcastInstance hazelcastInstance;
@@ -71,7 +70,9 @@ public class AuthorizationServerSecurityConfig {
                 .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint.consentPage("/consent"))
                 .tokenEndpoint(tokenEndpoint -> tokenEndpoint
                         .accessTokenRequestConverters(converters -> converters.addAll(Arrays.asList(
-                                new LegacyPasswordGrantAuthenticationConverter(legacyClientTypeResolver, legacyPolicy),
+                                new LegacyPasswordGrantAuthenticationConverter(
+                                        new LegacyPasswordGrantRequestMapper(legacyClientTypeResolver)
+                                ),
                                 new SmsOtpGrantAuthenticationConverter(),
                                 new ShahkarGrantAuthenticationConverter(
                                         otpUserService,

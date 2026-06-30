@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebAuthenticationDetails;
 import ir.daneshrefah.scm.uaa.exception.UnknownAuthenticationException;
+import ir.daneshrefah.scm.uaa.security.authentication.UaaPasswordAuthenticationFlowService;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.OAuth2AuthenticationErrorMapper;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -21,13 +22,13 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class UaaFormLoginAuthenticationProvider implements AuthenticationProvider {
-    private final UaaFormLoginAuthenticationService authenticationService;
+    private final UaaPasswordAuthenticationFlowService authenticationService;
     private final OAuth2AuthenticationErrorMapper errorMapper;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         try {
-            UaaFormLoginAuthenticationService.AuthenticationResult result =
+            UaaPasswordAuthenticationFlowService.AuthenticationResult result =
                     authenticationService.authenticate(toPreAuthenticationToken(authentication));
             PostAuthenticationToken.AuthenticationStatus status =
                     ((PostAuthenticationToken) result.authentication()).getAuthenticationStatus();

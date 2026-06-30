@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery;
 
 /**
  * Legacy token delivery strategy kept only for old NIB/PWA/MB compatibility.
@@ -8,7 +8,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
 @Deprecated(since = "9.0.0", forRemoval = true)
 @SuppressWarnings("removal")
 public interface LegacyTokenDeliveryStrategy {
-    boolean supports(LegacyClientType clientType);
+    boolean supports(LegacyTokenDeliveryContext context);
 
     void deliver(LegacyTokenDeliveryContext context);
 }

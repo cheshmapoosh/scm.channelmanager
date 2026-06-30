@@ -1,9 +1,11 @@
-package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.provider;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
-import ir.daneshrefah.scm.uaa.security.form.UaaFormLoginAuthenticationService;
+import ir.daneshrefah.scm.uaa.security.authentication.UaaPasswordAuthenticationFlowService;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.LegacyOAuth2ErrorMapper;
+import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -12,7 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,9 +31,11 @@ import org.springframework.stereotype.Component;
 @Deprecated(since = "9.0.0", forRemoval = true)
 @SuppressWarnings("removal")
 public class LegacyPasswordGrantAuthenticationProvider implements AuthenticationProvider {
-    private final UaaFormLoginAuthenticationService authenticationService;
+    private final UaaPasswordAuthenticationFlowService authenticationService;
     private final AuthenticationResponseTokenGenerator responseTokenGenerator;
     private final LegacyOAuth2ErrorMapper errorMapper;
+    private final RegisteredClientLegacyPolicy legacyPolicy;
+    private final RegisteredClientRepository registeredClientRepository;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -36,8 +44,18 @@ public class LegacyPasswordGrantAuthenticationProvider implements Authentication
         if (clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuthenticationToken) {
             preAuthenticationToken.setRegisteredClient(clientAuthenticationToken.getRegisteredClient());
         }
+        if (preAuthenticationToken.getRegisteredClient() == null) {
+            RegisteredClient registeredClient = registeredClientRepository.findByClientId(preAuthenticationToken.getClientId());
+            preAuthenticationToken.setRegisteredClient(registeredClient);
+        }
         try {
-            UaaFormLoginAuthenticationService.AuthenticationResult result =
+            if (preAuthenticationToken instanceof LegacyPasswordGrantAuthenticationToken legacyToken
+                    && !legacyPolicy.isLegacyPasswordGrantAllowed(
+                    preAuthenticationToken.getRegisteredClient(),
+                    legacyToken.legacyClientType())) {
+                ErrorUtils.throwError(OAuth2ErrorCodes.INVALID_GRANT, OAuth2ParameterNames.GRANT_TYPE);
+            }
+            UaaPasswordAuthenticationFlowService.AuthenticationResult result =
                     authenticationService.authenticate(preAuthenticationToken);
             return buildResponse(authentication, result.preAuthenticationToken(), result.authentication());
         } catch (Exception exception) {

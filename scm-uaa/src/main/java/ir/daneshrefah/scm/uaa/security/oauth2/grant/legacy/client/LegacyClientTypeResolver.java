@@ -1,6 +1,7 @@
-package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 

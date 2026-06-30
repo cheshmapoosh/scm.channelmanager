@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.service.proxy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,9 +7,9 @@ import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientTypeResolver;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyTokenDeliveryContext;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyTokenDeliveryStrategy;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyPwaCookieTokenDeliveryStrategy;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyTokenDeliveryContext;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -27,14 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.*;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
 
 /**
- * Legacy PWA/MB response adapter kept only for old compatibility.
+ * Legacy PWA/MB response adapter kept only for old NIB/PWA/MB compatibility.
  * Remove this class after migration to UAA-hosted login and authorization-code flow is complete.
  * No new feature should be added here unless strictly required for migration safety.
  */
@@ -55,7 +54,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
     private final PwaOauthResponseMapper responseMapper;
     private final PwaAuthenticationService pwaAuthenticationService;
     private final LegacyClientTypeResolver clientTypeResolver;
-    private final List<LegacyTokenDeliveryStrategy> tokenDeliveryStrategies;
+    private final LegacyPwaCookieTokenDeliveryStrategy pwaCookieTokenDeliveryStrategy;
 
     @Override
     public ResponseProxy<?> applyProxy(HttpServletRequest request, HttpServletResponse response, String responseBody) {
@@ -101,10 +100,20 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
 
     private void deliverToken(PwaOAuth2AccessToken token, HttpServletRequest request, HttpServletResponse response) {
         LegacyClientType clientType = resolveLegacyClientType(request);
-        LegacyTokenDeliveryContext context = new LegacyTokenDeliveryContext(clientType, request, response, token);
-        tokenDeliveryStrategies.stream()
-                .filter(strategy -> strategy.supports(clientType))
-                .forEach(strategy -> strategy.deliver(context));
+        if (!LegacyClientType.PWA.equals(clientType)) {
+            return;
+        }
+        PreAuthenticationToken preAuthenticationToken = preAuthenticationToken(request);
+        LegacyTokenDeliveryContext context = new LegacyTokenDeliveryContext(
+                clientType,
+                preAuthenticationToken == null ? null : preAuthenticationToken.getRegisteredClient(),
+                request,
+                response,
+                token
+        );
+        if (pwaCookieTokenDeliveryStrategy.supports(context)) {
+            pwaCookieTokenDeliveryStrategy.deliver(context);
+        }
     }
 
     private PwaOauthMessage mapUaaOauthError(String error) {
@@ -148,9 +157,14 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
     }
 
     private LegacyClientType resolveLegacyClientType(HttpServletRequest request) {
-        Object preAuthentication = request.getAttribute(PRE_AUTHENTICATION_INSTANCE);
+        Object preAuthentication = preAuthenticationToken(request);
         String clientId = preAuthentication instanceof AbstractAuthenticationToken token ? token.getClientId() : null;
         return clientTypeResolver.resolve(clientId, request.getHeader(Constants.APP_VERSION_HEADER), null);
+    }
+
+    private PreAuthenticationToken preAuthenticationToken(HttpServletRequest request) {
+        Object preAuthentication = request.getAttribute(PRE_AUTHENTICATION_INSTANCE);
+        return preAuthentication instanceof PreAuthenticationToken token ? token : null;
     }
 
     private String safeMessage(Throwable exception) {
@@ -160,7 +174,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
         String message = exception.getMessage()
                 .replace('\r', ' ')
                 .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number|registry[_-]?token)\\s*[:=]\\s*\\S+", "$1=***")
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number|registry[_-]?token|mobile|national[_-]?code|access[_-]?parameter)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
         return message.length() > 300 ? message.substring(0, 300) : message;
     }

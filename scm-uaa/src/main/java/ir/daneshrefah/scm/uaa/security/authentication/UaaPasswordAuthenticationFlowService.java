@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.form;
+package ir.daneshrefah.scm.uaa.security.authentication;
 
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.OAuth2AuthenticationErrorMapper;
@@ -32,7 +32,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_SCOPE_NAME_SE
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UaaFormLoginAuthenticationService {
+public class UaaPasswordAuthenticationFlowService {
     private final RegisteredClientRepository clientRepository;
     private final UserCache userCache;
     private final UserDetailsService userDetailsService;
