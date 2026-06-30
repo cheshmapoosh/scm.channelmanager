@@ -33,7 +33,7 @@ public class PwaWhiteListService {
         return whiteListRepository.findByUsername(username).map(mapper::toModel);
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(transactionManager = "activationTransactionManager", propagation = Propagation.NOT_SUPPORTED)
     public void checkWhiteList(String username) {
         if (Boolean.TRUE.equals(properties.getWhiteListEnabled())) {
             log.info("Whitelist is ON");

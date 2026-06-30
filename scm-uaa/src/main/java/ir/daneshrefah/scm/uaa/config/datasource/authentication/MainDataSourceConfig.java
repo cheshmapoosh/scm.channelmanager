@@ -1,11 +1,13 @@
-package ir.daneshrefah.scm.uaa.config;
+package ir.daneshrefah.scm.uaa.config.datasource.authentication;
 
+import com.zaxxer.hikari.HikariDataSource;
+import ir.daneshrefah.scm.uaa.config.DataSourceConfigProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -18,25 +20,42 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Owns the required UAA authentication persistence unit.
+ *
+ * <p>Only repositories below {@code repository.authentication} are created by this configuration.
+ * Shared entity packages are included solely so UAA entity relationships can be mapped; their
+ * repository interfaces are deliberately not scanned here.</p>
+ */
 @Configuration
 @EnableTransactionManagement
+@EnableConfigurationProperties(DataSourceConfigProperties.class)
 @EnableJpaRepositories(
-        basePackages = {
-                "ir.daneshrefah.scm.common.data",
-                "ir.daneshrefah.scm.notification",
-                "ir.daneshrefah.scm.common.log.repository.transaction",
-                "ir.daneshrefah.scm.uaa.repository.authentication"
-        },
-        entityManagerFactoryRef = "entityManagerFactory",
-        transactionManagerRef = "transactionManager",
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.ASSIGNABLE_TYPE,
-                value = ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository.class
-        )
+        basePackages = "ir.daneshrefah.scm.uaa.repository.authentication",
+        entityManagerFactoryRef = "mainEntityManagerFactory",
+        transactionManagerRef = "mainTransactionManager"
 )
-public class MainJpaConfig {
+public class MainDataSourceConfig {
 
-    @Bean("entityManagerFactory")
+    @Bean("mainDataSource")
+    @Primary
+    public DataSource mainDataSource(DataSourceConfigProperties properties) {
+        DataSourceConfigProperties.DatasourceProperties main = properties.getMain();
+        if (!main.isEnabled()) {
+            throw new IllegalStateException("scm.uaa.datasource.main is required and cannot be disabled");
+        }
+        HikariDataSource dataSource = DataSourceBuilder.create(getClass().getClassLoader())
+                .type(HikariDataSource.class)
+                .driverClassName(main.getDriverClassName())
+                .url(main.getUrl())
+                .username(main.getUsername())
+                .password(main.getPassword())
+                .build();
+        dataSource.setMaximumPoolSize(main.getMaxConnection());
+        return dataSource;
+    }
+
+    @Bean("mainEntityManagerFactory")
     @Primary
     public LocalContainerEntityManagerFactoryBean mainEntityManagerFactory(
             DataSourceConfigProperties dataSourceConfigProperties,
@@ -56,19 +75,16 @@ public class MainJpaConfig {
                 .dataSource(dataSource)
                 .packages(
                         "ir.daneshrefah.scm.uaa.repository.authentication",
-                        "ir.daneshrefah.scm.notification",
-                        "ir.daneshrefah.scm.common.log.entity.transaction",
-                        "ir.daneshrefah.scm.common.data.repository",
-                        "ir.daneshrefah.scm.common.data"
+                        "ir.daneshrefah.scm.common.data.entity"
                 )
                 .properties(jpaProperties)
                 .build();
     }
 
-    @Bean("transactionManager")
+    @Bean("mainTransactionManager")
     @Primary
     public PlatformTransactionManager mainTransactionManager(
-            @Qualifier("entityManagerFactory") LocalContainerEntityManagerFactoryBean entityManagerFactory
+            @Qualifier("mainEntityManagerFactory") LocalContainerEntityManagerFactoryBean entityManagerFactory
     ) {
         return new JpaTransactionManager(Objects.requireNonNull(entityManagerFactory.getObject()));
     }

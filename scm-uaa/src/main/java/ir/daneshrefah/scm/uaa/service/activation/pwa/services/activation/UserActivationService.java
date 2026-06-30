@@ -49,7 +49,7 @@ public class UserActivationService {
     private final JWKSet jwkSet;
     private final PwaAuthenticationConfigProperties properties;
 
-    @Transactional
+    @Transactional(transactionManager = "activationTransactionManager")
     public UserActivation save(ActivationRequest request) {
         ActivationRequestHeader headers = request.getRequestHeaders();
         //TODO CHANGE ON FUTURE WITH SCM CLIENT_VERSION

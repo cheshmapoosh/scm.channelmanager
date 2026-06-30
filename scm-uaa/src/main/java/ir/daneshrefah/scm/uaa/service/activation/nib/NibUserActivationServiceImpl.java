@@ -38,7 +38,7 @@ public class NibUserActivationServiceImpl implements UserActivationService {
     private final TerminalRepository terminalRepository;
     private final NibNativeRepository nibNativeRepository;
 
-    @Transactional
+    @Transactional(transactionManager = "activationTransactionManager")
     @Override
     public void activate(GeneralPerson person, TerminalType fromTerminal) {
         validateInput(person, fromTerminal);
