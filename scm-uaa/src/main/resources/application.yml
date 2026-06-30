@@ -48,6 +48,36 @@ scm:
     metric:
       enabled: true
   uaa:
+    legacy:
+      enabled: ${SCM_UAA_LEGACY_ENABLED:true}
+      pwa:
+        cookie:
+          enabled: ${SCM_UAA_LEGACY_PWA_COOKIE_ENABLED:true}
+          name: ${SCM_UAA_LEGACY_PWA_COOKIE_NAME:__Host-SCM-PWA}
+          max-age: ${SCM_UAA_LEGACY_PWA_COOKIE_MAX_AGE:PT1H}
+          secure: ${SCM_UAA_LEGACY_PWA_COOKIE_SECURE:true}
+          http-only: ${SCM_UAA_LEGACY_PWA_COOKIE_HTTP_ONLY:true}
+          same-site: ${SCM_UAA_LEGACY_PWA_COOKIE_SAME_SITE:Lax}
+          path: ${SCM_UAA_LEGACY_PWA_COOKIE_PATH:/}
+    login:
+      theme:
+        default-theme: default
+        clients:
+          default:
+            name: default
+            display-name: SCM
+            css-class: theme-default
+          nib:
+            name: nib
+            display-name: NIB
+            css-class: theme-nib
+            css-path: /assets/css/nib.css
+    cors:
+      allowed-origin-patterns: ${SCM_UAA_CORS_ALLOWED_ORIGIN_PATTERNS:*}
+      allowed-methods: ${SCM_UAA_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+      allowed-headers: ${SCM_UAA_CORS_ALLOWED_HEADERS:*}
+      allow-credentials: ${SCM_UAA_CORS_ALLOW_CREDENTIALS:true}
+      path-patterns: ${SCM_UAA_CORS_PATH_PATTERNS:/api/**}
     log:
       level:
         root: ${SCM_UAA_LOG_LEVEL_ROOT:INFO}

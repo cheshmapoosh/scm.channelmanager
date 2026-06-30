@@ -23,9 +23,6 @@ public enum AuthenticationTokenTypes {
     LOGIN_SMS_VERIFY(FirstLvlSmsVerifyAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.SMS, true),
 //    LOGIN_OTP_REQUEST(FirstLvlOtpDeviceRequestAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.OTP, false),
     LOGIN_OTP_VERIFY(FirstLvlOtpDeviceVerifyAuthenticationToken.class, AuthorizationGrantType.FIRST_PASSWORD, AuthenticationMethod.OTP, false),
-    TRANSACTION_STATIC(SecondLvlStaticAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.STATIC_PASSWORD, false),
-    TRANSACTION_SMS(SecondLvlSmsAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.SMS, false),
-    TRANSACTION_OTP(SecondLvlOtpAuthenticationToken.class, AuthorizationGrantType.SECOND_PASSWORD, AuthenticationMethod.OTP, false),
     ;
 
     private final Class<? extends GeneralAuthenticationToken> tokenClass;

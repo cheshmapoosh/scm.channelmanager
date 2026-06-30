@@ -26,7 +26,7 @@ public class AuthenticationAspect {
 
     private final UaaObservation observation;
 
-    @Around("execution(* authenticate(..)) && args(authentication) && within(ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider)")
+    @Around("execution(* authenticate(..)) && args(authentication) && within(ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationProvider)")
     public Object traceAuthenticate(ProceedingJoinPoint joinPoint, Authentication authentication) throws Throwable {
         UaaObservation.AuthContext ctx = authContext(authentication)
                 .withJwtPresent(false);

@@ -57,7 +57,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
     private final UserCache userCache;
     private final UserDetailsService userDetailsService;
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
-    private final DelegatorAuthenticationProvider delegatorAuthenticationProvider;
+    private final AuthenticationManager authenticationManager;
     private final UserActivationAuthenticationService userActivationAuthenticationService;
     private final PwaAuthenticationService pwaAuthenticationService;
 
@@ -109,7 +109,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
 
         GeneralAuthenticationToken authorization = null;
         try {
-            authorization = (GeneralAuthenticationToken) delegatorAuthenticationProvider.authenticate(token);
+            authorization = (GeneralAuthenticationToken) authenticationManager.authenticate(token);
         } catch (Exception e) {
             log.error("authenticate failed for token type {}: {}", token.getClass().getSimpleName(), safeMessage(e));
             throwError(token, e);
@@ -134,18 +134,18 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
             try {
                 userDetails = retrieveUser(username, clientTerminalCode);
             } catch (UsernameNotFoundException ex) {
-                log.debug("Failed to find user '{}'", username);
+                log.debug("Failed to find user '{}'", safeIdentifier(username));
                 throw new BadCredentialsException("AbstractUserDetailsAuthenticationProvider.badCredentials");
             }
         }
         if (userDetails == null) {
-            throwError(authentication, new UsernameNotFoundException("Failed to find user '" + username + "'"));
+            throwError(authentication, new UsernameNotFoundException("Failed to find user"));
         }
         if (!cacheWasUsed && cacheable) {
             this.userCache.putUserInCache(userDetails);
         }
         if (log.isTraceEnabled()) {
-            log.trace("Retrieved userDetails with username: {}:{}", username, clientTerminalCode);
+            log.trace("Retrieved userDetails with username={} terminal={}", safeIdentifier(username), clientTerminalCode);
         }
         return userDetails;
     }
@@ -254,7 +254,7 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
         try {
             return userDetailsService.loadUserByUsername(username, terminalCode);
         } catch (UsernameNotFoundException e) {
-            log.warn("user not found for username={} terminal={}", username, terminalCode);
+            log.warn("user not found for username={} terminal={}", safeIdentifier(username), terminalCode);
         }
         return null;
     }
@@ -275,6 +275,17 @@ public abstract class BaseGeneralAuthenticationProvider implements Authenticatio
                 .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
         return message.length() > 300 ? message.substring(0, 300) : message;
+    }
+
+    private String safeIdentifier(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        String text = value.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return text.substring(0, 2) + "***" + text.substring(text.length() - 2);
     }
 
     protected abstract PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication);

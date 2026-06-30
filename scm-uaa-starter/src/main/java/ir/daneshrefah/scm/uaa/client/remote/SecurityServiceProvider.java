@@ -15,6 +15,10 @@ import org.springframework.security.core.AuthenticationException;
  */
 public interface SecurityServiceProvider {
 
+    /**
+     * Legacy second-password claim authentication is inactive. Do not use for new integrations.
+     */
+    @Deprecated(since = "9.0.0", forRemoval = true)
     String authenticateClaim(ClaimAuthenticationToken authentication) throws AuthenticationException;
 
     String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException;

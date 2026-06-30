@@ -72,7 +72,7 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
                 user = retrieveUser(username, (BaseAuthenticationToken) authentication);
             }
             catch (UsernameNotFoundException ex) {
-                this.logger.debug("Failed to find user '" + username + "'");
+                this.logger.debug("Failed to find user '" + safeIdentifier(username) + "'");
                 if (!this.hideUserNotFoundExceptions) {
                     throw ex;
                 }
@@ -113,6 +113,17 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
 
     private String determineUsername(Authentication authentication) {
         return (authentication.getPrincipal() == null) ? USERNAME_NONE_PROVIDED : authentication.getName();
+    }
+
+    private String safeIdentifier(String value) {
+        if (StringUtils.isBlank(value) || USERNAME_NONE_PROVIDED.equals(value)) {
+            return value;
+        }
+        String text = value.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return text.substring(0, 2) + "***" + text.substring(text.length() - 2);
     }
 
     protected abstract UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication)

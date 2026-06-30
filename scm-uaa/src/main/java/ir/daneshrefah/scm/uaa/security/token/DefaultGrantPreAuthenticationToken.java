@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Data
 @Accessors(chain = true)
-@ToString(callSuper = true)
+@ToString(callSuper = true, exclude = {"accessParam", "otpCode", "registryToken"})
 public class DefaultGrantPreAuthenticationToken implements Serializable {
     private String accessParam;
     private String channel;

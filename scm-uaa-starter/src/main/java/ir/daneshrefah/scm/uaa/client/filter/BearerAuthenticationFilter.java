@@ -122,7 +122,8 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
             this.securityContextHolderStrategy.setContext(context);
             this.securityContextRepository.saveContext(context, request, response);
             if (this.logger.isDebugEnabled()) {
-                this.logger.debug(LogMessage.format("Set SecurityContextHolder to %s", authenticationResult));
+                this.logger.debug(LogMessage.format("Set SecurityContextHolder authentication type to %s",
+                        authenticationResult.getClass().getSimpleName()));
             }
             filterChain.doFilter(request, response);
         }
@@ -135,11 +136,23 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
                     request.getRequestURI(),
                     request.getRemoteAddr(),
                     failed.getClass().getSimpleName(),
-                    failed.getMessage()
-            ), failed);
+                    safeMessage(failed)
+            ));
 
             this.authenticationFailureHandler.onAuthenticationFailure(request, response, failed);
         }
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|cookie)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     /**

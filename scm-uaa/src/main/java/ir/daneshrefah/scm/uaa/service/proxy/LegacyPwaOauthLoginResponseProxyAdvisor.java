@@ -6,6 +6,10 @@ import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientTypeResolver;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyTokenDeliveryContext;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyTokenDeliveryStrategy;
 import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -21,19 +25,24 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.*;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
 
+/**
+ * Legacy PWA/MB response adapter kept only for old compatibility.
+ * Remove this class after migration to UAA-hosted login and authorization-code flow is complete.
+ * No new feature should be added here unless strictly required for migration safety.
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated(since = "9.0.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdvisor {
 
     private static final String LEGACY_APP_VERSION = "pwa";
@@ -45,6 +54,8 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
     private final ObjectMapper objectMapper;
     private final PwaOauthResponseMapper responseMapper;
     private final PwaAuthenticationService pwaAuthenticationService;
+    private final LegacyClientTypeResolver clientTypeResolver;
+    private final List<LegacyTokenDeliveryStrategy> tokenDeliveryStrategies;
 
     @Override
     public ResponseProxy<?> applyProxy(HttpServletRequest request, HttpServletResponse response, String responseBody) {
@@ -54,7 +65,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
             if (root.has(UAA_ERROR_PROP)) {
                 if (root.get(UAA_ERROR_DESC_PROP).asText().contains("required_claim")) {
                     PwaOAuth2AccessToken resp = pwaAuthenticationService.createTwoPhaseLoginResponse(preAuthenticationToken);
-                    applyResponseCookies(resp, request, response);
+                    deliverToken(resp, request, response);
                     return createResponseProxy(resp);
                 }
                 PwaOauthMessage error = resolveOauthMessage(root);
@@ -68,13 +79,13 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
                 int expiresIn = root.get(UAA_EXPIRE_IN_PROP).asInt();
                 TokenType tokenType = TokenType.valueOf(root.get(UAA_TOKEN_TYPE_PROP).asText().toUpperCase());
                 PwaOAuth2AccessToken resp = pwaAuthenticationService.postAuthenticate(preAuthenticationToken, tokenType, jwt, expiresIn);
-                applyResponseCookies(resp, request, response);
+                deliverToken(resp, request, response);
                 return createResponseProxy(resp);
             } else {
                 return createResponseProxy(responseMapper.getMessage(CLIENT_LOGIN_FAILED));
             }
         } catch (Exception e) {
-            log.error(">>> unknown exception on applying pwa response proxy", e);
+            log.error("legacy response proxy failed: {}", safeMessage(e));
             return createResponseProxy(responseMapper.getMessage(INVALID_CREDENTIALS));
         }
     }
@@ -88,38 +99,12 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
                 });
     }
 
-    private void applyResponseCookies(PwaOAuth2AccessToken token, HttpServletRequest request, HttpServletResponse response) {
-        addRegistryTokenCookieIfPresent(request, response, token);
-        addAccessTokenCookie(response, token);
-    }
-
-    private void addRegistryTokenCookieIfPresent(HttpServletRequest request, HttpServletResponse response, PwaOAuth2AccessToken token) {
-        String registryToken = request.getHeader(Constants.REGISTRY_TOKEN_HEADER);
-        if (StringUtils.isNotBlank(registryToken)) {
-            String encodedRegistryToken = URLEncoder.encode(registryToken, StandardCharsets.UTF_8);
-            String cookieValue = buildCookieHeader(Constants.REGISTRY_TOKEN_HEADER, encodedRegistryToken, Integer.MAX_VALUE);
-            response.addHeader(HttpHeaders.SET_COOKIE, cookieValue);
-            token.setHasRegistryTokenFromCookie(true);
-        }
-    }
-
-    private void addAccessTokenCookie(HttpServletResponse response, PwaOAuth2AccessToken token) {
-        Optional.ofNullable(token.getAccessToken())
-                .ifPresent(accessToken -> {
-                    String encodedToken = URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8);
-                    long maxAgeSeconds = Math.max(0, (token.getExpirationDate().getTime() - System.currentTimeMillis()) / 1000);
-                    String cookieValue = buildCookieHeader(HttpHeaders.AUTHORIZATION, encodedToken, maxAgeSeconds);
-                    response.addHeader(HttpHeaders.SET_COOKIE, cookieValue);
-                });
-    }
-
-    private String buildCookieHeader(String name, String value, long maxAgeSeconds) {
-        return name + "=" + value +
-                "; HttpOnly" +
-                "; Secure" +
-                "; Path=/" +
-                "; Max-Age=" + maxAgeSeconds +
-                "; SameSite=Strict";
+    private void deliverToken(PwaOAuth2AccessToken token, HttpServletRequest request, HttpServletResponse response) {
+        LegacyClientType clientType = resolveLegacyClientType(request);
+        LegacyTokenDeliveryContext context = new LegacyTokenDeliveryContext(clientType, request, response, token);
+        tokenDeliveryStrategies.stream()
+                .filter(strategy -> strategy.supports(clientType))
+                .forEach(strategy -> strategy.deliver(context));
     }
 
     private PwaOauthMessage mapUaaOauthError(String error) {
@@ -160,5 +145,23 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
     @Override
     public String filterUrlPathPattern() {
         return Urls.OAUTH2_TOKEN;
+    }
+
+    private LegacyClientType resolveLegacyClientType(HttpServletRequest request) {
+        Object preAuthentication = request.getAttribute(PRE_AUTHENTICATION_INSTANCE);
+        String clientId = preAuthentication instanceof AbstractAuthenticationToken token ? token.getClientId() : null;
+        return clientTypeResolver.resolve(clientId, request.getHeader(Constants.APP_VERSION_HEADER), null);
+    }
+
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number|registry[_-]?token)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 }

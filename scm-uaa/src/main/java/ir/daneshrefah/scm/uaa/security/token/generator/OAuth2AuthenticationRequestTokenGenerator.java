@@ -57,7 +57,6 @@ public class OAuth2AuthenticationRequestTokenGenerator implements Authentication
         if (tokenOptional.isEmpty()) {
             return null;
         }
-//TODO must change to factory instead of reflection
         GeneralAuthenticationToken token = tokenOptional.get()
                 .getDeclaredConstructor(TerminalUserDetails.class, PreAuthenticationToken.class)
                 .newInstance(userDetails, authentication);
@@ -68,8 +67,6 @@ public class OAuth2AuthenticationRequestTokenGenerator implements Authentication
         AuthenticationMethod toTest;
         if (AuthorizationGrantType.FIRST_PASSWORD.equals(grantType) || AuthorizationGrantType.DEFAULT.equals(grantType)) {
             toTest = user.getLoginAuthenticationMethod();
-        } else if (AuthorizationGrantType.SECOND_PASSWORD.equals(grantType)) {
-            toTest = user.getTransactionAuthenticationMethod();
         } else {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNSUPPORTED_TOKEN_TYPE);
         }

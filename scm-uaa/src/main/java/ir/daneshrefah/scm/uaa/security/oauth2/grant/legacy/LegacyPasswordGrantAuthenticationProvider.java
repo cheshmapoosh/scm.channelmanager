@@ -1,8 +1,8 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider;
-
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
+import ir.daneshrefah.scm.uaa.security.authenticationProvider.BaseGeneralAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
@@ -15,8 +15,7 @@ import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
@@ -31,68 +30,71 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-
 /**
- * Description of the class or purpose of the file.
- *
- * @author reza jamshidi
- * @version 1.0
- * @since 2023-12-18
+ * Legacy password provider kept only for old NIB/PWA/MB compatibility.
+ * Remove this class after migration to UAA-hosted login and authorization-code flow is complete.
+ * No new feature should be added here unless strictly required for migration safety.
  */
 @Component
-public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticationProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(OAuth2GeneralAuthenticationProvider.class);
+@Deprecated(since = "9.0.0", forRemoval = true)
+@SuppressWarnings("removal")
+public class LegacyPasswordGrantAuthenticationProvider extends BaseGeneralAuthenticationProvider {
     private final AuthenticationResponseTokenGenerator responseTokenGenerator;
 
-    public OAuth2GeneralAuthenticationProvider(RegisteredClientRepository clientRepository, UserCache userCache,
-                                               ClientService clientService,
-                                               UserDetailsService userDetailsService,
-                                               OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
-                                               DelegatorAuthenticationProvider delegatorAuthenticationProvider,
-                                               AuthenticationResponseTokenGenerator responseTokenGenerator,
-                                               UserActivationAuthenticationService userActivationService,
-                                               PwaAuthenticationService pwaAuthenticationService) {
-        super(clientRepository,
+    public LegacyPasswordGrantAuthenticationProvider(
+            RegisteredClientRepository clientRepository,
+            UserCache userCache,
+            ClientService clientService,
+            UserDetailsService userDetailsService,
+            OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
+            AuthenticationManager authenticationManager,
+            AuthenticationResponseTokenGenerator responseTokenGenerator,
+            UserActivationAuthenticationService userActivationService,
+            PwaAuthenticationService pwaAuthenticationService
+    ) {
+        super(
+                clientRepository,
                 clientService,
                 userCache,
                 userDetailsService,
                 authenticationTokenGenerator,
-                delegatorAuthenticationProvider,
+                authenticationManager,
                 userActivationService,
-                pwaAuthenticationService);
+                pwaAuthenticationService
+        );
         this.responseTokenGenerator = responseTokenGenerator;
-    }
-
-    @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        return super.authenticate(authentication);
     }
 
     @Override
     protected PreAuthenticationToken extractPreAuthenticationToken(Authentication authentication) {
         PreAuthenticationToken preAuthenticationToken = (PreAuthenticationToken) authentication;
         Authentication clientPrincipal = preAuthenticationToken.getClientPrincipal();
-        if (clientPrincipal instanceof OAuth2ClientAuthenticationToken oAuth2ClientAuthenticationToken) {
-            preAuthenticationToken.setRegisteredClient(oAuth2ClientAuthenticationToken.getRegisteredClient());
+        if (clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuthenticationToken) {
+            preAuthenticationToken.setRegisteredClient(clientAuthenticationToken.getRegisteredClient());
         }
-        return (PreAuthenticationToken) authentication;
+        return preAuthenticationToken;
     }
 
     @Override
-    protected Authentication buildResponse(Authentication requestAuthentication,
-                                           PreAuthenticationToken preAuthenticationToken, GeneralAuthenticationToken authentication) {
+    protected Authentication buildResponse(
+            Authentication requestAuthentication,
+            PreAuthenticationToken preAuthenticationToken,
+            GeneralAuthenticationToken authentication
+    ) {
         PostAuthenticationToken.AuthenticationStatus status = ((PostAuthenticationToken) authentication).getAuthenticationStatus();
         if (PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
             throwError(authentication, new TwoStepAuthenticationRequiredException(authentication));
         }
-
-        return responseTokenGenerator.getAccessToken(requestAuthentication, preAuthenticationToken.getClientPrincipal(),
-                preAuthenticationToken.getRegisteredClient(), authentication);
+        return responseTokenGenerator.getAccessToken(
+                requestAuthentication,
+                preAuthenticationToken.getClientPrincipal(),
+                preAuthenticationToken.getRegisteredClient(),
+                authentication
+        );
     }
 
     @Override
-    protected void throwError(Authentication authentication, Exception exception) {
+    protected void throwError(Authentication authentication, Exception exception) throws AuthenticationException {
         String parameterName = extractParameterName(exception);
         String errorCode = customizeExceptionMessage(exception);
         if (StringUtils.isEmpty(errorCode)) {
@@ -101,42 +103,46 @@ public class OAuth2GeneralAuthenticationProvider extends BaseGeneralAuthenticati
         ErrorUtils.throwError(errorCode, parameterName);
     }
 
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return LegacyPasswordGrantAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
     private String customizeExceptionMessage(Exception exception) {
-        if (null != exception.getCause()){
+        if (exception == null || exception.getCause() != null) {
             return null;
         }
-        if (exception instanceof TwoStepAuthenticationRequiredException twoStepException){
+        if (exception instanceof TwoStepAuthenticationRequiredException twoStepException) {
             if (!(twoStepException.getAuthentication() instanceof PostAuthenticationToken authenticationToken)) {
                 return null;
             }
             String code = authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode();
-            Map<String,String> response = new HashMap<>();
-            String expirationDuration;
-            String recipient;
-            if (Objects.nonNull(authenticationToken.getOtpSendResponse())){
+            Map<String, String> response = new HashMap<>();
+            if (Objects.nonNull(authenticationToken.getOtpSendResponse())) {
                 OtpSendResponse otpSendResponse = authenticationToken.getOtpSendResponse();
                 Instant expireTimeInstant = otpSendResponse.getOtp().getExpireTime();
                 LocalDateTime nowLocalDateTime = LocalDateTime.now();
-                LocalDateTime expirationLocalDateTime = DateUtils.DateConverter.convertToLocalDateTime(DateUtils.DateConverter.convertToTimestamp(expireTimeInstant));
-                expirationDuration = String.valueOf(Duration.between(nowLocalDateTime,expirationLocalDateTime).toSeconds());
-                recipient = otpSendResponse.getOtp().getRecipient().getAddress();
-                response.put("expirationDurationSeconds",expirationDuration);
-                response.put("recipient",recipient);
+                LocalDateTime expirationLocalDateTime = DateUtils.DateConverter.convertToLocalDateTime(
+                        DateUtils.DateConverter.convertToTimestamp(expireTimeInstant)
+                );
+                response.put("expirationDurationSeconds",
+                        String.valueOf(Duration.between(nowLocalDateTime, expirationLocalDateTime).toSeconds()));
+                response.put("recipient", safeRecipient(otpSendResponse.getOtp().getRecipient().getAddress()));
             }
-            response.put("authenticationMethod",code);
-            String responseString = response.toString();
-            return applyErrorCodeResponsePattern(responseString);
+            response.put("authenticationMethod", code);
+            return applyErrorCodeResponsePattern(response.toString());
         }
         return null;
     }
 
     private String applyErrorCodeResponsePattern(String responseString) {
-        responseString =responseString.replace("=",StringUtils.COLON);
-        return responseString;
+        return responseString.replace("=", StringUtils.COLON);
     }
 
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return PreAuthenticationToken.class.isAssignableFrom(authentication);
+    private String safeRecipient(String recipient) {
+        if (recipient == null || recipient.length() < 4) {
+            return "****";
+        }
+        return "***" + recipient.substring(recipient.length() - 4);
     }
 }

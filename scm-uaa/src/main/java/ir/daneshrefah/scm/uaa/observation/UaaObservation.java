@@ -250,7 +250,7 @@ public class UaaObservation {
                 .span("uaa.mq.otp.publish")
                 .spanKind("producer")
                 .action("uaa.mq.otp.publish");
-        putMessagingTraceAttributes(builder, ctx);
+        putUaaMessagingAttributes(builder, ctx);
         return builder.start();
     }
 
@@ -565,7 +565,7 @@ public class UaaObservation {
                 .attribute(UaaTraceAttributes.AUTH_FAILURE_REASON, ctx.failureReason());
     }
 
-    private void putMessagingTraceAttributes(TraceObservationBuilder builder, MessagingContext ctx) {
+    private void putUaaMessagingAttributes(TraceObservationBuilder builder, MessagingContext ctx) {
         if (ctx == null) {
             return;
         }

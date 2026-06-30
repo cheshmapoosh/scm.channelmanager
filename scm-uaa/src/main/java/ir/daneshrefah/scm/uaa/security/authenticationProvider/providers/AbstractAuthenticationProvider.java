@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
 
-import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
@@ -46,30 +45,12 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
             this.preAuthenticationChecks.check(user);
             additionalAuthenticationChecks(user, (GeneralAuthenticationToken) authentication);
         } catch (AuthenticationException ex) {
-            logger.warn("exception on authenticate", ex);
+            logger.warn("exception on authenticate: " + safeMessage(ex));
             return createFailAuthentication(authentication, ex);
         }
         this.postAuthenticationChecks.check(user);
-//        checkUserActivationCodeIfRequired((GeneralAuthenticationToken) authentication, user);
         return createSuccessAuthentication((GeneralAuthenticationToken) authentication);
     }
-
-//    private void checkUserActivationCodeIfRequired(GeneralAuthenticationToken authentication, TerminalUserDetails user) {
-//        ClientSettings clientSettings = authentication.getDetails().getRegisteredClient().getClientSettings();
-//        boolean isClientSupportCheckActivation = clientSettings.getSetting(CLIENT_SETTING_KEY_CHECK_ACTIVATION);
-//        boolean isGrantTypeSupportCheckActivation = authentication.getDetails().getGrantType().isSupportActivationCheck();
-//        if (!isClientSupportCheckActivation || !isGrantTypeSupportCheckActivation) {
-//            return;
-//        }
-//        String terminalCode = clientSettings.getSetting(CLIENT_SETTING_KEY_TERMINAL_CODE);
-//        String username = authentication.getDetails().getName();
-//        String accessParameter = authentication.getDetails().getAccessParameter();
-//        String activationCode = authentication.getDetails().getActivationCode();
-//        boolean isActivated = userService.checkUserActivationCode(terminalCode, username, accessParameter, activationCode);
-//        if (!isActivated) {
-//            throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_ACTIVATION_CODE);
-//        }
-//    }
 
     protected Authentication createFailAuthentication(Authentication authentication, Exception exception) {
         // Ensure we return the original credentials the user supplied,
@@ -88,17 +69,10 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         // so subsequent attempts are successful even with encoded passwords.
         // Also ensure we return the original getDetails(), so that future
         // authentication events after cache expiry contain the details
-        PostAuthenticationToken result = null;
-        if (AuthorizationGrantType.SECOND_PASSWORD.equals(authentication.getDetails().getGrantType())) {
-            result = PostAuthenticationToken.secondLvlAuthenticated(
-                    authentication.getPrincipal(),
-                    authentication.getDetails());
-        } else {
-            result = PostAuthenticationToken. authenticated(
-                    authentication.getPrincipal(),
-                    authentication.getDetails(),
-                    authentication.getPrincipal().getAuthorities());
-        }
+        PostAuthenticationToken result = PostAuthenticationToken.authenticated(
+                authentication.getPrincipal(),
+                authentication.getDetails(),
+                authentication.getPrincipal().getAuthorities());
         result.setSessionRequired(authentication.isSessionRequired());
         result.setNotificationRequired(authentication.isNotificationRequired());
         Instant issuedAt = Instant.now();
@@ -149,5 +123,17 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
 
     protected abstract void additionalAuthenticationChecks(TerminalUserDetails userDetails,
                                                            GeneralAuthenticationToken authentication) throws AuthenticationException;
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|cookie|mobile|national[_-]?code)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
+    }
 
 }

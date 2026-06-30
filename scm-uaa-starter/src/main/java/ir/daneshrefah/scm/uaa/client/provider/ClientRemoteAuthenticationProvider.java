@@ -63,10 +63,22 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
         try {
             responseMap = objectMapper.readValue(value, Map.class);
         } catch (JsonProcessingException e) {
-            logger.error("invalid response: " + value, e);
+            logger.error("invalid remote client authentication response: " + safeMessage(e));
             return null;
         }
         return responseMap.get("access_token");
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|cookie)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     @Override

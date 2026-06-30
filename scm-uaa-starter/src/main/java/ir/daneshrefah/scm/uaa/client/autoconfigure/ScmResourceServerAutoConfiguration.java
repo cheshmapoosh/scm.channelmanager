@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
 import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
+import ir.daneshrefah.scm.uaa.client.resource.ScmBearerTokenResolver;
 import ir.daneshrefah.scm.uaa.client.security.ScmJwtAuthenticationConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -23,6 +24,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
@@ -43,6 +45,12 @@ public class ScmResourceServerAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public BearerTokenResolver scmBearerTokenResolver(ScmResourceServerProperties properties) {
+        return new ScmBearerTokenResolver(properties);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     @ConditionalOnProperty(
             prefix = "scm.security.resource-server",
@@ -53,7 +61,8 @@ public class ScmResourceServerAutoConfiguration {
     public SecurityFilterChain scmResourceServerSecurityFilterChain(
             HttpSecurity http,
             ScmResourceServerProperties properties,
-            Converter<Jwt, UsernamePasswordAuthenticationToken> scmJwtAuthenticationConverter
+            Converter<Jwt, UsernamePasswordAuthenticationToken> scmJwtAuthenticationConverter,
+            BearerTokenResolver bearerTokenResolver
     ) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -68,7 +77,9 @@ public class ScmResourceServerAutoConfiguration {
             }
             authorize.anyRequest().authenticated();
         });
-        http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(scmJwtAuthenticationConverter)));
+        http.oauth2ResourceServer(oauth2 -> oauth2
+                .bearerTokenResolver(bearerTokenResolver)
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(scmJwtAuthenticationConverter)));
         return http.build();
     }
 

@@ -46,21 +46,22 @@ public class RemoteSecurityServiceProvider implements SecurityServiceProvider {
     }
 
     @Override
+    @Deprecated(since = "9.0.0", forRemoval = true)
+    @SuppressWarnings("removal")
     public String authenticateClaim(ClaimAuthenticationToken authentication) throws AuthenticationException {
-        return callServerAuthentication(AuthorizationGrantType.SECOND_PASSWORD, (String) authentication.getPrincipal(),
-                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+        throw new AuthenticationServiceException("second-password claim authentication is inactive");
     }
 
     @Override
     public String authenticateClient(ClientAuthenticationToken authentication) throws AuthenticationException {
         return callServerAuthentication(AuthorizationGrantType.CLIENT_CREDENTIALS, (String) authentication.getPrincipal(),
-                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+                (String) authentication.getCredentials(), authentication.getTerminalCode());
     }
 
     @Override
     public String authenticateBasic(BasicAuthenticationToken authentication) throws AuthenticationException {
         return callServerAuthentication(AuthorizationGrantType.FIRST_PASSWORD, (String) authentication.getPrincipal(),
-                (String) authentication.getCredentials(), authentication.getTerminalCode()); //TODO terminalCode is not clientId
+                (String) authentication.getCredentials(), authentication.getTerminalCode());
     }
 
     @Override
@@ -101,25 +102,34 @@ public class RemoteSecurityServiceProvider implements SecurityServiceProvider {
         int statusCode = 0;
         String responseBody = null;
         try {
-            RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, String.class);
             statusCode = response.getStatusCode().value();
             responseBody = response.getBody();
         } catch (RestClientResponseException e) {
-            logger.error("response error on remote authenticate for user: " + principal, e);
+            logger.error("response error on remote authenticate. status=" + e.getStatusCode().value());
             statusCode = e.getStatusCode().value();
         } catch (RestClientException e) {
-            logger.error("error on remote authenticate for user: " + principal, e);
+            logger.error("error on remote authenticate: " + safeMessage(e));
             throw new AuthenticationServiceException("error on client authentication.", e);
-//            statusCode = HttpConstants.HTTP_STATUS_BAD_REQUEST;
         }
         boolean isAuthenticated = HttpConstants.HTTP_STATUS_OK == statusCode/* ||
                 HttpStatusCode.SC_204.equals(statusCode)*/;
         if (!isAuthenticated) {
             return null;
         }
-//        Jwt jwt = getJwt(response.getBody());
         return responseBody;
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return exception == null ? null : exception.getClass().getSimpleName();
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|cookie)\\s*[:=]\\s*\\S+", "$1=***")
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
 }
