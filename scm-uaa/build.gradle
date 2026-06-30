@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'com.h2database:h2'
     runtimeOnly 'com.ibm.db2:db2jcc'
     runtimeOnly 'com.ibm.db2:db2jcc_license_cisuz'
     runtimeOnly 'com.ibm.db2.jcc:db2jcc:db2jcc4'

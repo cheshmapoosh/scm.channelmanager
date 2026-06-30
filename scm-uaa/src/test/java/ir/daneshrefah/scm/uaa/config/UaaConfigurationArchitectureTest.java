@@ -17,6 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UaaConfigurationArchitectureTest {
     private static final Path RESOURCES = Path.of("src/main/resources");
     private static final Path JAVA = Path.of("src/main/java/ir/daneshrefah/scm/uaa");
+    private static final Path MAIN_DATASOURCE = JAVA.resolve(
+            "config/datasource/authentication/MainDataSourceConfig.java"
+    );
+    private static final Path ACTIVATION_DATASOURCE = JAVA.resolve(
+            "config/datasource/activation/ActivationDataSourceConfig.java"
+    );
 
     @Test
     void onlyTheFiveAgreedApplicationFilesExist() throws Exception {
@@ -92,11 +98,9 @@ class UaaConfigurationArchitectureTest {
 
     @Test
     void activationBeanGraphIsConditionalAndNormalAuthenticationUsesOptionalProviders() throws Exception {
-        String activationConfig = Files.readString(JAVA.resolve("config/ActivationDataSourceConfig.java"));
-        String activationJpa = Files.readString(JAVA.resolve("config/ActivationJpaConfig.java"));
+        String activationConfig = Files.readString(ACTIVATION_DATASOURCE);
         assertTrue(activationConfig.contains("prefix = \"scm.uaa.datasource.activation\""));
         assertTrue(activationConfig.contains("havingValue = \"true\""));
-        assertTrue(activationJpa.contains("@ConditionalOnBean(name = \"activationDataSource\")"));
 
         Path activationServices = JAVA.resolve("service/activation");
         try (var files = Files.walk(activationServices)) {
@@ -108,6 +112,17 @@ class UaaConfigurationArchitectureTest {
                 }
             }
         }
+        for (String relativePath : List.of(
+                "controller/activation/UserActivationController.java",
+                "controller/message/LoginMessageController.java",
+                "controller/token/ActivationController.java",
+                "service/messages/LoginMessageService.java",
+                "security/oauth2/grant/legacy/response/LegacyPwaOauthLoginResponseProxyAdvisor.java"
+        )) {
+            String source = Files.readString(JAVA.resolve(relativePath));
+            assertTrue(source.contains("@ConditionalOnBean(name = \"activationDataSource\")"),
+                    () -> relativePath + " must be disabled with the activation datasource");
+        }
 
         String authenticationFlow = Files.readString(JAVA.resolve(
                 "security/authentication/UaaPasswordAuthenticationFlowService.java"
@@ -115,5 +130,68 @@ class UaaConfigurationArchitectureTest {
         String activationPolicy = Files.readString(JAVA.resolve("security/oauth2/policy/ActivationPolicy.java"));
         assertTrue(authenticationFlow.contains("ObjectProvider<PwaAuthenticationService>"));
         assertTrue(activationPolicy.contains("ObjectProvider<UserActivationAuthenticationService>"));
+    }
+
+    @Test
+    void repositoryPackagesAreBoundToExactlyOnePersistenceUnit() throws Exception {
+        String main = Files.readString(MAIN_DATASOURCE);
+        String activation = Files.readString(ACTIVATION_DATASOURCE);
+
+        assertTrue(main.contains(
+                "basePackages = \"ir.daneshrefah.scm.uaa.repository.authentication\""
+        ));
+        assertTrue(main.contains("entityManagerFactoryRef = \"mainEntityManagerFactory\""));
+        assertTrue(main.contains("transactionManagerRef = \"mainTransactionManager\""));
+        assertFalse(main.contains("repository.activation"));
+        assertFalse(main.contains("activationEntityManagerFactory"));
+        assertFalse(main.contains("activationTransactionManager"));
+
+        assertTrue(activation.contains(
+                "basePackages = \"ir.daneshrefah.scm.uaa.repository.activation\""
+        ));
+        assertTrue(activation.contains("entityManagerFactoryRef = \"activationEntityManagerFactory\""));
+        assertTrue(activation.contains("transactionManagerRef = \"activationTransactionManager\""));
+        assertFalse(activation.contains("repository.authentication"));
+        assertFalse(activation.contains("mainEntityManagerFactory"));
+        assertFalse(activation.contains("mainTransactionManager"));
+
+        long repositoryScans;
+        try (var files = Files.walk(JAVA.resolve("config"))) {
+            repositoryScans = files
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .map(this::readUnchecked)
+                    .filter(source -> source.contains("@EnableJpaRepositories"))
+                    .count();
+        }
+        assertEquals(2, repositoryScans, "only the two datasource configs may scan repositories");
+    }
+
+    @Test
+    void repositoriesDoNotReferenceTheOppositeTransactionManager() throws Exception {
+        assertPackageDoesNotContain(
+                JAVA.resolve("repository/authentication"),
+                "activationTransactionManager"
+        );
+        assertPackageDoesNotContain(
+                JAVA.resolve("repository/activation"),
+                "mainTransactionManager"
+        );
+    }
+
+    private String readUnchecked(Path path) {
+        try {
+            return Files.readString(path);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private void assertPackageDoesNotContain(Path packagePath, String forbiddenText) throws Exception {
+        try (var files = Files.walk(packagePath)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                assertFalse(Files.readString(file).contains(forbiddenText),
+                        () -> file + " must not reference " + forbiddenText);
+            }
+        }
     }
 }

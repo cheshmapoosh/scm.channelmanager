@@ -14,8 +14,6 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringBootApplication
 @EnableCaching
-//@EnableJpaRepositories(basePackages = {"ir.daneshrefah.scm.uaa.repository"})
-
 @ComponentScan(basePackages = "ir.daneshrefah.scm")
 public class UAAServerApplication {
     public static void main(String[] args) {
