@@ -34,7 +34,7 @@ import ir.daneshrefah.scm.uaa.domain.otp.AuthenticationMethodType;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.*;
 import ir.daneshrefah.scm.uaa.repository.authentication.client.FindUserByNationalCodeSpecs;
-import ir.daneshrefah.scm.uaa.security.CustomMD5Encoder;
+import ir.daneshrefah.scm.uaa.security.password.PasswordHashService;
 import ir.daneshrefah.scm.uaa.service.credential.CredentialGenerator;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
@@ -81,7 +81,7 @@ public class UserService {
     private final static String CUSTOMER_ROLE_CODE = "ROLE_CUSTOMER";
     //    private final UserActivationRepository userActivationRepository;
     private final PersonRepository personRepository;
-    private final CustomMD5Encoder passwordEncoder;
+    private final PasswordHashService passwordHashService;
     private final TerminalService terminalService;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -162,11 +162,15 @@ public class UserService {
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
         if (!bypassCheckingOldPassword) {
             ValidationUtils.checkBlankString(request.getOldPassword(), () -> new InvalidInputException("oldPassword"));
-            if (!userEntity.getLoginStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(), userEntity.getPerson().getUsername()))) {
+            if (!passwordHashService.matchesLoginPassword(
+                    request.getOldPassword(),
+                    userEntity.getPerson().getUsername(),
+                    userEntity.getLoginStaticPassword()
+            )) {
                 throw new InvalidInputException("oldPassword");
             }
         }
-        userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
+        userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(request.getNewPassword()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
@@ -181,11 +185,14 @@ public class UserService {
     public User updateUserTransactionStaticPass(PasswordModificationRequest request) {
         validatePasswordModificationRequest(request);
         UserEntity userEntity = findAuthenticatedUserByUsernameAndTerminalCode(request.getUsername(), request.getTerminalCode());
-        if (!userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(request.getOldPassword(),
-                userEntity.getPerson().getUsername()))) {
+        if (!passwordHashService.matchesTransactionPassword(
+                request.getOldPassword(),
+                userEntity.getPerson().getUsername(),
+                userEntity.getTransactionStaticPassword()
+        )) {
             throw new InvalidInputException("oldPassword");
         }
-        userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
+        userEntity.setTransactionStaticPassword(passwordHashService.encodeNewPassword(request.getNewPassword()));
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
@@ -373,8 +380,6 @@ public class UserService {
 //        entity.setTransactionAuthenticationMethod(request.getTransactionAuthenticationMethod());
 //        entity.setAccessParameters(validateAccessParameter(request.getAccessParameters()));
         entity.setStatus(UserStatus.ACTIVE);
-//        entity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), personEntity.getUsername()));
-//        entity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), personEntity.getUsername()));
 //        entity.setOtpSerialNumber(request.getOtpSerialNumber());
 //        entity.setPerson(personEntity);
 //        entity.setCreatorBranch(request.getCreatorBranch());
@@ -431,8 +436,8 @@ public class UserService {
         entity.setTransactionAuthenticationMethod(request.getTransactionAuthenticationMethod());
         entity.setAccessParameters(validateAccessParameter(request.getAccessParameters()));
         entity.setStatus(UserStatus.ACTIVE);
-        entity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getLoginStaticPassword(), personEntity.getUsername()));
-        entity.setTransactionStaticPassword(passwordEncoder.encodePassword(request.getTransactionStaticPassword(), personEntity.getUsername()));
+        entity.setLoginStaticPassword(encodeNewPasswordIfPresent(request.getLoginStaticPassword()));
+        entity.setTransactionStaticPassword(encodeNewPasswordIfPresent(request.getTransactionStaticPassword()));
         entity.setOtpSerialNumber(request.getOtpSerialNumber());
         entity.setPerson(personEntity);
         entity.setCreatorBranch(request.getCreatorBranch());
@@ -443,6 +448,10 @@ public class UserService {
         entity.setPrintCount(0);
         entity.setType(Objects.nonNull(userType) ? userType : null);
         return entity;
+    }
+
+    private String encodeNewPasswordIfPresent(String rawPassword) {
+        return StringUtils.isBlank(rawPassword) ? rawPassword : passwordHashService.encodeNewPassword(rawPassword);
     }
 
     private Set<String> validateAccessParameter(Set<String> accessParameters) {
@@ -677,20 +686,31 @@ public class UserService {
     }
 
     public void checkStaticPassword(UserEntity userEntity, String credential) {
-        if (!userEntity.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, userEntity.getPerson().getUsername()))) {
+        if (!passwordHashService.matchesTransactionPassword(
+                credential,
+                userEntity.getPerson().getUsername(),
+                userEntity.getTransactionStaticPassword()
+        )) {
             throw new InvalidInputException("static password");
         }
     }
 
     public boolean validateStaticPassword(User user, String credential, AuthenticationMethodType authenticationMethodType) {
-        if (StringUtils.isBlank(user.getTransactionStaticPassword()) || authenticationMethodType == null) {
+        if (authenticationMethodType == null) {
             return false;
         }
         if (authenticationMethodType.equals(AuthenticationMethodType.TRANSACTION)) {
-            return user.getTransactionStaticPassword().equals(passwordEncoder.encodePassword(credential, user.getPerson().getUsername()));
-        } else {
-            return user.getLoginStaticPassword().equals(passwordEncoder.encodePassword(credential, user.getPerson().getUsername()));
+            return passwordHashService.matchesTransactionPassword(
+                    credential,
+                    user.getPerson().getUsername(),
+                    user.getTransactionStaticPassword()
+            );
         }
+        return passwordHashService.matchesLoginPassword(
+                credential,
+                user.getPerson().getUsername(),
+                user.getLoginStaticPassword()
+        );
     }
 
     public UserEntity findUser(UserAuthentication loggedInUserAuthentication) {
@@ -721,8 +741,14 @@ public class UserService {
     private void applyDynamicUpdateChanges(UserEntity userEntity, UserDataChangeRequest request) {
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getNickname(), userEntity::setNickname);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getLoginStaticPassword(), userEntity::setLoginStaticPassword);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTransactionStaticPassword(), userEntity::setTransactionStaticPassword);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
+                request.getLoginStaticPassword(),
+                rawPassword -> userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
+        );
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
+                request.getTransactionStaticPassword(),
+                rawPassword -> userEntity.setTransactionStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
+        );
         DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(), accessParameters -> {
             userEntity.setAccessParameters(validateAccessParameter(accessParameters));
         });
@@ -932,8 +958,8 @@ public class UserService {
         user.setTransactionAuthenticationMethod(request.getLoginAuthenticationMethod());
         user.setStatus(UserStatus.ACTIVE);
         user.setPrintCount(0);
-        user.setLoginStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getLoginStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
-        user.setTransactionStaticPassword(passwordEncoder.encodePassword(Optional.ofNullable(request.getTransactionStaticPassword()).orElse("BLANK"), generalPerson.getUsername()));
+        user.setLoginStaticPassword(passwordHashService.encodeNewPassword(Optional.ofNullable(request.getLoginStaticPassword()).orElse("BLANK")));
+        user.setTransactionStaticPassword(passwordHashService.encodeNewPassword(Optional.ofNullable(request.getTransactionStaticPassword()).orElse("BLANK")));
         user.setPerson(generalPerson);
         user.setType(UserType.CM_REGULAR); //TODO Is the type set correctly?
         user.setCreatorBranch(getLoggedInBranchCode());
@@ -988,12 +1014,12 @@ public class UserService {
                 throw new UnsupportedOperationException();
             }
 
-            userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(generatedPassword, person.getUsername()));
+            userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(generatedPassword));
         } else {
             if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
             }
-            userEntity.setTransactionStaticPassword(passwordEncoder.encodePassword(generatedPassword, person.getUsername()));
+            userEntity.setTransactionStaticPassword(passwordHashService.encodeNewPassword(generatedPassword));
         }
         sendNotification(request,userEntity,generatedPassword);
         xUserDetailService.removeXUserByUsernameAndChannelCode(userEntity, request.getChannelCode());

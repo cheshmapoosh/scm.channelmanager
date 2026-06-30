@@ -14,6 +14,10 @@ spring:
 
 scm:
   uaa:
+    security:
+      password:
+        current-encoding-id: ${SCM_UAA_PASSWORD_CURRENT_ENCODING_ID:argon2id}
+        legacy-default-matching-id: ${SCM_UAA_PASSWORD_LEGACY_DEFAULT_MATCHING_ID:legacy-md5}
     datasource:
       main:
         url: ${SCM_UAA_MAIN_DB_URL:}

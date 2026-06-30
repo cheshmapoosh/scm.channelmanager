@@ -22,6 +22,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer>, JpaS
             "WHERE u.nickname = :nickname AND u.terminalId = :legacyTerminalId ")
     List<UserEntity> findByNicknameAndLegacyTerminalId(@Param("nickname") String nickname, @Param("legacyTerminalId") Integer legacyTerminalId);
 
+    boolean existsByNicknameAndTerminalId(String nickname, Integer terminalId);
+
     @Query(value = "SELECT u FROM UserEntity u " +
             "WHERE u.person.id = :personId AND u.terminalId = :legacyTerminalId")
     List<UserEntity> findByPersonIdAndLegacyTerminalId(@Param("personId") Integer personId, @Param("legacyTerminalId") Integer legacyTerminalId);

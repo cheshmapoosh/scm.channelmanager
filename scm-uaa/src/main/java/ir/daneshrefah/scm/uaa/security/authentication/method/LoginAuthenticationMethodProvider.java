@@ -8,7 +8,7 @@ import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredExce
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.OAuth2AuthenticationErrorMapper;
-import ir.daneshrefah.scm.uaa.security.password.LegacyPassword;
+import ir.daneshrefah.scm.uaa.security.password.PasswordHashService;
 import ir.daneshrefah.scm.uaa.security.authentication.method.token.DeviceOtpRequestLoginAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.authentication.method.token.DeviceOtpVerifyLoginAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.authentication.method.token.PatternLoginAuthenticationToken;
@@ -26,7 +26,6 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -45,16 +44,16 @@ public class LoginAuthenticationMethodProvider extends LoginAuthenticationMethod
             DeviceOtpVerifyLoginAuthenticationToken.class
     );
 
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordHashService passwordHashService;
     private final OtpService otpService;
 
     public LoginAuthenticationMethodProvider(
             OAuth2AuthenticationErrorMapper errorMapper,
-            PasswordEncoder passwordEncoder,
+            PasswordHashService passwordHashService,
             OtpService otpService
     ) {
         super(errorMapper);
-        this.passwordEncoder = passwordEncoder;
+        this.passwordHashService = passwordHashService;
         this.otpService = otpService;
     }
 
@@ -108,10 +107,7 @@ public class LoginAuthenticationMethodProvider extends LoginAuthenticationMethod
         }
         String storedPassword = userDetails.getPassword();
         String legacyUsernameSalt = userDetails.getUser().getPerson().getUsername();
-        if (storedPassword == null || !passwordEncoder.matches(
-                new LegacyPassword(credentials.toString(), legacyUsernameSalt),
-                storedPassword
-        )) {
+        if (!passwordHashService.matchesLoginPassword(credentials.toString(), legacyUsernameSalt, storedPassword)) {
             logger.debug("Failed to authenticate since password does not match stored value");
             throw new BadCredentialsException("LoginAuthenticationMethodProvider.badCredentials");
         }

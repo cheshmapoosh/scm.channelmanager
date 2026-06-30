@@ -66,6 +66,13 @@ scm:
             token-change-warn-period-days: ${SCM_UAA_PWA_TOKEN_CHANGE_WARN_DAYS:31}
 
   uaa:
+    security:
+      password:
+        current-encoding-id: ${SCM_UAA_PASSWORD_CURRENT_ENCODING_ID:argon2id}
+        legacy-default-matching-id: ${SCM_UAA_PASSWORD_LEGACY_DEFAULT_MATCHING_ID:legacy-md5}
+    activation:
+      nib:
+        enabled: ${SCM_UAA_NIB_ACTIVATION_ENABLED:true}
     datasource:
       main:
         enabled: true

@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -53,6 +55,20 @@ public class MainDataSourceConfig {
                 .build();
         dataSource.setMaximumPoolSize(main.getMaxConnection());
         return dataSource;
+    }
+
+    @Bean("mainJdbcTemplate")
+    @Primary
+    public JdbcTemplate mainJdbcTemplate(@Qualifier("mainDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean("mainNamedParameterJdbcTemplate")
+    @Primary
+    public NamedParameterJdbcTemplate mainNamedParameterJdbcTemplate(
+            @Qualifier("mainDataSource") DataSource dataSource
+    ) {
+        return new NamedParameterJdbcTemplate(dataSource);
     }
 
     @Bean("mainEntityManagerFactory")

@@ -1,0 +1,36 @@
+package ir.daneshrefah.scm.uaa.repository.authentication.nib;
+
+public record UserChannelAuthenticationRow(
+        Object archiveNo,
+        Integer sourceChannelId,
+        Object active,
+        Integer authenticationMethodId,
+        Object userAuthenticationType,
+        Integer userId,
+        Object fromDate,
+        Object toDate,
+        Object firstPassword,
+        Object secondPassword,
+        Object channelAccessParameter,
+        Object secondLevelAuthenticationMethodId,
+        Object printCount,
+        Object passwordSetPrinted,
+        Object createdBy,
+        Object modifiedBy,
+        Object creationDate,
+        Object modificationDate,
+        Object effectiveDate,
+        Object otpSerialNumber,
+        Object state,
+        Object nickname,
+        Object branchCode,
+        Object pinBasedPassword,
+        Object patternBasedPassword,
+        Object lastPasswordChangeDate,
+        Object lastPasswordReactionDate,
+        Object abortPassword,
+        Object userReason,
+        Object reason,
+        Object deactivationReason
+) {
+}

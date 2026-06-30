@@ -71,13 +71,13 @@ insert into TBL_SUA_CLIENT (TITLE, CLIENT_IDENTIFIER, CLIENT_SECRET, TERMINAL_CO
                             CLIENT_AUTH_METHOD_POST, CLIENT_AUTH_METHOD_SEC_JWT, CLIENT_AUTH_METHOD_KEY_JWT,
                             REDIRECT_URIS, REQUIRE_AUTHORIZATION_CONSENT, REQUIRE_CLIENT_AUTHENTICATION, REQUIRE_PROOF_KEY, CHECK_VERSION,
                             CHECK_ACTIVATION, SESSION_TIME_TO_LIVE_MINUTE, CREATOR, LAST_EDITOR)
-values ('Internet Bank', 'IB', '{noop}<change-me>', 'IB', 0, 0, 0, 0, 'http://127.0.0.1:8080/authorized', 1, 0, 0, 0, 0, 1000, 'system', 'system');
+values ('Internet Bank', 'IB', '{pbkdf2}ad24200baafb778e62c586709d9deb63a28d9a9d08f9dfdcaea487caecc9adcd13b89894dcaf50210ecbed216168dd59', 'IB', 0, 0, 0, 0, 'http://127.0.0.1:8080/authorized', 1, 0, 0, 0, 0, 1000, 'system', 'system');
 insert into TBL_SUA_CLIENT (TITLE, CLIENT_IDENTIFIER, CLIENT_SECRET, TERMINAL_CODE, CLIENT_AUTH_METHOD_BASIC,
                             CLIENT_AUTH_METHOD_POST, CLIENT_AUTH_METHOD_SEC_JWT, CLIENT_AUTH_METHOD_KEY_JWT,
                             REDIRECT_URIS, REQUIRE_AUTHORIZATION_CONSENT, REQUIRE_CLIENT_AUTHENTICATION,
                             REQUIRE_PROOF_KEY, CHECK_VERSION, CHECK_ACTIVATION, SESSION_TIME_TO_LIVE_MINUTE,
                             CREATOR, LAST_EDITOR)
-values ('Channel Manager', 'SCM', '{noop}<change-me>', 'SCM', 1, 0, 0, 0, 'http://localhost', 1, 0, 0, 0, 0, 1000, 'system', 'system');
+values ('Channel Manager', 'SCM', '{pbkdf2}1792c6d8f94dc7bff14046526e9869ae91c38540d6027f6e5a326f8a7580092da5f8c5003ab53f354a4c3ddfa54db3b3', 'SCM', 1, 0, 0, 0, 'http://localhost', 1, 0, 0, 0, 0, 1000, 'system', 'system');
 
 CREATE TABLE REF.TBL_SUA_CLIENT_SCOPE
 (

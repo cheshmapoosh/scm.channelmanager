@@ -4,7 +4,8 @@ import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.uaa.exception.activation.InvalidActivationTerminalCodeException;
 import ir.daneshrefah.scm.uaa.exception.activation.UserActivatedBeforeException;
 import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
-import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
+import ir.daneshrefah.scm.uaa.service.activation.nib.ActivationCandidateRequest;
+import ir.daneshrefah.scm.uaa.service.activation.nib.NibActivationEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,30 +14,30 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ActivationPolicy {
-    private final ObjectProvider<UserActivationAuthenticationService> activationAuthenticationServiceProvider;
+    private final ObjectProvider<NibActivationEligibilityService> eligibilityServiceProvider;
 
     public ActivationDecision decide(PreAuthenticationToken authentication, String clientTerminalCode) {
-        UserActivationAuthenticationService activationAuthenticationService =
-                activationAuthenticationServiceProvider.getIfAvailable();
-        if (activationAuthenticationService == null) {
+        NibActivationEligibilityService eligibilityService = eligibilityServiceProvider.getIfAvailable();
+        if (eligibilityService == null) {
             return new ActivationDecision(authentication.getName(), clientTerminalCode, true);
         }
-        UserActivationAuthenticationService.CandidateStatus candidateStatus =
-                activationAuthenticationService.checkActivationCandidate(authentication);
-        if (UserActivationAuthenticationService.CandidateStatus.ACCEPTED.equals(candidateStatus)) {
-            UserActivationAuthenticationService.AuthenticationStatus authenticationStatus = activationAuthenticationService
-                    .checkAuthentication(
-                            authentication.getName(),
-                            TerminalType.fromCode(authentication.getActivatorTerminal()).orElse(null),
-                            TerminalType.NIB
-                    );
+        ActivationCandidateRequest request = new ActivationCandidateRequest(
+                authentication.getName(),
+                authentication.getScopes(),
+                TerminalType.fromCode(authentication.getActivatorTerminal()).orElse(null),
+                TerminalType.NIB
+        );
+        NibActivationEligibilityService.CandidateStatus candidateStatus = eligibilityService.checkCandidate(request);
+        if (NibActivationEligibilityService.CandidateStatus.ACCEPTED.equals(candidateStatus)) {
+            NibActivationEligibilityService.AuthenticationStatus authenticationStatus =
+                    eligibilityService.checkAuthentication(request);
             return switch (authenticationStatus) {
                 case USER_NOT_FOUND -> throw new UsernameNotFoundException("Invalid username or password");
                 case ACTIVATED_BEFORE -> throw new UserActivatedBeforeException();
                 default -> new ActivationDecision(authentication.getName(), authentication.getActivatorTerminal(), false);
             };
         }
-        if (UserActivationAuthenticationService.CandidateStatus.HAS_ERROR.equals(candidateStatus)) {
+        if (NibActivationEligibilityService.CandidateStatus.HAS_ERROR.equals(candidateStatus)) {
             throw new InvalidActivationTerminalCodeException();
         }
         return new ActivationDecision(authentication.getName(), clientTerminalCode, true);

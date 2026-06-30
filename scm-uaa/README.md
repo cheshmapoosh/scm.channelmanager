@@ -4,8 +4,9 @@
 
 - `application.yml` contains shared defaults and is the no-profile local fallback. `application-dev.yml` is the local developer template; neither connects to `scm-config`.
 - `application-test.yml`, `application-pilot.yml`, and `application-prod.yml` are Kubernetes profiles and import `scm-config`. Database credentials and allowed CORS origins must come from config server or environment variables.
-- UAA has one required `mainDataSource` and one optional legacy `activationDataSource`. The main JPA configuration scans only `ir.daneshrefah.scm.uaa.repository.authentication`; the activation JPA configuration scans only `ir.daneshrefah.scm.uaa.repository.activation`. Shared entity packages may be mapped for relationships, but no external repository package is scanned by either UAA datasource configuration.
-- Disabling `scm.uaa.datasource.activation.enabled` removes the legacy MB/PWA activation repositories, services, controllers, and adapters without disabling normal login or token handling. The activation datasource will be deprecated after legacy migration.
+- UAA has one required `mainDataSource` and one optional legacy `activationDataSource`. `repository.authentication` (including `repository.authentication.nib`) uses the main datasource; `repository.activation` is reserved for legacy MB/PWA compatibility and uses the optional activation datasource. Shared entity packages may be mapped for relationships, but no external repository package is scanned by either UAA datasource configuration.
+- `service.activation.nib` is a NIB business activation flow on `mainDataSource`/`mainTransactionManager`; its business package name does not imply `activationDataSource`. It is controlled independently by `scm.uaa.activation.nib.enabled`.
+- Disabling `scm.uaa.datasource.activation.enabled` removes only legacy MB/PWA activation repositories, services, controllers, and adapters. It does not remove NIB activation, normal login, or token handling. The activation datasource will be deprecated after legacy migration.
 - UAA security explicitly selects `uaaCorsConfigurationSource`; it does not use `@Primary` to resolve CORS beans. Credentialed CORS rejects a wildcard, and the Kubernetes profiles also reject an empty origin list.
 - The dev profile supports HTTPS through `SCM_UAA_SSL_*`. Realistic cross-site cookie tests normally require `SameSite=None; Secure`; `Secure` requires HTTPS except for browser localhost exceptions. A `__Host-` cookie also requires `Path=/` and no `Domain` attribute.
 - Log, trace, and audit use separate NDJSON files. Dev and the no-profile local fallback also log to the console. Test, pilot, and prod default to files under `/var/log/app`.
@@ -302,6 +303,17 @@ sequenceDiagram
 
 `LegacyPassword` مقدار خام password را در `toString()` نمایش نمی‌دهد و `LegacyUsernameSaltedMd5PasswordEncoder` فقط برای رکوردهای قدیمی نگه داشته شده و deprecated for removal است. حذف این دو کلاس فقط بعد از migration کامل password storage مجاز است.
 
+## مدیریت hash پسورد
+
+- تنظیمات hash پسورد در `scm.uaa.security.password` قرار دارد. مقدار `current-encoding-id` الگوریتم ذخیره‌سازی پسوردهای جدید است و مقدار `legacy-default-matching-id` فقط fallback خواندن مقدارهای قدیمی بدون prefix است.
+- پسوردهای قدیمی که بدون prefix ذخیره شده‌اند با legacy username-salted MD5 بررسی می‌شوند.
+- اگر مقدار ذخیره‌شده prefix استاندارد Spring Security مثل `{bcrypt}`، `{argon2id}`، `{pbkdf2}`، `{legacy-md5}` یا `{MD5}` داشته باشد، همان encoder ثبت‌شده برای آن id استفاده می‌شود.
+- اگر مقدار ذخیره‌شده prefix نداشته باشد، فقط برای سازگاری با داده‌های قدیمی fallback به legacy MD5 انجام می‌شود.
+- اگر prefix ناشناخته باشد، احراز هویت باید fail شود و نباید به صورت ضمنی به legacy MD5 تبدیل شود.
+- پسوردهای جدید و پسوردهایی که در جریان تغییر رمز ذخیره می‌شوند با الگوریتم جدید پروژه ذخیره می‌شوند و خروجی باید prefix مثل `{argon2id}` یا `{bcrypt}` داشته باشد.
+- legacy MD5 فقط برای سازگاری با رکوردهای قدیمی نگه داشته شده است و نباید برای نوشتن پسورد جدید استفاده شود.
+- سرویس‌های business نباید مستقیم MD5 بسازند، `LegacyPassword` ایجاد کنند یا `LegacyUsernameSaltedMd5PasswordEncoder` را صدا بزنند. همه encode و verify پسورد کاربر باید از `PasswordHashService` عبور کند.
+
 ## کجا کد اضافه نکنیم؟
 
 - package قدیمی `security.authenticationProvider` را دوباره نسازید.
@@ -315,7 +327,7 @@ sequenceDiagram
 - token مربوط به Shahkar را داخل `security.token` قرار ندهید؛ این package حذف شده است.
 - ownership check یا ارسال OTP مربوط به Shahkar را داخل converter انجام ندهید.
 - قبل از موفقیت OTP، verified Shahkar user نسازید.
-- تا پایان migration ذخیره passwordهای قدیمی، package فعال `security.password` را حذف نکنید. providerها باید از `PasswordEncoder.matches(...)` استفاده کنند و نباید MD5 را دستی مقایسه کنند.
+- تا پایان migration ذخیره passwordهای قدیمی، package فعال `security.password` را حذف نکنید. providerها و سرویس‌های business باید از `PasswordHashService` استفاده کنند و نباید MD5 را دستی مقایسه کنند.
 - password خام، OTP، JWT، cookie، Authorization header، شماره موبایل یا کد ملی را به log، trace یا error اضافه نکنید.
 
 ## خلاصه مسئولیت کلاس‌های اصلی

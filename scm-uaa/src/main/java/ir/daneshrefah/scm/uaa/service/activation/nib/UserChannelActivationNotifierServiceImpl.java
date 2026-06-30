@@ -17,14 +17,19 @@ import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Locale;
 
 @Service
-@ConditionalOnBean(name = "activationDataSource")
+@ConditionalOnProperty(
+        prefix = "scm.uaa.activation.nib",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @RequiredArgsConstructor
 @Slf4j
 public class UserChannelActivationNotifierServiceImpl implements UserChannelActivationNotifierService {
@@ -70,14 +75,14 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
                     .template(notificationTemplate)
                     .media(NotificationMedia.SMS)
                     .recipient(recipient)
-                    .userLocale(new Locale("fa", "IR")) //TODO GET FROM HEADER
+                    .userLocale(Locale.of("fa", "IR"))
                     .data(notificationData)
                     .terminalCode(sourceTerminal.getCode())
                     .issuerInfo(issuerInfo)
                     .build();
             notificationService.sendNotification(request);
         } catch (Exception e) {
-            log.error("Exception occurred while sending notification: {}", safeMessage(e));
+            log.error("NIB activation notification failed; errorType={}", errorType(e));
         }
     }
 
@@ -97,15 +102,7 @@ public class UserChannelActivationNotifierServiceImpl implements UserChannelActi
                 .convertToTimestamp(Instant.now())), "yyyy/MM/dd HH:mm:ss");
     }
 
-    private String safeMessage(Exception exception) {
-        if (exception == null || exception.getMessage() == null) {
-            return exception == null ? null : exception.getClass().getSimpleName();
-        }
-        String message = exception.getMessage()
-                .replace('\r', ' ')
-                .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
-                .trim();
-        return message.length() > 300 ? message.substring(0, 300) : message;
+    private String errorType(Exception exception) {
+        return exception == null ? "Unknown" : exception.getClass().getSimpleName();
     }
 }
