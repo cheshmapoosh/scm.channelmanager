@@ -25,6 +25,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
  * @version 1.0
  * @since 2023-08-06
  */
+@Deprecated(since = "9.0.0", forRemoval = true)
 public class SecondPasswordGrantAuthenticationConverter implements AuthenticationConverter {
 
     @Override

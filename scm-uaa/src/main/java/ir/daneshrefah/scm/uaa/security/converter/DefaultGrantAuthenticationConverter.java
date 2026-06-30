@@ -25,6 +25,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 /**
  * Normally used on PWA/MB Authentication
  */
+@Deprecated(since = "9.0.0", forRemoval = true)
 public class DefaultGrantAuthenticationConverter implements AuthenticationConverter {
 
 

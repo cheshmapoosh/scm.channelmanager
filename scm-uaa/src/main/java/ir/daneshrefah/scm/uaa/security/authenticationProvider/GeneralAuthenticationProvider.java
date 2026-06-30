@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticatio
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -38,7 +39,7 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                                          ClientService clientService,
                                          UserDetailsService userDetailsService,
                                          OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator,
-                                         DelegatorAuthenticationProvider delegatorAuthenticationProvider,
+                                         AuthenticationManager authenticationManager,
                                          UserActivationAuthenticationService userActivationAuthenticationService,
                                          PwaAuthenticationService pwaAuthenticationService) {
 
@@ -47,7 +48,7 @@ public class GeneralAuthenticationProvider extends BaseGeneralAuthenticationProv
                 userCache,
                 userDetailsService,
                 authenticationTokenGenerator,
-                delegatorAuthenticationProvider,
+                authenticationManager,
                 userActivationAuthenticationService,
                 pwaAuthenticationService);
     }

@@ -47,7 +47,8 @@ public class ResponseProxyAdviosrFilter implements Filter {
         objectMapper = beanFactory.getBean(ObjectMapper.class);
         Map<String, ResponseProxyAdvisor> injectedResponseProxyAdvisors = ((ListableBeanFactory) beanFactory).getBeansOfType(ResponseProxyAdvisor.class);
         allResponseProxyAdvisors.putAll(injectedResponseProxyAdvisors);
-        allResponseProxyAdvisors.values().forEach(p -> log.info(">>> RESPONSE PROXY ADVISORS '{}' HAS BEEN INITIALIZED SUCCESSFULLY", p));
+        allResponseProxyAdvisors.values().forEach(p -> log.info("response proxy advisor initialized. type={}",
+                p.getClass().getSimpleName()));
         map = hazelcast.getMap(tokenCacheMap);
     }
 
@@ -99,7 +100,7 @@ public class ResponseProxyAdviosrFilter implements Filter {
         String message = exception.getMessage()
                 .replace('\r', ' ')
                 .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number|registry[_-]?token)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
         return message.length() > 300 ? message.substring(0, 300) : message;
     }

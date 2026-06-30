@@ -30,6 +30,7 @@ public class ScmResourceServerProperties {
     ));
     private boolean methodSecurityEnabled = true;
     private Observation observation = new Observation();
+    private Token token = new Token();
 
     @Getter
     @Setter
@@ -51,5 +52,13 @@ public class ScmResourceServerProperties {
         private boolean logEnabled = true;
         private boolean traceEnabled = true;
         private boolean metricEnabled = true;
+    }
+
+    @Getter
+    @Setter
+    public static class Token {
+        private boolean cookieEnabled = false;
+        private String cookieName = "__Host-SCM-PWA";
+        private boolean preferCookie = false;
     }
 }

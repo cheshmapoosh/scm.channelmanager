@@ -33,10 +33,17 @@ public class UaaSecurityObservationAspect {
 
     @Around("""
             execution(public * ir.daneshrefah.scm.uaa.security.authenticationProvider..*.authenticate(..)) &&
-            !within(ir.daneshrefah.scm.uaa.security.authenticationProvider.OAuth2GeneralAuthenticationProvider) &&
             !within(ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider)
             """)
     public Object observeAuthenticationProvider(ProceedingJoinPoint joinPoint) throws Throwable {
+        return observeOperation(joinPoint, "uaa.auth.provider.authenticate", "uaa.auth", "provider.authenticate");
+    }
+
+    @Around("""
+            execution(public * ir.daneshrefah.scm.uaa.security.oauth2.grant..*AuthenticationProvider.authenticate(..)) &&
+            !within(ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationProvider)
+            """)
+    public Object observeExtensionGrantProvider(ProceedingJoinPoint joinPoint) throws Throwable {
         return observeOperation(joinPoint, "uaa.auth.provider.authenticate", "uaa.auth", "provider.authenticate");
     }
 

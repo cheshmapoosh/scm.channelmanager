@@ -66,14 +66,15 @@ public class BasicAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
             String username = authRequest.getName();
-            this.logger.trace(LogMessage.format("Found username '%s' in Basic Authorization header", username));
+            this.logger.trace("Found Basic Authorization credentials");
             if (authenticationIsRequired(username)) {
                 Authentication authResult = this.authenticationManager.authenticate(authRequest);
                 SecurityContext context = this.securityContextHolderStrategy.createEmptyContext();
                 context.setAuthentication(authResult);
                 this.securityContextHolderStrategy.setContext(context);
                 if (this.logger.isDebugEnabled()) {
-                    this.logger.debug(LogMessage.format("Set SecurityContextHolder to %s", authResult));
+                    this.logger.debug(LogMessage.format("Set SecurityContextHolder authentication type to %s",
+                            authResult.getClass().getSimpleName()));
                 }
                 this.rememberMeServices.loginSuccess(request, response, authResult);
                 this.securityContextRepository.saveContext(context, request, response);
@@ -82,7 +83,7 @@ public class BasicAuthenticationFilter extends OncePerRequestFilter {
         }
         catch (AuthenticationException ex) {
             this.securityContextHolderStrategy.clearContext();
-            this.logger.debug("Failed to process authentication request", ex);
+            this.logger.debug("Failed to process Basic authentication request: " + ex.getClass().getSimpleName());
             this.rememberMeServices.loginFail(request, response);
             onUnsuccessfulAuthentication(request, response, ex);
             if (this.ignoreFailure) {

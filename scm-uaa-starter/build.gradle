@@ -24,4 +24,6 @@ dependencies {
     api project(':scm-uaa-common')
     implementation project(':scm-observation-starter')
     api project(':scm-utils')
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework:spring-test'
 }

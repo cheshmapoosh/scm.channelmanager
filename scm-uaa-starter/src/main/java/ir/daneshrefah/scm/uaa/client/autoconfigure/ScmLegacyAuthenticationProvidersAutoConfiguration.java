@@ -106,6 +106,13 @@ public class ScmLegacyAuthenticationProvidersAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(RemoteSecurityServiceProvider.class)
+    @ConditionalOnProperty(
+            prefix = "scm.security.legacy-authentication.claim",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = false
+    )
+    @SuppressWarnings("removal")
     public ClaimRemoteAuthenticationProvider claimRemoteAuthenticationProvider(
             RemoteSecurityServiceProvider remoteSecurityServiceProvider,
             ObjectMapper objectMapper,

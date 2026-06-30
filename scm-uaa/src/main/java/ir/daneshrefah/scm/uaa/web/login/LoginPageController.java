@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.controller;
+package ir.daneshrefah.scm.uaa.web.login;
 
 import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson;
 import ir.daneshrefah.scm.uaa.common.exception.CaptchaVerifyException;
@@ -45,7 +45,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
  */
 @RequiredArgsConstructor
 @Controller
-public class LoginController {
+public class LoginPageController {
 
     private static final String LOGIN_PAGE = "login";
     private static final String PARAMETER_KEY_CLIENT_ID = "client_id";
@@ -66,6 +66,7 @@ public class LoginController {
     private static final String OPERATION_CANCEL_LOGIN = "operation_cancel_login";
     private final ClientService clientService;
     private final MessageSource messageSource;
+    private final ClientLoginThemeResolver themeResolver;
 
     @GetMapping("/login")
     public String login(Model model, HttpServletRequest request,
@@ -101,6 +102,7 @@ public class LoginController {
         }
         model.addAttribute(ATTRIBUTE_AUTHENTICATION_METHOD, null != authenticationMethod ? authenticationMethod.getCode() : null);
         model.addAttribute(ATTRIBUTE_OTP_EXPIRE_TIME, otpExpireTime);
+        model.addAttribute("loginTheme", themeResolver.resolve(client.map(Client::getUser).map(User::getNickname).orElse(null)));
 
         return LOGIN_PAGE;
     }
