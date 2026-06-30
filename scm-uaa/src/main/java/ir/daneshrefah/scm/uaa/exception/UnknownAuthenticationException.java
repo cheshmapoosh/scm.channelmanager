@@ -10,7 +10,7 @@ package ir.daneshrefah.scm.uaa.exception;
 public class UnknownAuthenticationException extends BaseAuthenticationException {
 
     public UnknownAuthenticationException(Exception cause) {
-        super("unknown authentication exception: " + (null != cause ? cause.getMessage() : ""), cause);
+        super("unknown authentication exception", cause);
     }
 
     @Override

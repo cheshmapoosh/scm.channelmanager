@@ -2,9 +2,9 @@ package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.GeneralAuthenticationProvider;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
+import ir.daneshrefah.scm.uaa.security.form.UaaFormLoginAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.resource.JtiValidatingBearerAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -54,10 +54,10 @@ public class ResourceServerSecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(
             HttpSecurity http,
             JwtDecoder jwtDecoder,
-            GeneralAuthenticationProvider generalAuthenticationProvider
+            UaaFormLoginAuthenticationProvider formLoginAuthenticationProvider
     ) throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(
+        JtiValidatingBearerAuthenticationProvider bearerAuthenticationProvider = new JtiValidatingBearerAuthenticationProvider(
                 jwtDecoder,
                 logoutService,
                 cacheManager,
@@ -65,8 +65,8 @@ public class ResourceServerSecurityConfig {
         );
         http
                 .securityMatcher("/api/**", "/oauth2/**", "/logout")
-                .authenticationProvider(generalAuthenticationProvider)
-                .authenticationManager(new ProviderManager(List.of(jwtAuthenticationProvider, generalAuthenticationProvider)))
+                .authenticationProvider(formLoginAuthenticationProvider)
+                .authenticationManager(new ProviderManager(List.of(bearerAuthenticationProvider, formLoginAuthenticationProvider)))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/public/**").permitAll()

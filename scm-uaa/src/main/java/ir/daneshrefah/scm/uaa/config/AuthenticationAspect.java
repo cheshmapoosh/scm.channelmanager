@@ -15,8 +15,6 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 
-
-//INSERT INTO LOGGER.MESSAGE_LOG (ID, CORRELATION_ID, USERNAME, ACCESS_PARAM, BODY, IP, STATUS, TRANSACTION_DATE, SERVICE_TYPE, REAL_USERNAME, SUBMIT_DATE, ALLOCATED_TIME, CLIENT_TYPE, AMOUNT) VALUES (18188621, '1640862529925594', '5532377608', null, '{"description":"Success","serverCode":"1","additionalStatus":null,"name":"SUCCESS","code":"0","severity":"INFO"}', null, 'RESPONSE_FROM_CHANNEL', '2021-12-30 11:07:11.468000', 'LoanListInquiryResponse', '5532377608', '2021-12-30 14:37:20.150265', 0, null, null);
 @Aspect
 @Component
 @ConditionalOnProperty(name = "scm.log.trace.aspect.enable", havingValue = "true", matchIfMissing = true)
@@ -114,7 +112,11 @@ public class AuthenticationAspect {
             return null;
         }
         username = username.replace('\r', ' ').replace('\n', ' ').trim();
-        return username.length() > 128 ? username.substring(0, 128) : username;
+        if (username.length() <= 4) {
+            return "****";
+        }
+        String masked = username.substring(0, 2) + "***" + username.substring(username.length() - 2);
+        return masked.length() > 128 ? masked.substring(0, 128) : masked;
     }
 
     private String clientId(Authentication authentication) {
@@ -143,7 +145,7 @@ public class AuthenticationAspect {
         String message = exception.getMessage()
                 .replace('\r', ' ')
                 .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number|cookie|registry[_-]?token|mobile|national[_-]?code)\\s*[:=]\\s*\\S+", "$1=***")
                 .trim();
         return message.length() > 300 ? message.substring(0, 300) : message;
     }

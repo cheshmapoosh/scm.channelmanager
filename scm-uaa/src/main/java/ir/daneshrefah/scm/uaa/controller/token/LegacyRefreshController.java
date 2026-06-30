@@ -10,6 +10,7 @@ import java.util.*;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,13 +22,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 public class LegacyRefreshController {
+    private final String legacyRefreshClientId;
+    private final String legacyRefreshClientSecret;
+
+    public LegacyRefreshController(
+            @Value("${scm.uaa.legacy.refresh.client-id:MB}") String legacyRefreshClientId,
+            @Value("${scm.uaa.legacy.refresh.client-secret:}") String legacyRefreshClientSecret
+    ) {
+        this.legacyRefreshClientId = legacyRefreshClientId;
+        this.legacyRefreshClientSecret = legacyRefreshClientSecret;
+    }
 
     @PostMapping(value = "/refresh", consumes = MediaType.APPLICATION_JSON_VALUE)
     public void refresh(@RequestBody LegacyRefreshRequest body,
                         HttpServletRequest request,
                         HttpServletResponse response) throws Exception {
 
-        // map legacy -> استاندارد
         Map<String, String[]> params = new HashMap<>();
         params.put("grant_type", new String[]{"ext_shk"});
         params.put("refresh_token", new String[]{body.refresh_token()});
@@ -35,13 +45,11 @@ public class LegacyRefreshController {
             params.put("scope", new String[]{body.scope()});
         }
 
-        // اگر legacy کلاینت را جدا می‌فرستد و تو می‌خوای به شکل استاندارد بفرستی:
-        // بهتره کلاینت احراز هویت را همانند استاندارد (Basic یا ...) از خود request بگیرد.
-        // اما اگر مجبور باشی می‌تونی client_id را هم پارامتر کنی (بسته به client auth method):
-        // params.put("client_id", new String[]{body.clientId()});
-
-        HttpServletRequest wrapped = new HeaderAndParamOverrideRequestWrapper(request, params, Map.of(HttpHeaders.AUTHORIZATION, basicAuthHeaderValue("MB", "myClientSecretValue")));
-        // Content-Type استاندارد برای token endpoint
+        HttpServletRequest wrapped = new HeaderAndParamOverrideRequestWrapper(
+                request,
+                params,
+                Map.of(HttpHeaders.AUTHORIZATION, basicAuthHeaderValue(legacyRefreshClientId, legacyRefreshClientSecret))
+        );
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("Pragma", "no-cache");
 
@@ -146,4 +154,3 @@ final class HeaderAndParamOverrideRequestWrapper extends HttpServletRequestWrapp
         return Collections.enumeration(names);
     }
 }
-

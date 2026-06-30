@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.uaa.observation.UaaObservation;
+import ir.daneshrefah.scm.uaa.security.oauth2.policy.LegacyCookiePolicy;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -24,10 +25,16 @@ import java.util.Optional;
 @SuppressWarnings("removal")
 public class LegacyPwaCookieTokenDeliveryStrategy implements LegacyTokenDeliveryStrategy {
     private final LegacyAuthProperties properties;
+    private final LegacyCookiePolicy cookiePolicy;
     private final UaaObservation observation;
 
-    public LegacyPwaCookieTokenDeliveryStrategy(LegacyAuthProperties properties, UaaObservation observation) {
+    public LegacyPwaCookieTokenDeliveryStrategy(
+            LegacyAuthProperties properties,
+            LegacyCookiePolicy cookiePolicy,
+            UaaObservation observation
+    ) {
         this.properties = properties;
+        this.cookiePolicy = cookiePolicy;
         this.observation = observation;
     }
 
@@ -38,7 +45,7 @@ public class LegacyPwaCookieTokenDeliveryStrategy implements LegacyTokenDelivery
 
     @Override
     public void deliver(LegacyTokenDeliveryContext context) {
-        if (!properties.isEnabled() || !properties.getPwa().getCookie().isEnabled() || context.token() == null) {
+        if (!cookiePolicy.canCreateCookie(context.clientType()) || context.token() == null) {
             return;
         }
         UaaObservation.OperationContext operation = new UaaObservation.OperationContext(

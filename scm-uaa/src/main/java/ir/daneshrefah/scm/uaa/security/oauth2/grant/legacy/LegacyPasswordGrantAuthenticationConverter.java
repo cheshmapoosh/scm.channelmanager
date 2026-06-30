@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
 import ir.daneshrefah.scm.uaa.security.token.DefaultGrantPreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.uaa.utils.SecurityUtils;
@@ -31,11 +32,17 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
  * No new feature should be added here unless strictly required for migration safety.
  */
 @Deprecated(since = "9.0.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class LegacyPasswordGrantAuthenticationConverter implements AuthenticationConverter {
     private final LegacyClientTypeResolver clientTypeResolver;
+    private final RegisteredClientLegacyPolicy legacyPolicy;
 
-    public LegacyPasswordGrantAuthenticationConverter(LegacyClientTypeResolver clientTypeResolver) {
+    public LegacyPasswordGrantAuthenticationConverter(
+            LegacyClientTypeResolver clientTypeResolver,
+            RegisteredClientLegacyPolicy legacyPolicy
+    ) {
         this.clientTypeResolver = clientTypeResolver;
+        this.legacyPolicy = legacyPolicy;
     }
 
     @Override
@@ -43,6 +50,9 @@ public class LegacyPasswordGrantAuthenticationConverter implements Authenticatio
         AuthorizationGrantType grantType = grantType(request);
         if (!AuthorizationGrantType.FIRST_PASSWORD.equals(grantType) && !AuthorizationGrantType.DEFAULT.equals(grantType)) {
             return null;
+        }
+        if (!legacyPolicy.legacyPasswordGrantEnabled()) {
+            throwError(OAuth2ErrorCodes.INVALID_GRANT, OAuth2ParameterNames.GRANT_TYPE);
         }
 
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();

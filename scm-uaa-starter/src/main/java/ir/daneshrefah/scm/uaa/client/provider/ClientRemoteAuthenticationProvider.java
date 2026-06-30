@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.uaa.client.provider.token.BaseAuthenticationToken;
 import ir.daneshrefah.scm.uaa.client.provider.token.ClientAuthenticationToken;
@@ -50,18 +51,14 @@ public class ClientRemoteAuthenticationProvider extends AbstractRemoteClientAuth
         String accessToken = extractAccessToken(authenticationResult);
         Jwt jwt = jwtDecoder.decode(accessToken);
         UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt);
-//        UserDetails loadedUser = getSessionCache().getUserFromCache(authentication.getId());
-//        if (loadedUser == null) {
-//            throw new InternalAuthenticationServiceException(
-//                    "userCache returned null, which is an interface contract violation");
-//        }
         return userAuthentication;
     }
 
     private String extractAccessToken(String value) {
         Map<String, String> responseMap = null;
         try {
-            responseMap = objectMapper.readValue(value, Map.class);
+            responseMap = objectMapper.readValue(value, new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
             logger.error("invalid remote client authentication response: " + safeMessage(e));
             return null;

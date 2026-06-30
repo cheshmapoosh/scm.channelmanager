@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider;
+package ir.daneshrefah.scm.uaa.security.resource;
 
 import ir.daneshrefah.scm.common.model.person.PersonType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
@@ -10,9 +10,9 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -30,42 +30,28 @@ import java.util.Map;
 
 import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
-/**
- * Description of the class or purpose of the file.
- *
- * @author reza jamshidi
- * @version 1.0
- * @since 2024-05-19
- */
 @RequiredArgsConstructor
-public class JwtAuthenticationProvider implements AuthenticationProvider {
-
+public class JtiValidatingBearerAuthenticationProvider implements AuthenticationProvider {
     private static final String JWT_ID_CACHE_NAME = "jwt:jti";
 
     private final Log logger = LogFactory.getLog(getClass());
-
     private final JwtDecoder jwtDecoder;
-
     private final LogoutService logoutService;
-
     private final CacheManager cacheManager;
-
     private final UserService userService;
-
-//    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtTokenConverter(/*() -> null*/);
+    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter = new JwtTokenConverter();
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         BearerTokenAuthenticationToken bearer = (BearerTokenAuthenticationToken) authentication;
         Jwt jwt = getJwt(bearer);
         jwt = prepareJwt(jwt, authentication);
-        AbstractAuthenticationToken token = this.jwtAuthenticationConverter.convert(jwt);
-        validateJwtId(jwt,token);
+        AbstractAuthenticationToken token = jwtAuthenticationConverter.convert(jwt);
+        validateJwtId(jwt, token);
         if (token.getDetails() == null) {
             token.setDetails(bearer.getDetails());
         }
-        this.logger.debug("Authenticated token");
+        logger.debug("Authenticated token");
         return token;
     }
 
@@ -98,23 +84,19 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         Map<String, Object> headers = jwt.getHeaders();
         Map<String, Object> claims = new HashMap<>(jwt.getClaims());
         claims.put("claim_authentication", authentication);
-        // @formatter:off
         return Jwt.withTokenValue(jwt.getTokenValue())
-                .headers((h) -> h.putAll(headers))
-                .claims((c) -> c.putAll(claims))
+                .headers(h -> h.putAll(headers))
+                .claims(c -> c.putAll(claims))
                 .build();
     }
 
     private Jwt getJwt(BearerTokenAuthenticationToken bearer) {
         try {
-            Jwt decodeJwt = this.jwtDecoder.decode(bearer.getToken());
-            return decodeJwt;
-        }
-        catch (BadJwtException failed) {
-            this.logger.debug("Failed to authenticate since the JWT was invalid");
+            return jwtDecoder.decode(bearer.getToken());
+        } catch (BadJwtException failed) {
+            logger.debug("Failed to authenticate since the JWT was invalid");
             throw new InvalidBearerTokenException(failed.getMessage(), failed);
-        }
-        catch (JwtException failed) {
+        } catch (JwtException failed) {
             throw new AuthenticationServiceException(failed.getMessage(), failed);
         }
     }

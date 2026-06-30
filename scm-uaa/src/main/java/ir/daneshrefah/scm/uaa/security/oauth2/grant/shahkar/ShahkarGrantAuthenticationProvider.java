@@ -4,11 +4,12 @@ import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.model.recipient.Recipient;
 import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.BaseTokenAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.OAuth2TokenGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.otp.OtpService;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
@@ -30,7 +31,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.CLIENT_SETTING_KEY_T
 
 @Component
 @Slf4j
-public class ShahkarGrantAuthenticationProvider extends BaseTokenAuthenticationProvider<OAuth2ShahkarAuthenticationToken> {
+public class ShahkarGrantAuthenticationProvider extends OAuth2TokenGrantAuthenticationProvider<OAuth2ShahkarAuthenticationToken> {
     private final OtpService otpService;
     private final UserService userService;
 
@@ -43,6 +44,11 @@ public class ShahkarGrantAuthenticationProvider extends BaseTokenAuthenticationP
         super(registeredClientRepository, tokenGenerator);
         this.otpService = otpService;
         this.userService = userService;
+    }
+
+    @Override
+    protected AuthorizationGrantType grantType() {
+        return AuthorizationGrantType.SHAHKAR;
     }
 
     @Override

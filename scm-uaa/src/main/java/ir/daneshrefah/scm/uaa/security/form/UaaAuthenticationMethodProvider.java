@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.uaa.security.authenticationProvider.providers;
+package ir.daneshrefah.scm.uaa.security.form;
 
 import ir.daneshrefah.scm.common.constant.otp.OtpReason;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
+import ir.daneshrefah.scm.uaa.security.oauth2.error.OAuth2AuthenticationErrorMapper;
 import ir.daneshrefah.scm.uaa.security.password.LegacyPassword;
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlOtpDeviceRequestAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.FirstLvlOtpDeviceVerifyAuthenticationToken;
@@ -22,7 +23,6 @@ import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyRequest;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpVerifyResponse;
-import ir.daneshrefah.scm.uaa.service.user.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -33,12 +33,8 @@ import java.util.Set;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_INVALID_CLAIM;
 
-/**
- * Single Spring Security provider for the active first-level login methods.
- * It replaces the legacy one-class-per-supports hierarchy while keeping the existing token contract stable.
- */
 @Component
-public class GeneralAuthenticationMethodProvider extends AbstractAuthenticationProvider {
+public class UaaAuthenticationMethodProvider extends UaaAuthenticationMethodProviderSupport {
     private static final Set<Class<?>> SUPPORTED_TOKENS = Set.of(
             FirstLvlStaticAuthenticationToken.class,
             FirstLvlPinAuthenticationToken.class,
@@ -52,12 +48,12 @@ public class GeneralAuthenticationMethodProvider extends AbstractAuthenticationP
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
 
-    public GeneralAuthenticationMethodProvider(
-            UserService userService,
+    public UaaAuthenticationMethodProvider(
+            OAuth2AuthenticationErrorMapper errorMapper,
             PasswordEncoder passwordEncoder,
             OtpService otpService
     ) {
-        super(userService);
+        super(errorMapper);
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
     }
@@ -108,7 +104,7 @@ public class GeneralAuthenticationMethodProvider extends AbstractAuthenticationP
         Object credentials = authentication.getCredentials();
         if (credentials == null) {
             logger.debug("Failed to authenticate since no credentials were provided");
-            throw new BadCredentialsException("GeneralAuthenticationMethodProvider.badCredentials");
+            throw new BadCredentialsException("UaaAuthenticationMethodProvider.badCredentials");
         }
         String storedPassword = userDetails.getPassword();
         String legacyUsernameSalt = userDetails.getUser().getPerson().getUsername();
@@ -117,7 +113,7 @@ public class GeneralAuthenticationMethodProvider extends AbstractAuthenticationP
                 storedPassword
         )) {
             logger.debug("Failed to authenticate since password does not match stored value");
-            throw new BadCredentialsException("GeneralAuthenticationMethodProvider.badCredentials");
+            throw new BadCredentialsException("UaaAuthenticationMethodProvider.badCredentials");
         }
     }
 

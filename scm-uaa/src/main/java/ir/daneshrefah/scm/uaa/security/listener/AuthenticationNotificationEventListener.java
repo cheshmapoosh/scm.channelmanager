@@ -28,6 +28,7 @@ import java.util.Locale;
  */
 @RequiredArgsConstructor
 @Component
+@SuppressWarnings("deprecation")
 public class AuthenticationNotificationEventListener extends BaseAuthenticationListener {
 
     private final TerminalService terminalService;
@@ -38,7 +39,6 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         if (!authentication.isNotificationRequired()) {
             return;
         }
-//        BeanUtils.describe(authentication);
         User user = authentication.getPrincipal().getUser();
         terminalService
                 .findTerminalByCode(user.getTerminalCode())
@@ -54,26 +54,19 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                 .put(NotificationDataKey.TERMINAL_TITLE, terminal.getTitle());
         IssuerInfo issuerInfo = IssuerInfo.builder()
                 .parentCorrelationId(authentication.getSessionId())
-//                            .nickname(user.getNickname())
-//                            .username(Objects.nonNull(user.getPerson()) ? user.getPerson().getUsername() : null)
-//                            .personType(user.getPerson().getPersonType())
                 .terminalCode(user.getTerminalCode())
-//                            .hostAddress()
-//                            .instanceName()
                 .build();
         Recipient recipient = Recipient.builder()
                 .address(user.getPerson().getMobile1())
-//                .authenticationLevel(AuthenticationLevel.CM_AUTHENTICATED)
                 .identifier(user.getNickname())
                 .identifierType(UserIdentifierType.USER_NICKNAME)
                 .terminalCode(terminal.getCode())
-// TODO                .accessParameter(authentication.getA)
                 .build();
         NotificationRequest request = NotificationRequest.builder()
                 .template(NotificationTemplate.AUTHENTICATION)
                 .media(NotificationMedia.SMS)
                 .recipient(recipient)
-                .userLocale(new Locale("fa","IR")) //TODO GET FROM HEADER
+                .userLocale(Locale.forLanguageTag("fa-IR"))
                 .data(data)
                 .terminalCode(user.getTerminalCode())
                 .issuerInfo(issuerInfo)

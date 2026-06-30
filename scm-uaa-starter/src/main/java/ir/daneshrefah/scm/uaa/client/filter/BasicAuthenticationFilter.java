@@ -56,9 +56,8 @@ public class BasicAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         try {
-            String terminalCode = null; //TODO
-            ClientAuthenticationToken authRequest = null;//this.authenticationConverter.convertByHttpRequest(terminalCode,
-//                    request);
+            String terminalCode = null;
+            ClientAuthenticationToken authRequest = null;
             if (authRequest == null) {
                 this.logger.trace("Did not process authentication request since failed to find "
                         + "username and password in Basic Authorization header");

@@ -71,13 +71,13 @@ insert into TBL_SUA_CLIENT (TITLE, CLIENT_IDENTIFIER, CLIENT_SECRET, TERMINAL_CO
                             CLIENT_AUTH_METHOD_POST, CLIENT_AUTH_METHOD_SEC_JWT, CLIENT_AUTH_METHOD_KEY_JWT,
                             REDIRECT_URIS, REQUIRE_AUTHORIZATION_CONSENT, REQUIRE_CLIENT_AUTHENTICATION, REQUIRE_PROOF_KEY, CHECK_VERSION,
                             CHECK_ACTIVATION, SESSION_TIME_TO_LIVE_MINUTE, CREATOR, LAST_EDITOR)
-values ('Internet Bank', 'IB', '{noop}myClientSecretValue', 'IB', 0, 0, 0, 0, 'http://127.0.0.1:8080/authorized', 1, 0, 0, 0, 0, 1000, 'Reza Jamshidi', 'Reza Jamshidi');
+values ('Internet Bank', 'IB', '{noop}<change-me>', 'IB', 0, 0, 0, 0, 'http://127.0.0.1:8080/authorized', 1, 0, 0, 0, 0, 1000, 'system', 'system');
 insert into TBL_SUA_CLIENT (TITLE, CLIENT_IDENTIFIER, CLIENT_SECRET, TERMINAL_CODE, CLIENT_AUTH_METHOD_BASIC,
                             CLIENT_AUTH_METHOD_POST, CLIENT_AUTH_METHOD_SEC_JWT, CLIENT_AUTH_METHOD_KEY_JWT,
                             REDIRECT_URIS, REQUIRE_AUTHORIZATION_CONSENT, REQUIRE_CLIENT_AUTHENTICATION,
                             REQUIRE_PROOF_KEY, CHECK_VERSION, CHECK_ACTIVATION, SESSION_TIME_TO_LIVE_MINUTE,
                             CREATOR, LAST_EDITOR)
-values ('Channel Manager', 'SCM', '{noop}myClientSecretValue', 'SCM', 1, 0, 0, 0, 'http://localhost', 1, 0, 0, 0, 0, 1000, 'Reza Jamshidi', 'Reza Jamshidi');
+values ('Channel Manager', 'SCM', '{noop}<change-me>', 'SCM', 1, 0, 0, 0, 'http://localhost', 1, 0, 0, 0, 0, 1000, 'system', 'system');
 
 CREATE TABLE REF.TBL_SUA_CLIENT_SCOPE
 (

@@ -56,7 +56,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .map(this::mapToRegisteredClient)
                 .findFirst()
                 .orElseGet(() -> {
-                    log.warn(">>> the client with id : {} dos not found", id);
+                    log.warn("client lookup by id returned no result");
                     return null;
                 });
     }
@@ -68,7 +68,7 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .filter(client -> client.getUser().getNickname().equalsIgnoreCase(nickname))
                 .map(this::mapToRegisteredClient)
                 .findFirst().orElseGet(() -> {
-                    log.warn(">>> the client with clientId : {} dos not found", nickname);
+                    log.warn("client lookup by clientId returned no result");
                     return null;
                 });
     }
@@ -91,10 +91,11 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .build();
         RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
                 .clientId(client.getUser().getNickname())
-                .clientSecret(Objects.nonNull(client.getUser()) && StringUtils.isNotBlank(client.getUser().getLoginStaticPassword()) ? client.getUser().getLoginStaticPassword() : "{noop}myClientSecretValue")
-//                    .clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(client.getAuthenticationMethod()))
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSetting);
+        if (Objects.nonNull(client.getUser()) && StringUtils.isNotBlank(client.getUser().getLoginStaticPassword())) {
+            clientBuilder.clientSecret(client.getUser().getLoginStaticPassword());
+        }
         for (ClientAuthenticationMethod clientAuthenticationMethod : client.getAuthenticationMethods()) {
             clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethodMapper.INSTANCE.toSpring(clientAuthenticationMethod));
         }
@@ -104,11 +105,12 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .map(ClientAuthorizationGrantType::getAuthorizationGrantType)
                 .toList();
         if (grantTypes.isEmpty()) {
-            log.warn(">>> important! the client with nickname : {} does not have any authorizationGrantType", client.getUser().getNickname());
+            log.warn("client has no authorization grant type configured");
         } else {
             grantTypes
                     .stream()
                     .map(AuthorizationGrantTypeMapper.INSTANCE::toSpring)
+                    .filter(Objects::nonNull)
                     .forEach(clientBuilder::authorizationGrantType);
         }
 
@@ -125,7 +127,6 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
          if (!isScopeOpenIdAdded) {
             clientBuilder.scope(OidcScopes.OPENID);
         }
-        //TODO: Resolve bug for fetch from db
         clientBuilder.scope("session");
         return clientBuilder.build();
     }
