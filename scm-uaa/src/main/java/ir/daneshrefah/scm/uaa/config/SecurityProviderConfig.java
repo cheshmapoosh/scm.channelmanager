@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.uaa.security.authenticationProvider.providers.AbstractAuthenticationProvider;
+import ir.daneshrefah.scm.uaa.security.form.UaaAuthenticationMethodProviderSupport;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +15,7 @@ import java.util.List;
 public class SecurityProviderConfig {
     @Bean
     public AuthenticationManager authenticationManager(
-            List<AbstractAuthenticationProvider> providers,
+            List<UaaAuthenticationMethodProviderSupport> providers,
             ApplicationEventPublisher applicationEventPublisher
     ) {
         List<AuthenticationProvider> authenticationProviders = providers.stream()

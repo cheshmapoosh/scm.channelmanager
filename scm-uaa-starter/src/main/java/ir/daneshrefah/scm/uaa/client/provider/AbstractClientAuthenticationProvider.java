@@ -86,7 +86,6 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             throw new UsernameNotFoundException("not match username");
         }
         try {
-//            this.preAuthenticationChecks.check(user.findUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
         catch (AuthenticationException ex) {
@@ -97,16 +96,14 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
             // we're using latest data (i.e. not from the cache)
             cacheWasUsed = false;
             user = retrieveUser(username, (BaseAuthenticationToken) authentication);
-//            this.preAuthenticationChecks.check(user.findUserDetails());
             additionalAuthenticationChecks(user, (BaseAuthenticationToken) authentication);
         }
-//        this.postAuthenticationChecks.check(user.findUserDetails());
         if (!cacheWasUsed && StringUtils.isNotEmpty(sessionKey)) {
             this.sessionCache.putSessionInCache(sessionKey, user);
         }
         Object principalToReturn = user;
         if (this.forcePrincipalAsString) {
-            principalToReturn = user.getName(); //TODO username
+            principalToReturn = user.getName();
         }
         return createSuccessAuthentication(user, authentication);
     }
@@ -174,15 +171,6 @@ public abstract class AbstractClientAuthenticationProvider implements Authentica
     }
 
     protected UserAuthentication createSuccessAuthentication(UserAuthentication user, Authentication authentication) {
-        // Ensure we return the original credentials the user supplied,
-        // so subsequent attempts are successful even with encoded passwords.
-        // Also ensure we return the original getDetails(), so that future
-        // authentication events after cache expiry contain the details
-//        UsernamePasswordAuthenticationToken result = UsernamePasswordAuthenticationToken.authenticated(principal,
-//                authentication.getCredentials(), this.authoritiesMapper.mapAuthorities(user.getAuthorities()));
-//        result.setDetails(authentication.getDetails());
-//        this.logger.debug("Authenticated user");
-//        return result;
         return user;
     }
 

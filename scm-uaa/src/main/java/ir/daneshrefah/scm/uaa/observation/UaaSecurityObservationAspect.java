@@ -26,14 +26,16 @@ import java.util.Locale;
 public class UaaSecurityObservationAspect {
     private final UaaObservation observation;
 
-    @Around("execution(public * ir.daneshrefah.scm.uaa.security.converter..*.convert(..))")
+    @Around("""
+            execution(public * ir.daneshrefah.scm.uaa.security.converter..*.convert(..)) ||
+            execution(public * ir.daneshrefah.scm.uaa.security.oauth2.grant..*AuthenticationConverter.convert(..))
+            """)
     public Object observeConverter(ProceedingJoinPoint joinPoint) throws Throwable {
         return observeOperation(joinPoint, "uaa.auth.pre_auth.convert", "uaa.auth", "pre_auth.convert");
     }
 
     @Around("""
-            execution(public * ir.daneshrefah.scm.uaa.security.authenticationProvider..*.authenticate(..)) &&
-            !within(ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider)
+            execution(public * ir.daneshrefah.scm.uaa.security.form..*.authenticate(..))
             """)
     public Object observeAuthenticationProvider(ProceedingJoinPoint joinPoint) throws Throwable {
         return observeOperation(joinPoint, "uaa.auth.provider.authenticate", "uaa.auth", "provider.authenticate");
@@ -47,7 +49,7 @@ public class UaaSecurityObservationAspect {
         return observeOperation(joinPoint, "uaa.auth.provider.authenticate", "uaa.auth", "provider.authenticate");
     }
 
-    @Around("execution(public * ir.daneshrefah.scm.uaa.security.authenticationProvider.JwtAuthenticationProvider.authenticate(..))")
+    @Around("execution(public * ir.daneshrefah.scm.uaa.security.resource.JtiValidatingBearerAuthenticationProvider.authenticate(..))")
     public Object observeJwtValidation(ProceedingJoinPoint joinPoint) throws Throwable {
         UaaObservation.JwtContext ctx = jwtValidationContext(firstAuthentication(joinPoint));
         observation.jwtValidationStarted(ctx);

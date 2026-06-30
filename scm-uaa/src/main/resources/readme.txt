@@ -17,7 +17,7 @@ grant_type=client_credentials
 2) Post Method
 following parameters should be sent as (form-data/x-www-form-urlencoded/querystring):
 client_id=mb
-client_secret=myClientSecretValue
+client_secret=<client-secret>
 grant_type=client_credentials
 
 401 => Error => 

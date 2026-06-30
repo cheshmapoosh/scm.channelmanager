@@ -38,16 +38,6 @@ public class ClientEntity extends AbstractEntity<Long> {
     private boolean clientAuthenticationMethodKeyJwt;
     @Column(name = "CLIENT_AUTH_METHOD_NONE")
     private boolean clientAuthenticationMethodNone;
-    //    @Column(name = "AUTH_GRANT_AUTHORIZATION_CODE")
-//    private boolean authorizationGrantTypeAuthorizationCode;
-//    @Column(name = "AUTH_GRANT_REFRESH_TOKEN")
-//    private boolean authorizationGrantTypeRefreshToken;
-//    @Column(name = "AUTH_GRANT_CLIENT_CREDENTIAL")
-//    private boolean authorizationGrantTypeClientCredential;
-//    @Column(name = "AUTH_GRANT_FIRST_PASSWORD")
-//    private boolean authorizationGrantTypeFirstPassword;
-//    @Column(name = "AUTH_GRANT_SECOND_PASSWORD")
-//    private boolean authorizationGrantTypeSecondPassword;
     @Column(name = "REDIRECT_URIS")
     @Convert(converter = StringSetConverter.class)
     private Set<String> redirectUris;

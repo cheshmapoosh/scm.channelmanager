@@ -40,8 +40,8 @@ public class UserDetailsService {
     public UserDetails loadUserByUsername(String username, String terminalCode) throws UsernameNotFoundException {
         List<TerminalUserDetails> users = loadUsersByUsername(username, terminalCode);
         if (users.size() == 0) {
-            this.logger.debug("Query returned no results for user '" + username + ":" + terminalCode + "'");
-            throw new UsernameNotFoundException("username not found: '" + username + ":" + terminalCode + "'");
+            this.logger.debug("Query returned no results for user '" + safeIdentifier(username) + ":" + terminalCode + "'");
+            throw new UsernameNotFoundException("username not found");
         }
         TerminalUserDetails user = users.get(0); // contains no GrantedAuthority[]
         Set<GrantedAuthority> dbAuthsSet = new HashSet<>();
@@ -54,10 +54,21 @@ public class UserDetailsService {
         List<GrantedAuthority> dbAuths = new ArrayList<>(dbAuthsSet);
         addCustomAuthorities(user.getUsername(), dbAuths);
         if (dbAuths.size() == 0) {
-            this.logger.debug("User '" + username + "' has no authorities and will be treated as 'not found'");
-            throw new UsernameNotFoundException("User '" + username + ":" + terminalCode + "' has no GrantedAuthority");
+            this.logger.debug("User '" + safeIdentifier(username) + "' has no authorities and will be treated as 'not found'");
+            throw new UsernameNotFoundException("User has no GrantedAuthority");
         }
         return createUserDetails(username, user, dbAuths);
+    }
+
+    private String safeIdentifier(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String text = value.trim();
+        if (text.length() <= 4) {
+            return "****";
+        }
+        return text.substring(0, 2) + "***" + text.substring(text.length() - 2);
     }
 
     protected List<TerminalUserDetails> loadUsersByUsername(String username, String terminalCode) {
