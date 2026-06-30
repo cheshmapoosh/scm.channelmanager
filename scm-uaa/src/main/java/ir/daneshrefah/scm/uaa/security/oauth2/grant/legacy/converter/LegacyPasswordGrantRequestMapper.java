@@ -1,9 +1,10 @@
-package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter;
 
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
-import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
-import ir.daneshrefah.scm.uaa.security.token.DefaultGrantPreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantRequest;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.uaa.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -23,47 +23,39 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
 import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
 
 /**
- * Legacy password converter kept only for old NIB/PWA/MB compatibility.
+ * Legacy request mapper kept only for old NIB/PWA/MB compatibility.
  * Remove this class after migration to UAA-hosted login and authorization-code flow is complete.
  * No new feature should be added here unless strictly required for migration safety.
  */
 @Deprecated(since = "9.0.0", forRemoval = true)
 @SuppressWarnings("removal")
-public class LegacyPasswordGrantAuthenticationConverter implements AuthenticationConverter {
+public class LegacyPasswordGrantRequestMapper {
     private final LegacyClientTypeResolver clientTypeResolver;
-    private final RegisteredClientLegacyPolicy legacyPolicy;
 
-    public LegacyPasswordGrantAuthenticationConverter(
-            LegacyClientTypeResolver clientTypeResolver,
-            RegisteredClientLegacyPolicy legacyPolicy
-    ) {
+    public LegacyPasswordGrantRequestMapper(LegacyClientTypeResolver clientTypeResolver) {
         this.clientTypeResolver = clientTypeResolver;
-        this.legacyPolicy = legacyPolicy;
     }
 
-    @Override
-    public Authentication convert(HttpServletRequest request) {
-        AuthorizationGrantType grantType = grantType(request);
-        if (!AuthorizationGrantType.FIRST_PASSWORD.equals(grantType) && !AuthorizationGrantType.DEFAULT.equals(grantType)) {
-            return null;
-        }
-        if (!legacyPolicy.legacyPasswordGrantEnabled()) {
-            throwError(OAuth2ErrorCodes.INVALID_GRANT, OAuth2ParameterNames.GRANT_TYPE);
-        }
+    public AuthorizationGrantType grantType(HttpServletRequest request) {
+        return AuthorizationGrantType.findByCode(request.getParameter(OAuth2ParameterNames.GRANT_TYPE));
+    }
 
+    public LegacyPasswordGrantRequest map(
+            HttpServletRequest request,
+            ParameterSearch parameters,
+            AuthorizationGrantType grantType
+    ) {
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
-        ParameterSearch parameters = new ParameterSearch(request, AuthorizationGrantType.DEFAULT.equals(grantType));
         String username = requiredSingle(parameters, OAuth2ParameterNames.USERNAME, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         String password = password(parameters, grantType);
         String appVersion = parameters.getFirst(Constants.APP_VERSION_HEADER).orElse(null);
         String clientId = clientId(clientPrincipal, request, appVersion, grantType);
         Set<String> scopes = scopes(parameters);
         LegacyClientType legacyClientType = clientTypeResolver.resolve(clientId, appVersion, grantType);
-        LegacyPasswordGrantRequest grantRequest = new LegacyPasswordGrantRequest(
+        return new LegacyPasswordGrantRequest(
                 username,
                 password,
                 grantType,
@@ -73,17 +65,6 @@ public class LegacyPasswordGrantAuthenticationConverter implements Authenticatio
                 request.getRemoteAddr(),
                 legacyClientType
         );
-        LegacyPasswordGrantAuthenticationToken token = new LegacyPasswordGrantAuthenticationToken(grantRequest);
-        applyCommonFields(token, request, parameters);
-        if (AuthorizationGrantType.DEFAULT.equals(grantType)) {
-            applyDefaultGrantFields(token, request, parameters);
-        }
-        request.setAttribute(PRE_AUTHENTICATION_INSTANCE, token);
-        return token;
-    }
-
-    private AuthorizationGrantType grantType(HttpServletRequest request) {
-        return AuthorizationGrantType.findByCode(request.getParameter(OAuth2ParameterNames.GRANT_TYPE));
     }
 
     private String password(ParameterSearch parameters, AuthorizationGrantType grantType) {
@@ -144,53 +125,14 @@ public class LegacyPasswordGrantAuthenticationConverter implements Authenticatio
                 .orElse(null);
     }
 
-    private void applyCommonFields(
-            LegacyPasswordGrantAuthenticationToken token,
-            HttpServletRequest request,
-            ParameterSearch parameters
-    ) {
-        token.setAccessParameter(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACCESS_PARAMETER));
-        token.setClaimCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_CLAIM));
-        token.setClientVersion(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_VERSION));
-        token.setClientSignature(request.getParameter(Constants.OAUTH2_PARAM_NAME_CLIENT_SIGNATURE));
-        token.setActivationCode(request.getParameter(Constants.OAUTH2_PARAM_NAME_USER_REGISTER_CODE));
-        token.setActivatorTerminal(request.getParameter(Constants.OAUTH2_PARAM_NAME_ACTIVATOR_TERMINAL));
-        parameters.getFirst(Constants.APP_VERSION_HEADER).ifPresent(token::setClientVersion);
-        parameters.getFirst(Constants.SIGNATURE_HEADER).ifPresent(token::setClientSignature);
-        parameters.getFirst(Constants.ACCESS_PARAM_HEADER).ifPresent(token::setAccessParameter);
-    }
-
-    private void applyDefaultGrantFields(
-            LegacyPasswordGrantAuthenticationToken token,
-            HttpServletRequest request,
-            ParameterSearch parameters
-    ) {
-        DefaultGrantPreAuthenticationToken defaultGrantToken = new DefaultGrantPreAuthenticationToken();
-        parameters.getFirst(Constants.CHANNEL_HEADER).ifPresent(defaultGrantToken::setChannel);
-        parameters.getFirst(Constants.APP_VERSION_HEADER).ifPresent(defaultGrantToken::setAppVersion);
-        parameters.getFirst(Constants.SIGNATURE_HEADER).ifPresent(defaultGrantToken::setSignature);
-        parameters.getFirst(Constants.ACCESS_PARAM_HEADER).ifPresent(defaultGrantToken::setAccessParam);
-        parameters.getFirst(Constants.HASHCODE_HEADER).ifPresent(defaultGrantToken::setHashcode);
-        parameters.getFirst(Constants.AGENT_HEADER).ifPresent(defaultGrantToken::setAgent);
-        parameters.getFirst(Constants.REGISTRY_TOKEN_HEADER).ifPresent(defaultGrantToken::setRegistryToken);
-        parameters.getFirst(Constants.OPERATING_SYSTEM_VERSION_HEADER).ifPresent(defaultGrantToken::setOperationSystemVersion);
-        parameters.getFirst(Constants.DEVICE_MODEL_HEADER).ifPresent(defaultGrantToken::setDeviceModel);
-        parameters.getFirst(Constants.UUID_HEADER).ifPresent(defaultGrantToken::setUuid);
-        parameters.getFirst(Constants.PWA_OTP_CODE_HEADER).ifPresent(defaultGrantToken::setOtpCode);
-        parameters.getFirst(Constants.PWA_OTP_CODE_HEADER).ifPresent(token::setClaimCode);
-        parameters.getFirst(Constants.PWA_TERMINAL_TYPE_HEADER).ifPresent(defaultGrantToken::setTerminalType);
-        defaultGrantToken.setIp(RequestUtils.getOrDefaultRequestIp(null, request));
-        token.setDefaultGrantPreAuthToken(defaultGrantToken);
-    }
-
-    private static class ParameterSearch {
+    public static class ParameterSearch {
         private final MultiValueMap<String, String> parameters;
 
-        private ParameterSearch(HttpServletRequest request, boolean includeHeaders) {
+        public ParameterSearch(HttpServletRequest request, boolean includeHeaders) {
             parameters = getParameters(request, includeHeaders);
         }
 
-        private Optional<String> getFirst(String parameterName) {
+        public Optional<String> getFirst(String parameterName) {
             return Optional.ofNullable(parameters.getFirst(org.apache.commons.lang3.StringUtils.toRootLowerCase(parameterName)));
         }
 

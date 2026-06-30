@@ -1,8 +1,10 @@
-package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
+package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery;
 
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.model.PwaOAuth2AccessToken;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 /**
  * Legacy token delivery context kept only for old NIB/PWA/MB compatibility.
@@ -13,17 +15,20 @@ import jakarta.servlet.http.HttpServletResponse;
 @SuppressWarnings("removal")
 public final class LegacyTokenDeliveryContext {
     private final LegacyClientType clientType;
+    private final RegisteredClient registeredClient;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
     private final PwaOAuth2AccessToken token;
 
     public LegacyTokenDeliveryContext(
             LegacyClientType clientType,
+            RegisteredClient registeredClient,
             HttpServletRequest request,
             HttpServletResponse response,
             PwaOAuth2AccessToken token
     ) {
         this.clientType = clientType;
+        this.registeredClient = registeredClient;
         this.request = request;
         this.response = response;
         this.token = token;
@@ -31,6 +36,10 @@ public final class LegacyTokenDeliveryContext {
 
     public LegacyClientType clientType() {
         return clientType;
+    }
+
+    public RegisteredClient registeredClient() {
+        return registeredClient;
     }
 
     public HttpServletRequest request() {
