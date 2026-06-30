@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
@@ -30,6 +32,8 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 @RequiredArgsConstructor
 @Slf4j
 public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactory {
+    private static final Pattern VERSION_PATH_PATTERN = Pattern.compile("^/?v[1-9][0-9]*(?:/.*)?$");
+
     private final ClientContractVersionResolver clientContractVersionResolver;
 
     @Override
@@ -101,13 +105,13 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                                                                    Set<String> usedRouteIds) {
         GatewayChannel gatewayChannel = context.gatewayChannel();
         String serviceCode = service.getCode().trim();
-        URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode);
         String serviceVersion = clientContractVersionResolver.resolve(definition);
+        URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode, serviceVersion);
         if (definition != null) {
             if (definition.getMethod() != null) {
                 uri.setScheme("rest:" + definition.getMethod().getValue().toLowerCase());
             }
-            applyRestPath(uri, gatewayChannel.getPath(), null, definition.getPath());
+            applyRestPath(uri, gatewayChannel.getPath(), serviceVersion, definition.getPath());
         }
 
         RouteDefinition routeDefinition = context.routeBuilder().from(uri.toString())
@@ -146,21 +150,29 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         return candidate;
     }
 
-    private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode) {
+    private URIBuilder createDefaultUri(GatewayChannel gatewayChannel, String serviceCode, String versionText) {
         log.debug("Creating REST route URI for service {}", serviceCode);
         return new URIBuilder()
                 .setScheme("rest:post")
                 .setPath(gatewayChannel.getPath())
+                .appendPath(versionText)
                 .appendPath(serviceCode);
     }
 
-    private void applyRestPath(URIBuilder uri, String gatewayPath, String contextPath, String routePath) {
-        if (StringUtils.isAllBlank(contextPath, routePath)) {
+    private void applyRestPath(URIBuilder uri, String gatewayPath, String serviceVersion, String routePath) {
+        if (StringUtils.isBlank(routePath)) {
             return;
         }
         uri.setPath(gatewayPath);
-        appendPath(uri, contextPath);
+        if (!startsWithVersion(routePath)) {
+            appendPath(uri, serviceVersion);
+        }
         appendPath(uri, routePath);
+    }
+
+    private boolean startsWithVersion(String routePath) {
+        String normalizedPath = StringUtils.trimToEmpty(routePath).toLowerCase(Locale.ROOT);
+        return VERSION_PATH_PATTERN.matcher(normalizedPath).matches();
     }
 
     private void appendPath(URIBuilder uri, String path) {

@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
+import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 
 import java.time.Duration;
@@ -78,7 +79,13 @@ public class ShetabProducer extends DefaultProducer {
         ShetabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
+        log.info("REQUEST_MAP={}", maskSensitive(requestMap));
+
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
+
+        log.error("AFTER_CONVERT MTI={}", safeMti(request));
+        log.error("AFTER_CONVERT F11={}", safeField(request, 11));
+        log.error("AFTER_CONVERT F37={}", safeField(request, 37));
         ProviderRequest providerRequest = new ProviderRequest("ISO8583", null, Map.of(), requestMap);
         providerRequest.nativeRequest(request);
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
@@ -391,5 +398,21 @@ public class ShetabProducer extends DefaultProducer {
             throw new IllegalStateException("No bean found for " + type.getName());
         }
         return bean;
+    }
+
+    private String safeField(ISOMsg msg, int field) {
+        try {
+            return msg != null ? msg.getString(field) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String safeMti(ISOMsg msg) {
+        try {
+            return msg != null && msg.hasMTI() ? msg.getMTI() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

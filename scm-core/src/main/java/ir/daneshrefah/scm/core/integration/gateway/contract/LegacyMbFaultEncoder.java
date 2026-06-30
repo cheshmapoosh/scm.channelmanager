@@ -11,9 +11,9 @@ import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 
-@Component("legacyMbCardFaultEncoder")
+@Component("legacyMbFaultEncoder")
 @RequiredArgsConstructor
-public class LegacyMbCardFaultEncoder implements FaultContractEncoder {
+public class LegacyMbFaultEncoder implements FaultContractEncoder {
     private final ObjectMapper objectMapper;
 
     @Override

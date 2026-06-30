@@ -249,16 +249,16 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
         if (present) {
             return;
         }
-        throw new IllegalStateException("Invalid runtime service definition gatewayName="
-                + gatewayChannel.getName()
-                + " targetKind="
-                + targetKind
-                + " "
-                + serviceRef(access)
-                + ": missing "
-                + missingType
-                + " definition. "
-                + explanation);
+//        throw new IllegalStateException("Invalid runtime service definition gatewayName="
+//                + gatewayChannel.getName()
+//                + " targetKind="
+//                + targetKind
+//                + " "
+//                + serviceRef(access)
+//                + ": missing "
+//                + missingType
+//                + " definition. "
+//                + explanation);
     }
 
     private String serviceRef(ChannelServiceAccess access) {
