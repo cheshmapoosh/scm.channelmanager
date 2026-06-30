@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.activation.nib;
 
 import ir.daneshrefah.scm.common.constant.TerminalType;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

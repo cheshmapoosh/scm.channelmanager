@@ -8,7 +8,7 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUser
 import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
 import ir.daneshrefah.scm.uaa.exception.BaseAuthenticationException;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -188,7 +188,7 @@ public class LoginPageController {
                 null != exception.getCause()) {
             return null;
         }
-        PostAuthenticationToken authenticationToken = (PostAuthenticationToken) ((TwoStepAuthenticationRequiredException) exception).getAuthentication();
+        AuthenticationOutcomeToken authenticationToken = (AuthenticationOutcomeToken) ((TwoStepAuthenticationRequiredException) exception).getAuthentication();
         return null != authenticationToken.getOtpSendResponse() ? authenticationToken.getOtpSendResponse().getOtp().getExpireTime() : null;
     }
 

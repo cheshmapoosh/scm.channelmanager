@@ -201,6 +201,57 @@ TRACE/LOG مهم:
 
 نسخه ناشناخته مثل `WEB-1.0.0` با خطای `invalid_app_version` رد می‌شود. نسخه ناشناخته هرگز به PWA تبدیل نمی‌شود. اگر principal احراز هویت‌شده OAuth2 و پارامتر صریح `client_id` وجود نداشته باشد، نبودن `app_version` با `invalid_client` رد می‌شود و آن هم نباید به‌صورت ضمنی PWA انتخاب شود.
 
+## لاگین دو مرحله‌ای PWA/MB از smsotp استفاده نمی‌کند
+
+package قدیمی `security.oauth2.grant.smsotp` حذف شده و نباید دوباره ساخته شود. لاگین username/password همراه با SMS OTP یا device OTP برای PWA و MB همچنان از grant قدیمی password/default استفاده می‌کند و یک OAuth2 grant جدا به نام SMS OTP ندارد.
+
+- در درخواست اول، username و password ارسال می‌شود. اگر روش لاگین کاربر به مرحله دوم نیاز داشته باشد، پاسخ نشان می‌دهد که authentication هنوز کامل نشده است و OTP ارسال می‌شود.
+- در درخواست دوم، کد OTP ارسال می‌شود. در DEFAULT grant مربوط به PWA/MB، کد از header قدیمی مثل `x-otp-code` خوانده و به `claimCode` تبدیل می‌شود.
+- ارسال و بررسی SMS/device OTP در login authentication method tokenها و `LoginAuthenticationMethodProvider` انجام می‌شود.
+- این جریان با Shahkar جدا است و نباید به package یا grant مربوط به Shahkar منتقل شود.
+
+## Login Authentication Method Tokens
+
+نام‌های قدیمی `FirstLvl*` حذف شده‌اند، چون این کلاس‌ها level عمومی امنیتی نیستند و فقط روش‌های مختلف لاگین را نمایش می‌دهند. نام‌های فعلی عبارت‌اند از:
+
+- `StaticPasswordLoginAuthenticationToken`
+- `PinLoginAuthenticationToken`
+- `PatternLoginAuthenticationToken`
+- `SmsOtpRequestLoginAuthenticationToken`
+- `SmsOtpVerifyLoginAuthenticationToken`
+- `DeviceOtpRequestLoginAuthenticationToken`
+- `DeviceOtpVerifyLoginAuthenticationToken`
+
+این tokenها مشخص می‌کنند که لاگین کامل شده یا به مرحله دیگری نیاز دارد. `SmsOtpRequestLoginAuthenticationToken` درخواست ارسال SMS OTP را ایجاد می‌کند، `SmsOtpVerifyLoginAuthenticationToken` کد SMS را بررسی می‌کند و `DeviceOtpVerifyLoginAuthenticationToken` کد device OTP را بررسی می‌کند. در مسیر سازگاری PWA/MB ممکن است DEFAULT grant داخل سیستم مانند `FIRST_PASSWORD` پردازش شود، اما نام کلاس‌ها و مسئولیت آنها login-specific باقی می‌ماند.
+
+## لاگین Shahkar برای Super App
+
+Shahkar فقط مسیر لاگین Super App است. Super App باید `app_version` یا `AppVersion` با مقداری که با `SA` شروع می‌شود بفرستد تا client سازگار Super App resolve شود. PWA، MB و NIB مجاز به استفاده از Shahkar grant نیستند. `app_version` به‌تنهایی اختیار امنیتی ایجاد نمی‌کند و policy مربوط به registered client باید نوع Super App را تایید کند.
+
+در این جریان ابتدا مالکیت شماره موبایل و کد ملی در Shahkar بررسی می‌شود. فقط پس از موفقیت ownership check، OTP ارسال می‌شود. در درخواست دوم OTP بررسی می‌شود و فقط پس از موفقیت آن، کاربر نهایی Shahkar با `createShahkarVerifiedUserAndDeleteOld` ساخته می‌شود. قبل از OTP موفق هیچ verified user نهایی و هیچ access token نهایی ساخته نمی‌شود.
+
+```mermaid
+sequenceDiagram
+    participant SA as Super App
+    participant UAA as scm-uaa
+    participant Shahkar as Shahkar
+    participant OTP as OTP Service
+
+    SA->>UAA: national code + mobile + app_version=SA... بدون OTP
+    UAA->>UAA: map request به ShahkarGrantAuthenticationToken
+    UAA->>Shahkar: بررسی ownership
+    Shahkar-->>UAA: ownership موفق
+    UAA->>OTP: ارسال OTP challenge
+    UAA-->>SA: second_step_required
+    SA->>UAA: همان درخواست + OTP
+    UAA->>OTP: بررسی OTP
+    OTP-->>UAA: OTP موفق
+    UAA->>UAA: ساخت verified Shahkar user
+    UAA-->>SA: صدور token
+```
+
+منطق request parsing در mapper، منطق ownership/OTP/user creation در flow service و منطق refresh/session cache در session service قرار دارد. converter فقط HTTP request را به `ShahkarGrantAuthenticationToken` تبدیل می‌کند.
+
 ## قانون طلایی امنیتی
 
 هیچ‌وقت این مقدارها را log، trace یا داخل error message ننویسید:
@@ -231,9 +282,15 @@ TRACE/LOG مهم:
 - تغییرات PWA cookie delivery: `ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery`
 - تغییرات response body قدیمی: `ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.response`
 - تغییرات client policy: `ir.daneshrefah.scm.uaa.security.oauth2.policy`
-- تغییرات SMS OTP grant: `ir.daneshrefah.scm.uaa.security.oauth2.grant.smsotp`
-- تغییرات Shahkar: `ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar`
+- parsing درخواست Shahkar: `ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.converter`
+- business flow مربوط به Shahkar: `ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.flow`
+- refresh/session cache مربوط به Shahkar: `ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.session`
+- tokenهای روش لاگین: `ir.daneshrefah.scm.uaa.security.authentication.method.token`
+- ساخت request/response token در OAuth2: `ir.daneshrefah.scm.uaa.security.oauth2.token`
+- encoder سازگاری password قدیمی: `ir.daneshrefah.scm.uaa.security.password`
 - تغییرات استخراج token در resource serverها: `scm-uaa-starter/.../resource`
+
+`LegacyPassword` مقدار خام password را در `toString()` نمایش نمی‌دهد و `LegacyUsernameSaltedMd5PasswordEncoder` فقط برای رکوردهای قدیمی نگه داشته شده و deprecated for removal است. حذف این دو کلاس فقط بعد از migration کامل password storage مجاز است.
 
 ## کجا کد اضافه نکنیم؟
 
@@ -243,7 +300,13 @@ TRACE/LOG مهم:
 - legacy response code را داخل package عمومی `service.proxy` نگذارید.
 - cookie creation را داخل authentication provider نگذارید.
 - business logic را داخل converter نگذارید.
-- مقدار حساس را به log، trace یا error اضافه نکنید.
+- package حذف‌شده `security.oauth2.grant.smsotp` را دوباره نسازید.
+- از نام‌گذاری `FirstLvl` استفاده نکنید.
+- token مربوط به Shahkar را داخل `security.token` قرار ندهید؛ این package حذف شده است.
+- ownership check یا ارسال OTP مربوط به Shahkar را داخل converter انجام ندهید.
+- قبل از موفقیت OTP، verified Shahkar user نسازید.
+- تا پایان migration ذخیره passwordهای قدیمی، package فعال `security.password` را حذف نکنید. providerها باید از `PasswordEncoder.matches(...)` استفاده کنند و نباید MD5 را دستی مقایسه کنند.
+- password خام، OTP، JWT، cookie، Authorization header، شماره موبایل یا کد ملی را به log، trace یا error اضافه نکنید.
 
 ## خلاصه مسئولیت کلاس‌های اصلی
 

@@ -177,7 +177,7 @@ public class OtpUserService {
                 .findPerson(request.getPersonType(),request.getNationalId(),request.getSubOrg())
                 .orElseThrow(()->new NoMatchRecordFoundException("user"));
         if(StringUtils.notEquals(generalPerson.getMobile1(),accessParameter)){
-            log.error("MobileNo did not match with user in database. MobileNo:{} NationalCode:{}",accessParameter,request.getNationalId());
+            log.error("Shahkar OTP recipient does not match the stored user mobile number");
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_PASSWORD);
         }
         Recipient recipient = Recipient.builder()

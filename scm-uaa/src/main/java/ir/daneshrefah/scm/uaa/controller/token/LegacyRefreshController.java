@@ -26,7 +26,7 @@ public class LegacyRefreshController {
     private final String legacyRefreshClientSecret;
 
     public LegacyRefreshController(
-            @Value("${scm.uaa.legacy.refresh.client-id:MB}") String legacyRefreshClientId,
+            @Value("${scm.uaa.legacy.refresh.client-id:${SCM_UAA_LEGACY_SUPER_APP_CLIENT_ID:SA}}") String legacyRefreshClientId,
             @Value("${scm.uaa.legacy.refresh.client-secret:}") String legacyRefreshClientSecret
     ) {
         this.legacyRefreshClientId = legacyRefreshClientId;

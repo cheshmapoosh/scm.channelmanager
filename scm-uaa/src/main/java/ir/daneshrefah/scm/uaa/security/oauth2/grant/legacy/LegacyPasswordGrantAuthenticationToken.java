@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy;
 
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 
 /**
  * Spring Authentication token kept only for old NIB/PWA/MB compatibility.

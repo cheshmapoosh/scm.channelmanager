@@ -138,9 +138,12 @@ class UaaSecurityArchitectureTest {
     }
 
     @Test
-    void grantPackagesDoNotDependOnLegacyUnlessTheyAreLegacy() throws Exception {
-        assertPackageDoesNotContain("ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar", "security.oauth2.grant.legacy");
-        assertPackageDoesNotContain("ir/daneshrefah/scm/uaa/security/oauth2/grant/smsotp", "security.oauth2.grant.legacy");
+    void shahkarReusesCentralLegacyClientResolution() throws Exception {
+        String mapper = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/converter/ShahkarGrantRequestMapper.java"
+        ));
+        assertTrue(mapper.contains("LegacyClientIdResolver"));
+        assertTrue(mapper.contains("LegacyClientTypeResolver"));
     }
 
     @Test
@@ -149,14 +152,136 @@ class UaaSecurityArchitectureTest {
 
         assertTrue(source.contains("LegacyPasswordGrantAuthenticationConverter"));
         assertTrue(source.contains("LegacyPasswordGrantAuthenticationProvider"));
-        assertTrue(source.contains("SmsOtpGrantAuthenticationConverter"));
-        assertTrue(source.contains("SmsOtpGrantAuthenticationProvider"));
+        assertFalse(source.contains("SmsOtpGrantAuthenticationConverter"));
+        assertFalse(source.contains("SmsOtpGrantAuthenticationProvider"));
         assertTrue(source.contains("ShahkarGrantAuthenticationConverter"));
         assertTrue(source.contains("ShahkarGrantAuthenticationProvider"));
         assertFalse(source.contains("new LegacyPasswordGrantAuthenticationConverter"));
         assertFalse(source.contains("new LegacyPasswordGrantRequestMapper"));
         assertFalse(source.contains("SecondPassword" + "GrantAuthenticationConverter"));
         assertFalse(source.contains("AuthorizationGrantType." + "SECOND_PASSWORD"));
+    }
+
+    @Test
+    void removedSmsOtpGrantHasNoPackageOrGrantTypeRegistration() throws Exception {
+        assertFalse(Files.exists(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/smsotp"
+        )));
+        String grantType = Files.readString(Path.of("../scm-uaa-common/src/main/java/ir/daneshrefah/scm/uaa/common/core/AuthorizationGrantType.java"));
+        String mapper = Files.readString(MAIN.resolve("ir/daneshrefah/scm/uaa/mapper/AuthorizationGrantTypeMapper.java"));
+        assertFalse(grantType.contains("SMS_" + "OTP"));
+        assertFalse(mapper.contains("SMS_" + "OTP"));
+        assertTrue(mapper.contains("AuthorizationGrantType.SHAHKAR.getCode()"));
+    }
+
+    @Test
+    void firstLevelNamingAndOldSecurityTokenPackageAreGone() throws Exception {
+        Path oldTokenPackage = MAIN.resolve("ir/daneshrefah/scm/uaa/security/token");
+        assertTrue(javaFiles(oldTokenPackage).isEmpty());
+        for (Path file : javaFiles(MAIN)) {
+            String source = Files.readString(file);
+            assertFalse(file.getFileName().toString().startsWith("First" + "Lvl"),
+                    () -> file + " uses removed first-level naming");
+            assertFalse(source.contains("First" + "Lvl"), () -> file + " references removed first-level naming");
+            assertFalse(source.contains("ir.daneshrefah.scm.uaa.security." + "token"),
+                    () -> file + " references removed security.token package");
+        }
+    }
+
+    @Test
+    void authenticationAndOauthTokensLiveInResponsibilityPackages() {
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/token/PreAuthenticationToken.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/token/UserLoginAuthenticationToken.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/token/AuthenticationOutcomeToken.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/method/LoginAuthenticationTokenFactory.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/method/token/SmsOtpRequestLoginAuthenticationToken.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/authentication/method/token/DeviceOtpVerifyLoginAuthenticationToken.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/token/AuthenticationResponseTokenGenerator.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/token/OAuth2AuthenticationRequestTokenGenerator.java");
+    }
+
+    @Test
+    void shahkarConverterIsThinAndProviderDelegatesBusinessFlow() throws Exception {
+        String converter = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/ShahkarGrantAuthenticationConverter.java"
+        ));
+        assertTrue(converter.contains("ShahkarGrantRequestMapper"));
+        assertFalse(converter.contains("Hazelcast"));
+        assertFalse(converter.contains("ShahkarOwnershipService"));
+        assertFalse(converter.contains("OtpService"));
+        assertFalse(converter.contains("OtpUserService"));
+        assertFalse(converter.contains("createShahkarVerifiedUserAndDeleteOld"));
+
+        String provider = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/ShahkarGrantAuthenticationProvider.java"
+        ));
+        assertTrue(provider.contains("ShahkarAuthenticationFlowService"));
+        assertFalse(provider.contains("OtpService"));
+        assertFalse(provider.contains("ShahkarOwnershipService"));
+        assertFalse(provider.contains("UserService"));
+    }
+
+    @Test
+    void shahkarFlowOrdersOwnershipChallengeOtpAndVerifiedUserCreation() throws Exception {
+        String flow = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/flow/ShahkarAuthenticationFlowService.java"
+        ));
+        int ownership = flow.indexOf("ownershipVerificationService.verify");
+        int challenge = flow.indexOf("otpChallengeService.send");
+        int otpVerification = flow.indexOf("otpVerificationService.verify");
+        int createVerifiedUser = flow.indexOf("createShahkarVerifiedUserAndDeleteOld");
+        assertTrue(ownership >= 0 && ownership < challenge);
+        assertTrue(ownership < otpVerification);
+        assertTrue(otpVerification < createVerifiedUser);
+    }
+
+    @Test
+    void shahkarSessionCacheIsIsolatedFromConverterAndResponseFilter() throws Exception {
+        String session = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/session/ShahkarRefreshTokenSessionService.java"
+        ));
+        String converter = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/shahkar/ShahkarGrantAuthenticationConverter.java"
+        ));
+        String responseFilter = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/filter/ResponseProxyAdviosrFilter.java"
+        ));
+        assertTrue(session.contains("HazelcastInstance"));
+        assertFalse(converter.contains("HazelcastInstance"));
+        assertFalse(responseFilter.contains("refresh:token-cache"));
+    }
+
+    @Test
+    void legacyPasswordSafetyTypesAndPasswordEncoderUsageRemain() throws Exception {
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/password/LegacyPassword.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/password/LegacyUsernameSaltedMd5PasswordEncoder.java");
+        String provider = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/authentication/method/LoginAuthenticationMethodProvider.java"
+        ));
+        assertTrue(provider.contains("passwordEncoder.matches("));
+        assertFalse(provider.contains("MessageDigest"));
+        assertFalse(provider.toLowerCase().contains("getinstance(\"md5\")"));
+        String encoderConfig = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/config/PasswordEncoderConfig.java"
+        ));
+        assertTrue(encoderConfig.contains("LegacyUsernameSaltedMd5PasswordEncoder"));
+        for (Path file : javaFiles(MAIN)) {
+            if (!file.getFileName().toString().contains("Provider")) {
+                continue;
+            }
+            String source = Files.readString(file).toLowerCase();
+            assertFalse(source.contains("messagedigest"), () -> file + " manually hashes passwords");
+            assertFalse(source.contains("getinstance(\"md5\")"), () -> file + " manually hashes passwords");
+        }
+    }
+
+    @Test
+    void shahkarRefreshCompatibilityDefaultsToSuperAppClient() throws Exception {
+        String refreshController = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/controller/token/LegacyRefreshController.java"
+        ));
+        assertTrue(refreshController.contains("SCM_UAA_LEGACY_SUPER_APP_CLIENT_ID:SA"));
+        assertFalse(refreshController.contains("client-id:MB"));
     }
 
     @Test
@@ -263,6 +388,17 @@ class UaaSecurityArchitectureTest {
                 assertFalse(line.contains("client_secret"), () -> file + " must not log client_secret");
                 assertFalse(line.contains("otpCode"), () -> file + " must not log OTP code");
                 assertFalse(line.contains("getCredentials()"), () -> file + " must not log raw credentials");
+            }
+        }
+        for (String relativePath : List.of(
+                "ir/daneshrefah/scm/uaa/service/shahkar/ShahkarOwnershipService.java",
+                "ir/daneshrefah/scm/uaa/service/user/OtpUserService.java"
+        )) {
+            Path file = MAIN.resolve(relativePath);
+            for (String line : Files.readString(file).lines().filter(line -> line.contains("log.")).toList()) {
+                assertFalse(line.contains("request.getNationalId()"), () -> file + " logs a raw national code");
+                assertFalse(line.contains("accessParameter,"), () -> file + " logs a raw mobile/access parameter");
+                assertFalse(line.contains("getResponseBodyAsString"), () -> file + " logs a provider response body");
             }
         }
     }

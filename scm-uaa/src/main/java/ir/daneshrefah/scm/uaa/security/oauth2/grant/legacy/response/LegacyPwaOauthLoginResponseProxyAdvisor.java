@@ -12,8 +12,8 @@ import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTy
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyRequestParameters;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyPwaCookieTokenDeliveryStrategy;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyTokenDeliveryContext;
-import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.PwaOauthResponseMapper;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationResponse;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
@@ -141,7 +141,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
 
     @Override
     public boolean support(HttpServletRequest request) {
-        if (request.getAttribute(PRE_AUTHENTICATION_INSTANCE) instanceof OAuth2ShahkarAuthenticationToken) {
+        if (request.getAttribute(PRE_AUTHENTICATION_INSTANCE) instanceof ShahkarGrantAuthenticationToken) {
             return false;
         }
         LegacyClientType clientType = resolveLegacyClientType(request);

@@ -12,7 +12,7 @@ import ir.daneshrefah.scm.common.model.user.UserIdentifierType;
 import ir.daneshrefah.scm.common.dto.terminal.TerminalService;
 import ir.daneshrefah.scm.notification.client.service.spec.NotificationService;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
     private final NotificationService notificationService;
 
     @Override
-    protected void onSuccessAuthenticationEvent(PostAuthenticationToken authentication) {
+    protected void onSuccessAuthenticationEvent(AuthenticationOutcomeToken authentication) {
         if (!authentication.isNotificationRequired()) {
             return;
         }
@@ -47,7 +47,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
                 });
     }
 
-    private NotificationRequest extractNotificationRequest(PostAuthenticationToken authentication, Terminal terminal) {
+    private NotificationRequest extractNotificationRequest(AuthenticationOutcomeToken authentication, Terminal terminal) {
         User user = authentication.getPrincipal().getUser();
         NotificationData data = new NotificationData()
                 .put(NotificationDataKey.LOGIN_TIME, convertToPersianNumber(getShamsiLoginTime(authentication)))
@@ -88,7 +88,7 @@ public class AuthenticationNotificationEventListener extends BaseAuthenticationL
         return result.toString();
     }
 
-    private String getShamsiLoginTime(PostAuthenticationToken authentication) {
+    private String getShamsiLoginTime(AuthenticationOutcomeToken authentication) {
         return DateUtils
                 .ShamsiCalendarConvertor
                 .convertToShamsiDateString(DateUtils

@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.activation.nib;
 
 import ir.daneshrefah.scm.common.constant.TerminalType;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 
 public interface UserActivationAuthenticationService {
 

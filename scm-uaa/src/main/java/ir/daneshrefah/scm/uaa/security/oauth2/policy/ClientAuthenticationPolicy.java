@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.policy;
 
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.exception.ClientAuthenticationRequiredException;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Component;

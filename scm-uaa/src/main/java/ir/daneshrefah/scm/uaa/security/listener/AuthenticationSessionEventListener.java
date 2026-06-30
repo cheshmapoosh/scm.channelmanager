@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.security.listener;
 
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +26,7 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
 
 
     @Override
-    protected void onSuccessAuthenticationEvent(PostAuthenticationToken authentication) {
+    protected void onSuccessAuthenticationEvent(AuthenticationOutcomeToken authentication) {
         if (!authentication.isSessionRequired()) {
             return;
         }
@@ -38,7 +38,7 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
         sessionCache.putSessionInCache(sessionAuthentication);
     }
 
-    private UserAuthentication createUserSessionData(PostAuthenticationToken authentication) {
+    private UserAuthentication createUserSessionData(AuthenticationOutcomeToken authentication) {
         UserAuthentication.AuthenticationDetail detail = UserAuthentication.AuthenticationDetail.builder()
                 .issuer(null)
                 .issuedAt(authentication.getIssuedAt())
@@ -52,7 +52,7 @@ public class AuthenticationSessionEventListener extends BaseAuthenticationListen
 
         UserAuthentication userAuthentication = new UserAuthentication(detail,
                 authentication.getPrincipal().getUser(),
-                PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(authentication.getAuthenticationStatus()) ?
+                AuthenticationOutcomeToken.AuthenticationStatus.AUTHENTICATED.equals(authentication.getAuthenticationStatus()) ?
                         authentication.getAuthorities() : null);
 
         return userAuthentication;

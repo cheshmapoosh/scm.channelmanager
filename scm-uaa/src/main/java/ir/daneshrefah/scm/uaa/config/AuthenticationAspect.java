@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.uaa.observation.UaaObservation;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;

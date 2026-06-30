@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.uaa.domain.pwa.Register;
 import ir.daneshrefah.scm.uaa.domain.pwa.UserActivation;
 import ir.daneshrefah.scm.uaa.mapper.UserMapper;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.GeneralPwaOauthException;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.PwaOauthResponseMapper;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationRequest;

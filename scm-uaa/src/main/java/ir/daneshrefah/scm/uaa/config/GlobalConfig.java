@@ -1,6 +1,5 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.uaa.filter.CorrelationIdPreProcessingFilter;
 import ir.daneshrefah.scm.uaa.filter.RequestLoggingFilter;
 import ir.daneshrefah.scm.uaa.filter.ResponseProxyAdviosrFilter;
@@ -9,7 +8,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import org.springframework.beans.factory.annotation.Value;
 
 
 /**
@@ -42,13 +40,11 @@ public class GlobalConfig {
 
     @Bean
     public FilterRegistrationBean<ResponseProxyAdviosrFilter> securityWrapperFilter(
-            BeanFactory beanFactory,
-            HazelcastInstance hazelcast,
-            @Value("${scm.super-app.session-ttl}") Long sessionTTL
+            BeanFactory beanFactory
     ) {
         FilterRegistrationBean<ResponseProxyAdviosrFilter> registrationBean = new FilterRegistrationBean<>();
 
-        registrationBean.setFilter(new ResponseProxyAdviosrFilter(hazelcast, beanFactory,sessionTTL));
+        registrationBean.setFilter(new ResponseProxyAdviosrFilter(beanFactory));
 
         registrationBean.addUrlPatterns("/*");
         registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
