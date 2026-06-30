@@ -3,7 +3,10 @@ package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.provider;
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
 import ir.daneshrefah.scm.uaa.security.authentication.UaaPasswordAuthenticationFlowService;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyAppVersion;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.LegacyOAuth2ErrorMapper;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
 import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
@@ -22,7 +25,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.stereotype.Component;
 
 /**
- * Legacy password provider kept only for old NIB/PWA/MB compatibility.
+ * Legacy password provider kept only for old NIB/PWA/MB/SA compatibility.
  * Remove this class after migration to UAA-hosted login and authorization-code flow is complete.
  * No new feature should be added here unless strictly required for migration safety.
  */
@@ -36,6 +39,7 @@ public class LegacyPasswordGrantAuthenticationProvider implements Authentication
     private final LegacyOAuth2ErrorMapper errorMapper;
     private final RegisteredClientLegacyPolicy legacyPolicy;
     private final RegisteredClientRepository registeredClientRepository;
+    private final LegacyClientTypeResolver clientTypeResolver;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -49,10 +53,10 @@ public class LegacyPasswordGrantAuthenticationProvider implements Authentication
             preAuthenticationToken.setRegisteredClient(registeredClient);
         }
         try {
-            if (preAuthenticationToken instanceof LegacyPasswordGrantAuthenticationToken legacyToken
+            if (preAuthenticationToken instanceof LegacyPasswordGrantAuthenticationToken
                     && !legacyPolicy.isLegacyPasswordGrantAllowed(
                     preAuthenticationToken.getRegisteredClient(),
-                    legacyToken.legacyClientType())) {
+                    resolvedClientType(preAuthenticationToken))) {
                 ErrorUtils.throwError(OAuth2ErrorCodes.INVALID_GRANT, OAuth2ParameterNames.GRANT_TYPE);
             }
             UaaPasswordAuthenticationFlowService.AuthenticationResult result =
@@ -63,6 +67,15 @@ public class LegacyPasswordGrantAuthenticationProvider implements Authentication
             ErrorUtils.throwError(error.errorCode(), error.parameterName());
             return null;
         }
+    }
+
+    private LegacyClientType resolvedClientType(PreAuthenticationToken authenticationToken) {
+        return clientTypeResolver.resolve(
+                authenticationToken.getRegisteredClient(),
+                authenticationToken.getClientId(),
+                new LegacyAppVersion(authenticationToken.getClientVersion()),
+                authenticationToken.getGrantType()
+        );
     }
 
     private Authentication buildResponse(

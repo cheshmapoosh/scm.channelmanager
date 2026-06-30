@@ -18,6 +18,16 @@ import java.time.Duration;
 public class LegacyAuthProperties {
     private boolean enabled = true;
     private final Pwa pwa = new Pwa();
+    private final ClientResolution clientResolution = new ClientResolution();
+
+    @Getter
+    @Setter
+    public static class ClientResolution {
+        private String pwaClientId = "PWA";
+        private String mbClientId = "MB";
+        private String superAppClientId = "SA";
+        private String nibClientId = "NIB";
+    }
 
     @Getter
     @Setter

@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.common.model.service.HttpContentType;
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
-import ir.daneshrefah.scm.uaa.common.utils.Constants;
+import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyAppVersion;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyRequestParameters;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyPwaCookieTokenDeliveryStrategy;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.delivery.LegacyTokenDeliveryContext;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.PwaOauthResponseMapper;
@@ -25,9 +26,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.*;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
@@ -44,7 +44,6 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_I
 @SuppressWarnings("removal")
 public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdvisor {
 
-    private static final String LEGACY_APP_VERSION = "pwa";
     private static final String UAA_ERROR_PROP = "error";
     private static final String UAA_ERROR_DESC_PROP = "error_description";
     private static final String UAA_ACCESS_TOKEN_PROP = "access_token";
@@ -142,13 +141,11 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
 
     @Override
     public boolean support(HttpServletRequest request) {
-        if(request.getAttribute(PRE_AUTHENTICATION_INSTANCE) instanceof OAuth2ShahkarAuthenticationToken){
+        if (request.getAttribute(PRE_AUTHENTICATION_INSTANCE) instanceof OAuth2ShahkarAuthenticationToken) {
             return false;
         }
-        return Optional
-                .ofNullable(request.getHeader(Constants.APP_VERSION_HEADER))
-                .stream()
-                .anyMatch(s -> StringUtils.equalsIgnoreCase(s, LEGACY_APP_VERSION) || StringUtils.startsWithIgnoreCase(s, "MB"));
+        LegacyClientType clientType = resolveLegacyClientType(request);
+        return LegacyClientType.PWA.equals(clientType) || LegacyClientType.MB.equals(clientType);
     }
 
     @Override
@@ -157,9 +154,20 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
     }
 
     private LegacyClientType resolveLegacyClientType(HttpServletRequest request) {
-        Object preAuthentication = preAuthenticationToken(request);
-        String clientId = preAuthentication instanceof AbstractAuthenticationToken token ? token.getClientId() : null;
-        return clientTypeResolver.resolve(clientId, request.getHeader(Constants.APP_VERSION_HEADER), null);
+        PreAuthenticationToken preAuthentication = preAuthenticationToken(request);
+        LegacyRequestParameters parameters = new LegacyRequestParameters(request);
+        String clientId = preAuthentication == null ? null : preAuthentication.getClientId();
+        LegacyAppVersion appVersion = new LegacyAppVersion(parameters.appVersion().orElse(null));
+        AuthorizationGrantType grantType = preAuthentication == null
+                ? AuthorizationGrantType.findByCode(
+                        parameters.firstParameter(OAuth2ParameterNames.GRANT_TYPE).orElse(null))
+                : preAuthentication.getGrantType();
+        return clientTypeResolver.resolve(
+                preAuthentication == null ? null : preAuthentication.getRegisteredClient(),
+                clientId,
+                appVersion,
+                grantType
+        );
     }
 
     private PreAuthenticationToken preAuthenticationToken(HttpServletRequest request) {

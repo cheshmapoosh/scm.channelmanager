@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAu
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationConverter;
+import org.springframework.stereotype.Component;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
 
@@ -15,26 +16,26 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_I
  */
 @Deprecated(since = "9.0.0", forRemoval = true)
 @SuppressWarnings("removal")
+@Component
 public class LegacyPasswordGrantAuthenticationConverter implements AuthenticationConverter {
     private final LegacyPasswordGrantRequestMapper requestMapper;
     private final LegacyDefaultGrantRequestMapper defaultGrantRequestMapper;
 
-    public LegacyPasswordGrantAuthenticationConverter(LegacyPasswordGrantRequestMapper requestMapper) {
+    public LegacyPasswordGrantAuthenticationConverter(
+            LegacyPasswordGrantRequestMapper requestMapper,
+            LegacyDefaultGrantRequestMapper defaultGrantRequestMapper
+    ) {
         this.requestMapper = requestMapper;
-        this.defaultGrantRequestMapper = new LegacyDefaultGrantRequestMapper();
+        this.defaultGrantRequestMapper = defaultGrantRequestMapper;
     }
 
     @Override
     public Authentication convert(HttpServletRequest request) {
-        AuthorizationGrantType grantType = requestMapper.grantType(request);
+        LegacyRequestParameters parameters = new LegacyRequestParameters(request);
+        AuthorizationGrantType grantType = requestMapper.grantType(parameters);
         if (!AuthorizationGrantType.FIRST_PASSWORD.equals(grantType) && !AuthorizationGrantType.DEFAULT.equals(grantType)) {
             return null;
         }
-        LegacyPasswordGrantRequestMapper.ParameterSearch parameters =
-                new LegacyPasswordGrantRequestMapper.ParameterSearch(
-                        request,
-                        AuthorizationGrantType.DEFAULT.equals(grantType)
-                );
         LegacyPasswordGrantAuthenticationToken token = new LegacyPasswordGrantAuthenticationToken(
                 requestMapper.map(request, parameters, grantType)
         );
