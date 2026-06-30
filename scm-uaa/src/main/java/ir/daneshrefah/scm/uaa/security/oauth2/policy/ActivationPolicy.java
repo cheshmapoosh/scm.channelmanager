@@ -6,15 +6,21 @@ import ir.daneshrefah.scm.uaa.exception.activation.UserActivatedBeforeException;
 import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class ActivationPolicy {
-    private final UserActivationAuthenticationService activationAuthenticationService;
+    private final ObjectProvider<UserActivationAuthenticationService> activationAuthenticationServiceProvider;
 
     public ActivationDecision decide(PreAuthenticationToken authentication, String clientTerminalCode) {
+        UserActivationAuthenticationService activationAuthenticationService =
+                activationAuthenticationServiceProvider.getIfAvailable();
+        if (activationAuthenticationService == null) {
+            return new ActivationDecision(authentication.getName(), clientTerminalCode, true);
+        }
         UserActivationAuthenticationService.CandidateStatus candidateStatus =
                 activationAuthenticationService.checkActivationCandidate(authentication);
         if (UserActivationAuthenticationService.CandidateStatus.ACCEPTED.equals(candidateStatus)) {

@@ -139,7 +139,7 @@ affinity: {}
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: dev
+    value: test
   - name: SPRING_APPLICATION_NAME
     value: scm-uaa
   - name: VERSION

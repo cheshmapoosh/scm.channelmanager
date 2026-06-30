@@ -1,17 +1,62 @@
+# Local developer/template profile. This profile never imports scm-config.
 spring:
-  application:
-    name: uua
-  config:
-    import: 'optional:configserver:'
-    activate:
-      on-profile: dev
   cloud:
     config:
-      username: scm
-      password: scm
-      name: uaa
-      enabled: true
-      uri: http://10.10.4.125:8888/config
+      enabled: false
 
+server:
+  ssl:
+    # Enable HTTPS for realistic Secure/SameSite=None cookie testing.
+    enabled: ${SCM_UAA_SSL_ENABLED:false}
+    key-store: ${SCM_UAA_SSL_KEY_STORE:}
+    key-store-password: ${SCM_UAA_SSL_KEY_STORE_PASSWORD:}
+    key-store-type: ${SCM_UAA_SSL_KEY_STORE_TYPE:PKCS12}
+    key-alias: ${SCM_UAA_SSL_KEY_ALIAS:}
 
+scm:
+  uaa:
+    datasource:
+      main:
+        enabled: true
+        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://localhost:50000/SCM}
+        username: ${SCM_UAA_MAIN_DB_USERNAME:scm}
+        password: ${SCM_UAA_MAIN_DB_PASSWORD:}
+        driver-class-name: ${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+        max-connection: ${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}
+        default-schema: ${SCM_UAA_MAIN_DB_SCHEMA:REF}
+      activation:
+        enabled: ${SCM_UAA_ACTIVATION_DB_ENABLED:true}
+        url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://localhost:50000/SCM}
+        username: ${SCM_UAA_ACTIVATION_DB_USERNAME:scm}
+        password: ${SCM_UAA_ACTIVATION_DB_PASSWORD:}
+        driver-class-name: ${SCM_UAA_ACTIVATION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+        max-connection: ${SCM_UAA_ACTIVATION_DB_MAX_CONNECTION:10}
+        default-schema: ${SCM_UAA_ACTIVATION_DB_SCHEMA:MBUAA}
+    cors:
+      allowed-origin-patterns:
+        - "http://localhost:*"
+        - "https://localhost:*"
+        - "http://127.0.0.1:*"
+        - "https://127.0.0.1:*"
+        - "https://*.local.test:*"
 
+  log:
+    app:
+      file-directory: ${SCM_APP_LOG_DIRECTORY:${user.home}/scm/log/app}
+      rolling-archive-directory: ${SCM_APP_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/log/app/archive}
+
+  observation:
+    log:
+      console:
+        enabled: ${SCM_OBSERVATION_LOG_CONSOLE_ENABLED:true}
+      file:
+        directory: ${SCM_OBSERVATION_LOG_FILE_DIRECTORY:${user.home}/scm/obs/log}
+        archive-directory: ${SCM_OBSERVATION_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/obs/log/archive}
+    trace:
+      file:
+        directory: ${SCM_OBSERVATION_TRACE_FILE_DIRECTORY:${user.home}/scm/obs/trace}
+        archive-directory: ${SCM_OBSERVATION_TRACE_ARCHIVE_DIRECTORY:${user.home}/scm/obs/trace/archive}
+    audit:
+      file:
+        directory: ${SCM_OBSERVATION_AUDIT_FILE_DIRECTORY:${user.home}/scm/obs/audit}
+        archive-directory: ${SCM_OBSERVATION_AUDIT_ARCHIVE_DIRECTORY:${user.home}/scm/obs/audit/archive}

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationTok
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -13,6 +14,7 @@ import java.util.Set;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_SCOPE_NAME_ACTIVATION;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @Slf4j
 @RequiredArgsConstructor
 public class UserActivationAuthenticationServiceImpl implements UserActivationAuthenticationService {

@@ -8,7 +8,7 @@ ${AnsiColor.GREEN} .Version      ${AnsiColor.BRIGHT_CYAN}  : ${scm.application.v
 ${AnsiColor.GREEN} .Build        ${AnsiColor.BRIGHT_CYAN}  : ${scm.application.build:N/A}${AnsiColor.DEFAULT}
 ${AnsiColor.GREEN} .Java Version ${AnsiColor.BRIGHT_CYAN}  : ${java.version}${AnsiColor.DEFAULT}
 ${AnsiColor.GREEN} .Spring Version ${AnsiColor.BRIGHT_CYAN}: ${spring-boot.version}${AnsiColor.DEFAULT}
-${AnsiColor.GREEN} .Active Profile ${AnsiColor.BRIGHT_CYAN}: ${spring.profiles.active:default}${AnsiColor.DEFAULT}
+${AnsiColor.GREEN} .Active Profile ${AnsiColor.BRIGHT_CYAN}: ${spring.profiles.active:local fallback}${AnsiColor.DEFAULT}
 ${AnsiColor.GREEN} .Application   ${AnsiColor.BRIGHT_CYAN} : ${spring.application.name:N/A}${AnsiColor.DEFAULT}
 ${AnsiColor.RED} Powered by Danesh Refah Pardis ${AnsiColor.DEFAULT}
 

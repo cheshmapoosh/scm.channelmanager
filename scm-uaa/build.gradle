@@ -58,5 +58,6 @@ dependencies {
 }
 
 test{
-    exclude  'ir/daneshrefah/scm/uaa/*'
+    // This legacy integration test requires a populated external database.
+    exclude 'ir/daneshrefah/scm/uaa/DeviceClientEntityServiceTest.class'
 }

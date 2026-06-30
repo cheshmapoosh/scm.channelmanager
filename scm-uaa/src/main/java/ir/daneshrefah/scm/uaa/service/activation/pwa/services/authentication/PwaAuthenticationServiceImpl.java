@@ -26,6 +26,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,6 +39,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_IN
 
 @Slf4j
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 public class PwaAuthenticationServiceImpl implements PwaAuthenticationService {
 

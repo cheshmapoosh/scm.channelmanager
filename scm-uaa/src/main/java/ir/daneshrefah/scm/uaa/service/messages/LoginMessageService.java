@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.uaa.repository.activation.domain.MessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 @Slf4j
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 public class LoginMessageService {
     private final LoginMessageRepository repository;
     private final static Sort DEFAULT_SORT = Sort.by("createdDate").descending();

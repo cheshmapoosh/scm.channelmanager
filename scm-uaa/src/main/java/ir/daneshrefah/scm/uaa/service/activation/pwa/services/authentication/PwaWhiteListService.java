@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.mapper.WhiteListMapper;
 import ir.daneshrefah.scm.uaa.repository.activation.WhiteListRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_INVALID_USER;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class PwaWhiteListService {

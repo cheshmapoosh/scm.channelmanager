@@ -17,6 +17,7 @@ import ir.daneshrefah.scm.uaa.domain.pwa.UserActivation;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Locale;
 
 @Component
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class PwaNotificationCenter {

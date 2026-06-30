@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.config.ratelimit.RateLimitBuckets;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.WithRateLimit;
 import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationMessagePublisherService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,7 @@ import static ir.daneshrefah.scm.common.model.message.MessageStatus.SC_SUCCESS;
 
 @RequiredArgsConstructor
 @RestController
+@ConditionalOnBean(name = "activationDataSource")
 @RequestMapping("/api/activation")
 @CrossOrigin
 public class UserActivationController {

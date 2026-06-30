@@ -20,6 +20,7 @@ import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationRequestHead
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.CLIENT_INV
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_IS_DISABLED;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class UserActivationService {

@@ -9,11 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import static ir.daneshrefah.scm.uaa.utils.Constants.ACTIVATION_PUSH_SUB_QUEUE_NAME;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class UserActivationMessageSubscriberImpl implements UserActivationMessageSubscriber {

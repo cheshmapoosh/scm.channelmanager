@@ -19,6 +19,7 @@ import ir.daneshrefah.scm.uaa.service.client.ClientVersionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import java.util.Optional;
 import static ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage.CLIENT_NOT_FOUND;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class PwaActivationServiceImpl implements PwaActivationService {

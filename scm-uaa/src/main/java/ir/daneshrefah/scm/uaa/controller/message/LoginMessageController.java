@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.uaa.domain.client.ClientVersion;
 import ir.daneshrefah.scm.uaa.service.client.ClientVersionService;
 import ir.daneshrefah.scm.uaa.service.messages.LoginMessageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
+@ConditionalOnBean(name = "activationDataSource")
 @RequestMapping("/api")
 public class LoginMessageController {
     private final ClientVersionService clientService;
